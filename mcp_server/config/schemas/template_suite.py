@@ -17,7 +17,7 @@ TemplateId = Annotated[
         strict=True,
         min_length=1,
         max_length=24,
-        pattern=re.compile(r"^(?!.*(?:<!--|-->|/\*|\*/|//|#))[^\s=\x00-\x1f\x7f-\x9f]+$"),
+        pattern=re.compile(r"^(?!.*(?:<!--|-->|/\*|\*/|//|#))[^\s=\x00-\x1f\x7f-\x9f]+$(?![\s\S])"),
     ),
 ]
 

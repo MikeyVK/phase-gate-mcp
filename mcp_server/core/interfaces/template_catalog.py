@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
+from math import isfinite
 from typing import TypeAlias, Union
 
 from pydantic import ConfigDict, JsonValue, RootModel
@@ -24,6 +25,19 @@ class FrozenJsonObject(Mapping[str, FrozenJsonValue]):
     """An immutable object whose recursively frozen entries retain caller key presence."""
 
     entries: tuple[tuple[str, FrozenJsonValue], ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.entries, tuple):
+            raise TypeError("mutable_json_object_entries")
+        seen: set[str] = set()
+        for entry in self.entries:
+            if not isinstance(entry, tuple) or len(entry) != 2:
+                raise TypeError("invalid_json_object_entry")
+            key, value = entry
+            if not isinstance(key, str) or key in seen:
+                raise ValueError("invalid_json_object_key")
+            seen.add(key)
+            _validate_frozen(value)
 
     def __getitem__(self, key: str) -> FrozenJsonValue:
         for entry_key, value in self.entries:
@@ -66,3 +80,14 @@ def thaw_json(value: FrozenJsonValue) -> JsonValue:
     if isinstance(value, tuple):
         return [thaw_json(item) for item in value]
     return value
+
+
+def _validate_frozen(value: FrozenJsonValue) -> None:
+    if isinstance(value, tuple):
+        for item in value:
+            _validate_frozen(item)
+    elif isinstance(value, float):
+        if not isfinite(value):
+            raise ValueError("non_finite_json_number")
+    elif value is not None and not isinstance(value, (str, bool, int, FrozenJsonObject)):
+        raise TypeError("non_json_or_mutable_value")
