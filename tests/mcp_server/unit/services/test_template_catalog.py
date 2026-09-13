@@ -366,7 +366,6 @@ class TestTemplateCatalog:
             catalog_renderer(catalog).render("custom", context, FrozenJsonObject(())) == "prefix0"
         )
 
-
     @pytest.mark.parametrize(
         ("source", "base", "expected"),
         [
@@ -378,6 +377,18 @@ class TestTemplateCatalog:
             (
                 b"{% macro label(content, value=content.local) %}{{ value }}{% endmacro %}"
                 b"{{ label({'local':'ok'}) }}",
+                b"",
+                "ok",
+            ),
+            (
+                b'{% extends "shared/templates/base.jinja2" %}{% set title = content.value %}'
+                b"{% block body %}{{ title }}{% endblock %}",
+                b"{% block body %}{% endblock %}",
+                "0",
+            ),
+            (
+                b"{% macro wrap() %}{{ caller({'local':'ok'}) }}{% endmacro %}"
+                b"{% call(content) wrap() %}{{ content.local }}{% endcall %}",
                 b"",
                 "ok",
             ),
@@ -399,6 +410,4 @@ class TestTemplateCatalog:
         assert native.get_template("pkg/template.jinja2").render(content=context) == expected
         write_package_tree(suite_roots.templates, files)
         catalog = catalog_loader(suite_roots).load()
-        assert catalog_renderer(catalog).render(
-            "custom", context, FrozenJsonObject(())
-        ) == expected
+        assert catalog_renderer(catalog).render("custom", context, FrozenJsonObject(())) == expected

@@ -213,9 +213,13 @@ class TemplateInputValidator:
         def visit(name: str, incoming: Mapping[str, InputPath | None]) -> None:
             tree = trees[name]
             incoming = inherited(name, incoming)
-            undeclared = meta.find_undeclared_variables(tree) - incoming.keys()
+            module_bindings = dict(incoming)
+            _export_bindings(tree.body, module_bindings)
+            undeclared = meta.find_undeclared_variables(tree) - module_bindings.keys()
             if undeclared:
                 raise _input_error(package, name, sorted(undeclared)[0], 1)
+
+            parents: list[tuple[str, Mapping[str, InputPath | None]]] = []
 
             def dependency(node: nodes.Node, visible: Mapping[str, InputPath | None]) -> None:
                 if not isinstance(
@@ -225,8 +229,11 @@ class TemplateInputValidator:
                 target = node.template
                 if not isinstance(target, nodes.Const) or not isinstance(target.value, str):
                     raise MCPError("template_dependency_dynamic", code="ERR_CONFIG")
-                with_context = isinstance(node, nodes.Extends) or node.with_context
-                visit(target.value, visible if with_context else {})
+                if isinstance(node, nodes.Extends):
+                    # Jinja renders a parent after the child's module statements.
+                    parents.append((target.value, visible))
+                else:
+                    visit(target.value, visible if node.with_context else {})
 
             for path, line in _input_reads(tree, dict(incoming), dependency):
                 namespace, *members = path
@@ -235,6 +242,8 @@ class TemplateInputValidator:
                 ):
                     display = ".".join("*" if part is None else str(part) for part in path)
                     raise _input_error(package, name, display, line)
+            for parent_name, visible in parents:
+                visit(parent_name, visible)
 
         visit(root.template_name, {key: (key,) for key in schemas})
 
@@ -313,13 +322,16 @@ def _input_reads(
             for name in node.names:
                 bindings[name[1] if isinstance(name, tuple) else name] = None
         return
-    if isinstance(node, nodes.Macro):
-        bindings[node.name] = None
-        for value in node.defaults:
-            yield from _input_reads(value, bindings, visit_dependency)
+    if isinstance(node, (nodes.Macro, nodes.CallBlock)):
+        if isinstance(node, nodes.Macro):
+            bindings[node.name] = None
+        else:
+            yield from _input_reads(node.call, bindings, visit_dependency)
         local = {**bindings, "caller": None, "varargs": None, "kwargs": None}
         for argument in node.args:
             _bind(argument, None, local)
+        for value in node.defaults:
+            yield from _input_reads(value, local, visit_dependency)
         for child in node.body:
             yield from _input_reads(child, local, visit_dependency)
         return
