@@ -14,6 +14,7 @@ from jsonschema import Draft202012Validator
 from mcp_server.core.interfaces.execution import AdapterLaunch
 from mcp_server.execution.models import (
     AdapterCallFailureReason,
+    InvocationCancelled,
     InvocationCompleted,
     InvocationFailed,
 )
@@ -53,13 +54,14 @@ def request(fixture: ProcessFixture, mode: str, content: str = "hello\n世界") 
 
 async def invoke(
     fixture: ProcessFixture, mode: str, launch: AdapterLaunch | None = None
-) -> InvocationCompleted[FixtureResponse] | InvocationFailed:
+) -> InvocationCompleted[FixtureResponse] | InvocationFailed | InvocationCancelled:
     return await asyncio.wait_for(
         AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
             launch=launch or fixture.binding.launch,
             workspace_root=fixture.workspace,
             request=request(fixture, mode),
             response_contract=response_contract(),
+            timeout_seconds=10,
         ),
         timeout=15,
     )
@@ -163,6 +165,7 @@ async def test_stderr_drains_during_large_stdin_and_preserves_bounded_unicode_fr
             workspace_root=process_fixture.workspace,
             request=supplied,
             response_contract=response_contract(),
+            timeout_seconds=10,
         ),
         timeout=15,
     )
