@@ -16,7 +16,1629 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-08-22T19:45:36.727213+00:00"
+      "created_at": "2026-08-22T19:45:36.727213+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 105,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "Isolated suite roots",
+              "deliverables": [
+                {
+                  "id": "CY001.D1",
+                  "description": "Introduce explicit-root/package-tree support with a concrete existing public ConfigLoader consumer. Record the single active server launch/runtime baseline and preserve old harness/plugin callers. Preserved behavior: Unrelated workflow fixtures and collection; no implicit CWD/config authority. Semantic predecessors: Independent Planning GO. Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy001."
+                },
+                {
+                  "id": "CY001.D2",
+                  "description": "TEST-E01/02/07: two isolated roots consumed by the real existing loader cannot leak configuration or CWD. Record interpreter/import origin/CWD/explicit roots/relevant nonsecret launch settings and current read-only tool contract; no standalone helper-only test or parallel persistent server. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy001."
+                }
+              ],
+              "exit_criteria": "CY001.D1 and CY001.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 2,
+              "name": "Template package value contracts",
+              "deliverables": [
+                {
+                  "id": "CY002.D1",
+                  "description": "Introduce pure closed manifest/version/policy values and finite JSON context presence rules. Preserve all active legacy readers and constructor contracts. Preserved behavior: Absent/empty/null/false/zero distinctions, no materialized defaults; no artifact-ID dispatch. Semantic predecessors: [CY001](planning-execution.md#cy001). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy002."
+                },
+                {
+                  "id": "CY002.D2",
+                  "description": "Closed values reject removed/extra fields and invalid identity/version syntax; absent/empty/null/false/zero remain distinct. Legacy lifecycle cases remain until their named retirement. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy002."
+                }
+              ],
+              "exit_criteria": "CY002.D1 and CY002.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 3,
+              "name": "Contained JSON Schema preparation",
+              "deliverables": [
+                {
+                  "id": "CY003.D1",
+                  "description": "Implement contained 2020-12 static reference resolution and authored/resolved admission parity; add explicit ConfigLoader entry without changing active startup readers. Preserved behavior: Absent/empty/null/false/zero distinctions, no materialized defaults; no artifact-ID dispatch. Semantic predecessors: [CY002](planning-execution.md#cy002). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy003."
+                },
+                {
+                  "id": "CY003.D2",
+                  "description": "I-01/04/05/06/08/11; unknown fields, unsupported/dynamic/external/cyclic refs rejected; independent authored/resolved validation parity. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy003."
+                }
+              ],
+              "exit_criteria": "CY003.D1 and CY003.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 4,
+              "name": "Parser-supported template dependency graph",
+              "deliverables": [
+                {
+                  "id": "CY004.D1",
+                  "description": "Resolve only supported contained Jinja inheritance/import edges; no live renderer or startup selection change. Preserved behavior: Arbitrary manifest IDs, intended inherited/imported content and actionable startup failures. Semantic predecessors: [CY002](planning-execution.md#cy002), [CY003](planning-execution.md#cy003). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy004."
+                },
+                {
+                  "id": "CY004.D2",
+                  "description": "Independently authored graph fixtures prove missing, ambiguous, cyclic, escaping, dynamic and prohibited lateral edges are rejected; retained literal import/inheritance works. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy004."
+                }
+              ],
+              "exit_criteria": "CY004.D1 and CY004.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 5,
+              "name": "Immutable template catalog and renderer selection",
+              "deliverables": [
+                {
+                  "id": "CY005.D1",
+                  "description": "Compose the admitted schema and dependency graph into an immutable catalog with explicit renderer injection; keep the currently registered legacy tool route intact. Preserved behavior: Arbitrary manifest IDs, intended inherited/imported content and actionable startup failures. Semantic predecessors: [CY004](planning-execution.md#cy004). Shared-file predecessors: [CY003](planning-execution.md#cy003), [CY002](planning-execution.md#cy002), [CY001](planning-execution.md#cy001). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy005."
+                },
+                {
+                  "id": "CY005.D2",
+                  "description": "Arbitrary manifest IDs, missing/invalid package failure, intended inherited rendering, selected renderer/introspection equality and restart-stable snapshots; no Python ID registry. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy005."
+                }
+              ],
+              "exit_criteria": "CY005.D1 and CY005.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 6,
+              "name": "Generation fingerprints and package labels",
+              "deliverables": [
+                {
+                  "id": "CY006.D1",
+                  "description": "Implement generation-only pf/sf and independent SemVer labels from admitted sources; no legacy registry writes or historic lookup. Preserved behavior: Existing generated files untouched; invalid/unrecognized metadata has no selected template. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy006."
+                },
+                {
+                  "id": "CY006.D2",
+                  "description": "Independent fixed vectors; root/line-ending normalization; exact source inclusion; policy/version exclusion; lateral/transitive effects; four label/fingerprint relations. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy006."
+                }
+              ],
+              "exit_criteria": "CY006.D1 and CY006.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 7,
+              "name": "First-line provenance writer and reader",
+              "deliverables": [
+                {
+                  "id": "CY007.D1",
+                  "description": "Implement the pure bounded four-field header reader and shared generation framing; keep existing artifact bytes and live legacy templates unchanged. Preserved behavior: Existing generated files untouched; invalid/unrecognized metadata has no selected template. Semantic predecessors: [CY006](planning-execution.md#cy006). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy007."
+                },
+                {
+                  "id": "CY007.D2",
+                  "description": "Independent expected first-line bytes, maximum bounds/native comment frames, malformed/extra/duplicate/non-first-line rejection and no partial recognition; no lifecycle timestamps. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy007."
+                }
+              ],
+              "exit_criteria": "CY007.D1 and CY007.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 8,
+              "name": "Prepared tool input contract",
+              "deliverables": [
+                {
+                  "id": "CY008.D1",
+                  "description": "Introduce the immutable prepared input contract and explicit admitted-schema entrypoint. Preserve current tool constructors and schema behavior for their existing inputs. Preserved behavior: Unaffected typed tools, enforcement skip/error behavior and whole-tool schema identity. Semantic predecessors: [CY002](planning-execution.md#cy002), [CY003](planning-execution.md#cy003). Shared-file predecessors: [CY007](planning-execution.md#cy007). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy008."
+                },
+                {
+                  "id": "CY008.D2",
+                  "description": "One supplied contract governs exposure and real admission; strict unknown fields, schema://validation and unaffected existing tools remain consistent. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy008."
+                }
+              ],
+              "exit_criteria": "CY008.D1 and CY008.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 9,
+              "name": "Operation and attachment transport",
+              "deliverables": [
+                {
+                  "id": "CY009.D1",
+                  "description": "Normalize existing operation-only returns once into the designed internal carrier; add attachments and real wrapper/server transport without changing existing public tool input vocabulary. Switch only the resource-presenter injection in the normal bootstrap alongside the carrier; replace obsolete ValidationResourcePresenter and all its imports in this same coherent cycle. Preserved behavior: Unaffected typed tools, enforcement skip/error behavior and whole-tool schema identity. Whole-tool ValidationErrorOutput.input_schema stays unchanged in its operation/cache. New attachment presentation is generic and does not dispatch on DTO/error type. Semantic predecessors: [CY008](planning-execution.md#cy008). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy009."
+                },
+                {
+                  "id": "CY009.D2",
+                  "description": "Real wrappers prove one normalization, unchanged operational facts, correct empty/nonempty attachments, error and enforcement skip behavior, MCP isError and unrelated server/cycle behavior. A short-lived normal legacy startup still serves its current contracts. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy009."
+                }
+              ],
+              "exit_criteria": "CY009.D1 and CY009.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 10,
+              "name": "Required-null cache fidelity",
+              "deliverables": [
+                {
+                  "id": "CY010.D1",
+                  "description": "Schema-aware operation cache serialization and resource delivery; no presentation changes. Preserved behavior: Required-null/variant facts, unrelated cached error DTOs, cache FIFO and publisher/read separation; attachments remain separate. Semantic predecessors: [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy010."
+                },
+                {
+                  "id": "CY010.D2",
+                  "description": "Real resource reads retain required null and nested variants; same complete operation survives roundtrip; existing FIFO and matching/read semantics retained. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy010."
+                }
+              ],
+              "exit_criteria": "CY010.D1 and CY010.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 11,
+              "name": "Generic bounded presentation",
+              "deliverables": [
+                {
+                  "id": "CY011.D1",
+                  "description": "Generic Annotated/nullable scalar and enum admission with explicit null guard; bounded declarative text only. Preserved behavior: Existing collection/container shape rules, ordering, byte budgets and unsupported model-union rejection; no DTO/native/error-class dispatch. Semantic predecessors: [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009), [CY010](planning-execution.md#cy010). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy011."
+                },
+                {
+                  "id": "CY011.D2",
+                  "description": "Actual configured rows accept approved strict/nullable shapes and reject unsafe structures; null enum has no block; unaffected tool text keeps existing bounds. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy011."
+                }
+              ],
+              "exit_criteria": "CY011.D1 and CY011.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 12,
+              "name": "Adapter package admission and trust",
+              "deliverables": [
+                {
+                  "id": "CY012.D1",
+                  "description": "Immutable role-versioned manifests/catalog, contained files, package identity and explicit workspace trust. Preserved behavior: No startup execution/native survey; duplicate IDs fail; one official/workspace catalog. Semantic predecessors: [CY001](planning-execution.md#cy001). Shared-file predecessors: [CY005](planning-execution.md#cy005), [CY008](planning-execution.md#cy008), [CY003](planning-execution.md#cy003), [CY009](planning-execution.md#cy009). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy012."
+                },
+                {
+                  "id": "CY012.D2",
+                  "description": "TEST-E02/03; invalid manifests/entrypoints/trust/role references rejected; relocated package fingerprint stable; pure injected readers. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy012."
+                }
+              ],
+              "exit_criteria": "CY012.D1 and CY012.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 13,
+              "name": "Adapter process protocol",
+              "deliverables": [
+                {
+                  "id": "CY013.D1",
+                  "description": "Generic launch/JSON transport, typed attempted outcomes and ProcessCapture; add controlled process support. Preserved behavior: No native/language parser in generic runtime; valid domain failures differ from protocol failure. Semantic predecessors: [CY012](planning-execution.md#cy012). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy013."
+                },
+                {
+                  "id": "CY013.D2",
+                  "description": "TEST-E03/04; direct non-Python fixture, stdout/stderr/oversize/malformed/crash/launch errors and package evidence independently observed. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy013."
+                }
+              ],
+              "exit_criteria": "CY013.D1 and CY013.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 14,
+              "name": "Bounded process stopping",
+              "deliverables": [
+                {
+                  "id": "CY014.D1",
+                  "description": "Add deadline/cancel/descendant stopping to the generic process runtime, retaining typed invocation/capture facts. Preserved behavior: Logical target remains unchanged/absent; cleanup warning cannot overwrite primary result; unconfirmed termination blocks dependent mutation. Semantic predecessors: [CY013](planning-execution.md#cy013). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy014."
+                },
+                {
+                  "id": "CY014.D2",
+                  "description": "Real supported-OS processes prove timeout, cancellation, descendant stopping, stream bounds and rejection of late results; no mocked-only process certificate. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy014."
+                }
+              ],
+              "exit_criteria": "CY014.D1 and CY014.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 15,
+              "name": "Proposed-content input and scratch lifecycle",
+              "deliverables": [
+                {
+                  "id": "CY015.D1",
+                  "description": "Add direct-content and unique temp/validation file routes with intended logical target and separately reported cleanup. Preserved behavior: Logical target remains unchanged/absent; cleanup warning cannot overwrite primary result; unconfirmed termination blocks dependent mutation. Semantic predecessors: [CY014](planning-execution.md#cy014). Shared-file predecessors: [CY012](planning-execution.md#cy012). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy015."
+                },
+                {
+                  "id": "CY015.D2",
+                  "description": "Complete supplied text, logical target, no authoritative target overwrite, unique ownership, temp/artifacts separation and cleanup-warning preservation; physical scratch is never the content policy. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy015."
+                }
+              ],
+              "exit_criteria": "CY015.D1 and CY015.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 16,
+              "name": "Check bindings and output profiles",
+              "deliverables": [
+                {
+                  "id": "CY016.D1",
+                  "description": "Add pure check/profile configuration and catalog-reference validation to explicit new loader methods; no active quality.yaml dual read. Preserved behavior: Configured [] differs from empty branch; no .py filter, auto replay or hidden main fallback. Semantic predecessors: [CY012](planning-execution.md#cy012). Shared-file predecessors: [CY013](planning-execution.md#cy013). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy016."
+                },
+                {
+                  "id": "CY016.D2",
+                  "description": "Closed config, nonempty obligations, role/capability references, explicit defaults and configured arguments admitted consistently; fixes/tests cannot enter check profiles. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy016."
+                }
+              ],
+              "exit_criteria": "CY016.D1 and CY016.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 17,
+              "name": "Explicit check selection and branch scopes",
+              "deliverables": [
+                {
+                  "id": "CY017.D1",
+                  "description": "Implement required explicit scopes, ordered binding selection, native argument replacement and Git-owned branch target derivation. Preserved behavior: Configured [] differs from empty branch; no .py filter, auto replay or hidden main fallback. Semantic predecessors: [CY016](planning-execution.md#cy016). Shared-file predecessors: [CY014](planning-execution.md#cy014). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy017."
+                },
+                {
+                  "id": "CY017.D2",
+                  "description": "I-16/19; invalid role/profile/args selection before launch; rename/deletion/working changes and Git failure vs empty selection; no check-state access. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy017."
+                }
+              ],
+              "exit_criteria": "CY017.D1 and CY017.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 18,
+              "name": "Python syntax check adapter",
+              "deliverables": [
+                {
+                  "id": "CY018.D1",
+                  "description": "python_syntax check/v1 package and direct content conformance. Preserved behavior: ast.parse syntax only; unchanged text/filename; no generated-model/example execution. Semantic predecessors: [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy018."
+                },
+                {
+                  "id": "CY018.D2",
+                  "description": "Valid/invalid complete text, no import/execution, bad args, runtime provenance; declared dependency behavior independently exercised. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy018."
+                }
+              ],
+              "exit_criteria": "CY018.D1 and CY018.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 19,
+              "name": "Markdown preflight adapter",
+              "deliverables": [
+                {
+                  "id": "CY019.D1",
+                  "description": "Extract document/body checks behind check/v1 without importing old validator stack. Preserved behavior: H1 anywhere, H2 body, warning-only local missing links, schemes/anchors/fragments/images and intended-parent resolution. Semantic predecessors: [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy019."
+                },
+                {
+                  "id": "CY019.D2",
+                  "description": "Positive and negative fixtures prove precise retained observations and no stronger implicit lint; source bytes unchanged. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy019."
+                }
+              ],
+              "exit_criteria": "CY019.D1 and CY019.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 20,
+              "name": "Ruff checks and native configuration",
+              "deliverables": [
+                {
+                  "id": "CY020.D1",
+                  "description": "Ruff check format/lint roles and approved native settings migration in isolated fixtures; author target defaults separately. Edit only pyproject.toml tool.ruff sections in this cycle; preserve unrelated project/build/test settings. Preserved behavior: No check writes; line-length=100/py311; record approved stricter ignores removal and drop-isolated difference. Semantic predecessors: [CY013](planning-execution.md#cy013), [CY016](planning-execution.md#cy016), [CY017](planning-execution.md#cy017). Shared-file predecessors: [CY018](planning-execution.md#cy018). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy020."
+                },
+                {
+                  "id": "CY020.D2",
+                  "description": "Direct native vs adapter same-version input evidence; no-fix/source-switch refusal; 0/1/inability/notes; exact targets; changing native config affects results. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy020."
+                }
+              ],
+              "exit_criteria": "CY020.D1 and CY020.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 21,
+              "name": "Mypy check and native configuration",
+              "deliverables": [
+                {
+                  "id": "CY021.D1",
+                  "description": "Mypy check adapter and approved strict native defaults, with tests.* override. Edit only tool.mypy sections in this cycle. Preserved behavior: Remove blanket missing-import suppression; explicit tests/workspace selection can widen coverage as approved. Semantic predecessors: [CY013](planning-execution.md#cy013), [CY016](planning-execution.md#cy016), [CY017](planning-execution.md#cy017). Shared-file predecessors: [CY020](planning-execution.md#cy020). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy021."
+                },
+                {
+                  "id": "CY021.D2",
+                  "description": "Direct native/adapter failures, notes, configured files vs literal targets, import behavior and native settings change; no generic regex parser. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy021."
+                }
+              ],
+              "exit_criteria": "CY021.D1 and CY021.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 22,
+              "name": "Pyright check and native configuration",
+              "deliverables": [
+                {
+                  "id": "CY022.D1",
+                  "description": "Node Pyright adapter, workspace module resolution and target py311/Windows settings. Edit pyrightconfig.json and remove only duplicate tool.pyright after value proof in this cycle. Preserved behavior: Native JSON/text severity/location facts and explicit --warnings; remove duplicate TOML authority only at cutover. Semantic predecessors: [CY013](planning-execution.md#cy013), [CY016](planning-execution.md#cy016), [CY017](planning-execution.md#cy017). Shared-file predecessors: [CY021](planning-execution.md#cy021), [CY020](planning-execution.md#cy020). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy022."
+                },
+                {
+                  "id": "CY022.D2",
+                  "description": "Direct native/adapter output modes, exits and missing dependencies; no synthetic findings or severity remapping. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy022."
+                }
+              ],
+              "exit_criteria": "CY022.D1 and CY022.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 23,
+              "name": "TypeScript syntax adapter",
+              "deliverables": [
+                {
+                  "id": "CY023.D1",
+                  "description": "Node Language Service in-memory syntax check and workspace-native resolution. Preserved behavior: No emit or semantic/import-availability checking; target may not exist. Semantic predecessors: [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy023."
+                },
+                {
+                  "id": "CY023.D2",
+                  "description": "Valid/invalid syntax with missing imports; target absent before/after; invalid config and runtime/module absence distinct. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy023."
+                }
+              ],
+              "exit_criteria": "CY023.D1 and CY023.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 24,
+              "name": "Commit message adapter",
+              "deliverables": [
+                {
+                  "id": "CY024.D1",
+                  "description": "commitlint adapter consumes installed pure header reader; minimal conventional rules and native config. Preserved behavior: Arbitrary type/case, multiline body/footer, marker-only breaking intent; strip only valid header; no Git publication. Semantic predecessors: [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007), [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy024."
+                },
+                {
+                  "id": "CY024.D2",
+                  "description": "Known valid/invalid messages/headers and native overrides; no copied grammar or Git-tool enum authority; missing dependencies truthful. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy024."
+                }
+              ],
+              "exit_criteria": "CY024.D1 and CY024.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 25,
+              "name": "Lychee content and selection adapter",
+              "deliverables": [
+                {
+                  "id": "CY025.D1",
+                  "description": "Native links adapter with scratch logical base/self-remap, optional stronger profile. Preserved behavior: Broken links fail; no default mutation-profile broadening; authoritative target unchanged. Semantic predecessors: [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015), [CY016](planning-execution.md#cy016), [CY017](planning-execution.md#cy017). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy025."
+                },
+                {
+                  "id": "CY025.D2",
+                  "description": "Native supported-version self/TOC/neighbor positive/negative cases; native settings and literal target behavior; no fictitious availability pass. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy025."
+                }
+              ],
+              "exit_criteria": "CY025.D1 and CY025.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 26,
+              "name": "Internal check orchestration",
+              "deliverables": [
+                {
+                  "id": "CY026.D1",
+                  "description": "Shared factual check executor; explicit selection and mutation-profile consumers use same bindings. Preserved behavior: Mixed failed/unavailable/not-executed evidence, args/defaults, native facts and no auto-state/fix side effects. Semantic predecessors: [CY016](planning-execution.md#cy016), [CY017](planning-execution.md#cy017), [CY018](planning-execution.md#cy018), [CY019](planning-execution.md#cy019), [CY020](planning-execution.md#cy020), [CY021](planning-execution.md#cy021), [CY022](planning-execution.md#cy022), [CY023](planning-execution.md#cy023), [CY024](planning-execution.md#cy024), [CY025](planning-execution.md#cy025). Shared-file predecessors: [CY012](planning-execution.md#cy012), [CY011](planning-execution.md#cy011), [CY013](planning-execution.md#cy013). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy026."
+                },
+                {
+                  "id": "CY026.D2",
+                  "description": "Direct role doubles prove reductions and empty branch; real configured renamed/recomposed profile invokes intended adapter; no whole-workspace fallback. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy026."
+                }
+              ],
+              "exit_criteria": "CY026.D1 and CY026.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 27,
+              "name": "Pytest adapter and native settings",
+              "deliverables": [
+                {
+                  "id": "CY027.D1",
+                  "description": "test/v1 Pytest package, scoped recording double and declared native test/coverage defaults. Edit only native Pytest/coverage sections of pyproject.toml; no default coverage binding. Preserved behavior: Collection/failure/skip/no-tests=passed, LF/CRLF, --lf, verbosity, xdist; source=mcp_server and coverage 90 only on request. Semantic predecessors: [CY013](planning-execution.md#cy013), [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015). Shared-file predecessors: [CY022](planning-execution.md#cy022), [CY026](planning-execution.md#cy026). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy027."
+                },
+                {
+                  "id": "CY027.D2",
+                  "description": "Direct Pytest and adapter fixtures cover native outcomes/options/coverage rejection and descendant stopping; no old scalar DTO/verbose cap. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy027."
+                }
+              ],
+              "exit_criteria": "CY027.D1 and CY027.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 28,
+              "name": "Internal test orchestration",
+              "deliverables": [
+                {
+                  "id": "CY028.D1",
+                  "description": "Pure tests.yaml models and framework-neutral test service with configured/workspace/targets selection. Preserved behavior: No Pytest option knowledge in generic server; empty native selection and complete typed results remain distinct. Semantic predecessors: [CY027](planning-execution.md#cy027). Shared-file predecessors: [CY016](planning-execution.md#cy016), [CY026](planning-execution.md#cy026). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy028."
+                },
+                {
+                  "id": "CY028.D2",
+                  "description": "Native proof from CY027 plus public service selection/result matrix, invalid inputs and declared null/variant semantics. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy028."
+                }
+              ],
+              "exit_criteria": "CY028.D1 and CY028.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 29,
+              "name": "Ruff native fix conformance",
+              "deliverables": [
+                {
+                  "id": "CY029.D1",
+                  "description": "Add fix/v1 Ruff entrypoints and explicit addresses relations; separately prove native source mutation. Preserved behavior: Only admitted explicit existing files; residual lint can fail after writing; no automatic recheck/rollback. Semantic predecessors: [CY020](planning-execution.md#cy020). Shared-file predecessors: [CY011](planning-execution.md#cy011). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy029."
+                },
+                {
+                  "id": "CY029.D2",
+                  "description": "Observe native bytes independently, unsupported/source-expanding args refusal, no-change success and partial failure; recheck shared Ruff package check conformance after manifest/fingerprint change. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy029."
+                }
+              ],
+              "exit_criteria": "CY029.D1 and CY029.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 30,
+              "name": "Internal fix orchestration",
+              "deliverables": [
+                {
+                  "id": "CY030.D1",
+                  "description": "fixes.yaml and files-only ordered fix service; full admission before first launch. Preserved behavior: Caller order, first non-success stops later fixes; earlier/attempted writes may remain; no required prior check or clean worktree. Semantic predecessors: [CY029](planning-execution.md#cy029). Shared-file predecessors: [CY028](planning-execution.md#cy028). Exact scope, write-set and rollback: docs/development/issue460/planning-execution.md#cy030."
+                },
+                {
+                  "id": "CY030.D2",
+                  "description": "Typed fake plus native 3-step case: first writes, second fails after write, third unstarted; timeout/cancel/invalid response; no hidden Git/check/rollback. Named proof set and V1\u2013V6: docs/development/issue460/planning-execution.md#cy030."
+                }
+              ],
+              "exit_criteria": "CY030.D1 and CY030.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 31,
+              "name": "Shared Python generation sources",
+              "deliverables": [
+                {
+                  "id": "CY031.D1",
+                  "description": "Portable shared Python bases/import/signature/field/testing definitions used by next family cycles. Preserved behavior: Caller owns imports, defaults, bodies where allowed; no project-specific lifecycle or inferred markers. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005), [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy031."
+                },
+                {
+                  "id": "CY031.D2",
+                  "description": "CODE-E02/03/04/05/07/10 against isolated consumer roots; no generated passing placeholders or schema oracle duplication. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy031."
+                }
+              ],
+              "exit_criteria": "CY031.D1 and CY031.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 32,
+              "name": "Pydantic DTO artifact",
+              "deliverables": [
+                {
+                  "id": "CY032.D1",
+                  "description": "Migrate only the python_pydantic_dto concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: DTO immutable and examples for nonempty fields; config explicit frozen/extra policy and optional examples; no semantic example execution. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy032."
+                },
+                {
+                  "id": "CY032.D2",
+                  "description": "CODE-E01/03/04/09/10; empty and populated, required description, exact defaults/factories and rejected old context. Limit the family matrix to python_pydantic_dto; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy032."
+                }
+              ],
+              "exit_criteria": "CY032.D1 and CY032.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 33,
+              "name": "Pydantic configuration artifact",
+              "deliverables": [
+                {
+                  "id": "CY033.D1",
+                  "description": "Migrate only the python_pydantic_config concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: DTO immutable and examples for nonempty fields; config explicit frozen/extra policy and optional examples; no semantic example execution. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY032](planning-artifacts-mutation.md#cy032). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy033."
+                },
+                {
+                  "id": "CY033.D2",
+                  "description": "CODE-E01/03/04/09/10; empty and populated, required description, exact defaults/factories and rejected old context. Limit the family matrix to python_pydantic_config; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy033."
+                }
+              ],
+              "exit_criteria": "CY033.D1 and CY033.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 34,
+              "name": "Plain Python class artifact",
+              "deliverables": [
+                {
+                  "id": "CY034.D1",
+                  "description": "Migrate only the python_class concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: Explicit imports/bases/async; no Service routing, hidden project assumptions or fabricated bodies. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY033](planning-artifacts-mutation.md#cy033). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy034."
+                },
+                {
+                  "id": "CY034.D2",
+                  "description": "CODE-E01/02/05/09/10; valid empty skeleton and explicit signatures; unsupported bodies rejected. Limit the family matrix to python_class; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy034."
+                }
+              ],
+              "exit_criteria": "CY034.D1 and CY034.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 35,
+              "name": "Python Protocol artifact",
+              "deliverables": [
+                {
+                  "id": "CY035.D1",
+                  "description": "Migrate only the python_protocol concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: Explicit imports/bases/async; no Service routing, hidden project assumptions or fabricated bodies. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY034](planning-artifacts-mutation.md#cy034). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy035."
+                },
+                {
+                  "id": "CY035.D2",
+                  "description": "CODE-E01/02/05/09/10; valid empty skeleton and explicit signatures; unsupported bodies rejected. Limit the family matrix to python_protocol; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy035."
+                }
+              ],
+              "exit_criteria": "CY035.D1 and CY035.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 36,
+              "name": "Portable adapter artifact",
+              "deliverables": [
+                {
+                  "id": "CY036.D1",
+                  "description": "Migrate only the python_adapter concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: Caller-owned constructor/methods, opt-in logging; no strategy_cache/Translator/ID/lifecycle defaults. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY035](planning-artifacts-mutation.md#cy035). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy036."
+                },
+                {
+                  "id": "CY036.D2",
+                  "description": "CODE-E01/02/05/06/09/10; supplied operations render and absent logging stays absent; project dependency absence. Limit the family matrix to python_adapter; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy036."
+                }
+              ],
+              "exit_criteria": "CY036.D1 and CY036.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 37,
+              "name": "Portable worker artifact",
+              "deliverables": [
+                {
+                  "id": "CY037.D1",
+                  "description": "Migrate only the python_worker concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: Caller-owned constructor/methods, opt-in logging; no strategy_cache/Translator/ID/lifecycle defaults. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY036](planning-artifacts-mutation.md#cy036). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy037."
+                },
+                {
+                  "id": "CY037.D2",
+                  "description": "CODE-E01/02/05/06/09/10; supplied operations render and absent logging stays absent; project dependency absence. Limit the family matrix to python_worker; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy037."
+                }
+              ],
+              "exit_criteria": "CY037.D1 and CY037.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 38,
+              "name": "Public unit-test artifact",
+              "deliverables": [
+                {
+                  "id": "CY038.D1",
+                  "description": "Migrate only the pytest_unit_test concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: At least one real case; explicit sync/async, scope/autouse/params/imports; no forced E2E/class/pytest marker. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY037](planning-artifacts-mutation.md#cy037). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy038."
+                },
+                {
+                  "id": "CY038.D2",
+                  "description": "CODE-E01/02/05/07/09; actual schema/render output plus meaningful representative execution; no success placeholders. Limit the family matrix to pytest_unit_test; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy038."
+                }
+              ],
+              "exit_criteria": "CY038.D1 and CY038.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 39,
+              "name": "Public integration-test artifact",
+              "deliverables": [
+                {
+                  "id": "CY039.D1",
+                  "description": "Migrate only the pytest_integration_test concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: At least one real case; explicit sync/async, scope/autouse/params/imports; no forced E2E/class/pytest marker. Semantic predecessors: [CY018](planning-execution.md#cy018), [CY031](planning-artifacts-mutation.md#cy031). Shared-file predecessors: [CY038](planning-artifacts-mutation.md#cy038). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy039."
+                },
+                {
+                  "id": "CY039.D2",
+                  "description": "CODE-E01/02/05/07/09; actual schema/render output plus meaningful representative execution; no success placeholders. Limit the family matrix to pytest_integration_test; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy039."
+                }
+              ],
+              "exit_criteria": "CY039.D1 and CY039.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 40,
+              "name": "TypeScript DTO artifact",
+              "deliverables": [
+                {
+                  "id": "CY040.D1",
+                  "description": "Single concrete TS package replaces pseudo-pattern; explicit typed property records. Preserved behavior: Readonly/mutable, optionality, constructor and interfaces; no mini-language or project assumptions. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005), [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007), [CY023](planning-execution.md#cy023). Shared-file predecessors: [CY039](planning-artifacts-mutation.md#cy039). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy040."
+                },
+                {
+                  "id": "CY040.D2",
+                  "description": "CODE-E01/08/09/10; accepted/rejected contexts, syntactic output, caller content and one resolved entrypoint. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy040."
+                }
+              ],
+              "exit_criteria": "CY040.D1 and CY040.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 41,
+              "name": "Shared document records and rendering",
+              "deliverables": [
+                {
+                  "id": "CY041.D1",
+                  "description": "Link/issue/checklist records and document/tracking bases; paired schema/render support. Preserved behavior: Positive issue IDs, explicit checked state, absent vs empty, valid Markdown escaping/reference identity. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005), [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007). Shared-file predecessors: [CY031](planning-artifacts-mutation.md#cy031), [CY037](planning-artifacts-mutation.md#cy037). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy041."
+                },
+                {
+                  "id": "CY041.D2",
+                  "description": "DOC-E02/03/04/05/11; multiple concrete consumers, invalid primitive rejection and independent link construction assertions. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy041."
+                }
+              ],
+              "exit_criteria": "CY041.D1 and CY041.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 42,
+              "name": "Research artifact",
+              "deliverables": [
+                {
+                  "id": "CY042.D1",
+                  "description": "Research package with strategy/evidence/consumer/risk carriers. Preserved behavior: Initial valid basis distinct from finished Research; explicit human strategy content. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY040](planning-artifacts-mutation.md#cy040). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy042."
+                },
+                {
+                  "id": "CY042.D2",
+                  "description": "DOC-E01/02/03/06/10; all applicable Research workflow meanings render without embedded invocation or fabricated approval. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy042."
+                }
+              ],
+              "exit_criteria": "CY042.D1 and CY042.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 43,
+              "name": "Design artifact",
+              "deliverables": [
+                {
+                  "id": "CY043.D1",
+                  "description": "Design package contracts/options/production/test/preservation carriers. Preserved behavior: Author-owned decisions, no required premature decision; no prose snapshot authority. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY042](planning-artifacts-mutation.md#cy042). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy043."
+                },
+                {
+                  "id": "CY043.D2",
+                  "description": "DOC-E01/02/03/06/10; required workflow meanings supported; omission and explicit empty values retained. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy043."
+                }
+              ],
+              "exit_criteria": "CY043.D1 and CY043.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 44,
+              "name": "Planning artifact and operational projection",
+              "deliverables": [
+                {
+                  "id": "CY044.D1",
+                  "description": "Planning package work units and phase deliverables matching operational cycle shape. Preserved behavior: cycle_number/name/deliverables/validates/exit_criteria preserved; narrative not hidden tool payload. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY043](planning-artifacts-mutation.md#cy043). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy044."
+                },
+                {
+                  "id": "CY044.D2",
+                  "description": "DOC-E06/07/10; initial scaffold, refined plan and actual save/load projection separately exercised; no old success_criteria union. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy044."
+                }
+              ],
+              "exit_criteria": "CY044.D1 and CY044.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 45,
+              "name": "Validation report artifact",
+              "deliverables": [
+                {
+                  "id": "CY045.D1",
+                  "description": "Validation package obligation/evidence/preservation/containment carriers. Preserved behavior: Producer outcome never grants QA authority; explicit issue/cycle/status. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY044](planning-artifacts-mutation.md#cy044). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy045."
+                },
+                {
+                  "id": "CY045.D2",
+                  "description": "DOC-E01/06/10; all validation workflow meanings, no runtime-populated evidence or invented PASS. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy045."
+                }
+              ],
+              "exit_criteria": "CY045.D1 and CY045.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 46,
+              "name": "Architecture document artifact",
+              "deliverables": [
+                {
+                  "id": "CY046.D1",
+                  "description": "Migrate only the architecture concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: Concrete caller content and usable sources; no static tool inventory inferred. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY045](planning-artifacts-mutation.md#cy045), [CY042](planning-artifacts-mutation.md#cy042). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy046."
+                },
+                {
+                  "id": "CY046.D2",
+                  "description": "DOC-E01/02/04/08/10; empty initial vs populated records and required source semantics. Limit the family matrix to architecture; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy046."
+                }
+              ],
+              "exit_criteria": "CY046.D1 and CY046.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 47,
+              "name": "Reference document artifact",
+              "deliverables": [
+                {
+                  "id": "CY047.D1",
+                  "description": "Migrate only the reference concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: Concrete caller content and usable sources; no static tool inventory inferred. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY046](planning-artifacts-mutation.md#cy046). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy047."
+                },
+                {
+                  "id": "CY047.D2",
+                  "description": "DOC-E01/02/04/08/10; empty initial vs populated records and required source semantics. Limit the family matrix to reference; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy047."
+                }
+              ],
+              "exit_criteria": "CY047.D1 and CY047.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 48,
+              "name": "Generic document artifact",
+              "deliverables": [
+                {
+                  "id": "CY048.D1",
+                  "description": "Generic Document finite sections/migration/FAQ/checklist contract. Preserved behavior: Optional omission and explicit fields; no scalar coercion or silently ignored legacy content. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY047](planning-artifacts-mutation.md#cy047). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy048."
+                },
+                {
+                  "id": "CY048.D2",
+                  "description": "DOC-E01/02/03/04/05/10; schema rejection and faithful actual package render. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy048."
+                }
+              ],
+              "exit_criteria": "CY048.D1 and CY048.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 49,
+              "name": "Issue body artifact",
+              "deliverables": [
+                {
+                  "id": "CY049.D1",
+                  "description": "Migrate only the issue concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: No H1 body requirement; explicit none/populated deferred state; positive refs and unchecked items. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY048](planning-artifacts-mutation.md#cy048). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy049."
+                },
+                {
+                  "id": "CY049.D2",
+                  "description": "DOC-E01/02/05/09/11; original four PR defects covered, metadata stripping never publication. Limit the family matrix to issue; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy049."
+                }
+              ],
+              "exit_criteria": "CY049.D1 and CY049.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 50,
+              "name": "PR body artifact",
+              "deliverables": [
+                {
+                  "id": "CY050.D1",
+                  "description": "Migrate only the pr concrete package: manifest, version, policy, finite context schema and renderer together. Shared definitions are consumed, not copied into generic Python. Preserved behavior: No H1 body requirement; explicit none/populated deferred state; positive refs and unchecked items. Semantic predecessors: [CY019](planning-execution.md#cy019), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY049](planning-artifacts-mutation.md#cy049). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy050."
+                },
+                {
+                  "id": "CY050.D2",
+                  "description": "DOC-E01/02/05/09/11; original four PR defects covered, metadata stripping never publication. Limit the family matrix to pr; the paired family's evidence is independently required in its own cycle. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy050."
+                }
+              ],
+              "exit_criteria": "CY050.D1 and CY050.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 51,
+              "name": "Commit artifact",
+              "deliverables": [
+                {
+                  "id": "CY051.D1",
+                  "description": "Commit package conventional framing and required structured caller content. Preserved behavior: Arbitrary conventional type, case, marker/body/footer; no coupling to Git allowed types. Semantic predecessors: [CY024](planning-execution.md#cy024), [CY041](planning-artifacts-mutation.md#cy041). Shared-file predecessors: [CY050](planning-artifacts-mutation.md#cy050). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy051."
+                },
+                {
+                  "id": "CY051.D2",
+                  "description": "DOC-E01/09/11; actual package output through commit adapter, valid/invalid header/message boundaries. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy051."
+                }
+              ],
+              "exit_criteria": "CY051.D1 and CY051.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 52,
+              "name": "Artifact location policy",
+              "deliverables": [
+                {
+                  "id": "CY052.D1",
+                  "description": "Pure location schema/resolver and catalog foreign-key validation using explicit roots. Preserved behavior: Exact filename, configured/default/temp fallback, explicit force only in workspace; no overwrite authority. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005). Shared-file predecessors: [CY030](planning-execution.md#cy030), [CY015](planning-execution.md#cy015), [CY012](planning-execution.md#cy012), [CY001](planning-execution.md#cy001). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy052."
+                },
+                {
+                  "id": "CY052.D2",
+                  "description": "DI-04 \u00a78; all routing branches, stale config refs, containment, unmapped packages and unaffected enforcement. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy052."
+                }
+              ],
+              "exit_criteria": "CY052.D1 and CY052.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 53,
+              "name": "Internal scaffold persistence",
+              "deliverables": [
+                {
+                  "id": "CY053.D1",
+                  "description": "Generic unchanged-context render/check/create route with narrow injected dependencies. Preserved behavior: Enforce/report facts, create-only collision safety, no operation controls in render data. Semantic predecessors: [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007), [CY026](planning-execution.md#cy026), [CY052](planning-artifacts-mutation.md#cy052). Shared-file predecessors: [CY041](planning-artifacts-mutation.md#cy041), [CY001](planning-execution.md#cy001). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy053."
+                },
+                {
+                  "id": "CY053.D2",
+                  "description": "Actual bytes/result for pass/fail/unavailable/not-executed, early/late collision, render/persist failures and postcommit reporting; no write inference from result alone. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy053."
+                }
+              ],
+              "exit_criteria": "CY053.D1 and CY053.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 54,
+              "name": "Safe-edit construction and profile selection",
+              "deliverables": [
+                {
+                  "id": "CY054.D1",
+                  "description": "Complete replace/append/rewrite/pattern edit construction and metadata/explicit/extension profile selection. Preserved behavior: Existing operation/newline semantics, unmatched-anchor rejection, no-change results and unknown metadata fallback. Semantic predecessors: [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007), [CY026](planning-execution.md#cy026). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy054."
+                },
+                {
+                  "id": "CY054.D2",
+                  "description": "Exact original/proposed content, absent/invalid/current ID cases; no caller native args; construction failures prevent checks. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy054."
+                }
+              ],
+              "exit_criteria": "CY054.D1 and CY054.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 55,
+              "name": "Safe-edit guarded replacement",
+              "deliverables": [
+                {
+                  "id": "CY055.D1",
+                  "description": "Original snapshot, controlled replacement, concurrency and filesystem failure handling. Preserved behavior: Enforce no-write, report may persist invalid content, both retain independent safety blockers. Semantic predecessors: [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015), [CY054](planning-artifacts-mutation.md#cy054). Shared-file predecessors: [CY053](planning-artifacts-mutation.md#cy053). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy055."
+                },
+                {
+                  "id": "CY055.D2",
+                  "description": "Actual bytes under external writer/collision/symlink/lock/write/cleanup failures and unconfirmed child termination; no false no-write after commit. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy055."
+                }
+              ],
+              "exit_criteria": "CY055.D1 and CY055.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 56,
+              "name": "Schema discovery public composition",
+              "deliverables": [
+                {
+                  "id": "CY056.D1",
+                  "description": "Introduce final ScaffoldSchemaTool in mcp_server/tools/template_schema_tool.py using real decorators and selected-context attachments on isolated target composition; the existing scaffold_schema_tool.py and its normal registration stay intact until cutover. Preserved behavior: Complete finite ref-free schema, purpose, correct URI; successful scaffold excludes schema DTO duplication. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005), [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009), [CY011](planning-execution.md#cy011), [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007). Shared-file predecessors: [CY003](planning-execution.md#cy003), [CY053](planning-artifacts-mutation.md#cy053), [CY055](planning-artifacts-mutation.md#cy055). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy056."
+                },
+                {
+                  "id": "CY056.D2",
+                  "description": "Registered/lazy exposure==admission==resource; invalid input whole-tool vs context schema separate; supported client restart/cache behavior. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy056."
+                }
+              ],
+              "exit_criteria": "CY056.D1 and CY056.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 57,
+              "name": "Scaffold public composition",
+              "deliverables": [
+                {
+                  "id": "CY057.D1",
+                  "description": "Introduce final ScaffoldArtifactTool in mcp_server/tools/scaffold_tool.py, composed only in isolated target tests before cutover. Do not alter the legacy scaffold_artifact.py constructor, public contract or registration. Preserved behavior: 14 exact mutation error details, validation_policy/status and actual persistence facts; unrelated wrapper semantics. Semantic predecessors: [CY053](planning-artifacts-mutation.md#cy053), [CY055](planning-artifacts-mutation.md#cy055), [CY056](planning-artifacts-mutation.md#cy056). Shared-file predecessors: [CY011](planning-execution.md#cy011), [CY010](planning-execution.md#cy010). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy057."
+                },
+                {
+                  "id": "CY057.D2",
+                  "description": "Actual wrapper/cache/text/schema attachment proves scaffold creation, domain rejection and operation fault, required nulls and capture; preserve active legacy scaffold behavior before cutover. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy057."
+                }
+              ],
+              "exit_criteria": "CY057.D1 and CY057.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 58,
+              "name": "Safe-edit public composition",
+              "deliverables": [
+                {
+                  "id": "CY058.D1",
+                  "description": "Introduce final SafeEditTool in mcp_server/tools/edit_tool.py, composed only in isolated target tests before cutover. Do not alter the registered legacy safe_edit_tool.py route. Preserved behavior: 14 exact mutation error details, validation_policy/status and actual persistence facts; unrelated wrapper semantics. Semantic predecessors: [CY057](planning-artifacts-mutation.md#cy057). Shared-file predecessors: [CY055](planning-artifacts-mutation.md#cy055). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy058."
+                },
+                {
+                  "id": "CY058.D2",
+                  "description": "Real wrapper/cache/text proves every edit operation, enforce/report, all applicable exact error details, no-change/concurrency/partial reporting and required-null facts; legacy modes rejected only in target composition. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy058."
+                }
+              ],
+              "exit_criteria": "CY058.D1 and CY058.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 59,
+              "name": "Check public composition",
+              "deliverables": [
+                {
+                  "id": "CY059.D1",
+                  "description": "Thin run_checks tool and exact eight operation error-detail shapes in isolated V3 registration. Preserved behavior: Native negative findings remain operational success; scope/args/defaults and no-state-touch evidence. Semantic predecessors: [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009), [CY011](planning-execution.md#cy011), [CY026](planning-execution.md#cy026). Shared-file predecessors: [CY058](planning-artifacts-mutation.md#cy058), [CY057](planning-artifacts-mutation.md#cy057). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy059."
+                },
+                {
+                  "id": "CY059.D2",
+                  "description": "Real decorated calls and cache reads cover check results, process capture, required nulls, invalid_request and not_started; direct native evidence reused. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy059."
+                }
+              ],
+              "exit_criteria": "CY059.D1 and CY059.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 60,
+              "name": "Test public composition",
+              "deliverables": [
+                {
+                  "id": "CY060.D1",
+                  "description": "Framework-neutral run_tests and concrete public records in isolated V3 registration. Preserved behavior: Native outcomes/coverage/collection/no-tests distinct from operational error; closed variant serialization. Semantic predecessors: [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009), [CY011](planning-execution.md#cy011), [CY028](planning-execution.md#cy028). Shared-file predecessors: [CY059](planning-artifacts-mutation.md#cy059). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy060."
+                },
+                {
+                  "id": "CY060.D2",
+                  "description": "Real wrappers/cache/presenter; remove test-authored execute substitutes in touched suites; preserve ordinary non-test-tool behavior. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy060."
+                }
+              ],
+              "exit_criteria": "CY060.D1 and CY060.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 61,
+              "name": "Fix public composition",
+              "deliverables": [
+                {
+                  "id": "CY061.D1",
+                  "description": "Thin apply_fixes, exact attempted/unstarted rows and public stop behavior. Preserved behavior: Partial source effects truthful; no recheck/rollback guarantee or inferred changed-file census. Semantic predecessors: [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009), [CY011](planning-execution.md#cy011), [CY030](planning-execution.md#cy030). Shared-file predecessors: [CY060](planning-artifacts-mutation.md#cy060). Exact scope, write-set and rollback: docs/development/issue460/planning-artifacts-mutation.md#cy061."
+                },
+                {
+                  "id": "CY061.D2",
+                  "description": "Registered 3-step native/fault cases, cache/required null/FIFO evidence, no duplicate success source. Named proof set and V1\u2013V6: docs/development/issue460/planning-artifacts-mutation.md#cy061."
+                }
+              ],
+              "exit_criteria": "CY061.D1 and CY061.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 62,
+              "name": "Built and separately installed distribution",
+              "deliverables": [
+                {
+                  "id": "CY062.D1",
+                  "description": "Build source suite/defaults plus all bundled manifests/scripts/schemas/dependencies; isolated installed fixture outside checkout. This installation proof is independent of F-10 activation; it may be executed before CY063, CY064, CY065, CY066, CY067 when its dependencies are complete. Preserved behavior: Official adapters stay outside copied assets; dotfiles retained; workspace adapters/config remain owner-owned. Semantic predecessors: [CY032](planning-artifacts-mutation.md#cy032), [CY033](planning-artifacts-mutation.md#cy033), [CY034](planning-artifacts-mutation.md#cy034), [CY035](planning-artifacts-mutation.md#cy035), [CY036](planning-artifacts-mutation.md#cy036), [CY037](planning-artifacts-mutation.md#cy037), [CY038](planning-artifacts-mutation.md#cy038), [CY039](planning-artifacts-mutation.md#cy039), [CY040](planning-artifacts-mutation.md#cy040), [CY042](planning-artifacts-mutation.md#cy042), [CY043](planning-artifacts-mutation.md#cy043), [CY044](planning-artifacts-mutation.md#cy044), [CY045](planning-artifacts-mutation.md#cy045), [CY046](planning-artifacts-mutation.md#cy046), [CY047](planning-artifacts-mutation.md#cy047), [CY048](planning-artifacts-mutation.md#cy048), [CY049](planning-artifacts-mutation.md#cy049), [CY050](planning-artifacts-mutation.md#cy050), [CY051](planning-artifacts-mutation.md#cy051), [CY059](planning-artifacts-mutation.md#cy059), [CY060](planning-artifacts-mutation.md#cy060), [CY061](planning-artifacts-mutation.md#cy061). Shared-file predecessors: [CY027](planning-execution.md#cy027). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy062."
+                },
+                {
+                  "id": "CY062.D2",
+                  "description": "Inspect wheel and invoke installed entrypoints with actual imported header library; no source fallback or auto dependency installation; real first-v3 candidate validated. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy062."
+                }
+              ],
+              "exit_criteria": "CY062.D1 and CY062.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 63,
+              "name": "Operational components and selection",
+              "deliverables": [
+                {
+                  "id": "CY063.D1",
+                  "description": "Full-file operational fingerprints and pure adopted/actual/candidate component selection. Preserved behavior: Policy/.version included, absence first-class, manifest-ID keys; no pf/sf overwrite authority or per-file merge. Semantic predecessors: [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005), [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy063."
+                },
+                {
+                  "id": "CY063.D2",
+                  "description": "Independent vectors plus five relations/add/remove/conflict matrix; unrelated local component preserved. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy063."
+                }
+              ],
+              "exit_criteria": "CY063.D1 and CY063.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 64,
+              "name": "Installation checkpoint and first-v3 bootstrap",
+              "deliverables": [
+                {
+                  "id": "CY064.D1",
+                  "description": "Closed installation.json contract, trustworthy bootstrap and one-time compatibility-value migration. Preserved behavior: Checkpoint-less pre-v3 not fresh; preserve actual; no fabricated checkpoint from metadata/.version. Semantic predecessors: [CY063](planning-rollout.md#cy063). Shared-file predecessors: [CY052](planning-artifacts-mutation.md#cy052), [CY061](planning-artifacts-mutation.md#cy061). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy064."
+                },
+                {
+                  "id": "CY064.D2",
+                  "description": "Fresh/equal/trusted/unknown/external cases; candidate invalid cannot advance checkpoint; first-v3 checkpoint_required and acknowledgement-only effects. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy064."
+                }
+              ],
+              "exit_criteria": "CY064.D1 and CY064.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 65,
+              "name": "Candidate staging and proposal admission",
+              "deliverables": [
+                {
+                  "id": "CY065.D1",
+                  "description": "Flat candidate staging/supersession and complete off-root proposal under effective actual configuration. Preserved behavior: Config/native/trust bytes unchanged; external config root honored; candidate vs proposal invalid distinct. Semantic predecessors: [CY026](planning-execution.md#cy026), [CY032](planning-artifacts-mutation.md#cy032), [CY033](planning-artifacts-mutation.md#cy033), [CY034](planning-artifacts-mutation.md#cy034), [CY035](planning-artifacts-mutation.md#cy035), [CY036](planning-artifacts-mutation.md#cy036), [CY037](planning-artifacts-mutation.md#cy037), [CY038](planning-artifacts-mutation.md#cy038), [CY039](planning-artifacts-mutation.md#cy039), [CY040](planning-artifacts-mutation.md#cy040), [CY042](planning-artifacts-mutation.md#cy042), [CY043](planning-artifacts-mutation.md#cy043), [CY044](planning-artifacts-mutation.md#cy044), [CY045](planning-artifacts-mutation.md#cy045), [CY046](planning-artifacts-mutation.md#cy046), [CY047](planning-artifacts-mutation.md#cy047), [CY048](planning-artifacts-mutation.md#cy048), [CY049](planning-artifacts-mutation.md#cy049), [CY050](planning-artifacts-mutation.md#cy050), [CY051](planning-artifacts-mutation.md#cy051), [CY064](planning-rollout.md#cy064). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy065."
+                },
+                {
+                  "id": "CY065.D2",
+                  "description": "Real complete suite/profile resolution, missing profile identifies source; native absence causes no renewal probe; no alternative component search. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy065."
+                }
+              ],
+              "exit_criteria": "CY065.D1 and CY065.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 66,
+              "name": "F-10 activation and deterministic recovery",
+              "deliverables": [
+                {
+                  "id": "CY066.D1",
+                  "description": "Cross-process exclusion, fixed same-filesystem next/previous trees, recovery record and atomic checkpoint publication. Preserved behavior: One coherent authoritative tree/checkpoint; running catalog stable; forced backup separate; native fixes unrelated. Semantic predecessors: [CY065](planning-rollout.md#cy065). Shared-file predecessors: [CY055](planning-artifacts-mutation.md#cy055), [CY064](planning-rollout.md#cy064). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy066."
+                },
+                {
+                  "id": "CY066.D2",
+                  "description": "DI-06 fault matrix through public activation service and real OS processes: recognized interruption restores prior tree/checkpoint or completes target pair, unknown state remains untouched, concurrent activations are excluded. This does not certify normal bootstrap; CY071 and CY072 explicitly own actual startup-lock/recovery integration. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy066."
+                }
+              ],
+              "exit_criteria": "CY066.D1 and CY066.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 67,
+              "name": "Prepared renewal CLI composition",
+              "deliverables": [
+                {
+                  "id": "CY067.D1",
+                  "description": "Introduce final CLI renewal command/composition and dedicated result presenter, tested on isolated roots. Leave normal cli.py dispatch and legacy WorkspaceUpgrader active until CY072. Preserved behavior: Exit 0/2/1, actual_changed-only restart hint; explicit owner actions never overwrite external/config content. Semantic predecessors: [CY066](planning-rollout.md#cy066). Shared-file predecessors: [CY064](planning-rollout.md#cy064). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy067."
+                },
+                {
+                  "id": "CY067.D2",
+                  "description": "CLI public-result/filesystem tests; mutually exclusive modifiers, verified force backup, checkpoint-only no-copy, full actionable component output. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy067."
+                }
+              ],
+              "exit_criteria": "CY067.D1 and CY067.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 68,
+              "name": "Workflow carriers and phase semantics",
+              "deliverables": [
+                {
+                  "id": "CY068.D1",
+                  "description": "Prepare and verify the exact bounded target-source diff for nineteen workflow carriers, tool names, input-removal and conditional schema guidance. Store the reviewed patch/checksums as implementation evidence; do not advertise inactive V3 contracts in live source/copies. Preserved behavior: Substantive phase actions, approval gates and workflow differences; valid scaffold distinct from phase completion. Semantic predecessors: [CY042](planning-artifacts-mutation.md#cy042), [CY043](planning-artifacts-mutation.md#cy043), [CY044](planning-artifacts-mutation.md#cy044), [CY045](planning-artifacts-mutation.md#cy045), [CY056](planning-artifacts-mutation.md#cy056), [CY057](planning-artifacts-mutation.md#cy057), [CY058](planning-artifacts-mutation.md#cy058), [CY059](planning-artifacts-mutation.md#cy059), [CY060](planning-artifacts-mutation.md#cy060), [CY061](planning-artifacts-mutation.md#cy061). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy068."
+                },
+                {
+                  "id": "CY068.D2",
+                  "description": "DOCFLOW-E01/02; actual contract loading plus schema/render carrier evidence, no copied complete invocation payloads. Apply the prepared diff only to explicit isolated source copies for evidence. Live source/copy application and byte parity are CY072 obligations. The recorded patch is temporary migration evidence, never runtime configuration or a second instruction authority. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy068."
+                }
+              ],
+              "exit_criteria": "CY068.D1 and CY068.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 69,
+              "name": "Host instruction source parity",
+              "deliverables": [
+                {
+                  "id": "CY069.D1",
+                  "description": "Prepare and verify the exact bounded target-source diff for source-authoritative host instructions and their real mapped copies. Store the reviewed patch/checksums as implementation evidence; do not advertise inactive V3 contracts in live source/copies. Preserved behavior: QA read-only authority, research/coordination permissions and unaffected reboot; exclude machine connections/credentials. Semantic predecessors: [CY068](planning-rollout.md#cy068). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy069."
+                },
+                {
+                  "id": "CY069.D2",
+                  "description": "DOCFLOW-E03/05; source-first exact pair byte equality and role checks; no whole-directory overwrite. Apply the prepared diff only to explicit isolated source copies for evidence. Live source/copy application and byte parity are CY072 obligations. The recorded patch is temporary migration evidence, never runtime configuration or a second instruction authority. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy069."
+                }
+              ],
+              "exit_criteria": "CY069.D1 and CY069.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 70,
+              "name": "Prepared placement and rollout configuration",
+              "deliverables": [
+                {
+                  "id": "CY070.D1",
+                  "description": "Prepare the exact replacement artifacts.yaml and presentation/root/version compatibility changes against actual owner configuration; reconcile every target profile and installed-source declaration. Keep incompatible live config bytes unchanged until activation. Preserved behavior: Actual configuration/customization remains owner-controlled; first-v3 actual is not a fresh install, and no native dependency or missing profile is silently filled. Semantic predecessors: [CY052](planning-artifacts-mutation.md#cy052), [CY057](planning-artifacts-mutation.md#cy057), [CY058](planning-artifacts-mutation.md#cy058), [CY059](planning-artifacts-mutation.md#cy059), [CY060](planning-artifacts-mutation.md#cy060), [CY061](planning-artifacts-mutation.md#cy061), [CY062](planning-rollout.md#cy062), [CY067](planning-rollout.md#cy067). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy070."
+                },
+                {
+                  "id": "CY070.D2",
+                  "description": "Apply the exact prospective config diff on isolated copies of actual config; public target loaders accept every reference and reject obsolete inputs. Record exact preimage/postimage hashes and mismatch refusal; no whole-file overwrite of concurrent edits. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy070."
+                }
+              ],
+              "exit_criteria": "CY070.D1 and CY070.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 71,
+              "name": "Target startup composition and launch rehearsal",
+              "deliverables": [
+                {
+                  "id": "CY071.D1",
+                  "description": "Add the final explicit runtime composition at bootstrap without changing its normal entrypoint yet. Compose one target ToolAssembly with the six target schema/mutation/check/test/fix tools, unchanged unrelated tools, explicit root/config/installation readers and the DI-06 startup lock. Never union V2 and V3 same-name tools. Preserved behavior: The current normal entrypoint still constructs only its working legacy assembly. New startup takes the activation lock, rejects unresolved recovery without mutation, preserves unrelated enforcement/Git/GitHub behavior and probes no native availability. Semantic predecessors: [CY070](planning-rollout.md#cy070), [CY068](planning-rollout.md#cy068), [CY069](planning-rollout.md#cy069), [CY062](planning-rollout.md#cy062), [CY066](planning-rollout.md#cy066), [CY067](planning-rollout.md#cy067). Shared-file predecessors: [CY009](planning-execution.md#cy009), [CY064](planning-rollout.md#cy064), [CY052](planning-artifacts-mutation.md#cy052), [CY011](planning-execution.md#cy011), [CY001](planning-execution.md#cy001), [CY056](planning-artifacts-mutation.md#cy056), [CY005](planning-execution.md#cy005), [CY061](planning-artifacts-mutation.md#cy061), [CY030](planning-execution.md#cy030). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy071."
+                },
+                {
+                  "id": "CY071.D2",
+                  "description": "Short-lived real process/MCP handshake on explicit roots and a separately installed candidate; final planned dispatch diff applied only to an isolated source copy. Match interpreter/import/CWD/roots/relevant launch environment to the active launcher rather than inheriting PytestRunner PATH blindly. Prove current normal startup remains usable, target no duplicate names, init/startup and upgrade/owner-migration/startup, concurrent startup exclusion, unresolved recovery refusal and old immutable catalog stability. Record exact rehearsed input hashes. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy071."
+                }
+              ],
+              "exit_criteria": "CY071.D1 and CY071.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 72,
+              "name": "Public V3 cutover",
+              "deliverables": [
+                {
+                  "id": "CY072.D1",
+                  "description": "Apply only the previously rehearsed activation diff: normal bootstrap/CLI dispatch, owned config/root/version selection, removal of quality.yaml from active config, and prepared workflow/host source-copy changes. No new execution, migration, schema, presenter or test-helper algorithm is introduced here. Preserved behavior: Unrelated tools/enforcement/cache/state; new names only, run_tests new contract, actionable V2 config rejection, no aliases/dual reads. Semantic predecessors: [CY071](planning-rollout.md#cy071). Shared-file predecessors: [CY052](planning-artifacts-mutation.md#cy052), [CY062](planning-rollout.md#cy062), [CY061](planning-artifacts-mutation.md#cy061), [CY067](planning-rollout.md#cy067), [CY026](planning-execution.md#cy026), [CY028](planning-execution.md#cy028), [CY030](planning-execution.md#cy030), [CY012](planning-execution.md#cy012). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy072."
+                },
+                {
+                  "id": "CY072.D2",
+                  "description": "Preimage hashes match the rehearsed set; otherwise stop and refresh only invalidated preparation evidence. Migrate only this repository's owned root by the approved explicit DI-06 route with captured code/config/suite/installation recovery basis. Run the real target entrypoint against the landed bytes before restart. While the existing MCP route remains available correct any failures; then one deliberate restart_server boundary, client rediscovery and real V3 schema/scaffold/edit/check/test/fix calls with separately identified evidence. Verify fresh init/startup and owner-migration/startup. If MCP is absent/degraded after restart, stop mutations and use the pre-recorded existing host/client recovery action; no automatic rollback claim. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy072."
+                }
+              ],
+              "exit_criteria": "CY072.D1 and CY072.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 73,
+              "name": "Close legacy scaffold harness imports",
+              "deliverables": [
+                {
+                  "id": "CY073.D1",
+                  "description": "Remove only ArtifactManager/TemplateScaffolder/ValidationService/legacy-registry imports and builders from artifact_test_harness and shared support after migrating their named public tests. Rewire root plugin registration to the narrow support already introduced; preserve workflow_fixtures and unrelated environment/GitHub behavior. Preserved behavior: Unrelated PR-lock, merge escape hatch, workflow roots, cache/atomic helpers and real server registration remain independently observable. Semantic predecessors: [CY072](planning-rollout.md#cy072). Shared-file predecessors: [CY071](planning-rollout.md#cy071), [CY057](planning-artifacts-mutation.md#cy057). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy073."
+                },
+                {
+                  "id": "CY073.D2",
+                  "description": "Fixture-request/import/plugin search closes the retired builder set. Collect all surviving tests that requested those fixtures; run PR-lock, server/cycle and public scaffold/error successors. No delayed import hack or broad replacement harness is allowed. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy073."
+                }
+              ],
+              "exit_criteria": "CY073.D1 and CY073.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 74,
+              "name": "Retire obsolete scaffold tool and manager route",
+              "deliverables": [
+                {
+                  "id": "CY074.D1",
+                  "description": "Remove the inactive legacy scaffold/schema public wrappers and ArtifactManager, plus their now-exhausted old test slices and bootstrap imports. Keep TemplateScaffolder until the following renderer-retirement cycle. Preserved behavior: Already-proved public schema/scaffold/error/persistence behavior and unrelated tools; no production algorithm is added during deletion. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY073](planning-rollout.md#cy073). Shared-file predecessors: [CY053](planning-artifacts-mutation.md#cy053), [CY007](planning-execution.md#cy007), [CY006](planning-execution.md#cy006), [CY052](planning-artifacts-mutation.md#cy052), [CY057](planning-artifacts-mutation.md#cy057), [CY056](planning-artifacts-mutation.md#cy056). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy074."
+                },
+                {
+                  "id": "CY074.D2",
+                  "description": "Require successful public cutover first. Prove zero remaining production imports and test collection references to each deleted module, preserving any unrelated assertions in shared tests. Run the named successor proofs and a fresh normal server startup/handshake before accepting the commit. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy074."
+                }
+              ],
+              "exit_criteria": "CY074.D1 and CY074.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 75,
+              "name": "Retire obsolete template scaffolder route",
+              "deliverables": [
+                {
+                  "id": "CY075.D1",
+                  "description": "Remove TemplateScaffolder and its BaseScaffolder/ScaffoldResult support; remove obsolete eager exports together. Retain the separate scaffolding.base/components stack until its own retirement. Preserved behavior: Already-proved public schema/scaffold/error/persistence behavior and unrelated tools; no production algorithm is added during deletion. Semantic predecessors: [CY074](planning-rollout.md#cy074). Shared-file predecessors: [CY005](planning-execution.md#cy005), [CY056](planning-artifacts-mutation.md#cy056). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy075."
+                },
+                {
+                  "id": "CY075.D2",
+                  "description": "Require successful public cutover first. Prove zero remaining production imports and test collection references to each deleted module, preserving any unrelated assertions in shared tests. Run the named successor proofs and a fresh normal server startup/handshake before accepting the commit. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy075."
+                }
+              ],
+              "exit_criteria": "CY075.D1 and CY075.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 76,
+              "name": "Retire obsolete workspace-upgrade route",
+              "deliverables": [
+                {
+                  "id": "CY076.D1",
+                  "description": "Remove inactive WorkspaceUpgrader and old blanket-copy/registry-preservation branches and tests now replaced by explicit renewal CLI. Preserve unrelated CLI commands and owner configuration. Preserved behavior: Renewal exits 0/2/1, owner-controlled actual/config, adopted checkpoint and forced backup/recovery guarantees remain distinct from F-20 native fixes. Semantic predecessors: [CY072](planning-rollout.md#cy072). Shared-file predecessors: [CY067](planning-rollout.md#cy067). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy076."
+                },
+                {
+                  "id": "CY076.D2",
+                  "description": "No retained imports of WorkspaceUpgrader or legacy suite-copy route; run public renewal CLI and target init/startup and owner-migration/startup proofs. Existing unrelated CLI cases collect and pass. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy076."
+                }
+              ],
+              "exit_criteria": "CY076.D1 and CY076.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 77,
+              "name": "Retire legacy registry and hash authority",
+              "deliverables": [
+                {
+                  "id": "CY077.D1",
+                  "description": "Remove only obsolete registry/hash/artifact-registry paths and their last imports/tests after public target startup; preserve generation/schema successor evidence. Preserved behavior: Generation/header/schema claims already proved; no history replacement or edits to existing artifacts. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY075](planning-rollout.md#cy075), [CY076](planning-rollout.md#cy076). Shared-file predecessors: [CY074](planning-rollout.md#cy074), [CY071](planning-rollout.md#cy071), [CY011](planning-execution.md#cy011), [CY006](planning-execution.md#cy006), [CY002](planning-execution.md#cy002), [CY073](planning-rollout.md#cy073). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy077."
+                },
+                {
+                  "id": "CY077.D2",
+                  "description": "Exact registry reader/writer/import closure; no state/history replacement. Collect affected test sources with zero stale imports; run admitted schema, identity and public introspection successors. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy077."
+                }
+              ],
+              "exit_criteria": "CY077.D1 and CY077.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 78,
+              "name": "Retire legacy metadata and lifecycle contracts",
+              "deliverables": [
+                {
+                  "id": "CY078.D1",
+                  "description": "Remove legacy source-header metadata config/parser and lifecycle exports plus their explicitly named test imports; retain V3 first-line reader and separate context/provenance. Preserved behavior: Generation/header/schema claims already proved; no history replacement or edits to existing artifacts. Semantic predecessors: [CY077](planning-rollout.md#cy077). Shared-file predecessors: [CY072](planning-rollout.md#cy072), [CY074](planning-rollout.md#cy074), [CY007](planning-execution.md#cy007), [CY002](planning-execution.md#cy002). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy078."
+                },
+                {
+                  "id": "CY078.D2",
+                  "description": "Collect T090 and all surviving listed test files after removal; no imports of removed base/lifecycle/parser. Header adversarial cases and real scaffold context isolation remain covered. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy078."
+                }
+              ],
+              "exit_criteria": "CY078.D1 and CY078.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 79,
+              "name": "Retire legacy introspection and schema inference",
+              "deliverables": [
+                {
+                  "id": "CY079.D1",
+                  "description": "Remove only the superseded introspection/default/graph inference route and complete its named renderer/config test migration. Preserved behavior: Generation/header/schema claims already proved; no history replacement or edits to existing artifacts. Semantic predecessors: [CY078](planning-rollout.md#cy078). Shared-file predecessors: [CY053](planning-artifacts-mutation.md#cy053), [CY005](planning-execution.md#cy005), [CY004](planning-execution.md#cy004), [CY075](planning-rollout.md#cy075). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy079."
+                },
+                {
+                  "id": "CY079.D2",
+                  "description": "No legacy introspection imports; real target catalog/schema/render contracts survive; surviving mixed-file tests collect and preserve their unrelated claims. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy079."
+                }
+              ],
+              "exit_criteria": "CY079.D1 and CY079.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 80,
+              "name": "Retire parallel component scaffolders",
+              "deliverables": [
+                {
+                  "id": "CY080.D1",
+                  "description": "Remove only the separate scaffolding/base.py and components stack, including its hidden routing. Retain services/template_engine.py as the already-migrated generic injected renderer used by the new catalog. Preserved behavior: Only one generic resolved scaffold authority; current runtime Tool/Service/Resource classes untouched. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY075](planning-rollout.md#cy075). Shared-file predecessors: [CY079](planning-rollout.md#cy079). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy080."
+                },
+                {
+                  "id": "CY080.D2",
+                  "description": "CY032, CY033, CY034, CY035, CY036, CY037, CY038, CY039, CY040, CY041, CY042, CY043, CY044, CY045, CY046, CY047, CY048, CY049, CY050/CY053/CY057/CY058 retained behavior evidence plus exact dead import/call closure; source-project defaults not preserved. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy080."
+                }
+              ],
+              "exit_criteria": "CY080.D1 and CY080.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 81,
+              "name": "Retire legacy validator and validate_template stack",
+              "deliverables": [
+                {
+                  "id": "CY081.D1",
+                  "description": "Remove only the old validator/analyzer/registry/service and validate_template tool after native checks, mutation policy and new public routes are independently proven. Delete the inactive legacy safe_edit_tool.py wrapper in this cycle before removing its ValidationService/ValidationIssue dependencies. Remove obsolete SafeEditOutput.issues/ValidationIssue imports and validation package eager exports together; preserve unrelated models in tool_outputs.py and their required fields. Preserved behavior: New profile/persistence/location claims and unrelated EnforcementRunner/operation policy behavior. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY079](planning-rollout.md#cy079). Shared-file predecessors: [CY078](planning-rollout.md#cy078), [CY071](planning-rollout.md#cy071), [CY058](planning-artifacts-mutation.md#cy058), [CY055](planning-artifacts-mutation.md#cy055). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy081."
+                },
+                {
+                  "id": "CY081.D2",
+                  "description": "No retained runtime/config imports of legacy validators; check adapter native outcomes and scaffold/edit policy+file effects survive. Collect affected tests before accepting deletion. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy081."
+                }
+              ],
+              "exit_criteria": "CY081.D1 and CY081.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 82,
+              "name": "Retire project_structure and hidden naming",
+              "deliverables": [
+                {
+                  "id": "CY082.D1",
+                  "description": "Remove only project_structure schema/readers/directory resolver and hidden naming; migrate each retained operation/parent-policy field and affected test, preserving unrelated PolicyEngine and EnforcementRunner claims. Preserved behavior: New profile/persistence/location claims and unrelated EnforcementRunner/operation policy behavior. Semantic predecessors: [CY081](planning-rollout.md#cy081), [CY080](planning-rollout.md#cy080). Shared-file predecessors: [CY052](planning-artifacts-mutation.md#cy052), [CY074](planning-rollout.md#cy074), [CY078](planning-rollout.md#cy078). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy082."
+                },
+                {
+                  "id": "CY082.D2",
+                  "description": "DI-04 field/consumer map complete; obsolete reads/imports absent; location containment/temp/exact-name behavior and unrelated operation-policy cases pass. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy082."
+                }
+              ],
+              "exit_criteria": "CY082.D1 and CY082.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 83,
+              "name": "Retire generic Pytest runner",
+              "deliverables": [
+                {
+                  "id": "CY083.D1",
+                  "description": "Remove old runner/IPytestRunner/test_tools native command building and obsolete test fake calls. Preserved behavior: Pytest-native behavior remains CY027, service CY028, public CY060; no numeric/verbose alias. Semantic predecessors: [CY072](planning-rollout.md#cy072). Shared-file predecessors: [CY082](planning-rollout.md#cy082), [CY081](planning-rollout.md#cy081), [CY073](planning-rollout.md#cy073), [CY060](planning-artifacts-mutation.md#cy060), [CY071](planning-rollout.md#cy071). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy083."
+                },
+                {
+                  "id": "CY083.D2",
+                  "description": "Imports absent, native/test/public evidence retained, xdist stopping tested; no generic Pytest knowledge. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy083."
+                }
+              ],
+              "exit_criteria": "CY083.D1 and CY083.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 84,
+              "name": "Close QAManager-dependent parser test imports",
+              "deliverables": [
+                {
+                  "id": "CY084.D1",
+                  "description": "Finish migration/retirement of the eight enumerated parser-test sources that still import QAManager; keep parser configuration-only tests for the following parser-authority removal. Preserved behavior: Durable native findings, explicit scope, truthful operation outcomes and state noninterference; obsolete QAManager private-call/parser/replay expectations retire only after their named successor proof. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY083](planning-rollout.md#cy083). Shared-file predecessors: [CY022](planning-execution.md#cy022), [CY021](planning-execution.md#cy021). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy084."
+                },
+                {
+                  "id": "CY084.D2",
+                  "description": "Named replacement native/consumer/public proofs pass. Collect the changed test sources; their last runtime and type-only QAManager imports/fixtures are gone before manager removal. Retain unrelated public assertions. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy084."
+                }
+              ],
+              "exit_criteria": "CY084.D1 and CY084.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 85,
+              "name": "Close QAManager-dependent fix and state test imports",
+              "deliverables": [
+                {
+                  "id": "CY085.D1",
+                  "description": "Finish the final manager-import slices in fix propagation, baseline replay, diagnostic paths and summary tests. Preserve their native fix/public response/no-state-touch replacements before QAManager disappears. Preserved behavior: Durable native findings, explicit scope, truthful operation outcomes and state noninterference; obsolete QAManager private-call/parser/replay expectations retire only after their named successor proof. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY083](planning-rollout.md#cy083). Shared-file predecessors: [CY061](planning-artifacts-mutation.md#cy061), [CY059](planning-artifacts-mutation.md#cy059). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy085."
+                },
+                {
+                  "id": "CY085.D2",
+                  "description": "Named replacement native/consumer/public proofs pass. Collect the changed test sources; their last runtime and type-only QAManager imports/fixtures are gone before manager removal. Retain unrelated public assertions. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy085."
+                }
+              ],
+              "exit_criteria": "CY085.D1 and CY085.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 86,
+              "name": "Retire quality orchestration and old check/fix tools",
+              "deliverables": [
+                {
+                  "id": "CY086.D1",
+                  "description": "Remove old quality tools, QAManager and execution interface once no live consumer remains; preserve check/test/fix role separation and unrelated PR atomicity. Preserved behavior: Approved Ruff/Mypy/Pyright facts remain in adapters; workflow quality-gate policy remains. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY083](planning-rollout.md#cy083), [CY084](planning-rollout.md#cy084), [CY085](planning-rollout.md#cy085), [CY081](planning-rollout.md#cy081). Shared-file predecessors: [CY082](planning-rollout.md#cy082), [CY071](planning-rollout.md#cy071), [CY059](planning-artifacts-mutation.md#cy059), [CY061](planning-artifacts-mutation.md#cy061), [CY022](planning-execution.md#cy022). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy086."
+                },
+                {
+                  "id": "CY086.D2",
+                  "description": "Check/fix native and public proofs precede deletion. Collect affected test imports; old names absent from final ToolAssembly; unrelated PR flow and bounded cache facts survive. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy086."
+                }
+              ],
+              "exit_criteria": "CY086.D1 and CY086.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 87,
+              "name": "Retire generic native-parser DSL",
+              "deliverables": [
+                {
+                  "id": "CY087.D1",
+                  "description": "Delete the now-unreferenced generic violation parser and parser/gate schema fields plus their exact tests; retain native-specific diagnostics in the owning adapters. Preserved behavior: Approved Ruff/Mypy/Pyright facts remain in adapters; workflow quality-gate policy remains. Semantic predecessors: [CY086](planning-rollout.md#cy086). Shared-file predecessors: [CY059](planning-artifacts-mutation.md#cy059). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy087."
+                },
+                {
+                  "id": "CY087.D2",
+                  "description": "No active generic regex/field-map/native interpretation authority remains. Each affected native adapter still supplies independently verified diagnostics; unrelated schema fields and cache presence semantics survive. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy087."
+                }
+              ],
+              "exit_criteria": "CY087.D1 and CY087.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 88,
+              "name": "Retire auto replay state",
+              "deliverables": [
+                {
+                  "id": "CY088.D1",
+                  "description": "Remove quality state repository/DTO and only its branch-local registration. Preserved behavior: PR atomicity, general atomic-write/locking/state and cache FIFO retained; no new result validity store. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY086](planning-rollout.md#cy086), [CY087](planning-rollout.md#cy087). Shared-file predecessors: [CY010](planning-execution.md#cy010), [CY066](planning-rollout.md#cy066), [CY068](planning-rollout.md#cy068). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy088."
+                },
+                {
+                  "id": "CY088.D2",
+                  "description": "Public run_checks no-state-touch; independent atomic writer/state/cache owner tests present before deletion; submit_pr cases keep unrelated behavior. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy088."
+                }
+              ],
+              "exit_criteria": "CY088.D1 and CY088.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 89,
+              "name": "Scaffold and schema reference migration",
+              "deliverables": [
+                {
+                  "id": "CY089.D1",
+                  "description": "Update canonical scaffold/edit/discovery guidance; retire duplicate inventory/validation references with inbound links. Preserved behavior: Live schema owns exact fields; refinement, provenance and location explanations remain accurate. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY077](planning-rollout.md#cy077), [CY078](planning-rollout.md#cy078), [CY079](planning-rollout.md#cy079), [CY080](planning-rollout.md#cy080), [CY081](planning-rollout.md#cy081), [CY082](planning-rollout.md#cy082). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy089."
+                },
+                {
+                  "id": "CY089.D2",
+                  "description": "DOCFLOW-E04/05; active inbound link scan and public examples match V3; history stays historical. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy089."
+                }
+              ],
+              "exit_criteria": "CY089.D1 and CY089.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 90,
+              "name": "Execution and evidence references",
+              "deliverables": [
+                {
+                  "id": "CY090.D1",
+                  "description": "Migrate check/test/fix/resource standards and usage references. Preserved behavior: Native settings ownership, role-specific scopes/partial fix behavior and workflow gate evidence policy unchanged except approved deltas. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY083](planning-rollout.md#cy083), [CY086](planning-rollout.md#cy086), [CY087](planning-rollout.md#cy087), [CY088](planning-rollout.md#cy088). Shared-file predecessors: [CY010](planning-execution.md#cy010), [CY059](planning-artifacts-mutation.md#cy059). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy090."
+                },
+                {
+                  "id": "CY090.D2",
+                  "description": "Examples verified against registered schemas; no numbered-gate/quality.yaml authority, no fabricated executable pass. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy090."
+                }
+              ],
+              "exit_criteria": "CY090.D1 and CY090.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 91,
+              "name": "Deployment and setup references",
+              "deliverables": [
+                {
+                  "id": "CY091.D1",
+                  "description": "First-v3/manual migration, dependency/install/root/config preservation and restart guidance. Preserved behavior: No automatic external rollout, native install, forced config overwrite or health-first policy. Semantic predecessors: [CY062](planning-rollout.md#cy062), [CY067](planning-rollout.md#cy067), [CY072](planning-rollout.md#cy072). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy091."
+                },
+                {
+                  "id": "CY091.D2",
+                  "description": "Match real installed/CLI results and owner-action boundaries; active links resolve. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy091."
+                }
+              ],
+              "exit_criteria": "CY091.D1 and CY091.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 92,
+              "name": "Architecture diagrams",
+              "deliverables": [
+                {
+                  "id": "CY092.D1",
+                  "description": "Update seven catalogued subsystem/config/tool/naming diagrams to exact responsibility/dependency boundaries. Preserved behavior: No diagram becomes alternate catalog/schema/policy; unrelated architecture preserved. Semantic predecessors: [CY077](planning-rollout.md#cy077), [CY078](planning-rollout.md#cy078), [CY079](planning-rollout.md#cy079), [CY080](planning-rollout.md#cy080), [CY081](planning-rollout.md#cy081), [CY082](planning-rollout.md#cy082), [CY083](planning-rollout.md#cy083), [CY086](planning-rollout.md#cy086), [CY087](planning-rollout.md#cy087), [CY088](planning-rollout.md#cy088). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy092."
+                },
+                {
+                  "id": "CY092.D2",
+                  "description": "Diagram-to-public composition/owners crosscheck, local links, no obsolete active registry/parser authority. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy092."
+                }
+              ],
+              "exit_criteria": "CY092.D1 and CY092.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 93,
+              "name": "Architecture manuals and reference navigation",
+              "deliverables": [
+                {
+                  "id": "CY093.D1",
+                  "description": "Reconcile bounded architecture/vision/navigation and standards wording. Preserved behavior: Unrelated manual content and historical migration_v2.0; no universal TDD/phase or complete import-guarantee claims. Semantic predecessors: [CY068](planning-rollout.md#cy068), [CY089](planning-rollout.md#cy089), [CY090](planning-rollout.md#cy090), [CY091](planning-rollout.md#cy091), [CY092](planning-rollout.md#cy092). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy093."
+                },
+                {
+                  "id": "CY093.D2",
+                  "description": "DOCFLOW-E04/05; active inbound references and preserved-unaffected reasons; navigation identifies one owner. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy093."
+                }
+              ],
+              "exit_criteria": "CY093.D1 and CY093.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 94,
+              "name": "Retire legacy Pydantic/class sources",
+              "deliverables": [
+                {
+                  "id": "CY094.D1",
+                  "description": "Remove only old DTO/config/class/protocol configs/roots and related obsolete fixture assertions. Preserved behavior: CY032/CY033/CY034/CY035 semantic contracts and explicit fields/imports/defaults remain. Semantic predecessors: [CY032](planning-artifacts-mutation.md#cy032), [CY033](planning-artifacts-mutation.md#cy033), [CY034](planning-artifacts-mutation.md#cy034), [CY035](planning-artifacts-mutation.md#cy035), [CY072](planning-rollout.md#cy072), [CY080](planning-rollout.md#cy080). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy094."
+                },
+                {
+                  "id": "CY094.D2",
+                  "description": "Replacement package evidence plus no active legacy config/render imports; captured Git source rollback. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy094."
+                }
+              ],
+              "exit_criteria": "CY094.D1 and CY094.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 95,
+              "name": "Retire legacy specialized code/test sources",
+              "deliverables": [
+                {
+                  "id": "CY095.D1",
+                  "description": "Remove only old adapter/worker/unit/integration/TS roots/configs and TS pseudo-pattern. Preserved behavior: Portable behavior and first-class fixture options proved; actual existing production files remain. Semantic predecessors: [CY036](planning-artifacts-mutation.md#cy036), [CY037](planning-artifacts-mutation.md#cy037), [CY038](planning-artifacts-mutation.md#cy038), [CY039](planning-artifacts-mutation.md#cy039), [CY040](planning-artifacts-mutation.md#cy040), [CY072](planning-rollout.md#cy072), [CY080](planning-rollout.md#cy080). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy095."
+                },
+                {
+                  "id": "CY095.D2",
+                  "description": "CY036, CY037, CY038, CY039 evidence and source/fixture request closure, no orphan active imports. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy095."
+                }
+              ],
+              "exit_criteria": "CY095.D1 and CY095.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 96,
+              "name": "Retire legacy phase-document roots",
+              "deliverables": [
+                {
+                  "id": "CY096.D1",
+                  "description": "Delete only old Research/Design/Planning/Validation concrete roots/configs; close their actual root-rendering tests. Preserved behavior: Nineteen workflow meanings, original PR defects, structured links/refs/checklists and commit semantics. Semantic predecessors: [CY042](planning-artifacts-mutation.md#cy042), [CY043](planning-artifacts-mutation.md#cy043), [CY044](planning-artifacts-mutation.md#cy044), [CY045](planning-artifacts-mutation.md#cy045), [CY046](planning-artifacts-mutation.md#cy046), [CY047](planning-artifacts-mutation.md#cy047), [CY048](planning-artifacts-mutation.md#cy048), [CY049](planning-artifacts-mutation.md#cy049), [CY050](planning-artifacts-mutation.md#cy050), [CY051](planning-artifacts-mutation.md#cy051), [CY072](planning-rollout.md#cy072). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy096."
+                },
+                {
+                  "id": "CY096.D2",
+                  "description": "DOC family evidence and no active legacy render paths; approved phase content not discarded as obsolete prose. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy096."
+                }
+              ],
+              "exit_criteria": "CY096.D1 and CY096.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 97,
+              "name": "Retire legacy explanatory-document roots",
+              "deliverables": [
+                {
+                  "id": "CY097.D1",
+                  "description": "Delete only old Architecture/Reference/Generic Document concrete roots/configs; preserve their explicitly migrated semantic capacities. Preserved behavior: Nineteen workflow meanings, original PR defects, structured links/refs/checklists and commit semantics. Semantic predecessors: [CY096](planning-rollout.md#cy096). Shared-file predecessors: [CY048](planning-artifacts-mutation.md#cy048). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy097."
+                },
+                {
+                  "id": "CY097.D2",
+                  "description": "DOC family evidence and no active legacy render paths; approved phase content not discarded as obsolete prose. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy097."
+                }
+              ],
+              "exit_criteria": "CY097.D1 and CY097.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 98,
+              "name": "Retire legacy tracking roots",
+              "deliverables": [
+                {
+                  "id": "CY098.D1",
+                  "description": "Delete only old Issue/PR/Commit roots/configs after body/message contracts and native framing are proven. Preserved behavior: Nineteen workflow meanings, original PR defects, structured links/refs/checklists and commit semantics. Semantic predecessors: [CY097](planning-rollout.md#cy097). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy098."
+                },
+                {
+                  "id": "CY098.D2",
+                  "description": "DOC family evidence and no active legacy render paths; approved phase content not discarded as obsolete prose. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy098."
+                }
+              ],
+              "exit_criteria": "CY098.D1 and CY098.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 99,
+              "name": "Retire portable Python/test macro sources",
+              "deliverables": [
+                {
+                  "id": "CY099.D1",
+                  "description": "Remove only legacy Python/testing macros after every concrete Python consumer has migrated. Preserved behavior: Shared syntax/link/fixture/omission claims already in public family coverage. Semantic predecessors: [CY031](planning-artifacts-mutation.md#cy031), [CY041](planning-artifacts-mutation.md#cy041), [CY094](planning-rollout.md#cy094), [CY095](planning-rollout.md#cy095), [CY096](planning-rollout.md#cy096), [CY097](planning-rollout.md#cy097), [CY098](planning-rollout.md#cy098). Shared-file predecessors: [CY039](planning-artifacts-mutation.md#cy039), [CY037](planning-artifacts-mutation.md#cy037), [CY033](planning-artifacts-mutation.md#cy033). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy099."
+                },
+                {
+                  "id": "CY099.D2",
+                  "description": "Graph reachability/import scan plus affected family proof; remove direct macro tests only after named successor coverage. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy099."
+                }
+              ],
+              "exit_criteria": "CY099.D1 and CY099.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 100,
+              "name": "Retire document macro sources",
+              "deliverables": [
+                {
+                  "id": "CY100.D1",
+                  "description": "Remove only legacy Markdown shared patterns and their source-topology tests after all document/tracking roots migrate. Preserved behavior: Shared syntax/link/fixture/omission claims already in public family coverage. Semantic predecessors: [CY099](planning-rollout.md#cy099). Shared-file predecessors: [CY041](planning-artifacts-mutation.md#cy041), [CY048](planning-artifacts-mutation.md#cy048). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy100."
+                },
+                {
+                  "id": "CY100.D2",
+                  "description": "Graph reachability/import scan plus affected family proof; remove direct macro tests only after named successor coverage. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy100."
+                }
+              ],
+              "exit_criteria": "CY100.D1 and CY100.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 101,
+              "name": "Remove rejected Resource/Service/Tool artifact sources",
+              "deliverables": [
+                {
+                  "id": "CY101.D1",
+                  "description": "Delete only rejected Resource/Service/Tool concrete roots/configs; no runtime class or generated-source deletion. Preserved behavior: No retained generated/runtime classes deleted; future YAML recovery trace records exact historical source/removal commit. Semantic predecessors: [CY072](planning-rollout.md#cy072), [CY080](planning-rollout.md#cy080), [CY094](planning-rollout.md#cy094), [CY095](planning-rollout.md#cy095), [CY096](planning-rollout.md#cy096), [CY097](planning-rollout.md#cy097), [CY098](planning-rollout.md#cy098). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy101."
+                },
+                {
+                  "id": "CY101.D2",
+                  "description": "Approved exclusions plus absence from admitted catalog/registration; retained plain class and specialized artifact behavior remains; existing production tools/services/resources untouched. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy101."
+                }
+              ],
+              "exit_criteria": "CY101.D1 and CY101.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 102,
+              "name": "Remove source-project specialization patterns",
+              "deliverables": [
+                {
+                  "id": "CY102.D1",
+                  "description": "Delete exactly the six source-project patterns and their tests after all legacy callers are gone. Preserved behavior: No retained generated/runtime classes deleted; future YAML recovery trace records exact historical source/removal commit. Semantic predecessors: [CY101](planning-rollout.md#cy101). Shared-file predecessors: None. Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy102."
+                },
+                {
+                  "id": "CY102.D2",
+                  "description": "CODE-E06/10 portable actual-package evidence and zero remaining pattern imports; no lost portable logging/explicit-body behavior. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy102."
+                }
+              ],
+              "exit_criteria": "CY102.D1 and CY102.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 103,
+              "name": "Remove unreachable YAML and test seeds and agent hints",
+              "deliverables": [
+                {
+                  "id": "CY103.D1",
+                  "description": "Delete the explicitly unreachable YAML bases, empty test seeds and agent-hint pattern; record exact Git recovery trace for deferred YAML only. Preserved behavior: No retained generated/runtime classes deleted; future YAML recovery trace records exact historical source/removal commit. Semantic predecessors: [CY102](planning-rollout.md#cy102). Shared-file predecessors: [CY039](planning-artifacts-mutation.md#cy039). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy103."
+                },
+                {
+                  "id": "CY103.D2",
+                  "description": "Approved no-retained-behavior dispositions, zero source imports, CODE-E07 fixture capacity retained and exact source SHA/path recovery trace; no new deferred feature implementation. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy103."
+                }
+              ],
+              "exit_criteria": "CY103.D1 and CY103.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 104,
+              "name": "Retire exhausted tier bases",
+              "deliverables": [
+                {
+                  "id": "CY104.D1",
+                  "description": "Remove exact legacy tier0/tier1/tier2 portable bases after all retained and rejected old roots are gone; keep new shared generation sources. Preserved behavior: Shared syntax/link/fixture/omission claims already in public family coverage. Semantic predecessors: [CY100](planning-rollout.md#cy100), [CY103](planning-rollout.md#cy103). Shared-file predecessors: [CY048](planning-artifacts-mutation.md#cy048), [CY047](planning-artifacts-mutation.md#cy047). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy104."
+                },
+                {
+                  "id": "CY104.D2",
+                  "description": "Graph reachability/import scan plus affected family proof; remove direct macro tests only after named successor coverage. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy104."
+                }
+              ],
+              "exit_criteria": "CY104.D1 and CY104.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 105,
+              "name": "Retire exhausted legacy test harness",
+              "deliverables": [
+                {
+                  "id": "CY105.D1",
+                  "description": "Remove only the remaining exhausted legacy test-helper files/functions and obsolete plugin registration left after the earlier explicitly bounded import migrations; preserve the retained narrow support and unrelated workflow fixtures. Preserved behavior: Unrelated workflow plugin, GitHub mocking, server/cycle/PR behavior, cache/atomic helpers and scoped env fixtures. Semantic predecessors: [CY077](planning-rollout.md#cy077), [CY078](planning-rollout.md#cy078), [CY079](planning-rollout.md#cy079), [CY080](planning-rollout.md#cy080), [CY081](planning-rollout.md#cy081), [CY082](planning-rollout.md#cy082), [CY083](planning-rollout.md#cy083), [CY086](planning-rollout.md#cy086), [CY087](planning-rollout.md#cy087), [CY088](planning-rollout.md#cy088), [CY094](planning-rollout.md#cy094), [CY095](planning-rollout.md#cy095), [CY096](planning-rollout.md#cy096), [CY097](planning-rollout.md#cy097), [CY098](planning-rollout.md#cy098), [CY099](planning-rollout.md#cy099), [CY100](planning-rollout.md#cy100), [CY104](planning-rollout.md#cy104), [CY101](planning-rollout.md#cy101), [CY102](planning-rollout.md#cy102), [CY103](planning-rollout.md#cy103). Shared-file predecessors: [CY073](planning-rollout.md#cy073), [CY071](planning-rollout.md#cy071). Exact scope, write-set and rollback: docs/development/issue460/planning-rollout.md#cy105."
+                },
+                {
+                  "id": "CY105.D2",
+                  "description": "TEST-E07/08: fixture/import/plugin request closure plus affected public server/workflow/PR tests; no global test cleanup. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy105."
+                }
+              ],
+              "exit_criteria": "CY105.D1 and CY105.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            }
+          ]
+        },
+        "validation": {
+          "deliverables": [
+            {
+              "id": "V460.1",
+              "description": "Exact 126/151/79/57 existing-source closure, new-path ledger and applicable architecture review."
+            },
+            {
+              "id": "V460.2",
+              "description": "Independent native, consumer and real public evidence for check/test/fix, schema/cache/presentation and both mutation contracts."
+            },
+            {
+              "id": "V460.3",
+              "description": "Fresh installed complete distribution, first-v3 migration/startup, F-10 recovery and actual client rediscovery; rerun evidence invalidated by later code/config/package edits."
+            },
+            {
+              "id": "V460.4",
+              "description": "One full suite and branch-wide gates, with per-cycle evidence retained and failures honestly resolved."
+            },
+            {
+              "id": "V460.5",
+              "description": "All nineteen workflow carriers and actual instruction source/copy/reference consistency."
+            }
+          ]
+        },
+        "documentation": {
+          "deliverables": [
+            {
+              "id": "D460.1",
+              "description": "Final active user/operator/reference reconciliation against implemented contracts and accepted deltas."
+            },
+            {
+              "id": "D460.2",
+              "description": "Release/version/upgrade evidence and explicit external-owner migration instructions."
+            },
+            {
+              "id": "D460.3",
+              "description": "Outcome-neutral final hand-over. Scope any additional concrete release files explicitly when that phase starts."
+            }
+          ]
+        }
+      }
     }
   }
 }

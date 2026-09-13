@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -139,6 +139,14 @@
       "to_phase": "design",
       "timestamp": "2026-09-11T09:33:25.701192+00:00",
       "human_approval_message": "QA geeft clean go voor hervatten van design",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-09-13T06:54:36.453170+00:00",
+      "human_approval_message": "De gebruiker meldt expliciet onafhankelijke QA GO voor Planning op de Design-consolidatie van commit ea48558c en verzoekt de voorgeschreven overgang naar Planning voor issue 460.",
       "forced": false,
       "skip_reason": null
     }
