@@ -1354,7 +1354,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Check public composition**
 
 - **Semantic predecessors:** [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009), [CY011](planning-execution.md#cy011), [CY026](planning-execution.md#cy026).
-- **Shared-file predecessors:** [CY058](planning-artifacts-mutation.md#cy058), [CY057](planning-artifacts-mutation.md#cy057).
+- **Shared-file predecessors:** [CY058](planning-artifacts-mutation.md#cy058), [CY057](planning-artifacts-mutation.md#cy057), [CY017](planning-execution.md#cy017).
 - **Authority:** [DI-05 §13.1](design-execution-adapters.md).
 - **CY059.D1 — bounded result:** Thin run_checks tool and exact eight operation error-detail shapes in isolated V3 registration.
 - **Preserved behavior:** Native negative findings remain operational success; scope/args/defaults and no-state-touch evidence.
@@ -1373,10 +1373,19 @@ New exact paths:
 - `mcp_server/tools/check_tools.py`
 - `tests/mcp_server/integration/test_checks_public_v3.py`
 - `mcp_server/schemas/execution_outputs.py`
+- `mcp_server/services/check_operation.py`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `mcp_server/execution/check_selection.py`
+- `tests/mcp_server/unit/execution/test_check_selection.py`
+
+Additional existing paths:
+
+- `mcp_server/core/interfaces/git.py`
+- `mcp_server/adapters/git_adapter.py`
+
+Independent QA identified this bounded scope completion on 2026-09-14 under the user's standing authorization for proportionate QA corrections. The inward operation owns projection; selection retains its chosen profile and factual scope failures; Git distinguishes observed missing parent/merge-base facts. Preserve exception compatibility and other Git failures. No second resolver, shared executor change, new selection policy or live registration cutover.
 
 - Selection, native facts, capture and role results keep their own declared contracts; do not normalize check/test/fix into one success reducer.
 

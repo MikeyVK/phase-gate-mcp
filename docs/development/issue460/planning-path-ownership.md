@@ -468,9 +468,20 @@ C086 (output models), S030 (cache resource), S010 (cache-resource tests) and C05
 
 The supplement does not authorize general project/state management cleanup. The existing state.json backup path in FileStateRepository is outside the prerequisite's deliverables-query correction. CY071 rehearses every necessary root/bootstrap test change in isolated copies and leaves the live R004/R005/R006 bytes unchanged. CY072 alone applies their exact preimage-checked test hunks with the rehearsed public cutover, then verifies the landed result; it makes no new migration decision. CY073 closes actual legacy import dependencies before production removal; CY105 may remove only the remaining exhausted helper acquisition.
 
+## CY059 scope completion
+
+Independent QA identified these existing dependencies on 2026-09-14 under the user's standing authorization for proportionate corrections. The frozen source census is unchanged. CY059 may only add typed branch-basis observations while preserving unrelated Git behavior.
+
+| Existing path | Write owner | Bounded slice |
+|---|---|---|
+| `mcp_server/core/interfaces/git.py` | [CY059](planning-artifacts-mutation.md#cy059) | Typed branch-basis failure compatible with ExecutionError |
+| `mcp_server/adapters/git_adapter.py` | [CY059](planning-artifacts-mutation.md#cy059) | Classify only observed missing parent and missing merge-base facts |
+
+The new-source register records CY059's inward projection operation and the narrow selection/test revisits. CheckService, adapter execution, native selection and live registration remain outside this correction.
+
 ## Proposed new source register
 
-279 exact proposed paths. Files do not yet exist unless explicitly recorded as subsequent implementation progress. Creation and revisits are separately scoped by their cards.
+279 original proposed paths plus the bounded CY059 inward-operation addition. Files do not yet exist unless explicitly recorded as subsequent implementation progress. Creation and revisits are separately scoped by their cards.
 
 | Exact path | Creation owner | Ordered write episodes |
 |---|---|---|
@@ -518,8 +529,8 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/integration/execution/test_content_input.py` | [CY015](planning-execution.md#cy015) | CY015, CY053 |
 | `mcp_server/config/schemas/checks_config.py` | [CY016](planning-execution.md#cy016) | CY016, CY054 |
 | `tests/mcp_server/unit/config/test_checks_config.py` | [CY016](planning-execution.md#cy016) | CY016 |
-| `mcp_server/execution/check_selection.py` | [CY017](planning-execution.md#cy017) | CY017 |
-| `tests/mcp_server/unit/execution/test_check_selection.py` | [CY017](planning-execution.md#cy017) | CY017 |
+| `mcp_server/execution/check_selection.py` | [CY017](planning-execution.md#cy017) | CY017, CY059 |
+| `tests/mcp_server/unit/execution/test_check_selection.py` | [CY017](planning-execution.md#cy017) | CY017, CY059 |
 | `mcp_server/bundled_adapters/python_syntax/manifest.yaml` | [CY018](planning-execution.md#cy018) | CY018 |
 | `mcp_server/bundled_adapters/python_syntax/check.py` | [CY018](planning-execution.md#cy018) | CY018 |
 | `mcp_server/bundled_adapters/python_syntax/requirements.txt` | [CY018](planning-execution.md#cy018) | CY018 |
@@ -731,6 +742,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/integration/test_scaffold_public_v3.py` | [CY057](planning-artifacts-mutation.md#cy057) | CY057 |
 | `mcp_server/tools/edit_tool.py` | [CY058](planning-artifacts-mutation.md#cy058) | CY058 |
 | `tests/mcp_server/integration/test_edit_public_v3.py` | [CY058](planning-artifacts-mutation.md#cy058) | CY058 |
+| `mcp_server/services/check_operation.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 |
 | `mcp_server/tools/check_tools.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 |
 | `tests/mcp_server/integration/test_checks_public_v3.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 |
 | `mcp_server/schemas/execution_outputs.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059, CY060, CY061 |
@@ -761,3 +773,4 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/integration/test_target_startup.py` | [CY071](planning-rollout.md#cy071) | CY071 |
 | `docs/development/issue460/rollout-rehearsal.md` | [CY071](planning-rollout.md#cy071) | CY071 |
 | `tests/mcp_server/integration/test_v3_cutover.py` | [CY072](planning-rollout.md#cy072) | CY072 |
+
