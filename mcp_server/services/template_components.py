@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
+from mcp_server.config.schemas.template_suite import TemplateId
 from mcp_server.core.exceptions import MCPError
 from mcp_server.services.artifact_identity import (
     CompactFingerprint,
@@ -37,16 +38,9 @@ class ComponentState(BaseModel):
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
 
     kind: ComponentKind
-    component_id: str
+    component_id: TemplateId
     present: bool
     fingerprint: CompactFingerprint | None = None
-
-    @field_validator("component_id")
-    @classmethod
-    def valid_component_id(cls, value: str) -> str:
-        if not value or "/" in value or "\\" in value:
-            raise ValueError("component_id_invalid")
-        return value
 
     @model_validator(mode="after")
     def validate_presence(self) -> ComponentState:
@@ -69,7 +63,7 @@ class ComponentSelection(BaseModel):
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
 
     kind: ComponentKind
-    component_id: str
+    component_id: TemplateId
     adopted: ComponentState
     actual: ComponentState
     candidate: ComponentState

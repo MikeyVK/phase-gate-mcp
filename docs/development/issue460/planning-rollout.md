@@ -94,7 +94,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Installation checkpoint and first-v3 bootstrap**
 
 - **Semantic predecessors:** [CY063](planning-rollout.md#cy063).
-- **Shared-file predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY061](planning-artifacts-mutation.md#cy061).
+- **Shared-file predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY061](planning-artifacts-mutation.md#cy061), [CY063](planning-rollout.md#cy063).
 - **Authority:** [DI-06 §§7.2,9–10](design-distribution.md).
 - **CY064.D1 — bounded result:** Closed installation.json contract, trustworthy bootstrap and one-time compatibility-value migration.
 - **Preserved behavior:** Checkpoint-less pre-v3 not fresh; preserve actual; no fabricated checkpoint from metadata/.version.
@@ -117,6 +117,9 @@ New exact paths:
 Previously introduced paths revisited in this cycle:
 
 - `mcp_server/services/template_renewal.py`
+- `mcp_server/services/template_components.py`
+
+Independent QA identified one bounded predecessor correction: reuse the existing `TemplateId` type for component-state and selection identities instead of rejecting manifest IDs with an additional path-like restriction. Preserve the authored ID unchanged through component and checkpoint construction; do not modify `TemplateId` or filesystem path admission.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 - Introduce installation-state reading independently. The existing normal startup version/root reader is unchanged here; complete target startup integration is explicitly owned by CY071 and public activation by CY072.

@@ -11,13 +11,13 @@ from pydantic import ValidationError
 
 from mcp_server.config.schemas.installation import InstallationState, TemplateCheckpoint
 from mcp_server.core.exceptions import MCPError
-from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 from mcp_server.services.installation_state import (
     BootstrapResolver,
     InstallationStateRepository,
     ValidatedSuiteEvidence,
 )
 from mcp_server.services.template_components import ComponentState
+from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 FP_A = "AAAAAAAAAAAAAAAA"
 FP_B = "BBBBBBBBBBBBBBBB"
@@ -234,9 +234,7 @@ def test_fresh_requires_admitted_candidate_and_legacy_read_is_explicit(tmp_path:
     legacy = tmp_path / ".version"
     legacy.write_text("2.0.0\n", encoding="utf-8")
     state_path = tmp_path / "installation.json"
-    repository = InstallationStateRepository(
-        state_path, writer=AtomicJsonWriter().write_json
-    )
+    repository = InstallationStateRepository(state_path, writer=AtomicJsonWriter().write_json)
     assert repository.read_legacy_compatibility(legacy) == "2.0.0"
     assert repository.migrate_legacy_compatibility(legacy) is None
     assert repository.read() == InstallationState(pgmcp_version="2.0.0")

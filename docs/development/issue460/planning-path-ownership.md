@@ -752,7 +752,7 @@ The new-source register records CY059's inward projection operation and the narr
 | `tests/mcp_server/integration/test_fixes_public_v3.py` | [CY061](planning-artifacts-mutation.md#cy061) | CY061 |
 | `tests/mcp_server/fixtures/installed_distribution.py` | [CY062](planning-rollout.md#cy062) | CY062 |
 | `tests/mcp_server/integration/test_installed_distribution_v3.py` | [CY062](planning-rollout.md#cy062) | CY062 |
-| `mcp_server/services/template_components.py` | [CY063](planning-rollout.md#cy063) | CY063 |
+| `mcp_server/services/template_components.py` | [CY063](planning-rollout.md#cy063) | CY063, CY064 (reuse manifest identity validation only) |
 | `tests/mcp_server/unit/services/test_template_components.py` | [CY063](planning-rollout.md#cy063) | CY063 |
 | `mcp_server/services/template_renewal.py` | [CY063](planning-rollout.md#cy063) | CY063, CY064, CY065, CY066, CY067 |
 | `mcp_server/config/schemas/installation.py` | [CY064](planning-rollout.md#cy064) | CY064 |
