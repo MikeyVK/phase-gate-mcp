@@ -59,21 +59,26 @@ def compose(
             "max_items": 5,
             "template_success": "{requested_scope}",
             "template_failure": "{requested_scope}: {error_code}",
-            "collections": [{
-                "field": "results", "heading": "Fixes",
-                "item_template": "{fix_id}: {status}; args_source={args_source}",
-            }],
-            "enum_cases": [{
-                "field": "error_code",
-                "cases": {
-                    "no_configured_fixes": "No fix bindings configured.",
-                    "selection_invalid": "Fix selection invalid.",
-                    "scope_resolution_failed": "Fix scope could not be resolved.",
-                    "adapter_request_rejected": "Internal fix request rejected.",
-                    "operation_interrupted": "Fix operation interrupted.",
-                    "termination_unconfirmed": "Fix termination unconfirmed.",
-                },
-            }],
+            "collections": [
+                {
+                    "field": "results",
+                    "heading": "Fixes",
+                    "item_template": "{fix_id}: {status}; args_source={args_source}",
+                }
+            ],
+            "enum_cases": [
+                {
+                    "field": "error_code",
+                    "cases": {
+                        "no_configured_fixes": "No fix bindings configured.",
+                        "selection_invalid": "Fix selection invalid.",
+                        "scope_resolution_failed": "Fix scope could not be resolved.",
+                        "adapter_request_rejected": "Internal fix request rejected.",
+                        "operation_interrupted": "Fix operation interrupted.",
+                        "termination_unconfirmed": "Fix termination unconfirmed.",
+                    },
+                }
+            ],
         }
     }
     presenter = TextPresenter(config_data=presentation)
@@ -85,7 +90,9 @@ def compose(
     resource = CachedResponseResource(cache)
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(root))),
-        tools=[wrapped], resources=[resource], publisher=cache,
+        tools=[wrapped],
+        resources=[resource],
+        publisher=cache,
         presenter=ResponsePresenter(text, SchemaResourcePresenter()),
     )
     return Composition(server, resource, text)
@@ -111,13 +118,20 @@ async def test_noop_order_and_explicit_empty_args_survive_transport(
     runtime = RecordingRuntime((passed(), passed()))
     config = configuration()
     composition = compose(
-        tmp_path, pytestconfig, FixManager(config, Catalog(), runtime, FileFixScopePaths(tmp_path)),
+        tmp_path,
+        pytestconfig,
+        FixManager(config, Catalog(), runtime, FileFixScopePaths(tmp_path)),
         config,
     )
-    result = await run(composition, {
-        "scope": "targets", "targets": [source.name, "./" + source.name],
-        "fixes": ["second", "first"], "args": {"second": []},
-    })
+    result = await run(
+        composition,
+        {
+            "scope": "targets",
+            "targets": [source.name, "./" + source.name],
+            "fixes": ["second", "first"],
+            "args": {"second": []},
+        },
+    )
     assert result.success and result.error_code is None
     assert result.selected_fixes == ("second", "first")
     assert [call.request.model_dump() for call in runtime.calls] == [
@@ -143,33 +157,50 @@ async def test_native_three_step_chain_reports_partial_writes_without_rollback(
     (tmp_path / "ruff.toml").write_text('[lint]\nselect = ["F"]\n', encoding="utf-8")
     formatted = subprocess.run(
         [sys.executable, "-m", "ruff", "format", "--", str(source)],
-        cwd=tmp_path, capture_output=True, timeout=15,
+        cwd=tmp_path,
+        capture_output=True,
+        timeout=15,
     )
     after_format = source.read_bytes()
     linted = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "--fix", "--", str(source)],
-        cwd=tmp_path, capture_output=True, timeout=15,
+        cwd=tmp_path,
+        capture_output=True,
+        timeout=15,
     )
     after_lint = source.read_bytes()
     assert formatted.returncode == 0 and linted.returncode == 1
     assert original != after_format != after_lint
     source.write_bytes(original)
-    config = FixesConfig.model_validate({
-        "fixes": {
-            name: {
-                "adapter_id": "ruff", "capability": capability,
-                "timeout_seconds": 20, "default_args": [],
+    config = FixesConfig.model_validate(
+        {
+            "fixes": {
+                name: {
+                    "adapter_id": "ruff",
+                    "capability": capability,
+                    "timeout_seconds": 20,
+                    "default_args": [],
+                }
+                for name, capability in (
+                    ("first", "format"),
+                    ("second", "lint"),
+                    ("third", "format"),
+                )
             }
-            for name, capability in (("first", "format"), ("second", "lint"), ("third", "format"))
         }
-    })
+    )
     runtime = NativeRuntime(source)
     manager = FixManager(
         config, catalog(pytestconfig.rootpath, tmp_path), runtime, FileFixScopePaths(tmp_path)
     )
-    result = await run(compose(tmp_path, pytestconfig, manager, config), {
-        "scope": "targets", "targets": [source.name], "fixes": ["first", "second", "third"],
-    })
+    result = await run(
+        compose(tmp_path, pytestconfig, manager, config),
+        {
+            "scope": "targets",
+            "targets": [source.name],
+            "fixes": ["first", "second", "third"],
+        },
+    )
     assert result.success and result.error_code is None
     assert [row.status for row in result.results] == ["passed", "failed", "not_executed"]
     assert runtime.observed == [original, after_format]
@@ -182,9 +213,9 @@ async def test_native_three_step_chain_reports_partial_writes_without_rollback(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", [
-    "unavailable", "timeout", "cancelled", "unconfirmed_failure", "rejected"
-])
+@pytest.mark.parametrize(
+    "kind", ["unavailable", "timeout", "cancelled", "unconfirmed_failure", "rejected"]
+)
 async def test_attempted_effects_survive_faults_and_later_fixes_do_not_start(
     tmp_path: Path, pytestconfig: pytest.Config, kind: str
 ) -> None:
@@ -198,10 +229,15 @@ async def test_attempted_effects_survive_faults_and_later_fixes_do_not_start(
     runtime = RecordingRuntime((passed(), failure(kind)), mutate)
     config = configuration()
     manager = FixManager(config, Catalog(), runtime, FileFixScopePaths(tmp_path))
-    result = await run(compose(tmp_path, pytestconfig, manager, config), {
-        "scope": "targets", "targets": [source.name],
-        "fixes": ["first", "second", "third"], "timeout_seconds": 7,
-    })
+    result = await run(
+        compose(tmp_path, pytestconfig, manager, config),
+        {
+            "scope": "targets",
+            "targets": [source.name],
+            "fixes": ["first", "second", "third"],
+            "timeout_seconds": 7,
+        },
+    )
     assert result.success is (kind != "rejected")
     assert len(runtime.calls) == 2 and all(call.timeout_seconds == 7 for call in runtime.calls)
     assert source.read_text(encoding="utf-8") == (
@@ -213,7 +249,8 @@ async def test_attempted_effects_survive_faults_and_later_fixes_do_not_start(
     assert result.results[2].reason == "not_started" and result.results[2].capture is None
     assert result.results[2].effective_args == ("two words", "")
     expected = {
-        "cancelled": "operation_interrupted", "unconfirmed_failure": "termination_unconfirmed",
+        "cancelled": "operation_interrupted",
+        "unconfirmed_failure": "termination_unconfirmed",
         "rejected": "adapter_request_rejected",
     }.get(kind)
     assert result.error_code == expected
@@ -226,12 +263,15 @@ async def test_attempted_effects_survive_faults_and_later_fixes_do_not_start(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("arguments", [
-    {},
-    {"scope": "workspace", "targets": ["file.py"], "fixes": ["first"]},
-    {"scope": "targets", "targets": ["file.py"], "fixes": ["first"], "timeout_seconds": "7"},
-    {"scope": "targets", "targets": ["file.py"], "fixes": ["first"], "args": {"first": None}},
-])
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        {},
+        {"scope": "workspace", "targets": ["file.py"], "fixes": ["first"]},
+        {"scope": "targets", "targets": ["file.py"], "fixes": ["first"], "timeout_seconds": "7"},
+        {"scope": "targets", "targets": ["file.py"], "fixes": ["first"], "args": {"first": None}},
+    ],
+)
 async def test_strict_public_schema_is_reusable_after_invalid_calls(
     tmp_path: Path, pytestconfig: pytest.Config, arguments: dict[str, JsonValue]
 ) -> None:
@@ -254,7 +294,8 @@ async def test_strict_public_schema_is_reusable_after_invalid_calls(
             "properties": {
                 name: {"type": "array", "items": {"type": "string"}}
                 for name in ("first", "second", "third")
-            }, "additionalProperties": False,
+            },
+            "additionalProperties": False,
         }
 
 
@@ -271,7 +312,9 @@ async def test_complete_admission_precedes_any_write(
     config = configuration()
     manager = FixManager(config, Catalog(), runtime, FileFixScopePaths(tmp_path))
     arguments: dict[str, JsonValue] = {
-        "scope": "targets", "targets": [source.name], "fixes": ["first"],
+        "scope": "targets",
+        "targets": [source.name],
+        "fixes": ["first"],
     }
     expected = "selection_invalid"
     if kind == "directory":
