@@ -516,7 +516,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/integration/execution/test_process_stopping.py` | [CY014](planning-execution.md#cy014) | CY014 |
 | `mcp_server/execution/content_input.py` | [CY015](planning-execution.md#cy015) | CY015, CY053 |
 | `tests/mcp_server/integration/execution/test_content_input.py` | [CY015](planning-execution.md#cy015) | CY015, CY053 |
-| `mcp_server/config/schemas/checks_config.py` | [CY016](planning-execution.md#cy016) | CY016 |
+| `mcp_server/config/schemas/checks_config.py` | [CY016](planning-execution.md#cy016) | CY016, CY054 |
 | `tests/mcp_server/unit/config/test_checks_config.py` | [CY016](planning-execution.md#cy016) | CY016 |
 | `mcp_server/execution/check_selection.py` | [CY017](planning-execution.md#cy017) | CY017 |
 | `tests/mcp_server/unit/execution/test_check_selection.py` | [CY017](planning-execution.md#cy017) | CY017 |

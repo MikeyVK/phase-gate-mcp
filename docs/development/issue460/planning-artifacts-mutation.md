@@ -1154,7 +1154,14 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `mcp_server/config/schemas/checks_config.py`
+
+Independent QA identified that DI-04's selected extension requires the matched configured
+suffix as well as its profile. Under the user's standing bounded-correction authorization,
+expose that pair from the existing pure config lookup and delegate its existing profile-only
+accessor to it. Preserve basename validation, original suffix spelling and longest casefold
+matching. No second matching algorithm, runtime activation or selection policy change.
+Keep the corresponding ownership row aligned with this bounded revisit.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 
