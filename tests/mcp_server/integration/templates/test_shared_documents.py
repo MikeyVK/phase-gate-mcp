@@ -273,7 +273,7 @@ def test_sections_keep_markdown_rows_lists_and_conflicting_code_delimiters_safe(
         template,
         {
             "heading": "Section [name]\n# own text #",
-            "cell": "**bold** | value\nnext row",
+            "cell": "**bold** | value\nnext row; left\\|right",
             "bullets": ["First\ncontinued", "Second"],
             "code": "const value = `text`;\n``````\n<kept>",
             "tilde_code": "caller text\n~~~~~~\nkept",
@@ -283,7 +283,7 @@ def test_sections_keep_markdown_rows_lists_and_conflicting_code_delimiters_safe(
         },
     )
     assert r"## Section \[name\]&#10;# own text \#" in output
-    assert "| **bold** \\| value<br>next row |" in output
+    assert "| **bold** \\| value<br>next row; left\\|right |" in output
     assert "- First\n  continued\n- Second" in output
     assert "```````typescript\nconst value = `text`;\n``````\n<kept>\n```````" in output
     assert "~~~~~~~lang`info\ncaller text\n~~~~~~\nkept\n~~~~~~~" in output

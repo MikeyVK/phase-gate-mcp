@@ -19,7 +19,12 @@
 {% for item in items %}#{{ item | int }}{% if not loop.last %}, {% endif %}{% endfor %}
 {%- endmacro %}
 {%- macro table_cell(text) -%}
-{{ text | replace('|', '\\|') | replace('\r\n', '\n') | replace('\r', '\n') | replace('\n', '<br>') }}
+{%- set state = namespace(backslashes=0) -%}
+{%- for character in text | replace('\r\n', '\n') | replace('\r', '\n') | replace('\n', '<br>') -%}
+{%- if character == '|' and state.backslashes % 2 == 0 -%}{{ '\\' }}{%- endif -%}
+{{ character }}
+{%- set state.backslashes = state.backslashes + 1 if character == '\\' else 0 -%}
+{%- endfor -%}
 {%- endmacro %}
 {%- macro delimiter(text, minimum=1, character='`') -%}
 {%- set state = namespace(run=0, longest=0) -%}
