@@ -235,7 +235,15 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/shared/definitions/python.schema.json`
+- `.pgmcp/template_suite/python_class/context.schema.json`
+
+Independent QA identified one shared InstanceParameter specialization to preserve the
+existing self-name restriction without duplicating it across instance-method consumers.
+Parameter and Signature remain unchanged; Generic keeps its local dunder exclusion.
+The standing proportional QA-correction rule authorizes these two existing paths.
+R-CY035 is `77f2e0f522c7ca7ca8e9fa8e73d1ae754ba8901e`; both files were clean and the
+cycle-owned inverse diff is the recovery route. Existing class rejection evidence is reused.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
