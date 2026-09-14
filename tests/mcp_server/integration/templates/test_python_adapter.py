@@ -89,8 +89,16 @@ def test_explicit_injection_bodies_bases_and_imports_are_preserved(
         "module_description": "Separate module prose",
         "imports": {
             "stdlib": [{"kind": "import", "module": "collections", "alias": "col"}],
-            "third_party": [{"kind": "from", "module": "absent_external", "names": [{"name": "Client"}]}],
-            "project": [{"kind": "from", "module": "absent_project", "names": [{"name": "Boundary", "alias": "Base"}]}],
+            "third_party": [
+                {"kind": "from", "module": "absent_external", "names": [{"name": "Client"}]}
+            ],
+            "project": [
+                {
+                    "kind": "from",
+                    "module": "absent_project",
+                    "names": [{"name": "Boundary", "alias": "Base"}],
+                }
+            ],
         },
         "bases": ["Base"],
         "constructor": {
@@ -121,28 +129,41 @@ def test_explicit_injection_bodies_bases_and_imports_are_preserved(
     assert ast.get_docstring(tree) == context["module_description"]
     assert ast.get_docstring(cls) == context["description"]
     assert [ast.unparse(base) for base in cls.bases] == ["Base"]
-    assert [ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))] == [
+    assert [
+        ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))
+    ] == [
         "import collections as col",
         "from absent_external import Client",
         "from absent_project import Boundary as Base",
     ]
     assert len(tree.body) == 5
-    methods = [item for item in cls.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    methods = [
+        item for item in cls.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
     assert [item.name for item in methods] == ["__init__", "__call__", "fetch"]
     assert isinstance(methods[0], ast.FunctionDef) and isinstance(methods[1], ast.FunctionDef)
     assert isinstance(methods[2], ast.AsyncFunctionDef)
     assert [[arg.arg for arg in item.args.args] for item in methods] == [
-        ["self", "client", "enabled"], ["self", "value"], ["self", "label"]
+        ["self", "client", "enabled"],
+        ["self", "value"],
+        ["self", "label"],
     ]
     assert [[ast.literal_eval(value) for value in item.args.defaults] for item in methods] == [
-        [False], [0], [None]
+        [False],
+        [0],
+        [None],
     ]
     assert [ast.unparse(item.returns) for item in methods] == ["None", "str", "str"]
-    for item, body, has_doc in zip(methods, [constructor_body, sync_body, async_body], [False, True, True], strict=True):
+    for item, body, has_doc in zip(
+        methods, [constructor_body, sync_body, async_body], [False, True, True], strict=True
+    ):
         assert not item.decorator_list
         actual = ast.Module(body=item.body[1:] if has_doc else item.body, type_ignores=[])
         assert ast.dump(actual) == ast.dump(ast.parse(body))
-    assert [ast.get_docstring(item) for item in methods[1:]] == ["Translate explicit input", "Fetch result"]
+    assert [ast.get_docstring(item) for item in methods[1:]] == [
+        "Translate explicit input",
+        "Fetch result",
+    ]
     code, response = invoke(syntax_package, tmp_path, request(tmp_path / "explicit.py", output))
     assert code == 0 and response["decision"] == {"status": "passed"}
     assert not (tmp_path / "explicit.py").exists()
@@ -151,7 +172,8 @@ def test_explicit_injection_bodies_bases_and_imports_are_preserved(
 def test_logging_is_explicit_and_joins_caller_imports(
     delivered_adapter: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path
 ) -> None:
-    for record in ({}, {"name": 'caller."logger"'}):
+    records: tuple[dict[str, JsonValue], ...] = ({}, {"name": 'caller."logger"'})
+    for record in records:
         context: dict[str, JsonValue] = {
             "class_name": "LoggedAdapter",
             "description": "Opt-in logger",
@@ -186,8 +208,12 @@ def test_context_rejects_hidden_fields_self_and_conflicting_constructor(
 ) -> None:
     base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit adapter"}
     method: dict[str, JsonValue] = {
-        "name": "read", "description": "Read", "async": False,
-        "parameters": [], "return_type": "None", "body": "return None",
+        "name": "read",
+        "description": "Read",
+        "async": False,
+        "parameters": [],
+        "return_type": "None",
+        "body": "return None",
     }
     constructor: dict[str, JsonValue] = {"parameters": [], "body": "self.client = None"}
     invalid: list[dict[str, JsonValue]] = [
@@ -205,23 +231,33 @@ def test_context_rejects_hidden_fields_self_and_conflicting_constructor(
     ]
     for spelling in ("self", "ｓｅｌｆ"):
         parameter = {"name": spelling, "type": "object"}
-        invalid.extend([
-            {**base, "methods": [{**method, "parameters": [parameter]}]},
-            {**base, "constructor": {**constructor, "parameters": [parameter]}},
-        ])
+        invalid.extend(
+            [
+                {**base, "methods": [{**method, "parameters": [parameter]}]},
+                {**base, "constructor": {**constructor, "parameters": [parameter]}},
+            ]
+        )
     for spelling in ("__init__", "_＿ｉｎｉｔ__"):
         observed = ast.parse(f"def {spelling}(self): pass").body[0]
         assert isinstance(observed, ast.FunctionDef) and observed.name == "__init__"
-        invalid.append({**base, "constructor": constructor, "methods": [{**method, "name": spelling}]})
+        invalid.append(
+            {**base, "constructor": constructor, "methods": [{**method, "name": spelling}]}
+        )
     for context in invalid:
         with pytest.raises(ContextError):
-            delivered_adapter.renderer.render("python_adapter", context, delivered_adapter.provenance)
+            delivered_adapter.renderer.render(
+                "python_adapter", context, delivered_adapter.provenance
+            )
     for content in (
         {**base, "constructor": constructor},
         {**base, "methods": [{**method, "name": "__init__"}]},
         {**base, "methods": [], "bases": [], "imports": {}},
     ):
-        parse_adapter(delivered_adapter.renderer.render("python_adapter", content, delivered_adapter.provenance))
+        parse_adapter(
+            delivered_adapter.renderer.render(
+                "python_adapter", content, delivered_adapter.provenance
+            )
+        )
 
 
 def test_invalid_native_body_is_rejected_by_the_syntax_check(

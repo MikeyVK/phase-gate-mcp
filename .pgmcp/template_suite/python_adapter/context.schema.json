@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable Python adapter content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "bases": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/TypeText"
+      }
+    },
+    "constructor": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/python.schema.json#/$defs/Constructor"
+        },
+        {
+          "properties": {
+            "parameters": {
+              "items": {
+                "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/ConcreteMethod"
+          },
+          {
+            "properties": {
+              "parameters": {
+                "items": {
+                  "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "logging": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Logging"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "constructor"
+        ]
+      },
+      "then": {
+        "properties": {
+          "methods": {
+            "items": {
+              "properties": {
+                "name": {
+                  "$comment": "A supplied constructor is the sole native __init__ declaration, including Unicode 15.1 NFKC-equivalent spellings.",
+                  "not": {
+                    "pattern": "^[_︳︴﹍﹎﹏＿][_︳︴﹍﹎﹏＿][iᵢⁱℹⅈⅰｉ𝐢𝑖𝒊𝒾𝓲𝔦𝕚𝖎𝗂𝗶𝘪𝙞𝚒][nⁿₙｎ𝐧𝑛𝒏𝓃𝓷𝔫𝕟𝖓𝗇𝗻𝘯𝙣𝚗][iᵢⁱℹⅈⅰｉ𝐢𝑖𝒊𝒾𝓲𝔦𝕚𝖎𝗂𝗶𝘪𝙞𝚒][tᵗₜｔ𝐭𝑡𝒕𝓉𝓽𝔱𝕥𝖙𝗍𝘁𝘵𝙩𝚝][_︳︴﹍﹎﹏＿][_︳︴﹍﹎﹏＿]$(?![\\s\\S])"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
