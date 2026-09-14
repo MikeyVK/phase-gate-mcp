@@ -15,9 +15,11 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from os.path import lexists
 from pathlib import Path, PureWindowsPath
+from typing import Literal
 
 from mcp_server.core.interfaces.execution import ResolvedScopePath
 
@@ -99,6 +101,20 @@ def normalize_workspace_relative_path(value: str) -> str:
     return "/".join(parts) or "."
 
 
+class ArtifactTargetError(ValueError):
+    """A factual location failure with no inference required from diagnostic text."""
+
+    def __init__(
+        self,
+        reason: Literal["outside_workspace", "force_required", "not_file", "unresolvable"],
+        path: str,
+        message: str,
+    ) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.path = path
+
+
 class FileArtifactTargetPaths:
     """Observe contained creation targets while retaining an existing leaf entry."""
 
@@ -115,9 +131,19 @@ class FileArtifactTargetPaths:
 
     def resolve(self, relative: str) -> ResolvedScopePath:
         normalized = normalize_workspace_relative_path(relative)
+        if os.name == "nt" and any(
+            PureWindowsPath(part).is_reserved() or ":" in part or part.endswith((".", " "))
+            for part in Path(normalized).parts
+        ):
+            raise ArtifactTargetError("unresolvable", normalized, "artifact_target_name_reserved")
         candidate = self._workspace_root / normalized
-        parent = candidate.parent.resolve()
+        try:
+            parent = candidate.parent.resolve()
+        except (OSError, RuntimeError) as exc:
+            raise ArtifactTargetError("unresolvable", normalized, str(exc)) from exc
         if not parent.is_relative_to(self._workspace_root):
-            raise ValueError("artifact_target_outside_workspace")
+            raise ArtifactTargetError(
+                "outside_workspace", normalized, "artifact_target_outside_workspace"
+            )
         target = parent / candidate.name
         return ResolvedScopePath(path=target, exists=lexists(target))

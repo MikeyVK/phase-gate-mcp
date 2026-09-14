@@ -15,7 +15,11 @@ from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
-from mcp_server.utils.path_resolver import FileArtifactTargetPaths, resolve_temporary_paths
+from mcp_server.utils.path_resolver import (
+    ArtifactTargetError,
+    FileArtifactTargetPaths,
+    resolve_temporary_paths,
+)
 
 
 @pytest.fixture
@@ -77,13 +81,15 @@ def test_force_changes_only_location_permission(resolver: ArtifactTargetResolver
         ("design", "elsewhere"),
         ("unmapped", "docs"),
     ):
-        with pytest.raises(ValueError, match="force_target_required"):
+        with pytest.raises(ArtifactTargetError, match="force_target_required") as caught:
             resolver.resolve(
                 template_id=template_id,
                 persistence="workspace",
                 file_name="result.md",
                 target_path=target_path,
             )
+        assert caught.value.reason == "force_required"
+        assert caught.value.path == target_path
     with pytest.raises(ValueError, match="force_target_requires_target_path"):
         resolver.resolve(
             template_id="unmapped",
@@ -120,6 +126,19 @@ def test_filename_is_a_basename_and_collision_never_overwrites(
             target_path="docs",
             force_target=True,
         )
+    if os.name == "nt":
+        for filename in ("result.md:stream", "result.md.", "result.md "):
+            with pytest.raises(
+                ArtifactTargetError, match="artifact_target_name_reserved"
+            ) as caught:
+                resolver.resolve(
+                    template_id="design",
+                    persistence="workspace",
+                    file_name=filename,
+                    target_path="docs",
+                    force_target=True,
+                )
+            assert caught.value.reason == "unresolvable"
     assert existing.read_bytes() == original
 
 
@@ -201,7 +220,9 @@ def test_dangling_entry_and_escaping_parent_are_rejected(
         assert target.lstat().st_ino == original_entry.st_ino
         assert not referent.exists()
         create_directory_link(escape, tmp_path.parent)
-        with pytest.raises(ValueError, match="artifact_target_outside_workspace"):
+        with pytest.raises(
+            ArtifactTargetError, match="artifact_target_outside_workspace"
+        ) as caught:
             resolver.resolve(
                 template_id="design",
                 persistence="workspace",
@@ -209,6 +230,7 @@ def test_dangling_entry_and_escaping_parent_are_rejected(
                 target_path="docs/escape",
                 force_target=True,
             )
+        assert caught.value.reason == "outside_workspace"
     finally:
         for link in (target, escape):
             if os.path.lexists(link):

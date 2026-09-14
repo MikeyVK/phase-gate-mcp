@@ -8,7 +8,7 @@ from typing import Literal
 
 from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
 from mcp_server.core.interfaces.execution import ScopePaths
-from mcp_server.utils.path_resolver import normalize_workspace_relative_path
+from mcp_server.utils.path_resolver import ArtifactTargetError, normalize_workspace_relative_path
 
 
 @dataclass(frozen=True)
@@ -71,7 +71,7 @@ class ArtifactTargetResolver:
             )
             allowed = any(PurePosixPath(directory).is_relative_to(root) for root in allowed_roots)
             if not allowed and not force_target:
-                raise ValueError("force_target_required")
+                raise ArtifactTargetError("force_required", directory, "force_target_required")
 
         output_path = (PurePosixPath(directory) / file_name).as_posix()
         observed = self._paths.resolve(output_path)
