@@ -293,7 +293,8 @@ def test_explicit_targets_are_canonical_language_agnostic_and_directory_covering
 
 
 def test_missing_escape_and_equivalent_workspace_targets_are_rejected(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     planner = selector(tmp_path)
     for target, scope_reason in (
@@ -311,7 +312,6 @@ def test_missing_escape_and_equivalent_workspace_targets_are_rejected(
     for target in ("../outside", "/absolute", r"C:\outside", r"nested\..\outside"):
         with pytest.raises(ValidationError):
             CheckSelectionRequest(scope="targets", targets=(target,))
-
 
     def unresolved(_path: Path) -> Path:
         raise RuntimeError("native symbolic-link loop")

@@ -238,7 +238,7 @@ class FileScopePaths:
             exists = candidate.exists()
         except CheckScopeError:
             raise
-        except OSError as exc:
+        except (OSError, RuntimeError) as exc:
             raise CheckScopeError(
                 relative,
                 "unresolvable",
