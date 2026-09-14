@@ -292,7 +292,9 @@ def test_explicit_targets_are_canonical_language_agnostic_and_directory_covering
     assert workspace.calls[0].request.targets == (str(tmp_path),)
 
 
-def test_missing_escape_and_equivalent_workspace_targets_are_rejected(tmp_path: Path) -> None:
+def test_missing_escape_and_equivalent_workspace_targets_are_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     planner = selector(tmp_path)
     for target, scope_reason in (
         ("missing.md", "missing"),
@@ -309,6 +311,16 @@ def test_missing_escape_and_equivalent_workspace_targets_are_rejected(tmp_path: 
     for target in ("../outside", "/absolute", r"C:\outside", r"nested\..\outside"):
         with pytest.raises(ValidationError):
             CheckSelectionRequest(scope="targets", targets=(target,))
+
+
+    def unresolved(_path: Path) -> Path:
+        raise RuntimeError("native symbolic-link loop")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "resolve", unresolved)
+        with pytest.raises(CheckScopeError) as loop:
+            planner.select(CheckSelectionRequest(scope="targets", targets=("loop.md",)))
+        assert loop.value.target == "loop.md" and loop.value.scope_reason == "unresolvable"
 
 
 def test_real_directory_link_cannot_escape_workspace(tmp_path: Path) -> None:
