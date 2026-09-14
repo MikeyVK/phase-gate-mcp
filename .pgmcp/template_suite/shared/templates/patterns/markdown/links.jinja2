@@ -1,0 +1,20 @@
+{# Position-specific Markdown escaping preserves caller identity without resolving targets. #}
+{%- macro label(text) -%}
+{{ text | replace('&', '&amp;') | replace('\\', '\\\\') | replace('[', '\\[') | replace(']', '\\]') | replace('*', '\\*') | replace('_', '\\_') | replace('`', '\\`') | replace('!', '\\!') | replace('~', '\\~') | replace('<', '&lt;') | replace('>', '&gt;') | replace('|', '&#124;') | replace('\r', '&#13;') | replace('\n', '&#10;') | replace('\t', '&#9;') }}
+{%- endmacro %}
+{%- macro target(text) -%}
+{{ text | replace('&', '&amp;') | replace('\\', '\\\\') | replace('<', '\\<') | replace('>', '\\>') | replace('|', '&#124;') | replace('\r', '&#13;') | replace('\n', '&#10;') | replace('\t', '&#9;') }}
+{%- endmacro %}
+{%- macro inline(link) -%}
+[{{ label(link.label) }}](<{{ target(link.target) }}>)
+{%- endmacro %}
+{%- macro inline_list(items) -%}
+{% for item in items %}- {{ inline(item) }}{% if not loop.last %}
+{% endif %}{% endfor %}
+{%- endmacro %}
+{%- macro reference_list(items, namespace) -%}
+{% for item in items %}- [{{ label(item.label) }}][{{ namespace }}-{{ loop.index }}]
+{% endfor %}{% if items %}
+{% for item in items %}[{{ namespace }}-{{ loop.index }}]: <{{ target(item.target) }}>{% if not loop.last %}
+{% endif %}{% endfor %}{% endif %}
+{%- endmacro %}

@@ -1,0 +1,28 @@
+{% extends "shared/templates/bases/tier1_document.jinja2" %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% block comment_start %}<!--{% endblock %}
+{% block comment_end %} -->{% endblock %}
+{% block document_heading %}{{ sections.heading(content.title, 1) }}{% endblock %}
+{% block document_metadata %}
+{% if content.status is defined %}**Status:** {{ links.label(content.status) }}
+{% endif %}{% if content.version is defined %}**Version:** {{ links.label(content.version) }}
+{% endif %}{% if content.last_updated is defined %}**Last Updated:** {{ links.label(content.last_updated) }}
+{% endif %}{% endblock %}
+{% block document_before %}
+{% if content.purpose is defined %}{{ sections.prose('Purpose', content.purpose) }}
+
+{% endif %}{% if content.scope_in is defined %}{{ sections.prose('Scope In', content.scope_in) }}
+
+{% endif %}{% if content.scope_out is defined %}{{ sections.prose('Scope Out', content.scope_out) }}
+
+{% endif %}{% if content.prerequisites is defined %}{{ sections.heading('Prerequisites') }}
+
+{{ sections.bullets(content.prerequisites) }}
+
+{% endif %}{% endblock %}
+{% block document_after %}
+{% if content.related_docs is defined %}{{ sections.heading('Related Documents') }}
+
+{{ links.inline_list(content.related_docs) }}
+{% endif %}{% endblock %}

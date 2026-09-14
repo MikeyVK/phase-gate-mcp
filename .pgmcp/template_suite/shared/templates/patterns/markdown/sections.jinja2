@@ -1,0 +1,46 @@
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+{%- macro heading(text, level=2) -%}
+{{ '#' * level }}{{ (' ' ~ links.label(text)) | replace(' #', ' \\#') }}
+{%- endmacro %}
+{%- macro prose(title, text) -%}
+{{ heading(title) }}
+
+{{ text }}
+{%- endmacro %}
+{%- macro bullets(items) -%}
+{% for item in items %}- {{ item | indent(2) }}{% if not loop.last %}
+{% endif %}{% endfor %}
+{%- endmacro %}
+{%- macro checklist(items) -%}
+{% for item in items %}- [{% if item.checked %}x{% else %} {% endif %}] {{ item.text | indent(6) }}{% if not loop.last %}
+{% endif %}{% endfor %}
+{%- endmacro %}
+{%- macro issue_refs(items) -%}
+{% for item in items %}#{{ item | int }}{% if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro %}
+{%- macro table_cell(text) -%}
+{{ text | replace('|', '\\|') | replace('\r\n', '\n') | replace('\r', '\n') | replace('\n', '<br>') }}
+{%- endmacro %}
+{%- macro delimiter(text, minimum=1, character='`') -%}
+{%- set state = namespace(run=0, longest=0) -%}
+{%- for current in text -%}
+{%- if current == character -%}
+{%- set state.run = state.run + 1 -%}
+{%- set state.longest = [state.longest, state.run] | max -%}
+{%- else -%}{%- set state.run = 0 -%}{%- endif -%}
+{%- endfor -%}
+{{ character * ([state.longest + 1, minimum] | max) }}
+{%- endmacro %}
+{%- macro code_fence(code, language) -%}
+{%- set character = '~' if '`' in language else '`' -%}
+{%- set fence = delimiter(code, 3, character) -%}
+{{ fence }}{{ language }}
+{{ code }}
+{{ fence }}
+{%- endmacro %}
+{%- macro inline_code(code) -%}
+{%- set text = code | replace('\r\n', '\n') | replace('\r', '\n') | replace('\n', ' ') -%}
+{%- set fence = delimiter(text) -%}
+{%- set padded = text | trim and (text.startswith('`') or text.endswith('`') or text.startswith(' ') or text.endswith(' ')) -%}
+{{ fence }}{% if padded %} {% endif %}{{ text }}{% if padded %} {% endif %}{{ fence }}
+{%- endmacro %}
