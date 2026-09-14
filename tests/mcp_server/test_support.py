@@ -7,19 +7,27 @@
 from __future__ import annotations
 
 import json
+import os
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
+
+from jinja2 import Environment
 
 from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
 )
 from mcp_server.config.settings import Settings as RealSettings
+from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.interfaces import GateReport
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
+from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
@@ -42,6 +50,11 @@ from mcp_server.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
+from mcp_server.services.template_contract_loader import TemplateContractLoader
+from mcp_server.services.template_graph import TemplateGraphResolver
+from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_suite
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
@@ -579,3 +592,56 @@ def assert_itool_result(
         assert text_contains in text_content
 
     return text_content
+
+
+def make_template_suite_admission(
+    config_root: Path,
+    *,
+    official_adapter_root: Path,
+    workspace_adapter_root: Path,
+) -> Callable[[Path], SuiteSnapshot]:
+    """Bind real admission readers to explicit roots without executing native tools."""
+    validator = ConfigValidator()
+    environment = Environment()
+    provenance = freeze_json(ArtifactIdentity.model_json_schema())
+    assert isinstance(provenance, FrozenJsonObject)
+
+    def create_config(config_path: Path, suite_path: Path) -> ConfigLoader:
+        contracts = TemplateContractLoader(suite_path)
+        return ConfigLoader(
+            config_path, suite_path, context_schema_reader=contracts.load_context_schema
+        )
+
+    def create_catalog(
+        suite_path: Path, config: ConfigLoader, profiles: frozenset[str]
+    ) -> TemplateCatalogLoader:
+        return TemplateCatalogLoader(
+            suite_path,
+            read_manifest=config.load_template_manifest,
+            read_version=config.load_template_version,
+            read_policy=config.load_template_policy,
+            read_schema=config.load_template_context_schema,
+            validate_policy=lambda policy: validator.validate_template_policy(policy, profiles),
+            resolve_graph=TemplateGraphResolver(suite_path, environment.parse).resolve,
+            validate_inputs=TemplateInputValidator(environment.parse, provenance).validate,
+        )
+
+    def create_adapters(config: ConfigLoader) -> AdapterCatalogLoader:
+        return AdapterCatalogLoader(
+            official_adapter_root,
+            workspace_adapter_root,
+            config.load_adapter_trust(),
+            read_manifest=config.load_adapter_manifest,
+            files=FileAdapterPackageReader(),
+            resolve_program=lambda _: None,
+            windows=os.name == "nt",
+        )
+
+    return partial(
+        admit_template_suite,
+        effective_config_root=config_root,
+        create_config=create_config,
+        create_catalog=create_catalog,
+        create_adapters=create_adapters,
+        validator=validator,
+    )

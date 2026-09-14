@@ -10,24 +10,16 @@ from pathlib import Path
 from typing import Literal
 
 import pytest
-from jinja2 import Environment
 
-from mcp_server.config.loader import ConfigLoader
-from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import MCPError
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
-from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
-from mcp_server.services.artifact_identity import ArtifactIdentity
-from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_components import ComponentSelection, select_components
-from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
-from mcp_server.services.template_graph import TemplateGraphResolver
+from mcp_server.services.template_contract_loader import DRAFT_2020_12
 from mcp_server.services.template_proposal import (
     SuiteSnapshot,
     TemplateProposalService,
-    admit_template_suite,
 )
 from tests.mcp_server.fixtures.suite_roots import write_package_tree
+from tests.mcp_server.test_support import make_template_suite_admission
 
 
 def _package_files(
@@ -99,50 +91,11 @@ def _write_config(
 
 
 def _admit_suite(root: Path, config_root: Path) -> SuiteSnapshot:
-    validator = ConfigValidator()
-    environment = Environment()
-    provenance = freeze_json(ArtifactIdentity.model_json_schema())
-    assert isinstance(provenance, FrozenJsonObject)
-
-    def create_config(config_path: Path, suite_path: Path) -> ConfigLoader:
-        contracts = TemplateContractLoader(suite_path)
-        return ConfigLoader(
-            config_path, suite_path, context_schema_reader=contracts.load_context_schema
-        )
-
-    def create_catalog(
-        suite_path: Path, config: ConfigLoader, profiles: frozenset[str]
-    ) -> TemplateCatalogLoader:
-        return TemplateCatalogLoader(
-            suite_path,
-            read_manifest=config.load_template_manifest,
-            read_version=config.load_template_version,
-            read_policy=config.load_template_policy,
-            read_schema=config.load_template_context_schema,
-            validate_policy=lambda policy: validator.validate_template_policy(policy, profiles),
-            resolve_graph=TemplateGraphResolver(suite_path, environment.parse).resolve,
-            validate_inputs=TemplateInputValidator(environment.parse, provenance).validate,
-        )
-
-    def create_adapters(config: ConfigLoader) -> AdapterCatalogLoader:
-        return AdapterCatalogLoader(
-            config_root.parent / "official-adapters",
-            config_root.parent / "workspace-adapters",
-            config.load_adapter_trust(),
-            read_manifest=config.load_adapter_manifest,
-            files=FileAdapterPackageReader(),
-            resolve_program=lambda _: None,
-            windows=os.name == "nt",
-        )
-
-    return admit_template_suite(
-        root,
+    return make_template_suite_admission(
         config_root,
-        create_config=create_config,
-        create_catalog=create_catalog,
-        create_adapters=create_adapters,
-        validator=validator,
-    )
+        official_adapter_root=config_root.parent / "official-adapters",
+        workspace_adapter_root=config_root.parent / "workspace-adapters",
+    )(root)
 
 
 def _service(
