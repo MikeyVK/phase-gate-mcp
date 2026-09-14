@@ -17,7 +17,6 @@ from mcp.types import (
     TextContent,
     TextResourceContents,
 )
-from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
 from pydantic import BaseModel, JsonValue
 
 from mcp_server.bootstrap import SupportedToolContract
@@ -37,6 +36,7 @@ from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.server import MCPServer
 from mcp_server.services.artifact_identity import ArtifactIdentity
 from mcp_server.state.response_cache import ResponseCacheManager
+from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.integration.test_scaffold_operation_v3 import operation as build_operation
@@ -87,8 +87,14 @@ def compose(
     data = config.model_dump(mode="json", by_alias=True)
     data["tools"] = {
         "scaffold_artifact": {
-            "template_success": "{output_path}: written={written}; validation={validation_status}",
-            "template_failure": "{output_path}: written={written}; error={error_code}",
+            "template_success": (
+                "{output_path}: written={written}; policy={validation_policy}; "
+                "validation={validation_status}; profile={profile_id}"
+            ),
+            "template_failure": (
+                "{output_path}: written={written}; policy={validation_policy}; "
+                "validation={validation_status}; profile={profile_id}; error={error_code}"
+            ),
             "collections": [
                 {
                     "field": "checks",
@@ -96,13 +102,32 @@ def compose(
                     "item_template": "{check_id}: {status}; args_source={args_source}",
                 }
             ],
-            "enum_cases": {},
+            "enum_cases": [
+                {
+                    "field": "error_code",
+                    "cases": {
+                        "context_invalid": "The selected context was rejected.",
+                        "target_invalid": "The requested target was rejected.",
+                        "target_exists": "The output already exists.",
+                        "render_failed": "Rendering failed.",
+                        "preparation_failed": "Mutation preparation failed.",
+                        "validation_blocked": "Output checks prevented persistence.",
+                        "persistence_failed": "The output could not be saved.",
+                        "adapter_request_rejected": "An adapter rejected the check request.",
+                        "termination_unconfirmed": "Process termination was not confirmed.",
+                        "operation_interrupted": "The operation was interrupted.",
+                        "original_unreadable": "The original file could not be read.",
+                        "original_changed": "The original file changed.",
+                        "original_missing": "The original file is missing.",
+                        "edit_invalid": "The requested edit could not be constructed.",
+                    },
+                }
+            ],
         },
         "scaffold_schema": {
             "template_success": "{template_id}: {purpose}",
         },
     }
-    data["tools"]["scaffold_artifact"].pop("enum_cases")
     text_presenter = TextPresenter(config_data=data)
     validate_presentation_alignment(
         text_presenter,
@@ -187,6 +212,11 @@ async def test_public_scaffold_preserves_validation_and_actual_persistence(
     assert result["success"] is result["written"] is written
     assert result["validation_status"] == status
     assert result["validation_policy"] == policy
+    summary = response.content[0]
+    assert isinstance(summary, TextContent)
+    assert policy in summary.text and status in summary.text
+    profile = result["profile_id"]
+    assert isinstance(profile, str) and profile in summary.text
     assert result["output_path"] == "outputs/Exact name.v2.md"
     assert (tmp_path / "outputs/Exact name.v2.md").is_file() is written
     assert result["error_code"] == (None if written else "validation_blocked")
