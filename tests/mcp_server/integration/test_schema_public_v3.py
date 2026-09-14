@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -16,27 +16,31 @@ from mcp.types import (
     EmbeddedResource,
     ListToolsRequest,
     ListToolsResult,
+    TextContent,
     TextResourceContents,
 )
-from mcp_server.tools.template_schema_tool import ScaffoldSchemaOutput, ScaffoldSchemaTool
 from pydantic import BaseModel, JsonValue
 
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
 from mcp_server.core.decorators.input_validation_decorator import InputValidationDecorator
 from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHandlerDecorator
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.presenters.response_presenter import ResponsePresenter
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
 from mcp_server.server import MCPServer
 from mcp_server.services.artifact_identity import ArtifactIdentity
 from mcp_server.state.response_cache import ResponseCacheManager
+from mcp_server.tools.project_tools import GetProjectPlanInput
+from mcp_server.tools.template_schema_tool import ScaffoldSchemaOutput, ScaffoldSchemaTool
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 
 
@@ -72,8 +76,31 @@ def compose(root: Path, delivered: DeliveredTemplate) -> Composition:
     )
     cache = ResponseCacheManager(max_size=1)
     resource = CachedResponseResource(cache)
-    text = MagicMock(spec=ITextPresenter)
-    text.present_text.return_value = "Schema query result"
+    text = MagicMock(
+        spec=ITextPresenter,
+        wraps=TextPresenter(
+            config_data={
+                "global": {
+                    "formatting": {
+                        "inline_sequence_omission_template": " ({omitted_count} omitted)",
+                        "collection_omission_template": "{omitted_count} omitted",
+                        "truncation_notice": "Truncated",
+                        "cache_unavailable_truncation_notice": "Truncated without cache",
+                    },
+                    "next_instruction_texts": {
+                        "uri_reference": "pgmcp://cache/runs/{run_id}",
+                    },
+                },
+                "tools": {
+                    "scaffold_schema": {
+                        "template_success": (
+                            "{template_id}: {purpose} ({package_version}, {package_fingerprint})"
+                        ),
+                    }
+                },
+            }
+        ),
+    )
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(root))),
         tools=[wrapped],
@@ -96,7 +123,7 @@ async def listed_schema(composition: Composition) -> dict[str, JsonValue]:
 async def invoke(
     composition: Composition,
     arguments: dict[str, JsonValue],
-) -> tuple[CallToolResult, EmbeddedResource, CachePublication]:
+) -> tuple[CallToolResult, EmbeddedResource, str]:
     response = await composition.server.server.request_handlers[CallToolRequest](
         CallToolRequest(params=CallToolRequestParams(name="scaffold_schema", arguments=arguments))
     )
@@ -107,7 +134,7 @@ async def invoke(
     publication = composition.text.present_text.call_args.kwargs["cache_pub"]
     assert isinstance(publication, CachePublication)
     assert publication.run_id is not None
-    return response.root, resource, publication
+    return response.root, resource, publication.run_id
 
 
 def resource_schema(resource: EmbeddedResource) -> object:
@@ -129,22 +156,27 @@ async def test_registered_schema_query_transfers_the_complete_catalog_view(
         == composition.core.input_schema
         == thaw_json(composition.core.input_contract.schema)
     )
-    response, embedded, publication = await invoke(composition, raw)
+    response, embedded, run_id = await invoke(composition, raw)
     assert response.isError is False
     assert embedded.resource.mimeType == "application/schema+json"
     assert str(embedded.resource.uri) == "schema://template/issue/context"
     selected = delivered.catalog.get("issue")
     assert resource_schema(embedded) == thaw_json(selected.schema)
-    cached = json.loads(await composition.resource.read(f"pgmcp://cache/runs/{publication.run_id}"))
+    cached = json.loads(await composition.resource.read(f"pgmcp://cache/runs/{run_id}"))
     assert cached["schema_data"] == resource_schema(embedded)
     assert cached["purpose"] == selected.manifest.purpose
     assert cached["template_id"] == selected.manifest.template_id
     assert cached["package_version"] == selected.version
     identity = ArtifactIdentity.model_validate(thaw_json(delivered.provenance))
     assert cached["package_fingerprint"] == identity.pf
+    Draft202012Validator(ScaffoldSchemaOutput.model_json_schema()).validate(cached)
+    summary = response.content[0]
+    assert isinstance(summary, TextContent)
+    assert selected.manifest.purpose in summary.text
+    assert f"pgmcp://cache/runs/{run_id}" in summary.text
     assert "attachments" not in cached
     assert "sf" not in cached
-    operation = composition.cache.get(publication.run_id, ScaffoldSchemaOutput)
+    operation = composition.cache.get(run_id, ScaffoldSchemaOutput)
     assert operation is not None
     assert operation.schema_data is selected.schema
     direct = await composition.core.execute(
@@ -178,12 +210,12 @@ async def test_invalid_envelope_uses_the_exposed_whole_tool_schema(
     composition = compose(tmp_path, delivered)
     exposed = await listed_schema(composition)
     assert not Draft202012Validator(exposed).is_valid(raw)
-    response, embedded, publication = await invoke(composition, raw)
+    response, embedded, run_id = await invoke(composition, raw)
     assert response.isError is True
     assert str(embedded.resource.uri) == "schema://validation"
     assert resource_schema(embedded) == exposed
     composition.runner.run.assert_not_called()
-    operation = composition.cache.get(publication.run_id, ValidationErrorOutput)
+    operation = composition.cache.get(run_id, ValidationErrorOutput)
     assert operation is not None
     assert operation.params == raw
 
@@ -214,7 +246,33 @@ async def test_new_composition_changes_current_schema_without_mutating_old_snaps
     assert resource_schema(old_resource) == thaw_json(delivered.catalog.get("issue").schema)
     assert resource_schema(current_resource) == thaw_json(restarted.catalog.get("issue").schema)
     assert resource_schema(old_resource) != resource_schema(current_resource)
-    assert second.cache.get(old_run.run_id, BaseModel) is None
+    assert second.cache.get(old_run, BaseModel) is None
     await invoke(first, raw)  # bounded cache evicts the first run
-    assert first.cache.get(old_run.run_id, BaseModel) is None
+    assert first.cache.get(old_run, BaseModel) is None
     assert resource_schema(old_resource) == thaw_json(delivered.catalog.get("issue").schema)
+
+
+@pytest.mark.asyncio
+async def test_registered_legacy_input_keeps_its_exposed_type_boundary(tmp_path: Path) -> None:
+    raw = {"issue_number": "460"}
+    assert GetProjectPlanInput.model_validate(raw).issue_number == 460
+    core = MagicMock(spec=ICoreTool)
+    core.name = "get_project_plan"
+    core.description = "Read an existing project plan"
+    core.args_model = GetProjectPlanInput
+    core.execute = AsyncMock()
+    wrapped = ToolErrorHandlerDecorator(InputValidationDecorator(core))
+    direct = await wrapped.execute(raw, NoteContext())
+    assert isinstance(direct.operation, ValidationErrorOutput)
+    core.execute.assert_not_called()
+    server = MCPServer(
+        settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[],
+    )
+    response = await server.server.request_handlers[CallToolRequest](
+        CallToolRequest(params=CallToolRequestParams(name=core.name, arguments=raw))
+    )
+    assert isinstance(response.root, CallToolResult)
+    assert response.root.isError is True
+    core.execute.assert_not_called()
