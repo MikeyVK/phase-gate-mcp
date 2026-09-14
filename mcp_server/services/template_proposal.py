@@ -306,10 +306,10 @@ def _invoke_admission(
     config_root: Path,
 ) -> SuiteSnapshot:
     try:
-        parameters = inspect.signature(admit).parameters
+        single_argument = len(inspect.signature(admit).parameters) == 1
     except (TypeError, ValueError):
-        parameters = {}
-    if len(parameters) == 1:
+        single_argument = False
+    if single_argument:
         return admit(root)  # type: ignore[call-arg]
     return admit(root, config_root)
 
@@ -402,7 +402,11 @@ def _selected_sources(
         if location is None:
             raise MCPError("template_selected_component_missing", code="ERR_CONFIG")
         prefix = f"{location.directory}/"
-        result.extend(source for source in snapshot.sources if source.path == location.directory or source.path.startswith(prefix))
+        result.extend(
+            source
+            for source in snapshot.sources
+            if source.path == location.directory or source.path.startswith(prefix)
+        )
     if not result:
         raise MCPError("template_proposal_empty", code="ERR_CONFIG")
     return tuple(sorted(result, key=lambda item: item.path))
