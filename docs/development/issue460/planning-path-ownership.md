@@ -574,7 +574,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/unit/execution/test_fix_service.py` | [CY030](planning-execution.md#cy030) | CY030 |
 | `.pgmcp/config/fixes.yaml` | [CY030](planning-execution.md#cy030) | CY030, CY072 |
 | `tests/mcp_server/integration/templates/test_shared_python.py` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
-| `.pgmcp/template_suite/shared/definitions/python.schema.json` | [CY031](planning-artifacts-mutation.md#cy031) | CY031, CY033, CY035 |
+| `.pgmcp/template_suite/shared/definitions/python.schema.json` | [CY031](planning-artifacts-mutation.md#cy031) | CY031, CY033, CY035, CY037 |
 | `.pgmcp/template_suite/shared/templates/bases/tier1_code.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier2_python.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier2_typescript.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
@@ -611,7 +611,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/python_adapter/manifest.yaml` | [CY036](planning-artifacts-mutation.md#cy036) | CY036 |
 | `.pgmcp/template_suite/python_adapter/.version` | [CY036](planning-artifacts-mutation.md#cy036) | CY036 |
 | `.pgmcp/template_suite/python_adapter/policy.yaml` | [CY036](planning-artifacts-mutation.md#cy036) | CY036 |
-| `.pgmcp/template_suite/python_adapter/context.schema.json` | [CY036](planning-artifacts-mutation.md#cy036) | CY036 |
+| `.pgmcp/template_suite/python_adapter/context.schema.json` | [CY036](planning-artifacts-mutation.md#cy036) | CY036, CY037 |
 | `.pgmcp/template_suite/python_adapter/template.jinja2` | [CY036](planning-artifacts-mutation.md#cy036) | CY036 |
 | `tests/mcp_server/integration/templates/test_python_adapter.py` | [CY036](planning-artifacts-mutation.md#cy036) | CY036 |
 | `.pgmcp/template_suite/python_worker/manifest.yaml` | [CY037](planning-artifacts-mutation.md#cy037) | CY037 |

@@ -331,7 +331,13 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/shared/definitions/python.schema.json`
+- `.pgmcp/template_suite/python_adapter/context.schema.json`
+
+Independent QA identified the shared constructor-conflict rule needed by both portable families.
+Under the standing authorization for proportional corrections, CY037 factors the existing rule
+without changing adapter admission or the general method/constructor records.
+R-CY037 is `6f96903c7ca1b8979b2d7a40ab76ee8417592f47`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
