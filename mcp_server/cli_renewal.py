@@ -6,9 +6,10 @@ import argparse
 import os
 import sys
 from collections.abc import Sequence
+from contextlib import redirect_stderr
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Protocol, TextIO
+from typing import TextIO
 
 from jinja2 import Environment
 
@@ -34,22 +35,8 @@ from mcp_server.services.template_proposal import (
     TemplateProposalService,
     admit_template_suite,
 )
-from mcp_server.services.template_renewal import RenewalResult, TemplateRenewalService
+from mcp_server.services.template_renewal import TemplateRenewalService
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
-
-
-class RenewalExecutor(Protocol):
-    """Narrow operation boundary consumed by the CLI."""
-
-    def execute(
-        self,
-        *,
-        accept_baseline: bool,
-        force: bool,
-        resolve_components: tuple[str, ...],
-    ) -> RenewalResult:
-        """Execute one owner-intent renewal attempt."""
-        ...
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,26 +64,33 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def build_default_operation(settings: Settings) -> TemplateRenewalService:
+def build_default_operation(
+    settings: Settings, *, supplied_candidate_root: Path | None = None
+) -> TemplateRenewalService:
     """Compose the real renewal boundary for an installed server root."""
 
     server_root = Path(settings.server.resolved_server_root).resolve()
-    actual_root = server_root / "template_suite"
+    managed_root = server_root / "template_suite"
+    actual_root = (
+        Path(settings.server.resolved_template_root).resolve()
+        if settings.server.template_root is not None
+        else managed_root
+    )
     candidate_root = server_root / "upgrade"
     proposal_root = server_root / "proposal"
     config_root = Path(settings.server.resolved_config_root).resolve()
     package_root = Path(__file__).resolve().parent
     official_adapters = package_root / "bundled_adapters"
-    workspace_adapters = server_root / "adapters"
+    workspace_adapters = server_root / "workspace_adapters"
     validator = ConfigValidator()
     environment = Environment()
     provenance = freeze_json(ArtifactIdentity.model_json_schema())
     assert isinstance(provenance, FrozenJsonObject)
 
-    def create_config(suite_root: Path, _unused: Path) -> ConfigLoader:
+    def create_config(effective_config_root: Path, suite_root: Path) -> ConfigLoader:
         contracts = TemplateContractLoader(suite_root)
         return ConfigLoader(
-            config_root,
+            effective_config_root,
             suite_root,
             context_schema_reader=contracts.load_context_schema,
         )
@@ -151,26 +145,47 @@ def build_default_operation(settings: Settings) -> TemplateRenewalService:
         candidate_root=candidate_root,
         proposal_root=proposal_root,
         effective_config_root=config_root,
-        admit=admit,
+        admit=lambda root, effective_config: admit_template_suite(
+            root,
+            effective_config,
+            create_config=create_config,
+            create_catalog=create_catalog,
+            create_adapters=create_adapters,
+            validator=validator,
+        ),
     )
+    lock = UpgradeLock(files.paths.lock)
     activation = TemplateActivationService(
         files,
-        UpgradeLock(files.paths.lock),
+        lock,
         admit=admit,
         clock=lambda: datetime.now(UTC),
     )
-    configured_actual = Path(settings.server.resolved_template_root).resolve()
+
+    def activate(root: Path, version: str, fresh: bool, force: bool) -> None:
+        activation.activate(root, pgmcp_version=version, fresh=fresh, force=force)
+
     return TemplateRenewalService(
         actual_root=actual_root,
         candidate_root=candidate_root,
         proposal_root=proposal_root,
         pgmcp_version=settings.server.version,
-        managed=settings.server.template_root is None or configured_actual == actual_root,
+        managed=actual_root == managed_root,
+        supplied_candidate_root=(
+            supplied_candidate_root.resolve()
+            if supplied_candidate_root is not None
+            else package_root / "assets" / "template_suite"
+        ),
+        stage_candidate=proposal.stage_candidate,
+        hold_lock=lock.hold,
+        recovery_pending=lambda: files.record() is not None,
         read_installation=repository.read,
         publish_installation=repository.publish,
         admit=proposal.admit,
         materialize_proposal=proposal.materialize_proposal,
-        activation=activation,
+        activate=activate,
+        recover=activation.recover,
+        read_activation_result=lambda: activation.last_result,
         discard_candidate=files.discard,
     )
 
@@ -181,7 +196,7 @@ class RenewalCli:
     def __init__(
         self,
         *,
-        operation: RenewalExecutor,
+        operation: TemplateRenewalService,
         presenter: RenewalPresenter | None = None,
         stdout: TextIO | None = None,
         stderr: TextIO | None = None,
@@ -196,16 +211,17 @@ class RenewalCli:
 
         parser = build_parser()
         try:
-            args, unknown = parser.parse_known_args(argv)
-            if unknown:
-                parser.error(f"unrecognized arguments: {' '.join(unknown)}")
-            if not args.upgrade:
-                parser.error("--upgrade is required for template renewal")
+            with redirect_stderr(self._stderr):
+                args, unknown = parser.parse_known_args(argv)
+                if unknown:
+                    parser.error(f"unrecognized arguments: {' '.join(unknown)}")
+                if not args.upgrade:
+                    parser.error("--upgrade is required for template renewal")
         except SystemExit as error:
             return int(error.code) if isinstance(error.code, int) else 2
 
         try:
-            result = self._operation.execute(
+            self._operation.execute(
                 accept_baseline=bool(args.accept_template_baseline),
                 force=bool(args.force_template_upgrade),
                 resolve_components=tuple(args.resolve_template or ()),
@@ -217,6 +233,8 @@ class RenewalCli:
             print(f"Template upgrade failed: {error}", file=self._stderr)
             return 1
 
+        result = self._operation.last_result
+        assert result is not None
         self._stdout.write(self._presenter.present(result))
         self._stdout.flush()
         return result.exit_code
@@ -225,7 +243,7 @@ class RenewalCli:
 def main(
     argv: Sequence[str] | None = None,
     *,
-    operation: RenewalExecutor | None = None,
+    operation: TemplateRenewalService | None = None,
     presenter: RenewalPresenter | None = None,
     settings: Settings | None = None,
 ) -> int:
@@ -238,7 +256,6 @@ def main(
 
 __all__ = [
     "RenewalCli",
-    "RenewalExecutor",
     "build_default_operation",
     "build_parser",
     "main",

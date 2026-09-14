@@ -137,6 +137,27 @@ class ActivationResult:
     outcome: Literal["activated", "rolled_back", "completed"]
     candidate_retained: bool
     backup_path: Path | None
+    actual_changed: bool = False
+    checkpoint_effect: Literal["unchanged", "created", "advanced"] = "unchanged"
+
+
+def _completed_result(
+    record: ActivationRecord, outcome: Literal["activated", "completed"]
+) -> ActivationResult:
+    """Project durable prior/target facts without inspecting cleaned-up paths."""
+    prior = record.prior_installation
+    previous_checkpoint = None if prior is None else prior.template_checkpoint
+    target_checkpoint = record.target_installation.template_checkpoint
+    effect: Literal["unchanged", "created", "advanced"] = "unchanged"
+    if previous_checkpoint != target_checkpoint:
+        effect = "created" if previous_checkpoint is None else "advanced"
+    return ActivationResult(
+        outcome,
+        record.retain_candidate,
+        record.backup_path,
+        actual_changed=record.prior_suite != record.target_suite,
+        checkpoint_effect=effect,
+    )
 
 
 def _require_owned_endpoint(path: Path) -> None:
@@ -481,7 +502,7 @@ class TemplateActivationService:
         ):
             raise MCPError("template_activation_publication_changed", code="ERR_CONFIG")
         self._complete_target(record)
-        self._last_result = ActivationResult("activated", retain, backup)
+        self._last_result = _completed_result(record, "activated")
 
     def _recover_locked(self) -> None:
         record = self._files.record()
@@ -519,9 +540,7 @@ class TemplateActivationService:
             if next_tree.present and next_tree != record.target_suite:
                 raise MCPError("template_recovery_unknown", code="ERR_CONFIG")
             self._complete_target(record)
-            self._last_result = ActivationResult(
-                "completed", record.retain_candidate, record.backup_path
-            )
+            self._last_result = _completed_result(record, "completed")
             return
 
         prior_authoritative = (

@@ -13,11 +13,15 @@ import pytest
 
 from mcp_server.cli_renewal import RenewalCli, build_default_operation
 from mcp_server.config.settings import ServerSettings, Settings
-from mcp_server.services.template_activation import ActivationFiles, TemplateActivationService, UpgradeLock
 from mcp_server.services.installation_state import InstallationStateRepository
+from mcp_server.services.template_activation import (
+    ActivationFiles,
+    TemplateActivationService,
+    UpgradeLock,
+)
+from mcp_server.services.template_renewal import RenewalResult, TemplateRenewalService
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 from tests.mcp_server.test_support import make_template_suite_admission
-from mcp_server.services.template_renewal import RenewalResult, TemplateRenewalService
 
 
 @dataclass(frozen=True)
@@ -301,7 +305,8 @@ def test_busy_and_invalid_profile_are_actionable(renewal_case: RenewalCase) -> N
 
 
 def test_completed_recovery_without_changes_omits_restart(
-    renewal_case: RenewalCase, pytestconfig: pytest.Config,
+    renewal_case: RenewalCase,
+    pytestconfig: pytest.Config,
 ) -> None:
     case = renewal_case
     code, _out, _err, _operation = _run(case, supplied=case.source)
@@ -318,11 +323,14 @@ def test_completed_recovery_without_changes_omits_restart(
             raise OSError("simulated_interruption_after_publication")
 
     files = ActivationFiles(
-        case.server, json_writer=publish_then_interrupt, move=os.replace,
+        case.server,
+        json_writer=publish_then_interrupt,
+        move=os.replace,
         read_installation=repository.read,
     )
     activation = TemplateActivationService(
-        files, UpgradeLock(files.paths.lock),
+        files,
+        UpgradeLock(files.paths.lock),
         admit=make_template_suite_admission(
             case.config,
             official_adapter_root=pytestconfig.rootpath / "mcp_server" / "bundled_adapters",

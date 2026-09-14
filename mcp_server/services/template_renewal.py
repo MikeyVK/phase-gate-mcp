@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Literal, Protocol
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -19,6 +20,7 @@ from mcp_server.services.template_components import (
 )
 
 if TYPE_CHECKING:
+    from mcp_server.services.template_activation import ActivationResult
     from mcp_server.services.template_proposal import SuiteSnapshot
 
 RenewalOutcome = Literal[
@@ -94,10 +96,11 @@ class RenewalResult(BaseModel):
         if self.outcome in {
             "checkpoint_required",
             "activated_with_conflicts",
-            "reconciliation_completed",
             "upgrade_busy",
             "rolled_back",
         }:
+            return 2
+        if self.outcome == "reconciliation_completed" and self.available_actions:
             return 2
         return 0
 
@@ -144,29 +147,8 @@ def analyze_components(
     return RenewalAnalysis(decisions=select_components(adopted, actual, candidate))
 
 
-class RenewalActivation(Protocol):
-    """Narrow activation boundary used by renewal orchestration."""
-
-    @property
-    def last_result(self) -> object | None:
-        """Return the factual result of the most recent activation attempt."""
-
-    def activate(
-        self,
-        proposal_root: Path,
-        *,
-        pgmcp_version: str,
-        fresh: bool = False,
-        force: bool = False,
-    ) -> None:
-        """Activate one complete proposal root."""
-
-    def recover(self) -> None:
-        """Recover one interrupted activation."""
-
-
 class TemplateRenewalService:
-    """Coordinate bootstrap, selection, proposal, and activation through injected seams."""
+    """Coordinate renewal commands; expose their frozen facts separately."""
 
     def __init__(
         self,
@@ -174,31 +156,50 @@ class TemplateRenewalService:
         actual_root: Path,
         candidate_root: Path,
         proposal_root: Path,
+        supplied_candidate_root: Path,
         pgmcp_version: str,
         managed: bool,
         read_installation: Callable[[], InstallationState | None],
         publish_installation: Callable[[InstallationState], None],
         admit: Callable[[Path], SuiteSnapshot],
+        stage_candidate: Callable[[Path], None],
         materialize_proposal: Callable[[tuple[ComponentSelection, ...]], None],
-        activation: RenewalActivation,
+        activate: Callable[[Path, str, bool, bool], None],
+        recover: Callable[[], None],
+        read_activation_result: Callable[[], ActivationResult | None],
         discard_candidate: Callable[[Path], None],
+        hold_lock: Callable[[], AbstractContextManager[None]],
+        recovery_pending: Callable[[], bool],
     ) -> None:
-        roots = (actual_root, candidate_root, proposal_root)
+        roots = (actual_root, candidate_root, proposal_root, supplied_candidate_root)
         if any(not root.is_absolute() for root in roots):
             raise MCPError("absolute_template_renewal_roots_required", code="ERR_CONFIG")
-        self._actual_root = actual_root.resolve()
-        self._candidate_root = candidate_root.resolve()
-        self._proposal_root = proposal_root.resolve()
-        if len({self._actual_root, self._candidate_root, self._proposal_root}) != 3:
-            raise MCPError("template_renewal_roots_overlap", code="ERR_CONFIG")
+        self._actual_root = actual_root
+        self._candidate_root = candidate_root
+        self._proposal_root = proposal_root
+        self._supplied_candidate_root = supplied_candidate_root
         self._pgmcp_version = pgmcp_version
         self._managed = managed
         self._read_installation = read_installation
         self._publish_installation = publish_installation
         self._admit = admit
+        self._stage_candidate = stage_candidate
         self._materialize_proposal = materialize_proposal
-        self._activation = activation
+        self._activate_proposal = activate
+        self._recover = recover
+        self._read_activation_result = read_activation_result
         self._discard_candidate = discard_candidate
+        self._hold_lock = hold_lock
+        self._recovery_pending = recovery_pending
+        self._last_result: RenewalResult | None = None
+        self._pending: tuple[SuiteSnapshot | None, SuiteSnapshot, RenewalAnalysis | None] | None = (
+            None
+        )
+
+    @property
+    def last_result(self) -> RenewalResult | None:
+        """Read immutable facts from the most recent command."""
+        return self._last_result
 
     def execute(
         self,
@@ -206,335 +207,301 @@ class TemplateRenewalService:
         accept_baseline: bool = False,
         force: bool = False,
         resolve_components: tuple[str, ...] = (),
-    ) -> RenewalResult:
-        """Execute one explicit renewal attempt and return immutable facts."""
+    ) -> None:
+        """Recover first, prepare under exclusion, then activate a verified proposal."""
+        self._last_result = None
+        self._pending = None
+        if int(accept_baseline) + int(force) + int(bool(resolve_components)) > 1:
+            self._reject("modes_mutually_exclusive")
+            return
+        try:
+            self._recover()
+            if self._read_activation_result() is not None:
+                self._recovered()
+                return
+        except (MCPError, OSError, ValueError, TypeError) as error:
+            self._fail("recovery_failed", "recovery", error)
+            return
+        try:
+            with self._hold_lock():
+                # Another process may have started an activation after recovery released
+                # its lock. Never stage or publish over its durable recovery record.
+                if self._recovery_pending():
+                    self._reject("template_recovery_required", outcome="recovery_failed")
+                    return
+                self._prepare(accept_baseline, force, resolve_components)
+        except (MCPError, OSError, ValueError, TypeError) as error:
+            self._fail("activation_failed", "checkpoint preparation", error)
+            return
+        if self._pending is not None:
+            self._activate(force=force)
 
-        modes = int(accept_baseline) + int(force) + int(bool(resolve_components))
-        if modes > 1:
-            return RenewalResult(
-                outcome="candidate_invalid", failure_code="modes_mutually_exclusive"
-            )
-        installation = self._read_installation()
-        checkpoint = None if installation is None else installation.template_checkpoint
-
+    def _prepare(
+        self, accept_baseline: bool, force: bool, resolve_components: tuple[str, ...]
+    ) -> None:
+        if not (accept_baseline or force or resolve_components):
+            try:
+                if not self._supplied_candidate_root.exists():
+                    self._reject("candidate_missing", outcome="candidate_unavailable")
+                    return
+                if self._supplied_candidate_root != self._candidate_root:
+                    self._stage_candidate(self._supplied_candidate_root)
+            except (MCPError, OSError, ValueError, TypeError) as error:
+                self._fail("candidate_invalid", "candidate", error)
+                return
         if not self._candidate_root.exists():
-            return RenewalResult(
-                outcome="candidate_unavailable",
-                candidate_disposition="absent",
-                failure_code="candidate_missing",
-            )
+            self._reject("candidate_missing", outcome="candidate_unavailable")
+            return
         try:
             candidate = self._admit(self._candidate_root)
         except (MCPError, OSError, ValueError, TypeError) as error:
-            return self._failure("candidate_invalid", "candidate", error, retained=True)
-
-        actual: SuiteSnapshot | None
-        if self._actual_root.exists():
-            try:
-                actual = self._admit(self._actual_root)
-            except (MCPError, OSError, ValueError, TypeError) as error:
-                return self._failure("candidate_invalid", "actual", error, retained=True)
-        else:
-            actual = None
+            self._fail("candidate_invalid", "candidate", error)
+            return
+        installation = self._read_installation()
+        checkpoint = None if installation is None else installation.template_checkpoint
+        try:
+            actual = self._admit(self._actual_root) if self._actual_root.exists() else None
+        except (MCPError, OSError, ValueError, TypeError) as error:
+            self._fail("candidate_invalid", "actual", error)
+            return
 
         if accept_baseline:
-            return self._accept_baseline(installation, actual, candidate)
-
-        if checkpoint is not None and not self._managed:
-            return RenewalResult(
-                outcome="activation_failed",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="external_root_activation_forbidden",
-            )
-
-        if force:
-            if not self._managed:
-                return RenewalResult(
-                    outcome="activation_failed",
-                    candidate_disposition="retained",
-                    candidate_path=self._candidate_root,
-                    failure_code="external_root_force_forbidden",
+            if checkpoint is not None or actual is None:
+                self._reject(
+                    "checkpoint_available" if checkpoint is not None else "actual_suite_required"
                 )
-            if checkpoint is None or actual is None:
-                return RenewalResult(
-                    outcome="activation_failed",
-                    candidate_disposition="retained",
-                    candidate_path=self._candidate_root,
-                    failure_code="force_requires_managed_actual",
-                )
-            return self._force(candidate, actual)
-
-        if resolve_components:
-            return self._resolve(installation, checkpoint, actual, candidate, resolve_components)
-
-        if checkpoint is None:
-            return self._bootstrap(actual, candidate)
-
-        if actual is None:
-            return RenewalResult(
-                outcome="activation_failed",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="actual_suite_missing",
-            )
-        analysis = analyze_components(
-            self._states(checkpoint),
-            self._states(actual.evidence.to_checkpoint()),
-            self._states(candidate.evidence.to_checkpoint()),
-        )
-        try:
-            self._materialize_proposal(analysis.decisions)
-            self._activation.activate(self._proposal_root, pgmcp_version=self._pgmcp_version)
-        except MCPError as error:
-            return self._failure("proposal_invalid", "complete proposal", error, retained=True)
-        except (OSError, ValueError, TypeError) as error:
-            return self._failure("activation_failed", "activation", error, retained=True)
-
-        activation_result = self._activation.last_result
-        if getattr(activation_result, "outcome", None) == "rolled_back":
-            return RenewalResult(
-                outcome="rolled_back",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                actual_changed=False,
-                checkpoint_effect="unchanged",
-                components=analysis.decisions,
-            )
-        return RenewalResult(
-            outcome="activated_with_conflicts" if analysis.conflicts else "activated",
-            actual_changed=any(
-                decision.selected.present != decision.actual.present
-                or decision.selected.fingerprint != decision.actual.fingerprint
-                for decision in analysis.decisions
-            ),
-            checkpoint_effect="advanced",
-            candidate_disposition=("retained" if analysis.conflicts else "removed"),
-            candidate_path=self._candidate_root if analysis.conflicts else None,
-            components=analysis.decisions,
-            available_actions=(
-                (
-                    RenewalAction(
-                        kind="resolve_template",
-                        component_ids=tuple(key[1] for key in analysis.conflicts),
-                    ),
-                )
-                if analysis.conflicts
-                else ()
-            ),
-        )
-
-    def _accept_baseline(
-        self,
-        installation: InstallationState | None,
-        actual: SuiteSnapshot | None,
-        candidate: SuiteSnapshot,
-    ) -> RenewalResult:
-        if installation is not None and installation.template_checkpoint is not None:
-            return RenewalResult(
-                outcome="candidate_invalid",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="checkpoint_available",
-            )
-        if actual is None:
-            return RenewalResult(
-                outcome="candidate_invalid",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="actual_suite_required",
-            )
-        checkpoint = candidate.evidence.to_checkpoint()
-        self._publish_installation(
-            InstallationState(pgmcp_version=self._pgmcp_version, template_checkpoint=checkpoint)
-        )
-        self._discard_candidate(self._candidate_root)
-        return RenewalResult(
-            outcome="baseline_established",
-            checkpoint_effect="created",
-            candidate_disposition="removed",
-            actual_changed=False,
-        )
-
-    def _bootstrap(
-        self,
-        actual: SuiteSnapshot | None,
-        candidate: SuiteSnapshot,
-    ) -> RenewalResult:
-        if actual is None:
-            if not self._managed:
-                return RenewalResult(
-                    outcome="checkpoint_required",
-                    candidate_disposition="staged",
-                    candidate_path=self._candidate_root,
-                    available_actions=(
-                        RenewalAction(kind="accept_template_baseline"),
-                        RenewalAction(kind="force_template_upgrade"),
-                    ),
-                )
-            try:
-                self._activation.activate(
-                    self._candidate_root,
-                    pgmcp_version=self._pgmcp_version,
-                    fresh=True,
-                )
-            except MCPError as error:
-                return self._failure("activation_failed", "activation", error, retained=True)
-            except (OSError, ValueError, TypeError) as error:
-                return self._failure("activation_failed", "activation", error, retained=True)
-            activation_result = self._activation.last_result
-            if getattr(activation_result, "outcome", None) == "rolled_back":
-                return RenewalResult(
-                    outcome="rolled_back",
-                    candidate_disposition="retained",
-                    candidate_path=self._candidate_root,
-                )
-            return RenewalResult(
-                outcome="fresh_installed",
-                actual_changed=True,
+                return
+            self._publish(candidate.evidence.to_checkpoint())
+            self._discard_candidate(self._candidate_root)
+            self._last_result = RenewalResult(
+                outcome="baseline_established",
                 checkpoint_effect="created",
                 candidate_disposition="removed",
             )
-        if actual.evidence.to_checkpoint() == candidate.evidence.to_checkpoint():
-            self._publish_installation(
-                InstallationState(
-                    pgmcp_version=self._pgmcp_version,
-                    template_checkpoint=candidate.evidence.to_checkpoint(),
+            return
+        if resolve_components:
+            self._resolve(checkpoint, actual, candidate, resolve_components)
+            return
+        if force:
+            if not self._managed or actual is None:
+                self._reject(
+                    "external_root_force_forbidden"
+                    if not self._managed
+                    else "force_requires_managed_actual",
+                    outcome="activation_failed",
                 )
+                return
+            self._pending = (actual, candidate, None)
+            return
+        if checkpoint is None:
+            self._bootstrap(actual, candidate)
+            return
+        if not self._managed or actual is None:
+            self._reject(
+                "external_root_activation_forbidden"
+                if not self._managed
+                else "actual_suite_missing",
+                outcome="activation_failed",
             )
+            return
+        analysis = self._analyze(checkpoint, actual, candidate)
+        try:
+            self._materialize_proposal(analysis.decisions)
+        except (MCPError, OSError, ValueError, TypeError) as error:
+            self._fail("proposal_invalid", "complete proposal", error)
+            return
+        self._pending = (actual, candidate, analysis)
+
+    def _bootstrap(self, actual: SuiteSnapshot | None, candidate: SuiteSnapshot) -> None:
+        if self._managed and actual is None:
+            self._pending = (None, candidate, None)
+            return
+        if (
+            self._managed
+            and actual is not None
+            and (actual.evidence.to_checkpoint() == candidate.evidence.to_checkpoint())
+        ):
+            self._publish(candidate.evidence.to_checkpoint())
             self._discard_candidate(self._candidate_root)
-            return RenewalResult(
+            self._last_result = RenewalResult(
                 outcome="candidate_equal",
                 checkpoint_effect="created",
                 candidate_disposition="removed",
             )
-        return RenewalResult(
+            return
+        actions: tuple[RenewalAction, ...] = (
+            (RenewalAction(kind="accept_template_baseline"),) if actual is not None else ()
+        )
+        if self._managed and actual is not None:
+            actions += (RenewalAction(kind="force_template_upgrade"),)
+        self._last_result = RenewalResult(
             outcome="checkpoint_required",
             candidate_disposition="staged",
             candidate_path=self._candidate_root,
-            available_actions=(
-                RenewalAction(kind="accept_template_baseline"),
-                RenewalAction(kind="force_template_upgrade"),
-            ),
+            available_actions=actions,
         )
 
-    def _force(self, candidate: SuiteSnapshot, actual: SuiteSnapshot) -> RenewalResult:
+    def _activate(self, *, force: bool) -> None:
+        pending = self._pending
+        assert pending is not None
+        actual, candidate, analysis = pending
         try:
-            self._activation.activate(
-                self._candidate_root,
-                pgmcp_version=self._pgmcp_version,
-                force=True,
+            before = self._read_installation()
+            self._activate_proposal(
+                self._proposal_root if analysis is not None else self._candidate_root,
+                self._pgmcp_version,
+                actual is None,
+                force,
             )
-        except MCPError as error:
-            return self._failure("activation_failed", "force activation", error, retained=True)
-        except (OSError, ValueError, TypeError) as error:
-            return self._failure("activation_failed", "force activation", error, retained=True)
-        activation_result = self._activation.last_result
-        outcome = getattr(activation_result, "outcome", None)
-        if outcome == "rolled_back":
-            return RenewalResult(
-                outcome="rolled_back",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                backup_path=getattr(activation_result, "backup_path", None),
+        except (MCPError, OSError, ValueError, TypeError) as error:
+            self._fail("activation_failed", "activation", error)
+            return
+        result = self._read_activation_result()
+        if result is None:
+            self._reject("activation_result_missing", outcome="activation_failed")
+            return
+        if result.outcome != "activated":
+            self._recovered()
+            return
+        after = self._read_installation()
+        effect: CheckpointEffect = "unchanged"
+        if before != after:
+            effect = (
+                "created" if before is None or before.template_checkpoint is None else "advanced"
             )
-        return RenewalResult(
-            outcome="forced_candidate_installed",
-            actual_changed=actual.sources != candidate.sources,
-            checkpoint_effect="advanced",
-            candidate_disposition="removed",
-            backup_path=getattr(activation_result, "backup_path", None),
+        changed = actual is None or (
+            actual.sources != candidate.sources
+            if analysis is None
+            else any(item.selected != item.actual for item in analysis.decisions)
+        )
+        outcome: RenewalOutcome = (
+            "fresh_installed"
+            if actual is None
+            else "forced_candidate_installed"
+            if force
+            else "activated_with_conflicts"
+            if result.candidate_retained
+            else "activated"
+        )
+        self._last_result = RenewalResult(
+            outcome=outcome,
+            actual_changed=changed,
+            checkpoint_effect=effect,
+            candidate_disposition="retained" if result.candidate_retained else "removed",
+            candidate_path=self._candidate_root if result.candidate_retained else None,
+            backup_path=result.backup_path,
+            components=analysis.decisions if analysis is not None else (),
+            available_actions=self._resolve_actions(analysis) if analysis is not None else (),
+        )
+
+    def _recovered(self) -> None:
+        result = self._read_activation_result()
+        assert result is not None
+        analysis: RenewalAnalysis | None = None
+        if result.outcome == "completed" and result.candidate_retained:
+            with self._hold_lock():
+                installation = self._read_installation()
+                if installation is not None and installation.template_checkpoint is not None:
+                    analysis = self._analyze(
+                        installation.template_checkpoint,
+                        self._admit(self._actual_root),
+                        self._admit(self._candidate_root),
+                    )
+        self._last_result = RenewalResult(
+            outcome="rolled_back"
+            if result.outcome == "rolled_back"
+            else ("activated_with_conflicts" if result.candidate_retained else "activated"),
+            actual_changed=result.actual_changed,
+            checkpoint_effect=result.checkpoint_effect,
+            candidate_disposition="retained" if result.candidate_retained else "removed",
+            candidate_path=self._candidate_root if result.candidate_retained else None,
+            backup_path=result.backup_path,
+            components=analysis.decisions if analysis is not None else (),
+            available_actions=self._resolve_actions(analysis) if analysis is not None else (),
         )
 
     def _resolve(
         self,
-        installation: InstallationState | None,
         checkpoint: TemplateCheckpoint | None,
         actual: SuiteSnapshot | None,
         candidate: SuiteSnapshot,
         component_ids: tuple[str, ...],
-    ) -> RenewalResult:
-        if installation is None or checkpoint is None or actual is None:
-            return RenewalResult(
-                outcome="activation_failed",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="checkpoint_required",
-            )
+    ) -> None:
+        if checkpoint is None or actual is None:
+            self._reject("checkpoint_required")
+            return
         if len(set(component_ids)) != len(component_ids):
-            return RenewalResult(
-                outcome="candidate_invalid",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="duplicate_component",
-            )
-        analysis = analyze_components(
-            self._states(checkpoint),
-            self._states(actual.evidence.to_checkpoint()),
-            self._states(candidate.evidence.to_checkpoint()),
-        )
-        by_id = {decision.component_id: decision for decision in analysis.decisions}
-        if any(component_id not in by_id for component_id in component_ids):
-            return RenewalResult(
-                outcome="candidate_invalid",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="unknown_component",
-                components=analysis.decisions,
-            )
-        if any(by_id[component_id].relation != "conflict" for component_id in component_ids):
-            return RenewalResult(
-                outcome="candidate_invalid",
-                candidate_disposition="retained",
-                candidate_path=self._candidate_root,
-                failure_code="component_not_conflicted",
-                components=analysis.decisions,
-            )
-        accepted = set(component_ids)
-        next_packages = dict(checkpoint.packages)
-        for decision in analysis.decisions:
-            if decision.component_id not in accepted:
-                continue
-            if decision.kind == "package":
-                if decision.candidate.present and decision.candidate.fingerprint is not None:
-                    next_packages[decision.component_id] = decision.candidate.fingerprint
-                else:
-                    next_packages.pop(decision.component_id, None)
+            self._reject("duplicate_component")
+            return
+        analysis = self._analyze(checkpoint, actual, candidate)
+        selected: list[ComponentSelection] = []
+        for name in component_ids:
+            matches = tuple(item for item in analysis.decisions if item.component_id == name)
+            if len(matches) != 1:
+                self._reject("ambiguous_component" if matches else "unknown_component")
+                return
+            if matches[0].relation != "conflict":
+                self._reject("component_not_conflicted")
+                return
+            selected.append(matches[0])
+        packages = dict(checkpoint.packages)
+        shared = checkpoint.shared
+        for decision in selected:
+            fingerprint = decision.candidate.fingerprint
+            if decision.kind == "shared":
+                assert fingerprint is not None
+                shared = fingerprint
+            elif fingerprint is not None:
+                packages[decision.component_id] = fingerprint
             else:
-                shared = decision.candidate.fingerprint
-                if shared is None:
-                    return RenewalResult(
-                        outcome="candidate_invalid",
-                        candidate_disposition="retained",
-                        candidate_path=self._candidate_root,
-                        failure_code="shared_checkpoint_missing",
-                    )
-                checkpoint = TemplateCheckpoint(shared=shared, packages=next_packages)
+                packages.pop(decision.component_id, None)
+        updated = TemplateCheckpoint(shared=shared, packages=packages)
+        accepted_keys = {item.key for item in selected}
+        remaining = self._analyze(updated, actual, candidate)
+        self._publish(updated)
+        if not remaining.conflicts:
+            self._discard_candidate(self._candidate_root)
+        self._last_result = RenewalResult(
+            outcome="reconciliation_completed",
+            checkpoint_effect="advanced",
+            candidate_disposition="retained" if remaining.conflicts else "removed",
+            candidate_path=self._candidate_root if remaining.conflicts else None,
+            components=tuple(
+                item.model_copy(
+                    update={
+                        "checkpoint_action": "advance_to_candidate",
+                        "proposed_checkpoint": item.candidate,
+                    }
+                )
+                if item.key in accepted_keys
+                else item
+                for item in remaining.decisions
+            ),
+            available_actions=self._resolve_actions(remaining),
+        )
+
+    def _publish(self, checkpoint: TemplateCheckpoint) -> None:
         self._publish_installation(
             InstallationState(pgmcp_version=self._pgmcp_version, template_checkpoint=checkpoint)
         )
-        remaining = tuple(
-            decision
-            for decision in analysis.decisions
-            if decision.relation == "conflict" and decision.component_id not in accepted
+
+    @classmethod
+    def _analyze(
+        cls, checkpoint: TemplateCheckpoint, actual: SuiteSnapshot, candidate: SuiteSnapshot
+    ) -> RenewalAnalysis:
+        return analyze_components(
+            cls._states(checkpoint),
+            cls._states(actual.evidence.to_checkpoint()),
+            cls._states(candidate.evidence.to_checkpoint()),
         )
-        if not remaining:
-            self._discard_candidate(self._candidate_root)
-        return RenewalResult(
-            outcome="reconciliation_completed",
-            checkpoint_effect="advanced",
-            candidate_disposition="retained" if remaining else "removed",
-            candidate_path=self._candidate_root if remaining else None,
-            components=analysis.decisions,
-            available_actions=(
-                (
-                    RenewalAction(
-                        kind="resolve_template",
-                        component_ids=tuple(item.component_id for item in remaining),
-                    ),
-                )
-                if remaining
-                else ()
+
+    @staticmethod
+    def _resolve_actions(analysis: RenewalAnalysis) -> tuple[RenewalAction, ...]:
+        if not analysis.conflicts:
+            return ()
+        return (
+            RenewalAction(
+                kind="resolve_template", component_ids=tuple(key[1] for key in analysis.conflicts)
             ),
         )
 
@@ -552,30 +519,33 @@ class TemplateRenewalService:
             },
         }
 
-    @staticmethod
-    def _failure(
-        outcome: Literal["candidate_invalid", "proposal_invalid", "activation_failed"],
-        stage: str,
-        error: BaseException,
-        *,
-        retained: bool,
-    ) -> RenewalResult:
-        if isinstance(error, MCPError):
-            code = error.message
-            params = {key: str(value) for key, value in error.params.items()}
-        else:
-            code = type(error).__name__
-            params = {"cause": str(error)}
-        return RenewalResult(
+    def _reject(self, code: str, *, outcome: RenewalOutcome = "candidate_invalid") -> None:
+        retained = self._candidate_root.exists()
+        self._last_result = RenewalResult(
+            outcome=outcome,
+            failure_code=code,
+            candidate_disposition="retained" if retained else "absent",
+            candidate_path=self._candidate_root if retained else None,
+        )
+
+    def _fail(self, outcome: RenewalOutcome, stage: str, error: BaseException) -> None:
+        code = error.message if isinstance(error, MCPError) else type(error).__name__
+        params = (
+            {key: str(value) for key, value in error.params.items()}
+            if isinstance(error, MCPError)
+            else {"cause": str(error)}
+        )
+        if code == "template_upgrade_locked":
+            outcome = "upgrade_busy"
+        retained = self._candidate_root.exists()
+        self._last_result = RenewalResult(
             outcome=outcome,
             candidate_disposition="retained" if retained else "absent",
+            candidate_path=self._candidate_root if retained else None,
             validation_stage=stage,
             failure_code=code,
             failure_params=params,
         )
-
-
-RenewalOperation = TemplateRenewalService
 
 
 __all__ = [
@@ -583,7 +553,6 @@ __all__ = [
     "CheckpointEffect",
     "RenewalAction",
     "RenewalAnalysis",
-    "RenewalOperation",
     "RenewalOutcome",
     "RenewalResult",
     "TemplateRenewalService",

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from mcp_server.services.template_components import ComponentSelection
-from mcp_server.services.template_renewal import RenewalAction, RenewalResult
+from mcp_server.services.template_renewal import RenewalResult
 
 
 class RenewalPresenter:
@@ -40,6 +40,8 @@ class RenewalPresenter:
             lines.append(f"Validation stage: {result.validation_stage}")
         if result.failure_code is not None:
             lines.append(f"Failure: {result.failure_code}")
+        for key, value in sorted(result.failure_params.items()):
+            lines.append(f"{key}: {value}")
         if result.backup_path is not None:
             lines.append(f"Backup: {result.backup_path}")
 
@@ -100,7 +102,12 @@ class RenewalPresenter:
             "Resolved": [],
         }
         for component in components:
-            if component.relation == "conflict":
+            if (
+                component.relation == "local_only"
+                and component.checkpoint_action == "advance_to_candidate"
+            ):
+                grouped["Resolved"].append(component.component_id)
+            elif component.relation == "conflict":
                 grouped["Conflicts"].append(component.component_id)
             elif component.relation == "upstream_only":
                 grouped["Updated from candidate"].append(component.component_id)
@@ -113,21 +120,7 @@ class RenewalPresenter:
     def _actions(self, result: RenewalResult) -> tuple[str, ...]:
         actions = result.available_actions
         if not actions:
-            if result.outcome == "checkpoint_required":
-                return (
-                    "Next:",
-                    "- migrate local templates and run:",
-                    "  pgmcp --upgrade --accept-template-baseline",
-                    "- or replace the managed suite using:",
-                    "  pgmcp --upgrade --force-template-upgrade",
-                )
-            if result.outcome == "activated_with_conflicts":
-                conflicts = tuple(
-                    item.component_id for item in result.components if item.relation == "conflict"
-                )
-                actions = (RenewalAction(kind="resolve_template", component_ids=conflicts),)
-            else:
-                return ()
+            return ()
 
         rendered: list[str] = ["Next:"]
         for action in actions:

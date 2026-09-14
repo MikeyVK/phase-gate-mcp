@@ -256,6 +256,7 @@ New exact paths:
 Previously introduced paths revisited in this cycle:
 
 - `mcp_server/services/template_renewal.py`
+- `mcp_server/services/template_activation.py` — independent QA-directed CY067 revisit: project prior/target recovery effects into the immutable result before cleanup; no recovery algorithm change. Covered by one real CLI recovery regression and retained CY066 process evidence.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 - Prepared --init/--upgrade handling is not yet publicly dispatched. Installed rehearsal must prove init-to-startup and upgrade-to-explicit-owner-migration-to-startup before the actual switch.
