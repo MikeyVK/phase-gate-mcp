@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import re
 from enum import IntEnum, StrEnum
 from typing import Annotated, Generic, Literal, TypeVar, get_args
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -25,6 +27,7 @@ from pydantic import (
 from pydantic_core import CoreSchema, core_schema
 
 from mcp_server.config.schemas.adapter_manifest import AdapterId, AdapterVersion, CapabilityId
+from mcp_server.config.schemas.fixes_config import FixId
 from mcp_server.config.schemas.tests_config import TestId
 from mcp_server.core.interfaces.template_catalog import (
     FrozenJsonObject,
@@ -564,4 +567,258 @@ class RunTestsOutput(_TestModel):
             and self.error_code not in {"operation_interrupted", "termination_unconfirmed"}
         ):
             raise ValueError("interrupted_row_requires_operation_error")
+        return self
+
+
+def _file_path(value: str) -> str:
+    if re.search(r"(?:[\\/]|(?:^|[\\/])\.{1,2})$", value) is not None:
+        raise ValueError("file_path_required")
+    return value
+
+
+def _relative_file_path(value: str) -> str:
+    if any(character in value for character in "*?[]"):
+        raise ValueError("literal_file_path_required")
+    return _file_path(value)
+
+
+AbsoluteFilePath = Annotated[AbsolutePath, AfterValidator(_file_path)]
+WorkspaceRelativeFilePath = Annotated[WorkspaceRelativePath, AfterValidator(_relative_file_path)]
+
+
+# Fix contracts own stop-first mutation facts separately from test outcomes.
+class _FixModel(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+
+
+class FixRequest(_FixModel):
+    operation: CapabilityId
+    targets: Annotated[tuple[AbsoluteFilePath, ...], Field(min_length=1)]
+    args: tuple[StrictStr, ...]
+
+
+class FixPassed(_FixModel):
+    status: Literal["passed"]
+
+
+class FixFailed(_FixModel):
+    status: Literal["failed"]
+    message: NonBlankText
+
+
+class FixUnavailable(_FixModel):
+    status: Literal["unavailable"]
+    reason: AdapterUnavailableReason
+    message: NonBlankText
+
+
+FixDecision = Annotated[FixPassed | FixFailed | FixUnavailable, Field(discriminator="status")]
+
+
+def _require_fix_evidence(evidence: NativeEvidence | None) -> None:
+    if (
+        evidence is None
+        or (isinstance(evidence, TextEvidence) and not evidence.data.strip())
+        or (isinstance(evidence, JsonEvidence) and evidence.data is None)
+    ):
+        raise ValueError("substantive_failed_evidence_required")
+
+
+class FixRoleResponse(_FixModel):
+    decision: FixDecision
+    external_tools: tuple[ExternalToolIdentity, ...]
+    evidence: NativeEvidence | None = None
+
+    @model_validator(mode="after")
+    def validate_evidence(self) -> FixRoleResponse:
+        if self.evidence is None and "evidence" in self.model_fields_set:
+            raise ValueError("evidence_must_be_omitted")
+        if self.decision.status == "failed":
+            _require_fix_evidence(self.evidence)
+        return self
+
+    @model_serializer(mode="wrap")
+    def serialize_evidence(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        result: dict[str, object] = handler(self)
+        if self.evidence is None:
+            result.pop("evidence", None)
+        return result
+
+
+class FixResponse(RootModel[FixRoleResponse | InvalidCheckRequest]):
+    model_config = ConfigDict(frozen=True, strict=True)
+
+
+class PublicFixResult(_FixModel):
+    fix_id: FixId
+    status: Literal["passed", "failed", "unavailable", "not_executed"]
+    reason: AdapterUnavailableReason | AdapterCallFailureReason | ConsumerNotExecutedReason | None
+    message: NonBlankText | None
+    evidence: NativeEvidence | None
+    external_tools: tuple[ExternalToolIdentity, ...] | None
+    adapter: AdapterRunIdentity | None
+    capture: ProcessCapture | None
+    termination_problem: TerminationProblem | None
+    request_rejection: Annotated[tuple[RequestValidationIssue, ...], Field(min_length=1)] | None
+    args_source: ArgsSource | None
+    effective_args: tuple[StrictStr, ...] | None
+
+    @model_validator(mode="after")
+    def validate_observation(self) -> PublicFixResult:
+        if (self.args_source is None) != (self.effective_args is None):
+            raise ValueError("argument_facts_must_agree")
+        not_started = self.status == "not_executed" and self.reason == "not_started"
+        if not_started:
+            if self.adapter is not None or self.capture is not None:
+                raise ValueError("not_started_attempt_forbidden")
+        elif self.adapter is None or self.capture is None:
+            raise ValueError("attempt_identity_and_capture_required")
+        if self.status == "not_executed":
+            if self.reason not in {"not_started", "interrupted", "invalid_request"}:
+                raise ValueError("invalid_not_executed_reason")
+            if (
+                self.message is not None
+                or self.evidence is not None
+                or self.external_tools is not None
+            ):
+                raise ValueError("not_executed_native_facts_forbidden")
+            if (self.request_rejection is not None) != (self.reason == "invalid_request"):
+                raise ValueError("request_rejection_reason_mismatch")
+            if self.termination_problem is not None:
+                raise ValueError("interruption_termination_owned_by_operation")
+        else:
+            if self.request_rejection is not None:
+                raise ValueError("ordinary_result_rejection_forbidden")
+            if (self.status == "passed") != (self.message is None):
+                raise ValueError("message_must_match_fix_decision")
+            if self.status in {"passed", "failed"}:
+                if self.reason is not None or self.external_tools is None:
+                    raise ValueError("accepted_result_requires_native_facts")
+            elif isinstance(self.reason, AdapterCallFailureReason):
+                if self.evidence is not None or self.external_tools is not None:
+                    raise ValueError("invocation_failure_native_facts_forbidden")
+            elif (
+                self.reason not in get_args(AdapterUnavailableReason) or self.external_tools is None
+            ):
+                raise ValueError("adapter_unavailable_facts_invalid")
+            if self.termination_problem is not None and not isinstance(
+                self.reason, AdapterCallFailureReason
+            ):
+                raise ValueError("termination_problem_requires_invocation_failure")
+            if self.status == "failed":
+                _require_fix_evidence(self.evidence)
+        return self
+
+
+class FixSelectionIssue(_FixModel):
+    field: Literal["fixes", "args"]
+    fix_id: FixId
+    reason: Literal["unknown_fix", "unselected_args"]
+
+    @model_validator(mode="after")
+    def validate_field(self) -> FixSelectionIssue:
+        if self.reason == "unselected_args" and self.field != "args":
+            raise ValueError("unselected_args_requires_args_field")
+        return self
+
+
+class FixSelectionDetails(_FixModel):
+    issues: Annotated[tuple[FixSelectionIssue, ...], Field(min_length=1)]
+
+
+class FixScopeIssue(_FixModel):
+    target: WorkspaceRelativePath
+    reason: Literal["missing", "not_file", "outside_workspace", "unresolvable"]
+    message: NonBlankText
+
+
+class FixScopeDetails(_FixModel):
+    issues: Annotated[tuple[FixScopeIssue, ...], Field(min_length=1)]
+
+
+class RejectedFixRequestDetails(_FixModel):
+    fix_id: FixId
+
+
+class FixTerminationDetails(_FixModel):
+    fix_id: FixId
+    interrupted: StrictBool
+
+
+ApplyFixesErrorCode = Literal[
+    "no_configured_fixes",
+    "selection_invalid",
+    "scope_resolution_failed",
+    "adapter_request_rejected",
+    "operation_interrupted",
+    "termination_unconfirmed",
+]
+
+
+class ApplyFixesOutput(_FixModel):
+    success: StrictBool
+    requested_scope: Literal["targets"]
+    requested_targets: Annotated[tuple[WorkspaceRelativePath, ...], Field(min_length=1)]
+    selected_fixes: tuple[FixId, ...]
+    results: tuple[PublicFixResult, ...]
+    error_code: ApplyFixesErrorCode | None
+    error_details: (
+        FixSelectionDetails
+        | FixScopeDetails
+        | RejectedFixRequestDetails
+        | FixTerminationDetails
+        | None
+    )
+
+    @model_validator(mode="after")
+    def validate_output(self) -> ApplyFixesOutput:
+        if len(set(self.selected_fixes)) != len(self.selected_fixes):
+            raise ValueError("duplicate_selected_fix")
+        if tuple(row.fix_id for row in self.results) != self.selected_fixes:
+            raise ValueError("result_obligations_must_match_selection")
+        unresolved = self.error_code in {"no_configured_fixes", "selection_invalid"}
+        if unresolved != (not self.selected_fixes):
+            raise ValueError("selection_must_resolve_before_results")
+        detail_types = {
+            "selection_invalid": FixSelectionDetails,
+            "scope_resolution_failed": FixScopeDetails,
+            "adapter_request_rejected": RejectedFixRequestDetails,
+            "termination_unconfirmed": FixTerminationDetails,
+        }
+        expected = detail_types.get(self.error_code) if self.error_code is not None else None
+        if expected is None:
+            if self.error_details is not None:
+                raise ValueError("unexpected_error_details")
+        elif not isinstance(self.error_details, expected):
+            raise ValueError("error_details_type_mismatch")
+        rejected = tuple(row.fix_id for row in self.results if row.reason == "invalid_request")
+        if self.success == bool(rejected):
+            raise ValueError("internal_rejection_determines_operational_failure")
+        if isinstance(self.error_details, RejectedFixRequestDetails):
+            if rejected != (self.error_details.fix_id,):
+                raise ValueError("rejection_details_must_match_row")
+        elif rejected and self.error_code != "termination_unconfirmed":
+            raise ValueError("rejected_request_requires_operation_error")
+        interrupted = tuple(row.fix_id for row in self.results if row.reason == "interrupted")
+        unconfirmed = tuple(
+            row.fix_id
+            for row in self.results
+            if row.termination_problem is TerminationProblem.UNCONFIRMED
+        )
+        if isinstance(self.error_details, FixTerminationDetails):
+            affected = interrupted if self.error_details.interrupted else unconfirmed + rejected
+            if affected != (self.error_details.fix_id,):
+                raise ValueError("termination_details_must_match_observed_row")
+        elif unconfirmed:
+            raise ValueError("unconfirmed_termination_requires_operation_error")
+        if interrupted and self.error_code not in {
+            "operation_interrupted",
+            "termination_unconfirmed",
+        }:
+            raise ValueError("interruption_requires_operation_error")
+        # Cancellation may precede every attempt, leaving all rows not_started.
+        if self.error_code == "operation_interrupted" and not any(
+            row.reason in {"not_started", "interrupted"} for row in self.results
+        ):
+            raise ValueError("interruption_requires_unfinished_work")
         return self

@@ -18,10 +18,15 @@ from jsonschema import Draft202012Validator
 
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
+from mcp_server.config.schemas.fixes_config import FixesConfig
 from mcp_server.config.schemas.template_suite import TemplatePolicy
 from mcp_server.config.schemas.tests_config import TestsConfig
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.interfaces.execution import CheckCatalogReader, TestCatalogReader
+from mcp_server.core.interfaces.execution import (
+    CheckCatalogReader,
+    FixCatalogReader,
+    TestCatalogReader,
+)
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
@@ -82,6 +87,11 @@ class ConfigValidator:
                         raise ConfigError(
                             f"check_profile_input_unsupported: {profile_id}/{check_id}/{input_kind}"
                         )
+
+    def validate_fixes_config(self, config: FixesConfig, catalog: FixCatalogReader) -> None:
+        """Resolve each fix capability without requiring native availability or checks."""
+        for _, binding in config.fixes:
+            catalog.get_fix(binding.adapter_id, binding.capability)
 
     def validate_tests_config(self, config: TestsConfig, catalog: TestCatalogReader) -> None:
         """Resolve every declared test binding without invoking native tools."""

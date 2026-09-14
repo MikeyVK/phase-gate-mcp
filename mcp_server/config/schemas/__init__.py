@@ -23,6 +23,7 @@ from mcp_server.config.schemas.enforcement_config import (
     EnforcementConfig,
     EnforcementRule,
 )
+from mcp_server.config.schemas.fixes_config import FixBinding, FixesConfig, FixId
 from mcp_server.config.schemas.git_config import GitConfig
 from mcp_server.config.schemas.issue_config import IssueConfig, IssueTypeEntry
 from mcp_server.config.schemas.label_config import Label, LabelConfig, LabelPattern
@@ -62,6 +63,9 @@ __all__ = [
     "TestBinding",
     "TestId",
     "TestsConfig",
+    "FixesConfig",
+    "FixBinding",
+    "FixId",
     "ArtifactDefinition",
     "ArtifactLoggingConfig",
     "ArtifactRegistryConfig",

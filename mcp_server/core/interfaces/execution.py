@@ -145,3 +145,9 @@ class ScopePaths(Protocol):
     def workspace_root(self) -> Path: ...
 
     def resolve(self, relative: str) -> ResolvedScopePath: ...
+
+
+class FixScopePaths(ScopePaths, Protocol):
+    """Read-only file admission without enlarging check/test filesystem consumers."""
+
+    def is_file(self, path: Path) -> bool: ...

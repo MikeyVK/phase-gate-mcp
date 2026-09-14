@@ -15,6 +15,7 @@ from mcp_server.config.schemas import (
     ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
+    FixesConfig,
     GitConfig,
     IssueConfig,
     LabelConfig,
@@ -156,6 +157,12 @@ class ConfigLoader:
         """Read required test bindings without native dependency probing."""
         return self._load_declaration(
             TestsConfig, self.config_root / "tests.yaml", description="tests configuration"
+        )
+
+    def load_fixes_config(self) -> FixesConfig:
+        """Read required fix bindings without native dependency probing."""
+        return self._load_declaration(
+            FixesConfig, self.config_root / "fixes.yaml", description="fixes configuration"
         )
 
     def _load_declaration(
