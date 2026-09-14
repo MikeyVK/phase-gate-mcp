@@ -1099,7 +1099,16 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `mcp_server/core/interfaces/execution.py`
+- `mcp_server/execution/content_input.py`
+- `tests/mcp_server/integration/execution/test_content_input.py`
+- `tests/mcp_server/unit/execution/test_check_service.py`
+
+Independent QA identified a missing preparation-stage fact required by DI-04 §7.1.
+The user's standing authorization for bounded QA corrections covers preserving allocation
+versus write failure at the existing scratch boundary and checking its existing propagation.
+No execution policy, adapter protocol, startup activation, or public behavior changes.
+Keep the corresponding rows in `planning-path-ownership.md` aligned with this bounded revisit.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 

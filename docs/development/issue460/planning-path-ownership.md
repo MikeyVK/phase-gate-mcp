@@ -499,7 +499,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/integration/test_cache_fidelity_v3.py` | [CY010](planning-execution.md#cy010) | CY010 |
 | `tests/mcp_server/integration/test_execution_presentation_v3.py` | [CY011](planning-execution.md#cy011) | CY011 |
 | `mcp_server/config/schemas/adapter_manifest.py` | [CY012](planning-execution.md#cy012) | CY012 |
-| `mcp_server/core/interfaces/execution.py` | [CY012](planning-execution.md#cy012) | CY012, CY013 |
+| `mcp_server/core/interfaces/execution.py` | [CY012](planning-execution.md#cy012) | CY012, CY013, CY053 |
 | `mcp_server/execution/catalog.py` | [CY012](planning-execution.md#cy012) | CY012 |
 | `tests/mcp_server/unit/execution/test_catalog.py` | [CY012](planning-execution.md#cy012) | CY012 |
 | `mcp_server/execution/__init__.py` | [CY012](planning-execution.md#cy012) | CY012 |
@@ -514,8 +514,8 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/integration/execution/test_process_runtime.py` | [CY013](planning-execution.md#cy013) | CY013 |
 | `mcp_server/execution/models.py` | [CY013](planning-execution.md#cy013) | CY013, CY026, CY028, CY030 |
 | `tests/mcp_server/integration/execution/test_process_stopping.py` | [CY014](planning-execution.md#cy014) | CY014 |
-| `mcp_server/execution/content_input.py` | [CY015](planning-execution.md#cy015) | CY015 |
-| `tests/mcp_server/integration/execution/test_content_input.py` | [CY015](planning-execution.md#cy015) | CY015 |
+| `mcp_server/execution/content_input.py` | [CY015](planning-execution.md#cy015) | CY015, CY053 |
+| `tests/mcp_server/integration/execution/test_content_input.py` | [CY015](planning-execution.md#cy015) | CY015, CY053 |
 | `mcp_server/config/schemas/checks_config.py` | [CY016](planning-execution.md#cy016) | CY016 |
 | `tests/mcp_server/unit/config/test_checks_config.py` | [CY016](planning-execution.md#cy016) | CY016 |
 | `mcp_server/execution/check_selection.py` | [CY017](planning-execution.md#cy017) | CY017 |
@@ -555,7 +555,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `mcp_server/bundled_adapters/lychee/dependencies.json` | [CY025](planning-execution.md#cy025) | CY025 |
 | `tests/mcp_server/integration/adapters/test_lychee.py` | [CY025](planning-execution.md#cy025) | CY025 |
 | `mcp_server/execution/check_service.py` | [CY026](planning-execution.md#cy026) | CY026 |
-| `tests/mcp_server/unit/execution/test_check_service.py` | [CY026](planning-execution.md#cy026) | CY026 |
+| `tests/mcp_server/unit/execution/test_check_service.py` | [CY026](planning-execution.md#cy026) | CY026, CY053 |
 | `tests/mcp_server/integration/execution/test_check_profiles.py` | [CY026](planning-execution.md#cy026) | CY026 |
 | `.pgmcp/config/checks.yaml` | [CY026](planning-execution.md#cy026) | CY026, CY072 |
 | `mcp_server/bundled_adapters/pytest/manifest.yaml` | [CY027](planning-execution.md#cy027) | CY027 |

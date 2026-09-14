@@ -16,6 +16,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterBinding,
     AdapterLaunch,
     AdapterPackageIdentity,
+    ScratchPreparationError,
 )
 from mcp_server.core.interfaces.git import BranchChanges
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
@@ -134,6 +135,7 @@ def compose(
     *,
     file_content: bool = False,
     write_bytes: Callable[[Path, bytes], int] = Path.write_bytes,
+    profile_id: str = "renamed",
 ) -> tuple[CheckService, CheckSelector, RecordingRuntime]:
     names = tuple(f"check_{index}" for index in range(len(outcomes)))
     config = ChecksConfig.model_validate(
@@ -147,9 +149,9 @@ def compose(
                 }
                 for index, name in enumerate(names)
             },
-            "profiles": {"renamed": {"checks": list(names)}},
+            "profiles": {profile_id: {"checks": list(names)}},
             "profiles_by_extension": {},
-            "run_checks": {"default_profile": "renamed"},
+            "run_checks": {"default_profile": profile_id},
         }
     )
     binding = AdapterBinding(
@@ -308,7 +310,9 @@ async def test_later_content_preparation_failure_preserves_prior_results(tmp_pat
         await service.run_content(
             "renamed", target_path=str(tmp_path / "untouched.md"), content="proposed\r\n"
         )
-    assert isinstance(caught.value.__cause__, OSError)
+    assert isinstance(caught.value.__cause__, ScratchPreparationError)
+    assert caught.value.__cause__.phase == "write"
+    assert isinstance(caught.value.__cause__.__cause__, OSError)
     assert caught.value.check_id == "check_1"
     result = caught.value.execution
     assert result.stop_reason == "content_preparation_failed"

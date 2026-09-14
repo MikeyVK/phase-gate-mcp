@@ -20,6 +20,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterPackageIdentity,
     ContentScratchFiles,
     OwnedScratchFile,
+    ScratchPreparationError,
 )
 from mcp_server.execution.content_input import (
     ContentInputPreparer,
@@ -169,8 +170,10 @@ def test_repeated_concurrent_and_colliding_allocations_never_share_or_adopt(tmp_
     assert len({allocation.directory for allocation in allocations}) == 6
     existing = allocations[0]
     collision = FileContentScratch(paths.validation_root, fresh_id=lambda: existing.directory.name)
-    with pytest.raises(FileExistsError):
+    with pytest.raises(ScratchPreparationError) as collision_failure:
         collision.create(target.name, b"must not overwrite")
+    assert collision_failure.value.phase == "allocation"
+    assert isinstance(collision_failure.value.__cause__, FileExistsError)
     assert existing.input_path.read_bytes() == b"same\n"
     assert target.read_bytes() == b"original"
     artifacts = write_package_tree(paths.artifacts_root, {"persisted.txt": b"keep"})
@@ -355,9 +358,10 @@ def test_partial_write_failure_keeps_primary_error_when_rollback_fails(tmp_path:
         write_bytes=partial_write,
         remove_tree=denied_remove,
     )
-    with pytest.raises(OSError, match="fixture disk full") as failure:
+    with pytest.raises(ScratchPreparationError) as failure:
         provider.create("proposed.py", b"complete text")
-    assert failure.value is primary
+    assert failure.value.phase == "write"
+    assert failure.value.__cause__ is primary
     assert (root / "owned" / "proposed.py").read_bytes() == b"co"
     assert any("rollback" in note for note in getattr(primary, "__notes__", ()))
     FileContentScratch(root, fresh_id=lambda: uuid4().hex).remove(
