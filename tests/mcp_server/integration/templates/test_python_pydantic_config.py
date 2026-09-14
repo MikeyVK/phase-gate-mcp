@@ -4,32 +4,15 @@ from __future__ import annotations
 
 import ast
 from copy import deepcopy
-from dataclasses import dataclass
-from functools import partial
 from pathlib import Path
-from shutil import copytree
-from types import MappingProxyType
 
 import pytest
-from jinja2 import DictLoader, Environment, StrictUndefined
 from jsonschema.exceptions import ValidationError as ContextError
 from pydantic import JsonValue
 
-from mcp_server.config.loader import ConfigLoader
-from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
-from mcp_server.services.artifact_identity import ArtifactIdentity
-from mcp_server.services.template_catalog import (
-    TemplateCatalog,
-    TemplateCatalogLoader,
-    TemplateCatalogRenderer,
-    TemplateInputValidator,
-)
-from mcp_server.services.template_contract_loader import TemplateContractLoader
-from mcp_server.services.template_engine import TemplateEngine
-from mcp_server.services.template_graph import TemplateGraphResolver
+from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.integration.adapters.test_python_syntax import (
     SyntaxPackage,
     invoke,
@@ -40,72 +23,22 @@ from tests.mcp_server.integration.adapters.test_python_syntax import (
 __all__ = ["syntax_package"]
 
 
-@dataclass(frozen=True)
-class DeliveredConfig:
-    catalog: TemplateCatalog
-    renderer: TemplateCatalogRenderer
-    provenance: FrozenJsonObject
-
-
 @pytest.fixture
-def delivered_config(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredConfig:
-    suite = tmp_path / "explicit suite"
+def delivered_config(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:
     source = pytestconfig.rootpath / ".pgmcp/template_suite"
-    copytree(source / "shared", suite / "shared")
-    copytree(source / "python_pydantic_config", suite / "opaque package location")
-    contracts = TemplateContractLoader(suite)
-    config = ConfigLoader(
-        pytestconfig.rootpath / ".pgmcp/config",
-        suite,
-        context_schema_reader=contracts.load_context_schema,
+    delivered = load_delivered_template(
+        source_suite=source,
+        source_package=source / "python_pydantic_config",
+        config_root=pytestconfig.rootpath / ".pgmcp/config",
+        destination=tmp_path / "explicit suite",
+        template_id="python_pydantic_config",
     )
-    validator = ConfigValidator()
-    parser = Environment()
-    graph = TemplateGraphResolver(suite, parser.parse)
-    provenance_schema = freeze_json(ArtifactIdentity.model_json_schema())
-    assert isinstance(provenance_schema, FrozenJsonObject)
-    inputs = TemplateInputValidator(parser.parse, provenance_schema)
-    checks = config.load_checks_config()
-    catalog = TemplateCatalogLoader(
-        suite,
-        read_manifest=config.load_template_manifest,
-        read_version=config.load_template_version,
-        read_policy=config.load_template_policy,
-        read_schema=config.load_template_context_schema,
-        validate_policy=partial(
-            validator.validate_template_policy,
-            profiles=frozenset(name for name, _ in checks.profiles),
-        ),
-        resolve_graph=graph.resolve,
-        validate_inputs=inputs.validate,
-    ).load()
-    selected = catalog.get("python_pydantic_config")
+    selected = delivered.catalog.get("python_pydantic_config")
     assert selected.policy.persistence == "workspace"
-    profile = dict(checks.profiles)[selected.policy.output_profile]
-    assert profile.checks == ("python_syntax",)
-    engine = TemplateEngine(
-        environment=Environment(
-            loader=DictLoader(
-                MappingProxyType(
-                    {item.name: item.content.decode("utf-8") for item in catalog.graph.sources}
-                )
-            ),
-            undefined=StrictUndefined,
-            keep_trailing_newline=True,
-        )
+    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
+        "python_syntax",
     )
-    renderer = TemplateCatalogRenderer(
-        catalog,
-        validate_context=validator.validate_template_context,
-        render_context=engine.render_context,
-    )
-    provenance = freeze_json(
-        ArtifactIdentity(
-            id=selected.manifest.template_id, pv=selected.version, pf="a" * 16, sf="b" * 16
-        ).model_dump(mode="json")
-    )
-    assert isinstance(provenance, FrozenJsonObject)
-    return DeliveredConfig(catalog, renderer, provenance)
+    return delivered
 
 
 def parse_config(output: str) -> tuple[ast.Module, ast.ClassDef, dict[str | None, object]]:
@@ -125,7 +58,7 @@ def parse_config(output: str) -> tuple[ast.Module, ast.ClassDef, dict[str | None
 
 @pytest.mark.parametrize("frozen", [False, True])
 def test_empty_configuration_respects_explicit_frozen_choice(
-    delivered_config: DeliveredConfig,
+    delivered_config: DeliveredTemplate,
     syntax_package: SyntaxPackage,
     tmp_path: Path,
     frozen: bool,
@@ -154,7 +87,7 @@ def test_empty_configuration_respects_explicit_frozen_choice(
 
 @pytest.mark.parametrize("examples", [None, [], [{"deliberately_unmatched": [False, 0, None]}]])
 def test_populated_configuration_keeps_examples_optional_and_exact_values(
-    delivered_config: DeliveredConfig,
+    delivered_config: DeliveredTemplate,
     syntax_package: SyntaxPackage,
     tmp_path: Path,
     examples: JsonValue,
@@ -252,7 +185,7 @@ def test_populated_configuration_keeps_examples_optional_and_exact_values(
 
 
 def test_config_context_requires_frozen_and_reuses_closed_model_field_rules(
-    delivered_config: DeliveredConfig,
+    delivered_config: DeliveredTemplate,
 ) -> None:
     base: dict[str, JsonValue] = {
         "class_name": "Settings",

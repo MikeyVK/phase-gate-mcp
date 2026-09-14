@@ -179,10 +179,19 @@ New exact paths:
 - `.pgmcp/template_suite/python_class/context.schema.json`
 - `.pgmcp/template_suite/python_class/template.jinja2`
 - `tests/mcp_server/integration/templates/test_python_class.py`
+- `tests/mcp_server/fixtures/delivered_templates.py`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `tests/mcp_server/integration/templates/test_python_pydantic_dto.py`
+- `tests/mcp_server/integration/templates/test_python_pydantic_config.py`
+
+Independent QA identified the repeated delivered-package composition as a bounded test
+maintenance prerequisite. One shared factory replaces that wiring; family assertions and
+acceptance behavior remain in each test. The standing proportional QA-correction rule
+authorizes these exact paths. R-CY034 is `c8683722ab81c7bec8436396862f60a157ec0b80`;
+the two existing tests were clean and the factory was absent. Recover only this cycle's
+inverse diff, including its owned factory addition.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 

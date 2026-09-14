@@ -588,19 +588,20 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/python_pydantic_dto/policy.yaml` | [CY032](planning-artifacts-mutation.md#cy032) | CY032 |
 | `.pgmcp/template_suite/python_pydantic_dto/context.schema.json` | [CY032](planning-artifacts-mutation.md#cy032) | CY032, CY033 |
 | `.pgmcp/template_suite/python_pydantic_dto/template.jinja2` | [CY032](planning-artifacts-mutation.md#cy032) | CY032 |
-| `tests/mcp_server/integration/templates/test_python_pydantic_dto.py` | [CY032](planning-artifacts-mutation.md#cy032) | CY032 |
+| `tests/mcp_server/integration/templates/test_python_pydantic_dto.py` | [CY032](planning-artifacts-mutation.md#cy032) | CY032, CY034 |
 | `.pgmcp/template_suite/python_pydantic_config/manifest.yaml` | [CY033](planning-artifacts-mutation.md#cy033) | CY033 |
 | `.pgmcp/template_suite/python_pydantic_config/.version` | [CY033](planning-artifacts-mutation.md#cy033) | CY033 |
 | `.pgmcp/template_suite/python_pydantic_config/policy.yaml` | [CY033](planning-artifacts-mutation.md#cy033) | CY033 |
 | `.pgmcp/template_suite/python_pydantic_config/context.schema.json` | [CY033](planning-artifacts-mutation.md#cy033) | CY033 |
 | `.pgmcp/template_suite/python_pydantic_config/template.jinja2` | [CY033](planning-artifacts-mutation.md#cy033) | CY033 |
-| `tests/mcp_server/integration/templates/test_python_pydantic_config.py` | [CY033](planning-artifacts-mutation.md#cy033) | CY033 |
+| `tests/mcp_server/integration/templates/test_python_pydantic_config.py` | [CY033](planning-artifacts-mutation.md#cy033) | CY033, CY034 |
 | `.pgmcp/template_suite/python_class/manifest.yaml` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
 | `.pgmcp/template_suite/python_class/.version` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
 | `.pgmcp/template_suite/python_class/policy.yaml` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
 | `.pgmcp/template_suite/python_class/context.schema.json` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
 | `.pgmcp/template_suite/python_class/template.jinja2` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
 | `tests/mcp_server/integration/templates/test_python_class.py` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
+| `tests/mcp_server/fixtures/delivered_templates.py` | [CY034](planning-artifacts-mutation.md#cy034) | CY034 |
 | `.pgmcp/template_suite/python_protocol/manifest.yaml` | [CY035](planning-artifacts-mutation.md#cy035) | CY035 |
 | `.pgmcp/template_suite/python_protocol/.version` | [CY035](planning-artifacts-mutation.md#cy035) | CY035 |
 | `.pgmcp/template_suite/python_protocol/policy.yaml` | [CY035](planning-artifacts-mutation.md#cy035) | CY035 |
