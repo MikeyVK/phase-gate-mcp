@@ -31,6 +31,7 @@ from mcp_server.config.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.config.schemas.adapter_manifest import AdapterManifest, AdapterTrustConfig
+from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
 from mcp_server.config.schemas.template_suite import (
     TemplateManifest,
     TemplatePackageVersion,
@@ -157,6 +158,14 @@ class ConfigLoader:
         """Read required test bindings without native dependency probing."""
         return self._load_declaration(
             TestsConfig, self.config_root / "tests.yaml", description="tests configuration"
+        )
+
+    def load_artifact_locations_config(self) -> ArtifactLocationsConfig:
+        """Read the required workspace artifact-location declaration."""
+        return self._load_declaration(
+            ArtifactLocationsConfig,
+            self.config_root / "artifacts.yaml",
+            description="artifact locations configuration",
         )
 
     def load_fixes_config(self) -> FixesConfig:

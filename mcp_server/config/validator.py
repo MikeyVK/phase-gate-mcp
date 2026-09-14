@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from jsonschema import Draft202012Validator
 
+from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.config.schemas.fixes_config import FixesConfig
@@ -97,6 +98,14 @@ class ConfigValidator:
         """Resolve every declared test binding without invoking native tools."""
         for _, binding in config.tests:
             catalog.get_test(binding.adapter_id, binding.capability)
+
+    def validate_artifact_locations(
+        self, config: ArtifactLocationsConfig, template_ids: frozenset[str]
+    ) -> None:
+        """Require each configured location key to name one loaded template package."""
+        unknown = sorted(set(dict(config.artifacts)) - template_ids)
+        if unknown:
+            raise ConfigError(f"artifact_location_template_unknown: {unknown}")
 
     def validate_startup(
         self,

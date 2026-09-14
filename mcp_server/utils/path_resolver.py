@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from pathlib import Path
+from os.path import lexists
+from pathlib import Path, PureWindowsPath
+
+from mcp_server.core.interfaces.execution import ResolvedScopePath
 
 logger = logging.getLogger(__name__)
 
@@ -72,3 +75,49 @@ def resolve_temporary_paths(resolved_server_root: Path) -> ResolvedTemporaryPath
         validation_root=temp_root / "validation",
         artifacts_root=temp_root / "artifacts",
     )
+
+
+def normalize_workspace_relative_path(value: str) -> str:
+    """Normalize logical path components without resolving them against the filesystem."""
+    if (
+        not value.strip()
+        or "\x00" in value
+        or value.startswith(("/", "\\"))
+        or PureWindowsPath(value).drive
+    ):
+        raise ValueError("workspace_relative_path_required")
+    parts: list[str] = []
+    for part in value.replace("\\", "/").split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if not parts:
+                raise ValueError("workspace_relative_path_required")
+            parts.pop()
+        else:
+            parts.append(part)
+    return "/".join(parts) or "."
+
+
+class FileArtifactTargetPaths:
+    """Observe contained creation targets while retaining an existing leaf entry."""
+
+    def __init__(self, workspace_root: Path) -> None:
+        if not workspace_root.is_absolute():
+            raise ValueError("absolute_workspace_required")
+        self._workspace_root = workspace_root.resolve(strict=True)
+        if not self._workspace_root.is_dir():
+            raise ValueError("workspace_directory_required")
+
+    @property
+    def workspace_root(self) -> Path:
+        return self._workspace_root
+
+    def resolve(self, relative: str) -> ResolvedScopePath:
+        normalized = normalize_workspace_relative_path(relative)
+        candidate = self._workspace_root / normalized
+        parent = candidate.parent.resolve()
+        if not parent.is_relative_to(self._workspace_root):
+            raise ValueError("artifact_target_outside_workspace")
+        target = parent / candidate.name
+        return ResolvedScopePath(path=target, exists=lexists(target))

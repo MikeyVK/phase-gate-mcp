@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 from pathlib import Path
 from typing import Literal
 
@@ -77,19 +79,26 @@ def test_force_changes_only_location_permission(resolver: ArtifactTargetResolver
     ):
         with pytest.raises(ValueError, match="force_target_required"):
             resolver.resolve(
-                template_id=template_id, persistence="workspace",
-                file_name="result.md", target_path=target_path,
+                template_id=template_id,
+                persistence="workspace",
+                file_name="result.md",
+                target_path=target_path,
             )
     with pytest.raises(ValueError, match="force_target_requires_target_path"):
         resolver.resolve(
-            template_id="unmapped", persistence="workspace",
-            file_name="result.md", force_target=True,
+            template_id="unmapped",
+            persistence="workspace",
+            file_name="result.md",
+            force_target=True,
         )
     for target_path in ("../outside", "docs/../../outside", "/absolute", "C:\\absolute", ""):
         with pytest.raises(ValueError, match="workspace_relative_path_required"):
             resolver.resolve(
-                template_id="design", persistence="workspace", file_name="result.md",
-                target_path=target_path, force_target=True,
+                template_id="design",
+                persistence="workspace",
+                file_name="result.md",
+                target_path=target_path,
+                force_target=True,
             )
 
 
@@ -105,8 +114,11 @@ def test_filename_is_a_basename_and_collision_never_overwrites(
     existing.write_bytes(original)
     with pytest.raises(FileExistsError):
         resolver.resolve(
-            template_id="design", persistence="workspace", file_name=existing.name,
-            target_path="docs", force_target=True,
+            template_id="design",
+            persistence="workspace",
+            file_name=existing.name,
+            target_path="docs",
+            force_target=True,
         )
     assert existing.read_bytes() == original
 
@@ -114,7 +126,7 @@ def test_filename_is_a_basename_and_collision_never_overwrites(
 def test_loader_and_one_way_catalog_references(tmp_path: Path) -> None:
     (tmp_path / "artifacts.yaml").write_text(
         'version: "2.0.0"\nartifacts:\n  design:\n'
-        '    default_root: docs/./design\n    additional_roots: [notes/drafts]\n',
+        "    default_root: docs/./design\n    additional_roots: [notes/drafts]\n",
         encoding="utf-8",
     )
     config = ConfigLoader(tmp_path, template_root=tmp_path).load_artifact_locations_config()
@@ -126,7 +138,7 @@ def test_loader_and_one_way_catalog_references(tmp_path: Path) -> None:
         validator.validate_artifact_locations(config, frozenset({"other"}))
     (tmp_path / "artifacts.yaml").write_text(
         'version: "2.0.0"\nartifacts:\n  design: {default_root: docs}\n'
-        '  design: {default_root: other}\n',
+        "  design: {default_root: other}\n",
         encoding="utf-8",
     )
     with pytest.raises(ConfigError):
@@ -153,19 +165,54 @@ def test_location_config_rejects_invalid_or_duplicate_roots(
     assert locations.artifacts[0][1].default_root == "docs"
 
 
-def test_dangling_output_entry_is_a_collision(
+def create_directory_link(link: Path, target: Path) -> None:
+    """Create an actual directory alias without requiring Windows symlink privileges."""
+    if os.name == "nt":
+        subprocess.run(
+            ["cmd", "/d", "/c", "mklink", "/J", str(link), str(target)],
+            check=True,
+            capture_output=True,
+        )
+    else:
+        link.symlink_to(target, target_is_directory=True)
+
+
+def test_dangling_entry_and_escaping_parent_are_rejected(
     resolver: ArtifactTargetResolver, tmp_path: Path
 ) -> None:
     directory = tmp_path / "docs"
     directory.mkdir()
     target = directory / "requested.md"
-    referent = directory / "missing.md"
-    target.symlink_to(referent)
-    with pytest.raises(FileExistsError):
-        resolver.resolve(
-            template_id="design", persistence="workspace", file_name=target.name,
-            target_path="docs", force_target=True,
-        )
-    assert target.is_symlink()
-    assert target.readlink() == referent
-    assert not referent.exists()
+    referent = directory / "missing"
+    escape = directory / "escape"
+    create_directory_link(target, referent)
+    try:
+        assert target.resolve() == referent
+        assert not target.exists()
+        original_entry = target.lstat()
+        with pytest.raises(FileExistsError):
+            resolver.resolve(
+                template_id="design",
+                persistence="workspace",
+                file_name=target.name,
+                target_path="docs",
+                force_target=True,
+            )
+        assert target.lstat().st_ino == original_entry.st_ino
+        assert not referent.exists()
+        create_directory_link(escape, tmp_path.parent)
+        with pytest.raises(ValueError, match="artifact_target_outside_workspace"):
+            resolver.resolve(
+                template_id="design",
+                persistence="workspace",
+                file_name="outside.md",
+                target_path="docs/escape",
+                force_target=True,
+            )
+    finally:
+        for link in (target, escape):
+            if os.path.lexists(link):
+                if os.name == "nt":
+                    link.rmdir()
+                else:
+                    link.unlink()
