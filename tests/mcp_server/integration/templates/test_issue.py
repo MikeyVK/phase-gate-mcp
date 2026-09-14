@@ -87,7 +87,7 @@ def test_issue_preserves_optional_values_order_and_related_reference_namespace(
         assert isinstance(value, str) and value in output
     assert "1. first step\n   continued" in output and "2. second step" in output
     assert output.index("first step") < output.index("second step")
-    assert "[Spec | marker][related-1]" in output
+    assert "[Spec &#124; marker][related-1]" in output
     assert "[Self marker][related-2]" in output
     assert "[related-1]: <docs/[spec].md#Part A>" in output
     assert "[related-2]: <#Caller-Anchor>" in output

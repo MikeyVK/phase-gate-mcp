@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue body content",
+  "description": "Caller-authored issue body; publication metadata belongs to the downstream issue operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "problem"
+  ],
+  "properties": {
+    "problem": {
+      "$ref": "#/$defs/Text"
+    },
+    "summary": {
+      "$ref": "#/$defs/Prose"
+    },
+    "expected": {
+      "$ref": "#/$defs/Prose"
+    },
+    "actual": {
+      "$ref": "#/$defs/Prose"
+    },
+    "context": {
+      "$ref": "#/$defs/Prose"
+    },
+    "reproduction_steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    }
+  }
+}
