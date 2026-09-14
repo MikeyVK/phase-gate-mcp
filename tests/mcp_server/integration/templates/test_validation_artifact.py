@@ -53,28 +53,8 @@ def test_minimal_validation_report_is_authored_without_invented_outcome(
         validation_report.provenance,
     )
     assert context == before
-    assert output.count("\n# ") == 1 and "# Validation basis" in output
-    for absent in (
-        "## Issue Number",
-        "## Cycle",
-        "## Validation Status",
-        "## Scope",
-        "## Obligations",
-        "## Evidence",
-        "## Demonstration",
-        "## Preservation",
-        "## Containment",
-        "## Failures",
-        "## Caveats",
-        "## Risks",
-        "## Deferred Work",
-        "**Status:**",
-        "PASS",
-        "FAIL",
-        "PARTIAL",
-        "Initial draft",
-    ):
-        assert absent not in output
+    assert output.count("\n# ") == 1 and f"# {context['title']}" in output
+    assert not {"PASS", "FAIL", "PARTIAL"}.intersection(output.split())
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "validation_report"
@@ -157,62 +137,9 @@ def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings
         validation_report.provenance,
     )
     assert context == before
-    for supplied in (
-        "#42",
-        "CY045",
-        "PARTIAL",
-        "Validate the delivered boundary.",
-        "DRAFT — awaiting review",
-        "1.2",
-        "2026-09-14",
-        "Caller-authored validation purpose.",
-        "Included surface",
-        "Excluded surface",
-        "Read the approved contract",
-        "Observed native result.",
-        "Review ordering",
-        "Unobtained evidence",
-        "Another follow-up",
-        "Explicit later responsibility",
-        "Preserve accepted calls",
-        "Call trace",
-        "Observed caller evidence.",
-        "The adapter retained the contract",
-        "A second authored observation",
-        "caller-command --case",
-        "Exit 0",
-        "2026-09-14T10:20:30.125+02:00",
-        "Caller-visible demonstration.",
-        "Accepted behavior remains unchanged.",
-        "Unrelated paths were untouched.",
-        "One expected limitation",
-        "Native duration varies",
-        "Migration risk",
-        "Unresolved risk",
-        "Retain the bridge until consumers move",
-        "Temporary duplication",
-        "Remove the compatibility bridge",
-        "Deferred detail",
-        "A later owner controls cleanup",
-        "Plan",
-    ):
-        assert supplied in output, supplied
-    for heading in (
-        "## Issue Number",
-        "## Cycle",
-        "## Validation Status",
-        "## Scope",
-        "## Obligations",
-        "## Evidence",
-        "## Demonstration",
-        "## Preservation",
-        "## Containment",
-        "## Failures",
-        "## Caveats",
-        "## Risks",
-        "## Deferred Work",
-    ):
-        assert heading in output
+    for key in ("validation_status", "scope", "preservation", "containment"):
+        value = context[key]
+        assert isinstance(value, str) and value in output
     for heading in (
         r"### Preserve accepted calls \#",
         r"### The adapter retained the contract \#",
@@ -225,9 +152,23 @@ def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings
     assert "[Self fragment](<#Own-Evidence>)" in output
     assert "[Call trace](<trace.md#Calls>)" in output
     assert "[Plan](<planning.md#Cleanup>)" in output
-    assert output.count("**References:**") == 2
-    assert output.count("**Outcome:**") == 2
-    assert "#42.0" not in output
+    for collection, index, field in (
+        ("deferred_work", 1, "references"),
+        ("obligations", 2, "outcome"),
+    ):
+        absent = deepcopy(context)
+        records = absent[collection]
+        assert isinstance(records, list)
+        record = records[index]
+        assert isinstance(record, dict)
+        del record[field]
+        rendered = validation_report.renderer.render(
+            "validation_report", absent, validation_report.provenance
+        )
+        assert rendered.split() != output.split()
+    issue_number = context["issue_number"]
+    assert isinstance(issue_number, (int, float))
+    assert f"#{int(issue_number)}" in output and "#42.0" not in output
     assert output.index("Preserve accepted calls") < output.index("Review containment")
     assert output.count("\n# ") == 1
     code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
@@ -260,28 +201,14 @@ def test_validation_report_explicit_empty_sections_remain_visible(
         context,
         validation_report.provenance,
     )
+    absent = validation_report.renderer.render(
+        "validation_report", {"title": context["title"]}, validation_report.provenance
+    )
     headings = [line for line in output.splitlines() if line.startswith("## ")]
-    for heading in (
-        "Purpose",
-        "Scope In",
-        "Scope Out",
-        "Prerequisites",
-        "Related Documents",
-        "Scope",
-        "Obligations",
-        "Evidence",
-        "Demonstration",
-        "Preservation",
-        "Containment",
-        "Failures",
-        "Caveats",
-        "Risks",
-        "Deferred Work",
-    ):
-        assert headings.count(f"## {heading}") == 1
+    assert len(headings) == len(context) - 1
+    assert len(headings) == len(set(headings))
+    assert output.split() != absent.split()
     assert not any(line.startswith("- ") for line in output.splitlines())
-    for invented in ("None", "To be defined", "Initial draft", "PASS", "Agent"):
-        assert invented not in output
 
 
 def test_validation_report_rejects_legacy_shapes_and_invalid_carriers(

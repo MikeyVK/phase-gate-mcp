@@ -649,7 +649,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/shared/definitions/link.schema.json` | [CY041](planning-artifacts-mutation.md#cy041) | CY041 |
 | `.pgmcp/template_suite/shared/definitions/issue-reference.schema.json` | [CY041](planning-artifacts-mutation.md#cy041) | CY041 |
 | `.pgmcp/template_suite/shared/definitions/checklist-item.schema.json` | [CY041](planning-artifacts-mutation.md#cy041) | CY041 |
-| `tests/mcp_server/integration/templates/test_research_artifact.py` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
+| `tests/mcp_server/integration/templates/test_research_artifact.py` | [CY042](planning-artifacts-mutation.md#cy042) | CY042, CY047 |
 | `.pgmcp/template_suite/research/manifest.yaml` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
 | `.pgmcp/template_suite/research/.version` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
 | `.pgmcp/template_suite/research/policy.yaml` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
@@ -657,7 +657,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/shared/definitions/evidence.schema.json` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
 | `.pgmcp/template_suite/shared/definitions/risk.schema.json` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
 | `.pgmcp/template_suite/research/template.jinja2` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
-| `tests/mcp_server/integration/templates/test_design_artifact.py` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
+| `tests/mcp_server/integration/templates/test_design_artifact.py` | [CY043](planning-artifacts-mutation.md#cy043) | CY043, CY047 |
 | `.pgmcp/template_suite/design/manifest.yaml` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
 | `.pgmcp/template_suite/design/.version` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
 | `.pgmcp/template_suite/design/policy.yaml` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
@@ -665,13 +665,13 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/shared/definitions/decision.schema.json` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |
 | `.pgmcp/template_suite/shared/definitions/evidence-requirement.schema.json` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
 | `.pgmcp/template_suite/design/template.jinja2` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
-| `tests/mcp_server/integration/templates/test_planning_artifact.py` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
+| `tests/mcp_server/integration/templates/test_planning_artifact.py` | [CY044](planning-artifacts-mutation.md#cy044) | CY044, CY047 |
 | `.pgmcp/template_suite/planning/manifest.yaml` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
 | `.pgmcp/template_suite/planning/.version` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
 | `.pgmcp/template_suite/planning/policy.yaml` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
 | `.pgmcp/template_suite/planning/context.schema.json` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
 | `.pgmcp/template_suite/planning/template.jinja2` | [CY044](planning-artifacts-mutation.md#cy044) | CY044 |
-| `tests/mcp_server/integration/templates/test_validation_artifact.py` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
+| `tests/mcp_server/integration/templates/test_validation_artifact.py` | [CY045](planning-artifacts-mutation.md#cy045) | CY045, CY047 |
 | `.pgmcp/template_suite/validation_report/manifest.yaml` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
 | `.pgmcp/template_suite/validation_report/.version` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
 | `.pgmcp/template_suite/validation_report/policy.yaml` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
@@ -682,7 +682,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/architecture/policy.yaml` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |
 | `.pgmcp/template_suite/architecture/context.schema.json` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |
 | `.pgmcp/template_suite/architecture/template.jinja2` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |
-| `tests/mcp_server/integration/templates/test_architecture.py` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |
+| `tests/mcp_server/integration/templates/test_architecture.py` | [CY046](planning-artifacts-mutation.md#cy046) | CY046, CY047 |
 | `.pgmcp/template_suite/reference/manifest.yaml` | [CY047](planning-artifacts-mutation.md#cy047) | CY047 |
 | `.pgmcp/template_suite/reference/.version` | [CY047](planning-artifacts-mutation.md#cy047) | CY047 |
 | `.pgmcp/template_suite/reference/policy.yaml` | [CY047](planning-artifacts-mutation.md#cy047) | CY047 |

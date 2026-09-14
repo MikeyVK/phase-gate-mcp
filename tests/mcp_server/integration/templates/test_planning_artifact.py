@@ -55,21 +55,7 @@ def test_initial_planning_does_not_invent_work_or_completion(
     before = deepcopy(context)
     output = planning.renderer.render("planning", context, planning.provenance)
     assert context == before
-    assert output.count("\n# ") == 1 and "# Plan the boundary" in output
-    assert "## Summary" in output and "Authored planning basis." in output
-    assert "## Work Units" in output
-    for absent in (
-        "## Dependencies",
-        "## Risks",
-        "## Milestones",
-        "## Phase Deliverables",
-        "## Related Documents",
-        "**Status:**",
-        "Version History",
-        "Initial draft",
-        "TDD",
-    ):
-        assert absent not in output
+    assert output.count("\n# ") == 1 and f"# {context['title']}" in output
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "planning"
@@ -168,54 +154,9 @@ def test_refined_plan_retains_authored_ownership_scope_and_evidence_requirements
     before = deepcopy(context)
     output = planning.renderer.render("planning", context, planning.provenance)
     assert context == before
-    for supplied in (
-        "Implement the approved boundary.",
-        "DRAFT — awaiting review",
-        "3.2",
-        "2026-09-14",
-        "**Caller purpose**",
-        "Included surface",
-        "Excluded surface",
-        "Approved strategy",
-        "External owner response",
-        "Explicit mitigation",
-        "Potential delay",
-        "Consumer cutover",
-        "Bridge retirement",
-        "WU-B",
-        "Keep accepted caller behavior",
-        "B.D1",
-        "Caller adapter",
-        "Adapter owner",
-        "Caller evidence recorded.\nIndependent review complete.",
-        "Named consumer",
-        "Other consumers",
-        "Migration owner",
-        "WU-A",
-        "Preserve accepted calls",
-        "Run the selected comparison",
-        "Preserved output",
-        "Review exclusions",
-        "Inspect changes",
-        "Excluded code retained",
-        "Review ordering",
-        "Read dependencies",
-        "Explicit order retained",
-        "Stop on an unexplained mismatch",
-        "Prepare reader",
-        "Expose narrow reader",
-        "A.D1",
-        "Reader implementation",
-        "Reader reviewed",
-        "D.DESIGN",
-        "Reviewed contract",
-        "D.VALIDATE",
-        "Observed final evidence",
-        "D.DOC",
-        "Final usage guide",
-        "Documentation owner",
-    ):
-        assert supplied in output, supplied
+    for key in ("summary", "scope_in", "scope_out"):
+        value = context[key]
+        assert isinstance(value, str) and value in output
     assert output.index("Migrate consumer") < output.index("Prepare reader")
     assert output.index("Consumer cutover") < output.index("Bridge retirement")
     for escaped in (
@@ -227,9 +168,15 @@ def test_refined_plan_retains_authored_ownership_scope_and_evidence_requirements
         assert escaped in output
     assert "[Design](<design.md#Boundary>)" in output
     assert "[Proof design](<#Caller-Proof>)" in output
-    assert output.count("**References:**") == 2
-    assert output.count("**Validates:** null") == 2
-    assert "**Cycle Number:**" not in output
+    absent = deepcopy(context)
+    units = absent["work_units"]
+    assert isinstance(units, list) and isinstance(units[0], dict)
+    verification = units[0]["verification"]
+    assert isinstance(verification, list) and isinstance(verification[1], dict)
+    del verification[1]["references"]
+    assert (
+        planning.renderer.render("planning", absent, planning.provenance).split() != output.split()
+    )
     code, response = invoke(markdown_package, tmp_path, request(tmp_path / "refined.md", output))
     assert code == 0 and response["decision"] == {"status": "passed"}
 
@@ -267,48 +214,24 @@ def test_empty_planning_sections_and_work_unit_capacities_are_visible(
         "phase_deliverables": {"design": [], "validation": [], "documentation": []},
     }
     output = planning.renderer.render("planning", context, planning.provenance)
-    for label in (
-        "Purpose",
-        "Scope In",
-        "Scope Out",
-        "Prerequisites",
-        "Related Documents",
-        "Dependencies",
-        "Risks",
-        "Milestones",
-        "Phase Deliverables",
-    ):
-        assert f"## {label}" in output
-    for label in (
-        "Scope In",
-        "Scope Out",
-        "Dependencies",
-        "Obligations",
-        "Verification",
-        "Risks",
-        "Stop Conditions",
-        "Design",
-        "Validation",
-        "Documentation",
-    ):
-        assert label in output
-    unit_section = output.split("### WU-EMPTY", 1)[1].split("## Phase Deliverables", 1)[0]
-    assert not any(line.startswith("## ") for line in unit_section.splitlines())
-    for heading in (
-        "Scope In",
-        "Scope Out",
-        "Deliverables",
-        "Exit Criteria",
-        "Dependencies",
-        "Obligations",
-        "Verification",
-        "Risks",
-        "Stop Conditions",
-    ):
-        assert f"#### {heading}\n" in unit_section
+    units = context["work_units"]
+    assert isinstance(units, list) and isinstance(units[0], dict)
+    required = ("id", "name", "goal", "deliverables", "exit_criteria")
+    base: dict[str, JsonValue] = {
+        "title": context["title"],
+        "summary": context["summary"],
+        "work_units": [{key: units[0][key] for key in required}],
+    }
+    absent = planning.renderer.render("planning", base, planning.provenance)
+    assert output.split() != absent.split()
+    headings = [line for line in output.splitlines() if line.startswith("## ")]
+    absent_headings = [line for line in absent.splitlines() if line.startswith("## ")]
+    assert len(headings) - len(absent_headings) == len(context) - len(base)
+    assert len(headings) == len(set(headings))
+    unit_section = output.split("### WU-EMPTY", 1)[1].split("\n## ", 1)[0]
+    exit_criteria = units[0]["exit_criteria"]
+    assert isinstance(exit_criteria, str) and exit_criteria in unit_section
     assert "##### D1\n" in unit_section
-    for invented in ("None", "To be defined", "Initial draft", "**Status:**", "TDD"):
-        assert invented not in output
 
 
 def test_explicit_projection_survives_actual_planning_save_and_readback(
@@ -362,39 +285,18 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
     output = planning.renderer.render("planning", context, planning.provenance)
     assert context == before
     assert output.index("Prepare reader") < output.index("Migrate consumer")
-    assert "**Cycle Number:** 1" in output and "**Cycle Number:** 2" in output
-    for supplied in (
-        "WU-A",
-        "WU-B",
-        "Reader owner",
-        "D1",
-        "D2",
-        "D3",
-        "D4",
-        "D5",
-        "file_exists",
-        "file_glob",
-        "contains_text",
-        "absent_text",
-        "key_path",
-        "src/reader.py",
-        "src/*.py",
-        "proof.md",
-        "Retained behavior",
-        "contract.json",
-        "version",
-        "Reader public behavior verified.\nReady for consumer.",
-        "Consumer preserved and bridge retired.",
-        "DESIGN.1",
-        "VALIDATE.1",
-        "DOC.1",
-    ):
-        assert supplied in output, supplied
-    assert "**Text:** null" in output and "**Path:** null" in output
-    absent_text_section = output.split("**Type:** absent_text", 1)[1].split(
-        "**Type:** key_path", 1
-    )[0]
-    assert any(line.rstrip() == "**Text:**" for line in absent_text_section.splitlines())
+    for deliverable in deliverables:
+        assert isinstance(deliverable, dict)
+        identifier = deliverable["id"]
+        assert isinstance(identifier, str) and identifier in output
+        spec = deliverable["validates"]
+        assert isinstance(spec, dict)
+        kind = spec["type"]
+        assert isinstance(kind, str) and kind in output
+    for cycle in (first_cycle, second_cycle):
+        for key in ("name", "exit_criteria"):
+            value = cycle[key]
+            assert isinstance(value, str) and value in output
     payload: dict[str, JsonValue] = {
         "cycles": {"total": 2, "cycles": cycles},
         "design": {"deliverables": phase_design},

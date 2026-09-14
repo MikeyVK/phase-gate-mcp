@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reference document content",
+  "description": "Valid initial authored Reference content; active work-context phase instructions determine completion. API descriptions, links, and language-labelled examples remain caller-owned content.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "sources",
+    "api_reference"
+  ],
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "status": {
+      "$ref": "#/$defs/Text"
+    },
+    "version": {
+      "$ref": "#/$defs/Text"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
+    },
+    "purpose": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      },
+      "minItems": 1
+    },
+    "api_reference": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ApiEntry"
+      }
+    },
+    "test_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "usage_examples": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/UsageExample"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "ApiEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "$ref": "#/$defs/Prose"
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ApiMethod"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "../shared/definitions/link.schema.json"
+          }
+        }
+      }
+    },
+    "ApiMethod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signature",
+        "parameters",
+        "returns"
+      ],
+      "properties": {
+        "signature": {
+          "$ref": "#/$defs/Text"
+        },
+        "parameters": {
+          "$ref": "#/$defs/Prose"
+        },
+        "returns": {
+          "$ref": "#/$defs/Prose"
+        },
+        "description": {
+          "$ref": "#/$defs/Prose"
+        },
+        "errors": {
+          "$ref": "#/$defs/Prose"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "../shared/definitions/link.schema.json"
+          }
+        }
+      }
+    },
+    "UsageExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "language",
+        "code"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/Text"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+(?![\\s\\S])",
+          "description": "Explicit single-line code-fence language; no default or inferred language."
+        },
+        "code": {
+          "$ref": "#/$defs/Prose"
+        }
+      }
+    }
+  }
+}

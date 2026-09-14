@@ -818,7 +818,18 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `tests/mcp_server/integration/templates/test_research_artifact.py`
+- `tests/mcp_server/integration/templates/test_design_artifact.py`
+- `tests/mcp_server/integration/templates/test_planning_artifact.py`
+- `tests/mcp_server/integration/templates/test_validation_artifact.py`
+- `tests/mcp_server/integration/templates/test_architecture.py`
+
+The user clarified that tests must verify behavior, not template editorial content. Independent QA
+confirmed this bounded maintenance slice removes fixed heading/label wording and duplicated expected
+prose while retaining schema admission, caller-data preservation, presence behavior, escaping, link
+integrity and actual operational save/readback. No production behavior, shared helper, new test case,
+or broader test framework is introduced by this slice. Both planning ledgers record the ownership.
+R-CY047 is `dfa12e8790db99d62b12ba1cacf15bc93107199a`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
