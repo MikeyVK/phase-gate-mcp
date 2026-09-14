@@ -759,7 +759,7 @@ The new-source register records CY059's inward projection operation and the narr
 | `mcp_server/services/installation_state.py` | [CY064](planning-rollout.md#cy064) | CY064, CY071 |
 | `tests/mcp_server/unit/services/test_installation_state.py` | [CY064](planning-rollout.md#cy064) | CY064 |
 | `mcp_server/services/template_proposal.py` | [CY065](planning-rollout.md#cy065) | CY065 |
-| `tests/mcp_server/integration/test_template_proposal.py` | [CY065](planning-rollout.md#cy065) | CY065 |
+| `tests/mcp_server/integration/test_template_proposal.py` | [CY065](planning-rollout.md#cy065) | CY065, CY066 (extract shared test composition only) |
 | `mcp_server/services/template_activation.py` | [CY066](planning-rollout.md#cy066) | CY066 |
 | `tests/mcp_server/integration/test_template_activation.py` | [CY066](planning-rollout.md#cy066) | CY066 |
 | `mcp_server/presenters/renewal_presenter.py` | [CY067](planning-rollout.md#cy067) | CY067 |

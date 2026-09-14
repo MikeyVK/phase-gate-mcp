@@ -188,7 +188,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **F-10 activation and deterministic recovery**
 
 - **Semantic predecessors:** [CY065](planning-rollout.md#cy065).
-- **Shared-file predecessors:** [CY055](planning-artifacts-mutation.md#cy055), [CY064](planning-rollout.md#cy064).
+- **Shared-file predecessors:** [CY055](planning-artifacts-mutation.md#cy055), [CY064](planning-rollout.md#cy064), [CY065](planning-rollout.md#cy065).
 - **Authority:** [DI-06 §§7.5,8,10](design-distribution.md).
 - **CY066.D1 — bounded result:** Cross-process exclusion, fixed same-filesystem next/previous trees, recovery record and atomic checkpoint publication.
 - **Preserved behavior:** One coherent authoritative tree/checkpoint; running catalog stable; forced backup separate; native fixes unrelated.
@@ -210,6 +210,9 @@ New exact paths:
 Previously introduced paths revisited in this cycle:
 
 - `mcp_server/services/template_renewal.py`
+- `tests/mcp_server/integration/test_template_proposal.py`
+
+Independent QA authorized extracting only the existing real admission factory assembly into the public T048 helper with explicit config and adapter roots. The proposal test retains a thin delegate; production admission and its evidence computation stay unchanged. Reuse this composition for activation evidence and rerun the affected proposal tests once.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 
