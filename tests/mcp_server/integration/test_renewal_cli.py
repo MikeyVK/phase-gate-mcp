@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
 
@@ -11,7 +13,10 @@ import pytest
 
 from mcp_server.cli_renewal import RenewalCli, build_default_operation
 from mcp_server.config.settings import ServerSettings, Settings
-from mcp_server.services.template_activation import UpgradeLock
+from mcp_server.services.template_activation import ActivationFiles, TemplateActivationService, UpgradeLock
+from mcp_server.services.installation_state import InstallationStateRepository
+from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
+from tests.mcp_server.test_support import make_template_suite_admission
 from mcp_server.services.template_renewal import RenewalResult, TemplateRenewalService
 
 
@@ -181,7 +186,7 @@ def test_checkpointless_external_root_requires_action_and_rejects_force(
     _append(candidate / "issue" / "template.jinja2", b"\n{# external-candidate #}\n")
     _stage(renewal_case, candidate)
 
-    code, out, err, operation = _run(renewal_case, external=True)
+    code, out, err, operation = _run(renewal_case, external=True, supplied=renewal_case.source)
     assert code == 2
     assert _result(operation).outcome == "checkpoint_required"
     assert _tree_bytes(renewal_case.external_actual) == before
@@ -293,3 +298,48 @@ def test_busy_and_invalid_profile_are_actionable(renewal_case: RenewalCase) -> N
     assert "issue" in rendered
     assert "missing_profile" in rendered
     assert "checks.yaml" in rendered
+
+
+def test_completed_recovery_without_changes_omits_restart(
+    renewal_case: RenewalCase, pytestconfig: pytest.Config,
+) -> None:
+    case = renewal_case
+    code, _out, _err, _operation = _run(case, supplied=case.source)
+    assert code == 0
+    before = _tree_bytes(case.actual)
+    before_installation = (case.server / "installation.json").read_bytes()
+    _stage(case, case.source)
+    writer = AtomicJsonWriter().write_json
+    repository = InstallationStateRepository(case.server / "installation.json", writer=writer)
+
+    def publish_then_interrupt(path: Path, payload: dict[str, object]) -> None:
+        writer(path, payload)
+        if path == case.server / "installation.json":
+            raise OSError("simulated_interruption_after_publication")
+
+    files = ActivationFiles(
+        case.server, json_writer=publish_then_interrupt, move=os.replace,
+        read_installation=repository.read,
+    )
+    activation = TemplateActivationService(
+        files, UpgradeLock(files.paths.lock),
+        admit=make_template_suite_admission(
+            case.config,
+            official_adapter_root=pytestconfig.rootpath / "mcp_server" / "bundled_adapters",
+            workspace_adapter_root=case.server / "workspace_adapters",
+        ),
+        clock=lambda: datetime.now(UTC),
+    )
+    with pytest.raises(OSError, match="simulated_interruption_after_publication"):
+        activation.activate(case.candidate, pgmcp_version=_settings(case).server.version)
+    assert files.paths.record.exists()
+
+    code, out, _err, operation = _run(case)
+    assert code == 0
+    result = _result(operation)
+    assert result.actual_changed is False
+    assert result.checkpoint_effect == "unchanged"
+    assert "Restart any running" not in out
+    assert _tree_bytes(case.actual) == before
+    assert (case.server / "installation.json").read_bytes() == before_installation
+    assert not files.paths.record.exists()
