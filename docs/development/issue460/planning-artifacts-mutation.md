@@ -24,6 +24,7 @@ Read-only review/preservation IDs: None. For a previously deleted source this me
 New exact paths:
 
 - `tests/mcp_server/integration/templates/test_shared_python.py`
+- `.pgmcp/template_suite/shared/definitions/python.schema.json`
 - `.pgmcp/template_suite/shared/templates/bases/tier1_code.jinja2`
 - `.pgmcp/template_suite/shared/templates/bases/tier2_python.jinja2`
 - `.pgmcp/template_suite/shared/templates/bases/tier2_typescript.jinja2`
@@ -32,6 +33,13 @@ New exact paths:
 - `.pgmcp/template_suite/shared/templates/patterns/python/pydantic.jinja2`
 - `.pgmcp/template_suite/shared/templates/patterns/python/logging.jinja2`
 - `.pgmcp/template_suite/shared/templates/patterns/testing/pytest.jinja2`
+
+The Python definition path completes the shared-record prerequisite already required by
+CY031.D1 and DI-03 §7.9. Independent QA confirmed this bounded inventory correction during
+implementation under the user's standing authorization. It adds no contract or strategy;
+concrete-package restrictions remain with CY032 onward. The pre-cycle baseline is
+`d121a1a7cb4423348a3d60d66f6d1a7476d0b6c9`; the definition file was absent there and its
+cycle-owned addition belongs to the same scoped inverse diff.
 
 Previously introduced paths revisited in this cycle:
 

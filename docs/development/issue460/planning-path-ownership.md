@@ -574,6 +574,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/unit/execution/test_fix_service.py` | [CY030](planning-execution.md#cy030) | CY030 |
 | `.pgmcp/config/fixes.yaml` | [CY030](planning-execution.md#cy030) | CY030, CY072 |
 | `tests/mcp_server/integration/templates/test_shared_python.py` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
+| `.pgmcp/template_suite/shared/definitions/python.schema.json` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier1_code.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier2_python.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier2_typescript.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
