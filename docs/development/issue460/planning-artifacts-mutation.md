@@ -609,10 +609,17 @@ New exact paths:
 - `.pgmcp/template_suite/design/policy.yaml`
 - `.pgmcp/template_suite/design/context.schema.json`
 - `.pgmcp/template_suite/design/template.jinja2`
+- `.pgmcp/template_suite/shared/definitions/risk.schema.json`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/research/context.schema.json`
+
+Independent QA confirmed that Research and Design actually reuse the same Risk record under
+DI-03 section 7.2. Under the standing authorization for proportional corrections, CY043 extracts
+that record unchanged into a shared definition and points both consumers at it. The two planning
+ledgers record only this ownership amendment; no broader schema framework is introduced.
+R-CY043 is `8881113feeb43b48862d68d4edb0f88d678ac5d2`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 

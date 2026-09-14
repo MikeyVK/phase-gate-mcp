@@ -1,0 +1,159 @@
+{% extends "shared/templates/bases/tier2_markdown_document.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+
+{% block document_body %}
+{{ sections.prose('Problem Statement', content.problem_statement) }}
+
+{{ sections.heading('Functional Requirements') }}
+
+{{ sections.bullets(content.requirements_functional) }}
+
+{{ sections.heading('Nonfunctional Requirements') }}
+
+{{ sections.bullets(content.requirements_nonfunctional) }}
+{% if content.constraints is defined %}
+
+{{ sections.heading('Constraints') }}
+
+{{ sections.bullets(content.constraints) }}
+{% endif %}
+{% if content.options is defined %}
+
+{{ sections.heading('Options') }}
+{% for item in content.options %}
+
+{{ sections.heading(loop.index ~ '. ' ~ item.name, 3) }}
+
+{{ item.description }}
+{% if item.pros is defined %}
+
+**Pros:**
+
+{{ sections.bullets(item.pros) }}
+{% endif %}
+{% if item.cons is defined %}
+
+**Cons:**
+
+{{ sections.bullets(item.cons) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if content.decision is defined %}
+
+{{ sections.prose('Decision', content.decision) }}
+{% endif %}
+{% if content.rationale is defined %}
+
+{{ sections.prose('Rationale', content.rationale) }}
+{% endif %}
+{% if content.key_decisions is defined %}
+
+{{ sections.heading('Key Decisions') }}
+{% for item in content.key_decisions %}
+
+{{ sections.heading(item.decision, 3) }}
+
+{{ item.rationale }}
+{% if item.alternatives is defined %}
+
+**Alternatives:**
+
+{{ sections.bullets(item.alternatives) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if content.questions is defined %}
+
+{{ sections.heading('Questions') }}
+
+{{ sections.bullets(content.questions) }}
+{% endif %}
+{% if content.production_design is defined %}
+
+{{ sections.prose('Production Design', content.production_design) }}
+{% endif %}
+{% if content.test_design is defined %}
+
+{{ sections.prose('Test Design', content.test_design) }}
+{% endif %}
+{% if content.contracts is defined %}
+
+{{ sections.heading('Contracts') }}
+{% for item in content.contracts %}
+
+{{ sections.heading(item.heading, 3) }}
+{% if item.content is defined %}
+
+{{ item.content }}
+{% endif %}
+{% if item.bullets is defined %}
+
+{{ sections.bullets(item.bullets) }}
+{% endif %}
+{% if item.checklist is defined %}
+
+{{ sections.checklist(item.checklist) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if content.flow is defined %}
+
+{{ sections.prose('Flow', content.flow) }}
+{% endif %}
+{% if content.state_and_failures is defined %}
+
+{{ sections.prose('State and Failures', content.state_and_failures) }}
+{% endif %}
+{% if content.preservation is defined %}
+
+{{ sections.prose('Preservation', content.preservation) }}
+{% endif %}
+{% if content.transition_and_cleanup is defined %}
+
+{{ sections.prose('Transition and Cleanup', content.transition_and_cleanup) }}
+{% endif %}
+{% if content.validation is defined %}
+
+{{ sections.heading('Validation') }}
+{% for item in content.validation %}
+
+{{ sections.heading(item.obligation, 3) }}
+
+**Method:** {{ item.method }}
+
+**Expected Result:** {{ item.expected_result }}
+{% if item.references is defined %}
+
+**References:**
+
+{{ links.inline_list(item.references) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if content.risks is defined %}
+
+{{ sections.heading('Risks') }}
+{% for item in content.risks %}
+
+{{ sections.heading(item.description, 3) }}
+
+{{ item.mitigation }}
+{% if item.consequence is defined %}
+
+**Consequence:** {{ item.consequence }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if content.planning_consequences is defined %}
+
+{{ sections.prose('Planning Consequences', content.planning_consequences) }}
+{% endif %}
+{% if content.sources is defined %}
+
+{{ sections.heading('Sources') }}
+
+{{ links.inline_list(content.sources) }}
+{% endif %}
+{% endblock %}

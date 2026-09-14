@@ -25,7 +25,7 @@
     "expected_results": {"$ref": "#/$defs/Prose"},
     "evidence": {"type": "array", "items": {"$ref": "#/$defs/Evidence"}},
     "consumers": {"type": "array", "items": {"$ref": "#/$defs/Consumer"}},
-    "risks": {"type": "array", "items": {"$ref": "#/$defs/Risk"}},
+    "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
     "assumptions": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
   },
   "$defs": {
@@ -52,16 +52,6 @@
         "name": {"$ref": "#/$defs/Text"},
         "responsibility": {"$ref": "#/$defs/Prose"},
         "impact": {"$ref": "#/$defs/Prose"}
-      }
-    },
-    "Risk": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["description", "mitigation"],
-      "properties": {
-        "description": {"$ref": "#/$defs/Text"},
-        "mitigation": {"$ref": "#/$defs/Prose"},
-        "consequence": {"$ref": "#/$defs/Prose"}
       }
     }
   }

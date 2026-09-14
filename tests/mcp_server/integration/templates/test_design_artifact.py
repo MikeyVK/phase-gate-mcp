@@ -56,9 +56,16 @@ def test_initial_design_does_not_require_or_invent_a_decision(
     for heading in ("Problem Statement", "Functional Requirements", "Nonfunctional Requirements"):
         assert f"## {heading}" in output
     for absent in (
-        "## Options", "## Decision", "## Rationale", "## Key Decisions",
-        "## Validation", "## Risks", "## Related Documents", "**Status:**",
-        "Version History", "Initial draft",
+        "## Options",
+        "## Decision",
+        "## Rationale",
+        "## Key Decisions",
+        "## Validation",
+        "## Risks",
+        "## Related Documents",
+        "**Status:**",
+        "Version History",
+        "Initial draft",
     ):
         assert absent not in output
     header = ArtifactHeaderReader().read(output)
@@ -78,8 +85,10 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
         for index in range(1, 12)
     ]
     options[0] = {
-        "name": "Candidate 1 #", "description": "First option.",
-        "pros": ["Keeps the public seam"], "cons": ["Requires transition work"],
+        "name": "Candidate 1 #",
+        "description": "First option.",
+        "pros": ["Keeps the public seam"],
+        "cons": ["Requires transition work"],
     }
     options[1] = {"name": "Candidate 2", "description": "", "pros": [], "cons": []}
     context: dict[str, JsonValue] = {
@@ -100,8 +109,11 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
         "decision": "Caller selected the second option.",
         "rationale": "Caller trade-off.\n\nAdditional rationale.",
         "key_decisions": [
-            {"decision": "Keep the boundary #", "rationale": "Preserves consumer calls",
-             "alternatives": ["Rejected global rewrite"]},
+            {
+                "decision": "Keep the boundary #",
+                "rationale": "Preserves consumer calls",
+                "alternatives": ["Rejected global rewrite"],
+            },
             {"decision": "Deferred detail", "rationale": "", "alternatives": []},
             {"decision": "Authored detail", "rationale": "No alternatives supplied"},
         ],
@@ -109,10 +121,15 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
         "production_design": "Inject the narrow reader.",
         "test_design": "Observe calls through the public seam.",
         "contracts": [
-            {"heading": "Input contract #", "content": "Authored **contract**.\n\nNext paragraph.",
-             "bullets": ["Accepted input", "Explicit output"],
-             "checklist": [{"text": "Caller verified", "checked": True},
-                           {"text": "Awaiting evidence", "checked": False}]},
+            {
+                "heading": "Input contract #",
+                "content": "Authored **contract**.\n\nNext paragraph.",
+                "bullets": ["Accepted input", "Explicit output"],
+                "checklist": [
+                    {"text": "Caller verified", "checked": True},
+                    {"text": "Awaiting evidence", "checked": False},
+                ],
+            },
             {"heading": "Empty prose contract", "content": ""},
             {"heading": "Empty bullets contract", "bullets": []},
             {"heading": "Empty checklist contract", "checklist": []},
@@ -122,17 +139,30 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
         "preservation": "Retain accepted input semantics.",
         "transition_and_cleanup": "Cut over the named consumer, then retire its bridge.",
         "validation": [
-            {"obligation": "Preserve the seam #", "method": "Compare public results",
-             "expected_result": "Same accepted outcomes",
-             "references": [{"label": "Planned check", "target": "#Caller-Check"}]},
-            {"obligation": "Prove the exclusion", "method": "Inspect the diff",
-             "expected_result": "Excluded path unchanged", "references": []},
-            {"obligation": "Review ownership", "method": "Read the consumer",
-             "expected_result": "Narrow dependency retained"},
+            {
+                "obligation": "Preserve the seam #",
+                "method": "Compare public results",
+                "expected_result": "Same accepted outcomes",
+                "references": [{"label": "Planned check", "target": "#Caller-Check"}],
+            },
+            {
+                "obligation": "Prove the exclusion",
+                "method": "Inspect the diff",
+                "expected_result": "Excluded path unchanged",
+                "references": [],
+            },
+            {
+                "obligation": "Review ownership",
+                "method": "Read the consumer",
+                "expected_result": "Narrow dependency retained",
+            },
         ],
         "risks": [
-            {"description": "Consumer transition risk #", "mitigation": "Named migration",
-             "consequence": "Consumer interruption"},
+            {
+                "description": "Consumer transition risk #",
+                "mitigation": "Named migration",
+                "consequence": "Consumer interruption",
+            },
             {"description": "Unresolved risk", "mitigation": ""},
         ],
         "planning_consequences": "Implement the reader before migrating its consumer.",
@@ -142,22 +172,49 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
     output = design.renderer.render("design", context, design.provenance)
     assert context == before
     for supplied in (
-        "Caller-defined mismatch.", "**Authored purpose**", "Included seam", "Excluded behavior",
-        "DRAFT — awaiting review", "2.1", "2026-09-14", "Read the approved strategy",
-        "Keep the approved strategy", "First option.", "Keeps the public seam",
-        "Requires transition work", "Caller selected the second option.",
-        "Caller trade-off.\n\nAdditional rationale.", "Preserves consumer calls",
-        "Rejected global rewrite", "Deferred detail", "Authored detail",
-        "No alternatives supplied", "Which owner supplies the dependency?",
-        "Inject the narrow reader.", "Observe calls through the public seam.",
-        "Authored **contract**.\n\nNext paragraph.", "Accepted input", "Explicit output",
-        "Empty prose contract", "Empty bullets contract", "Empty checklist contract",
-        "Caller → reader → result", "A failed read leaves state unchanged.",
-        "Retain accepted input semantics.", "Cut over the named consumer, then retire its bridge.",
-        "Compare public results", "Same accepted outcomes", "Prove the exclusion",
-        "Inspect the diff", "Excluded path unchanged", "Review ownership",
-        "Read the consumer", "Narrow dependency retained", "Named migration",
-        "Consumer interruption", "Unresolved risk",
+        "Caller-defined mismatch.",
+        "**Authored purpose**",
+        "Included seam",
+        "Excluded behavior",
+        "DRAFT — awaiting review",
+        "2.1",
+        "2026-09-14",
+        "Read the approved strategy",
+        "Keep the approved strategy",
+        "First option.",
+        "Keeps the public seam",
+        "Requires transition work",
+        "Caller selected the second option.",
+        "Caller trade-off.\n\nAdditional rationale.",
+        "Preserves consumer calls",
+        "Rejected global rewrite",
+        "Deferred detail",
+        "Authored detail",
+        "No alternatives supplied",
+        "Which owner supplies the dependency?",
+        "Inject the narrow reader.",
+        "Observe calls through the public seam.",
+        "Authored **contract**.\n\nNext paragraph.",
+        "Accepted input",
+        "Explicit output",
+        "Empty prose contract",
+        "Empty bullets contract",
+        "Empty checklist contract",
+        "Caller → reader → result",
+        "A failed read leaves state unchanged.",
+        "Retain accepted input semantics.",
+        "Cut over the named consumer, then retire its bridge.",
+        "Compare public results",
+        "Same accepted outcomes",
+        "Prove the exclusion",
+        "Inspect the diff",
+        "Excluded path unchanged",
+        "Review ownership",
+        "Read the consumer",
+        "Narrow dependency retained",
+        "Named migration",
+        "Consumer interruption",
+        "Unresolved risk",
         "Implement the reader before migrating its consumer.",
     ):
         assert supplied in output, supplied
@@ -165,20 +222,28 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
     assert positions == sorted(positions)
     assert "Authored option 11." in output
     for heading in (
-        r"### 1. Candidate 1 \#", r"### Keep the boundary \#",
-        r"### Input contract \#", r"### Preserve the seam \#",
+        r"### 1. Candidate 1 \#",
+        r"### Keep the boundary \#",
+        r"### Input contract \#",
+        r"### Preserve the seam \#",
         r"### Consumer transition risk \#",
     ):
         assert heading in output
     functional = output.split("## Functional Requirements\n", 1)[1].split("\n## ", 1)[0]
     nonfunctional = output.split("## Nonfunctional Requirements\n", 1)[1].split("\n## ", 1)[0]
-    assert functional.index("Preserve accepted calls") < functional.index("Return explicit outcomes")
+    assert functional.index("Preserve accepted calls") < functional.index(
+        "Return explicit outcomes"
+    )
     assert "Keep bounded runtime" not in functional
-    assert "Keep bounded runtime" in nonfunctional and "Preserve accepted calls" not in nonfunctional
+    assert (
+        "Keep bounded runtime" in nonfunctional and "Preserve accepted calls" not in nonfunctional
+    )
     assert "- [x] Caller verified" in output and "- [ ] Awaiting evidence" in output
     assert "[Research](<research.md#Findings>)" in output
     assert "[Contract](<contract.md#Boundary>)" in output
     assert "[Planned check](<#Caller-Check>)" in output
+    assert output.count("**Alternatives:**") == 2
+    assert output.count("**References:**") == 2
     assert "Observed Result" not in output
     assert output.count("\n# ") == 1
     code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
@@ -187,22 +252,60 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
 
 def test_design_explicit_empty_sections_remain_visible(design: DeliveredTemplate) -> None:
     context: dict[str, JsonValue] = {
-        "title": "Initial design", "problem_statement": "Known problem.",
-        "requirements_functional": [], "requirements_nonfunctional": [],
-        "purpose": "", "scope_in": "", "scope_out": "", "prerequisites": [], "related_docs": [],
-        "constraints": [], "options": [], "decision": "", "rationale": "", "key_decisions": [],
-        "questions": [], "production_design": "", "test_design": "", "contracts": [], "flow": "",
-        "state_and_failures": "", "preservation": "", "transition_and_cleanup": "",
-        "validation": [], "risks": [], "planning_consequences": "", "sources": [],
+        "title": "Initial design",
+        "problem_statement": "Known problem.",
+        "requirements_functional": [],
+        "requirements_nonfunctional": [],
+        "purpose": "",
+        "scope_in": "",
+        "scope_out": "",
+        "prerequisites": [],
+        "related_docs": [],
+        "constraints": [],
+        "options": [],
+        "decision": "",
+        "rationale": "",
+        "key_decisions": [],
+        "questions": [],
+        "production_design": "",
+        "test_design": "",
+        "contracts": [],
+        "flow": "",
+        "state_and_failures": "",
+        "preservation": "",
+        "transition_and_cleanup": "",
+        "validation": [],
+        "risks": [],
+        "planning_consequences": "",
+        "sources": [],
     }
     output = design.renderer.render("design", context, design.provenance)
     headings = [line for line in output.splitlines() if line.startswith("## ")]
     for heading in (
-        "Purpose", "Scope In", "Scope Out", "Prerequisites", "Related Documents",
-        "Functional Requirements", "Nonfunctional Requirements", "Constraints", "Options",
-        "Decision", "Rationale", "Key Decisions", "Questions", "Production Design", "Test Design",
-        "Contracts", "Flow", "State and Failures", "Preservation", "Transition and Cleanup",
-        "Validation", "Risks", "Planning Consequences", "Sources",
+        "Purpose",
+        "Scope In",
+        "Scope Out",
+        "Prerequisites",
+        "Related Documents",
+        "Functional Requirements",
+        "Nonfunctional Requirements",
+        "Constraints",
+        "Options",
+        "Decision",
+        "Rationale",
+        "Key Decisions",
+        "Questions",
+        "Production Design",
+        "Test Design",
+        "Contracts",
+        "Flow",
+        "State and Failures",
+        "Preservation",
+        "Transition and Cleanup",
+        "Validation",
+        "Risks",
+        "Planning Consequences",
+        "Sources",
     ):
         assert headings.count(f"## {heading}") == 1
     assert not any(line.startswith("- ") for line in output.splitlines())
@@ -210,17 +313,26 @@ def test_design_explicit_empty_sections_remain_visible(design: DeliveredTemplate
         assert invented not in output
 
 
-def test_design_rejects_legacy_shapes_and_invalid_record_contracts(design: DeliveredTemplate) -> None:
+def test_design_rejects_legacy_shapes_and_invalid_record_contracts(
+    design: DeliveredTemplate,
+) -> None:
     base: dict[str, JsonValue] = {
-        "title": "Design", "problem_statement": "Problem",
-        "requirements_functional": [], "requirements_nonfunctional": [],
+        "title": "Design",
+        "problem_statement": "Problem",
+        "requirements_functional": [],
+        "requirements_nonfunctional": [],
     }
     invalid: list[dict[str, JsonValue]] = [
         {"title": "Design", "problem_statement": "Problem", "requirements_functional": []},
-        {**base, "title": ""}, {**base, "problem_statement": ""},
-        {**base, "requirements_functional": [""]}, {**base, "requirements_nonfunctional": "Fast"},
-        {**base, "requirements": []}, {**base, "questions_list": []},
-        {**base, "decision": None}, {**base, "workflow": "feature"}, {**base, "status": ""},
+        {**base, "title": ""},
+        {**base, "problem_statement": ""},
+        {**base, "requirements_functional": [""]},
+        {**base, "requirements_nonfunctional": "Fast"},
+        {**base, "requirements": []},
+        {**base, "questions_list": []},
+        {**base, "decision": None},
+        {**base, "workflow": "feature"},
+        {**base, "status": ""},
         {**base, "last_updated": "2026-09-14\n"},
         {**base, "options": ["Option"]},
         {**base, "options": [{"name": "Option", "description": "", "selected": True}]},
@@ -228,11 +340,24 @@ def test_design_rejects_legacy_shapes_and_invalid_record_contracts(design: Deliv
         {**base, "contracts": [{"heading": "Missing content"}]},
         {**base, "contracts": [{"heading": "Contract", "content": "", "children": []}]},
         {**base, "contracts": [{"heading": "Contract", "checklist": [{"text": "Check"}]}]},
-        {**base, "contracts": [{"heading": "Contract",
-                              "checklist": [{"text": "Check", "checked": None}]}]},
+        {
+            **base,
+            "contracts": [
+                {"heading": "Contract", "checklist": [{"text": "Check", "checked": None}]}
+            ],
+        },
         {**base, "validation": [{"obligation": "Proof", "method": "Inspect"}]},
-        {**base, "validation": [{"obligation": "Proof", "method": "Inspect",
-                                "expected_result": "Preserved", "observation": "Invented"}]},
+        {
+            **base,
+            "validation": [
+                {
+                    "obligation": "Proof",
+                    "method": "Inspect",
+                    "expected_result": "Preserved",
+                    "observation": "Invented",
+                }
+            ],
+        },
         {**base, "risks": [{"description": "Risk"}]},
         {**base, "risks": [{"description": "Risk", "mitigation": "", "probability": 0}]},
         {**base, "sources": [{"target": "contract.md"}]},

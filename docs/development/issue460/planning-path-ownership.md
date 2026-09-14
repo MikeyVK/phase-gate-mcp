@@ -653,7 +653,8 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/research/manifest.yaml` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
 | `.pgmcp/template_suite/research/.version` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
 | `.pgmcp/template_suite/research/policy.yaml` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
-| `.pgmcp/template_suite/research/context.schema.json` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
+| `.pgmcp/template_suite/research/context.schema.json` | [CY042](planning-artifacts-mutation.md#cy042) | CY042, CY043 |
+| `.pgmcp/template_suite/shared/definitions/risk.schema.json` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
 | `.pgmcp/template_suite/research/template.jinja2` | [CY042](planning-artifacts-mutation.md#cy042) | CY042 |
 | `tests/mcp_server/integration/templates/test_design_artifact.py` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
 | `.pgmcp/template_suite/design/manifest.yaml` | [CY043](planning-artifacts-mutation.md#cy043) | CY043 |
