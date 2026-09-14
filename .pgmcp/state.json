@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 26,
-  "last_cycle": 25,
+  "current_cycle": 27,
+  "last_cycle": 26,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -156,6 +156,12 @@
       "name": "Internal check orchestration",
       "forced": false,
       "entered": "2026-09-14T05:19:59.026795+00:00"
+    },
+    {
+      "cycle_number": 27,
+      "name": "Pytest adapter and native settings",
+      "forced": false,
+      "entered": "2026-09-14T05:39:22.975800+00:00"
     }
   ],
   "required_phases": [
@@ -311,5 +317,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }
