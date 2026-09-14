@@ -10,10 +10,18 @@ from pathlib import Path
 from typing import Literal
 
 import pytest
+from jinja2 import Environment
 
+from mcp_server.config.loader import ConfigLoader
+from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import MCPError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
+from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
+from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_components import ComponentSelection, select_components
-from mcp_server.services.template_contract_loader import DRAFT_2020_12
+from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
+from mcp_server.services.template_graph import TemplateGraphResolver
 from mcp_server.services.template_proposal import (
     SuiteSnapshot,
     TemplateProposalService,
@@ -60,6 +68,7 @@ def _write_config(
     write_package_tree(
         root,
         {
+            "adapters.yaml": b"trusted_adapter_ids: []\n",
             "checks.yaml": (
                 "checks:\n"
                 "  syntax:\n"
@@ -70,8 +79,69 @@ def _write_config(
                 f"profiles: {{{configured}}}\n"
                 "profiles_by_extension: {}\n"
                 "run_checks: {}\n"
-            ).encode()
+            ).encode(),
         },
+    )
+
+    write_package_tree(
+        root.parent / "official-adapters" / "syntax",
+        {
+            "manifest.yaml": (
+                b"adapter_id: python_syntax\nversion: 1.0.0\nfiles: [check.py]\n"
+                b"roles:\n  check:\n    contract_version: 1\n"
+                b"    entrypoint: {executable: unavailable_native, args: []}\n"
+                b"    capabilities:\n"
+                b"      syntax: {inputs: [content, selection], requires_file: false}\n"
+            ),
+            "check.py": b"raise RuntimeError('admission must not execute native tools')\n",
+        },
+    )
+
+
+def _admit_suite(root: Path, config_root: Path) -> SuiteSnapshot:
+    validator = ConfigValidator()
+    environment = Environment()
+    provenance = freeze_json(ArtifactIdentity.model_json_schema())
+    assert isinstance(provenance, FrozenJsonObject)
+
+    def create_config(config_path: Path, suite_path: Path) -> ConfigLoader:
+        contracts = TemplateContractLoader(suite_path)
+        return ConfigLoader(
+            config_path, suite_path, context_schema_reader=contracts.load_context_schema
+        )
+
+    def create_catalog(
+        suite_path: Path, config: ConfigLoader, profiles: frozenset[str]
+    ) -> TemplateCatalogLoader:
+        return TemplateCatalogLoader(
+            suite_path,
+            read_manifest=config.load_template_manifest,
+            read_version=config.load_template_version,
+            read_policy=config.load_template_policy,
+            read_schema=config.load_template_context_schema,
+            validate_policy=lambda policy: validator.validate_template_policy(policy, profiles),
+            resolve_graph=TemplateGraphResolver(suite_path, environment.parse).resolve,
+            validate_inputs=TemplateInputValidator(environment.parse, provenance).validate,
+        )
+
+    def create_adapters(config: ConfigLoader) -> AdapterCatalogLoader:
+        return AdapterCatalogLoader(
+            config_root.parent / "official-adapters",
+            config_root.parent / "workspace-adapters",
+            config.load_adapter_trust(),
+            read_manifest=config.load_adapter_manifest,
+            files=FileAdapterPackageReader(),
+            resolve_program=lambda _: None,
+            windows=os.name == "nt",
+        )
+
+    return admit_template_suite(
+        root,
+        config_root,
+        create_config=create_config,
+        create_catalog=create_catalog,
+        create_adapters=create_adapters,
+        validator=validator,
     )
 
 
@@ -86,6 +156,7 @@ def _service(
         candidate_root=staged,
         proposal_root=proposal,
         effective_config_root=config,
+        admit=_admit_suite,
     )
 
 
@@ -129,7 +200,7 @@ def test_flat_supersession_and_mixed_proposal_use_complete_admitted_snapshots(
     config_before = (config / "checks.yaml").read_bytes()
     service = _service(actual, staged, proposal, config)
     actual_snapshot = service.admit(actual)
-    supplied_snapshot = admit_template_suite(supplied, config)
+    supplied_snapshot = _admit_suite(supplied, config)
 
     assert service.stage_candidate(supplied) is None
     candidate_snapshot = service.admit(staged)
@@ -218,8 +289,8 @@ def test_proposal_invalid_is_distinct_and_retains_valid_candidate(tmp_path: Path
         _package_files("upstream", "demo", body=b"{{ content.value }}"),
     )
     _write_config(config, ("text",))
-    actual_snapshot = admit_template_suite(actual, config)
-    candidate_snapshot = admit_template_suite(supplied, config)
+    actual_snapshot = _admit_suite(actual, config)
+    candidate_snapshot = _admit_suite(supplied, config)
     service = _service(actual, staged, proposal, config)
     service.stage_candidate(supplied)
 
@@ -264,9 +335,7 @@ def test_owned_write_path_overlap_preserves_existing_trees(
     write_package_tree(candidate, {"retained.txt": b"keep"})
     _write_config(config, ("text",))
     actual_before = {
-        path.relative_to(actual): path.read_bytes()
-        for path in actual.rglob("*")
-        if path.is_file()
+        path.relative_to(actual): path.read_bytes() for path in actual.rglob("*") if path.is_file()
     }
     candidate_before = {
         path.relative_to(candidate): path.read_bytes()
@@ -278,9 +347,7 @@ def test_owned_write_path_overlap_preserves_existing_trees(
         _service(actual, candidate, proposal, config)
 
     assert actual_before == {
-        path.relative_to(actual): path.read_bytes()
-        for path in actual.rglob("*")
-        if path.is_file()
+        path.relative_to(actual): path.read_bytes() for path in actual.rglob("*") if path.is_file()
     }
     assert candidate_before == {
         path.relative_to(candidate): path.read_bytes()
@@ -309,7 +376,6 @@ def test_candidate_link_is_rejected_before_supersession(tmp_path: Path) -> None:
 
     assert raised.value.params["cause"] == "template_suite_symlink_escape"
     assert (staged / "retained.txt").read_bytes() == b"keep"
-
 
 
 def _directory_link(link: Path, target: Path) -> None:

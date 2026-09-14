@@ -9,14 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from jinja2 import Environment
-
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import MCPError
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
+from mcp_server.execution.catalog import AdapterCatalogLoader
 from mcp_server.services.artifact_identity import (
-    ArtifactIdentity,
     GenerationPackage,
     GenerationSource,
 )
@@ -24,15 +21,12 @@ from mcp_server.services.installation_state import ValidatedSuiteEvidence
 from mcp_server.services.template_catalog import (
     TemplateCatalog,
     TemplateCatalogLoader,
-    TemplateInputValidator,
 )
 from mcp_server.services.template_components import (
     ComponentKey,
     ComponentSelection,
     component_fingerprints,
 )
-from mcp_server.services.template_contract_loader import TemplateContractLoader
-from mcp_server.services.template_graph import TemplateGraphResolver
 
 Admission = Callable[[Path, Path], "SuiteSnapshot"]
 
@@ -70,36 +64,30 @@ class SuiteSnapshot:
             raise ValueError("suite_snapshot_location_mismatch")
 
 
-def admit_template_suite(root: Path, effective_config_root: Path) -> SuiteSnapshot:
-    """Load and validate one complete suite through the existing admission chain."""
+def admit_template_suite(
+    root: Path,
+    effective_config_root: Path,
+    *,
+    create_config: Callable[[Path, Path], ConfigLoader],
+    create_catalog: Callable[[Path, ConfigLoader, frozenset[str]], TemplateCatalogLoader],
+    create_adapters: Callable[[ConfigLoader], AdapterCatalogLoader],
+    validator: ConfigValidator,
+) -> SuiteSnapshot:
+    """Admit complete source bytes through injected real config and catalog readers."""
 
     suite_root = _absolute_directory(root, "template_suite_root_invalid")
     config_root = _absolute_directory(effective_config_root, "effective_config_root_invalid")
     inventory = _inventory(suite_root)
-    contract_reader = TemplateContractLoader(suite_root)
-    config = ConfigLoader(
-        config_root,
-        suite_root,
-        context_schema_reader=contract_reader.load_context_schema,
-    )
+    config = create_config(config_root, suite_root)
     checks = config.load_checks_config()
     profiles = frozenset(name for name, _ in checks.profiles)
-    validator = ConfigValidator()
-    environment = Environment()
-    graph = TemplateGraphResolver(suite_root, environment.parse)
-    provenance = freeze_json(ArtifactIdentity.model_json_schema())
-    if not isinstance(provenance, FrozenJsonObject):
-        raise MCPError("template_provenance_schema_invalid", code="ERR_CONFIG")
-    catalog = TemplateCatalogLoader(
-        suite_root,
-        read_manifest=config.load_template_manifest,
-        read_version=config.load_template_version,
-        read_policy=config.load_template_policy,
-        read_schema=config.load_template_context_schema,
-        validate_policy=lambda policy: validator.validate_template_policy(policy, profiles),
-        resolve_graph=graph.resolve,
-        validate_inputs=TemplateInputValidator(environment.parse, provenance).validate,
-    ).load()
+    catalog = create_catalog(suite_root, config, profiles).load()
+    adapters = create_adapters(config).load()
+    validator.validate_checks_config(
+        checks,
+        adapters,
+        template_profiles=frozenset(package.policy.output_profile for package in catalog.packages),
+    )
     if _inventory(suite_root) != inventory:
         raise MCPError("template_suite_snapshot_changed", code="ERR_CONFIG")
     packages = tuple(
@@ -146,16 +134,18 @@ class TemplateProposalService:
         candidate_root: Path,
         proposal_root: Path,
         effective_config_root: Path,
-        admit: Admission | None = None,
+        admit: Admission,
     ) -> None:
         roots = (actual_root, candidate_root, proposal_root, effective_config_root)
         if any(not root.is_absolute() for root in roots):
             raise MCPError("absolute_template_proposal_roots_required", code="ERR_CONFIG")
         self._actual_root = actual_root.resolve()
-        self._candidate_root = candidate_root.resolve()
-        self._proposal_root = proposal_root.resolve()
+        if _is_link(candidate_root) or _is_link(proposal_root):
+            raise MCPError("template_writable_endpoint_alias", code="ERR_CONFIG")
+        self._candidate_root = candidate_root.parent.resolve() / candidate_root.name
+        self._proposal_root = proposal_root.parent.resolve() / proposal_root.name
         self._config_root = effective_config_root.resolve()
-        self._admit = admit or admit_template_suite
+        self._admit = admit
         self._validate_owned_roots()
 
     def admit(self, root: Path) -> SuiteSnapshot:
@@ -166,6 +156,7 @@ class TemplateProposalService:
     def stage_candidate(self, supplied_candidate_root: Path) -> None:
         """Validate and atomically supersede the flat candidate staging root."""
 
+        self._validate_owned_roots()
         try:
             sources = _inventory(supplied_candidate_root)
             snapshot = self._admit_snapshot(supplied_candidate_root, "template_candidate_invalid")
@@ -182,13 +173,14 @@ class TemplateProposalService:
     ) -> None:
         """Materialize selected complete component bytes and validate the result off-root."""
 
+        self._validate_owned_roots()
         incoming = self._temporary_root(self._proposal_root)
         self._remove_tree(incoming)
         try:
             actual = self._admit_snapshot(self._actual_root, "template_proposal_invalid")
             candidate = self._admit_snapshot(self._candidate_root, "template_proposal_invalid")
             sources = _selected_sources(actual, candidate, tuple(selections))
-            self._materialize_sources(incoming, sources)
+            self._write_sources(incoming, sources)
             admitted = self._admit_snapshot(incoming, "template_proposal_invalid")
             _assert_snapshot_bytes(admitted, sources)
             self._replace_tree(incoming, self._proposal_root)
@@ -219,23 +211,27 @@ class TemplateProposalService:
         incoming = self._temporary_root(target)
         self._remove_tree(incoming)
         try:
-            incoming.mkdir(parents=True, exist_ok=False)
-            owner = incoming.resolve(strict=True)
-            for source in sources:
-                relative = Path(source.path)
-                destination = incoming / relative
-                lexical = Path(os.path.abspath(destination))
-                if not lexical.is_relative_to(Path(os.path.abspath(incoming))):
-                    raise MCPError("template_source_path_invalid", code="ERR_CONFIG")
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(source.content)
-                resolved = destination.resolve(strict=True)
-                if not resolved.is_relative_to(owner):
-                    raise MCPError("template_source_path_escape", code="ERR_CONFIG")
+            self._write_sources(incoming, sources)
             self._replace_tree(incoming, target)
         except BaseException:
             self._remove_tree(incoming)
             raise
+
+    @staticmethod
+    def _write_sources(target: Path, sources: tuple[GenerationSource, ...]) -> None:
+        target.mkdir(parents=True, exist_ok=False)
+        owner = target.resolve(strict=True)
+        for source in sources:
+            relative = Path(source.path)
+            destination = target / relative
+            lexical = Path(os.path.abspath(destination))
+            if not lexical.is_relative_to(Path(os.path.abspath(target))):
+                raise MCPError("template_source_path_invalid", code="ERR_CONFIG")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(source.content)
+            resolved = destination.resolve(strict=True)
+            if not resolved.is_relative_to(owner):
+                raise MCPError("template_source_path_escape", code="ERR_CONFIG")
 
     def _wrap(self, message: str, error: BaseException) -> MCPError:
         if isinstance(error, MCPError):
@@ -247,22 +243,29 @@ class TemplateProposalService:
             cause = str(error)
             code = "ERR_CONFIG"
         params.update({"cause": cause, "config_root": str(self._config_root)})
+        if "output_profile" in params:
+            params["config_source"] = "checks.yaml"
         if code != "ERR_CONFIG":
             params["admission_code"] = code
         return MCPError(message, code="ERR_CONFIG", params=params)
 
     def _validate_owned_roots(self) -> None:
-        mutable = (self._candidate_root, self._proposal_root)
-        if self._candidate_root == self._proposal_root:
-            raise MCPError("template_proposal_roots_overlap", code="ERR_CONFIG")
-        for root in mutable:
-            if (
-                root == self._actual_root
-                or root.is_relative_to(self._actual_root)
-                or self._actual_root.is_relative_to(root)
-                or root == self._config_root
-                or root.is_relative_to(self._config_root)
-                or self._config_root.is_relative_to(root)
+        footprint = tuple(
+            path
+            for root in (self._candidate_root, self._proposal_root)
+            for path in (
+                root,
+                self._temporary_root(root),
+                root.parent / f".{root.name}.previous",
+            )
+        )
+        protected = (self._actual_root, self._config_root)
+        for index, path in enumerate(footprint):
+            if _is_link(path) or path.resolve() != path:
+                raise MCPError("template_writable_endpoint_alias", code="ERR_CONFIG")
+            if any(
+                path.is_relative_to(other) or other.is_relative_to(path)
+                for other in (*protected, *footprint[:index])
             ):
                 raise MCPError("template_proposal_roots_overlap", code="ERR_CONFIG")
 

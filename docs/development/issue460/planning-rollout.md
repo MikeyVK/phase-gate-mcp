@@ -141,7 +141,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Candidate staging and proposal admission**
 
 - **Semantic predecessors:** [CY026](planning-execution.md#cy026), [CY032](planning-artifacts-mutation.md#cy032), [CY033](planning-artifacts-mutation.md#cy033), [CY034](planning-artifacts-mutation.md#cy034), [CY035](planning-artifacts-mutation.md#cy035), [CY036](planning-artifacts-mutation.md#cy036), [CY037](planning-artifacts-mutation.md#cy037), [CY038](planning-artifacts-mutation.md#cy038), [CY039](planning-artifacts-mutation.md#cy039), [CY040](planning-artifacts-mutation.md#cy040), [CY042](planning-artifacts-mutation.md#cy042), [CY043](planning-artifacts-mutation.md#cy043), [CY044](planning-artifacts-mutation.md#cy044), [CY045](planning-artifacts-mutation.md#cy045), [CY046](planning-artifacts-mutation.md#cy046), [CY047](planning-artifacts-mutation.md#cy047), [CY048](planning-artifacts-mutation.md#cy048), [CY049](planning-artifacts-mutation.md#cy049), [CY050](planning-artifacts-mutation.md#cy050), [CY051](planning-artifacts-mutation.md#cy051), [CY064](planning-rollout.md#cy064).
-- **Shared-file predecessors:** None.
+- **Shared-file predecessors:** [CY005](planning-execution.md#cy005), [CY063](planning-rollout.md#cy063).
 - **Authority:** [DI-06 §§5.5,7.3,7.7](design-distribution.md).
 - **CY065.D1 — bounded result:** Flat candidate staging/supersession and complete off-root proposal under effective actual configuration.
 - **Preserved behavior:** Config/native/trust bytes unchanged; external config root honored; candidate vs proposal invalid distinct.
@@ -163,6 +163,11 @@ New exact paths:
 Previously introduced paths revisited in this cycle:
 
 - `mcp_server/services/template_renewal.py`
+- `mcp_server/services/template_catalog.py`
+
+Independent QA identified a bounded diagnostic seam: enrich the existing policy-validation exception inside `_load_package` with the already admitted manifest ID, output profile and suite-relative policy source, preserving its class, code, message and cause. The proposal service supplies effective configuration-source context. No callback-order state, duplicate parser or catalog constructor change is permitted.
+
+Execution evidence limitation: the initial RED run (`91ca04aff17e4218887e70dbf557e34d`, commit `8548c31fc436fc3c8ee750d4afd1cf9647f0914d`) failed during collection on a scaffold import of `backend`; it is not valid behavioral RED evidence. The subsequent QA corrections use independently observed defects and fresh focused regression evidence. Historical RED is not reconstructed.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 

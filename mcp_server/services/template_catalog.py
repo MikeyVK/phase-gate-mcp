@@ -13,7 +13,7 @@ from jinja2 import meta, nodes
 from pydantic import JsonValue
 
 from mcp_server.config.schemas.template_suite import TemplateManifest, TemplatePolicy
-from mcp_server.core.exceptions import MCPError
+from mcp_server.core.exceptions import ConfigError, MCPError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, thaw_json
 from mcp_server.services.template_graph import TemplateGraph
 
@@ -136,7 +136,19 @@ class TemplateCatalogLoader:
         manifest = self._read_manifest(members["manifest.yaml"])
         version = self._read_version(members[".version"])
         policy = self._read_policy(members["policy.yaml"])
-        self._validate_policy(policy)
+        try:
+            self._validate_policy(policy)
+        except ConfigError as error:
+            error.params.update(
+                {
+                    "template_id": manifest.template_id,
+                    "output_profile": policy.output_profile,
+                    "policy_source": members["policy.yaml"]
+                    .relative_to(self._suite_root)
+                    .as_posix(),
+                }
+            )
+            raise
         schema = self._read_schema(members["context.schema.json"])
         renderer = members["template.jinja2"].relative_to(self._suite_root).as_posix()
         return TemplatePackage(manifest, version, policy, schema, renderer)
