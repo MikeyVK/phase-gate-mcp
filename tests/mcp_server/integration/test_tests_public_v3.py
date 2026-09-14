@@ -74,23 +74,27 @@ def compose(
             "max_items": 5,
             "template_success": "{requested_scope}",
             "template_failure": "{requested_scope}: {error_code}",
-            "collections": [{
-                "field": "results",
-                "heading": "Tests",
-                "item_template": "{test_id}: {status}; args_source={args_source}",
-            }],
-            "enum_cases": [{
-                "field": "error_code",
-                "cases": {
-                    "no_configured_tests": "No test bindings configured.",
-                    "no_active_tests": "No active test bindings.",
-                    "selection_invalid": "Test selection invalid.",
-                    "scope_resolution_failed": "Test scope could not be resolved.",
-                    "adapter_request_rejected": "Internal test request rejected.",
-                    "operation_interrupted": "Test operation interrupted.",
-                    "termination_unconfirmed": "Test termination unconfirmed.",
-                },
-            }],
+            "collections": [
+                {
+                    "field": "results",
+                    "heading": "Tests",
+                    "item_template": "{test_id}: {status}; args_source={args_source}",
+                }
+            ],
+            "enum_cases": [
+                {
+                    "field": "error_code",
+                    "cases": {
+                        "no_configured_tests": "No test bindings configured.",
+                        "no_active_tests": "No active test bindings.",
+                        "selection_invalid": "Test selection invalid.",
+                        "scope_resolution_failed": "Test scope could not be resolved.",
+                        "adapter_request_rejected": "Internal test request rejected.",
+                        "operation_interrupted": "Test operation interrupted.",
+                        "termination_unconfirmed": "Test termination unconfirmed.",
+                    },
+                }
+            ],
         }
     }
     presenter = TextPresenter(config_data=presentation)
@@ -145,13 +149,14 @@ async def test_scopes_defaults_and_explicit_inactive_selection_survive_transport
     assert result.success and result.error_code is None
     assert result.selected_tests == expected_ids
     assert [row.test_id for row in result.results] == list(expected_ids)
-    expected_targets = () if scope == "configured" else (
-        str(tmp_path) if scope == "workspace" else str(target),
+    expected_targets = (
+        () if scope == "configured" else (str(tmp_path) if scope == "workspace" else str(target),)
     )
     assert all(call.request.model_dump()["targets"] == expected_targets for call in runtime.calls)
     assert [call.timeout_seconds for call in runtime.calls] == expected_budgets
     assert [(row.args_source, row.effective_args) for row in result.results] == [
-        ("configured", ("--label", "two words", "")), ("caller", ())
+        ("configured", ("--label", "two words", "")),
+        ("caller", ()),
     ]
     assert result.results[0].message == "Native collection succeeded."
     assert result.results[0].external_tools == () and result.results[0].evidence is None
@@ -167,24 +172,29 @@ async def test_native_negative_and_unavailable_are_successful_operations(
         {"decision": {"status": "passed", "message": "No tests found."}, "external_tools": []},
         {
             "decision": {"status": "failed", "message": "Native assertions failed."},
-            "external_tools": [{"name": "native", "version": "1.2"}],
+            "external_tools": [{"tool_id": "native", "version": "1.2"}],
             "evidence": {"format": "text", "data": "original failure\r\nline two"},
         },
         {
             "decision": {
-                "status": "unavailable", "reason": "unsupported_input",
+                "status": "unavailable",
+                "reason": "unsupported_input",
                 "message": "Native usage rejected.",
             },
             "external_tools": [],
         },
     ]
-    runtime = RecordingTestRuntime(tuple(
-        (json.dumps(row).encode(), code) for row, code in zip(native, (0, 1, 3), strict=True)
-    ))
-    result = await run(compose(tmp_path, pytestconfig, runtime), {
-        "scope": "configured", "tests": ["first", "second", "manual"],
-        "args": {"first": ["--collect-only", "two words", ""]},
-    })
+    runtime = RecordingTestRuntime(
+        tuple((json.dumps(row).encode(), code) for row, code in zip(native, (0, 1, 3), strict=True))
+    )
+    result = await run(
+        compose(tmp_path, pytestconfig, runtime),
+        {
+            "scope": "configured",
+            "tests": ["first", "second", "manual"],
+            "args": {"first": ["--collect-only", "two words", ""]},
+        },
+    )
     assert result.success and result.error_code is None
     assert [row.status for row in result.results] == ["passed", "failed", "unavailable"]
     assert result.results[0].message == "No tests found."
@@ -203,27 +213,36 @@ async def test_partial_results_and_unstarted_obligations_survive_transport(
 ) -> None:
     runtime: AdapterProcessRuntime
     if kind == "rejected":
-        rejection = {"reason": "invalid_request", "details": [
-            {"location": ["args"], "code": "wrong_type"}
-        ]}
+        rejection = {
+            "reason": "invalid_request",
+            "details": [{"location": ["args"], "code": "wrong_type"}],
+        }
         runtime = RecordingTestRuntime((passed(), (json.dumps(rejection).encode(), 2)))
         code = "adapter_request_rejected"
     else:
         stream = StreamCapture(observed_bytes=4, head="head", tail="", truncated=False)
         capture = ProcessCapture(exit_code=None, stdout=stream, stderr=stream)
-        fault = InvocationCancelled(
-            outcome="cancelled", capture=capture, termination_problem=None
-        ) if kind == "interrupted" else InvocationFailed(
-            outcome="failed", capture=capture, termination_problem=TerminationProblem.UNCONFIRMED,
-            failure=AdapterCallFailure(
-                reason=AdapterCallFailureReason.TIMEOUT, message="Budget expired."
-            ),
+        fault = (
+            InvocationCancelled(outcome="cancelled", capture=capture, termination_problem=None)
+            if kind == "interrupted"
+            else InvocationFailed(
+                outcome="failed",
+                capture=capture,
+                termination_problem=TerminationProblem.UNCONFIRMED,
+                failure=AdapterCallFailure(
+                    reason=AdapterCallFailureReason.TIMEOUT, message="Budget expired."
+                ),
+            )
         )
         runtime = InterruptedRuntime(fault)
         code = "operation_interrupted" if kind == "interrupted" else "termination_unconfirmed"
-    result = await run(compose(tmp_path, pytestconfig, runtime), {
-        "scope": "configured", "tests": ["first", "second", "manual"],
-    })
+    result = await run(
+        compose(tmp_path, pytestconfig, runtime),
+        {
+            "scope": "configured",
+            "tests": ["first", "second", "manual"],
+        },
+    )
     assert result.success is (kind != "rejected") and result.error_code == code
     assert result.results[0].status == "passed"
     assert result.results[1].capture is not None and result.results[1].adapter is not None
@@ -239,11 +258,15 @@ async def test_partial_results_and_unstarted_obligations_survive_transport(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("arguments", [
-    {}, {"scope": "configured", "timeout_seconds": "11"},
-    {"scope": "configured", "args": {"manual": None}},
-    {"scope": "configured", "coverage": True},
-])
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        {},
+        {"scope": "configured", "timeout_seconds": "11"},
+        {"scope": "configured", "args": {"manual": None}},
+        {"scope": "configured", "coverage": True},
+    ],
+)
 async def test_schema_exposure_and_strict_admission_share_one_contract(
     tmp_path: Path, pytestconfig: pytest.Config, arguments: dict[str, JsonValue]
 ) -> None:
