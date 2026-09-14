@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, templates, agent instructions, and workflows into the installable pip wheel.
+Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the v3 template suite, agent instructions, and workflows into the installable pip wheel.
 
 ## Prerequisites
 
@@ -75,8 +75,8 @@ version: "1.0.0"
 assets:
   - source: ".pgmcp/config"
     target: "config"
-  - source: ".pgmcp/templates"
-    target: "templates"
+  - source: ".pgmcp/template_suite"
+    target: "template_suite"
   - source: "docs/agents"
     target: "agents"
   - source: "docs/coding_standards"
@@ -89,6 +89,11 @@ assets:
     target: "docs/setup"
 ```
 
+Official adapters are authored under `mcp_server/bundled_adapters/` and remain in
+that package path in the wheel. They are package data, not release-manifest assets,
+and are never copied into a workspace's `.pgmcp/` root. Workspace adapters and
+workspace-owned configuration remain outside the build input.
+
 ---
 
 ## 3. Build-Time Assembly Procedure
@@ -97,7 +102,7 @@ During the Python wheel compilation step:
 1. The packaging utility clears `mcp_server/assets/` completely.
 2. It parses `release_manifest.yaml`.
 3. It copies specified paths from the repository sources to the subdirectories under `mcp_server/assets/`.
-4. The `pyproject.toml` file bundles `mcp_server/assets/` via `package-data`, resulting in a clean standalone wheel.
+4. The `pyproject.toml` file bundles `mcp_server/assets/` and `mcp_server/bundled_adapters/` via `package-data`, including nested files and dotfiles, resulting in a clean standalone wheel.
 
 ---
 

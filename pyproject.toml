@@ -13,6 +13,7 @@ dependencies = [
     "gitpython>=3.1.0",
     "PyGithub>=2.0.0",
     "jinja2>=3.1.2",
+    "jsonschema>=4.20.0",
 ]
 
 [project.scripts]
@@ -38,7 +39,13 @@ where = ["."]
 include = ["mcp_server*"]
 
 [tool.setuptools.package-data]
-mcp_server = ["assets/**/*"]
+mcp_server = [
+    "assets/**/*",
+    "assets/**/.*",
+    "bundled_adapters/**/*",
+    "bundled_adapters/**/.*",
+    "execution/contracts/*.json",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
