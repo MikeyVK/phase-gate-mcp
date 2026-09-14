@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -48,7 +50,12 @@ def _package_files(
     }
 
 
-def _write_config(root: Path, profiles: Iterable[str]) -> None:
+def _write_config(
+    root: Path,
+    profiles: Iterable[str],
+    *,
+    adapter_id: str = "python_syntax",
+) -> None:
     configured = ", ".join(f"{profile}: {{checks: [syntax]}}" for profile in profiles)
     write_package_tree(
         root,
@@ -56,7 +63,7 @@ def _write_config(root: Path, profiles: Iterable[str]) -> None:
             "checks.yaml": (
                 "checks:\n"
                 "  syntax:\n"
-                "    adapter_id: python_syntax\n"
+                f"    adapter_id: {adapter_id}\n"
                 "    capability: syntax\n"
                 "    timeout_seconds: 30\n"
                 "    default_args: []\n"
@@ -85,12 +92,16 @@ def _service(
 def _selections(
     actual: SuiteSnapshot,
     candidate: SuiteSnapshot,
+    *,
+    adopted_shared_source: Literal["actual", "candidate"] = "candidate",
 ) -> tuple[ComponentSelection, ...]:
     actual_map = {state.key: state for state in (actual.evidence.shared, *actual.evidence.packages)}
     candidate_map = {
         state.key: state for state in (candidate.evidence.shared, *candidate.evidence.packages)
     }
     adopted = {key: candidate_map[key] for key in actual_map.keys() & candidate_map.keys()}
+    if adopted_shared_source == "actual":
+        adopted[("shared", "shared")] = actual_map[("shared", "shared")]
     return select_components(adopted, actual_map, candidate_map)
 
 
@@ -151,12 +162,39 @@ def test_candidate_invalid_is_distinct_and_preserves_existing_stage(tmp_path: Pa
     write_package_tree(supplied, _package_files("pkg", "demo", profile="missing"))
     write_package_tree(staged, {"retained.txt": b"keep"})
     _write_config(config, ("text",))
+    service = _service(actual, staged, proposal, config)
 
     with pytest.raises(MCPError, match="template_candidate_invalid") as raised:
-        _service(actual, staged, proposal, config).stage_candidate(supplied)
+        service.stage_candidate(supplied)
 
     assert raised.value.params["config_root"] == str(config.resolve())
     assert raised.value.params["cause"] == "template_output_profile_unknown"
+    assert raised.value.params["template_id"] == "demo"
+    assert raised.value.params["output_profile"] == "missing"
+    assert raised.value.params["policy_source"] == "pkg/policy.yaml"
+    assert raised.value.params["config_source"] == "checks.yaml"
+    assert (staged / "retained.txt").read_bytes() == b"keep"
+    assert not proposal.exists()
+
+    _write_config(config, ("text", "missing"))
+    assert service.stage_candidate(supplied) is None
+    assert (staged / "pkg" / "manifest.yaml").is_file()
+
+
+def test_candidate_unknown_adapter_is_invalid_and_preserves_stage(tmp_path: Path) -> None:
+    actual = tmp_path / "actual"
+    supplied = tmp_path / "supplied"
+    staged = tmp_path / "upgrade"
+    proposal = tmp_path / "proposal"
+    config = tmp_path / "external-config"
+    write_package_tree(actual, _package_files("pkg", "demo"))
+    write_package_tree(supplied, _package_files("pkg", "demo"))
+    write_package_tree(staged, {"retained.txt": b"keep"})
+    _write_config(config, ("text",), adapter_id="missing_adapter")
+
+    with pytest.raises(MCPError, match="template_candidate_invalid"):
+        _service(actual, staged, proposal, config).stage_candidate(supplied)
+
     assert (staged / "retained.txt").read_bytes() == b"keep"
     assert not proposal.exists()
 
@@ -166,30 +204,89 @@ def test_proposal_invalid_is_distinct_and_retains_valid_candidate(tmp_path: Path
     supplied = tmp_path / "supplied"
     staged = tmp_path / "upgrade"
     proposal = tmp_path / "proposal"
-    broad_config = tmp_path / "broad-config"
-    effective_config = tmp_path / "effective-config"
-    write_package_tree(actual, _package_files("local", "demo", profile="local"))
+    config = tmp_path / "effective-config"
+    old_reference = b"{% include 'shared/templates/old.jinja2' %}{{ content.value }}"
     write_package_tree(
-        supplied,
+        actual,
         {
-            **_package_files("upstream", "demo"),
-            **_package_files("added", "new"),
+            **_package_files("local", "demo", body=old_reference),
+            "shared/templates/old.jinja2": b"old",
         },
     )
-    _write_config(broad_config, ("text", "local"))
-    _write_config(effective_config, ("text",))
-    actual_snapshot = admit_template_suite(actual, broad_config)
-    candidate_snapshot = admit_template_suite(supplied, effective_config)
-    service = _service(actual, staged, proposal, effective_config)
+    write_package_tree(
+        supplied,
+        _package_files("upstream", "demo", body=b"{{ content.value }}"),
+    )
+    _write_config(config, ("text",))
+    actual_snapshot = admit_template_suite(actual, config)
+    candidate_snapshot = admit_template_suite(supplied, config)
+    service = _service(actual, staged, proposal, config)
     service.stage_candidate(supplied)
 
-    with pytest.raises(MCPError, match="template_proposal_invalid") as raised:
-        service.materialize_proposal(_selections(actual_snapshot, candidate_snapshot))
+    selections = _selections(
+        actual_snapshot,
+        candidate_snapshot,
+        adopted_shared_source="actual",
+    )
+    shared_selection = next(selection for selection in selections if selection.kind == "shared")
+    assert shared_selection.selected_source == "candidate"
+    package_selection = next(selection for selection in selections if selection.kind == "package")
+    assert package_selection.selected_source == "actual"
 
-    assert raised.value.params["config_root"] == str(effective_config.resolve())
-    assert raised.value.params["cause"] == "template_output_profile_unknown"
+    with pytest.raises(MCPError, match="template_proposal_invalid") as raised:
+        service.materialize_proposal(selections)
+
+    assert raised.value.params["cause"] == "template_source_unavailable"
     assert (staged / "upstream" / "manifest.yaml").is_file()
     assert not proposal.exists()
+
+
+@pytest.mark.parametrize(
+    ("actual_relative", "candidate_relative", "proposal_relative"),
+    [
+        ("workspace/.upgrade.incoming", "workspace/upgrade", "workspace/proposal"),
+        ("workspace/active", "workspace/upgrade", "workspace/upgrade/proposal"),
+    ],
+)
+def test_owned_write_path_overlap_preserves_existing_trees(
+    tmp_path: Path,
+    actual_relative: str,
+    candidate_relative: str,
+    proposal_relative: str,
+) -> None:
+    actual = tmp_path / actual_relative
+    supplied = tmp_path / "release" / "templates"
+    candidate = tmp_path / candidate_relative
+    proposal = tmp_path / proposal_relative
+    config = tmp_path / "owner-config"
+    write_package_tree(actual, _package_files("pkg", "demo"))
+    write_package_tree(supplied, _package_files("pkg", "demo", body=b"candidate"))
+    write_package_tree(candidate, {"retained.txt": b"keep"})
+    _write_config(config, ("text",))
+    actual_before = {
+        path.relative_to(actual): path.read_bytes()
+        for path in actual.rglob("*")
+        if path.is_file()
+    }
+    candidate_before = {
+        path.relative_to(candidate): path.read_bytes()
+        for path in candidate.rglob("*")
+        if path.is_file()
+    }
+
+    with pytest.raises(MCPError, match="template_proposal_roots_overlap"):
+        _service(actual, candidate, proposal, config)
+
+    assert actual_before == {
+        path.relative_to(actual): path.read_bytes()
+        for path in actual.rglob("*")
+        if path.is_file()
+    }
+    assert candidate_before == {
+        path.relative_to(candidate): path.read_bytes()
+        for path in candidate.rglob("*")
+        if path.is_file()
+    }
 
 
 def test_candidate_link_is_rejected_before_supersession(tmp_path: Path) -> None:
@@ -198,20 +295,45 @@ def test_candidate_link_is_rejected_before_supersession(tmp_path: Path) -> None:
     staged = tmp_path / "upgrade"
     proposal = tmp_path / "proposal"
     config = tmp_path / "config"
-    outside = tmp_path / "outside.txt"
+    outside = tmp_path / "outside"
     write_package_tree(actual, _package_files("pkg", "demo"))
     write_package_tree(supplied, _package_files("pkg", "demo"))
     write_package_tree(staged, {"retained.txt": b"keep"})
     _write_config(config, ("text",))
-    outside.write_bytes(b"outside")
-    link = supplied / "pkg" / "escape.txt"
-    try:
-        os.symlink(outside, link)
-    except OSError:
-        pytest.skip("link creation is unavailable on this host")
+    write_package_tree(outside, {"outside.txt": b"outside"})
+    link = supplied / "pkg" / "escape"
+    _directory_link(link, outside)
 
     with pytest.raises(MCPError, match="template_candidate_invalid") as raised:
         _service(actual, staged, proposal, config).stage_candidate(supplied)
 
     assert raised.value.params["cause"] == "template_suite_symlink_escape"
     assert (staged / "retained.txt").read_bytes() == b"keep"
+
+
+
+def _directory_link(link: Path, target: Path) -> None:
+    if os.name == "nt":
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+            check=True,
+            capture_output=True,
+        )
+    else:
+        link.symlink_to(target, target_is_directory=True)
+
+
+def test_writable_endpoint_alias_preserves_target(tmp_path: Path) -> None:
+    actual = tmp_path / "actual"
+    staged = tmp_path / "upgrade"
+    proposal = tmp_path / "proposal"
+    config = tmp_path / "config"
+    outside = tmp_path / "owner-data"
+    write_package_tree(outside, {"retained.txt": b"keep"})
+    _directory_link(staged, outside)
+
+    with pytest.raises(MCPError, match="template_writable_endpoint_alias"):
+        _service(actual, staged, proposal, config)
+
+    assert (outside / "retained.txt").read_bytes() == b"keep"
+    assert staged.is_dir()
