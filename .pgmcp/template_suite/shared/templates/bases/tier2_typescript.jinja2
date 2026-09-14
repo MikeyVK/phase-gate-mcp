@@ -1,0 +1,8 @@
+{% extends "shared/templates/bases/tier1_code.jinja2" %}
+{% block comment_start %}//{% endblock %}
+{% block module_documentation %}/**
+{{ content.description | replace('\\', '\\\\') | replace('*/', '*\\/') | replace('\r', '\\r') | replace('\t', '\\t') | replace('\x00', '\\0') | indent(' * ', true) }}
+ */{% endblock %}
+{% block module_imports %}{% for statement in content.imports | default([]) %}
+{{ statement }}
+{% endfor %}{% endblock %}

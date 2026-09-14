@@ -1,0 +1,4 @@
+{% import "shared/templates/patterns/python/imports.jinja2" as values %}
+{% macro logger(record) -%}
+logger = logging.getLogger({% if record.name is defined %}{{ values.literal(record.name) }}{% else %}__name__{% endif %})
+{%- endmacro %}

@@ -1,0 +1,88 @@
+{% macro quoted(value) -%}
+{%- set escaped = namespace(text=value) -%}
+{%- for raw, encoded in [
+("\\", "\\\\"),
+("\"", "\\\""),
+("\u0000", "\\x00"),
+("\u0001", "\\x01"),
+("\u0002", "\\x02"),
+("\u0003", "\\x03"),
+("\u0004", "\\x04"),
+("\u0005", "\\x05"),
+("\u0006", "\\x06"),
+("\u0007", "\\x07"),
+("\b", "\\x08"),
+("\t", "\\x09"),
+("\n", "\\x0a"),
+("\u000b", "\\x0b"),
+("\f", "\\x0c"),
+("\r", "\\x0d"),
+("\u000e", "\\x0e"),
+("\u000f", "\\x0f"),
+("\u0010", "\\x10"),
+("\u0011", "\\x11"),
+("\u0012", "\\x12"),
+("\u0013", "\\x13"),
+("\u0014", "\\x14"),
+("\u0015", "\\x15"),
+("\u0016", "\\x16"),
+("\u0017", "\\x17"),
+("\u0018", "\\x18"),
+("\u0019", "\\x19"),
+("\u001a", "\\x1a"),
+("\u001b", "\\x1b"),
+("\u001c", "\\x1c"),
+("\u001d", "\\x1d"),
+("\u001e", "\\x1e"),
+("\u001f", "\\x1f")
+] -%}
+{%- set escaped.text = escaped.text | replace(raw, encoded) -%}
+{%- endfor -%}
+{{ '"' ~ escaped.text ~ '"' }}
+{%- endmacro %}
+
+{# Explicit JSON values and import records; no import or source execution. #}
+{% macro literal(value) -%}
+{%- if value is none -%}None
+{%- elif value is sameas true -%}True
+{%- elif value is sameas false -%}False
+{%- elif value is string -%}{{ quoted(value) }}
+{%- elif value is mapping -%}{
+{%- for key, item in value.items() -%}{{ quoted(key) }}: {{ literal(item) }}{% if not loop.last %}, {% endif %}{%- endfor -%}}
+{%- elif value is sequence -%}[
+{%- for item in value -%}{{ literal(item) }}{% if not loop.last %}, {% endif %}{%- endfor -%}]
+{%- else -%}{{ value }}{%- endif -%}
+{%- endmacro %}
+
+{% macro documentation(text) -%}{{ literal(text) }}{%- endmacro %}
+
+{% macro statement(record) -%}
+{%- if record.kind == 'import' -%}
+import {{ record.module }}{% if record.alias is defined %} as {{ record.alias }}{% endif %}
+{%- else -%}
+from {{ record.module }} import {% for name in record.names %}{{ name.name }}{% if name.alias is defined %} as {{ name.alias }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro groups(supplied, fixed) -%}
+{%- set future = namespace(statements=[]) -%}
+{%- for group in ['stdlib', 'third_party', 'project'] -%}
+{%- for record in supplied.get(group, []) + fixed.get(group, []) -%}
+{%- if record.kind == 'from' and record.module == '__future__' -%}
+{%- set future.statements = future.statements + [statement(record)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endfor -%}
+{%- for item in future.statements | unique(case_sensitive=true) | sort(case_sensitive=true) -%}{{ item }}{{ '\n' }}{%- endfor -%}
+{%- for group, label in [('stdlib', 'Standard library'), ('third_party', 'Third party'), ('project', 'Project')] -%}
+{%- set selected = namespace(statements=[]) -%}
+{%- for record in supplied.get(group, []) + fixed.get(group, []) -%}
+{%- if not (record.kind == 'from' and record.module == '__future__') -%}
+{%- set selected.statements = selected.statements + [statement(record)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if selected.statements -%}{{ '\n# ' ~ label ~ '\n' }}
+{%- for item in selected.statements | unique(case_sensitive=true) | sort(case_sensitive=true) -%}{{ item }}{{ '\n' }}{%- endfor -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endmacro %}
