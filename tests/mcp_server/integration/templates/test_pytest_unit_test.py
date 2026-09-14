@@ -54,12 +54,19 @@ def test_minimal_content_preserves_one_function_without_inferred_scaffolding(
     body = "result = sum([2, 3])\nassert result == 5"
     context: dict[str, JsonValue] = {
         "description": "Caller-owned arithmetic test",
-        "cases": [{
-            "name": "test_total", "description": "Check sum", "async": False,
-            "parameters": [], "body": body,
-        }],
+        "cases": [
+            {
+                "name": "test_total",
+                "description": "Check sum",
+                "async": False,
+                "parameters": [],
+                "body": body,
+            }
+        ],
     }
-    output = delivered_unit_test.renderer.render("pytest_unit_test", context, delivered_unit_test.provenance)
+    output = delivered_unit_test.renderer.render(
+        "pytest_unit_test", context, delivered_unit_test.provenance
+    )
     tree = parse_tests(output)
     assert ast.get_docstring(tree) == context["description"] and len(tree.body) == 2
     function = tree.body[1]
@@ -67,7 +74,9 @@ def test_minimal_content_preserves_one_function_without_inferred_scaffolding(
     assert not function.args.args and not function.decorator_list
     assert ast.unparse(function.returns) == "None"
     assert ast.get_docstring(function) == "Check sum"
-    assert ast.dump(ast.Module(body=function.body[1:], type_ignores=[])) == ast.dump(ast.parse(body))
+    assert ast.dump(ast.Module(body=function.body[1:], type_ignores=[])) == ast.dump(
+        ast.parse(body)
+    )
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "pytest_unit_test"
@@ -77,7 +86,8 @@ def test_minimal_content_preserves_one_function_without_inferred_scaffolding(
 
 
 def test_explicit_fixtures_markers_and_assertions_execute_with_native_pytest(
-    delivered_unit_test: DeliveredTemplate, native_case: NativeCase,
+    delivered_unit_test: DeliveredTemplate,
+    native_case: NativeCase,
 ) -> None:
     context: dict[str, JsonValue] = {
         "description": "Explicit fixture composition and parameterized arithmetic",
@@ -85,33 +95,51 @@ def test_explicit_fixtures_markers_and_assertions_execute_with_native_pytest(
         "markers": ['pytest.mark.usefixtures("base")'],
         "fixtures": [
             {
-                "name": "base", "description": "Supply base", "async": False,
-                "parameters": [], "return_type": "int", "body": "return 2",
+                "name": "base",
+                "description": "Supply base",
+                "async": False,
+                "parameters": [],
+                "return_type": "int",
+                "body": "return 2",
                 "decorator": "pytest.fixture",
             },
             {
-                "name": "numbers", "description": "Compose values", "async": False,
-                "parameters": [{"name": "base", "type": "int"}], "return_type": "list[int]",
-                "body": "return [base, base + 1]", "decorator": "pytest.fixture",
-                "scope": "function", "autouse": False,
+                "name": "numbers",
+                "description": "Compose values",
+                "async": False,
+                "parameters": [{"name": "base", "type": "int"}],
+                "return_type": "list[int]",
+                "body": "return [base, base + 1]",
+                "decorator": "pytest.fixture",
+                "scope": "function",
+                "autouse": False,
             },
         ],
         "cases": [
             {
-                "name": "test_total", "description": "Check composed values", "async": False,
+                "name": "test_total",
+                "description": "Check composed values",
+                "async": False,
                 "parameters": [{"name": "numbers", "type": "list[int]"}],
                 "body": "arranged = numbers\nobserved = sum(arranged)\nassert observed == 5",
             },
             {
-                "name": "test_square", "description": "Check square", "async": False,
-                "parameters": [{"name": "value", "type": "int"}, {"name": "expected", "type": "int"}],
+                "name": "test_square",
+                "description": "Check square",
+                "async": False,
+                "parameters": [
+                    {"name": "value", "type": "int"},
+                    {"name": "expected", "type": "int"},
+                ],
                 "markers": ['pytest.mark.parametrize("value, expected", [(2, 4), (3, 9)])'],
                 "body": "assert value ** 2 == expected",
             },
         ],
     }
     before = deepcopy(context)
-    output = delivered_unit_test.renderer.render("pytest_unit_test", context, delivered_unit_test.provenance)
+    output = delivered_unit_test.renderer.render(
+        "pytest_unit_test", context, delivered_unit_test.provenance
+    )
     tree = parse_tests(output)
     assert context == before
     functions = [item for item in tree.body if isinstance(item, ast.FunctionDef)]
@@ -120,7 +148,8 @@ def test_explicit_fixtures_markers_and_assertions_execute_with_native_pytest(
     configured_fixture = functions[1].decorator_list[0]
     assert isinstance(configured_fixture, ast.Call)
     assert {item.arg: ast.literal_eval(item.value) for item in configured_fixture.keywords} == {
-        "scope": "function", "autouse": False,
+        "scope": "function",
+        "autouse": False,
     }
     assert [arg.arg for arg in functions[1].args.args] == ["base"]
     markers = [item for item in tree.body if isinstance(item, ast.Assign)]
@@ -133,7 +162,9 @@ def test_explicit_fixtures_markers_and_assertions_execute_with_native_pytest(
 
 
 def test_class_async_fixture_and_case_content_remain_explicit(
-    delivered_unit_test: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path,
+    delivered_unit_test: DeliveredTemplate,
+    syntax_package: SyntaxPackage,
+    tmp_path: Path,
 ) -> None:
     fixture_body = "return await source.open()"
     async_body = "observed = await opened.read()\nassert observed == 7"
@@ -142,18 +173,31 @@ def test_class_async_fixture_and_case_content_remain_explicit(
         "class_name": "ＴestExplicit",
         "imports": {
             "stdlib": [{"kind": "import", "module": "collections", "alias": "col"}],
-            "third_party": [{"kind": "import", "module": "pytest"}, {"kind": "import", "module": "pytest_asyncio", "alias": "aio"}],
+            "third_party": [
+                {"kind": "import", "module": "pytest"},
+                {"kind": "import", "module": "pytest_asyncio", "alias": "aio"},
+            ],
             "project": [{"kind": "from", "module": "absent_project", "names": [{"name": "Port"}]}],
         },
-        "fixtures": [{
-            "name": "opened", "description": "Open explicit dependency", "async": True,
-            "parameters": [{"name": "source", "type": "Port"}], "return_type": "Port",
-            "body": fixture_body, "decorator": "aio.fixture", "scope": "module", "autouse": False,
-        }],
+        "fixtures": [
+            {
+                "name": "opened",
+                "description": "Open explicit dependency",
+                "async": True,
+                "parameters": [{"name": "source", "type": "Port"}],
+                "return_type": "Port",
+                "body": fixture_body,
+                "decorator": "aio.fixture",
+                "scope": "module",
+                "autouse": False,
+            }
+        ],
         "markers": [],
         "cases": [
             {
-                "name": "test_defaults", "description": "Keep scalar defaults", "async": False,
+                "name": "test_defaults",
+                "description": "Keep scalar defaults",
+                "async": False,
                 "parameters": [
                     {"name": "offset", "type": "int", "default": 0},
                     {"name": "enabled", "type": "bool", "default": False},
@@ -163,18 +207,27 @@ def test_class_async_fixture_and_case_content_remain_explicit(
                 "markers": [],
             },
             {
-                "name": "test_read", "description": "Read asynchronously", "async": True,
+                "name": "test_read",
+                "description": "Read asynchronously",
+                "async": True,
                 "parameters": [{"name": "opened", "type": "Port"}],
-                "body": async_body, "markers": ["pytest.mark.asyncio"],
+                "body": async_body,
+                "markers": ["pytest.mark.asyncio"],
             },
         ],
     }
     before = deepcopy(context)
-    output = delivered_unit_test.renderer.render("pytest_unit_test", context, delivered_unit_test.provenance)
+    output = delivered_unit_test.renderer.render(
+        "pytest_unit_test", context, delivered_unit_test.provenance
+    )
     tree = parse_tests(output)
     assert context == before and ast.get_docstring(tree) == context["description"]
-    assert [ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))] == [
-        "import collections as col", "import pytest", "import pytest_asyncio as aio",
+    assert [
+        ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))
+    ] == [
+        "import collections as col",
+        "import pytest",
+        "import pytest_asyncio as aio",
         "from absent_project import Port",
     ]
     fixtures = [item for item in tree.body if isinstance(item, ast.AsyncFunctionDef)]
@@ -183,9 +236,12 @@ def test_class_async_fixture_and_case_content_remain_explicit(
     decorator = fixtures[0].decorator_list[0]
     assert isinstance(decorator, ast.Call) and ast.unparse(decorator.func) == "aio.fixture"
     assert {item.arg: ast.literal_eval(item.value) for item in decorator.keywords} == {
-        "scope": "module", "autouse": False,
+        "scope": "module",
+        "autouse": False,
     }
-    assert ast.dump(ast.Module(body=fixtures[0].body[1:], type_ignores=[])) == ast.dump(ast.parse(fixture_body))
+    assert ast.dump(ast.Module(body=fixtures[0].body[1:], type_ignores=[])) == ast.dump(
+        ast.parse(fixture_body)
+    )
     classes = [item for item in tree.body if isinstance(item, ast.ClassDef)]
     assert len(classes) == 1 and classes[0].name == "TestExplicit"
     functions = classes[0].body
@@ -198,7 +254,9 @@ def test_class_async_fixture_and_case_content_remain_explicit(
     assert [arg.arg for arg in second.args.args] == ["self", "opened"]
     assert not first.decorator_list
     assert [ast.unparse(item) for item in second.decorator_list] == ["pytest.mark.asyncio"]
-    assert ast.dump(ast.Module(body=second.body[1:], type_ignores=[])) == ast.dump(ast.parse(async_body))
+    assert ast.dump(ast.Module(body=second.body[1:], type_ignores=[])) == ast.dump(
+        ast.parse(async_body)
+    )
     assert not any(isinstance(item, ast.Assign) for item in tree.body)
     code, response = invoke(syntax_package, tmp_path, request(tmp_path / "test_async.py", output))
     assert code == 0 and response["decision"] == {"status": "passed"}
@@ -207,23 +265,46 @@ def test_class_async_fixture_and_case_content_remain_explicit(
 
 def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
     delivered_unit_test: DeliveredTemplate,
+    native_case: NativeCase,
 ) -> None:
     case: dict[str, JsonValue] = {
-        "name": "test_value", "description": "Check", "async": False,
-        "parameters": [], "body": "assert 2 + 3 == 5",
+        "name": "test_value",
+        "description": "Check",
+        "async": False,
+        "parameters": [],
+        "body": "assert 2 + 3 == 5",
     }
     fixture: dict[str, JsonValue] = {
-        "name": "value", "description": "Supply", "async": False, "parameters": [],
-        "return_type": "int", "body": "return 2", "decorator": "pytest.fixture",
+        "name": "value",
+        "description": "Supply",
+        "async": False,
+        "parameters": [],
+        "return_type": "int",
+        "body": "return 2",
+        "decorator": "pytest.fixture",
     }
     base: dict[str, JsonValue] = {"description": "Caller cases", "cases": [case]}
+    noncollectable = "Test\u0307Cases"
+    blocked_composition = "Test\u0300\u0307Cases"
+    for spelling, canonical, expected_code, token in (
+        (noncollectable, "TesṫCases", 5, b"no tests collected"),
+        (blocked_composition, blocked_composition, 0, b"test_value"),
+    ):
+        native_source = f"class {spelling}:\n    def test_value(self):\n        assert 2 + 3 == 5\n"
+        native_class = ast.parse(native_source).body[0]
+        assert isinstance(native_class, ast.ClassDef) and native_class.name == canonical
+        native_case.source.write_text(native_source, encoding="utf-8")
+        discovered = native(native_case, [str(native_case.source)], ["--collect-only"])
+        assert discovered.returncode == expected_code and token in discovered.stdout
     invalid: list[dict[str, JsonValue]] = [
         {"description": "Missing cases"},
-        {**base, "cases": []}, {**base, "cases": None},
+        {**base, "cases": []},
+        {**base, "cases": None},
         {**base, "description": ""},
         {**base, "module_description": "Unsupported"},
         {**base, "layer": "Tests"},
         {**base, "class_name": "Examples"},
+        {**base, "class_name": noncollectable},
         {**base, "class_name": None},
         {**base, "cases": [{**case, "name": "check_value"}]},
         {**base, "cases": [{**case, "body": " \n\t"}]},
@@ -236,26 +317,49 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
         {**base, "markers": None},
     ]
     for spelling in ("self", "ｓｅｌｆ"):
-        invalid.append({**base, "class_name": "TestExplicit", "cases": [{**case, "parameters": [{"name": spelling, "type": "object"}]}]})
+        invalid.append(
+            {
+                **base,
+                "class_name": "TestExplicit",
+                "cases": [{**case, "parameters": [{"name": spelling, "type": "object"}]}],
+            }
+        )
     for context in invalid:
         with pytest.raises(ContextError):
-            delivered_unit_test.renderer.render("pytest_unit_test", context, delivered_unit_test.provenance)
+            delivered_unit_test.renderer.render(
+                "pytest_unit_test", context, delivered_unit_test.provenance
+            )
     for content in (
         {**base, "fixtures": [], "markers": [], "imports": {}},
+        {**base, "class_name": blocked_composition},
         {**base, "cases": [{**case, "parameters": [{"name": "self", "type": "object"}]}]},
     ):
-        parse_tests(delivered_unit_test.renderer.render("pytest_unit_test", content, delivered_unit_test.provenance))
+        parse_tests(
+            delivered_unit_test.renderer.render(
+                "pytest_unit_test", content, delivered_unit_test.provenance
+            )
+        )
 
 
 def test_invalid_native_body_remains_a_syntax_failure(
-    delivered_unit_test: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path,
+    delivered_unit_test: DeliveredTemplate,
+    syntax_package: SyntaxPackage,
+    tmp_path: Path,
 ) -> None:
     output = delivered_unit_test.renderer.render(
         "pytest_unit_test",
-        {"description": "Native body syntax", "cases": [{
-            "name": "test_invalid", "description": "Invalid", "async": False,
-            "parameters": [], "body": "if True",
-        }]},
+        {
+            "description": "Native body syntax",
+            "cases": [
+                {
+                    "name": "test_invalid",
+                    "description": "Invalid",
+                    "async": False,
+                    "parameters": [],
+                    "body": "if True",
+                }
+            ],
+        },
         delivered_unit_test.provenance,
     )
     code, response = invoke(syntax_package, tmp_path, request(tmp_path / "test_invalid.py", output))

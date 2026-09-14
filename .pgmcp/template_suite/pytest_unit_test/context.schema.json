@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pytest unit-test content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "cases"
+  ],
+  "properties": {
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/TestCase"
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/Fixture"
+      }
+    },
+    "markers": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+      }
+    },
+    "class_name": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+        },
+        {
+          "$comment": "Pytest discovers the native Test prefix, including Unicode 15.1 NFKC equivalents. NFKD nonstarter guards preserve the final t using canonical combining-class blocking.",
+          "pattern": "^[TᵀＴ𝐓𝑇𝑻𝒯𝓣𝔗𝕋𝕿𝖳𝗧𝘛𝙏𝚃][eᵉₑℯⅇｅ𝐞𝑒𝒆𝓮𝔢𝕖𝖊𝖾𝗲𝘦𝙚𝚎](?:[sſˢₛｓ𝐬𝑠𝒔𝓈𝓼𝔰𝕤𝖘𝗌𝘀𝘴𝙨𝚜][tᵗₜｔ𝐭𝑡𝒕𝓉𝓽𝔱𝕥𝖙𝗍𝘁𝘵𝙩𝚝]|[ﬅﬆ])(?![̀-̠̣-̦̩-͎͐-ͯ҃-֑҇-ׇֽֿׁׂׅׄؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۤۧۨ-ܑۭܰ-݊߫-߽߳ࠖ-࠙ࠛ-ࠣࠥ-ࠧࠩ-࡙࠭-࡛࢘-࢟࣊-ࣣ࣡-़्ࣿ॑-়਼઼଼఼಼্੍્୍்్್഻഼്්ౕౖุ॔৾-ฺ่-๋ຸ-຺່-໋ཱ༹༘༙༵༷-ཱེུ-ཽྀ-့྄္်࿆ႍ྆྇፝-᜔᜕᜴្᤹ᢩ፟៝-᩠᤻ᨘᨗ᩵-᩿᩼᪰-᪽ᪿ-᬴᭄ᫎ᭫-᯦᰷᮪᮫᯲᯳᭳᳐-᳔᳒-᳢᳠-᳨᳭᳴᳸᳹᷀-᷏᷑-᷿⃐-⃥⃜⃡-⃰⳯-⵿⳱ⷠ-〪ⷿ-゙゚〯꙯ꙴ-꠆꠬꣄꙽ꚞꚟ꛰꛱꣠-꤫꣱-꦳꥓꧀꤭ꪰꪲ-꫶꯭ﬞꪴꪷꪸꪾ꪿꫁︠-︯ﾞﾟ𐇽𐋠𐍶-𐨍𐍺𐨏𐨸-𐨿𐨺𐫦𐫥𐴤-𐻽𐴧𐺫𐺬-𐻿𐽆-𐽐𐾂-𑂺𑁆𑁰𑁿𑂹𐾅𑄀-𑅳𑇊𑈶𑋩𑌻𑌼𑄳𑄴𑇀𑈵𑋪𑍍𑄂𑍦-𑍬𑍰-𖫰𑑆𑓃𑗀𑚷𑠺𑥃𑵂𑑂𑓂𑖿𑘿𑚶𑜫𑠹𑤽𑤾𑧠𑨴𑩇𑪙𑰿𑵄𑵅𑶗𑽁𑽂𑍴𑑞-𖫴𖬰-𛲞𖿰𖿱𝅥𖬶-𝅩𝅭-𝅲𝅻-𝆂𝆅-𝆋𝆪-𝆭𝉂-𝉄𞀀-𞀆𞀈-𞀘𞀛-𞀡𞀣𞀤𞀦-𞀪𞂏𞄰-𞄶𞊮𞋬-𞋯𞓬-𞣐𞓯-𞣖𞥄-𞥊]*[̧])(?![̀-̴̡̢̧̨̛̕̚-̸̽-͆͊-͌͐-͒͗͛͘-ͯ҃-҇֒-֕֗-֚֜-֡֨֩֫-ׇֽֿׁׂׄؐ-ًؚ-ٔٗ-ٰٛٝٞۖ-ۜ۟-ܑۢۤۧۨ۫۬ܰܲܳܵܶܺܽܿ-݁݃݅݇݉݊߫-߱߳ࠖ-࠙ࠛ-ࠣࠥ-ࠧࠩ-࠭࢘࢜-࢟࣊-࣎ࣔ-࣡ࣤࣥࣧࣨ࣪-ࣰ࣬-ࣵࣷࣸࣻ-़়਼઼଼఼಼्্੍્୍்్್഻഼്්ౕౖุࣿ॑॓॔৾-ฺ่-๋ຸ-຺່-໋ཱ༹-ཱེུ-ཽྀ-့྄္်྆྇፝-᜔᜕᜴្᩠᤹ᢩ፟៝᤺ᨗ᩵-᩼᪰-᪴᪻᪼᫁᫂᫅-᫉᫋-᬴᭄ᫎ᭫᭭-᯦᰷᮪᮫᯲᯳᭳᳐-᳔᳢᳒᳚᳛᳠-᳨᳴᳸᳹᷀᷁᷃-᷉᷋-᷐᷎-᷺᷸-᷾⃐᷼-⃥⃜⃡-⃧⃩-⃫⃰⳯-⵿⳱ⷠ-〪ⷿ-゙゚〯꙯ꙴ-꠆꠬꣄꙽ꚞꚟ꛰꛱꣠-꦳꥓꧀꫶꯭ﬞ꣱ꪰꪲꪳꪷꪸꪾ꪿꫁︠-︦︮︯ﾞﾟ𐍶-𐨹𐨿𐍺𐨏𐨸𐫥𐴤-𐴧𐺫𐺬𐽈-𑂺𑁆𑁰𑁿𑂹𐽊𐽌𐾂𐾄𑄀-𑅳𑇊𑈶𑋩𑌻𑌼𑄳𑄴𑇀𑈵𑋪𑍍𑄂𑍦-𑍬𑍰-𖫰𑑆𑓃𑗀𑚷𑠺𑥃𑵂𑑂𑓂𑖿𑘿𑚶𑜫𑠹𑤽𑤾𑧠𑨴𑩇𑪙𑰿𑵄𑵅𑶗𑽁𑽂𑍴𑑞-𖫴𖬰-𛲞𖿰𖿱𝅥𖬶-𝅩𝅭-𝅲𝆅-𝆉𝆪-𝆭𝉂-𝉄𞀀-𞀆𞀈-𞀘𞀛-𞀡𞀣𞀤𞀦-𞀪𞂏𞄰-𞄶𞊮𞋬-𞋯𞓯𞥄𞓬𞓭-𞥊]*[̣̦̭̱])(?![̕-̼͇ͅ-͉͍͎͓-͖͘-͚͜-֑֖֛֢֚͢-ְ֧֪֭֮-ׇֽֿׁׂؘׅ-ًؚ-ْٰܑٕٖٜٟۣ۪ۭܱܴܷ-ܹܻܼܾ݂݄݆݈߲߽࡙-࡛࢙-࢛࣏-࣓ࣣࣦࣩ࣭-़়਼઼଼఼಼्্੍્୍்్್഻഼്්ࣲౕౖุࣶࣹࣺ॒-ฺ่-๋ຸ-຺່-໋ཱ༹༘༙༵༷-ཱེུ-့྄္်᜔᜕᜴្᩠ཱཽྀྀ࿆ႍ᤻ᨘ᩿᪵᤹ᢩ-᳔᬴᯦᰷᭄᮪᮫᯲᯳᪺᪽ᪿᫀ᫃᫄᫊᭬-᳙᳜-᳢᳟-᳨᳭᷂᷊᷍-᷐᷶-⃒⃓⃘᷺᷽᷿᷼-⃚⃥⃦⃪⃨-⵿〪⃯-゙゚꠆꠬꣄꤫〯-꦳꥓꧀꫶꯭ﬞ꤭ꪴ︧-︭ﾞﾟ𐨹𐨿𐇽𐋠𐨍𐨺𐫦𐻽-𐻿𐽆𐽇𐽋𐽍-𖫰𑂺𑅳𑇊𑈶𑋩𑌻𑌼𑑆𑓃𑗀𑚷𑠺𑥃𑵂𑁆𑁰𑁿𑂹𑄳𑄴𑇀𑈵𑋪𑍍𑑂𑓂𑖿𑘿𑚶𑜫𑠹𑤽𑤾𑧠𑨴𑩇𑪙𑰿𑵄𑵅𑶗𑽁𑽂𐽐𐾃𐾅-𖫴𛲞𖿰𖿱𝅥-𝅩𝅭-𝅲𝅻-𝆂𝆊𝆋𞓬-𞓮𞣐-𞥊𞣖]*[̇̈̌̈́])"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "class_name"
+        ]
+      },
+      "then": {
+        "properties": {
+          "cases": {
+            "items": {
+              "properties": {
+                "parameters": {
+                  "items": {
+                    "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

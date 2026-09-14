@@ -1,0 +1,2 @@
+template_id: pytest_unit_test
+purpose: Create caller-owned Pytest unit cases with explicit fixtures, markers, and imports.
