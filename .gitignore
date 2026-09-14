@@ -63,6 +63,7 @@ pylint_*.txt
 temp_*
 script.py
 test.py
+!/mcp_server/bundled_adapters/pytest/test.py
 results/
 
 # Source data

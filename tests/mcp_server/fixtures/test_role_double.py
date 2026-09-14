@@ -6,12 +6,27 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, SerializerFunctionWrapHandler, model_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 
 from mcp_server.core.interfaces.execution import AdapterLaunch
 from mcp_server.execution.models import (
-    AdapterExitCode, AdapterUnavailableReason, ExternalToolIdentity, InvalidCheckRequest,
-    InvocationCompleted, NativeEvidence, NonBlankText, ProcessCapture, StreamCapture,
+    AdapterExitCode,
+    AdapterUnavailableReason,
+    ExternalToolIdentity,
+    InvalidCheckRequest,
+    InvocationCompleted,
+    NativeEvidence,
+    NonBlankText,
+    ProcessCapture,
+    StreamCapture,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
 from mcp_server.execution.protocol import AdapterResponseContract
@@ -38,13 +53,17 @@ class NativeUnavailable(RoleValue):
 
 
 class NativeTestResult(RoleValue):
-    decision: Annotated[NativePassed | NativeFailed | NativeUnavailable, Field(discriminator="status")]
+    decision: Annotated[
+        NativePassed | NativeFailed | NativeUnavailable, Field(discriminator="status")
+    ]
     external_tools: tuple[ExternalToolIdentity, ...]
     evidence: NativeEvidence | None = None
 
     @model_validator(mode="after")
     def validate_evidence(self) -> NativeTestResult:
-        if self.evidence is None and ("evidence" in self.model_fields_set or self.decision.status == "failed"):
+        if self.evidence is None and (
+            "evidence" in self.model_fields_set or self.decision.status == "failed"
+        ):
             raise ValueError("evidence_missing_or_null")
         return self
 
@@ -63,12 +82,17 @@ class NativeTestResponse(RootModel[NativeTestResult | InvalidCheckRequest]):
 def native_exit(response: NativeTestResponse) -> AdapterExitCode:
     if isinstance(response.root, InvalidCheckRequest):
         return AdapterExitCode.INVALID_REQUEST
-    return {"passed": AdapterExitCode.SUCCESS, "failed": AdapterExitCode.NEGATIVE_RESULT,
-            "unavailable": AdapterExitCode.UNAVAILABLE}[response.root.decision.status]
+    return {
+        "passed": AdapterExitCode.SUCCESS,
+        "failed": AdapterExitCode.NEGATIVE_RESULT,
+        "unavailable": AdapterExitCode.UNAVAILABLE,
+    }[response.root.decision.status]
 
 
 def role_response_contract() -> AdapterResponseContract[NativeTestResponse]:
-    return AdapterResponseContract(NativeTestResponse, InvocationCompleted[NativeTestResponse], native_exit)
+    return AdapterResponseContract(
+        NativeTestResponse, InvocationCompleted[NativeTestResponse], native_exit
+    )
 
 
 @dataclass(frozen=True)
@@ -90,8 +114,13 @@ class RecordingTestRuntime(AdapterProcessRuntime):
         self.calls: list[RecordedTestCall] = []
 
     async def invoke(
-        self, *, launch: AdapterLaunch, workspace_root: Path, request: BaseModel,
-        response_contract: AdapterResponseContract[TResponse], timeout_seconds: float,
+        self,
+        *,
+        launch: AdapterLaunch,
+        workspace_root: Path,
+        request: BaseModel,
+        response_contract: AdapterResponseContract[TResponse],
+        timeout_seconds: float,
     ) -> InvocationCompleted[TResponse]:
         self.calls.append(RecordedTestCall(launch, workspace_root, request, timeout_seconds))
         raw, code = next(self.answers)

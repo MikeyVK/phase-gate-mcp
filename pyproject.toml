@@ -53,9 +53,7 @@ addopts = [
     "--tb=short",
     "-n", "auto",
 ]
-# Coverage decoupled from default pytest runs per TODO 6 (Issue #131)
-# Coverage is enforced separately via Gate 6 (branch coverage >= 90%)
-# To run with coverage: pytest --cov=mcp_server --cov-branch --cov-fail-under=90
+# Coverage is opt-in; native source, branch and threshold defaults apply with --cov.
 markers = [
     "slow: Fully hermetic tests that spawns real subprocesses or git operations on tmp_path. Enabled by default; skip via -m 'not slow' for fast dev-runs.",
     "manual: Manual tests requiring full environment setup and explicit enablement (RUN_MANUAL_TESTS=1)",
@@ -118,3 +116,10 @@ ignore = []
 # Pydantic v2 integration - prevents FieldInfo type inference issues
 reportFunctionMemberAccess = false
 
+
+[tool.coverage.run]
+source = ["mcp_server"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90

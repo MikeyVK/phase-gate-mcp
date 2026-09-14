@@ -23,7 +23,11 @@ from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackag
 from mcp_server.execution.check_selection import SelectionCheckRequest
 from mcp_server.execution.models import InvocationCancelled, TextEvidence
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
-from tests.mcp_server.fixtures.test_role_double import NativeTestResponse, NativeTestResult, role_response_contract
+from tests.mcp_server.fixtures.test_role_double import (
+    NativeTestResponse,
+    NativeTestResult,
+    role_response_contract,
+)
 
 
 @dataclass(frozen=True)
@@ -37,38 +41,60 @@ class NativeCase:
 def native_case(tmp_path: Path, pytestconfig: pytest.Config) -> NativeCase:
     workspace = tmp_path / "native workspace"
     workspace.mkdir()
-    (workspace / "pytest.ini").write_text("[pytest]\naddopts = -q\ntestpaths = selected\n", encoding="utf-8")
+    (workspace / "pytest.ini").write_text(
+        "[pytest]\naddopts = -q\ntestpaths = selected\n", encoding="utf-8"
+    )
     selected = workspace / "selected"
     selected.mkdir()
     source = selected / "test_native.py"
     source.write_text("def test_pass():\n    assert True\n", encoding="utf-8")
     (workspace / "outside").mkdir()
-    (workspace / "outside/test_decoy.py").write_text("def test_decoy():\n    assert False, 'OUTSIDE_DECOY'\n", encoding="utf-8")
+    (workspace / "outside/test_decoy.py").write_text(
+        "def test_decoy():\n    assert False, 'OUTSIDE_DECOY'\n", encoding="utf-8"
+    )
     return NativeCase(workspace, source, pytestconfig.rootpath)
 
 
 def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
     loader = ConfigLoader(case.repo_root / ".pgmcp/config", case.repo_root / ".pgmcp/templates")
     catalog = AdapterCatalogLoader(
-        case.repo_root / "mcp_server/bundled_adapters", case.workspace / "no workspace adapters",
-        AdapterTrustConfig(trusted_adapter_ids=()), read_manifest=loader.load_adapter_manifest,
-        files=FileAdapterPackageReader(), resolve_program=lambda name: Path(sys.executable) if name == "python" else None,
+        case.repo_root / "mcp_server/bundled_adapters",
+        case.workspace / "no workspace adapters",
+        AdapterTrustConfig(trusted_adapter_ids=()),
+        read_manifest=loader.load_adapter_manifest,
+        files=FileAdapterPackageReader(),
+        resolve_program=lambda name: Path(sys.executable) if name == "python" else None,
         windows=os.name == "nt",
     ).load()
     return catalog.get_test("pytest", "tests")
 
 
-def native(case: NativeCase, targets: list[str], args: list[str]) -> subprocess.CompletedProcess[bytes]:
-    return subprocess.run([sys.executable, "-m", "pytest", *args, *targets], cwd=case.workspace,
-                          capture_output=True, timeout=45)
+def native(
+    case: NativeCase, targets: list[str], args: list[str]
+) -> subprocess.CompletedProcess[bytes]:
+    return subprocess.run(
+        [sys.executable, "-m", "pytest", *targets, *args],
+        cwd=case.workspace,
+        capture_output=True,
+        timeout=45,
+    )
 
 
-def invoke(case: NativeCase, request: dict[str, object], *, isolated: bool = False) -> tuple[int, NativeTestResponse]:
+def invoke(
+    case: NativeCase, request: dict[str, object], *, isolated: bool = False
+) -> tuple[int, NativeTestResponse]:
     binding = binding_for(case)
     command = [str(binding.launch.executable), *(["-S"] if isolated else []), *binding.launch.args]
-    result = subprocess.run(command, input=json.dumps(request).encode(), cwd=case.workspace,
-                            capture_output=True, timeout=55)
-    schema = json.loads((case.repo_root / "mcp_server/execution/contracts/test_v1.schema.json").read_text())
+    result = subprocess.run(
+        command,
+        input=json.dumps(request).encode(),
+        cwd=case.workspace,
+        capture_output=True,
+        timeout=55,
+    )
+    schema = json.loads(
+        (case.repo_root / "mcp_server/execution/contracts/test_v1.schema.json").read_text()
+    )
     Draft202012Validator(schema).validate(json.loads(result.stdout))
     response = NativeTestResponse.model_validate_json(result.stdout)
     return result.returncode, response
@@ -86,16 +112,32 @@ def invoke(case: NativeCase, request: dict[str, object], *, isolated: bool = Fal
         ("usage", 4, 3, "unavailable", "unrecognized arguments"),
         ("bad-config", 4, 3, "unavailable", "invalid.toml"),
         ("xdist", 0, 0, "passed", "1 passed"),
+        ("literal-rejected", 4, 3, "unavailable", "path cannot contain"),
     ],
-    ids=["pass", "fail", "skip", "collect", "empty", "collection-error", "usage", "bad-config", "xdist"],
+    ids=[
+        "pass",
+        "fail",
+        "skip",
+        "collect",
+        "empty",
+        "collection-error",
+        "usage",
+        "bad-config",
+        "xdist",
+        "literal-rejected",
+    ],
 )
-def test_native_outcomes_and_options(native_case: NativeCase, case_name, native_code, wire_code, status, token) -> None:
+def test_native_outcomes_and_options(
+    native_case: NativeCase, case_name, native_code, wire_code, status, token
+) -> None:
     case = native_case
     args: list[str] = []
     if case_name == "fail":
         case.source.write_bytes(b"def test_fail():\r\n    assert False, 'FAILURE_DETAIL'\r\n")
     elif case_name == "skip":
-        case.source.write_text("import pytest\n\ndef test_skip():\n    pytest.skip('native skip')\n", encoding="utf-8")
+        case.source.write_text(
+            "import pytest\n\ndef test_skip():\n    pytest.skip('native skip')\n", encoding="utf-8"
+        )
     elif case_name == "empty":
         case.source.write_text("# no tests\n", encoding="utf-8")
     elif case_name == "collection-error":
@@ -110,6 +152,10 @@ def test_native_outcomes_and_options(native_case: NativeCase, case_name, native_
         args = ["-c", str(invalid)]
     elif case_name == "xdist":
         args = ["-n", "2"]
+    elif case_name == "literal-rejected":
+        renamed = case.source.with_name("test_[literal].py")
+        case.source.rename(renamed)
+        case = NativeCase(case.workspace, renamed, case.repo_root)
     targets = [str(case.source)]
     direct = native(case, targets, args)
     assert direct.returncode == native_code, (direct.stdout, direct.stderr)
@@ -127,6 +173,8 @@ def test_native_outcomes_and_options(native_case: NativeCase, case_name, native_
         assert "no tests" in result.decision.message.lower()
     if case_name == "bad-config":
         assert result.decision.reason == "invalid_configuration"
+        assert not direct.stdout
+        assert result.evidence.data == direct.stderr.decode("utf-8", errors="replace")
 
 
 def test_configured_discovery_and_deliberate_native_expansion(native_case: NativeCase) -> None:
@@ -147,7 +195,9 @@ def test_configured_discovery_and_deliberate_native_expansion(native_case: Nativ
 def test_last_failed_and_verbose_traceback_remain_native(native_case: NativeCase) -> None:
     case = native_case
     case.source.write_text(
-        "def test_pass():\n    assert True\n\ndef test_bad():\n    assert " + repr("x" * 400) + " == 'different'\n",
+        "def test_pass():\n    assert True\n\ndef test_bad():\n    assert "
+        + repr("x" * 400)
+        + " == 'different'\n",
         encoding="utf-8",
     )
     targets = [str(case.source)]
@@ -167,13 +217,22 @@ def test_native_coverage_is_opt_in_and_owns_threshold_rejection(native_case: Nat
     package = case.workspace / "mcp_server"
     package.mkdir()
     (package / "__init__.py").write_text("", encoding="utf-8")
-    (package / "sample.py").write_text("def choose(value):\n    if value:\n        return 1\n    return 2\n", encoding="utf-8")
-    case.source.write_text("from mcp_server.sample import choose\n\ndef test_choose():\n    assert choose(True) == 1\n", encoding="utf-8")
-    configured = tomllib.loads((case.repo_root / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["coverage"]
+    (package / "sample.py").write_text(
+        "def choose(value):\n    if value:\n        return 1\n    return 2\n", encoding="utf-8"
+    )
+    case.source.write_text(
+        "from mcp_server.sample import choose\n\n"
+        "def test_choose():\n    assert choose(True) == 1\n",
+        encoding="utf-8",
+    )
+    configured = tomllib.loads((case.repo_root / "pyproject.toml").read_text(encoding="utf-8"))[
+        "tool"
+    ]["coverage"]
     assert configured["run"] == {"source": ["mcp_server"], "branch": True}
     assert configured["report"]["fail_under"] == 90
     (case.workspace / "pyproject.toml").write_text(
-        '[tool.coverage.run]\nsource = ["mcp_server"]\nbranch = true\n[tool.coverage.report]\nfail_under = 90\n',
+        '[tool.coverage.run]\nsource = ["mcp_server"]\nbranch = true\n'
+        "[tool.coverage.report]\nfail_under = 90\n",
         encoding="utf-8",
     )
     targets = [str(case.source)]
@@ -189,20 +248,31 @@ def test_native_coverage_is_opt_in_and_owns_threshold_rejection(native_case: Nat
     assert "90" in response.root.evidence.data and "sample.py" in response.root.evidence.data
 
 
-def test_wire_rejection_dependency_and_metadata_only_requests(native_case: NativeCase) -> None:
+def test_wire_rejection_dependency_and_metadata_only_requests(
+    native_case: NativeCase, monkeypatch: pytest.MonkeyPatch
+) -> None:
     case = native_case
     request = {"operation": "tests", "targets": [], "args": []}
-    for invalid in ({**request, "operation": "other"}, {**request, "scope": "workspace"},
-                    {**request, "targets": ["relative.py"]}, {**request, "args": [True]}):
+    for invalid in (
+        {**request, "operation": "other"},
+        {**request, "scope": "workspace"},
+        {**request, "targets": ["relative.py"]},
+        {**request, "args": [True]},
+    ):
         code, response = invoke(case, invalid)
         assert code == 2 and response.root.reason == "invalid_request"
     code, response = invoke(case, request, isolated=True)
     assert code == 3 and isinstance(response.root, NativeTestResult)
     assert response.root.decision.reason == "dependency_unavailable"
-    for args in (["--version"], ["--help"]):
+    for args in (["--version"], ["--help"], ["-VV"], ["-qh"]):
         code, response = invoke(case, {**request, "args": args})
         assert code == 3 and isinstance(response.root, NativeTestResult)
         assert response.root.decision.reason == "unsupported_input"
+    monkeypatch.setenv("PYTEST_ADDOPTS", "--help")
+    assert native(case, [], []).returncode == 0
+    code, response = invoke(case, request)
+    assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert response.root.decision.reason == "unsupported_input"
 
 
 def is_running(pid: int) -> bool:
@@ -228,19 +298,26 @@ async def test_cancellation_stops_native_pytest_descendant(native_case: NativeCa
     case = native_case
     child = case.workspace / "child.py"
     child.write_text(
-        "import os, pathlib, time\npathlib.Path('child.pid').write_text(str(os.getpid()))\ntime.sleep(60)\n",
+        "import os, pathlib, time\n"
+        "pathlib.Path('child.pid').write_text(str(os.getpid()))\ntime.sleep(60)\n",
         encoding="utf-8",
     )
     case.source.write_text(
         "import subprocess, sys, time\n\ndef test_spawn():\n"
-        "    subprocess.Popen([sys.executable, 'child.py'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n"
-        "    time.sleep(60)\n", encoding="utf-8",
+        "    subprocess.Popen([sys.executable, 'child.py'], "
+        "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n"
+        "    time.sleep(60)\n",
+        encoding="utf-8",
     )
-    task = asyncio.create_task(AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
-        launch=binding_for(case).launch, workspace_root=case.workspace,
-        request=SelectionCheckRequest(operation="tests", targets=(str(case.source),), args=()),
-        response_contract=role_response_contract(), timeout_seconds=20,
-    ))
+    task = asyncio.create_task(
+        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+            launch=binding_for(case).launch,
+            workspace_root=case.workspace,
+            request=SelectionCheckRequest(operation="tests", targets=(str(case.source),), args=()),
+            response_contract=role_response_contract(),
+            timeout_seconds=20,
+        )
+    )
     try:
         async with asyncio.timeout(12):
             while not (case.workspace / "child.pid").exists():
