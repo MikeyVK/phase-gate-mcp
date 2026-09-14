@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 37,
-  "last_cycle": 36,
+  "current_cycle": 38,
+  "last_cycle": 37,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -222,6 +222,12 @@
       "name": "Portable worker artifact",
       "forced": false,
       "entered": "2026-09-14T08:53:44.229614+00:00"
+    },
+    {
+      "cycle_number": 38,
+      "name": "Public unit-test artifact",
+      "forced": false,
+      "entered": "2026-09-14T09:12:13.570303+00:00"
     }
   ],
   "required_phases": [
@@ -377,5 +383,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }
