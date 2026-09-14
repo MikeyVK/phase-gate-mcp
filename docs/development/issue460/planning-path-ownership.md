@@ -574,7 +574,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `tests/mcp_server/unit/execution/test_fix_service.py` | [CY030](planning-execution.md#cy030) | CY030 |
 | `.pgmcp/config/fixes.yaml` | [CY030](planning-execution.md#cy030) | CY030, CY072 |
 | `tests/mcp_server/integration/templates/test_shared_python.py` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
-| `.pgmcp/template_suite/shared/definitions/python.schema.json` | [CY031](planning-artifacts-mutation.md#cy031) | CY031, CY033, CY035, CY037 |
+| `.pgmcp/template_suite/shared/definitions/python.schema.json` | [CY031](planning-artifacts-mutation.md#cy031) | CY031, CY033, CY035, CY037, CY039 |
 | `.pgmcp/template_suite/shared/templates/bases/tier1_code.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier2_python.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
 | `.pgmcp/template_suite/shared/templates/bases/tier2_typescript.jinja2` | [CY031](planning-artifacts-mutation.md#cy031) | CY031 |
@@ -623,7 +623,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/pytest_unit_test/manifest.yaml` | [CY038](planning-artifacts-mutation.md#cy038) | CY038 |
 | `.pgmcp/template_suite/pytest_unit_test/.version` | [CY038](planning-artifacts-mutation.md#cy038) | CY038 |
 | `.pgmcp/template_suite/pytest_unit_test/policy.yaml` | [CY038](planning-artifacts-mutation.md#cy038) | CY038 |
-| `.pgmcp/template_suite/pytest_unit_test/context.schema.json` | [CY038](planning-artifacts-mutation.md#cy038) | CY038 |
+| `.pgmcp/template_suite/pytest_unit_test/context.schema.json` | [CY038](planning-artifacts-mutation.md#cy038) | CY038, CY039 |
 | `.pgmcp/template_suite/pytest_unit_test/template.jinja2` | [CY038](planning-artifacts-mutation.md#cy038) | CY038 |
 | `tests/mcp_server/integration/templates/test_pytest_unit_test.py` | [CY038](planning-artifacts-mutation.md#cy038) | CY038 |
 | `.pgmcp/template_suite/pytest_integration_test/manifest.yaml` | [CY039](planning-artifacts-mutation.md#cy039) | CY039 |

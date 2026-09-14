@@ -425,7 +425,13 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/shared/definitions/python.schema.json`
+- `.pgmcp/template_suite/pytest_unit_test/context.schema.json`
+
+Independent QA identified the shared class-discovery and instance-case rules needed by both
+pytest families. Under the standing authorization for proportional corrections, CY039 factors
+the existing unit rules without changing admission or the general test/fixture records.
+R-CY039 is `4a284a9f278d0708bbc339ef347796d5fcf9d8ac`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
