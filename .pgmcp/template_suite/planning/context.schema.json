@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Planning document content",
+  "description": "Valid initial authored Planning content; completion is determined by active work-context phase instructions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "summary", "work_units"],
+  "properties": {
+    "title": {"$ref": "#/$defs/Text"},
+    "status": {"$ref": "#/$defs/Text"},
+    "version": {"$ref": "#/$defs/Text"},
+    "last_updated": {"type": "string", "format": "date", "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"},
+    "purpose": {"$ref": "#/$defs/Prose"},
+    "scope_in": {"$ref": "#/$defs/Prose"},
+    "scope_out": {"$ref": "#/$defs/Prose"},
+    "prerequisites": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+    "related_docs": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}},
+    "summary": {"$ref": "#/$defs/Text"},
+    "dependencies": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+    "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
+    "milestones": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+    "work_units": {"type": "array", "items": {"$ref": "#/$defs/WorkUnit"}},
+    "phase_deliverables": {"$ref": "#/$defs/PhaseDeliverables"}
+  },
+  "$defs": {
+    "Text": {"type": "string", "minLength": 1},
+    "Prose": {"type": "string"},
+    "ValidationSpec": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "file"],
+      "properties": {
+        "type": {"enum": ["file_exists", "file_glob", "contains_text", "absent_text", "key_path"]},
+        "file": {"type": "string"},
+        "text": {"type": ["string", "null"]},
+        "path": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"type": {"enum": ["contains_text", "absent_text"]}}},
+         "then": {"required": ["text"], "properties": {"text": {"type": "string"}}}},
+        {"if": {"properties": {"type": {"const": "key_path"}}},
+         "then": {"required": ["path"], "properties": {"path": {"type": "string"}}}}
+      ]
+    },
+    "Deliverable": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "description"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Text"},
+        "description": {"$ref": "#/$defs/Text"},
+        "owner": {"$ref": "#/$defs/Text"},
+        "validates": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/ValidationSpec"}]}
+      }
+    },
+    "EvidenceRequirement": {"$ref": "../shared/definitions/evidence-requirement.schema.json"},
+    "WorkUnit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "goal", "deliverables", "exit_criteria"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Text"},
+        "name": {"$ref": "#/$defs/Text"},
+        "goal": {"$ref": "#/$defs/Text"},
+        "deliverables": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Deliverable"}},
+        "exit_criteria": {"$ref": "#/$defs/Text"},
+        "scope_in": {"$ref": "#/$defs/Prose"},
+        "scope_out": {"$ref": "#/$defs/Prose"},
+        "owner": {"$ref": "#/$defs/Text"},
+        "dependencies": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+        "obligations": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+        "verification": {"type": "array", "items": {"$ref": "#/$defs/EvidenceRequirement"}},
+        "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
+        "stop_conditions": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+        "cycle_number": {"type": "integer", "minimum": 1}
+      }
+    },
+    "PhaseDeliverables": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "design": {"type": "array", "items": {"$ref": "#/$defs/Deliverable"}},
+        "validation": {"type": "array", "items": {"$ref": "#/$defs/Deliverable"}},
+        "documentation": {"type": "array", "items": {"$ref": "#/$defs/Deliverable"}}
+      }
+    }
+  }
+}

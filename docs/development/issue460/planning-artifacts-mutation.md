@@ -662,10 +662,17 @@ New exact paths:
 - `.pgmcp/template_suite/planning/policy.yaml`
 - `.pgmcp/template_suite/planning/context.schema.json`
 - `.pgmcp/template_suite/planning/template.jinja2`
+- `.pgmcp/template_suite/shared/definitions/evidence-requirement.schema.json`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/design/context.schema.json`
+
+Independent QA confirmed actual reuse of EvidenceRequirement by Design.validation and
+Planning WorkUnit.verification under DI-03 sections 7.2 and 7.5. Under the standing authorization
+for proportional corrections, CY044 extracts that closed record unchanged into a shared definition.
+The two planning ledgers record only this ownership amendment; operational schemas remain read-only.
+R-CY044 is `0eeff39b8765d1fe49bb38ee1d2c3b325e76eaad`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 

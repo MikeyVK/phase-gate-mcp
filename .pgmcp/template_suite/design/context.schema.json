@@ -31,7 +31,7 @@
     "state_and_failures": {"$ref": "#/$defs/Prose"},
     "preservation": {"$ref": "#/$defs/Prose"},
     "transition_and_cleanup": {"$ref": "#/$defs/Prose"},
-    "validation": {"type": "array", "items": {"$ref": "#/$defs/EvidenceRequirement"}},
+    "validation": {"type": "array", "items": {"$ref": "../shared/definitions/evidence-requirement.schema.json"}},
     "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
     "planning_consequences": {"$ref": "#/$defs/Prose"},
     "sources": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}}
@@ -73,16 +73,6 @@
         {"required": ["bullets"]},
         {"required": ["checklist"]}
       ]
-    },
-    "EvidenceRequirement": {
-      "type": "object", "additionalProperties": false,
-      "required": ["obligation", "method", "expected_result"],
-      "properties": {
-        "obligation": {"$ref": "#/$defs/Text"},
-        "method": {"$ref": "#/$defs/Text"},
-        "expected_result": {"$ref": "#/$defs/Text"},
-        "references": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}}
-      }
     }
   }
 }

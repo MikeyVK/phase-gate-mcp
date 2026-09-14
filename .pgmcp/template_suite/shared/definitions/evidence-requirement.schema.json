@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Authored planned evidence requirement",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "obligation",
+    "method",
+    "expected_result"
+  ],
+  "properties": {
+    "obligation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expected_result": {
+      "type": "string",
+      "minLength": 1
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "$ref": "link.schema.json"
+      }
+    }
+  }
+}
