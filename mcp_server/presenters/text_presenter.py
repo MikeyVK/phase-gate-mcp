@@ -11,7 +11,7 @@ import json
 import string
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeGuard, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, get_args, get_origin
 
 from pydantic import BaseModel
 
@@ -705,11 +705,18 @@ def validate_presentation_alignment(
                 f"on DTO '{model.__name__}' for tool '{tool_name}'"
             )
         enum_type = unwrap_nullable_annotation(model_field.annotation)
-        if not (isinstance(enum_type, type) and issubclass(enum_type, Enum)):
+        if isinstance(enum_type, type) and issubclass(enum_type, Enum):
+            allowed_values = {str(member.value) for member in enum_type}
+        elif (
+            get_origin(enum_type) is Literal
+            and get_args(enum_type)
+            and all(isinstance(value, str) for value in get_args(enum_type))
+        ):
+            allowed_values = set(get_args(enum_type))
+        else:
             raise ConfigError(
                 f"Enum-case field '{tool_name}.{declaration.field}' must be enum-valued"
             )
-        allowed_values = {str(member.value) for member in enum_type}
         invalid_values = set(declaration.cases) - allowed_values
         if invalid_values:
             values = ", ".join(sorted(invalid_values))

@@ -87,6 +87,7 @@ def compose(
     data = config.model_dump(mode="json", by_alias=True)
     data["tools"] = {
         "scaffold_artifact": {
+            "max_items": 5,
             "template_success": (
                 "{output_path}: written={written}; policy={validation_policy}; "
                 "validation={validation_status}; profile={profile_id}"
