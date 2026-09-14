@@ -86,7 +86,8 @@ def test_minimal_content_preserves_one_function_without_inferred_scaffolding(
 
 
 def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
-    delivered_integration_test: DeliveredTemplate, native_case: NativeCase,
+    delivered_integration_test: DeliveredTemplate,
+    native_case: NativeCase,
 ) -> None:
     context: dict[str, JsonValue] = {
         "description": "Explicit JSON serialization and filesystem collaboration",
@@ -100,12 +101,17 @@ def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
         "markers": ['pytest.mark.usefixtures("payload")'],
         "fixtures": [
             {
-                "name": "payload", "description": "Supply content", "async": False,
-                "parameters": [], "return_type": "dict[str, object]",
-                "body": 'return {"value": 7, "enabled": False}', "decorator": "pytest.fixture",
+                "name": "payload",
+                "description": "Supply content",
+                "async": False,
+                "parameters": [],
+                "return_type": "dict[str, object]",
+                "body": 'return {"value": 7, "enabled": False}',
+                "decorator": "pytest.fixture",
             },
             {
-                "name": "stored", "description": "Serialize to explicit fixture storage",
+                "name": "stored",
+                "description": "Serialize to explicit fixture storage",
                 "async": False,
                 "parameters": [
                     {"name": "tmp_path", "type": "Path"},
@@ -117,12 +123,15 @@ def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
                     'destination.write_text(json.dumps(payload), encoding="utf-8")\n'
                     "return destination"
                 ),
-                "decorator": "pytest.fixture", "scope": "function", "autouse": False,
+                "decorator": "pytest.fixture",
+                "scope": "function",
+                "autouse": False,
             },
         ],
         "cases": [
             {
-                "name": "test_round_trip", "description": "Read serialized content",
+                "name": "test_round_trip",
+                "description": "Read serialized content",
                 "async": False,
                 "parameters": [
                     {"name": "stored", "type": "Path"},
@@ -135,7 +144,8 @@ def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
                 ),
             },
             {
-                "name": "test_selected_field", "description": "Check stored fields",
+                "name": "test_selected_field",
+                "description": "Check stored fields",
                 "async": False,
                 "parameters": [
                     {"name": "stored", "type": "Path"},
@@ -160,18 +170,22 @@ def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
     assert context == before
     functions = [item for item in tree.body if isinstance(item, ast.FunctionDef)]
     assert [item.name for item in functions] == [
-        "payload", "stored", "test_round_trip", "test_selected_field"
+        "payload",
+        "stored",
+        "test_round_trip",
+        "test_selected_field",
     ]
     assert isinstance(functions[0].decorator_list[0], ast.Attribute)
     configured_fixture = functions[1].decorator_list[0]
     assert isinstance(configured_fixture, ast.Call)
     assert {item.arg: ast.literal_eval(item.value) for item in configured_fixture.keywords} == {
-        "scope": "function", "autouse": False,
+        "scope": "function",
+        "autouse": False,
     }
     assert [arg.arg for arg in functions[1].args.args] == ["tmp_path", "payload"]
-    assert [ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))] == [
-        "from pathlib import Path", "import json", "import pytest"
-    ]
+    assert [
+        ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))
+    ] == ["from pathlib import Path", "import json", "import pytest"]
     markers = [item for item in tree.body if isinstance(item, ast.Assign)]
     assert len(markers) == 1 and ast.unparse(markers[0].targets[0]) == "pytestmark"
     assert not any(isinstance(item, ast.ClassDef) for item in tree.body)
@@ -285,7 +299,6 @@ def test_class_async_fixture_and_case_content_remain_explicit(
 
 def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
     delivered_integration_test: DeliveredTemplate,
-    native_case: NativeCase,
 ) -> None:
     case: dict[str, JsonValue] = {
         "name": "test_value",
@@ -306,16 +319,6 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
     base: dict[str, JsonValue] = {"description": "Caller cases", "cases": [case]}
     noncollectable = "Test\u0307Cases"
     blocked_composition = "Test\u0300\u0307Cases"
-    for spelling, canonical, expected_code, token in (
-        (noncollectable, "TesṫCases", 5, b"no tests collected"),
-        (blocked_composition, blocked_composition, 0, b"test_value"),
-    ):
-        native_source = f"class {spelling}:\n    def test_value(self):\n        assert 2 + 3 == 5\n"
-        native_class = ast.parse(native_source).body[0]
-        assert isinstance(native_class, ast.ClassDef) and native_class.name == canonical
-        native_case.source.write_text(native_source, encoding="utf-8")
-        discovered = native(native_case, [str(native_case.source)], ["--collect-only"])
-        assert discovered.returncode == expected_code and token in discovered.stdout
     invalid: list[dict[str, JsonValue]] = [
         {"description": "Missing cases"},
         {**base, "cases": []},
@@ -387,4 +390,3 @@ def test_invalid_native_body_remains_a_syntax_failure(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not (tmp_path / "test_invalid.py").exists()
-

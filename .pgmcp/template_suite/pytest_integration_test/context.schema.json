@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Pytest unit-test content",
+  "title": "Pytest integration-test content",
   "type": "object",
   "additionalProperties": false,
   "required": [
