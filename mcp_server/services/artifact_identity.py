@@ -139,7 +139,7 @@ def derive_artifact_identities(
             raise _source_error("generation_source_missing", min(missing))
 
     generation = {
-        path: _normalize(content)
+        path: normalize_source_bytes(content)
         for path, content in files.items()
         if _generation_source(path, directories.keys())
     }
@@ -174,19 +174,19 @@ def derive_artifact_identities(
         if not path.startswith("shared/") and path not in reached:
             raise _source_error("generation_private_source_unreachable", path)
 
-    suite_fingerprint = _fingerprint(
+    suite_fingerprint = fingerprint_records(
         "pgmcp:source-suite:v1",
-        (_Record("file", path, content) for path, content in generation.items()),
+        (FingerprintRecord("file", path, content) for path, content in generation.items()),
     )
     result: list[ArtifactIdentity] = []
     for package in sorted(packages, key=lambda item: item.manifest.template_id):
         closure = closures[package.directory]
         records = [
-            _Record("file", _package_path(path, package.directory), generation[path])
+            FingerprintRecord("file", _package_path(path, package.directory), generation[path])
             for path in closure
         ]
         records.extend(
-            _Record(
+            FingerprintRecord(
                 f"edge:{edge.kind}",
                 json.dumps(
                     [
@@ -206,7 +206,7 @@ def derive_artifact_identities(
             ArtifactIdentity(
                 id=package.manifest.template_id,
                 pv=package.version,
-                pf=_fingerprint("pgmcp:resolved-package:v1", records),
+                pf=fingerprint_records("pgmcp:resolved-package:v1", records),
                 sf=suite_fingerprint,
             )
         )
@@ -214,13 +214,13 @@ def derive_artifact_identities(
 
 
 @dataclass(frozen=True)
-class _Record:
+class FingerprintRecord:
     kind: str
     identity: str
     value: bytes
 
 
-def _fingerprint(domain: str, records: Iterable[_Record]) -> str:
+def fingerprint_records(domain: str, records: Iterable[FingerprintRecord]) -> str:
     """v1 fields are NUL-delimited; values are framed by decimal UTF-8 byte length."""
     digest = hashlib.sha256()
     digest.update(domain.encode("ascii") + b"\x00")
@@ -232,7 +232,7 @@ def _fingerprint(domain: str, records: Iterable[_Record]) -> str:
     return base64.urlsafe_b64encode(digest.digest()[:12]).decode("ascii")
 
 
-def _normalize(content: bytes) -> bytes:
+def normalize_source_bytes(content: bytes) -> bytes:
     return content.decode("utf-8-sig").replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
 
 

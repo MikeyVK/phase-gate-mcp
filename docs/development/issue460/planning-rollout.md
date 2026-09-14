@@ -47,7 +47,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Operational components and selection**
 
 - **Semantic predecessors:** [CY004](planning-execution.md#cy004), [CY005](planning-execution.md#cy005), [CY006](planning-execution.md#cy006), [CY007](planning-execution.md#cy007).
-- **Shared-file predecessors:** None.
+- **Shared-file predecessors:** [CY006](planning-execution.md#cy006).
 - **Authority:** [DI-06 §§5.2–5.4,7.1,10](design-distribution.md).
 - **CY063.D1 — bounded result:** Full-file operational fingerprints and pure adopted/actual/candidate component selection.
 - **Preserved behavior:** Policy/.version included, absence first-class, manifest-ID keys; no pf/sf overwrite authority or per-file merge.
@@ -69,7 +69,11 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `mcp_server/services/artifact_identity.py`
+
+Independent QA identified this bounded shared-primitive exposure under the user's standing authorization: reuse D-SUITE-30 record framing and source normalization through public names, preserving existing generation bytes. No second fingerprint engine or broader generation change is permitted.
+
+Implementation process record: the initial CY063 production implementation preceded its first test run and had no RED commit. The independent QA repair subsequently demonstrated the real empty-shared defect before fixing production, but that RED state was not committed separately. The first repair run also contained an incorrect lifecycle expectation, which was corrected independently of the production fix. No historical test-first sequence or RED commit is claimed. Final behavior and scoped evidence remain subject to independent QA review.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 

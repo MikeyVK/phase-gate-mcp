@@ -496,7 +496,7 @@ The new-source register records CY059's inward projection operation and the narr
 | `tests/mcp_server/unit/services/test_template_graph.py` | [CY004](planning-execution.md#cy004) | CY004 |
 | `mcp_server/services/template_catalog.py` | [CY005](planning-execution.md#cy005) | CY005, CY071 |
 | `tests/mcp_server/unit/services/test_template_catalog.py` | [CY005](planning-execution.md#cy005) | CY005 |
-| `mcp_server/services/artifact_identity.py` | [CY006](planning-execution.md#cy006) | CY006 |
+| `mcp_server/services/artifact_identity.py` | [CY006](planning-execution.md#cy006) | CY006, CY063 (public canonical primitives only) |
 | `tests/mcp_server/unit/services/test_artifact_identity.py` | [CY006](planning-execution.md#cy006) | CY006 |
 | `mcp_server/core/interfaces/artifact_header_reader.py` | [CY007](planning-execution.md#cy007) | CY007 |
 | `mcp_server/services/artifact_header_reader.py` | [CY007](planning-execution.md#cy007) | CY007 |
