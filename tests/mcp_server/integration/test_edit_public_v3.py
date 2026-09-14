@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import EmbeddedResource, TextContent
-from mcp_server.tools.edit_tool import SafeEditTool
 from pydantic import JsonValue
 
 from mcp_server.bootstrap import SupportedToolContract
@@ -27,35 +26,32 @@ from mcp_server.presenters.text_presenter import TextPresenter, validate_present
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.mutation_outputs import EditOperationOutput
 from mcp_server.server import MCPServer
+from mcp_server.services.template_catalog import TemplateCatalog
 from mcp_server.state.response_cache import ResponseCacheManager
+from mcp_server.tools.edit_tool import SafeEditTool
 from mcp_server.utils.atomic_file_writer import CheckedFileWriter
-from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
+from tests.mcp_server.fixtures.suite_roots import SuiteRoots, write_package_tree
 from tests.mcp_server.integration.test_edit_operation_v3 import operation as build_operation
 from tests.mcp_server.integration.test_scaffold_public_v3 import Composition, invoke
+from tests.mcp_server.unit.services.test_template_catalog import catalog_loader, package_files
 
 
 @pytest.fixture
-def delivered(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:
-    suite = pytestconfig.rootpath / ".pgmcp/template_suite"
-    return load_delivered_template(
-        source_suite=suite,
-        source_package=suite / "issue",
-        config_root=pytestconfig.rootpath / ".pgmcp/config",
-        destination=tmp_path / "suite",
-        template_id="source_notes",
-    )
+def catalog(suite_roots: SuiteRoots) -> TemplateCatalog:
+    write_package_tree(suite_roots.templates, package_files("notes-package", "source_notes"))
+    return catalog_loader(suite_roots).load()
 
 
 def compose(
     root: Path,
     pytestconfig: pytest.Config,
-    delivered: DeliveredTemplate,
+    catalog: TemplateCatalog,
     outcomes: tuple[str, ...] = ("passed",),
     *,
     has_profile: bool = True,
 ) -> Composition:
     service, _ = build_operation(root, outcomes, has_profile=has_profile)
-    core = SafeEditTool(operation=service, catalog=delivered.catalog)
+    core = SafeEditTool(operation=service, catalog=catalog)
     wrapped = ToolErrorHandlerDecorator(
         InputValidationDecorator(
             EnforcementDecorator(core, MagicMock(spec=EnforcementRunner), root),
@@ -163,9 +159,9 @@ async def edit(
                 "op": "replace",
                 "target_content": "alpha",
                 "replacement": "new",
-                "search_window": [1, 1],
+                "search_window": [2, 2],
             },
-            "new\nbeta\n",
+            "alpha\nnew\n",
             "passed",
             "enforce",
             True,
@@ -197,7 +193,7 @@ async def edit(
 async def test_public_operations_preserve_binding_and_actual_write_facts(
     tmp_path: Path,
     pytestconfig: pytest.Config,
-    delivered: DeliveredTemplate,
+    catalog: TemplateCatalog,
     command: dict[str, JsonValue],
     expected: str,
     outcome: str,
@@ -205,8 +201,8 @@ async def test_public_operations_preserve_binding_and_actual_write_facts(
     changed: bool,
 ) -> None:
     target = tmp_path / "notes.md"
-    target.write_bytes(b"alpha\nbeta\n")
-    composition = compose(tmp_path, pytestconfig, delivered, (outcome,))
+    target.write_bytes(b"alpha\nalpha\n" if command["op"] == "replace" else b"alpha\nbeta\n")
+    composition = compose(tmp_path, pytestconfig, catalog, (outcome,))
     result = await edit(composition, command, policy=policy, template_id="source_notes")
     assert result.success and result.written and result.content_changed is changed
     assert target.read_bytes() == expected.encode("utf-8")
@@ -223,7 +219,7 @@ async def test_public_operations_preserve_binding_and_actual_write_facts(
 async def test_default_enforce_preserves_original_and_selection(
     tmp_path: Path,
     pytestconfig: pytest.Config,
-    delivered: DeliveredTemplate,
+    catalog: TemplateCatalog,
     has_profile: bool,
 ) -> None:
     target = tmp_path / "notes.md"
@@ -231,7 +227,7 @@ async def test_default_enforce_preserves_original_and_selection(
     composition = compose(
         tmp_path,
         pytestconfig,
-        delivered,
+        catalog,
         ("failed",),
         has_profile=has_profile,
     )
@@ -253,12 +249,12 @@ async def test_default_enforce_preserves_original_and_selection(
 async def test_construction_feedback_survives_the_cache(
     tmp_path: Path,
     pytestconfig: pytest.Config,
-    delivered: DeliveredTemplate,
+    catalog: TemplateCatalog,
 ) -> None:
     target = tmp_path / "notes.md"
     target.write_bytes(b"original")
     result = await edit(
-        compose(tmp_path, pytestconfig, delivered),
+        compose(tmp_path, pytestconfig, catalog),
         {"op": "replace", "target_content": "absent", "replacement": "new"},
         policy="report",
     )
@@ -274,7 +270,7 @@ async def test_construction_feedback_survives_the_cache(
 async def test_concurrent_original_change_retains_passed_checks(
     tmp_path: Path,
     pytestconfig: pytest.Config,
-    delivered: DeliveredTemplate,
+    catalog: TemplateCatalog,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     target = tmp_path / "notes.md"
@@ -292,7 +288,7 @@ async def test_concurrent_original_change_retains_passed_checks(
 
     monkeypatch.setattr(CheckedFileWriter, "replace_if_unchanged", intervene)
     result = await edit(
-        compose(tmp_path, pytestconfig, delivered),
+        compose(tmp_path, pytestconfig, catalog),
         {"op": "rewrite", "content": "proposed"},
     )
     assert result.error_code == "original_changed" and result.validation_status == "passed"
@@ -321,7 +317,7 @@ async def test_concurrent_original_change_retains_passed_checks(
 async def test_target_input_rejects_legacy_and_unadmitted_values(
     tmp_path: Path,
     pytestconfig: pytest.Config,
-    delivered: DeliveredTemplate,
+    catalog: TemplateCatalog,
     extra: dict[str, JsonValue],
 ) -> None:
     target = tmp_path / "notes.md"
@@ -332,7 +328,7 @@ async def test_target_input_rejects_legacy_and_unadmitted_values(
         **extra,
     }
     response, cached = await invoke(
-        compose(tmp_path, pytestconfig, delivered),
+        compose(tmp_path, pytestconfig, catalog),
         "safe_edit_file",
         arguments,
     )
