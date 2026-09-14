@@ -28,9 +28,14 @@ from mcp_server.core.interfaces.execution import (
     AdapterLaunch,
     AdapterPackageIdentity,
 )
-from mcp_server.core.interfaces.git import BranchChanges, IBranchChangeReader
+from mcp_server.core.interfaces.git import (
+    BranchBasisUnavailable,
+    BranchChanges,
+    IBranchChangeReader,
+)
 from mcp_server.execution.catalog import AdapterCatalog
 from mcp_server.execution.check_selection import (
+    CheckScopeError,
     CheckSelectionError,
     CheckSelectionFailureReason,
     CheckSelectionRequest,
@@ -161,15 +166,15 @@ def test_profile_and_caller_order_determine_calls_with_binding_defaults(tmp_path
     for request in requests:
         plan = planner.select(request)
         assert plan.selected_check_ids == ("second", "first")
+        assert plan.selected_profile == ("reverse" if request.profile else None)
         assert tuple(call.check_id for call in plan.calls) == ("second", "first")
         assert tuple(call.request.args for call in plan.calls) == (("--second",), ("--default",))
         assert tuple(call.timeout_seconds for call in plan.calls) == (7, 3)
         assert planner.select(request) == plan
     default_changed = selector(tmp_path, config=configured_checks(default_profile="reverse"))
-    assert default_changed.select(CheckSelectionRequest(scope="configured")).selected_check_ids == (
-        "second",
-        "first",
-    )
+    default_plan = default_changed.select(CheckSelectionRequest(scope="configured"))
+    assert default_plan.selected_check_ids == ("second", "first")
+    assert default_plan.selected_profile == "reverse"
 
 
 @pytest.mark.parametrize(
@@ -289,10 +294,14 @@ def test_explicit_targets_are_canonical_language_agnostic_and_directory_covering
 
 def test_missing_escape_and_equivalent_workspace_targets_are_rejected(tmp_path: Path) -> None:
     planner = selector(tmp_path)
-    for target in ("missing.md", ".", "./"):
-        with pytest.raises(CheckSelectionError) as caught:
+    for target, scope_reason in (("missing.md", "missing"), (".", "outside_workspace"), ("./", "outside_workspace")):
+        with pytest.raises(CheckScopeError) as caught:
             planner.select(CheckSelectionRequest(scope="targets", targets=(target,)))
         assert caught.value.reason == CheckSelectionFailureReason.INVALID_TARGETS
+        assert caught.value.selection_id == target
+        assert caught.value.target == target
+        assert caught.value.scope_reason == scope_reason
+        assert caught.value.message
     for target in ("../outside", "/absolute", r"C:\outside", r"nested\..\outside"):
         with pytest.raises(ValidationError):
             CheckSelectionRequest(scope="targets", targets=(target,))
@@ -314,11 +323,15 @@ def test_real_directory_link_cannot_escape_workspace(tmp_path: Path) -> None:
     else:
         link.symlink_to(outside, target_is_directory=True)
     try:
-        with pytest.raises(CheckSelectionError) as caught:
+        with pytest.raises(CheckScopeError) as caught:
             selector(workspace).select(
                 CheckSelectionRequest(scope="targets", targets=("linked/file.md",))
             )
         assert caught.value.reason == CheckSelectionFailureReason.INVALID_TARGETS
+        assert caught.value.selection_id == "linked/file.md"
+        assert caught.value.target == "linked/file.md"
+        assert caught.value.scope_reason == "outside_workspace"
+        assert caught.value.message
     finally:
         if os.name == "nt":
             link.rmdir()
@@ -427,9 +440,16 @@ def test_missing_parent_invalid_revision_and_unrelated_history_are_errors(
     adapter = GitAdapter(str(tmp_path))
     try:
         request = CheckSelectionRequest(scope="branch")
-        for parent in (None, "missing-parent"):
-            with pytest.raises(ExecutionError):
-                selector(tmp_path, branch=adapter, parent=parent).select(request)
+        with pytest.raises(BranchBasisUnavailable) as parent_missing:
+            selector(tmp_path, branch=adapter, parent=None).select(request)
+        assert parent_missing.value.reason == "parent_unavailable"
+        assert parent_missing.value.message == "branch_parent_missing"
+        assert isinstance(parent_missing.value, ExecutionError)
+
+        with pytest.raises(BranchBasisUnavailable) as missing_ref:
+            selector(tmp_path, branch=adapter, parent="missing-parent").select(request)
+        assert missing_ref.value.reason == "parent_unavailable"
+        assert missing_ref.value.message
         unrelated = Commit.create_from_tree(
             branch_repo,
             branch_repo.head.commit.tree,
@@ -439,8 +459,11 @@ def test_missing_parent_invalid_revision_and_unrelated_history_are_errors(
             committer=ACTOR,
         )
         branch_repo.create_head("unrelated", unrelated)
-        with pytest.raises(ExecutionError, match="merge-base"):
+        with pytest.raises(BranchBasisUnavailable) as unrelated_basis:
             selector(tmp_path, branch=adapter, parent="unrelated").select(request)
+        assert unrelated_basis.value.reason == "merge_base_unavailable"
+        assert unrelated_basis.value.message
+        assert isinstance(unrelated_basis.value, ExecutionError)
     finally:
         adapter.repo.close()
 
@@ -484,9 +507,12 @@ def test_missing_current_path_is_not_reported_as_git_deletion(tmp_path: Path) ->
             assert parent == "upstream"
             return BranchChanges(current_paths=("disappeared.md",), removed_paths=())
 
-    with pytest.raises(CheckSelectionError) as caught:
+    with pytest.raises(CheckScopeError) as caught:
         selector(tmp_path, branch=DisappearedCurrentPath()).select(
             CheckSelectionRequest(scope="branch")
         )
     assert caught.value.reason == CheckSelectionFailureReason.INVALID_TARGETS
     assert caught.value.selection_id == "disappeared.md"
+    assert caught.value.target == "disappeared.md"
+    assert caught.value.scope_reason == "missing"
+    assert caught.value.message
