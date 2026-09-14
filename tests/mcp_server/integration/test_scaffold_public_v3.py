@@ -316,7 +316,7 @@ async def test_creation_fault_retains_passed_checks_and_exact_error_details(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "override",
-    [{"file_name": "../invalid.md"}, {"target_path": "/outside"}, {"force_target": True}],
+    [{"file_name": "1:invalid.md"}, {"target_path": "/outside"}, {"force_target": True}],
     ids=["basename", "relative-target", "force-needs-target"],
 )
 async def test_malformed_scaffold_input_stops_at_the_public_envelope(
