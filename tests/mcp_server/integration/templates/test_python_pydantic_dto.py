@@ -277,6 +277,11 @@ def test_context_rejects_legacy_and_invalid_concrete_combinations(
         "model_validate_strings",
     ):
         invalid.append({**base, "fields": [{**field, "name": name}], "examples": [{}]})
+    for spelling, native_name in (("Ｆｉｅｌｄ", "Field"), ("Conﬁg", "Config")):
+        native = ast.parse(f"{spelling} = None").body[0]
+        assert isinstance(native, ast.Assign)
+        assert isinstance(native.targets[0], ast.Name) and native.targets[0].id == native_name
+        invalid.append({**base, "fields": [{**field, "name": spelling}], "examples": [{}]})
     for context in invalid:
         with pytest.raises(ContextError):
             delivered_dto.renderer.render("python_pydantic_dto", context, delivered_dto.provenance)
