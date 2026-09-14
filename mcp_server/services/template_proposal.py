@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import os
 import shutil
 from collections.abc import Callable, Iterable
@@ -74,12 +73,6 @@ class SuiteSnapshot:
 def admit_template_suite(root: Path, effective_config_root: Path) -> SuiteSnapshot:
     """Load and validate one complete suite through the existing admission chain."""
 
-    if _is_link(root):
-        raise MCPError(
-            "template_suite_symlink_escape",
-            code="ERR_CONFIG",
-            params={"source": str(root)},
-        )
     suite_root = _absolute_directory(root, "template_suite_root_invalid")
     config_root = _absolute_directory(effective_config_root, "effective_config_root_invalid")
     inventory = _inventory(suite_root)
@@ -209,7 +202,7 @@ class TemplateProposalService:
     def _admit_snapshot(self, root: Path, failure: str) -> SuiteSnapshot:
         try:
             candidate = _absolute_directory(root, "template_suite_root_invalid")
-            snapshot = _invoke_admission(self._admit, candidate, self._config_root)
+            snapshot = self._admit(candidate, self._config_root)
             if snapshot.root.resolve() != candidate.resolve():
                 raise MCPError("template_admission_root_mismatch", code="ERR_CONFIG")
             return snapshot
@@ -300,20 +293,6 @@ class TemplateProposalService:
             shutil.rmtree(path)
 
 
-def _invoke_admission(
-    admit: Admission,
-    root: Path,
-    config_root: Path,
-) -> SuiteSnapshot:
-    try:
-        single_argument = len(inspect.signature(admit).parameters) == 1
-    except (TypeError, ValueError):
-        single_argument = False
-    if single_argument:
-        return admit(root)  # type: ignore[call-arg]
-    return admit(root, config_root)
-
-
 def _absolute_directory(path: Path, message: str) -> Path:
     if not path.is_absolute():
         raise MCPError(message, code="ERR_CONFIG")
@@ -324,41 +303,56 @@ def _absolute_directory(path: Path, message: str) -> Path:
 
 
 def _inventory(root: Path) -> tuple[GenerationSource, ...]:
-    if _is_link(root):
-        raise MCPError(
-            "template_suite_symlink_escape",
-            code="ERR_CONFIG",
-            params={"source": str(root)},
-        )
     suite = _absolute_directory(root, "template_suite_root_invalid")
-    if _is_link(suite):
-        raise MCPError(
-            "template_suite_symlink_escape",
-            code="ERR_CONFIG",
-            params={"source": str(suite)},
-        )
     resolved_suite = suite.resolve(strict=True)
+    lexical_root = Path(os.path.abspath(suite))
     records: list[GenerationSource] = []
-    for current, directories, files in os.walk(suite, followlinks=False):
-        current_path = Path(current)
-        for name in (*directories, *files):
-            member = current_path / name
-            if _is_link(member):
-                raise MCPError(
-                    "template_suite_symlink_escape",
-                    code="ERR_CONFIG",
-                    params={"source": str(member)},
-                )
+
+    def visit(current: Path, ancestors: frozenset[Path]) -> None:
+        resolved_current = current.resolve(strict=True)
+        if not resolved_current.is_relative_to(resolved_suite):
+            raise MCPError(
+                "template_suite_symlink_escape",
+                code="ERR_CONFIG",
+                params={"source": str(current)},
+            )
+        if resolved_current in ancestors:
+            raise MCPError(
+                "template_suite_symlink_cycle",
+                code="ERR_CONFIG",
+                params={"source": str(current)},
+            )
+        next_ancestors = ancestors | {resolved_current}
+        try:
+            with os.scandir(current) as iterator:
+                entries = sorted(iterator, key=lambda entry: entry.name)
+        except OSError as exc:
+            raise MCPError(
+                "template_suite_unreadable",
+                code="ERR_CONFIG",
+                params={"source": str(current)},
+            ) from exc
+        for entry in entries:
+            member = current / entry.name
             lexical = Path(os.path.abspath(member))
-            if not lexical.is_relative_to(Path(os.path.abspath(suite))):
+            if not lexical.is_relative_to(lexical_root):
                 raise MCPError("template_suite_path_escape", code="ERR_CONFIG")
-            resolved = member.resolve(strict=True)
-            if not resolved.is_relative_to(resolved_suite):
-                raise MCPError(
-                    "template_suite_path_escape",
-                    code="ERR_CONFIG",
-                    params={"source": str(member)},
+            try:
+                resolved = member.resolve(strict=True)
+            except OSError as exc:
+                message = (
+                    "template_suite_symlink_escape"
+                    if _is_link(member)
+                    else "template_suite_unreadable"
                 )
+                raise MCPError(message, code="ERR_CONFIG", params={"source": str(member)}) from exc
+            if not resolved.is_relative_to(resolved_suite):
+                message = (
+                    "template_suite_symlink_escape"
+                    if _is_link(member)
+                    else "template_suite_path_escape"
+                )
+                raise MCPError(message, code="ERR_CONFIG", params={"source": str(member)})
             logical = member.relative_to(suite).as_posix()
             resolved_logical = resolved.relative_to(resolved_suite).as_posix()
             if logical.split("/", 1)[0] != resolved_logical.split("/", 1)[0]:
@@ -367,8 +361,18 @@ def _inventory(root: Path) -> tuple[GenerationSource, ...]:
                     code="ERR_CONFIG",
                     params={"source": logical},
                 )
-            if member.is_file():
+            if resolved.is_dir():
+                visit(member, next_ancestors)
+            elif resolved.is_file():
                 records.append(GenerationSource(path=logical, content=member.read_bytes()))
+            else:
+                raise MCPError(
+                    "template_suite_member_invalid",
+                    code="ERR_CONFIG",
+                    params={"source": logical},
+                )
+
+    visit(suite, frozenset())
     return tuple(sorted(records, key=lambda item: item.path))
 
 
