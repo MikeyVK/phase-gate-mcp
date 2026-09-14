@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pydantic DTO content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/ModelField"
+          },
+          {
+            "properties": {
+              "name": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "pattern": "^_"
+                    },
+                    {
+                      "enum": [
+                        "model_config",
+                        "Config",
+                        "Field",
+                        "model_dump",
+                        "model_dump_json",
+                        "model_validate",
+                        "model_validate_json",
+                        "model_validate_strings"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "fields"
+        ],
+        "properties": {
+          "fields": {
+            "minItems": 1
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "examples"
+        ],
+        "properties": {
+          "examples": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
