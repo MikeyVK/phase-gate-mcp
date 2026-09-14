@@ -34,6 +34,7 @@ from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresen
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.schemas.mutation_outputs import ScaffoldOperationOutput
 from mcp_server.server import MCPServer
 from mcp_server.services.artifact_identity import ArtifactIdentity
 from mcp_server.state.response_cache import ResponseCacheManager
@@ -168,7 +169,8 @@ async def invoke(
     cached = json.loads(
         await composition.cache_resource.read(f"pgmcp://cache/runs/{publication.run_id}")
     )
-    assert cached == operation.model_dump(mode="json")
+    if isinstance(operation, ScaffoldOperationOutput):
+        assert cached == operation.model_dump(mode="json")
     summary = response.root.content[0]
     assert isinstance(summary, TextContent)
     assert f"pgmcp://cache/runs/{publication.run_id}" in summary.text
@@ -206,6 +208,8 @@ async def test_public_scaffold_preserves_validation_and_actual_persistence(
         {
             "artifact_type": "issue",
             "file_name": "Exact name.v2.md",
+            "target_path": "outputs",
+            "force_target": True,
             "context": {"problem": "Caller value", "context": ""},
             "validation": policy,
         },
@@ -333,5 +337,7 @@ async def test_malformed_scaffold_input_stops_at_the_public_envelope(
     response, result = await invoke(composition, "scaffold_artifact", raw)
     assert response.isError is True
     assert result["error_type"] == "ValidationError"
+    assert result["params"] == raw
+    assert result["input_schema"] == schema
     assert str(schema_resource(response).resource.uri) == "schema://validation"
     assert not (tmp_path / "outputs").exists()

@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
+import re
+from typing import Annotated, ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, create_model
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+    create_model,
+    model_validator,
+)
 
 from mcp_server.config.schemas.template_suite import TemplateId
 from mcp_server.core.interfaces.icore_tool import ICoreTool
@@ -23,19 +32,49 @@ from mcp_server.core.tool_execution import (
 from mcp_server.schemas.mutation_outputs import ScaffoldOperationOutput
 from mcp_server.services.scaffold_operation import ScaffoldOperation, ValidationPolicy
 from mcp_server.services.template_catalog import TemplateCatalog
+from mcp_server.utils.path_resolver import normalize_workspace_relative_path
 
 
 class ScaffoldArtifactInput(BaseModel):
     """Strict public input envelope for the scaffold operation."""
 
-    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    model_config = ConfigDict(
+        frozen=True,
+        strict=True,
+        extra="forbid",
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "required": ["force_target"],
+                        "properties": {"force_target": {"const": True}},
+                    },
+                    "then": {
+                        "required": ["target_path"],
+                        "properties": {"target_path": {"type": "string"}},
+                    },
+                }
+            ],
+        },
+    )
 
     artifact_type: TemplateId = Field(
         description="Admitted template-package identity.",
     )
-    file_name: str = Field(description="Exact output basename, including extension.")
+    file_name: str = Field(
+        min_length=1,
+        pattern=re.compile(r"^(?!\.{1,2}$(?![\s\S]))(?![A-Za-z]:)[^/\\\x00]+$(?![\s\S])"),
+        description="Exact output basename, including extension.",
+    )
     context: JsonObject = Field(description="Caller-provided template context.")
-    target_path: str | None = Field(
+    target_path: (
+        Annotated[
+            str,
+            Field(pattern=re.compile(r"^(?![\\/])(?![A-Za-z]:)(?=[\s\S]*\S)[^\x00]+$(?![\s\S])")),
+            AfterValidator(normalize_workspace_relative_path),
+        ]
+        | None
+    ) = Field(
         default=None,
         description="Optional target directory inside the workspace.",
     )
@@ -47,6 +86,13 @@ class ScaffoldArtifactInput(BaseModel):
         default="enforce",
         description="Validation policy for the generated content.",
     )
+
+    @model_validator(mode="after")
+    def validate_target_override(self) -> Self:
+        """Require an explicit directory when opting out of configured locations."""
+        if self.force_target and self.target_path is None:
+            raise ValueError("force_target_requires_target_path")
+        return self
 
 
 class ScaffoldArtifactTool(ICoreTool[ScaffoldArtifactInput, ScaffoldOperationOutput]):
