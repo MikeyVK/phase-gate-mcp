@@ -962,11 +962,16 @@ New exact paths:
 - `.pgmcp/template_suite/pr/policy.yaml`
 - `.pgmcp/template_suite/pr/context.schema.json`
 - `.pgmcp/template_suite/pr/template.jinja2`
+- `.pgmcp/template_suite/shared/definitions/deferred-item.schema.json`
 - `tests/mcp_server/integration/templates/test_pr.py`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/validation_report/context.schema.json`
+- `docs/development/issue460/planning-artifacts-mutation.md`
+- `docs/development/issue460/planning-path-ownership.md`
+
+Bounded actual-reuse amendment: extract the unchanged DeferredItem contract shared by Validation and PR; existing Validation render/rejection cases cover the reference replacement. Independent QA confirmed this scope under the user's standing authorization. C094 changes only the two authored-body descriptions, not publication behavior. Retire T101 and the eighteen issue/PR/Markdown cases in T044 after successor evidence; retain its nine commit/tier1/text cases until CY051. R-CY050 is `fb4937d423a5c449ccc8f351f642bbb26f92b820`; these paths were clean at entry.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 

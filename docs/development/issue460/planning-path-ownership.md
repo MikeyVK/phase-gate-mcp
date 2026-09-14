@@ -676,7 +676,8 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/validation_report/manifest.yaml` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
 | `.pgmcp/template_suite/validation_report/.version` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
 | `.pgmcp/template_suite/validation_report/policy.yaml` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
-| `.pgmcp/template_suite/validation_report/context.schema.json` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
+| `.pgmcp/template_suite/validation_report/context.schema.json` | [CY045](planning-artifacts-mutation.md#cy045) | CY045, CY050 |
+| `.pgmcp/template_suite/shared/definitions/deferred-item.schema.json` | [CY050](planning-artifacts-mutation.md#cy050) | CY050 |
 | `.pgmcp/template_suite/validation_report/template.jinja2` | [CY045](planning-artifacts-mutation.md#cy045) | CY045 |
 | `.pgmcp/template_suite/architecture/manifest.yaml` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |
 | `.pgmcp/template_suite/architecture/.version` | [CY046](planning-artifacts-mutation.md#cy046) | CY046 |

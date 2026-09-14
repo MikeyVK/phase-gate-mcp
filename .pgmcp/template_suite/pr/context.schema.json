@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pull request body content",
+  "description": "Caller-authored change and deferred-work declarations; publication remains a separate downstream operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "changes",
+    "deferred_work"
+  ],
+  "properties": {
+    "changes": {
+      "$ref": "#/$defs/Prose"
+    },
+    "deferred_work": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/deferred-item.schema.json"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/Prose"
+    },
+    "testing": {
+      "$ref": "#/$defs/Prose"
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/checklist-item.schema.json"
+      }
+    },
+    "breaking_changes": {
+      "$ref": "#/$defs/Prose"
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "closes": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/issue-reference.schema.json"
+      }
+    }
+  },
+  "$defs": {
+    "Prose": {
+      "type": "string"
+    }
+  }
+}

@@ -139,26 +139,7 @@
       }
     },
     "DeferredItem": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "description",
-        "rationale"
-      ],
-      "properties": {
-        "description": {
-          "$ref": "#/$defs/Text"
-        },
-        "rationale": {
-          "$ref": "#/$defs/Prose"
-        },
-        "references": {
-          "type": "array",
-          "items": {
-            "$ref": "../shared/definitions/link.schema.json"
-          }
-        }
-      }
+      "$ref": "../shared/definitions/deferred-item.schema.json"
     }
   }
 }

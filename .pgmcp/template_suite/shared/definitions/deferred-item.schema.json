@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Authored deferred work item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "rationale"
+  ],
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "$ref": "link.schema.json"
+      }
+    }
+  }
+}
