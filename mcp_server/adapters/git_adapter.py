@@ -29,7 +29,7 @@ from git.remote import PushInfo
 from mcp_server.config.settings import Settings
 from mcp_server.core import logging as core_logging
 from mcp_server.core.exceptions import ExecutionError, MCPSystemError
-from mcp_server.core.interfaces.git import BranchChanges
+from mcp_server.core.interfaces.git import BranchBasisUnavailableError, BranchChanges
 
 _PUSH_ERROR_MASK: int = (
     PushInfo.ERROR | PushInfo.REJECTED | PushInfo.REMOTE_REJECTED | PushInfo.REMOTE_FAILURE
@@ -93,10 +93,19 @@ class GitAdapter:
         """Return tracked and nonignored untracked paths changed from the parent."""
         try:
             head = self.repo.commit("HEAD")
-            parent_commit = self.repo.commit(parent)
+            try:
+                parent_commit = self.repo.commit(parent)
+            except BadName as exc:
+                raise BranchBasisUnavailableError(
+                    "parent_unavailable",
+                    f"Unable to resolve branch parent {parent!r}.",
+                ) from exc
             merge_bases = self.repo.merge_base(head, parent_commit)
             if not merge_bases:
-                raise ExecutionError(f"git merge-base returned no result for parent={parent!r}")
+                raise BranchBasisUnavailableError(
+                    "merge_base_unavailable",
+                    f"Unable to resolve a merge base for parent {parent!r}.",
+                )
             merge_base = merge_bases[0]
 
             current: set[str] = set()

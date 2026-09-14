@@ -207,7 +207,6 @@ async def test_native_findings_and_internal_failures_keep_distinct_operational_s
                 RunChecksOutput.model_validate_json(json.dumps(invalid_result))
 
 
-
 @pytest.mark.asyncio
 async def test_empty_branch_retains_no_invocation_and_explicit_nulls(
     tmp_path: Path,
@@ -299,4 +298,3 @@ async def test_early_operation_refusals_retain_exact_details_without_invocation(
     invalid["error_details"] = {"unexpected": True}
     with pytest.raises(ValidationError):
         RunChecksOutput.model_validate_json(json.dumps(invalid))
-

@@ -10,7 +10,22 @@ Read-only git context for the current branch.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
+
+from mcp_server.core.exceptions import ExecutionError
+
+
+class BranchBasisUnavailableError(ExecutionError):
+    """Raised when the configured branch basis cannot be observed."""
+
+    def __init__(
+        self,
+        reason: Literal["parent_unavailable", "merge_base_unavailable"],
+        message: str,
+    ) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.message = message
 
 
 @dataclass(frozen=True)

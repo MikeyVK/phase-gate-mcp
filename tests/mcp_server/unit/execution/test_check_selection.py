@@ -29,7 +29,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterPackageIdentity,
 )
 from mcp_server.core.interfaces.git import (
-    BranchBasisUnavailable,
+    BranchBasisUnavailableError,
     BranchChanges,
     IBranchChangeReader,
 )
@@ -294,7 +294,11 @@ def test_explicit_targets_are_canonical_language_agnostic_and_directory_covering
 
 def test_missing_escape_and_equivalent_workspace_targets_are_rejected(tmp_path: Path) -> None:
     planner = selector(tmp_path)
-    for target, scope_reason in (("missing.md", "missing"), (".", "outside_workspace"), ("./", "outside_workspace")):
+    for target, scope_reason in (
+        ("missing.md", "missing"),
+        (".", "unresolvable"),
+        ("./", "unresolvable"),
+    ):
         with pytest.raises(CheckScopeError) as caught:
             planner.select(CheckSelectionRequest(scope="targets", targets=(target,)))
         assert caught.value.reason == CheckSelectionFailureReason.INVALID_TARGETS
@@ -440,13 +444,13 @@ def test_missing_parent_invalid_revision_and_unrelated_history_are_errors(
     adapter = GitAdapter(str(tmp_path))
     try:
         request = CheckSelectionRequest(scope="branch")
-        with pytest.raises(BranchBasisUnavailable) as parent_missing:
+        with pytest.raises(BranchBasisUnavailableError) as parent_missing:
             selector(tmp_path, branch=adapter, parent=None).select(request)
         assert parent_missing.value.reason == "parent_unavailable"
         assert parent_missing.value.message == "branch_parent_missing"
         assert isinstance(parent_missing.value, ExecutionError)
 
-        with pytest.raises(BranchBasisUnavailable) as missing_ref:
+        with pytest.raises(BranchBasisUnavailableError) as missing_ref:
             selector(tmp_path, branch=adapter, parent="missing-parent").select(request)
         assert missing_ref.value.reason == "parent_unavailable"
         assert missing_ref.value.message
@@ -459,7 +463,7 @@ def test_missing_parent_invalid_revision_and_unrelated_history_are_errors(
             committer=ACTOR,
         )
         branch_repo.create_head("unrelated", unrelated)
-        with pytest.raises(BranchBasisUnavailable) as unrelated_basis:
+        with pytest.raises(BranchBasisUnavailableError) as unrelated_basis:
             selector(tmp_path, branch=adapter, parent="unrelated").select(request)
         assert unrelated_basis.value.reason == "merge_base_unavailable"
         assert unrelated_basis.value.message

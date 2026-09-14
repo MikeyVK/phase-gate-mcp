@@ -22,14 +22,17 @@ from pydantic import (
 
 from mcp_server.config.schemas.adapter_manifest import CapabilityId, CheckCapability
 from mcp_server.config.schemas.checks_config import CheckId, ChecksConfig, ProfileId
-from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces.execution import (
     AdapterBinding,
     CheckCatalogReader,
     ResolvedScopePath,
     ScopePaths,
 )
-from mcp_server.core.interfaces.git import IBranchChangeReader, IBranchParentReader
+from mcp_server.core.interfaces.git import (
+    BranchBasisUnavailableError,
+    IBranchChangeReader,
+    IBranchParentReader,
+)
 
 CheckScope = Literal["configured", "workspace", "targets", "branch"]
 ArgsSource = Literal["configured", "caller"]
@@ -140,6 +143,21 @@ class CheckSelectionError(ValueError):
         self.selection_id = selection_id
 
 
+class CheckScopeError(CheckSelectionError):
+    """Typed scope failure facts while retaining the selection error contract."""
+
+    def __init__(
+        self,
+        target: str,
+        scope_reason: Literal["missing", "outside_workspace", "unresolvable"],
+        message: str,
+    ) -> None:
+        super().__init__(CheckSelectionFailureReason.INVALID_TARGETS, target)
+        self.target = target
+        self.scope_reason = scope_reason
+        self.message = message
+
+
 @dataclass(frozen=True)
 class ResolvedCheckScope:
     scope: CheckScope
@@ -162,6 +180,7 @@ class CheckSelectionPlan:
     scope: ResolvedCheckScope
     selected_check_ids: tuple[str, ...]
     calls: tuple[SelectedCheckCall, ...]
+    selected_profile: ProfileId | None = None
 
     @property
     def empty_selection(self) -> bool:
@@ -188,13 +207,44 @@ class FileScopePaths:
         return self._workspace_root
 
     def resolve(self, relative: str) -> ResolvedScopePath:
-        _relative_path(relative)
+        try:
+            _relative_path(relative)
+        except ValueError as exc:
+            raise CheckScopeError(
+                relative,
+                "unresolvable",
+                "Target is not a valid workspace-relative path.",
+            ) from exc
         if PureWindowsPath(relative).drive:
-            raise CheckSelectionError(CheckSelectionFailureReason.INVALID_TARGETS, relative)
-        candidate = (self._workspace_root / relative).resolve()
-        if not candidate.is_relative_to(self._workspace_root) or candidate == self._workspace_root:
-            raise CheckSelectionError(CheckSelectionFailureReason.INVALID_TARGETS, relative)
-        return ResolvedScopePath(path=candidate, exists=candidate.exists())
+            raise CheckScopeError(
+                relative,
+                "outside_workspace",
+                "Target is outside the workspace.",
+            )
+        try:
+            candidate = (self._workspace_root / relative).resolve()
+            if candidate == self._workspace_root:
+                raise CheckScopeError(
+                    relative,
+                    "unresolvable",
+                    "Target must identify a non-root workspace path.",
+                )
+            if not candidate.is_relative_to(self._workspace_root):
+                raise CheckScopeError(
+                    relative,
+                    "outside_workspace",
+                    "Target is outside the workspace.",
+                )
+            exists = candidate.exists()
+        except CheckScopeError:
+            raise
+        except OSError as exc:
+            raise CheckScopeError(
+                relative,
+                "unresolvable",
+                "Target could not be resolved.",
+            ) from exc
+        return ResolvedScopePath(path=candidate, exists=exists)
 
 
 def _collapse_targets(paths: tuple[Path, ...]) -> tuple[Path, ...]:
@@ -227,14 +277,18 @@ class ScopeResolver:
             for relative in request.targets or ():
                 resolved = self._paths.resolve(relative)
                 if not resolved.exists:
-                    raise CheckSelectionError(CheckSelectionFailureReason.INVALID_TARGETS, relative)
+                    raise CheckScopeError(
+                        relative,
+                        "missing",
+                        "Requested target does not exist.",
+                    )
                 paths.append(resolved.path)
             return ResolvedCheckScope(request.scope, _collapse_targets(tuple(paths)), (), False)
 
         branch = self._git.get_current_branch()
         parent = self._parents.get_parent_branch(branch)
         if not parent:
-            raise ExecutionError("branch_parent_missing")
+            raise BranchBasisUnavailableError("parent_unavailable", "branch_parent_missing")
         changes = self._git.get_branch_changes(parent)
         current: list[Path] = []
         removed = set(changes.removed_paths)
@@ -244,7 +298,11 @@ class ScopeResolver:
                 current.append(resolved.path)
                 removed.discard(relative)
             elif relative not in removed:
-                raise CheckSelectionError(CheckSelectionFailureReason.INVALID_TARGETS, relative)
+                raise CheckScopeError(
+                    relative,
+                    "missing",
+                    "Requested branch path does not exist.",
+                )
         targets = _collapse_targets(tuple(current))
         removed_targets = tuple(
             sorted(PureWindowsPath(_relative_path(relative)).as_posix() for relative in removed)
@@ -267,6 +325,7 @@ class CheckSelector:
         if not configured:
             raise CheckSelectionError(CheckSelectionFailureReason.NO_CONFIGURED_CHECKS)
         profiles = dict(self._config.profiles)
+        selected_profile: ProfileId | None = None
         if request.checks is not None:
             selected = request.checks
         else:
@@ -275,6 +334,7 @@ class CheckSelector:
                 raise CheckSelectionError(CheckSelectionFailureReason.DEFAULT_PROFILE_MISSING)
             if profile not in profiles:
                 raise CheckSelectionError(CheckSelectionFailureReason.UNKNOWN_PROFILE, profile)
+            selected_profile = profile
             selected = profiles[profile].checks
 
         bindings: dict[str, AdapterBinding[CheckCapability]] = {}
@@ -316,4 +376,9 @@ class CheckSelector:
                         args_source="caller" if check_id in overrides else "configured",
                     )
                 )
-        return CheckSelectionPlan(scope=scope, selected_check_ids=selected, calls=tuple(calls))
+        return CheckSelectionPlan(
+            scope=scope,
+            selected_check_ids=selected,
+            calls=tuple(calls),
+            selected_profile=selected_profile,
+        )
