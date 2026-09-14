@@ -1428,6 +1428,10 @@ New exact paths:
 Previously introduced paths revisited in this cycle:
 
 - `mcp_server/schemas/execution_outputs.py`
+- `mcp_server/tools/check_tools.py`
+- `tests/mcp_server/integration/test_checks_public_v3.py`
+
+Independent QA corrected its CY059 verdict after the CY060 transition: DI-05 §7.16 requires named optional args properties for every configured recipient. Under the user's standing authorization, CY060 includes only that schema-exposure repair and its existing public proof; execution semantics and live registration remain unchanged.
 
 - Selection, native facts, capture and role results keep their own declared contracts; do not normalize check/test/fix into one success reducer.
 

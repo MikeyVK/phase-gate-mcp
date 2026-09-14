@@ -237,6 +237,16 @@ async def test_malformed_envelope_returns_validation_schema(
     composition, runtime = compose(tmp_path, pytestconfig, ("passed",))
     response, cached = await invoke(composition, "run_checks", arguments)
     assert response.isError and cached["error_type"] == "ValidationError"
+    if not arguments:
+        schema = cached["input_schema"]
+        assert isinstance(schema, dict)
+        properties = schema["properties"]
+        assert isinstance(properties, dict)
+        assert properties["args"] == {
+            "type": "object",
+            "properties": {"check_0": {"type": "array", "items": {"type": "string"}}},
+            "additionalProperties": False,
+        }
     assert runtime.requests == []
     resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
     assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"

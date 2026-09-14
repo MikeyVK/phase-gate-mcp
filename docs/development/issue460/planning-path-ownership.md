@@ -743,8 +743,8 @@ The new-source register records CY059's inward projection operation and the narr
 | `mcp_server/tools/edit_tool.py` | [CY058](planning-artifacts-mutation.md#cy058) | CY058 |
 | `tests/mcp_server/integration/test_edit_public_v3.py` | [CY058](planning-artifacts-mutation.md#cy058) | CY058 |
 | `mcp_server/services/check_operation.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 |
-| `mcp_server/tools/check_tools.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 |
-| `tests/mcp_server/integration/test_checks_public_v3.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 |
+| `mcp_server/tools/check_tools.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059, CY060 (DI-05 §7.16 args exposure only) |
+| `tests/mcp_server/integration/test_checks_public_v3.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059, CY060 (existing args schema proof only) |
 | `mcp_server/schemas/execution_outputs.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059, CY060, CY061 |
 | `mcp_server/tools/run_tests_tool.py` | [CY060](planning-artifacts-mutation.md#cy060) | CY060 |
 | `tests/mcp_server/integration/test_tests_public_v3.py` | [CY060](planning-artifacts-mutation.md#cy060) | CY060 |
