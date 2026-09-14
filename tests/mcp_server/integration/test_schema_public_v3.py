@@ -254,7 +254,7 @@ async def test_new_composition_changes_current_schema_without_mutating_old_snaps
 
 @pytest.mark.asyncio
 async def test_registered_legacy_input_keeps_its_exposed_type_boundary(tmp_path: Path) -> None:
-    raw = {"issue_number": "460"}
+    raw: dict[str, JsonValue] = {"issue_number": "460"}
     assert GetProjectPlanInput.model_validate(raw).issue_number == 460
     core = MagicMock(spec=ICoreTool)
     core.name = "get_project_plan"

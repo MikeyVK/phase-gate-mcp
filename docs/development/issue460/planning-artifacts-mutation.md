@@ -1240,7 +1240,9 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C106, S001, S002, S003, S009, T004, T006, T016, T018, T048, T060, T075, T084, T099, T104.
+Existing source IDs: C006, C106, S001, S002, S003, S009, T004, T006, T016, T018, T048, T060, T075, T084, T099, T104.
+
+User-directed amendment (2026-09-14): keep wire-schema admission and typed binding in InputValidationDecorator; server.py only disables the SDK's early input rejection. C006 is limited to bounding the existing MCP dependency to >=1.0.0,<2. Context-schema validation remains separate.
 
 Read-only review/preservation IDs: C086, C098. For a previously deleted source this means absence/import-closure review, never recreation.
 

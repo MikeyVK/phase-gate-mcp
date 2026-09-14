@@ -16,6 +16,7 @@ Decorator that validates incoming raw parameters dictionary into Pydantic models
 from typing import Any, Generic, TypeVar
 
 # Third-party
+import jsonschema
 from pydantic import BaseModel, ValidationError
 
 from mcp_server.core.interfaces.icore_tool import ICoreTool
@@ -76,39 +77,38 @@ class InputValidationDecorator(ITool[TOutput | ValidationErrorOutput], Generic[T
     async def execute(
         self, params: JsonObject, context: NoteContext
     ) -> ToolExecution[TOutput | ValidationErrorOutput]:
+        attachment_schema = (
+            self._input_contract.schema
+            if self._input_contract is not None
+            else freeze_json(self.input_schema)
+        )
+        if not isinstance(attachment_schema, FrozenJsonObject):
+            raise TypeError("Tool input schema must be an object")
         try:
             if self._input_contract is not None:
                 validated = self._input_contract.validate(params)
-            elif self.args_model is not None:
-                validated = self.args_model.model_validate(params)
             else:
-                validated = None
+                # Preserve the public wire contract before Python model construction.
+                jsonschema.validate(instance=params, schema=thaw_json(attachment_schema))
+                validated = (
+                    self.args_model.model_validate(params) if self.args_model is not None else None
+                )
+        except jsonschema.ValidationError as error:
+            return input_validation_failure(
+                self.name,
+                params,
+                attachment_schema,
+                [{"field": ".".join(map(str, error.absolute_path)), "error": error.message}],
+            )
         except ValidationError as e:
-            schema = self.input_schema
-            operation = ValidationErrorOutput(
-                error_message=f"Invalid input for {self.name}",
-                validation_errors=[
+            return input_validation_failure(
+                self.name,
+                params,
+                attachment_schema,
+                [
                     {"field": ".".join(map(str, err["loc"])), "error": err["msg"]}
                     for err in e.errors()
                 ],
-                input_schema=schema,
-                params=params,
-            )
-            attachment_schema = (
-                self._input_contract.schema
-                if self._input_contract is not None
-                else freeze_json(schema)
-            )
-            if not isinstance(attachment_schema, FrozenJsonObject):
-                raise TypeError("Tool input schema must be an object") from e
-            return ToolExecution(
-                operation=operation,
-                attachments=(
-                    SchemaAttachment(
-                        identity=WholeToolSchemaIdentity(kind="whole_tool"),
-                        schema=attachment_schema,
-                    ),
-                ),
             )
 
         if validated is None:
@@ -119,3 +119,23 @@ class InputValidationDecorator(ITool[TOutput | ValidationErrorOutput], Generic[T
         if isinstance(result, ToolExecution):
             return result
         return ToolExecution(operation=result, attachments=())
+
+
+def input_validation_failure(
+    tool_name: str,
+    params: JsonObject,
+    schema: FrozenJsonObject,
+    errors: list[dict[str, str]],
+) -> ToolExecution[ValidationErrorOutput]:
+    """Project input rejection through the common whole-tool response carrier."""
+    return ToolExecution(
+        operation=ValidationErrorOutput(
+            error_message=f"Invalid input for {tool_name}",
+            validation_errors=errors,
+            input_schema={key: thaw_json(value) for key, value in schema.items()},
+            params=params,
+        ),
+        attachments=(
+            SchemaAttachment(identity=WholeToolSchemaIdentity(kind="whole_tool"), schema=schema),
+        ),
+    )
