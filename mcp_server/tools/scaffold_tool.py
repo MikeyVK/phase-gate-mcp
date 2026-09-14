@@ -63,14 +63,14 @@ class ScaffoldArtifactInput(BaseModel):
     )
     file_name: str = Field(
         min_length=1,
-        pattern=re.compile(r"^(?!\.{1,2}$(?![\s\S]))(?![A-Za-z]:)[^/\\\x00]+$(?![\s\S])"),
+        pattern=re.compile(r"^(?!\.{1,2}$(?![\s\S]))(?![\s\S]:)[^/\\\x00]+$(?![\s\S])"),
         description="Exact output basename, including extension.",
     )
     context: JsonObject = Field(description="Caller-provided template context.")
     target_path: (
         Annotated[
             str,
-            Field(pattern=re.compile(r"^(?![\\/])(?![A-Za-z]:)(?=[\s\S]*\S)[^\x00]+$(?![\s\S])")),
+            Field(pattern=re.compile(r"^(?![\\/])(?![\s\S]:)(?=[\s\S]*\S)[^\x00]+$(?![\s\S])")),
             AfterValidator(normalize_workspace_relative_path),
         ]
         | None
