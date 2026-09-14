@@ -1,0 +1,2 @@
+template_id: python_pydantic_config
+purpose: Create a Pydantic configuration model with an explicit mutability choice.

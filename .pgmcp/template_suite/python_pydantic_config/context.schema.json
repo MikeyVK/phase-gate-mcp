@@ -1,11 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Pydantic DTO content",
+  "title": "Pydantic configuration content",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "class_name",
-    "description"
+    "description",
+    "frozen"
   ],
   "properties": {
     "class_name": {
@@ -31,30 +32,9 @@
       "items": {
         "type": "object"
       }
+    },
+    "frozen": {
+      "type": "boolean"
     }
-  },
-  "allOf": [
-    {
-      "if": {
-        "required": [
-          "fields"
-        ],
-        "properties": {
-          "fields": {
-            "minItems": 1
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "examples"
-        ],
-        "properties": {
-          "examples": {
-            "minItems": 1
-          }
-        }
-      }
-    }
-  ]
+  }
 }
