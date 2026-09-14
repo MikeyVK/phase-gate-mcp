@@ -763,11 +763,18 @@ New exact paths:
 - `.pgmcp/template_suite/architecture/policy.yaml`
 - `.pgmcp/template_suite/architecture/context.schema.json`
 - `.pgmcp/template_suite/architecture/template.jinja2`
+- `.pgmcp/template_suite/shared/definitions/decision.schema.json`
 - `tests/mcp_server/integration/templates/test_architecture.py`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/design/context.schema.json`
+
+Independent QA confirmed actual reuse of Decision by Design and Architecture under DI-03
+sections 7.2 and 7.3. Under the standing authorization for proportional corrections, CY046 extracts
+that closed record unchanged into a shared definition. The two planning ledgers record only this
+ownership amendment; sources remain optional and no new diagram-check dependency is introduced.
+R-CY046 is `ceaa29ae0ef2a66fca83337f026a986d76f1cc9f`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 

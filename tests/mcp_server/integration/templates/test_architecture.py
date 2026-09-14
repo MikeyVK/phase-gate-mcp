@@ -41,7 +41,9 @@ def architecture(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTempla
 
 
 def test_minimal_architecture_is_a_valid_initial_basis_without_sources(
-    architecture: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path,
+    architecture: DeliveredTemplate,
+    markdown_package: MarkdownPackage,
+    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {"title": "Architecture basis", "concepts": []}
     before = deepcopy(context)
@@ -54,13 +56,17 @@ def test_minimal_architecture_is_a_valid_initial_basis_without_sources(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "architecture"
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "architecture.md", output))
+    code, response = invoke(
+        markdown_package, tmp_path, request(tmp_path / "architecture.md", output)
+    )
     assert code == 0 and response["decision"] == {"status": "passed"}
     assert not (tmp_path / "architecture.md").exists()
 
 
 def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
-    architecture: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path,
+    architecture: DeliveredTemplate,
+    markdown_package: MarkdownPackage,
+    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary architecture",
@@ -109,16 +115,31 @@ def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
     output = architecture.renderer.render("architecture", context, architecture.provenance)
     assert context == before
     for supplied in (
-        "DRAFT — awaiting review", "2.0", "2026-09-14", "Caller-authored purpose.",
-        "Included boundary", "Excluded systems", "Read the contract", "Keep the public seam",
-        "First concept.", "Accepted inputs.", "Returned outputs.", "Second concept.",
-        "Keep the reader", "Preserves callers.", "Rewrite all consumers", "Defer cleanup",
-        "Document ownership", "No alternatives supplied",
+        "DRAFT — awaiting review",
+        "2.0",
+        "2026-09-14",
+        "Caller-authored purpose.",
+        "Included boundary",
+        "Excluded systems",
+        "Read the contract",
+        "Keep the public seam",
+        "First concept.",
+        "Accepted inputs.",
+        "Returned outputs.",
+        "Second concept.",
+        "Keep the reader",
+        "Preserves callers.",
+        "Rewrite all consumers",
+        "Defer cleanup",
+        "Document ownership",
+        "No alternatives supplied",
     ):
         assert supplied in output, supplied
     for heading in (
-        r"### 1. Ingress boundary \#", "### 2. Persistence boundary",
-        r"#### Inputs \#", "#### Outputs",
+        r"### 1. Ingress boundary \#",
+        "### 2. Persistence boundary",
+        r"#### Inputs \#",
+        "#### Outputs",
     ):
         assert heading in output
     assert r"### Keep the reader \#" in output
@@ -139,7 +160,9 @@ def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
     assert output.index("Keep the reader") < output.index("Defer cleanup")
     assert output.count("\n# ") == 1
     without_decisions = {key: value for key, value in context.items() if key != "decisions"}
-    undecided = architecture.renderer.render("architecture", without_decisions, architecture.provenance)
+    undecided = architecture.renderer.render(
+        "architecture", without_decisions, architecture.provenance
+    )
     assert "Keep the public seam" in undecided and "## Decisions" not in undecided
     code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
     assert code == 0 and response["decision"] == {"status": "passed"}
@@ -156,15 +179,24 @@ def test_architecture_explicit_empty_common_and_concept_capacities_remain_visibl
         "prerequisites": [],
         "related_docs": [],
         "constraints": [],
-        "concepts": [{"name": "Empty concept", "description": "", "diagram": "", "subsections": []}],
+        "concepts": [
+            {"name": "Empty concept", "description": "", "diagram": "", "subsections": []}
+        ],
         "decisions": [],
         "sources": [],
     }
     output = architecture.renderer.render("architecture", context, architecture.provenance)
     headings = [line for line in output.splitlines() if line.startswith("## ")]
     for heading in (
-        "Purpose", "Scope In", "Scope Out", "Prerequisites", "Related Documents",
-        "Constraints", "Concepts", "Decisions", "Sources",
+        "Purpose",
+        "Scope In",
+        "Scope Out",
+        "Prerequisites",
+        "Related Documents",
+        "Constraints",
+        "Concepts",
+        "Decisions",
+        "Sources",
     ):
         assert headings.count(f"## {heading}") == 1
     assert "Empty concept" in output
@@ -186,9 +218,18 @@ def test_architecture_rejects_closed_and_invalid_concept_records(
         {**base, "concepts": ["Concept"]},
         {**base, "concepts": [{"description": "Missing name"}]},
         {**base, "concepts": [{"name": "Concept", "description": None}]},
-        {**base, "concepts": [{"name": "Concept", "description": "", "subsections": [
-            {"name": "Nested", "description": "", "subsections": []},
-        ]}]},
+        {
+            **base,
+            "concepts": [
+                {
+                    "name": "Concept",
+                    "description": "",
+                    "subsections": [
+                        {"name": "Nested", "description": "", "subsections": []},
+                    ],
+                }
+            ],
+        },
         {**base, "sources": [{"target": "architecture.md"}]},
         {**base, "decisions": [{"decision": "Decision"}]},
         {**base, "decisions": [{"decision": "Decision", "rationale": "", "unknown": True}]},

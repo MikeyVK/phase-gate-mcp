@@ -22,7 +22,7 @@
     "options": {"type": "array", "items": {"$ref": "#/$defs/Alternative"}},
     "decision": {"$ref": "#/$defs/Prose"},
     "rationale": {"$ref": "#/$defs/Prose"},
-    "key_decisions": {"type": "array", "items": {"$ref": "#/$defs/Decision"}},
+    "key_decisions": {"type": "array", "items": {"$ref": "../shared/definitions/decision.schema.json"}},
     "questions": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
     "production_design": {"$ref": "#/$defs/Prose"},
     "test_design": {"$ref": "#/$defs/Prose"},
@@ -47,15 +47,6 @@
         "description": {"$ref": "#/$defs/Prose"},
         "pros": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
         "cons": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
-      }
-    },
-    "Decision": {
-      "type": "object", "additionalProperties": false,
-      "required": ["decision", "rationale"],
-      "properties": {
-        "decision": {"$ref": "#/$defs/Text"},
-        "rationale": {"$ref": "#/$defs/Prose"},
-        "alternatives": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
       }
     },
     "ChecklistItem": {"$ref": "../shared/definitions/checklist-item.schema.json"},
