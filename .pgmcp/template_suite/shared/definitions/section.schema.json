@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Authored flat document section",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "heading"
+  ],
+  "properties": {
+    "heading": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": "string"
+    },
+    "bullets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "$ref": "checklist-item.schema.json"
+      }
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "content"
+      ]
+    },
+    {
+      "required": [
+        "bullets"
+      ]
+    },
+    {
+      "required": [
+        "checklist"
+      ]
+    }
+  ]
+}

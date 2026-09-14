@@ -49,21 +49,6 @@
         "cons": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
       }
     },
-    "ChecklistItem": {"$ref": "../shared/definitions/checklist-item.schema.json"},
-    "Section": {
-      "type": "object", "additionalProperties": false,
-      "required": ["heading"],
-      "properties": {
-        "heading": {"$ref": "#/$defs/Text"},
-        "content": {"$ref": "#/$defs/Prose"},
-        "bullets": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-        "checklist": {"type": "array", "items": {"$ref": "#/$defs/ChecklistItem"}}
-      },
-      "anyOf": [
-        {"required": ["content"]},
-        {"required": ["bullets"]},
-        {"required": ["checklist"]}
-      ]
-    }
+    "Section": {"$ref": "../shared/definitions/section.schema.json"}
   }
 }

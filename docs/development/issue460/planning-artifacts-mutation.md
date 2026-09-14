@@ -870,10 +870,15 @@ New exact paths:
 - `.pgmcp/template_suite/generic_doc/policy.yaml`
 - `.pgmcp/template_suite/generic_doc/context.schema.json`
 - `.pgmcp/template_suite/generic_doc/template.jinja2`
+- `.pgmcp/template_suite/shared/definitions/section.schema.json`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/design/context.schema.json`
+- `docs/development/issue460/planning-artifacts-mutation.md`
+- `docs/development/issue460/planning-path-ownership.md`
+
+Bounded actual-reuse amendment: extract the unchanged Section contract shared by Design and Generic Document, preserving closed records and the presence-based anyOf rule. Keep FAQ local. The existing Design populated-render and schema-rejection cases cover the reference substitution; no new test framework or unrelated legacy retirement is included. The CY048-owned T094 test is retired after its named successor passes; mixed legacy tests remain with their later owners. Independent QA confirmed this bounded scope under the user's standing authorization. R-CY048 is `d435424df31f22ac1e433e0ac8f8f55ae733359d`; these paths were clean at entry.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
