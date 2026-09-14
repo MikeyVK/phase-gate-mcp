@@ -153,7 +153,7 @@ class ChecksConfig(_ChecksBase):
             raise ValueError("default_profile_reference_unknown")
         return self
 
-    def profile_for_filename(self, filename: str) -> str | None:
+    def match_for_filename(self, filename: str) -> tuple[str, str] | None:
         if not isinstance(filename, str) or not filename or "/" in filename or "\\" in filename:
             raise ValueError("basename_required")
         if "\x00" in filename:
@@ -161,11 +161,16 @@ class ChecksConfig(_ChecksBase):
 
         folded_filename = filename.casefold()
         matches = [
-            (extension.casefold(), profile_id)
+            (extension.casefold(), extension, profile_id)
             for extension, profile_id in self.profiles_by_extension
             if len(folded_filename) > len(extension.casefold())
             and folded_filename.endswith(extension.casefold())
         ]
         if not matches:
             return None
-        return max(matches, key=lambda item: len(item[0]))[1]
+        _, extension, profile_id = max(matches, key=lambda item: len(item[0]))
+        return extension, profile_id
+
+    def profile_for_filename(self, filename: str) -> str | None:
+        match = self.match_for_filename(filename)
+        return None if match is None else match[1]
