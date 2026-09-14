@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
 from mcp_server.cli_renewal import RenewalCli
+from mcp_server.config.schemas.installation import InstallationState
 from mcp_server.presenters.renewal_presenter import RenewalPresenter
+from mcp_server.services.installation_state import ValidatedSuiteEvidence
 from mcp_server.services.template_components import (
     ComponentSelection,
     ComponentState,
 )
-from mcp_server.services.template_renewal import RenewalResult
+from mcp_server.services.template_renewal import RenewalResult, TemplateRenewalService
 
 
 def _selection(
@@ -71,7 +75,7 @@ def test_modifiers_are_mutually_exclusive(capsys: pytest.CaptureFixture[str]) ->
 
     assert code == 2
     assert operation.calls == []
-    assert "mutually exclusive" in capsys.readouterr().err
+    assert "not allowed" in capsys.readouterr().err
 
 
 def test_checkpoint_acceptance_creates_only_checkpoint_on_isolated_root(
@@ -150,15 +154,98 @@ def test_actual_changed_only_controls_restart_hint(
     unchanged = RecordingOperation(RenewalResult(outcome="unchanged", actual_changed=False))
     changed = RecordingOperation(RenewalResult(outcome="activated", actual_changed=True))
 
-    unchanged_code = RenewalCli(
-        operation=unchanged, presenter=RenewalPresenter()
-    ).run(["--upgrade"])
+    unchanged_code = RenewalCli(operation=unchanged, presenter=RenewalPresenter()).run(
+        ["--upgrade"]
+    )
+    unchanged_output = capsys.readouterr().out
     changed_code = RenewalCli(operation=changed, presenter=RenewalPresenter()).run(["--upgrade"])
+    changed_output = capsys.readouterr().out
 
     assert unchanged_code == changed_code == 0
-    first_output = capsys.readouterr().out
-    assert "Restart any running pgmcp server" not in first_output
+    assert "Restart any running pgmcp server" not in unchanged_output
+    assert "Restart any running pgmcp server" in changed_output
 
-    RenewalCli(operation=changed, presenter=RenewalPresenter()).run(["--upgrade"])
-    second_output = capsys.readouterr().out
-    assert "Restart any running pgmcp server" in second_output
+
+@dataclass(frozen=True)
+class _Snapshot:
+    evidence: ValidatedSuiteEvidence
+    sources: tuple[str, ...]
+
+
+class _ActivationDouble:
+    last_result = None
+
+    def activate(
+        self,
+        proposal_root: Path,
+        *,
+        pgmcp_version: str,
+        fresh: bool = False,
+        force: bool = False,
+    ) -> None:
+        del proposal_root, pgmcp_version, fresh, force
+
+    def recover(self) -> None:
+        return None
+
+
+def _evidence(shared: str, package: str) -> ValidatedSuiteEvidence:
+    return ValidatedSuiteEvidence(
+        shared=ComponentState(
+            kind="shared",
+            component_id="shared",
+            present=True,
+            fingerprint=shared,
+        ),
+        packages=(
+            ComponentState(
+                kind="package",
+                component_id="demo",
+                present=True,
+                fingerprint=package,
+            ),
+        ),
+    )
+
+
+def test_real_renewal_baseline_publishes_checkpoint_without_copying_candidate(
+    tmp_path: Path,
+) -> None:
+    actual_root = tmp_path / "template_suite"
+    candidate_root = tmp_path / "upgrade"
+    proposal_root = tmp_path / "proposal"
+    actual_root.mkdir()
+    candidate_root.mkdir()
+    (actual_root / "owner.txt").write_bytes(b"owner")
+    (candidate_root / "candidate.txt").write_bytes(b"candidate")
+    actual_snapshot = _Snapshot(_evidence("aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"), ("owner",))
+    candidate_snapshot = _Snapshot(
+        _evidence("cccccccccccccccc", "dddddddddddddddd"), ("candidate",)
+    )
+    snapshots = {actual_root: actual_snapshot, candidate_root: candidate_snapshot}
+    published: list[InstallationState] = []
+
+    def admit(root: Path) -> _Snapshot:
+        return snapshots[root]
+
+    operation = TemplateRenewalService(
+        actual_root=actual_root,
+        candidate_root=candidate_root,
+        proposal_root=proposal_root,
+        pgmcp_version="3.0.0",
+        managed=True,
+        read_installation=lambda: None,
+        publish_installation=published.append,
+        admit=admit,
+        materialize_proposal=lambda _selections: None,
+        activation=_ActivationDouble(),
+        discard_candidate=lambda root: shutil.rmtree(root),
+    )
+
+    result = operation.execute(accept_baseline=True)
+
+    assert result.outcome == "baseline_established"
+    assert result.actual_changed is False
+    assert published[0].template_checkpoint == candidate_snapshot.evidence.to_checkpoint()
+    assert (actual_root / "owner.txt").read_bytes() == b"owner"
+    assert not candidate_root.exists()
