@@ -9,6 +9,7 @@ from typing import Literal
 from unittest.mock import MagicMock
 
 import pytest
+from jsonschema import Draft202012Validator
 from mcp.types import (
     CallToolRequest,
     CallToolRequestParams,
@@ -306,3 +307,31 @@ async def test_creation_fault_retains_passed_checks_and_exact_error_details(
     assert details["path"] == result["output_path"]
     assert not (tmp_path / "outputs/denied.md").exists()
     assert len(response.content) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "override",
+    [{"file_name": "../invalid.md"}, {"target_path": "/outside"}, {"force_target": True}],
+    ids=["basename", "relative-target", "force-needs-target"],
+)
+async def test_malformed_scaffold_input_stops_at_the_public_envelope(
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    delivered: DeliveredTemplate,
+    override: dict[str, JsonValue],
+) -> None:
+    composition = compose(tmp_path, pytestconfig, delivered, "passed")
+    raw: dict[str, JsonValue] = {
+        "artifact_type": "issue",
+        "file_name": "rejected.md",
+        "context": {"problem": "Caller value", "context": ""},
+    }
+    raw.update(override)
+    schema = composition.server.tools[0].input_schema
+    assert not Draft202012Validator(schema).is_valid(raw)
+    response, result = await invoke(composition, "scaffold_artifact", raw)
+    assert response.isError is True
+    assert result["error_type"] == "ValidationError"
+    assert str(schema_resource(response).resource.uri) == "schema://validation"
+    assert not (tmp_path / "outputs").exists()
