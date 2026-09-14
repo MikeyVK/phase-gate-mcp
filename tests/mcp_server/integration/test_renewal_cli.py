@@ -1,251 +1,295 @@
-"""Public renewal CLI behavior on isolated roots."""
+"""Public renewal CLI behavior through the real composition root."""
 
 from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 
 import pytest
 
-from mcp_server.cli_renewal import RenewalCli
-from mcp_server.config.schemas.installation import InstallationState
-from mcp_server.presenters.renewal_presenter import RenewalPresenter
-from mcp_server.services.installation_state import ValidatedSuiteEvidence
-from mcp_server.services.template_components import (
-    ComponentSelection,
-    ComponentState,
-)
+from mcp_server.cli_renewal import RenewalCli, build_default_operation
+from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.services.template_activation import UpgradeLock
 from mcp_server.services.template_renewal import RenewalResult, TemplateRenewalService
 
 
-def _selection(
-    component_id: str,
-    *,
-    relation: str = "upstream_only",
-) -> ComponentSelection:
-    adopted = ComponentState(
-        kind="package",
-        component_id=component_id,
-        present=True,
-        fingerprint="aaaaaaaaaaaaaaaa",
-    )
-    actual = adopted
-    candidate = ComponentState(
-        kind="package",
-        component_id=component_id,
-        present=True,
-        fingerprint="bbbbbbbbbbbbbbbb",
-    )
-    return ComponentSelection(
-        kind="package",
-        component_id=component_id,
-        adopted=adopted,
-        actual=actual,
-        candidate=candidate,
-        relation=relation,
-        selected=candidate if relation == "upstream_only" else actual,
-        selected_source="candidate" if relation == "upstream_only" else "actual",
-        checkpoint_action=(
-            "advance_to_candidate" if relation == "upstream_only" else "retain_adopted"
-        ),
-        proposed_checkpoint=candidate if relation == "upstream_only" else adopted,
-        change_kind="change",
-    )
-
-
-class RecordingOperation:
-    """Small public operation double that records CLI intent and returns facts."""
-
-    def __init__(self, result: RenewalResult) -> None:
-        self.result = result
-        self.calls: list[dict[str, object]] = []
-
-    def execute(self, **kwargs: object) -> RenewalResult:
-        self.calls.append(kwargs)
-        return self.result
-
-
-def test_modifiers_are_mutually_exclusive(capsys: pytest.CaptureFixture[str]) -> None:
-    operation = RecordingOperation(RenewalResult(outcome="unchanged"))
-
-    code = RenewalCli(operation=operation, presenter=RenewalPresenter()).run(
-        ["--upgrade", "--accept-template-baseline", "--force-template-upgrade"]
-    )
-
-    assert code == 2
-    assert operation.calls == []
-    assert "not allowed" in capsys.readouterr().err
-
-
-def test_checkpoint_acceptance_creates_only_checkpoint_on_isolated_root(
-    tmp_path: Path,
-) -> None:
-    actual = tmp_path / "template_suite"
-    actual.mkdir()
-    marker = actual / "marker.txt"
-    marker.write_bytes(b"owner content")
-    result = RenewalResult(
-        outcome="baseline_established",
-        checkpoint_effect="created",
-        candidate_disposition="removed",
-        actual_changed=False,
-    )
-    operation = RecordingOperation(result)
-
-    code = RenewalCli(operation=operation, presenter=RenewalPresenter()).run(
-        ["--upgrade", "--accept-template-baseline"]
-    )
-
-    assert code == 0
-    assert marker.read_bytes() == b"owner content"
-    assert operation.calls == [{"accept_baseline": True, "force": False, "resolve_components": ()}]
-
-
-def test_force_replacement_reports_verified_backup(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    backup = tmp_path / ".pgmcp_template_backup_20260914T120000000000Z"
-    result = RenewalResult(
-        outcome="forced_candidate_installed",
-        actual_changed=True,
-        checkpoint_effect="created",
-        candidate_disposition="removed",
-        backup_path=backup,
-    )
-    operation = RecordingOperation(result)
-
-    code = RenewalCli(operation=operation, presenter=RenewalPresenter()).run(
-        ["--upgrade", "--force-template-upgrade"]
-    )
-
-    assert code == 0
-    assert operation.calls == [{"accept_baseline": False, "force": True, "resolve_components": ()}]
-    output = capsys.readouterr().out
-    assert str(backup) in output
-    assert "Restart any running pgmcp server" in output
-
-
-def test_checkpoint_required_reports_every_actionable_component(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    result = RenewalResult(
-        outcome="checkpoint_required",
-        candidate_disposition="staged",
-        candidate_path=Path(".pgmcp/upgrade"),
-        components=(_selection("design"), _selection("research")),
-        available_actions=(),
-    )
-    operation = RecordingOperation(result)
-
-    code = RenewalCli(operation=operation, presenter=RenewalPresenter()).run(["--upgrade"])
-
-    assert code == 2
-    output = capsys.readouterr().out
-    assert "checkpoint" in output.lower()
-    assert "design" in output
-    assert "research" in output
-    assert "--accept-template-baseline" in output
-
-
-def test_actual_changed_only_controls_restart_hint(
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    unchanged = RecordingOperation(RenewalResult(outcome="unchanged", actual_changed=False))
-    changed = RecordingOperation(RenewalResult(outcome="activated", actual_changed=True))
-
-    unchanged_code = RenewalCli(operation=unchanged, presenter=RenewalPresenter()).run(
-        ["--upgrade"]
-    )
-    unchanged_output = capsys.readouterr().out
-    changed_code = RenewalCli(operation=changed, presenter=RenewalPresenter()).run(["--upgrade"])
-    changed_output = capsys.readouterr().out
-
-    assert unchanged_code == changed_code == 0
-    assert "Restart any running pgmcp server" not in unchanged_output
-    assert "Restart any running pgmcp server" in changed_output
-
-
 @dataclass(frozen=True)
-class _Snapshot:
-    evidence: ValidatedSuiteEvidence
-    sources: tuple[str, ...]
+class RenewalCase:
+    workspace: Path
+    server: Path
+    config: Path
+    source: Path
+    actual: Path
+    candidate: Path
+    external_actual: Path
 
 
-class _ActivationDouble:
-    last_result = None
-
-    def activate(
-        self,
-        proposal_root: Path,
-        *,
-        pgmcp_version: str,
-        fresh: bool = False,
-        force: bool = False,
-    ) -> None:
-        del proposal_root, pgmcp_version, fresh, force
-
-    def recover(self) -> None:
-        return None
+def _copy_suite(source: Path, target: Path) -> Path:
+    target.mkdir(parents=True)
+    for component in ("issue", "shared"):
+        shutil.copytree(source / component, target / component)
+    return target
 
 
-def _evidence(shared: str, package: str) -> ValidatedSuiteEvidence:
-    return ValidatedSuiteEvidence(
-        shared=ComponentState(
-            kind="shared",
-            component_id="shared",
-            present=True,
-            fingerprint=shared,
-        ),
-        packages=(
-            ComponentState(
-                kind="package",
-                component_id="demo",
-                present=True,
-                fingerprint=package,
-            ),
-        ),
+def _append(path: Path, marker: bytes) -> None:
+    path.write_bytes(path.read_bytes() + marker)
+
+
+@pytest.fixture
+def renewal_case(tmp_path: Path, pytestconfig: pytest.Config) -> RenewalCase:
+    repository = pytestconfig.rootpath
+    source = _copy_suite(
+        repository / ".pgmcp" / "template_suite",
+        tmp_path / "release-v1" / "template_suite",
+    )
+    config = tmp_path / "config"
+    config.mkdir()
+    for name in ("checks.yaml", "adapters.yaml"):
+        shutil.copy2(repository / ".pgmcp" / "config" / name, config / name)
+    server = tmp_path / ".pgmcp"
+    server.mkdir()
+    return RenewalCase(
+        workspace=tmp_path,
+        server=server,
+        config=config,
+        source=source,
+        actual=server / "template_suite",
+        candidate=server / "upgrade",
+        external_actual=tmp_path / "external-template-suite",
     )
 
 
-def test_real_renewal_baseline_publishes_checkpoint_without_copying_candidate(
-    tmp_path: Path,
+def _settings(case: RenewalCase, *, external: bool = False) -> Settings:
+    return Settings(
+        server=ServerSettings(
+            workspace_root=str(case.workspace),
+            config_root=str(case.config),
+            template_root=str(case.external_actual) if external else None,
+        )
+    )
+
+
+def _run(
+    case: RenewalCase,
+    *args: str,
+    supplied: Path | None = None,
+    external: bool = False,
+) -> tuple[int, str, str, TemplateRenewalService]:
+    operation = build_default_operation(
+        _settings(case, external=external),
+        supplied_candidate_root=supplied,
+    )
+    stdout = StringIO()
+    stderr = StringIO()
+    code = RenewalCli(
+        operation=operation,
+        stdout=stdout,
+        stderr=stderr,
+    ).run(["--upgrade", *args])
+    return code, stdout.getvalue(), stderr.getvalue(), operation
+
+
+def _stage(case: RenewalCase, source: Path) -> None:
+    shutil.copytree(source, case.candidate)
+
+
+def _result(operation: TemplateRenewalService) -> RenewalResult:
+    result = getattr(operation, "last_result", None)
+    assert isinstance(result, RenewalResult)
+    return result
+
+
+def _tree_bytes(root: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+def test_modifiers_are_mutually_exclusive_on_real_operation(renewal_case: RenewalCase) -> None:
+    code, _out, err, operation = _run(
+        renewal_case,
+        "--accept-template-baseline",
+        "--force-template-upgrade",
+        supplied=renewal_case.source,
+    )
+
+    assert code == 2
+    assert getattr(operation, "last_result", None) is None
+    assert "not allowed" in err
+
+
+def test_fresh_install_then_normal_upstream_upgrade(renewal_case: RenewalCase) -> None:
+    code, _out, _err, operation = _run(
+        renewal_case,
+        supplied=renewal_case.source,
+    )
+
+    assert code == 0
+    assert _result(operation).outcome == "fresh_installed"
+    installed_before = _tree_bytes(renewal_case.actual)
+
+    upgraded = _copy_suite(
+        renewal_case.source,
+        renewal_case.workspace / "release-v2" / "template_suite",
+    )
+    _append(upgraded / "issue" / "template.jinja2", b"\n{# upstream-v2 #}\n")
+    code, _out, _err, operation = _run(renewal_case, supplied=upgraded)
+
+    assert code == 0
+    assert _result(operation).outcome == "activated"
+    assert _tree_bytes(renewal_case.actual) != installed_before
+    assert b"upstream-v2" in (renewal_case.actual / "issue" / "template.jinja2").read_bytes()
+
+
+def test_checkpointless_baseline_publishes_checkpoint_without_copying(
+    renewal_case: RenewalCase,
 ) -> None:
-    actual_root = tmp_path / "template_suite"
-    candidate_root = tmp_path / "upgrade"
-    proposal_root = tmp_path / "proposal"
-    actual_root.mkdir()
-    candidate_root.mkdir()
-    (actual_root / "owner.txt").write_bytes(b"owner")
-    (candidate_root / "candidate.txt").write_bytes(b"candidate")
-    actual_snapshot = _Snapshot(_evidence("aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"), ("owner",))
-    candidate_snapshot = _Snapshot(
-        _evidence("cccccccccccccccc", "dddddddddddddddd"), ("candidate",)
+    _copy_suite(renewal_case.source, renewal_case.actual)
+    before = _tree_bytes(renewal_case.actual)
+    staged = _copy_suite(
+        renewal_case.source,
+        renewal_case.workspace / "release-baseline" / "template_suite",
     )
-    snapshots = {actual_root: actual_snapshot, candidate_root: candidate_snapshot}
-    published: list[InstallationState] = []
+    _append(staged / "issue" / "template.jinja2", b"\n{# candidate-baseline #}\n")
+    _stage(renewal_case, staged)
 
-    def admit(root: Path) -> _Snapshot:
-        return snapshots[root]
-
-    operation = TemplateRenewalService(
-        actual_root=actual_root,
-        candidate_root=candidate_root,
-        proposal_root=proposal_root,
-        pgmcp_version="3.0.0",
-        managed=True,
-        read_installation=lambda: None,
-        publish_installation=published.append,
-        admit=admit,
-        materialize_proposal=lambda _selections: None,
-        activation=_ActivationDouble(),
-        discard_candidate=lambda root: shutil.rmtree(root),
+    code, _out, _err, operation = _run(
+        renewal_case,
+        "--accept-template-baseline",
     )
 
-    result = operation.execute(accept_baseline=True)
+    assert code == 0
+    assert _result(operation).outcome == "baseline_established"
+    assert _tree_bytes(renewal_case.actual) == before
+    assert not renewal_case.candidate.exists()
+    assert (renewal_case.server / "installation.json").is_file()
 
-    assert result.outcome == "baseline_established"
-    assert result.actual_changed is False
-    assert published[0].template_checkpoint == candidate_snapshot.evidence.to_checkpoint()
-    assert (actual_root / "owner.txt").read_bytes() == b"owner"
-    assert not candidate_root.exists()
+
+def test_checkpointless_external_root_requires_action_and_rejects_force(
+    renewal_case: RenewalCase,
+) -> None:
+    _copy_suite(renewal_case.source, renewal_case.external_actual)
+    before = _tree_bytes(renewal_case.external_actual)
+    candidate = _copy_suite(
+        renewal_case.source,
+        renewal_case.workspace / "release-external" / "template_suite",
+    )
+    _append(candidate / "issue" / "template.jinja2", b"\n{# external-candidate #}\n")
+    _stage(renewal_case, candidate)
+
+    code, out, err, operation = _run(renewal_case, external=True)
+    assert code == 2
+    assert _result(operation).outcome == "checkpoint_required"
+    assert _tree_bytes(renewal_case.external_actual) == before
+    assert "baseline" in out.lower()
+
+    code, out, err, operation = _run(
+        renewal_case,
+        "--force-template-upgrade",
+        external=True,
+    )
+    assert code == 1
+    assert _result(operation).failure_code == "external_root_force_forbidden"
+    assert "external" in (out + err).lower()
+    assert _tree_bytes(renewal_case.external_actual) == before
+
+
+def test_checkpointless_force_keeps_verified_backup_bytes(renewal_case: RenewalCase) -> None:
+    _copy_suite(renewal_case.source, renewal_case.actual)
+    before = _tree_bytes(renewal_case.actual)
+    staged = _copy_suite(
+        renewal_case.source,
+        renewal_case.workspace / "release-force" / "template_suite",
+    )
+    _append(staged / "issue" / "template.jinja2", b"\n{# forced-v2 #}\n")
+    _stage(renewal_case, staged)
+
+    code, _out, _err, operation = _run(
+        renewal_case,
+        "--force-template-upgrade",
+    )
+
+    assert code == 0
+    result = _result(operation)
+    assert result.outcome == "forced_candidate_installed"
+    assert result.backup_path is not None
+    assert _tree_bytes(result.backup_path / "template_suite") == before
+    assert not renewal_case.candidate.exists()
+
+
+def test_conflict_resolution_uses_persisted_checkpoint_and_keeps_remaining_conflict(
+    renewal_case: RenewalCase,
+) -> None:
+    code, _out, _err, operation = _run(renewal_case, supplied=renewal_case.source)
+    assert code == 0
+    assert _result(operation).outcome == "fresh_installed"
+
+    _append(renewal_case.actual / "issue" / "template.jinja2", b"\n{# local-issue #}\n")
+    _append(
+        renewal_case.actual / "shared" / "templates" / "bases" / "tier2_markdown_tracking.jinja2",
+        b"\n{# local-shared #}\n",
+    )
+    before = _tree_bytes(renewal_case.actual)
+    upgraded = _copy_suite(
+        renewal_case.source,
+        renewal_case.workspace / "release-conflict" / "template_suite",
+    )
+    _append(upgraded / "issue" / "template.jinja2", b"\n{# upstream-issue #}\n")
+    _append(
+        upgraded / "shared" / "templates" / "bases" / "tier2_markdown_tracking.jinja2",
+        b"\n{# upstream-shared #}\n",
+    )
+
+    code, _out, _err, operation = _run(renewal_case, supplied=upgraded)
+    assert code == 2
+    result = _result(operation)
+    assert result.outcome == "activated_with_conflicts"
+    assert _tree_bytes(renewal_case.actual) == before
+    assert renewal_case.candidate.exists()
+
+    code, out, err, operation = _run(renewal_case, "--resolve-template", "issue")
+    assert code == 2
+    result = _result(operation)
+    assert result.outcome == "reconciliation_completed"
+    assert "shared" in (out + err).lower()
+    assert _tree_bytes(renewal_case.actual) == before
+    assert renewal_case.candidate.exists()
+
+    code, _out, _err, operation = _run(renewal_case, "--resolve-template", "shared")
+    assert code == 0
+    assert _result(operation).outcome == "reconciliation_completed"
+    assert not renewal_case.candidate.exists()
+    assert _tree_bytes(renewal_case.actual) == before
+
+
+def test_busy_and_invalid_profile_are_actionable(renewal_case: RenewalCase) -> None:
+    _copy_suite(renewal_case.source, renewal_case.actual)
+    _stage(renewal_case, renewal_case.source)
+    holder = UpgradeLock(renewal_case.server / "template_upgrade.lock")
+    holder.acquire()
+    try:
+        code, out, err, operation = _run(renewal_case)
+    finally:
+        holder.release()
+
+    assert code == 2
+    assert _result(operation).outcome == "upgrade_busy"
+    assert "template_upgrade_locked" in (out + err)
+
+    invalid = _copy_suite(
+        renewal_case.source,
+        renewal_case.workspace / "release-invalid" / "template_suite",
+    )
+    _append(invalid / "issue" / "policy.yaml", b"\noutput_profile: missing_profile\n")
+    code, out, err, operation = _run(renewal_case, supplied=invalid)
+    assert code == 1
+    result = _result(operation)
+    assert result.outcome == "candidate_invalid"
+    rendered = (out + err).lower()
+    assert "issue" in rendered
+    assert "missing_profile" in rendered
+    assert "checks.yaml" in rendered
