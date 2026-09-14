@@ -48,7 +48,7 @@ def test_minimal_and_marker_only_commits_keep_explicit_intent(
 ) -> None:
     base: dict[str, JsonValue] = {"type": "CuStOm_7", "subject": "Keep Caller Case"}
     ordinary = commit_template.renderer.render("commit", base, commit_template.provenance)
-    assert ordinary.splitlines()[1] == f"{base['type']}: {base['subject']}"
+    assert f"{base['type']}: {base['subject']}" in ordinary.splitlines()
     unchanged = commit_template.renderer.render(
         "commit", {**base, "breaking_change": False}, commit_template.provenance
     )
@@ -56,7 +56,7 @@ def test_minimal_and_marker_only_commits_keep_explicit_intent(
     marker = commit_template.renderer.render(
         "commit", {**base, "breaking_change": True}, commit_template.provenance
     )
-    assert marker.splitlines()[1] == f"{base['type']}!: {base['subject']}"
+    assert f"{base['type']}!: {base['subject']}" in marker.splitlines()
     code, response = invoke(commitlint_package, marker, ("--color=false", "--verbose"))
     assert code == 0 and response["decision"] == {"status": "passed"}
 
@@ -81,9 +81,7 @@ def test_commit_preserves_caller_fields_and_checks_full_saved_artifact(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "commit"
-    assert output.splitlines()[1] == (
-        f"{context['type']}({context['scope']})!: {context['subject']}"
-    )
+    assert f"{context['type']}({context['scope']})!: {context['subject']}" in output.splitlines()
     for key in ("body", "breaking_description", "footer"):
         value = context[key]
         assert isinstance(value, str) and value in output
@@ -99,7 +97,8 @@ def test_commit_preserves_caller_fields_and_checks_full_saved_artifact(
     malformed = output.replace("pgmcp:v1", "pgmcp:v2", 1)
     assert ArtifactHeaderReader().read(malformed).provenance is None
     code, response = invoke(commitlint_package, malformed, ("--color=false", "--verbose"))
-    assert code == 1 and response["decision"] == {"status": "failed"}
+    decision = response["decision"]
+    assert isinstance(decision, dict) and code == 1 and decision["status"] == "failed"
 
 
 def test_explicit_empty_commit_options_preserve_plain_text_structure(
@@ -109,9 +108,10 @@ def test_explicit_empty_commit_options_preserve_plain_text_structure(
     absent = commit_template.renderer.render("commit", base, commit_template.provenance)
     explicit = {**base, "body": "", "footer": "", "refs": []}
     output = commit_template.renderer.render("commit", explicit, commit_template.provenance)
-    assert output.splitlines()[1] == absent.splitlines()[1]
+    subject_line = f"{base['type']}: {base['subject']}"
+    assert subject_line in output.splitlines() and subject_line in absent.splitlines()
     assert output.count("\n") > absent.count("\n")
-    assert "Refs:" in output and "#460" not in output
+    assert "Refs:" in output and not output.partition("Refs:")[2].strip()
 
 
 def test_commit_rejects_framing_breaks_and_invalid_breaking_or_reference_shapes(

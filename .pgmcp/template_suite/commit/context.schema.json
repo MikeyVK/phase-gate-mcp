@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Conventional commit content",
+  "description": "Explicit conventional framing with caller-owned case, message and references; independent of Git workflow type configuration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "subject"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_]+(?![\\s\\S])",
+      "description": "Nonempty conventional parser type token; no workflow allowlist."
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n]+(?![\\s\\S])"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n()]+(?![\\s\\S])"
+    },
+    "body": {
+      "$ref": "#/$defs/Prose"
+    },
+    "breaking_change": {
+      "type": "boolean"
+    },
+    "breaking_description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "footer": {
+      "$ref": "#/$defs/Prose"
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/issue-reference.schema.json"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "breaking_description"
+        ]
+      },
+      "then": {
+        "required": [
+          "breaking_change"
+        ],
+        "properties": {
+          "breaking_change": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "Prose": {
+      "type": "string"
+    }
+  }
+}
