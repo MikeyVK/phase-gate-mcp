@@ -35,7 +35,9 @@ def delivered_protocol(tmp_path: Path, pytestconfig: pytest.Config) -> Delivered
     )
     selected = delivered.catalog.get("python_protocol")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == ("python_syntax",)
+    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
+        "python_syntax",
+    )
     return delivered
 
 
@@ -51,7 +53,9 @@ def test_empty_protocol_keeps_identity_without_fabricated_methods(
     delivered_protocol: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path
 ) -> None:
     context = {"class_name": "exact_name", "description": "Explicit empty class."}
-    output = delivered_protocol.renderer.render("python_protocol", context, delivered_protocol.provenance)
+    output = delivered_protocol.renderer.render(
+        "python_protocol", context, delivered_protocol.provenance
+    )
     tree, cls = parse_protocol(output)
     assert cls.name == "exact_name"
     assert [ast.unparse(base) for base in cls.bases] == ["Protocol"]
@@ -75,35 +79,62 @@ def test_explicit_bases_imports_and_ordered_sync_async_signatures(
         "class_name": "exact_reader",
         "description": 'Class "description" 😀\nnext line',
         "module_description": "Separate module prose",
-        "imports": {"project": [
-            {"kind": "from", "module": "absent_dependency", "names": [
-                {"name": "BaseA"}, {"name": "BaseB", "alias": "SecondBase"}]},
-        ]},
+        "imports": {
+            "project": [
+                {
+                    "kind": "from",
+                    "module": "absent_dependency",
+                    "names": [{"name": "BaseA"}, {"name": "BaseB", "alias": "SecondBase"}],
+                },
+            ]
+        },
         "bases": ["BaseA", "SecondBase"],
         "methods": [
-            {"name": "read", "description": "Read input", "async": False, "parameters": [
-                {"name": "value", "type": "int"},
-                {"name": "enabled", "type": "bool", "default": False},
-                {"name": "offset", "type": "int", "default": 0},
-            ], "return_type": "str"},
-            {"name": "fetch", "description": "Fetch input", "async": True, "parameters": [
-                {"name": "label", "type": "str | None", "default": None},
-            ], "return_type": "str | None"},
-            {"name": "__iter__", "description": "Iterate", "async": False,
-             "parameters": [], "return_type": "object"},
+            {
+                "name": "read",
+                "description": "Read input",
+                "async": False,
+                "parameters": [
+                    {"name": "value", "type": "int"},
+                    {"name": "enabled", "type": "bool", "default": False},
+                    {"name": "offset", "type": "int", "default": 0},
+                ],
+                "return_type": "str",
+            },
+            {
+                "name": "fetch",
+                "description": "Fetch input",
+                "async": True,
+                "parameters": [
+                    {"name": "label", "type": "str | None", "default": None},
+                ],
+                "return_type": "str | None",
+            },
+            {
+                "name": "__iter__",
+                "description": "Iterate",
+                "async": False,
+                "parameters": [],
+                "return_type": "object",
+            },
         ],
     }
     before = deepcopy(context)
-    output = delivered_protocol.renderer.render("python_protocol", context, delivered_protocol.provenance)
+    output = delivered_protocol.renderer.render(
+        "python_protocol", context, delivered_protocol.provenance
+    )
     tree, cls = parse_protocol(output)
     assert context == before
     assert cls.name == "exact_reader" and [ast.unparse(base) for base in cls.bases] == [
-        "BaseA", "SecondBase", "Protocol"
+        "BaseA",
+        "SecondBase",
+        "Protocol",
     ]
     assert ast.get_docstring(tree) == context["module_description"]
     assert ast.get_docstring(cls) == context["description"]
     imports = [
-        item for item in tree.body
+        item
+        for item in tree.body
         if isinstance(item, ast.ImportFrom) and item.module == "absent_dependency"
     ]
     assert len(imports) == 1
@@ -113,9 +144,12 @@ def test_explicit_bases_imports_and_ordered_sync_async_signatures(
     assert len(typing_imports) == 1
     assert [item.name for item in typing_imports[0].names] == ["Protocol"]
     assert [(item.name, item.asname) for item in imports[0].names] == [
-        ("BaseA", None), ("BaseB", "SecondBase")
+        ("BaseA", None),
+        ("BaseB", "SecondBase"),
     ]
-    methods = [item for item in cls.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    methods = [
+        item for item in cls.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
     assert [item.name for item in methods] == ["read", "fetch", "__iter__"]
     assert isinstance(methods[0], ast.FunctionDef)
     assert isinstance(methods[1], ast.AsyncFunctionDef)
@@ -141,8 +175,11 @@ def test_protocol_context_rejects_bodies_and_caller_owned_self(
 ) -> None:
     base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit class"}
     method: dict[str, JsonValue] = {
-        "name": "read", "description": "Read input", "async": False,
-        "parameters": [], "return_type": "None",
+        "name": "read",
+        "description": "Read input",
+        "async": False,
+        "parameters": [],
+        "return_type": "None",
     }
     invalid: list[dict[str, JsonValue]] = [
         {"class_name": "Example"},
@@ -155,22 +192,28 @@ def test_protocol_context_rejects_bodies_and_caller_owned_self(
         {**base, "methods": [{**method, "body": "return None"}]},
         {**base, "methods": [{**method, "decorators": []}]},
         {**base, "methods": [{**method, "async": "false"}]},
-        {**base, "methods": [{**method, "parameters": [
-            {"name": "value", "type": "list", "default": []}
-        ]}]},
+        {
+            **base,
+            "methods": [
+                {**method, "parameters": [{"name": "value", "type": "list", "default": []}]}
+            ],
+        },
     ]
     for spelling, canonical in (("self", "self"), ("ｓｅｌｆ", "self")):
         parsed = ast.parse(f"{spelling} = None").body[0]
         assert isinstance(parsed, ast.Assign)
         assert isinstance(parsed.targets[0], ast.Name) and parsed.targets[0].id == canonical
-        invalid.append({**base, "methods": [{**method, "parameters": [
-            {"name": spelling, "type": "object"}
-        ]}]})
+        invalid.append(
+            {**base, "methods": [{**method, "parameters": [{"name": spelling, "type": "object"}]}]}
+        )
     for context in invalid:
         with pytest.raises(ContextError):
-            delivered_protocol.renderer.render("python_protocol", context, delivered_protocol.provenance)
+            delivered_protocol.renderer.render(
+                "python_protocol", context, delivered_protocol.provenance
+            )
     output = delivered_protocol.renderer.render(
-        "python_protocol", {**base, "methods": [], "bases": [], "imports": {}},
+        "python_protocol",
+        {**base, "methods": [], "bases": [], "imports": {}},
         delivered_protocol.provenance,
     )
     _, cls = parse_protocol(output)
@@ -182,10 +225,22 @@ def test_invalid_native_parameter_order_remains_a_syntax_failure(
 ) -> None:
     output = delivered_protocol.renderer.render(
         "python_protocol",
-        {"class_name": "InvalidOrder", "description": "Native signature syntax",
-         "methods": [{"name": "read", "description": "Read", "async": False,
-                      "parameters": [{"name": "first", "type": "int", "default": 0},
-                                     {"name": "second", "type": "int"}], "return_type": "None"}]},
+        {
+            "class_name": "InvalidOrder",
+            "description": "Native signature syntax",
+            "methods": [
+                {
+                    "name": "read",
+                    "description": "Read",
+                    "async": False,
+                    "parameters": [
+                        {"name": "first", "type": "int", "default": 0},
+                        {"name": "second", "type": "int"},
+                    ],
+                    "return_type": "None",
+                }
+            ],
+        },
         delivered_protocol.provenance,
     )
     code, response = invoke(syntax_package, tmp_path, request(tmp_path / "invalid.py", output))

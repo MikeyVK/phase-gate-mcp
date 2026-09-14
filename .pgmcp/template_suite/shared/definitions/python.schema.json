@@ -279,6 +279,23 @@
       ],
       "additionalProperties": false
     },
+    "InstanceParameter": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Parameter"
+        },
+        {
+          "properties": {
+            "name": {
+              "$comment": "self is supplied by the instance-method template, including native Unicode15.1 NFKC-equivalent spellings.",
+              "not": {
+                "pattern": "^[sſˢₛｓ𝐬𝑠𝒔𝓈𝓼𝔰𝕤𝖘𝗌𝘀𝘴𝙨𝚜][eᵉₑℯⅇｅ𝐞𝑒𝒆𝓮𝔢𝕖𝖊𝖾𝗲𝘦𝙚𝚎][lˡₗℓⅼｌ𝐥𝑙𝒍𝓁𝓵𝔩𝕝𝖑𝗅𝗹𝘭𝙡𝚕][fᶠｆ𝐟𝑓𝒇𝒻𝓯𝔣𝕗𝖋𝖿𝗳𝘧𝙛𝚏]$(?![\\s\\S])"
+              }
+            }
+          }
+        }
+      ]
+    },
     "Signature": {
       "type": "object",
       "properties": {

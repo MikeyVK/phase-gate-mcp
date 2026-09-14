@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Plain Python class content",
+  "title": "Python Protocol content",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -35,12 +35,6 @@
           },
           {
             "properties": {
-              "name": {
-                "$comment": "Ordinary class signatures exclude native dunder methods; Unicode15.1 NFKC-equivalent underscores are included.",
-                "not": {
-                  "pattern": "^[_︳︴﹍﹎﹏＿]{2}.*[_︳︴﹍﹎﹏＿]{2}$(?![\\s\\S])"
-                }
-              },
               "parameters": {
                 "items": {
                   "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
