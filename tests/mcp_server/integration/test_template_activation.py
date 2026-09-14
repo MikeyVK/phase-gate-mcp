@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-import multiprocessing
 import os
-import shutil
+import subprocess
+import sys
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -27,7 +27,7 @@ from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 from tests.mcp_server.fixtures.suite_roots import write_package_tree
 from tests.mcp_server.test_support import make_template_suite_admission
 
-FP_CLOCK = datetime(2026, 9, 14, 12, 0, tzinfo=timezone.utc)
+FP_CLOCK = datetime(2026, 9, 14, 12, 0, tzinfo=UTC)
 
 
 @dataclass(frozen=True)
@@ -96,7 +96,9 @@ def _write_config(case: ActivationCase) -> None:
                 b"    capabilities:\n"
                 b"      syntax: {inputs: [content, selection], requires_file: false}\n"
             ),
-            "check.py": b"raise RuntimeError('activation admission must not execute native tools')\n",
+            "check.py": (
+                b"raise RuntimeError('activation admission must not execute native tools')\n"
+            ),
         },
     )
 
@@ -187,10 +189,11 @@ def _prepare_transition(
     actual_body: bytes = b"actual",
     candidate_body: bytes = b"candidate",
     proposal_body: bytes = b"candidate",
+    proposal_version: str = "2.0.0",
 ) -> tuple[SuiteSnapshot, SuiteSnapshot]:
     write_package_tree(case.actual, _package_files(actual_body))
     write_package_tree(case.candidate, _package_files(candidate_body, version="2.0.0"))
-    write_package_tree(case.proposal, _package_files(proposal_body, version="2.0.0"))
+    write_package_tree(case.proposal, _package_files(proposal_body, version=proposal_version))
     actual = _admit(case)(case.actual)
     _publish_initial_state(case, actual)
     candidate = _admit(case)(case.candidate)
@@ -199,15 +202,18 @@ def _prepare_transition(
 
 def _pause_after_boundary(
     stage: str,
-    ready: Any,
-    resume: Any,
+    ready: Path,
+    resume: Path,
     current: str,
 ) -> None:
     if stage != current:
         return
-    ready.set()
-    if not resume.wait(60):
-        raise TimeoutError(f"activation test did not resume at {stage}")
+    ready.touch()
+    deadline = time.monotonic() + 60
+    while not resume.exists():
+        if time.monotonic() >= deadline:
+            raise TimeoutError(f"activation test did not resume at {stage}")
+        time.sleep(0.02)
 
 
 def _child_activation(
@@ -217,8 +223,9 @@ def _child_activation(
     workspace_adapter_root: str,
     proposal_root: str,
     stage: str,
-    ready: Any,
-    resume: Any,
+    ready_path: str,
+    resume_path: str,
+    error_path: str | None = None,
 ) -> None:
     case = ActivationCase(
         root=Path(server_root).parent,
@@ -231,6 +238,8 @@ def _child_activation(
         proposal=Path(proposal_root),
     )
     real_writer = AtomicJsonWriter().write_json
+    ready = Path(ready_path)
+    resume = Path(resume_path)
 
     def writer(path: Path, payload: dict[str, object]) -> None:
         real_writer(path, payload)
@@ -246,8 +255,13 @@ def _child_activation(
         elif target == case.server / "template_suite":
             _pause_after_boundary(stage, ready, resume, "next_to_actual")
 
-    service = _service(case, json_writer=writer, move=move)
-    service.activate(case.proposal, pgmcp_version="3.0.0")
+    try:
+        service = _service(case, json_writer=writer, move=move)
+        service.activate(case.proposal, pgmcp_version="3.0.0")
+    except BaseException as exc:
+        if error_path is not None:
+            Path(error_path).write_text(repr(exc), encoding="utf-8")
+        raise
 
 
 def _child_recover(
@@ -306,35 +320,69 @@ def _child_lock_probe(
             json.dumps({"code": exc.code, "message": str(exc)}),
             encoding="utf-8",
         )
+    except BaseException as exc:
+        Path(report_path).write_text(
+            json.dumps({"exception": repr(exc)}),
+            encoding="utf-8",
+        )
+        raise
     else:
         Path(report_path).write_text(json.dumps({"activated": True}), encoding="utf-8")
 
 
-def _spawn_context() -> multiprocessing.context.BaseContext:
-    return multiprocessing.get_context("spawn")
-
-
-def _terminate(process: multiprocessing.Process) -> None:
-    if process.is_alive():
-        process.terminate()
-    process.join(15)
-    assert not process.is_alive()
-
-
-def _recover_in_fresh_process(case: ActivationCase) -> multiprocessing.Process:
-    context = _spawn_context()
-    process = context.Process(
-        target=_child_recover,
-        args=(
-            str(case.server),
-            str(case.config),
-            str(case.official_adapters),
-            str(case.workspace_adapters),
-        ),
+def _child_code(target: str) -> str:
+    return (
+        "import sys; "
+        "from tests.mcp_server.integration.test_template_activation import "
+        f"{target}; "
+        f"{target}(*sys.argv[1:])"
     )
-    process.start()
-    process.join(30)
-    assert not process.is_alive()
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _start_child(target: str, *args: str) -> subprocess.Popen[str]:
+    return subprocess.Popen(
+        [sys.executable, "-c", _child_code(target), *args],
+        cwd=_repo_root(),
+        text=True,
+    )
+
+
+def _wait_for_file(path: Path, timeout: float = 15) -> bool:
+    deadline = time.monotonic() + timeout
+    while not path.exists() and time.monotonic() < deadline:
+        time.sleep(0.02)
+    return path.exists()
+
+
+def _terminate(process: subprocess.Popen[str]) -> None:
+    if process.poll() is None:
+        process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+    assert process.poll() is not None
+
+
+def _recover_in_fresh_process(
+    case: ActivationCase,
+    report_path: Path | None = None,
+) -> subprocess.Popen[str]:
+    args = [
+        str(case.server),
+        str(case.config),
+        str(case.official_adapters),
+        str(case.workspace_adapters),
+    ]
+    if report_path is not None:
+        args.append(str(report_path))
+    process = _start_child("_child_recover", *args)
+    process.wait(timeout=20)
     return process
 
 
@@ -371,6 +419,17 @@ def test_forced_activation_keeps_verified_backup(activation_case: ActivationCase
     prior_installation = (case.server / "installation.json").read_bytes()
 
     service = _service(case)
+    collision = case.server.parent / (
+        f".pgmcp_template_backup_{FP_CLOCK.strftime('%Y%m%dT%H%M%S%fZ')}"
+    )
+    collision.mkdir()
+    with pytest.raises(FileExistsError):
+        service.activate(case.proposal, pgmcp_version="3.0.0", force=True)
+    assert _tree_bytes(case.actual) == prior_tree
+    assert (case.server / "installation.json").read_bytes() == prior_installation
+    assert not (case.server / "template_upgrade.json").exists()
+    assert not (case.server / "template_suite.next").exists()
+    collision.rmdir()
     service.activate(case.proposal, pgmcp_version="3.0.0", force=True)
 
     assert _tree_bytes(case.actual) == _tree_bytes(case.proposal)
@@ -394,12 +453,13 @@ def test_forced_activation_keeps_verified_backup(activation_case: ActivationCase
 
 def test_local_content_retains_adopted_checkpoint(activation_case: ActivationCase) -> None:
     case = activation_case
-    _, candidate = _prepare_transition(
-        case,
-        actual_body=b"local customization",
-        candidate_body=b"upstream update",
-        proposal_body=b"local customization",
-    )
+    baseline_root = case.root / "baseline"
+    write_package_tree(baseline_root, _package_files(b"baseline"))
+    write_package_tree(case.actual, _package_files(b"local customization"))
+    write_package_tree(case.candidate, _package_files(b"upstream update", version="2.0.0"))
+    write_package_tree(case.proposal, _package_files(b"local customization"))
+    baseline = _admit(case)(baseline_root)
+    _publish_initial_state(case, baseline)
     adopted_state = InstallationStateRepository(
         case.server / "installation.json",
         writer=AtomicJsonWriter().write_json,
@@ -413,7 +473,10 @@ def test_local_content_retains_adopted_checkpoint(activation_case: ActivationCas
         case.server / "installation.json",
         writer=AtomicJsonWriter().write_json,
     ).read()
-    assert current == adopted_state
+    assert current == adopted_state, (
+        f"adopted={adopted_state.model_dump(mode='json')} "
+        f"current={None if current is None else current.model_dump(mode='json')}"
+    )
     assert _tree_bytes(case.actual) == _tree_bytes(case.proposal)
     assert case.candidate.exists()
     assert service.last_result is not None
@@ -429,7 +492,7 @@ def test_interruption_recovers_pair_in_fresh_process(
     stage: str,
 ) -> None:
     case = activation_case
-    actual, candidate = _prepare_transition(case)
+    _, candidate = _prepare_transition(case)
     prior_tree = _tree_bytes(case.actual)
     prior_installation = (case.server / "installation.json").read_bytes()
     target_tree = _tree_bytes(case.proposal)
@@ -438,33 +501,35 @@ def test_interruption_recovers_pair_in_fresh_process(
         template_checkpoint=candidate.evidence.to_checkpoint(),
     )
 
-    context = _spawn_context()
-    ready = context.Event()
-    resume = context.Event()
-    process = context.Process(
-        target=_child_activation,
-        args=(
-            str(case.server),
-            str(case.config),
-            str(case.official_adapters),
-            str(case.workspace_adapters),
-            str(case.proposal),
-            stage,
-            ready,
-            resume,
-        ),
+    ready = case.root / f"activation-child-{stage}.ready"
+    resume = case.root / f"activation-child-{stage}.resume"
+    error_path = case.root / f"activation-child-{stage}.error"
+    process = _start_child(
+        "_child_activation",
+        str(case.server),
+        str(case.config),
+        str(case.official_adapters),
+        str(case.workspace_adapters),
+        str(case.proposal),
+        stage,
+        str(ready),
+        str(resume),
+        str(error_path),
     )
-    process.start()
     try:
-        assert ready.wait(30), f"child did not reach activation boundary {stage}"
+        assert _wait_for_file(ready, 8), (
+            f"child did not reach activation boundary {stage}; "
+            f"returncode={process.poll()} "
+            f"error={error_path.read_text(encoding='utf-8') if error_path.exists() else 'none'}"
+        )
         _terminate(process)
     finally:
-        resume.set()
-        if process.is_alive():
+        resume.touch()
+        if process.poll() is None:
             _terminate(process)
 
     recovery = _recover_in_fresh_process(case)
-    assert recovery.exitcode == 0
+    assert recovery.returncode == 0
 
     if stage == "installation":
         assert _tree_bytes(case.actual) == target_tree
@@ -481,29 +546,30 @@ def test_interruption_recovers_pair_in_fresh_process(
 def test_unknown_recovery_state_is_preserved(activation_case: ActivationCase) -> None:
     case = activation_case
     _prepare_transition(case)
-    context = _spawn_context()
-    ready = context.Event()
-    resume = context.Event()
-    process = context.Process(
-        target=_child_activation,
-        args=(
-            str(case.server),
-            str(case.config),
-            str(case.official_adapters),
-            str(case.workspace_adapters),
-            str(case.proposal),
-            "actual_to_previous",
-            ready,
-            resume,
-        ),
+    ready = case.root / "unknown-child.ready"
+    resume = case.root / "unknown-child.resume"
+    error_path = case.root / "unknown-child.error"
+    process = _start_child(
+        "_child_activation",
+        str(case.server),
+        str(case.config),
+        str(case.official_adapters),
+        str(case.workspace_adapters),
+        str(case.proposal),
+        "actual_to_previous",
+        str(ready),
+        str(resume),
+        str(error_path),
     )
-    process.start()
     try:
-        assert ready.wait(30)
+        assert _wait_for_file(ready, 8), (
+            f"child did not reach unknown-state boundary; returncode={process.poll()} "
+            f"error={error_path.read_text(encoding='utf-8') if error_path.exists() else 'none'}"
+        )
         _terminate(process)
     finally:
-        resume.set()
-        if process.is_alive():
+        resume.touch()
+        if process.poll() is None:
             _terminate(process)
 
     write_package_tree(case.actual, {"unknown.txt": b"unknown durable state"})
@@ -514,20 +580,16 @@ def test_unknown_recovery_state_is_preserved(activation_case: ActivationCase) ->
         "installation": (case.server / "installation.json").read_bytes(),
     }
     report = case.root / "unknown-recovery.json"
-    recovery = _spawn_context().Process(
-        target=_child_recover,
-        args=(
-            str(case.server),
-            str(case.config),
-            str(case.official_adapters),
-            str(case.workspace_adapters),
-            str(report),
-        ),
+    recovery = _start_child(
+        "_child_recover",
+        str(case.server),
+        str(case.config),
+        str(case.official_adapters),
+        str(case.workspace_adapters),
+        str(report),
     )
-    recovery.start()
-    recovery.join(30)
-    assert not recovery.is_alive()
-    assert recovery.exitcode != 0
+    recovery.wait(timeout=20)
+    assert recovery.returncode != 0
     assert _tree_bytes(case.actual) == before["actual"]
     assert _tree_bytes(case.server / "template_suite.previous") == before["previous"]
     assert (case.server / "template_upgrade.json").read_bytes() == before["record"]
@@ -539,45 +601,40 @@ def test_cross_process_activation_lock_excludes_second_activation(
 ) -> None:
     case = activation_case
     _prepare_transition(case)
-    context = _spawn_context()
-    ready = context.Event()
-    resume = context.Event()
-    first = context.Process(
-        target=_child_activation,
-        args=(
-            str(case.server),
-            str(case.config),
-            str(case.official_adapters),
-            str(case.workspace_adapters),
-            str(case.proposal),
-            "record",
-            ready,
-            resume,
-        ),
+    ready = case.root / "lock-child.ready"
+    resume = case.root / "lock-child.resume"
+    error_path = case.root / "lock-child.error"
+    first = _start_child(
+        "_child_activation",
+        str(case.server),
+        str(case.config),
+        str(case.official_adapters),
+        str(case.workspace_adapters),
+        str(case.proposal),
+        "record",
+        str(ready),
+        str(resume),
+        str(error_path),
     )
-    first.start()
     second_report = case.root / "second-lock.json"
-    second = context.Process(
-        target=_child_lock_probe,
-        args=(
+    try:
+        assert _wait_for_file(ready, 8), (
+            f"child did not reach lock boundary; returncode={first.poll()} "
+            f"error={error_path.read_text(encoding='utf-8') if error_path.exists() else 'none'}"
+        )
+        second = _start_child(
+            "_child_lock_probe",
             str(case.server),
             str(case.config),
             str(case.official_adapters),
             str(case.workspace_adapters),
             str(case.proposal),
             str(second_report),
-        ),
-    )
-    try:
-        assert ready.wait(30)
-        second.start()
-        second.join(15)
-        assert not second.is_alive()
+        )
+        second.wait(timeout=15)
         report = json.loads(second_report.read_text(encoding="utf-8"))
-        assert report["code"] == "template_upgrade_locked"
+        if (report.get("code"), report.get("message")) != ("ERR_CONFIG", "template_upgrade_locked"):
+            pytest.fail(f"second activation report={report}; first_returncode={first.poll()}")
     finally:
-        resume.set()
+        resume.touch()
         _terminate(first)
-
-    recovery = _recover_in_fresh_process(case)
-    assert recovery.exitcode == 0
