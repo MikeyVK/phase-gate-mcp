@@ -51,16 +51,21 @@ def parse_worker(output: str) -> tuple[ast.Module, ast.ClassDef]:
 
 @pytest.mark.parametrize("asynchronous", [False, True])
 def test_minimal_worker_preserves_the_single_supplied_operation(
-    delivered_worker: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path,
+    delivered_worker: DeliveredTemplate,
+    syntax_package: SyntaxPackage,
+    tmp_path: Path,
     asynchronous: bool,
 ) -> None:
     context: dict[str, JsonValue] = {
         "class_name": "exact_worker",
         "description": "Explicit worker",
         "operation": {
-            "name": "process_value", "description": "Process one value", "async": asynchronous,
+            "name": "process_value",
+            "description": "Process one value",
+            "async": asynchronous,
             "parameters": [{"name": "value", "type": "int"}],
-            "return_type": "int", "body": "return value + 1",
+            "return_type": "int",
+            "body": "return value + 1",
         },
     }
     output = delivered_worker.renderer.render("python_worker", context, delivered_worker.provenance)
@@ -74,7 +79,9 @@ def test_minimal_worker_preserves_the_single_supplied_operation(
     assert operation.name == "process_value" and not operation.decorator_list
     assert [arg.arg for arg in operation.args.args] == ["self", "value"]
     assert ast.unparse(operation.returns) == "int"
-    assert ast.dump(ast.Module(body=operation.body[1:], type_ignores=[])) == ast.dump(ast.parse("return value + 1"))
+    assert ast.dump(ast.Module(body=operation.body[1:], type_ignores=[])) == ast.dump(
+        ast.parse("return value + 1")
+    )
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "python_worker"
@@ -84,10 +91,17 @@ def test_minimal_worker_preserves_the_single_supplied_operation(
 
 
 def test_explicit_injection_imports_logging_and_nested_body_are_preserved(
-    delivered_worker: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path,
+    delivered_worker: DeliveredTemplate,
+    syntax_package: SyntaxPackage,
+    tmp_path: Path,
 ) -> None:
     constructor_body = "self.client = client"
-    operation_body = "if enabled:\n    logger.debug(label)\n    return await self.client.fetch(offset)\nraise ValueError('disabled')"
+    operation_body = (
+        "if enabled:\n"
+        "    logger.debug(label)\n"
+        "    return await self.client.fetch(offset)\n"
+        "raise ValueError('disabled')"
+    )
     records: tuple[dict[str, JsonValue], ...] = ({}, {"name": 'caller."worker"'})
     for record in records:
         context: dict[str, JsonValue] = {
@@ -96,41 +110,74 @@ def test_explicit_injection_imports_logging_and_nested_body_are_preserved(
             "module_description": "Separate module prose",
             "imports": {
                 "stdlib": [{"kind": "import", "module": "logging"}],
-                "third_party": [{"kind": "from", "module": "absent_external", "names": [{"name": "Client", "alias": "Injected"}]}],
-                "project": [{"kind": "from", "module": "absent_project", "names": [{"name": "Result"}]}],
+                "third_party": [
+                    {
+                        "kind": "from",
+                        "module": "absent_external",
+                        "names": [{"name": "Client", "alias": "Injected"}],
+                    }
+                ],
+                "project": [
+                    {"kind": "from", "module": "absent_project", "names": [{"name": "Result"}]}
+                ],
             },
             "logging": record,
             "constructor": {
-                "parameters": [{"name": "client", "type": "Injected"}], "body": constructor_body,
+                "parameters": [{"name": "client", "type": "Injected"}],
+                "body": constructor_body,
             },
             "operation": {
-                "name": "__call__", "description": "Process explicit input", "async": True,
+                "name": "__call__",
+                "description": "Process explicit input",
+                "async": True,
                 "parameters": [
                     {"name": "offset", "type": "int", "default": 0},
                     {"name": "enabled", "type": "bool", "default": False},
                     {"name": "label", "type": "str | None", "default": None},
                 ],
-                "return_type": "Result", "body": operation_body,
+                "return_type": "Result",
+                "body": operation_body,
             },
         }
         before = deepcopy(context)
-        output = delivered_worker.renderer.render("python_worker", context, delivered_worker.provenance)
+        output = delivered_worker.renderer.render(
+            "python_worker", context, delivered_worker.provenance
+        )
         tree, cls = parse_worker(output)
         assert context == before
         assert ast.get_docstring(tree) == context["module_description"]
         assert ast.get_docstring(cls) == context["description"]
         assert not cls.bases
-        statements = [ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))]
-        assert statements == ["import logging", "from absent_external import Client as Injected", "from absent_project import Result"]
-        assert all(label in output for label in ("# Standard library", "# Third-party", "# Project modules"))
-        methods = [item for item in cls.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        statements = [
+            ast.unparse(item)
+            for item in tree.body
+            if isinstance(item, (ast.Import, ast.ImportFrom))
+        ]
+        assert statements == [
+            "import logging",
+            "from absent_external import Client as Injected",
+            "from absent_project import Result",
+        ]
+        assert all(
+            label in output for label in ("# Standard library", "# Third party", "# Project")
+        )
+        methods = [
+            item for item in cls.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+        ]
         assert [item.name for item in methods] == ["__init__", "__call__"]
-        assert isinstance(methods[0], ast.FunctionDef) and isinstance(methods[1], ast.AsyncFunctionDef)
-        assert [[arg.arg for arg in item.args.args] for item in methods] == [["self", "client"], ["self", "offset", "enabled", "label"]]
+        assert isinstance(methods[0], ast.FunctionDef) and isinstance(
+            methods[1], ast.AsyncFunctionDef
+        )
+        assert [[arg.arg for arg in item.args.args] for item in methods] == [
+            ["self", "client"],
+            ["self", "offset", "enabled", "label"],
+        ]
         assert [ast.literal_eval(item) for item in methods[1].args.defaults] == [0, False, None]
         assert [ast.unparse(item.returns) for item in methods] == ["None", "Result"]
         assert ast.get_docstring(methods[1]) == "Process explicit input"
-        for method, body, has_doc in zip(methods, [constructor_body, operation_body], [False, True], strict=True):
+        for method, body, has_doc in zip(
+            methods, [constructor_body, operation_body], [False, True], strict=True
+        ):
             assert not method.decorator_list
             actual = ast.Module(body=method.body[1:] if has_doc else method.body, type_ignores=[])
             assert ast.dump(actual) == ast.dump(ast.parse(body))
@@ -152,10 +199,18 @@ def test_context_requires_one_operation_and_rejects_hidden_lifecycle_or_conflict
     delivered_worker: DeliveredTemplate,
 ) -> None:
     operation: dict[str, JsonValue] = {
-        "name": "process", "description": "Process", "async": False, "parameters": [],
-        "return_type": "None", "body": "return None",
+        "name": "process",
+        "description": "Process",
+        "async": False,
+        "parameters": [],
+        "return_type": "None",
+        "body": "return None",
     }
-    base: dict[str, JsonValue] = {"class_name": "Worker", "description": "Explicit worker", "operation": operation}
+    base: dict[str, JsonValue] = {
+        "class_name": "Worker",
+        "description": "Explicit worker",
+        "operation": operation,
+    }
     constructor: dict[str, JsonValue] = {"parameters": [], "body": "self.client = None"}
     invalid: list[dict[str, JsonValue]] = [
         {"class_name": "Worker", "description": "Missing operation"},
@@ -174,12 +229,16 @@ def test_context_requires_one_operation_and_rejects_hidden_lifecycle_or_conflict
     ]
     for spelling in ("self", "ｓｅｌｆ"):
         parameter = {"name": spelling, "type": "object"}
-        invalid.extend([
-            {**base, "operation": {**operation, "parameters": [parameter]}},
-            {**base, "constructor": {**constructor, "parameters": [parameter]}},
-        ])
+        invalid.extend(
+            [
+                {**base, "operation": {**operation, "parameters": [parameter]}},
+                {**base, "constructor": {**constructor, "parameters": [parameter]}},
+            ]
+        )
     for spelling in ("__init__", "_＿ｉｎｉｔ__"):
-        invalid.append({**base, "constructor": constructor, "operation": {**operation, "name": spelling}})
+        invalid.append(
+            {**base, "constructor": constructor, "operation": {**operation, "name": spelling}}
+        )
     for context in invalid:
         with pytest.raises(ContextError):
             delivered_worker.renderer.render("python_worker", context, delivered_worker.provenance)
@@ -188,7 +247,9 @@ def test_context_requires_one_operation_and_rejects_hidden_lifecycle_or_conflict
         {**base, "operation": {**operation, "name": "__init__"}},
         {**base, "imports": {}},
     ):
-        parse_worker(delivered_worker.renderer.render("python_worker", content, delivered_worker.provenance))
+        parse_worker(
+            delivered_worker.renderer.render("python_worker", content, delivered_worker.provenance)
+        )
 
 
 def test_invalid_native_operation_body_remains_a_syntax_failure(
@@ -197,10 +258,15 @@ def test_invalid_native_operation_body_remains_a_syntax_failure(
     output = delivered_worker.renderer.render(
         "python_worker",
         {
-            "class_name": "InvalidBody", "description": "Native body syntax",
+            "class_name": "InvalidBody",
+            "description": "Native body syntax",
             "operation": {
-                "name": "process", "description": "Process", "async": False,
-                "parameters": [], "return_type": "None", "body": "if True",
+                "name": "process",
+                "description": "Process",
+                "async": False,
+                "parameters": [],
+                "return_type": "None",
+                "body": "if True",
             },
         },
         delivered_worker.provenance,

@@ -1,11 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Portable Python adapter content",
+  "title": "Portable Python worker content",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "class_name",
-    "description"
+    "description",
+    "operation"
   ],
   "properties": {
     "class_name": {
@@ -19,12 +20,6 @@
     },
     "imports": {
       "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
-    },
-    "bases": {
-      "type": "array",
-      "items": {
-        "$ref": "../shared/definitions/python.schema.json#/$defs/TypeText"
-      }
     },
     "constructor": {
       "allOf": [
@@ -42,27 +37,24 @@
         }
       ]
     },
-    "methods": {
-      "type": "array",
-      "items": {
-        "allOf": [
-          {
-            "$ref": "../shared/definitions/python.schema.json#/$defs/ConcreteMethod"
-          },
-          {
-            "properties": {
-              "parameters": {
-                "items": {
-                  "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
-                }
+    "logging": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Logging"
+    },
+    "operation": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/python.schema.json#/$defs/ConcreteMethod"
+        },
+        {
+          "properties": {
+            "parameters": {
+              "items": {
+                "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
               }
             }
           }
-        ]
-      }
-    },
-    "logging": {
-      "$ref": "../shared/definitions/python.schema.json#/$defs/Logging"
+        }
+      ]
     }
   },
   "allOf": [
@@ -74,10 +66,8 @@
       },
       "then": {
         "properties": {
-          "methods": {
-            "items": {
-              "$ref": "../shared/definitions/python.schema.json#/$defs/NonConstructorMethod"
-            }
+          "operation": {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/NonConstructorMethod"
           }
         }
       }
