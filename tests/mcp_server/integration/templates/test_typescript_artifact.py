@@ -56,7 +56,6 @@ def native_artifact(
     (package.workspace / "consumer.ts").write_text(consumer, encoding="utf-8")
     script = r"""
 const ts = require("typescript");
-const path = require("node:path");
 const [target, exercise] = JSON.parse(process.argv[1]);
 const options = {
   target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS,
@@ -118,10 +117,15 @@ def test_omitted_and_empty_fields_keep_exported_class_and_object_constructor(
         output,
         exercise="assert.deepEqual(Object.keys(new artifact.$Empty({})), []);",
     )
-    assert facts["classes"] == [{
-        "name": "$Empty", "exported": True, "implements": [], "fields": [],
-        "constructors": [[{"name": "data", "type": "{}"}]],
-    }]
+    assert facts["classes"] == [
+        {
+            "name": "$Empty",
+            "exported": True,
+            "implements": [],
+            "fields": [],
+            "constructors": [[{"name": "data", "type": "{}"}]],
+        }
+    ]
     assert facts["imports"] == []
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
@@ -141,11 +145,20 @@ def test_explicit_fields_preserve_native_types_and_strict_optional_behavior(
         ],
         "implements": ["Contract"],
         "fields": [
-            {"name": "id", "type": "number", "readonly": True, "optional": False,
-             "description": "Identifier */ remains documentation"},
+            {
+                "name": "id",
+                "type": "number",
+                "readonly": True,
+                "optional": False,
+                "description": "Identifier */ remains documentation",
+            },
             {"name": "payload", "type": "Payload", "readonly": False, "optional": False},
-            {"name": "mapper", "type": "(value: { count: number }) => { ok: boolean }",
-             "readonly": False, "optional": False},
+            {
+                "name": "mapper",
+                "type": "(value: { count: number }) => { ok: boolean }",
+                "readonly": False,
+                "optional": False,
+            },
             {"name": "enabled", "type": "boolean", "readonly": False, "optional": False},
             {"name": "note", "type": "string | null", "readonly": True, "optional": True},
         ],
@@ -206,8 +219,12 @@ assert.equal(data.enabled, false);
     assert cls["fields"] == [
         {"name": "id", "type": "number", "readonly": True, "optional": False},
         {"name": "payload", "type": "Payload", "readonly": False, "optional": False},
-        {"name": "mapper", "type": "(value: { count: number }) => { ok: boolean }",
-         "readonly": False, "optional": False},
+        {
+            "name": "mapper",
+            "type": "(value: { count: number }) => { ok: boolean }",
+            "readonly": False,
+            "optional": False,
+        },
         {"name": "enabled", "type": "boolean", "readonly": False, "optional": False},
         {"name": "note", "type": "string | null", "readonly": True, "optional": True},
     ]
@@ -218,16 +235,25 @@ def test_schema_rejects_legacy_fields_unknown_properties_and_invalid_symbols(
 ) -> None:
     base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit DTO"}
     field: dict[str, JsonValue] = {
-        "name": "value", "type": "{ count: number }", "readonly": False, "optional": False,
+        "name": "value",
+        "type": "{ count: number }",
+        "readonly": False,
+        "optional": False,
     }
     invalid: list[dict[str, JsonValue]] = [
-        {"class_name": "Example"}, {**base, "description": ""},
-        {**base, "class_name": "class"}, {**base, "class_name": "Invalid-Name"},
-        {**base, "class_name": "Example\n"}, {**base, "name": "Alias"},
-        {**base, "fields": None}, {**base, "fields": ["readonly value: number"]},
-        {**base, "implements": "Contract"}, {**base, "imports": [" "]},
+        {"class_name": "Example"},
+        {**base, "description": ""},
+        {**base, "class_name": "class"},
+        {**base, "class_name": "Invalid-Name"},
+        {**base, "class_name": "Example\n"},
+        {**base, "name": "Alias"},
+        {**base, "fields": None},
+        {**base, "fields": ["readonly value: number"]},
+        {**base, "implements": "Contract"},
+        {**base, "imports": [" "]},
         {**base, "fields": [{**field, "name": "value?"}]},
         {**base, "fields": [{**field, "name": "constructor"}]},
+        {**base, "fields": [{**field, "name": "__proto__"}]},
         {**base, "fields": [{**field, "name": "__proto__", "optional": True}]},
         {**base, "fields": [{**field, "type": ""}]},
         {**base, "fields": [{**field, "readonly": "false"}]},
@@ -245,13 +271,15 @@ def test_native_syntax_check_reports_invalid_caller_type_without_writing(
     delivered_dto: DeliveredTemplate, typescript_package: TypeScriptPackage
 ) -> None:
     context: dict[str, JsonValue] = {
-        "class_name": "Broken", "description": "Caller owns annotation syntax",
+        "class_name": "Broken",
+        "description": "Caller owns annotation syntax",
         "fields": [{"name": "value", "type": "{ count: }", "readonly": False, "optional": False}],
     }
     output = delivered_dto.renderer.render("typescript_dto", context, delivered_dto.provenance)
     target = typescript_package.workspace / "not persisted.ts"
     code, response = invoke(
-        typescript_package, typescript_package.workspace,
+        typescript_package,
+        typescript_package.workspace,
         {"operation": "syntax", "target_path": str(target), "content": output, "args": []},
     )
     assert code == 1
