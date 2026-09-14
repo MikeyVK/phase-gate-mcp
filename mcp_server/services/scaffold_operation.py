@@ -71,7 +71,7 @@ def validation_status(checks: tuple[MutationCheck, ...]) -> ValidationStatus:
     return "passed" if checks else "not_executed"
 
 
-def _project_check(
+def project_mutation_check(
     row: ContentCheckExecution,
     workspace_root: Path,
     *,
@@ -164,7 +164,7 @@ def _project_check(
     )
 
 
-def _execution_blocker(
+def mutation_execution_blocker(
     execution: ContentExecution,
     checks: tuple[MutationCheck, ...],
 ) -> tuple[MutationErrorCode | None, MutationErrorDetails | None]:
@@ -302,7 +302,7 @@ class ScaffoldOperation:
             if not isinstance(cause, ScratchPreparationError):
                 raise
             checks = tuple(
-                _project_check(
+                project_mutation_check(
                     row,
                     self._workspace_root,
                     preparation_cleanup=cause.cleanup if row.check_id == exc.check_id else None,
@@ -326,10 +326,12 @@ class ScaffoldOperation:
                     message=str(cause),
                 ),
             )
-        checks = tuple(_project_check(row, self._workspace_root) for row in execution.results)
+        checks = tuple(
+            project_mutation_check(row, self._workspace_root) for row in execution.results
+        )
         if not checks:
             raise ValueError("nonempty_check_obligations_required")
-        error_code, error_details = _execution_blocker(execution, checks)
+        error_code, error_details = mutation_execution_blocker(execution, checks)
         status = validation_status(checks)
         permitted = status == "passed" or (
             validation == "report" and status in ("failed", "unavailable")

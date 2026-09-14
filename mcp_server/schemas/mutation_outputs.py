@@ -9,7 +9,7 @@ error-detail facts without presentation or orchestration behavior.
 from __future__ import annotations
 
 import re
-from typing import Annotated, Literal, get_args
+from typing import Annotated, Literal, Self, get_args
 
 from pydantic import (
     AfterValidator,
@@ -21,7 +21,7 @@ from pydantic import (
     model_validator,
 )
 
-from mcp_server.config.schemas.checks_config import CheckId, ProfileId
+from mcp_server.config.schemas.checks_config import CheckId, ExtensionKey, ProfileId
 from mcp_server.config.schemas.template_suite import TemplateId, TemplatePackageVersion
 from mcp_server.execution.check_selection import WorkspaceRelativePath
 from mcp_server.execution.models import (
@@ -37,6 +37,11 @@ from mcp_server.execution.models import (
     TerminationProblem,
 )
 from mcp_server.services.artifact_identity import CompactFingerprint
+from mcp_server.services.edit_construction import (
+    EditDetails,
+    EditProfileSelection,
+    MetadataFallbackReason,
+)
 
 
 def _validate_json_pointer(value: str) -> str:
@@ -59,6 +64,10 @@ MutationErrorCode = Literal[
     "adapter_request_rejected",
     "termination_unconfirmed",
     "operation_interrupted",
+    "original_unreadable",
+    "original_changed",
+    "original_missing",
+    "edit_invalid",
 ]
 
 
@@ -148,8 +157,18 @@ class TerminationDetails(_MutationModel):
         return self
 
 
+class OriginalReadDetails(_MutationModel):
+    """Observed original-file read failure, independent of content checking."""
+
+    path: WorkspaceRelativePath
+    reason: Literal["permission_denied", "invalid_encoding", "io_error"]
+    message: NonBlankText
+
+
 MutationErrorDetails = (
-    ContextDetails
+    OriginalReadDetails
+    | EditDetails
+    | ContextDetails
     | TargetDetails
     | AffectedPathDetails
     | RenderDetails
@@ -272,15 +291,11 @@ class MutationCheck(_MutationModel):
         return self
 
 
-class ScaffoldOperationOutput(_MutationModel):
-    """Complete immutable scaffold operation result."""
+class _MutationOperationOutput(_MutationModel):
+    """Shared immutable validation and lifecycle facts for completed mutation attempts."""
 
     success: StrictBool
     written: StrictBool
-    output_path: WorkspaceRelativePath | None
-    template_id: TemplateId
-    package_version: TemplatePackageVersion
-    package_fingerprint: CompactFingerprint
     validation_policy: Literal["enforce", "report"]
     validation_status: Literal["passed", "failed", "unavailable", "not_executed"]
     profile_id: ProfileId | None
@@ -290,19 +305,17 @@ class ScaffoldOperationOutput(_MutationModel):
     housekeeping: tuple[HousekeepingIssue, ...]
 
     @model_validator(mode="after")
-    def validate_operation(self) -> ScaffoldOperationOutput:
+    def validate_operation(self) -> Self:
         if self.success != self.written:
             raise ValueError("success_written_must_agree")
         if not self.success and self.error_code is None:
             raise ValueError("unsuccessful_operation_requires_error")
-        if self.written and self.output_path is None:
-            raise ValueError("written_output_path_required")
         if self.success and self.error_code is not None:
             raise ValueError("successful_operation_cannot_have_error")
 
         statuses = tuple(row.status for row in self.checks)
         if self.written:
-            if self.validation_status == "not_executed" or "not_executed" in statuses:
+            if "not_executed" in statuses:
                 raise ValueError("written_operation_requires_complete_validation")
             if self.validation_policy == "enforce" and self.validation_status != "passed":
                 raise ValueError("enforce_write_requires_passed_validation")
@@ -327,6 +340,10 @@ class ScaffoldOperationOutput(_MutationModel):
 
         expected_details: dict[str, type[BaseModel] | tuple[type[BaseModel], ...] | None] = {
             "context_invalid": ContextDetails,
+            "original_unreadable": OriginalReadDetails,
+            "original_changed": AffectedPathDetails,
+            "original_missing": AffectedPathDetails,
+            "edit_invalid": EditDetails,
             "target_invalid": TargetDetails,
             "target_exists": AffectedPathDetails,
             "render_failed": RenderDetails,
@@ -376,4 +393,70 @@ class ScaffoldOperationOutput(_MutationModel):
             "termination_unconfirmed",
         }:
             raise ValueError("interruption_requires_operation_error")
+        return self
+
+
+class ScaffoldOperationOutput(_MutationOperationOutput):
+    """Complete immutable scaffold operation result."""
+
+    output_path: WorkspaceRelativePath | None
+    template_id: TemplateId
+    package_version: TemplatePackageVersion
+    package_fingerprint: CompactFingerprint
+
+    @model_validator(mode="after")
+    def validate_scaffold(self) -> Self:
+        if self.written and self.output_path is None:
+            raise ValueError("written_output_path_required")
+        if self.written and self.validation_status == "not_executed":
+            raise ValueError("written_operation_requires_complete_validation")
+        if self.error_code in {
+            "original_unreadable",
+            "original_changed",
+            "original_missing",
+            "edit_invalid",
+        }:
+            raise ValueError("edit_error_for_scaffold_forbidden")
+        return self
+
+
+class EditOperationOutput(_MutationOperationOutput):
+    """Complete edit result with factual source selection and completed text effect."""
+
+    path: WorkspaceRelativePath
+    content_changed: StrictBool | None
+    selected_source: Literal["input", "metadata", "extension", "none"] | None
+    template_id: TemplateId | None
+    extension: ExtensionKey | None
+    selection_reason: MetadataFallbackReason | None
+
+    @model_validator(mode="after")
+    def validate_edit(self) -> Self:
+        if self.written != (self.content_changed is not None):
+            raise ValueError("completed_write_required_for_text_effect")
+        if self.selected_source is None:
+            if any(
+                value is not None
+                for value in (
+                    self.profile_id,
+                    self.template_id,
+                    self.extension,
+                    self.selection_reason,
+                )
+            ):
+                raise ValueError("unreached_selection_facts_forbidden")
+        else:
+            EditProfileSelection(
+                selected_source=self.selected_source,
+                profile_id=self.profile_id,
+                template_id=self.template_id,
+                extension=self.extension,
+                selection_reason=self.selection_reason,
+            )
+        if self.checks and self.profile_id is None:
+            raise ValueError("check_facts_require_selected_profile")
+        if self.written and self.selected_source is None:
+            raise ValueError("written_edit_requires_selection")
+        if self.written and self.profile_id is not None and not self.checks:
+            raise ValueError("selected_profile_requires_check_obligations")
         return self

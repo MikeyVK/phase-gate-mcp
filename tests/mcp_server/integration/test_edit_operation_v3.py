@@ -19,8 +19,14 @@ from mcp_server.execution.protocol import AdapterResponseContract
 from mcp_server.schemas.mutation_outputs import EditOperationOutput
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.edit_construction import (
-    EditOperation as EditCommand, EditProfileSelection, ReplaceOperation,
-    RewriteOperation, construct_edit, select_profile,
+    EditOperation as EditCommand,
+)
+from mcp_server.services.edit_construction import (
+    EditProfileSelection,
+    ReplaceOperation,
+    RewriteOperation,
+    construct_edit,
+    select_profile,
 )
 from mcp_server.services.edit_operation import EditOperation
 from mcp_server.utils.atomic_file_writer import CheckedFileWriter, OriginalFileReader
@@ -30,30 +36,45 @@ from tests.mcp_server.unit.services.test_artifact_target_resolver import create_
 
 
 def operation(
-    root: Path, outcomes: tuple[str, ...], *, has_profile: bool = True,
+    root: Path,
+    outcomes: tuple[str, ...],
+    *,
+    has_profile: bool = True,
 ) -> tuple[EditOperation, RecordingRuntime]:
     checks, _, runtime = compose(root, outcomes)
-    config = ChecksConfig.model_validate({
-        "checks": {"syntax": {
-            "adapter_id": "fixture", "capability": "check",
-            "timeout_seconds": 3, "default_args": [],
-        }},
-        "profiles": {"renamed": {"checks": ["syntax"]}},
-        "profiles_by_extension": {".md": "renamed"} if has_profile else {},
-        "run_checks": {},
-    })
+    config = ChecksConfig.model_validate(
+        {
+            "checks": {
+                "syntax": {
+                    "adapter_id": "fixture",
+                    "capability": "check",
+                    "timeout_seconds": 3,
+                    "default_args": [],
+                }
+            },
+            "profiles": {"renamed": {"checks": ["syntax"]}},
+            "profiles_by_extension": {".md": "renamed"} if has_profile else {},
+            "run_checks": {},
+        }
+    )
 
     def select(original: str, filename: str, explicit: str | None) -> EditProfileSelection:
         return select_profile(
-            original, filename, explicit_template_id=explicit,
+            original,
+            filename,
+            explicit_template_id=explicit,
             header_reader=ArtifactHeaderReader(),
             template_profiles={"source_notes": "renamed"},
             extension_profile_for_filename=config.match_for_filename,
         )
 
     return EditOperation(
-        paths=FileArtifactTargetPaths(root), reader=OriginalFileReader(),
-        writer=CheckedFileWriter(), select=select, construct=construct_edit, checks=checks,
+        paths=FileArtifactTargetPaths(root),
+        reader=OriginalFileReader(),
+        writer=CheckedFileWriter(),
+        select=select,
+        construct=construct_edit,
+        checks=checks,
     ), runtime
 
 
@@ -64,7 +85,10 @@ def operation(
     [("passed", True), ("failed", True), ("unavailable", True), ("passed", False)],
 )
 async def test_policy_retains_actual_text_bytes_and_validation(
-    tmp_path: Path, policy: Literal["enforce", "report"], outcome: str, has_profile: bool,
+    tmp_path: Path,
+    policy: Literal["enforce", "report"],
+    outcome: str,
+    has_profile: bool,
 ) -> None:
     service, runtime = operation(tmp_path, (outcome,), has_profile=has_profile)
     target = tmp_path / "notes.md"
@@ -72,7 +96,9 @@ async def test_policy_retains_actual_text_bytes_and_validation(
     target.write_bytes(original)
     proposed = "\ufeffsource\nbody\n"
     result = await service.execute(
-        path=target.name, operation=RewriteOperation(content=proposed), validation=policy,
+        path=target.name,
+        operation=RewriteOperation(content=proposed),
+        validation=policy,
     )
     written = policy == "report" or (has_profile and outcome == "passed")
     assert result.written is written and result.success is written
@@ -97,7 +123,9 @@ async def test_policy_retains_actual_text_bytes_and_validation(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("change", ["bytes", "missing"])
 async def test_final_guard_preserves_external_writer_and_passed_checks(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    change: str,
 ) -> None:
     service, runtime = operation(tmp_path, ("passed",))
     target = tmp_path / "notes.md"
@@ -106,7 +134,9 @@ async def test_final_guard_preserves_external_writer_and_passed_checks(
     target.write_bytes(original)
     actual = CheckedFileWriter.replace_if_unchanged
 
-    def intervene(self: CheckedFileWriter, path: Path, expected_original: bytes, content: str) -> tuple[WriteHousekeepingIssue, ...]:
+    def intervene(
+        self: CheckedFileWriter, path: Path, expected_original: bytes, content: str
+    ) -> tuple[WriteHousekeepingIssue, ...]:
         assert expected_original == original and content == "proposed"
         if change == "bytes":
             path.write_bytes(competing)
@@ -116,7 +146,9 @@ async def test_final_guard_preserves_external_writer_and_passed_checks(
 
     monkeypatch.setattr(CheckedFileWriter, "replace_if_unchanged", intervene)
     result = await service.execute(
-        path=target.name, operation=RewriteOperation(content="proposed"), validation="report",
+        path=target.name,
+        operation=RewriteOperation(content="proposed"),
+        validation="report",
     )
     assert result.error_code == ("original_changed" if change == "bytes" else "original_missing")
     assert result.validation_status == "passed" and len(runtime.requests) == 1
@@ -129,33 +161,45 @@ async def test_final_guard_preserves_external_writer_and_passed_checks(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["missing", "directory", "encoding", "permission", "edit"])
+@pytest.mark.parametrize("kind", ["missing", "directory", "root", "encoding", "permission", "edit"])
 async def test_precheck_failures_do_not_invent_check_results(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
 ) -> None:
     service, runtime = operation(tmp_path, ("passed",))
-    target = tmp_path / "notes.md"
+    target = tmp_path if kind == "root" else tmp_path / "notes.md"
     command: EditCommand = RewriteOperation(content="proposed")
     if kind == "directory":
         target.mkdir()
-    elif kind != "missing":
+    elif kind not in ("missing", "root"):
         target.write_bytes(b"\xff" if kind == "encoding" else b"original")
     if kind == "permission":
+
         def deny_read(_self: OriginalFileReader, _path: Path) -> OriginalFileSnapshot:
             raise PermissionError("controlled original read denial")
+
         monkeypatch.setattr(OriginalFileReader, "read_snapshot", deny_read)
     if kind == "edit":
         command = ReplaceOperation(target_content="absent", replacement="new")
-    result = await service.execute(path=target.name, operation=command, validation="report")
+    result = await service.execute(
+        path="." if kind == "root" else target.name, operation=command, validation="report"
+    )
     expected = {
-        "missing": "original_missing", "directory": "target_invalid",
-        "encoding": "original_unreadable", "permission": "original_unreadable",
+        "missing": "original_missing",
+        "directory": "target_invalid",
+        "root": "target_invalid",
+        "encoding": "original_unreadable",
+        "permission": "original_unreadable",
         "edit": "edit_invalid",
     }
     assert result.error_code == expected[kind] and result.checks == ()
     assert result.validation_status == "not_executed" and not result.written
     assert result.content_changed is None and runtime.requests == []
     assert result.profile_id == ("renamed" if kind == "edit" else None)
+    if kind in ("root", "directory"):
+        assert result.error_details is not None
+        assert result.error_details.model_dump()["reason"] == "not_file"
 
 
 @pytest.mark.asyncio
@@ -170,7 +214,8 @@ async def test_parent_alias_cannot_edit_outside_workspace(tmp_path: Path) -> Non
     try:
         service, runtime = operation(root, ("passed",))
         result = await service.execute(
-            path="alias/notes.md", operation=RewriteOperation(content="proposed"),
+            path="alias/notes.md",
+            operation=RewriteOperation(content="proposed"),
         )
         assert result.error_code == "target_invalid" and runtime.requests == []
         assert target.read_bytes() == b"external" and not result.written
@@ -180,7 +225,8 @@ async def test_parent_alias_cannot_edit_outside_workspace(tmp_path: Path) -> Non
 
 @pytest.mark.asyncio
 async def test_retry_rechecks_original_without_repeating_validation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     service, runtime = operation(tmp_path, ("passed",))
     target = tmp_path / "notes.md"
@@ -204,18 +250,25 @@ async def test_retry_rechecks_original_without_repeating_validation(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stop", ["invalid_request", "unconfirmed", "cancelled"])
 async def test_runtime_stop_retains_prior_checks_and_blocks_report(
-    tmp_path: Path, stop: str,
+    tmp_path: Path,
+    stop: str,
 ) -> None:
     service, runtime = operation(tmp_path, ("failed", stop, "passed"))
     target = tmp_path / "notes.md"
     target.write_bytes(b"original")
     result = await service.execute(
-        path=target.name, operation=RewriteOperation(content="proposed"), validation="report",
+        path=target.name,
+        operation=RewriteOperation(content="proposed"),
+        validation="report",
     )
-    assert result.error_code == {
-        "invalid_request": "adapter_request_rejected",
-        "unconfirmed": "termination_unconfirmed", "cancelled": "operation_interrupted",
-    }[stop]
+    assert (
+        result.error_code
+        == {
+            "invalid_request": "adapter_request_rejected",
+            "unconfirmed": "termination_unconfirmed",
+            "cancelled": "operation_interrupted",
+        }[stop]
+    )
     assert result.validation_status == "failed" and result.checks[0].status == "failed"
     assert result.checks[-1].reason == "not_started"
     assert len(runtime.requests) == 2 and target.read_bytes() == b"original"
@@ -227,7 +280,8 @@ TResponse = TypeVar("TResponse", bound=BaseModel)
 
 @pytest.mark.asyncio
 async def test_lock_wait_is_separate_from_validation_and_is_released(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     service, runtime = operation(tmp_path, ("passed",))
     target = tmp_path / "notes.md"
@@ -236,23 +290,35 @@ async def test_lock_wait_is_separate_from_validation_and_is_released(
     actual = runtime.invoke
 
     async def held(
-        *, launch: AdapterLaunch, workspace_root: Path, request: BaseModel,
-        response_contract: AdapterResponseContract[TResponse], timeout_seconds: float,
+        *,
+        launch: AdapterLaunch,
+        workspace_root: Path,
+        request: BaseModel,
+        response_contract: AdapterResponseContract[TResponse],
+        timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
         entered.set()
         await release.wait()
         return await actual(
-            launch=launch, workspace_root=workspace_root, request=request,
-            response_contract=response_contract, timeout_seconds=timeout_seconds,
+            launch=launch,
+            workspace_root=workspace_root,
+            request=request,
+            response_contract=response_contract,
+            timeout_seconds=timeout_seconds,
         )
 
     monkeypatch.setattr(runtime, "invoke", held)
-    first = asyncio.create_task(service.execute(
-        path=target.name, operation=RewriteOperation(content="first"),
-    ))
+    first = asyncio.create_task(
+        service.execute(
+            path=target.name,
+            operation=RewriteOperation(content="first"),
+        )
+    )
     await entered.wait()
     try:
-        blocked = await service.execute(path=target.name, operation=RewriteOperation(content="second"))
+        blocked = await service.execute(
+            path=target.name, operation=RewriteOperation(content="second")
+        )
         assert blocked.error_code == "preparation_failed"
         assert blocked.error_details is not None
         assert blocked.error_details.model_dump()["reason"] == "lock_wait_timeout"
@@ -269,7 +335,8 @@ async def test_lock_wait_is_separate_from_validation_and_is_released(
 
 @pytest.mark.asyncio
 async def test_postcommit_result_failure_leaves_completed_bytes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     service, _ = operation(tmp_path, ("passed",))
     target = tmp_path / "notes.md"
@@ -286,14 +353,17 @@ async def test_postcommit_result_failure_leaves_completed_bytes(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("cleanup_denied", [False, True])
+@pytest.mark.parametrize("failure", ["write", "write_cleanup", "missing_stage"])
 async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cleanup_denied: bool,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure: str,
 ) -> None:
     service, _ = operation(tmp_path, ("passed",))
     target = tmp_path / "notes.md"
     target.write_bytes(b"original")
-    actual_write, actual_unlink = os.write, Path.unlink
+    actual_write, actual_unlink, actual_replace = os.write, Path.unlink, os.replace
+    cleanup_denied = failure == "write_cleanup"
 
     def partial(descriptor: int, payload: bytes) -> int:
         actual_write(descriptor, payload[:3])
@@ -304,12 +374,24 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
             raise PermissionError("controlled cleanup denial")
         actual_unlink(path, missing_ok=missing_ok)
 
-    monkeypatch.setattr("mcp_server.utils.atomic_file_writer.os.write", partial)
+    if failure == "missing_stage":
+
+        def lose_stage(source: Path, destination: Path) -> None:
+            source.unlink()
+            actual_replace(source, destination)
+
+        monkeypatch.setattr("mcp_server.utils.atomic_file_writer.os.replace", lose_stage)
+    else:
+        monkeypatch.setattr("mcp_server.utils.atomic_file_writer.os.write", partial)
     monkeypatch.setattr(Path, "unlink", cleanup)
     result = await service.execute(path=target.name, operation=RewriteOperation(content="proposed"))
     assert result.error_code == "persistence_failed" and not result.written
     assert result.content_changed is None and result.validation_status == "passed"
     assert target.read_bytes() == b"original"
+    assert result.error_details is not None
+    assert result.error_details.model_dump()["stage"] == (
+        "replace" if failure == "missing_stage" else "write_staging"
+    )
     assert bool(result.housekeeping) is cleanup_denied
     if cleanup_denied:
         issue = result.housekeeping[0]
