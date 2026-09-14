@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plain Python class content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "bases": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/TypeText"
+      }
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/Signature"
+          },
+          {
+            "properties": {
+              "name": {
+                "$comment": "Ordinary class signatures exclude native dunder methods; Unicode15.1 NFKC-equivalent underscores are included.",
+                "not": {
+                  "pattern": "^[_︳︴﹍﹎﹏＿]{2}.*[_︳︴﹍﹎﹏＿]{2}$(?![\\s\\S])"
+                }
+              },
+              "parameters": {
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "../shared/definitions/python.schema.json#/$defs/Parameter"
+                    },
+                    {
+                      "properties": {
+                        "name": {
+                          "$comment": "self is supplied by the instance-method template, including native Unicode15.1 NFKC-equivalent spellings.",
+                          "not": {
+                            "pattern": "^[sſˢₛｓ𝐬𝑠𝒔𝓈𝓼𝔰𝕤𝖘𝗌𝘀𝘴𝙨𝚜][eᵉₑℯⅇｅ𝐞𝑒𝒆𝓮𝔢𝕖𝖊𝖾𝗲𝘦𝙚𝚎][lˡₗℓⅼｌ𝐥𝑙𝒍𝓁𝓵𝔩𝕝𝖑𝗅𝗹𝘭𝙡𝚕][fᶠｆ𝐟𝑓𝒇𝒻𝓯𝔣𝕗𝖋𝖿𝗳𝘧𝙛𝚏]$(?![\\s\\S])"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

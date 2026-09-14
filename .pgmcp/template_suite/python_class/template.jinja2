@@ -1,0 +1,12 @@
+{% extends "shared/templates/bases/tier2_python.jinja2" %}
+{% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}
+{% block module_documentation %}{{ imports.documentation(content.module_description | default(content.description)) }}{% endblock %}
+{% block code %}
+class {{ content.class_name }}{% if content.bases | default([]) %}({{ content.bases | join(", ") }}){% endif %}:
+    {{ imports.documentation(content.description) }}
+{% for signature in content.methods | default([]) %}
+{{ signatures.method(signature, "raise NotImplementedError") | indent(4, true) }}
+{% else %}
+    pass
+{% endfor %}
+{% endblock %}
