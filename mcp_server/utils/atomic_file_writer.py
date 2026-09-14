@@ -4,14 +4,21 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from mcp_server.core.interfaces.file_writer import IAtomicFileWriter
+from mcp_server.core.interfaces.file_writer import (
+    FileCreationCollisionError,
+    FileCreationError,
+    IArtifactFileCreator,
+    IAtomicFileWriter,
+    WriteHousekeepingIssue,
+)
 
 _MAX_REPLACE_RETRIES = 10
 _REPLACE_RETRY_SLEEP_S = 0.002
@@ -49,3 +56,76 @@ class AtomicFileWriter(IAtomicFileWriter):
                 time.sleep(_REPLACE_RETRY_SLEEP_S)
         if last_exc is not None:
             raise last_exc
+
+
+class CreateOnlyFileWriter(IArtifactFileCreator):
+    """Create one UTF-8 artifact without replacing an existing target."""
+
+    def create_text(self, path: Path, content: str) -> tuple[WriteHousekeepingIssue, ...]:
+        """Stage content, atomically create the target, then clean up staging."""
+        target = Path(path)
+        staging = target.parent / f".{uuid.uuid4().hex}.staging"
+        payload = content.encode("utf-8")
+
+        owned_staging = False
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            descriptor = os.open(
+                staging,
+                os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0),
+                0o666,
+            )
+            owned_staging = True
+            try:
+                written = os.write(descriptor, payload)
+                if written != len(payload):
+                    raise OSError(
+                        f"short staging write: expected {len(payload)} bytes, wrote {written}"
+                    )
+            except OSError:
+                with contextlib.suppress(OSError):
+                    os.close(descriptor)
+                raise
+            os.close(descriptor)
+        except OSError as exc:
+            housekeeping = self._cleanup(staging, owned=owned_staging)
+            raise FileCreationError(
+                "write_staging",
+                self._reason(exc),
+                str(exc),
+                housekeeping=housekeeping,
+            ) from exc
+
+        try:
+            os.link(staging, target)
+        except FileExistsError as exc:
+            housekeeping = self._cleanup(staging, owned=True)
+            raise FileCreationCollisionError(target, housekeeping=housekeeping) from exc
+        except OSError as exc:
+            housekeeping = self._cleanup(staging, owned=True)
+            raise FileCreationError(
+                "create",
+                self._reason(exc),
+                str(exc),
+                housekeeping=housekeeping,
+            ) from exc
+
+        return self._cleanup(staging, owned=True)
+
+    @staticmethod
+    def _reason(exc: OSError) -> Literal["permission_denied", "io_error"]:
+        return "permission_denied" if isinstance(exc, PermissionError) else "io_error"
+
+    @staticmethod
+    def _cleanup(
+        path: Path,
+        *,
+        owned: bool,
+    ) -> tuple[WriteHousekeepingIssue, ...]:
+        if not owned:
+            return ()
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            return (WriteHousekeepingIssue(path=path, message=str(exc)),)
+        return ()

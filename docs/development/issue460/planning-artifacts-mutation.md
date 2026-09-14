@@ -1099,6 +1099,7 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
+- `mcp_server/services/artifact_target_resolver.py`
 - `mcp_server/core/interfaces/execution.py`
 - `mcp_server/execution/content_input.py`
 - `tests/mcp_server/integration/execution/test_content_input.py`
@@ -1106,7 +1107,10 @@ Previously introduced paths revisited in this cycle:
 
 Independent QA identified a missing preparation-stage fact required by DI-04 §7.1.
 The user's standing authorization for bounded QA corrections covers preserving allocation
-versus write failure at the existing scratch boundary and checking its existing propagation.
+versus write failure and factual rollback-cleanup failure at the existing scratch boundary,
+and checking their existing propagation without inventing an adapter invocation.
+Preserve the already-resolved early-collision path in the standard exception filename field
+so the mutation consumer can report it without parsing diagnostic text.
 No execution policy, adapter protocol, startup activation, or public behavior changes.
 Keep the corresponding rows in `planning-path-ownership.md` aligned with this bounded revisit.
 

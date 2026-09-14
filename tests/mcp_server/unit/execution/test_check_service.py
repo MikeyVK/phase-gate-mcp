@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
@@ -136,6 +137,7 @@ def compose(
     file_content: bool = False,
     write_bytes: Callable[[Path, bytes], int] = Path.write_bytes,
     profile_id: str = "renamed",
+    remove_tree: Callable[[Path], None] = shutil.rmtree,
 ) -> tuple[CheckService, CheckSelector, RecordingRuntime]:
     names = tuple(f"check_{index}" for index in range(len(outcomes)))
     config = ChecksConfig.model_validate(
@@ -163,7 +165,9 @@ def compose(
     )
     catalog = AdapterCatalog(checks=(binding,), tests=(), fixes=())
     runtime = RecordingRuntime(outcomes)
-    scratch = FileContentScratch(root / "scratch", fresh_id=lambda: "one", write_bytes=write_bytes)
+    scratch = FileContentScratch(
+        root / "scratch", fresh_id=lambda: "one", write_bytes=write_bytes, remove_tree=remove_tree
+    )
     service = CheckService(config, catalog, runtime, ContentInputPreparer(scratch), root)
     selector = CheckSelector(
         config, catalog, ScopeResolver(FileScopePaths(root), EmptyBranch(), EmptyBranch())

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Literal
@@ -76,5 +77,5 @@ class ArtifactTargetResolver:
         output_path = (PurePosixPath(directory) / file_name).as_posix()
         observed = self._paths.resolve(output_path)
         if observed.exists:
-            raise FileExistsError(output_path)
+            raise FileExistsError(errno.EEXIST, "Artifact target already exists", output_path)
         return ArtifactTarget(path=observed.path, output_path=output_path)

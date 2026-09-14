@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generic, Protocol, TypeVar
+from typing import Generic, Literal, Protocol, TypeVar
 
 from mcp_server.config.schemas.adapter_manifest import (
     CheckCapability,
@@ -120,6 +120,21 @@ class OwnedScratchFile:
 
     directory: Path
     input_path: Path
+
+
+class ScratchPreparationError(OSError):
+    """A filesystem failure while allocating or writing validation scratch data."""
+
+    def __init__(
+        self,
+        phase: Literal["allocation", "write"],
+        message: str,
+        *,
+        cleanup: tuple[Path, str] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.phase = phase
+        self.cleanup = cleanup
 
 
 class ContentScratchFiles(Protocol):

@@ -716,7 +716,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `.pgmcp/template_suite/commit/context.schema.json` | [CY051](planning-artifacts-mutation.md#cy051) | CY051 |
 | `.pgmcp/template_suite/commit/template.jinja2` | [CY051](planning-artifacts-mutation.md#cy051) | CY051 |
 | `mcp_server/config/schemas/artifact_locations.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052 |
-| `mcp_server/services/artifact_target_resolver.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052 |
+| `mcp_server/services/artifact_target_resolver.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052, CY053 |
 | `tests/mcp_server/unit/services/test_artifact_target_resolver.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052 |
 | `mcp_server/services/scaffold_operation.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053 |
 | `tests/mcp_server/integration/test_scaffold_operation_v3.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053 |

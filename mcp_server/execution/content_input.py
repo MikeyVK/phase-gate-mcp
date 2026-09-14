@@ -24,6 +24,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterBinding,
     ContentScratchFiles,
     OwnedScratchFile,
+    ScratchPreparationError,
 )
 from mcp_server.execution.models import (
     InvocationCancelled,
@@ -153,11 +154,24 @@ class FileContentScratch:
         _validate_component(allocation_id, "scratch_id")
         directory = self._validation_root / allocation_id
         input_path = directory / basename
-        directory.mkdir(parents=True, exist_ok=False)
+        try:
+            directory.mkdir(parents=True, exist_ok=False)
+        except OSError as exc:
+            raise ScratchPreparationError("allocation", str(exc)) from exc
         try:
             written = self._write_bytes(input_path, content)
             if written != len(content):
                 raise OSError("scratch_write_incomplete")
+        except OSError as exc:
+            cleanup: tuple[Path, str] | None = None
+            try:
+                self._remove_tree(directory)
+            except OSError as rollback_error:
+                exc.add_note(f"scratch_rollback_failed: {rollback_error}")
+                cleanup = (directory, str(rollback_error))
+            except BaseException as rollback_error:
+                exc.add_note(f"scratch_rollback_failed: {rollback_error}")
+            raise ScratchPreparationError("write", str(exc), cleanup=cleanup) from exc
         except BaseException as exc:
             try:
                 self._remove_tree(directory)
