@@ -1,0 +1,18 @@
+adapter_id: commitlint
+version: 1.0.0
+files:
+  - check.py
+  - package.json
+  - requirements.txt
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      message:
+        inputs:
+          - content
+        requires_file: false

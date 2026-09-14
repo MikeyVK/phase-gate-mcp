@@ -1,0 +1,2 @@
+phase-gate-mcp==2.0.0
+# Node.js and npm prerequisites are supplied through package.json.
