@@ -23,7 +23,7 @@
     "references": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}},
     "approved_strategy": {"$ref": "#/$defs/Prose"},
     "expected_results": {"$ref": "#/$defs/Prose"},
-    "evidence": {"type": "array", "items": {"$ref": "#/$defs/Evidence"}},
+    "evidence": {"type": "array", "items": {"$ref": "../shared/definitions/evidence.schema.json"}},
     "consumers": {"type": "array", "items": {"$ref": "#/$defs/Consumer"}},
     "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
     "assumptions": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
@@ -31,19 +31,6 @@
   "$defs": {
     "Text": {"type": "string", "minLength": 1},
     "Prose": {"type": "string"},
-    "Evidence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["claim", "observation", "sources"],
-      "properties": {
-        "claim": {"$ref": "#/$defs/Text"},
-        "observation": {"$ref": "#/$defs/Prose"},
-        "sources": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}},
-        "invocation": {"$ref": "#/$defs/Prose"},
-        "observed_result": {"$ref": "#/$defs/Prose"},
-        "observed_at": {"type": "string", "format": "date-time", "description": "ISO date-time spelling with optional fractional seconds and Z or numeric offset; Calendar validity is not certified by this schema.", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})(?![\\s\\S])"}
-      }
-    },
     "Consumer": {
       "type": "object",
       "additionalProperties": false,

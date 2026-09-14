@@ -41,20 +41,38 @@ def validation_report(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredT
 
 
 def test_minimal_validation_report_is_authored_without_invented_outcome(
-    validation_report: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path,
+    validation_report: DeliveredTemplate,
+    markdown_package: MarkdownPackage,
+    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {"title": "Validation basis"}
     before = deepcopy(context)
     output = validation_report.renderer.render(
-        "validation_report", context, validation_report.provenance,
+        "validation_report",
+        context,
+        validation_report.provenance,
     )
     assert context == before
     assert output.count("\n# ") == 1 and "# Validation basis" in output
     for absent in (
-        "## Issue Number", "## Cycle", "## Validation Status", "## Scope",
-        "## Obligations", "## Evidence", "## Demonstration", "## Preservation",
-        "## Containment", "## Failures", "## Caveats", "## Risks", "## Deferred Work",
-        "**Status:**", "PASS", "FAIL", "PARTIAL", "Initial draft",
+        "## Issue Number",
+        "## Cycle",
+        "## Validation Status",
+        "## Scope",
+        "## Obligations",
+        "## Evidence",
+        "## Demonstration",
+        "## Preservation",
+        "## Containment",
+        "## Failures",
+        "## Caveats",
+        "## Risks",
+        "## Deferred Work",
+        "**Status:**",
+        "PASS",
+        "FAIL",
+        "PARTIAL",
+        "Initial draft",
     ):
         assert absent not in output
     header = ArtifactHeaderReader().read(output)
@@ -66,7 +84,9 @@ def test_minimal_validation_report_is_authored_without_invented_outcome(
 
 
 def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings(
-    validation_report: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path,
+    validation_report: DeliveredTemplate,
+    markdown_package: MarkdownPackage,
+    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary validation",
@@ -132,28 +152,65 @@ def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings
     }
     before = deepcopy(context)
     output = validation_report.renderer.render(
-        "validation_report", context, validation_report.provenance,
+        "validation_report",
+        context,
+        validation_report.provenance,
     )
     assert context == before
     for supplied in (
-        "#42", "CY045", "PARTIAL", "Validate the delivered boundary.",
-        "DRAFT — awaiting review", "1.2", "2026-09-14", "Caller-authored validation purpose.",
-        "Included surface", "Excluded surface", "Read the approved contract",
-        "Observed native result.", "Review ordering", "Unobtained evidence",
-        "Another follow-up", "Explicit later responsibility",
-        "Preserve accepted calls", "Call trace", "Observed caller evidence.",
-        "The adapter retained the contract", "A second authored observation", "caller-command --case", "Exit 0",
-        "2026-09-14T10:20:30.125+02:00", "Caller-visible demonstration.",
-        "Accepted behavior remains unchanged.", "Unrelated paths were untouched.",
-        "One expected limitation", "Native duration varies", "Migration risk", "Unresolved risk",
-        "Retain the bridge until consumers move", "Temporary duplication",
-        "Remove the compatibility bridge", "Deferred detail", "A later owner controls cleanup", "Plan",
+        "#42",
+        "CY045",
+        "PARTIAL",
+        "Validate the delivered boundary.",
+        "DRAFT — awaiting review",
+        "1.2",
+        "2026-09-14",
+        "Caller-authored validation purpose.",
+        "Included surface",
+        "Excluded surface",
+        "Read the approved contract",
+        "Observed native result.",
+        "Review ordering",
+        "Unobtained evidence",
+        "Another follow-up",
+        "Explicit later responsibility",
+        "Preserve accepted calls",
+        "Call trace",
+        "Observed caller evidence.",
+        "The adapter retained the contract",
+        "A second authored observation",
+        "caller-command --case",
+        "Exit 0",
+        "2026-09-14T10:20:30.125+02:00",
+        "Caller-visible demonstration.",
+        "Accepted behavior remains unchanged.",
+        "Unrelated paths were untouched.",
+        "One expected limitation",
+        "Native duration varies",
+        "Migration risk",
+        "Unresolved risk",
+        "Retain the bridge until consumers move",
+        "Temporary duplication",
+        "Remove the compatibility bridge",
+        "Deferred detail",
+        "A later owner controls cleanup",
+        "Plan",
     ):
         assert supplied in output, supplied
     for heading in (
-        "## Issue Number", "## Cycle", "## Validation Status", "## Scope",
-        "## Obligations", "## Evidence", "## Demonstration", "## Preservation",
-        "## Containment", "## Failures", "## Caveats", "## Risks", "## Deferred Work",
+        "## Issue Number",
+        "## Cycle",
+        "## Validation Status",
+        "## Scope",
+        "## Obligations",
+        "## Evidence",
+        "## Demonstration",
+        "## Preservation",
+        "## Containment",
+        "## Failures",
+        "## Caveats",
+        "## Risks",
+        "## Deferred Work",
     ):
         assert heading in output
     for heading in (
@@ -199,13 +256,27 @@ def test_validation_report_explicit_empty_sections_remain_visible(
         "deferred_work": [],
     }
     output = validation_report.renderer.render(
-        "validation_report", context, validation_report.provenance,
+        "validation_report",
+        context,
+        validation_report.provenance,
     )
     headings = [line for line in output.splitlines() if line.startswith("## ")]
     for heading in (
-        "Purpose", "Scope In", "Scope Out", "Prerequisites", "Related Documents",
-        "Scope", "Obligations", "Evidence", "Demonstration", "Preservation",
-        "Containment", "Failures", "Caveats", "Risks", "Deferred Work",
+        "Purpose",
+        "Scope In",
+        "Scope Out",
+        "Prerequisites",
+        "Related Documents",
+        "Scope",
+        "Obligations",
+        "Evidence",
+        "Demonstration",
+        "Preservation",
+        "Containment",
+        "Failures",
+        "Caveats",
+        "Risks",
+        "Deferred Work",
     ):
         assert headings.count(f"## {heading}") == 1
     assert not any(line.startswith("- ") for line in output.splitlines())
@@ -224,17 +295,34 @@ def test_validation_report_rejects_legacy_shapes_and_invalid_carriers(
         {**base, "issue_number": True},
         {**base, "cycle": None},
         {**base, "scope": None},
-        {**base, "deferred_work": [{"description": "Work", "rationale": "", "tracking_state": "new"}]},
+        {
+            **base,
+            "deferred_work": [{"description": "Work", "rationale": "", "tracking_state": "new"}],
+        },
         {**base, "issue_number": "42"},
         {**base, "issue_number": None},
         {**base, "validation_status": "PASSING"},
         {**base, "last_updated": "2026-09-14\n"},
-        {**base, "evidence": [{"claim": "Claim", "observation": "", "sources": [],
-                               "observed_at": "yesterday"}]},
-        {**base, "evidence": [{"claim": "Claim", "observation": "", "sources": [
-            {"target": "run.log"}]}]},
-        {**base, "obligations": [{"obligation": "Proof", "evidence": [
-            {"label": "Trace", "target": "trace.md"}], "unexpected": True}]},
+        {
+            **base,
+            "evidence": [
+                {"claim": "Claim", "observation": "", "sources": [], "observed_at": "yesterday"}
+            ],
+        },
+        {
+            **base,
+            "evidence": [{"claim": "Claim", "observation": "", "sources": [{"target": "run.log"}]}],
+        },
+        {
+            **base,
+            "obligations": [
+                {
+                    "obligation": "Proof",
+                    "evidence": [{"label": "Trace", "target": "trace.md"}],
+                    "unexpected": True,
+                }
+            ],
+        },
         {**base, "deferred_work": [{"description": "Cleanup"}]},
         {**base, "workflow": "validation"},
         {**base, "status": ""},
@@ -242,5 +330,7 @@ def test_validation_report_rejects_legacy_shapes_and_invalid_carriers(
     for context in invalid:
         with pytest.raises(ContextError):
             validation_report.renderer.render(
-                "validation_report", context, validation_report.provenance,
+                "validation_report",
+                context,
+                validation_report.provenance,
             )

@@ -713,10 +713,17 @@ New exact paths:
 - `.pgmcp/template_suite/validation_report/policy.yaml`
 - `.pgmcp/template_suite/validation_report/context.schema.json`
 - `.pgmcp/template_suite/validation_report/template.jinja2`
+- `.pgmcp/template_suite/shared/definitions/evidence.schema.json`
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/research/context.schema.json`
+
+Independent QA confirmed actual reuse of Evidence by Research and Validation Report under
+DI-03 sections 7.2 and 7.3. Under the standing authorization for proportional corrections,
+CY045 extracts that closed record with unchanged field and date semantics into a shared definition.
+The two planning ledgers record only this ownership amendment; no runtime or broader schema changes.
+R-CY045 is `3f233e720a333f1f7a4140176a6294f81e4a5679`; restore only this cycle's owned inverse diff.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
