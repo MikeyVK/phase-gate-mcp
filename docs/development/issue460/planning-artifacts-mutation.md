@@ -1204,6 +1204,12 @@ New exact paths:
 Previously introduced paths revisited in this cycle:
 
 - `mcp_server/schemas/mutation_outputs.py`
+- `mcp_server/services/scaffold_operation.py`
+
+Independent QA approved exposing its existing pure mutation-check projection and
+execution-blocker helpers for the safe-edit consumer. Preserve their behavior and reuse
+the existing validation reducer; do not duplicate the check fact graph or move execution
+projection into output schemas. This bounded revisit uses the user's standing authorization.
 
 - The listed legacy review-only paths retain their current constructors, runtime reads and normal registration. New behavior is exercised through the separately named final internal components; no V2/V3 ToolAssembly union, public alias, fallback reader or constructor mode.
 

@@ -718,7 +718,7 @@ The supplement does not authorize general project/state management cleanup. The 
 | `mcp_server/config/schemas/artifact_locations.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052 |
 | `mcp_server/services/artifact_target_resolver.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052, CY053 |
 | `tests/mcp_server/unit/services/test_artifact_target_resolver.py` | [CY052](planning-artifacts-mutation.md#cy052) | CY052 |
-| `mcp_server/services/scaffold_operation.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053 |
+| `mcp_server/services/scaffold_operation.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053, CY055 |
 | `tests/mcp_server/integration/test_scaffold_operation_v3.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053 |
 | `mcp_server/schemas/mutation_outputs.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053, CY055, CY057, CY058 |
 | `mcp_server/services/edit_construction.py` | [CY054](planning-artifacts-mutation.md#cy054) | CY054 |
