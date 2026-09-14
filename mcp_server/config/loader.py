@@ -25,6 +25,7 @@ from mcp_server.config.schemas import (
     QualityConfig,
     ScaffoldMetadataConfig,
     ScopeConfig,
+    TestsConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -149,6 +150,12 @@ class ConfigLoader:
         """Read required checks.yaml without activating or reading legacy quality config."""
         return self._load_declaration(
             ChecksConfig, self.config_root / "checks.yaml", description="checks configuration"
+        )
+
+    def load_tests_config(self) -> TestsConfig:
+        """Read required test bindings without native dependency probing."""
+        return self._load_declaration(
+            TestsConfig, self.config_root / "tests.yaml", description="tests configuration"
         )
 
     def _load_declaration(

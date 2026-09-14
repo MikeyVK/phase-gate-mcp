@@ -54,10 +54,14 @@ from mcp_server.config.schemas.scaffold_metadata_config import (
     ScaffoldMetadataConfig,
 )
 from mcp_server.config.schemas.scope_config import ScopeConfig
+from mcp_server.config.schemas.tests_config import TestBinding, TestId, TestsConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig, WorkflowTemplate
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 
 __all__ = [
+    "TestBinding",
+    "TestId",
+    "TestsConfig",
     "ArtifactDefinition",
     "ArtifactLoggingConfig",
     "ArtifactRegistryConfig",
