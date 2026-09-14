@@ -131,7 +131,14 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `.pgmcp/template_suite/shared/definitions/python.schema.json`
+- `.pgmcp/template_suite/python_pydantic_dto/context.schema.json`
+
+Independent QA identified these two bounded prerequisites to keep the Pydantic field-name
+restriction authoritative in the shared ModelField consumed by both families. This is
+authorized under the standing proportional QA-correction rule; it preserves DTO acceptance
+and adds no runtime semantics. R-CY033 is `957b1db23d16e06673ebfaba7ca3481842651917`;
+both existing files were clean and their cycle-owned inverse diff is the recovery route.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
