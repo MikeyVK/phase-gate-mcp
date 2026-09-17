@@ -126,7 +126,6 @@ artifacts:
     default_root: "docs/architecture"
     additional_roots:
       - "docs/reference"
-      - "docs/manuals"
   commit:
     default_root: ".pgmcp/temp/artifacts"
   design:
@@ -136,7 +135,6 @@ artifacts:
   generic_doc:
     default_root: "docs"
     additional_roots:
-      - "docs/development"
       - "docs/reference"
       - "docs/manuals"
   issue:
@@ -149,39 +147,26 @@ artifacts:
     default_root: ".github/PULL_REQUEST_TEMPLATE"
   pytest_integration_test:
     default_root: "tests/mcp_server/integration"
-    additional_roots:
-      - "tests/integration"
   pytest_unit_test:
     default_root: "tests/mcp_server/unit"
     additional_roots:
       - "tests/backend"
-      - "tests/unit"
   python_adapter:
     default_root: "mcp_server/adapters"
-    additional_roots:
-      - "backend/adapters"
   python_class:
     default_root: "mcp_server"
-    additional_roots:
-      - "backend"
   python_protocol:
     default_root: "mcp_server/core/interfaces"
-    additional_roots:
-      - "backend/interfaces"
   python_pydantic_config:
     default_root: "mcp_server/config/schemas"
-    additional_roots:
-      - "mcp_server/schemas"
   python_pydantic_dto:
     default_root: "mcp_server/dtos"
     additional_roots:
       - "backend/dtos"
-      - "mcp_server/schemas"
   python_worker:
     default_root: "mcp_server/workers"
     additional_roots:
       - "backend/workers"
-      - "mcp_server/execution"
   reference:
     default_root: "docs/reference"
     additional_roots:
@@ -204,23 +189,31 @@ artifacts:
 3. **Root Normalization & Distinctness:** `default_root` and entries in `additional_roots` must be distinct workspace-relative paths. Duplicate roots within an entry are rejected with `duplicate_artifact_location_root`.
 4. **Target Resolution:** Explicit targets at or below admitted roots require no force; targets outside admitted roots require `force_target`.
 
-### 2.4 Reconciliation with Legacy `project_structure.yaml` and Owner Placement Choices
+### 2.4 Strict Reconciliation with Legacy `project_structure.yaml` (Preservation Option 1)
 
-Under Design §3.2 and QA reconciliation review, the V3 `artifacts.yaml` configuration reconciles with legacy `project_structure.yaml` (`.pgmcp/config/project_structure.yaml`) while eliminating obsolete conventions:
+Under Design §3.2, QA review, and owner authorization (Option 1: strict preservation), the V3 `artifacts.yaml` configuration translates only genuinely permitted owner rules from `.pgmcp/config/project_structure.yaml`, strictly honoring disabled routes and eliminating obsolete or unverified paths:
 
-| Template ID | V3 `default_root` | V3 `additional_roots` | Legacy `project_structure.yaml` Alignment | Owner Placement Rationale |
+| Template ID | V3 `default_root` | V3 `additional_roots` | Legacy `project_structure.yaml` Status | Owner Preservation Rationale |
 |---|---|---|---|---|
-| `python_pydantic_dto` | `mcp_server/dtos` | `backend/dtos`, `mcp_server/schemas` | Aligns with `backend/dtos` (line 20) and `mcp_server/schemas` | New canonical location is `mcp_server/dtos`; preserves legacy roots |
-| `python_worker` | `mcp_server/workers` | `backend/workers`, `mcp_server/execution` | Aligns with `backend/workers` (line 28) and execution runner | New canonical location is `mcp_server/workers`; preserves legacy roots |
-| `python_pydantic_config` | `mcp_server/config/schemas` | `mcp_server/schemas` | Aligns with `mcp_server/config/schemas` (line 74) | Canonical config schema root |
-| `commit` | `.pgmcp/temp/artifacts` | *(none)* | Strictly cleans up obsolete `.phase-gate` | Purged `.phase-gate/temp/artifacts` per design-mutation-validation.md:141 |
-| `pytest_unit_test` | `tests/mcp_server/unit` | `tests/backend`, `tests/unit` | Aligns with `tests/backend` (line 120) and legacy `tests/unit` | Preserves legacy test roots alongside canonical server tests |
-| `python_adapter` | `mcp_server/adapters` | `backend/adapters` | Aligns with `backend/adapters` (line 34) | Preserves backend adapter root |
-| `python_protocol` | `mcp_server/core/interfaces` | `backend/interfaces` | Aligns with `backend/interfaces` (line 39) | Preserves backend interface root |
-| `python_class` | `mcp_server` | `backend` | Aligns with `backend` (line 8) | Preserves generic backend root |
-| `reference` | `docs/reference` | `docs/architecture`, `docs/manuals`, `docs/coding_standards` | Aligns with `docs/architecture`, `manuals`, `coding_standards` | Full documentation taxonomy preservation |
-| `research` / `planning` / `design` | `docs/development` | `docs` | Aligns with `docs/development` (line 125) and `docs` root | Development lifecycle documentation |
-| `generic_doc` | `docs` | `docs/development`, `docs/reference`, `docs/manuals` | Complete documentation root support | General documentation scaffolding |
+| `python_pydantic_dto` | `mcp_server/dtos` | `backend/dtos` | `backend/dtos` allows `dto` (line 24) | New canonical server root; preserves allowed backend root. `mcp_server/schemas` omitted (reserved for schema). |
+| `python_worker` | `mcp_server/workers` | `backend/workers` | `backend/workers` allows `worker` (line 32) | New canonical server root; preserves allowed backend root. `mcp_server/execution` omitted (not in owner config). |
+| `python_adapter` | `mcp_server/adapters` | *(none)* | `backend/adapters` is `[] # DISABLED (issue #325)` | Strictly preserves disabled status of `backend/adapters`. |
+| `python_protocol` | `mcp_server/core/interfaces` | *(none)* | `backend/interfaces` is `[] # DISABLED (issue #325)` | Strictly preserves disabled status of `backend/interfaces`. |
+| `pytest_unit_test` | `tests/mcp_server/unit` | `tests/backend` | `tests/backend` allows `unit_test` (line 120) | Preserves real backend test root. `tests/unit` omitted (non-existent). |
+| `pytest_integration_test` | `tests/mcp_server/integration` | *(none)* | `tests/mcp_server/integration` allows `integration_test` (line 111) | Canonical integration test root. `tests/integration` omitted (non-existent). |
+| `python_pydantic_config` | `mcp_server/config/schemas` | *(none)* | Canonical schema configuration path | No extraneous roots. |
+| `python_class` | `mcp_server` | *(none)* | `mcp_server` general code root (line 54) | No extraneous roots. |
+| `commit` | `.pgmcp/temp/artifacts` | *(none)* | Central temporary artifact fallback root | Obsolete `.phase-gate/temp/artifacts` purged per design contract. |
+| `architecture` | `docs/architecture` | `docs/reference` | Both allow `architecture` (lines 144, 160) | `docs/manuals` omitted (only allows generic, reference). |
+| `generic_doc` | `docs` | `docs/reference`, `docs/manuals` | Allowed in `docs`, `reference`, `manuals` (lines 134, 161, 174) | `docs/development` omitted (only allows research, planning, design). |
+| `reference` | `docs/reference` | `docs/architecture`, `docs/manuals`, `docs/coding_standards` | All explicitly allow `reference` (lines 145, 175, 187) | Preserves documented reference taxonomy. |
+| `research` | `docs/development` | `docs` | Both allow `research` (lines 129, 151) | Preserves development lifecycle documentation roots. |
+| `planning` | `docs/development` | `docs` | Both allow `planning` (lines 130, 152) | Preserves development lifecycle documentation roots. |
+| `design` | `docs/development` | `docs` | Both allow `design` (lines 131, 153) | Preserves development lifecycle documentation roots. |
+| `issue` | `.github/ISSUE_TEMPLATE` | *(none)* | Standard GitHub issue template location | Standard repository convention. |
+| `pr` | `.github/PULL_REQUEST_TEMPLATE` | *(none)* | Standard GitHub PR template location | Standard repository convention. |
+| `typescript_dto` | `frontend/src/dtos` | *(none)* | Frontend DTO location | Standard repository convention. |
+| `validation_report` | `docs/development` | *(none)* | Validation reporting location | Standard repository convention. |
 
 ---
 
@@ -241,13 +234,13 @@ To protect against configuration drift and race conditions during rollout:
 ### 3.2 C004: `.pgmcp/config/artifacts.yaml`
 - **Role:** Workspace artifact location policy.
 - **Preimage SHA-256:** `e17c98ebd7bc03771ea0b7faab55b05b9b02b16d0b5c34cada21443c962f5157`
-- **Postimage SHA-256:** `2206dc35df61476b9d89b2887b902dc6a4e58fc3076af5ee1106140e4dd4b9d2`
+- **Postimage SHA-256:** `2249bbc6fbcf2990606b67faaeee5a51afaff67f73707336815643a70744c94c`
 
 **Prospective Unified Diff:**
 ```diff
 --- a/.pgmcp/config/artifacts.yaml
 +++ b/.pgmcp/config/artifacts.yaml
-@@ -1,2 +1,64 @@
+@@ -1,2 +1,48 @@
 -version: 1.0.0
 -artifact_types: []
 +version: "2.0.0"
@@ -256,7 +249,6 @@ To protect against configuration drift and race conditions during rollout:
 +    default_root: "docs/architecture"
 +    additional_roots:
 +      - "docs/reference"
-+      - "docs/manuals"
 +  commit:
 +    default_root: ".pgmcp/temp/artifacts"
 +  design:
@@ -266,7 +258,6 @@ To protect against configuration drift and race conditions during rollout:
 +  generic_doc:
 +    default_root: "docs"
 +    additional_roots:
-+      - "docs/development"
 +      - "docs/reference"
 +      - "docs/manuals"
 +  issue:
@@ -279,39 +270,26 @@ To protect against configuration drift and race conditions during rollout:
 +    default_root: ".github/PULL_REQUEST_TEMPLATE"
 +  pytest_integration_test:
 +    default_root: "tests/mcp_server/integration"
-+    additional_roots:
-+      - "tests/integration"
 +  pytest_unit_test:
 +    default_root: "tests/mcp_server/unit"
 +    additional_roots:
 +      - "tests/backend"
-+      - "tests/unit"
 +  python_adapter:
 +    default_root: "mcp_server/adapters"
-+    additional_roots:
-+      - "backend/adapters"
 +  python_class:
 +    default_root: "mcp_server"
-+    additional_roots:
-+      - "backend"
 +  python_protocol:
 +    default_root: "mcp_server/core/interfaces"
-+    additional_roots:
-+      - "backend/interfaces"
 +  python_pydantic_config:
 +    default_root: "mcp_server/config/schemas"
-+    additional_roots:
-+      - "mcp_server/schemas"
 +  python_pydantic_dto:
 +    default_root: "mcp_server/dtos"
 +    additional_roots:
 +      - "backend/dtos"
-+      - "mcp_server/schemas"
 +  python_worker:
 +    default_root: "mcp_server/workers"
 +    additional_roots:
 +      - "backend/workers"
-+      - "mcp_server/execution"
 +  reference:
 +    default_root: "docs/reference"
 +    additional_roots:
@@ -529,11 +507,11 @@ The test suite validates:
 2. `test_artifacts_location_config_validates_prospective_v3`: `ConfigLoader` and `ConfigValidator` successfully load and cross-validate prospective V3 `artifacts.yaml` against real packages.
 3. `test_stale_or_unknown_template_id_rejection`: Confirms that informal aliases (`dto`, `worker`) and unknown package IDs are strictly rejected with `ConfigError("artifact_location_template_unknown")`.
 4. `test_artifacts_location_config_rejects_obsolete_and_duplicate_roots`: Confirms that legacy V1 `artifacts.yaml` (`artifact_types: []`) and duplicate roots within a single entry are strictly rejected.
-5. `test_artifacts_compare_before_write_and_drift_protection`: Tests `apply_compare_before_write` for `artifacts.yaml`, proving successful write on match and unchanged bytes on preimage drift.
+5. `test_artifacts_checked_replacement_and_drift_protection`: Tests `CheckedFileWriter` replacement for `artifacts.yaml`, proving successful write on match, concurrency race rejection with `OriginalChangedError`, and unchanged target bytes.
 6. `test_pyproject_pyright_exact_hunk_and_mismatch_refusal`: Verifies prospective deletion of `[tool.pyright]`, TOML parseability, compare-before-write application, and drift refusal with unchanged target bytes.
 7. `test_pyrightconfig_native_settings_preservation`: Confirms that `pyrightconfig.json` natively declares all compiler flags (`reportFunctionMemberAccess: false`, `3.11`, `Windows`, `strict`).
 8. `test_presentation_yaml_clean_break_patch_and_drift_refusal`: Verifies full V3 clean break patch: `run_quality_gates` and `auto_fix` absence, presence of `apply_fixes`, `run_checks`, and V3 `run_tests`, validation against DTO models via `validate_presentation_alignment`, and compare-before-write drift refusal with unchanged target bytes.
-9. `test_version_compare_before_write_and_preservation`: Verifies byte preservation and drift refusal for `.version`.
+9. `test_version_checked_replacement_and_preservation`: Verifies byte preservation and `CheckedFileWriter` drift refusal for `.version`.
 10. `test_live_configuration_remains_unmutated_in_cy070`: Verifies that live `.pgmcp/config/artifacts.yaml`, `pyproject.toml`, `presentation.yaml`, and `.version` remain unmodified on disk during CY070.
 11. `test_prospective_configuration_hashes_and_drift_protection`: Asserts exact SHA-256 pre/postimages for all 4 configs.
 
@@ -564,3 +542,4 @@ In case of rollback:
 | 1.0 | 2026-09-17 | @imp implementer | Initial release: configuration source register, artifacts location policy, pyproject deletion hunk, and test verification. |
 | 2.0 | 2026-09-17 | @imp implementer | Remediation: update artifacts.yaml to all 19 real template suite packages, reject informal aliases, add prospective diffs and SHA-256 pre/postimages for all 4 configs, and document drift protection / mismatch refusal. |
 | 3.0 | 2026-09-17 | @imp implementer | Full clean-break remediation: unify artifacts.yaml postimage and hash byte-identically with test constant; expand presentation patch to complete PGMCP 3.0 clean break (retire run_quality_gates and auto_fix, add apply_fixes, run_checks, and V3 run_tests with DTO alignment proof); verify atomic compare-before-write procedure with demonstrable unchanged bytes on drift. |
+| 4.0 | 2026-09-17 | @imp implementer | Option 1 remediation: strictly reconcile placement roots with owner policy in project_structure.yaml (retire disabled backend/adapters and backend/interfaces, remove non-existent roots), update postimage hash to 2249bbc6fbcf2990606b67faaeee5a51afaff67f73707336815643a70744c94c, and fix evidence test names. |

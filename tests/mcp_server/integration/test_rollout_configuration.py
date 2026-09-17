@@ -42,14 +42,13 @@ from mcp_server.presenters.text_presenter import TextPresenter, validate_present
 from mcp_server.schemas.execution_outputs import RunChecksOutput
 from mcp_server.utils.atomic_file_writer import CheckedFileWriter, OriginalChangedError
 
-# Authoritative prospective V3 artifacts.yaml reconciled with project_structure.yaml
+# Authoritative prospective V3 artifacts.yaml strictly reconciled with project_structure.yaml
 PROSPECTIVE_V3_ARTIFACTS_YAML = """version: "2.0.0"
 artifacts:
   architecture:
     default_root: "docs/architecture"
     additional_roots:
       - "docs/reference"
-      - "docs/manuals"
   commit:
     default_root: ".pgmcp/temp/artifacts"
   design:
@@ -59,7 +58,6 @@ artifacts:
   generic_doc:
     default_root: "docs"
     additional_roots:
-      - "docs/development"
       - "docs/reference"
       - "docs/manuals"
   issue:
@@ -72,39 +70,26 @@ artifacts:
     default_root: ".github/PULL_REQUEST_TEMPLATE"
   pytest_integration_test:
     default_root: "tests/mcp_server/integration"
-    additional_roots:
-      - "tests/integration"
   pytest_unit_test:
     default_root: "tests/mcp_server/unit"
     additional_roots:
       - "tests/backend"
-      - "tests/unit"
   python_adapter:
     default_root: "mcp_server/adapters"
-    additional_roots:
-      - "backend/adapters"
   python_class:
     default_root: "mcp_server"
-    additional_roots:
-      - "backend"
   python_protocol:
     default_root: "mcp_server/core/interfaces"
-    additional_roots:
-      - "backend/interfaces"
   python_pydantic_config:
     default_root: "mcp_server/config/schemas"
-    additional_roots:
-      - "mcp_server/schemas"
   python_pydantic_dto:
     default_root: "mcp_server/dtos"
     additional_roots:
       - "backend/dtos"
-      - "mcp_server/schemas"
   python_worker:
     default_root: "mcp_server/workers"
     additional_roots:
       - "backend/workers"
-      - "mcp_server/execution"
   reference:
     default_root: "docs/reference"
     additional_roots:
@@ -737,7 +722,7 @@ class TestRolloutConfiguration:
             "e17c98ebd7bc03771ea0b7faab55b05b9b02b16d0b5c34cada21443c962f5157"
         )
         assert artifacts_post_sha == (
-            "2206dc35df61476b9d89b2887b902dc6a4e58fc3076af5ee1106140e4dd4b9d2"
+            "2249bbc6fbcf2990606b67faaeee5a51afaff67f73707336815643a70744c94c"
         )
         assert pyproject_pre_sha == (
             "e91b9079e91c2c7ea4c43433c0e635053533696016dfb16160624c994e3cd66f"
