@@ -92,7 +92,7 @@ from mcp_server.presenters.text_presenter import (
     validate_presentation_alignment,
 )
 from mcp_server.resources.base import BaseResource
-from mcp_server.resources.cache import CachedResponseResource
+from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.resources.standards import StandardsResource
 from mcp_server.resources.status import StatusResource
@@ -793,6 +793,7 @@ class ServerBootstrapper:
         resources.append(StandardsResource())
         resources.append(StatusResource())
         resources.append(CachedResponseResource(cache=managers.response_cache))
+        resources.append(CacheReadGuideResource())
 
         if self._settings.github.token:
             resources.append(GitHubIssuesResource())

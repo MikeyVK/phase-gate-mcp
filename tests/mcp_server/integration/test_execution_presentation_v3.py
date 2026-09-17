@@ -36,8 +36,7 @@ from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.presenters.response_presenter import ResponsePresenter
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
-from mcp_server.resources.cache import CachedResponseResource
-from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 
@@ -174,22 +173,49 @@ def test_alignment_rejects_structured_union(config: PresentationConfig) -> None:
         )
 
 
-@pytest.mark.parametrize("length", [8, 20_000], ids=["short", "truncated"])
-def test_shipped_cache_hint_stays_complete_within_budget(
+@pytest.mark.asyncio
+@pytest.mark.parametrize("length", [8, 20_000], ids=["small", "large"])
+async def test_shipped_cache_hint_stays_complete_within_budget(
     config: PresentationConfig,
     length: int,
+    tmp_path: Path,
 ) -> None:
     presenter = _presenter(config, ToolPresentationConfig(template_success="{title}"))
-    run_id = "c" * 32
-    hint = config.global_settings.next_instruction_texts["uri_reference"].format(run_id=run_id)
-    text = presenter.present_text(
-        "projection",
-        {"success": True, "title": "x" * length},
-        cache_pub=CachePublication(run_id=run_id),
+    operation = Projection(
+        success=True,
+        title="Brief summary",
+        count=0,
+        labels=None,
+        status=None,
+        rows=(),
+        detail="x" * length,
     )
-    assert hint in text
+    cache = ResponseCacheManager()
+    publication = cache.put("projection", operation)
+    text = presenter.present_text("projection", operation, cache_pub=publication)
+    assert f"pgmcp://cache/runs/{publication.run_id}" in text
+    complete = await CachedResponseResource(cache).read(f"pgmcp://cache/runs/{publication.run_id}")
+    assert publication.size_chars == len(complete)
+    paged = len(complete) > config.global_settings.cache_read_budget_chars
+    guide_uri = CacheReadGuideResource.uri_pattern
+    assert (guide_uri in text) is paged
     assert len(text.encode("utf-8")) <= config.global_settings.max_text_response_bytes
-    assert f"pgmcp://cache/runs/{run_id}?offset=0&limit=" in hint
-    for fact in ("next_offset", "null", "run_id", "sha256", "total_chars", "UTF-8", "Unicode"):
-        assert fact in hint
-    assert "smaller" in hint and "mutating" in hint and "read-only" in hint
+    assert len(text) < 200
+    assert "sha256" not in text
+    if paged:
+        server = MCPServer(
+            Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+            tools=[],
+            resources=[CacheReadGuideResource()],
+            publisher=cache,
+            presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
+        )
+        readback = await server.server.request_handlers[ReadResourceRequest](
+            ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl(guide_uri)))
+        )
+        assert isinstance(readback.root, ReadResourceResult)
+        content = readback.root.contents[0]
+        assert isinstance(content, TextResourceContents)
+        assert content.text == (
+            Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"
+        ).read_text(encoding="utf-8")

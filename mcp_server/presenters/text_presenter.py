@@ -356,6 +356,15 @@ class TextPresenter(ITextPresenter):
                     "*(Full details available in the structured JSON payload. "
                     f"View resource: pgmcp://cache/runs/{placeholder_run_id})*"
                 )
+            if (
+                cache_pub is not None
+                and cache_pub.success
+                and cache_pub.size_chars is not None
+                and cache_pub.size_chars > self.global_config.cache_read_budget_chars
+            ):
+                pagination_reference = self.get_next_instruction_texts().get("pagination_reference")
+                if pagination_reference:
+                    cache_reference = f"{cache_reference}\n{pagination_reference}"
             if cache_reference not in text:
                 text = f"{text}\n\n{cache_reference}"
 

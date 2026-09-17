@@ -153,15 +153,12 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 #### Reading large cached plans
 
-The normal text presentation stays compact. Read the referenced resource for full planning data. When a client truncates large resource results, use the same URI with `?offset=0&limit=6000`. This optional read-window protocol applies to cached outputs of every tool; it does not introduce a second planning store.
-
-The JSON window contains `run_id`, `offset`, `total_chars`, `sha256`, `text` and `next_offset`. Both parameters are required: offset is nonnegative, limit is 1–12000; unknown/duplicate parameters and URI fragments are rejected. Offsets count Unicode codepoints, not bytes or JavaScript UTF-16 code units.
-
-1. Follow the returned `next_offset` on the same base URI. Require matching run ID, full-content SHA-256 and total length on every page, and contiguous offsets.
-2. Join each `text` in order until `next_offset=null`. Verify complete codepoint length and SHA-256 of the joined UTF-8 bytes; then parse the joined JSON. Compare its actual `planning_deliverables` with the authoritative plan.
-3. EOF permits an empty page; an offset beyond EOF fails. If a page is truncated, retry with a smaller limit. On cache loss or changed hash, stop: call `get_project_plan` again and reconstruct from zero using its new URI. Never mix runs.
-
-The cache is transient. Durability comes from a fresh public query of persisted planning, not from keeping an old run URI alive. Reads without window parameters retain the complete JSON response.
+The normal text presentation retains a short cache URI. Only complete cached results
+larger than the configured read budget also link to `pgmcp://docs/cache-reading`.
+That MCP resource serves the packaged [cache-reading reference](../../../mcp_server/resources/cache_reading.md),
+including the unchanged window, integrity, truncation, and safe retry protocol.
+It is available without a repository checkout. For an expired cached plan, repeat
+the read-only `get_project_plan` query and use its new run URI.
 
 #### Example Usage
 
@@ -591,3 +588,4 @@ Phase state is **synchronized** with git branch operations:
 | 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
+

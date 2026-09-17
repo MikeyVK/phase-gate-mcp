@@ -131,11 +131,16 @@ class GlobalPresentationConfig(BaseModel):
     notes: GlobalNotesConfig = Field(default_factory=GlobalNotesConfig)
     failures: dict[str, str] = Field(default_factory=dict)
     max_text_response_bytes: int = Field(default=8_000, gt=0)
+    cache_read_budget_chars: int = Field(default=6_000, gt=0)
 
     @model_validator(mode="after")
     def validate_text_budget(self) -> GlobalPresentationConfig:
         """Ensure the byte ceiling can always retain the mandatory cache tail."""
-        uri_template = self.next_instruction_texts.get("uri_reference", "")
+        uri_template = "\n".join(
+            text
+            for key in ("uri_reference", "pagination_reference")
+            if (text := self.next_instruction_texts.get(key, ""))
+        )
         try:
             cache_reference = uri_template.format(run_id="x" * 32)
         except (KeyError, ValueError) as exc:

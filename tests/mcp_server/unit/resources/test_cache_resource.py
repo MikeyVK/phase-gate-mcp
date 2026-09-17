@@ -76,6 +76,7 @@ async def test_windows_reassemble_exact_unicode_snapshot_and_detect_mutation() -
     uri = f"pgmcp://cache/runs/{publication.run_id}"
     resource = CachedResponseResource(cache)
     complete = await resource.read(uri)
+    assert publication.size_chars == len(complete)
     expected_hash = hashlib.sha256(complete.encode("utf-8")).hexdigest()
     fragments: list[str] = []
     offset = 0
