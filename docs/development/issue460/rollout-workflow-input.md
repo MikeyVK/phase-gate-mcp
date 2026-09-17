@@ -3,7 +3,7 @@
 # Issue 460 Rollout Workflow Input: Nineteen Workflow Carriers and Phase Semantics
 
 **Status:** IMPLEMENTATION EVIDENCE — REVIEW REQUESTED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-09-17  
 **Primary Package:** DI-07 §§7.1–7.2, 10  
 **Cycle:** CY068 (Workflow carriers and phase semantics)  
@@ -101,134 +101,501 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 ### 5.1 Checksums
 - **Target File:** `.pgmcp/config/contracts.yaml`
 - **Preimage SHA-256:** `9610d38bf943c687e8c200b626259b3f107b69d4e9d0a40e44f38c91f8194d10`
-- **Postimage SHA-256:** `dd62d93ff05bd62eb0b0dc7e4bee4d4dc0a142d8d2cb8d910816358e6cbc0f40`
+- **Postimage SHA-256:** `0c358a2d3170dd9a0758238a27e952b1cd646d08d771672df184cbee4e80f5d0`
 
 ### 5.2 Exact Patch (Unified Diff)
 ```diff
 --- a/.pgmcp/config/contracts.yaml
 +++ b/.pgmcp/config/contracts.yaml
-@@ -51,2 +51,2 @@
+@@ -47,11 +47,13 @@
+                 "No special migration policy; preserve supported contracts" is valid when explicit.
+                 Stop if scope, evidence, or strategy remains ambiguous.
+ 
+-            [ ] Scaffold the research artifact with
 -                scaffold_artifact(artifact_type='research', name='research', context={...}).
-+                scaffold_artifact(artifact_type='research', name='research').
-@@ -120,2 +120,2 @@
+-                Apply the relevant DOCUMENTATION_STANDARD boundaries and add concrete source links.
+-                Self-check that claims are evidenced, test blast radius is explicit, and no design
+-                or planning commitment leaked into Research.
++            [ ] Obtain the current Research context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Apply the relevant
++                DOCUMENTATION_STANDARD boundaries and add concrete source links. Self-check that
++                claims are evidenced, test blast radius is explicit, and no design or planning
++                commitment leaked into Research.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='research',
+                 message='Research findings (#N)').
+@@ -116,11 +118,13 @@
+             [ ] Stop for a human decision if the Approved Strategy is missing, evidence makes it
+                 unsound, or a major design choice cannot be resolved from approved constraints.
+ 
+-            [ ] Scaffold the design artifact with
 -                scaffold_artifact(artifact_type='design', name='design', context={...}).
-+                scaffold_artifact(artifact_type='design', name='design').
-@@ -192,4 +192,3 @@
+-                Record the chosen direction, rejected alternatives, production and test design,
+-                validation obligations, risks, and planning consequences with source links.
+-                Self-check phase and document boundaries.
++            [ ] Obtain the current Design context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Record the chosen
++                direction, rejected alternatives, production and test design, validation
++                obligations, risks, and planning consequences with source links. Self-check phase
++                and document boundaries.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='design',
+                 message='Design for #N').
+@@ -188,11 +192,13 @@
+ 
+             [ ] Stop if Design or Approved Strategy is ambiguous, contradicted, or requires change.
+ 
+-            [ ] Scaffold the plan with
 -                scaffold_artifact(artifact_type='planning', name='planning', context={...}).
 -                Apply Documentation Standard boundaries and keep document cycles identical to the
 -                structured payload. Save them with save_planning_deliverables(issue_number=N,
 -                cycles={...}, deliverables=[...]) after verifying IDs, ordering, and dependencies.
-+                scaffold_artifact(artifact_type='planning', name='planning').
-+                Apply Documentation Standard boundaries and keep document cycles identical to the
-+                structured payload. Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs, ordering, and dependencies.
-@@ -260,2 +259,2 @@
++            [ ] Obtain the current Planning context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Apply Documentation
++                Standard boundaries and keep document cycles identical to the structured payload.
++                Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs,
++                ordering, and dependencies.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='planning',
+                 message='Planning for #N').
+@@ -257,7 +263,7 @@
+                   and commit with sub_phase='refactor' only when cleanup changed files
+ 
+             [ ] Use run_tests(path='<focused scope>') and
 -                run_quality_gates(scope='files', files=[...]) proportionally. Do not run the full
-+                run_checks(scope='files', files=[...]) proportionally. Do not run the full
-@@ -316,2 +315,2 @@
++                run_checks(scope='files') proportionally on affected files. Do not run the full
+                 suite here; Validation owns the workspace-wide run.
+ 
+             [ ] Perform a producer self-check against cycle deliverables, direct diff evidence,
+@@ -313,7 +319,7 @@
+                 high-risk production/test surface to observable evidence.
+ 
+             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
 -                gates with run_quality_gates(scope='branch'). Reuse nothing stale; if a check
 +                gates with run_checks(scope='branch'). Reuse nothing stale; if a check
-@@ -328,3 +327,3 @@
+                 fails, preserve exact evidence and report FAIL rather than weakening criteria.
+ 
+             [ ] Add targeted validation only for a material gap not covered by the full checks.
+@@ -324,12 +330,13 @@
+             [ ] Identify residual risk, limitations, and deferred work explicitly, including
+                 findings that Ready must transfer for @co triage.
+ 
+-            [ ] Create the validation artifact if absent with
 -                scaffold_artifact(artifact_type='validation_report', name='validation',
 -                context={...}); otherwise update the existing phase artifact.
-+                scaffold_artifact(artifact_type='validation_report', name='validation');
-+                otherwise update the existing phase artifact.
-@@ -530,2 +529,2 @@
+-                Record scope, exact outcomes, deliverable mapping, Design and Approved Strategy
+-                alignment, demonstration/fallback, failures, caveats, and deferred work.
+-                Do not claim independent QA approval.
++            [ ] Create the validation artifact if absent: obtain the context schema via
++                scaffold_schema if not already available, scaffold with
++                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                with safe_edit_file; otherwise update the existing phase artifact. A valid scaffold
++                is not phase completion. Record scope, exact outcomes, deliverable mapping, Design
++                and Approved Strategy alignment, demonstration/fallback, failures, caveats, and
++                deferred work. Do not claim independent QA approval.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='validation',
+                 message='Validation for #N').
+@@ -441,8 +448,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
+@@ -517,11 +525,13 @@
+                 defect is not evidenced, root cause remains materially ambiguous, issue scope
+                 must change, or strategy is undecided.
+ 
+-            [ ] Scaffold the research artifact with
 -                scaffold_artifact(artifact_type='research', name='research', context={...}).
-+                scaffold_artifact(artifact_type='research', name='research').
-@@ -599,2 +598,2 @@
+-                Apply relevant Documentation Standard boundaries; link evidence and state
+-                reproduction, root cause, blast radius, corrected behavior, risks, and strategy.
+-                Keep fix design and planning out.
++            [ ] Obtain the current Research context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Apply relevant
++                Documentation Standard boundaries; link evidence and state reproduction, root
++                cause, blast radius, corrected behavior, risks, and strategy. Keep fix design and
++                planning out.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='research',
+                 message='Research findings (#N)').
+@@ -587,11 +597,13 @@
+             [ ] Stop for human decision if root cause, corrected behavior, or Approved Strategy is
+                 missing, contradicted, or made unsound by new evidence.
+ 
+-            [ ] Scaffold the design artifact with
 -                scaffold_artifact(artifact_type='design', name='design', context={...}).
-+                scaffold_artifact(artifact_type='design', name='design').
-@@ -671,4 +670,3 @@
+-                Record chosen correction, rejected alternatives, production/test design,
+-                preservation obligations, validation evidence, and planning consequences.
+-                Self-check phase and document boundaries.
++            [ ] Obtain the current Design context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Record chosen
++                correction, rejected alternatives, production/test design, preservation
++                obligations, validation evidence, and planning consequences. Self-check phase and
++                document boundaries.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='design',
+                 message='Design for #N').
+@@ -659,11 +671,12 @@
+ 
+             [ ] Stop if Root Cause, Design, corrected behavior, or Approved Strategy conflicts.
+ 
+-            [ ] Scaffold Planning with
 -                scaffold_artifact(artifact_type='planning', name='planning', context={...}).
--                Apply Documentation Standard boundaries and keep document cycles identical to the
--                structured payload. Save them with save_planning_deliverables(issue_number=N,
--                cycles={...}, deliverables=[...]) after verifying IDs, ordering, and dependencies.
-+                scaffold_artifact(artifact_type='planning', name='planning').
-+                Apply Documentation Standard boundaries and keep document cycles identical to the
-+                structured payload. Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs, ordering, and dependencies.
-@@ -739,2 +737,2 @@
--                run_quality_gates(scope='files', files=[...]) proportionally. Do not run the full
-+                run_checks(scope='files', files=[...]) proportionally. Do not run the full
-@@ -795,2 +793,2 @@
--                gates with run_quality_gates(scope='branch'). Reuse nothing stale; if a check
-+                gates with run_checks(scope='branch'). Reuse nothing stale; if a check
-@@ -807,3 +805,3 @@
+-                Keep document cycles identical to save_planning_deliverables(issue_number=N,
+-                cycles={...}, deliverables=[...]); verify IDs, ordering, dependencies, regression
+-                value, and cleanup ownership before saving.
++            [ ] Obtain the current Planning context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Keep document cycles
++                identical to save_planning_deliverables(issue_number=N, ...); verify IDs, ordering,
++                dependencies, regression value, and cleanup ownership before saving.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='planning',
+                 message='Planning for #N').
+@@ -730,7 +743,7 @@
+                   sub_phase='refactor' only when files changed
+ 
+             [ ] Use run_tests(path='<focused scope>') and
+-                run_quality_gates(scope='files', files=[...]) proportionally. Validation owns the
++                run_checks(scope='files') proportionally on affected files. Validation owns the
+                 full suite and branch-wide gates.
+ 
+             [ ] Self-check the diff against root cause, corrected behavior, cycle deliverables,
+@@ -786,7 +799,7 @@
+                 preservation constraints, and high-risk production/test surfaces to evidence.
+ 
+             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-                gates with run_quality_gates(scope='branch'). Preserve exact failures and report
++                gates with run_checks(scope='branch'). Preserve exact failures and report
+                 FAIL; do not weaken criteria or reinterpret the plan.
+ 
+             [ ] Explicitly rerun the durable regression/reproduction scope if the full suite does
+@@ -796,12 +809,13 @@
+ 
+             [ ] Identify residual risks, limitations, and deferred work for Ready/@co triage.
+ 
+-            [ ] Create Validation if absent with
 -                scaffold_artifact(artifact_type='validation_report', name='validation',
--                context={...}); otherwise update the existing phase artifact.
-+                scaffold_artifact(artifact_type='validation_report', name='validation');
-+                otherwise update the existing phase artifact.
-@@ -1009,2 +1007,2 @@
+-                context={...}); otherwise update it. Record exact full-suite/gate/regression
+-                results, root-cause and corrected-behavior proof, deliverable/design/strategy
+-                mapping, demonstration/fallback, failures, caveats, and deferred work.
+-                Do not claim independent QA approval.
++            [ ] Create Validation if absent: obtain the context schema via scaffold_schema if not
++                already available, scaffold with
++                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                with safe_edit_file; otherwise update it. A valid scaffold is not phase completion.
++                Record exact full-suite/gate/regression results, root-cause and corrected-behavior
++                proof, deliverable/design/strategy mapping, demonstration/fallback, failures,
++                caveats, and deferred work. Do not claim independent QA approval.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='validation',
+                 message='Validation for #N').
+@@ -911,8 +925,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
+@@ -988,7 +1003,7 @@
+                   files changed
+ 
+             [ ] Use run_tests(path='<focused scope>') and
+-                run_quality_gates(scope='files', files=[...]) proportionally. Validation owns the
++                run_checks(scope='files') proportionally on affected files. Validation owns the
+                 full suite and branch-wide gates.
+ 
+             [ ] Self-check failure correction, containment, rollback exposure when relevant,
+@@ -1042,7 +1057,7 @@
+                 slice exit criteria, and high-risk production/test surfaces to evidence.
+ 
+             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-                gates with run_quality_gates(scope='branch'). Preserve exact failures and report
++                gates with run_checks(scope='branch'). Preserve exact failures and report
+                 FAIL rather than weakening criteria. Explicitly rerun the focused hotfix regression
+                 if the full suite does not expose corrected behavior.
+ 
+@@ -1051,11 +1066,13 @@
+                 reviewable fallback. Identify deferred work for Ready/@co triage; keep nonessential
+                 cleanup outside the hotfix.
+ 
+-            [ ] Create Validation if absent with
+-                scaffold_artifact(artifact_type='validation_report', name='validation',
+-                context={...}); otherwise update it. Record exact tests/gates/regression evidence,
+-                correction and containment mapping, demonstration/fallback, failures, rollback
+-                notes, caveats, and deferred work. Do not claim independent QA approval.
++            [ ] Create Validation if absent: obtain the context schema via scaffold_schema if not
++                already available, scaffold with
++                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                with safe_edit_file; otherwise update it. A valid scaffold is not phase completion.
++                Record exact tests/gates/regression evidence, correction and containment mapping,
++                demonstration/fallback, failures, rollback notes, caveats, and deferred work. Do
++                not claim independent QA approval.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='validation',
+                 message='Validation for #N').
+@@ -1163,8 +1180,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
+@@ -1238,11 +1256,13 @@
+                 boundary; preserving supported behavior without a bridge is valid when explicit.
+                 Stop on scope drift, ambiguous invariants, or undecided strategy.
+ 
+-            [ ] Scaffold Research with
 -                scaffold_artifact(artifact_type='research', name='research', context={...}).
-+                scaffold_artifact(artifact_type='research', name='research').
-@@ -1078,2 +1076,2 @@
+-                Apply Documentation Standard boundaries; link evidence and record current
+-                structure, invariants, blast radius, seams, risks, expected outcomes, and strategy.
+-                Keep target design and cycles out.
++            [ ] Obtain the current Research context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Apply Documentation
++                Standard boundaries; link evidence and record current structure, invariants, blast
++                radius, seams, risks, expected outcomes, and strategy. Keep target design and
++                cycles out.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='research',
+                 message='Research findings (#N)').
+@@ -1308,10 +1328,12 @@
+             [ ] Stop for human decision if invariants or Approved Strategy are missing/unsound, or
+                 the target necessarily changes supported behavior.
+ 
+-            [ ] Scaffold Design with
 -                scaffold_artifact(artifact_type='design', name='design', context={...}).
-+                scaffold_artifact(artifact_type='design', name='design').
-@@ -1150,4 +1148,3 @@
+-                Record target/rejected structures, preservation mapping, production/test design,
+-                transition/cleanup, validation obligations, risks, and planning consequences.
++            [ ] Obtain the current Design context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Record target/rejected
++                structures, preservation mapping, production/test design, transition/cleanup,
++                validation obligations, risks, and planning consequences.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='design',
+                 message='Design for #N').
+@@ -1378,10 +1400,12 @@
+ 
+             [ ] Stop if target Design, invariants, or Approved Strategy conflict.
+ 
+-            [ ] Scaffold Planning with
 -                scaffold_artifact(artifact_type='planning', name='planning', context={...}).
--                Apply Documentation Standard boundaries and keep document cycles identical to the
--                structured payload. Save them with save_planning_deliverables(issue_number=N,
--                cycles={...}, deliverables=[...]) after verifying IDs, ordering, and dependencies.
-+                scaffold_artifact(artifact_type='planning', name='planning').
-+                Apply Documentation Standard boundaries and keep document cycles identical to the
-+                structured payload. Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs, ordering, and dependencies.
-@@ -1218,2 +1215,2 @@
--                run_quality_gates(scope='files', files=[...]) proportionally. Do not run the full
-+                run_checks(scope='files', files=[...]) proportionally. Do not run the full
-@@ -1274,2 +1271,2 @@
--                gates with run_quality_gates(scope='branch'). Reuse nothing stale; if a check
-+                gates with run_checks(scope='branch'). Reuse nothing stale; if a check
-@@ -1286,3 +1283,3 @@
+-                Keep cycles identical to save_planning_deliverables(issue_number=N, cycles={...},
+-                deliverables=[...]); verify order, IDs, preservation, cleanup, and dependencies.
++            [ ] Obtain the current Planning context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Keep cycles identical to
++                save_planning_deliverables(issue_number=N, ...); verify order, IDs, preservation,
++                cleanup, and dependencies.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='planning',
+                 message='Planning for #N').
+@@ -1444,7 +1468,7 @@
+                   rerun focused tests and file gates, and commit sub_phase='refactor' when changed
+ 
+             [ ] Use run_tests(path='<focused scope>') and
+-                run_quality_gates(scope='files', files=[...]) proportionally. Validation owns the
++                run_checks(scope='files') proportionally on affected files. Validation owns the
+                 full suite and branch gates.
+ 
+             [ ] Self-check diff purity, responsibility/dependency direction, invariants, behavior,
+@@ -1499,7 +1523,7 @@
+                 Inspect for remnants, dependency-direction violations, and test/helper coupling.
+ 
+             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-                gates with run_quality_gates(scope='branch'). Preserve exact failure evidence and
++                gates with run_checks(scope='branch'). Preserve exact failure evidence and
+                 report FAIL rather than weakening preservation criteria.
+ 
+             [ ] Add targeted structural/characterization checks only for material proof gaps.
+@@ -1508,11 +1532,13 @@
+ 
+             [ ] Identify residual coupling, caveats, and deferred work for Ready/@co triage.
+ 
+-            [ ] Create Validation if absent with
 -                scaffold_artifact(artifact_type='validation_report', name='validation',
--                context={...}); otherwise update the existing phase artifact.
-+                scaffold_artifact(artifact_type='validation_report', name='validation');
-+                otherwise update the existing phase artifact.
-@@ -1488,2 +1485,2 @@
--                scaffold_artifact(artifact_type='research', name='research', context={...}).
-+                scaffold_artifact(artifact_type='research', name='research').
-@@ -1556,2 +1553,2 @@
--                run_quality_gates(scope='files', files=[...]) proportionally. Do not run the full
-+                run_checks(scope='files', files=[...]) proportionally. Do not run the full
-@@ -1612,2 +1609,2 @@
--                gates with run_quality_gates(scope='branch'). Reuse nothing stale; if a check
-+                gates with run_checks(scope='branch'). Reuse nothing stale; if a check
-@@ -1624,3 +1621,3 @@
--                scaffold_artifact(artifact_type='validation_report', name='validation',
--                context={...}); otherwise update the existing phase artifact.
-+                scaffold_artifact(artifact_type='validation_report', name='validation');
-+                otherwise update the existing phase artifact.
-@@ -1826,2 +1823,2 @@
--                scaffold_artifact(artifact_type='research', name='research', context={...}).
-+                scaffold_artifact(artifact_type='research', name='research').
-@@ -1895,2 +1892,2 @@
--                scaffold_artifact(artifact_type='planning', name='planning', context={...}).
-+                scaffold_artifact(artifact_type='planning', name='planning').
-@@ -1965,4 +1962,3 @@
--                scaffold_artifact(artifact_type='design', name='design', context={...}).
--                Apply Documentation Standard boundaries and keep document cycles identical to the
--                structured payload. Save them with save_planning_deliverables(issue_number=N,
--                cycles={...}, deliverables=[...]) after verifying IDs, ordering, and dependencies.
-+                scaffold_artifact(artifact_type='design', name='design').
-+                Apply Documentation Standard boundaries and keep document cycles identical to the
-+                structured payload. Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs, ordering, and dependencies.
-@@ -2175,4 +2171,3 @@
--                scaffold_artifact(artifact_type='planning', name='planning', context={...}).
--                Apply Documentation Standard boundaries and keep document cycles identical to the
--                structured payload. Save them with save_planning_deliverables(issue_number=N,
--                cycles={...}, deliverables=[...]) after verifying IDs, ordering, and dependencies.
-+                scaffold_artifact(artifact_type='planning', name='planning').
-+                Apply Documentation Standard boundaries and keep document cycles identical to the
-+                structured payload. Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs, ordering, and dependencies.
-@@ -2320,2 +2315,2 @@
--                run_quality_gates(scope='files', files=[...]) proportionally. Do not run the full
-+                run_checks(scope='files', files=[...]) proportionally. Do not run the full
-@@ -2376,2 +2371,2 @@
--                gates with run_quality_gates(scope='branch'). Reuse nothing stale; if a check
-+                gates with run_checks(scope='branch'). Reuse nothing stale; if a check
-@@ -2388,3 +2383,3 @@
--                scaffold_artifact(artifact_type='validation_report', name='validation',
--                context={...}); otherwise update the existing phase artifact.
-+                scaffold_artifact(artifact_type='validation_report', name='validation');
-+                otherwise update the existing phase artifact.
+-                context={...}); otherwise update it. Record exact suite/gate results, deliverable
+-                and cleanup mapping, invariant/behavior/design/strategy alignment, structural
+-                checks, failures, demonstration/fallback, risks, and deferred work.
++            [ ] Create Validation if absent: obtain the context schema via scaffold_schema if not
++                already available, scaffold with
++                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                with safe_edit_file; otherwise update it. A valid scaffold is not phase completion.
++                Record exact suite/gate results, deliverable and cleanup mapping,
++                invariant/behavior/design/strategy alignment, structural checks, failures,
++                demonstration/fallback, risks, and deferred work.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='validation',
+                 message='Validation for #N').
+@@ -1621,8 +1647,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
+@@ -1695,12 +1722,11 @@
+                 outcome, review proof, and consistency risks.
+                 Do not hide implementation or redesign work in the plan.
+ 
+-            [ ] Call scaffold_schema(artifact_type='planning'), then scaffold and complete
+-                the Planning artifact with schema-complete evidence:
+-                scaffold_artifact(artifact_type='planning', name='planning',
+-                context={...}).
+-                Verify boundary, source mapping, dependencies, review criteria,
+-                and Documentation Standard compliance.
++            [ ] Obtain the current Planning context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Verify boundary, source
++                mapping, dependencies, review criteria, and Documentation Standard compliance.
+ 
+             [ ] Commit with git_add_or_commit(workflow_phase='planning',
+                 message='Planning for #N').
+@@ -1819,8 +1845,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
+@@ -1956,7 +1983,7 @@
+                 stale terms, missed consumers, and unsupported claims.
+             [ ] After final implementation changes run once:
+                 - run_tests(scope='full')
+-                - run_quality_gates(scope='branch', verbose=True)
++                - run_checks(scope='branch', verbose=True)
+                 Read both cached resources. Add narrow checks only for a material gap;
+                 do not duplicate fresh evidence.
+             [ ] Explain failures directly. Do not accept stale/unexplained broad results
+@@ -2059,8 +2086,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
+@@ -2130,13 +2158,14 @@
+                 Obtain and capture human Approved Strategy.
+                 Stop if the epic must be narrowed, split, reframed, or lacks a decision.
+ 
+-            [ ] Call scaffold_schema(artifact_type='research'), then
+-                scaffold_artifact(artifact_type='research', name='research',
+-                context={...}) with schema-complete evidence. Complete Research with
+-                initiative framing, candidate workstreams, blast radius, dependencies,
+-                shared proof obligations,
+-                assumptions/risks, Approved Strategy, and expected Planning inputs.
+-                Keep child issue creation, selected decomposition, design, and execution out.
++            [ ] Obtain the current Research context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Complete Research with
++                initiative framing, candidate workstreams, blast radius, dependencies, shared
++                proof obligations, assumptions/risks, Approved Strategy, and expected Planning
++                inputs. Keep child issue creation, selected decomposition, design, and execution
++                out.
+ 
+             [ ] Verify evidence traceability, boundary discipline, and applicable
+                 Documentation Standard compliance. Commit with
+@@ -2190,12 +2219,12 @@
+                 Bounded discovery, when useful, must be neutral, source-citing,
+                 uncertainty-bearing, producer-verified, and non-authoritative.
+ 
+-            [ ] Call scaffold_schema(artifact_type='planning'), then
+-                scaffold_artifact(artifact_type='planning', name='planning',
+-                context={...}) with schema-complete evidence. Verify complete
+-                Research/strategy traceability, non-overlapping child ownership,
+-                executable dependencies,
+-                and no hidden Design or implementation work.
++            [ ] Obtain the current Planning context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Verify complete
++                Research/strategy traceability, non-overlapping child ownership, executable
++                dependencies, and no hidden Design or implementation work.
+ 
+             [ ] Present the decomposition and external mutations to the human.
+                 After explicit confirmation, create the child issues with create_issue
+@@ -2261,13 +2290,13 @@
+                 findings/uncertainty, exclusions, and stop conditions; verify output.
+                 Producer-owned review cannot return a verdict or drive progression.
+ 
+-            [ ] Call scaffold_schema(artifact_type='design'), then
+-                scaffold_artifact(artifact_type='design', name='design',
+-                context={...}) with schema-complete evidence. Verify
+-                Research/Planning/strategy traceability, child usability,
+-                architecture/test quality, coordination
+-                consequences, and applicable Documentation Standard compliance.
+-                Commit with git_add_or_commit(workflow_phase='design',
++            [ ] Obtain the current Design context schema via scaffold_schema if not already
++                available. Create the initial document with
++                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                safe_edit_file. A valid scaffold is not phase completion. Verify
++                Research/Planning/strategy traceability, child usability, architecture/test
++                quality, coordination consequences, and applicable Documentation Standard
++                compliance. Commit with git_add_or_commit(workflow_phase='design',
+                 message='Design for #N').
+ 
+             [ ] Stop with the outcome-neutral review index below.
+@@ -2404,8 +2433,9 @@
+                 recommended follow-up, and existing issue reference or @co triage need.
+                 Record "None identified" when the search finds none.
+ 
+-            [ ] Scaffold the PR body:
+-                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
++            [ ] Obtain the PR context schema via scaffold_schema if not already available.
++                Scaffold the PR body with
++                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
+                 Include delivered scope, exact verification evidence, closure claims,
+                 residual risks, deferred work, tracking state, and links to primary artifacts.
+                 Use only supported claims; stop if scope or closure intent is ambiguous.
 ```
 
 ---
@@ -237,7 +604,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 
 ### 6.1 DOCFLOW-E01 Evidence
 - **Automated Test:** `tests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_isolated_patched_contracts_loading_and_docflow_e01`
-- **Result:** PASS (24 passed)
+- **Result:** PASS
 - **Observations:**
   - Patched `contracts.yaml` loads cleanly via `ConfigLoader(config_dir).load_contracts_config()`.
   - Pydantic model validation passes completely.
@@ -245,20 +612,21 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
   - `pr_allowed_phase == "ready"` is preserved.
   - Obsolete `context=` and `run_quality_gates` strings are completely absent.
   - V3 tool names (`run_checks`, `run_tests`, `safe_edit_file`, `scaffold_artifact`) are present in expected phases.
-  - Postimage hash matches `dd62d93ff05bd62eb0b0dc7e4bee4d4dc0a142d8d2cb8d910816358e6cbc0f40`.
+  - Postimage hash matches `0c358a2d3170dd9a0758238a27e952b1cd646d08d771672df184cbee4e80f5d0`.
 
 ### 6.2 DOCFLOW-E02 Evidence
 - **Automated Test:** `tests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02`
 - **Result:** PASS
 - **Observations:**
-  - Verified that all nineteen workflow variants' required semantic concepts (evidence, consumers, risks, invariants, reproduction, root cause, test design, work units, obligations, demonstration, caveats) map directly to exposed properties in the live public schemas (`research`, `design`, `planning`, `validation_report`).
-  - No workflow requires invented fields or unauthorized schema modifications.
+  - Verified that all four underlying document carrier templates (`research`, `design`, `planning`, `validation_report`) render cleanly without Jinja errors when supplied with representative semantic payloads covering the 19 workflow variants.
+  - Scaffolded outputs contain valid Markdown section structure and represent the essential meaning without invented fields.
 
 ### 6.3 Discovery Tool Integration Evidence
 - **Automated Test:** `tests/mcp_server/unit/tools/test_discovery_tools.py::TestGetWorkContextC7ContractsInjection::test_c68_docflow_e01_v3_instructions_without_obsolete_syntax`
-- **Result:** PASS (46 passed)
+- **Result:** PASS
 - **Observations:**
-  - `GetWorkContextTool` returns V3 phase instructions and sub-role hints without obsolete syntax.
+  - `GetWorkContextTool` executes against the verified patched contracts configuration.
+  - Returns V3 phase instructions and sub-role hints without obsolete syntax.
   - Outcome-neutral handover templates remain intact.
 
 ---
@@ -266,6 +634,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 ## 7. Rollback (R-CY068)
 
 In case of rollback:
+- **Pre-cycle Git Commit SHA:** `a365a63ac8c482770fe2bd76542efea3b9a4afb7`
 1. Revert `docs/development/issue460/rollout-workflow-input.md` (newly introduced cycle-owned file).
 2. Revert edits to `tests/mcp_server/unit/config/test_contracts_loader.py` and `tests/mcp_server/unit/tools/test_discovery_tools.py`.
 3. Live `.pgmcp/config/contracts.yaml` was intentionally left untouched during CY068, requiring no rollback.
@@ -277,3 +646,4 @@ In case of rollback:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-17 | @imp implementer | Initial CY068 preparation: 19 workflow carriers, target diff, checksums, and DOCFLOW-E01/E02 verification evidence. |
+| 1.1 | 2026-09-17 | @imp implementer | Aligned exact patch and postimage checksum across all 7 workflows, added pre-cycle commit SHA, and verified bidirectional patch application. |

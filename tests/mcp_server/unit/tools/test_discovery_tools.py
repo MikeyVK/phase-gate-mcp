@@ -7,6 +7,7 @@ Tests for the get_work_context discovery tool.
 @dependencies: [pytest, tempfile, unittest.mock, mcp_server.tools.discovery_tools]
 """
 
+import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -30,7 +31,7 @@ from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.schemas.tool_outputs import WorkflowStateStatus
+from mcp_server.schemas.tool_outputs import GetWorkContextOutput, WorkflowStateStatus
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import GetWorkContextInput, GetWorkContextTool
 from tests.mcp_server.test_support import (
@@ -38,6 +39,7 @@ from tests.mcp_server.test_support import (
     make_phase_state_engine,
     make_project_manager,
 )
+from tests.mcp_server.unit.config.test_contracts_loader import TestCY068DocflowE01
 
 
 def make_settings(workspace_root: Path | str = ".", github_token: str | None = None) -> Settings:
@@ -1308,32 +1310,34 @@ class TestGetWorkContextC7ContractsInjection:
         writer.set_context_loaded.assert_called_once_with("feature/42-test", value=True)
 
     @pytest.mark.asyncio
-    async def test_c68_docflow_e01_v3_instructions_without_obsolete_syntax(self) -> None:
-        """DOCFLOW-E01: GetWorkContextTool emits V3 instructions without obsolete syntax."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+    async def test_c68_docflow_e01_v3_instructions_without_obsolete_syntax(
+        self, tmp_path: Path
+    ) -> None:
+        """DOCFLOW-E01: GetWorkContextTool emits V3 instructions from patched contracts.
 
-        v3_instructions = (
-            "Establish the evidence and strategy boundary for a new feature.\n\n"
-            "[ ] Scaffold the research artifact with scaffold_artifact and refine with "
-            "safe_edit_file.\n"
-            "[ ] Commit with git_add_or_commit."
+        Ensures no obsolete syntax remains.
+        """
+        root = Path(__file__).parents[4]
+        evidence_file = root / "docs" / "development" / "issue460" / "rollout-workflow-input.md"
+        assert evidence_file.exists(), "rollout-workflow-input.md must exist"
+        evidence_text = evidence_file.read_text(encoding="utf-8")
+        diff_match = re.search(
+            r"```diff\n(--- a/\.pgmcp/config/contracts\.yaml\n.+?\n)```",
+            evidence_text,
+            re.DOTALL,
         )
-        handover = (
-            "### Feature / Research Hand-over\n"
-            "#### Scope\n"
-            "#### Deliverables\n"
-            "#### Evidence\n"
-            "#### Open Work\n"
-            "#### Review Request\n"
-            "Review requested"
-        )
-        contracts = _make_c7_contracts(
-            workflow="feature",
-            phase="research",
-            sub_role="researcher",
-            phase_instructions=v3_instructions,
-            handover_template=handover,
-        )
+        assert diff_match, "Unified diff must be present in section 5.2"
+        unified_diff = diff_match.group(1)
+
+        real_contracts = root / get_default_server_root() / "config" / "contracts.yaml"
+        original_text = real_contracts.read_text(encoding="utf-8")
+        patched_text = TestCY068DocflowE01._apply_unified_diff(original_text, unified_diff)
+
+        tmp_cfg_dir = tmp_path / get_default_server_root() / "config"
+        tmp_cfg_dir.mkdir(parents=True, exist_ok=True)
+        (tmp_cfg_dir / "contracts.yaml").write_text(patched_text, encoding="utf-8")
+
+        contracts = ConfigLoader(tmp_cfg_dir).load_contracts_config()
         tool = self._make_c7_tool(contracts_config=contracts, workflow="feature", phase="research")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
@@ -1342,5 +1346,8 @@ class TestGetWorkContextC7ContractsInjection:
         assert result.sub_role_hint == "researcher"
         assert result.phase_instructions is not None
         assert "context=" not in result.phase_instructions
+        assert "scaffold_schema" in result.phase_instructions
         assert "scaffold_artifact" in result.phase_instructions
+        assert "safe_edit_file" in result.phase_instructions
+        assert "A valid scaffold is not phase completion" in result.phase_instructions
         assert "Review requested" in (result.handover_template or "")

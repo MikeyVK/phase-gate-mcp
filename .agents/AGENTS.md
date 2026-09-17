@@ -138,6 +138,10 @@ Run branch- or workspace-wide verification only at the workflow phase that owns 
 Reuse fresh evidence until later changes invalidate it. Follow the active plan for commit
 boundaries and required verification.
 
+Before committing or presenting evidence, perform a pre-commit reality check: verify whether
+tests and evidence genuinely prove the deliverable against its design and planning contract,
+or merely create shallow or tautological asserts to satisfy tooling.
+
 ---
 
 ## ⚖️ Prime Directives

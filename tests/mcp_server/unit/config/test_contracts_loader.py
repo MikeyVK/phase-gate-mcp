@@ -16,6 +16,7 @@ Unit tests for load_contracts_config (issue #271 C2)
 # Standard library
 import hashlib
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # Third-party
@@ -660,6 +661,15 @@ class TestContractsConfigRoundtrip:
         ]
 
 
+@dataclass
+class _DiffHunk:
+    old_start: int
+    old_count: int
+    new_start: int
+    new_count: int
+    lines: list[str] = field(default_factory=list)
+
+
 class TestCY068DocflowE01:
     """CY068 / DOCFLOW-E01: workflow carriers, phase ordering, and instruction validation."""
 
@@ -712,212 +722,252 @@ class TestCY068DocflowE01:
             assert phase is not None
             assert phase.instructions.phase_instructions.strip()
 
+    @staticmethod
+    def _apply_unified_diff(original: str, diff_text: str) -> str:
+        """Apply a unified diff string to an original text."""
+        orig_lines = original.splitlines(keepends=True)
+        diff_lines = diff_text.splitlines(keepends=True)
+
+        hunks: list[_DiffHunk] = []
+        current_hunk: _DiffHunk | None = None
+        for line in diff_lines:
+            if line.startswith("@@"):
+                m = re.match(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", line)
+                if m:
+                    old_start = int(m.group(1))
+                    old_count = int(m.group(2)) if m.group(2) is not None else 1
+                    new_start = int(m.group(3))
+                    new_count = int(m.group(4)) if m.group(4) is not None else 1
+                    current_hunk = _DiffHunk(
+                        old_start=old_start,
+                        old_count=old_count,
+                        new_start=new_start,
+                        new_count=new_count,
+                    )
+                    hunks.append(current_hunk)
+            elif current_hunk is not None and line.startswith(("+", "-", " ")):
+                current_hunk.lines.append(line)
+
+        # Apply hunks in reverse line order to prevent offset drift
+        hunks.sort(key=lambda h: h.old_start, reverse=True)
+        result_lines = list(orig_lines)
+        for hunk in hunks:
+            old_idx = hunk.old_start - 1
+            replacement: list[str] = []
+            old_consumed = 0
+            for hline in hunk.lines:
+                prefix = hline[0]
+                content = hline[1:]
+                if prefix == " ":
+                    old_consumed += 1
+                    replacement.append(content)
+                elif prefix == "-":
+                    old_consumed += 1
+                elif prefix == "+":
+                    replacement.append(content)
+            result_lines[old_idx : old_idx + old_consumed] = replacement
+
+        return "".join(result_lines)
+
     def test_isolated_patched_contracts_loading_and_docflow_e01(self, tmp_path: Path) -> None:
-        """DOCFLOW-E01: Patched contracts loads, preserves order and invariants without V2."""
-        real = Path(__file__).parents[4] / get_default_server_root() / "config" / "contracts.yaml"
-        original_text = real.read_text(encoding="utf-8")
+        """DOCFLOW-E01: Patch from rollout-workflow-input.md applies and loads cleanly."""
+        root = Path(__file__).parents[4]
+        evidence_file = root / "docs" / "development" / "issue460" / "rollout-workflow-input.md"
+        assert evidence_file.exists(), "rollout-workflow-input.md must exist"
+        evidence_text = evidence_file.read_text(encoding="utf-8")
 
-        # Apply target-source diff transformations:
-        # 1. Replace run_quality_gates with run_checks
-        patched = original_text.replace("run_quality_gates", "run_checks")
+        # 1. Extract Postimage SHA-256 and unified diff from markdown
+        sha_match = re.search(r"\*\*Postimage SHA-256:\*\*\s+`([a-f0-9]{64})`", evidence_text)
+        assert sha_match, "Postimage SHA-256 must be documented in section 5.1"
+        expected_postimage_sha = sha_match.group(1)
 
-        # 2. Replace obsolete scaffold_artifact invocation with context={...}
-        pattern = re.compile(
-            r"scaffold_artifact\(artifact_type=['\"](\w+)['\"],\s*"
-            r"name=['\"](\w+)['\"],\s*context=\{[^}]*\}\)"
+        diff_match = re.search(
+            r"```diff\n(--- a/\.pgmcp/config/contracts\.yaml\n.+?\n)```",
+            evidence_text,
+            re.DOTALL,
         )
-        patched = pattern.sub(r"scaffold_artifact(artifact_type='\1', name='\2')", patched)
+        assert diff_match, "Unified diff must be present in section 5.2"
+        unified_diff = diff_match.group(1)
 
-        # 3. Replace save_planning_deliverables complete payload
-        payload_multiline = (
-            "save_planning_deliverables(issue_number=N,\n"
-            "                cycles={...}, deliverables=[...])"
+        # 2. Read preimage contracts.yaml and verify preimage SHA-256
+        real_contracts = root / get_default_server_root() / "config" / "contracts.yaml"
+        content_bytes = real_contracts.read_bytes()
+        preimage_sha = hashlib.sha256(content_bytes).hexdigest()
+        assert preimage_sha == "9610d38bf943c687e8c200b626259b3f107b69d4e9d0a40e44f38c91f8194d10"
+        original_text = real_contracts.read_text(encoding="utf-8")
+
+        # 3. Apply the stored unified diff to preimage
+        patched_text = self._apply_unified_diff(original_text, unified_diff)
+        actual_postimage_sha = hashlib.sha256(patched_text.encode("utf-8")).hexdigest()
+        assert (
+            actual_postimage_sha
+            == expected_postimage_sha
+            == "0c358a2d3170dd9a0758238a27e952b1cd646d08d771672df184cbee4e80f5d0"
         )
-        patched = patched.replace(
-            payload_multiline, "save_planning_deliverables(issue_number=N, ...)"
-        )
-        patched = patched.replace(
-            "save_planning_deliverables(issue_number=N, cycles={...}, deliverables=[...])",
-            "save_planning_deliverables(issue_number=N, ...)",
-        )
 
-        # Verify patch changed content
-        assert patched != original_text
-        assert "run_quality_gates" not in patched
-        assert "context=" not in patched
+        # 4. Invariant assertions on patched text
+        assert "run_quality_gates" not in patched_text
+        assert "context=" not in patched_text
+        assert "files=[...]" not in patched_text
+        assert "cycles={...}" not in patched_text
+        assert "A valid scaffold is not phase completion" in patched_text
+        assert "scaffold_schema" in patched_text
+        assert "safe_edit_file" in patched_text
+        assert "run_checks" in patched_text
 
-        # Write to isolated test directory
-        config_dir = tmp_path / "config"
-        config_dir.mkdir(parents=True)
-        (config_dir / "contracts.yaml").write_text(patched, encoding="utf-8")
+        # 5. Write to tmp_path and load via ConfigLoader
+        tmp_cfg_dir = tmp_path / get_default_server_root() / "config"
+        tmp_cfg_dir.mkdir(parents=True, exist_ok=True)
+        (tmp_cfg_dir / "contracts.yaml").write_text(patched_text, encoding="utf-8")
 
-        # Test loading via public ConfigLoader
-        loader = ConfigLoader(config_dir)
+        loader = ConfigLoader(tmp_cfg_dir)
         patched_config = loader.load_contracts_config()
-        assert isinstance(patched_config, ContractsConfig)
+
+        # 6. Verify structural integrity and phase order preservation
+        preimage_config = ConfigLoader(real_contracts.parent).load_contracts_config()
+        assert (
+            set(patched_config.workflows)
+            == set(preimage_config.workflows)
+            == {
+                "feature",
+                "bug",
+                "refactor",
+                "chore",
+                "epic",
+                "docs",
+                "hotfix",
+            }
+        )
+        for wf_name, orig_wf in preimage_config.workflows.items():
+            patched_wf = patched_config.workflows[wf_name]
+            assert [p.name for p in patched_wf.phases] == [p.name for p in orig_wf.phases]
+            for p in patched_wf.phases:
+                assert p.instructions.phase_instructions.strip()
+                assert p.instructions.sub_role.strip()
+                assert p.instructions.handover_template and p.instructions.handover_template.strip()
+
         assert patched_config.merge_policy.pr_allowed_phase == "ready"
 
-        # Verify all 7 workflows retain phase ordering
-        original_config = ConfigLoader(real.parent).load_contracts_config()
-        for wf_name in original_config.workflows:
-            assert patched_config.get_phases(wf_name) == original_config.get_phases(wf_name)
+    def test_nineteen_workflow_variants_satisfy_docflow_e02(self, tmp_path: Path) -> None:
+        """DOCFLOW-E02: Four document carrier templates render without Jinja errors."""
+        root = Path(__file__).parents[4]
+        manager = make_artifact_manager(root)
 
-        # Verify all 19 carrier phases have non-empty instructions without obsolete syntax
-        carrier_phases = [
-            ("feature", "research"),
-            ("feature", "design"),
-            ("feature", "planning"),
-            ("feature", "validation"),
-            ("bug", "research"),
-            ("bug", "design"),
-            ("bug", "planning"),
-            ("bug", "validation"),
-            ("refactor", "research"),
-            ("refactor", "design"),
-            ("refactor", "planning"),
-            ("refactor", "validation"),
-            ("chore", "research"),
-            ("chore", "validation"),
-            ("epic", "research"),
-            ("epic", "design"),
-            ("epic", "planning"),
-            ("docs", "planning"),
-            ("hotfix", "validation"),
-        ]
-        for wf, ph in carrier_phases:
-            phase_entry = patched_config.workflows[wf].get_phase(ph)
-            instr = phase_entry.instructions.phase_instructions
-            assert "context=" not in instr
-            assert "run_quality_gates" not in instr
-            if ph == "validation":
-                assert "run_checks" in instr
-            handover = phase_entry.instructions.handover_template
-            assert handover is not None and handover.strip()
+        # 1. Research carrier (covers Feature, Bug, Refactor, Chore, Epic research semantics)
+        research_context = {
+            "title": "Representative Research Carrier",
+            "status": "APPROVED",
+            "version": "1.0",
+            "last_updated": "2026-09-17",
+            "problem_statement": (
+                "Investigate affected boundaries, reproduction context, and blast radius."
+            ),
+            "goals": [
+                "Map affected code, config, tests, docs, and consumers",
+                "Formulate viable compatibility and migration strategies",
+            ],
+            "scope_in": "Production seams, invariant preservation, and strategy options",
+            "scope_out": "Fix design, cycle sequencing, and child issue creation",
+            "approved_strategy": "Preserve supported contracts without breaking changes",
+            "expected_results": "All existing caller contracts preserved; new behavior additive",
+            "findings": "Root cause identified at interface boundary; blast radius is bounded.",
+        }
+        res_research = manager.scaffolder.scaffold(
+            artifact_type="research",
+            name="research",
+            skip_validation=True,
+            **research_context,
+        )
+        assert res_research.content
+        assert "{{" not in res_research.content
+        assert "{%" not in res_research.content
+        assert "Representative Research Carrier" in res_research.content
+        assert "Preserve supported contracts without breaking changes" in res_research.content
 
-        # Compute postimage hash
-        sha256_postimage = hashlib.sha256(patched.encode("utf-8")).hexdigest()
-        expected_postimage = "dd62d93ff05bd62eb0b0dc7e4bee4d4dc0a142d8d2cb8d910816358e6cbc0f40"
-        assert sha256_postimage == expected_postimage
+        # 2. Design carrier (covers Feature, Bug, Refactor, Epic design semantics)
+        design_context = {
+            "title": "Representative Design Carrier",
+            "status": "APPROVED",
+            "version": "1.0",
+            "last_updated": "2026-09-17",
+            "problem_statement": (
+                "Technical design resolving identified root cause and invariant constraints."
+            ),
+            "requirements_functional": [
+                "Implement clean-break tool naming",
+                "Maintain backward-compatible schema contracts",
+            ],
+            "requirements_nonfunctional": [
+                "No runtime performance degradation",
+                "Strict type-checking compliance",
+            ],
+            "decision": "Introduce narrow read-only interfaces and config-driven dispatch.",
+            "rationale": "Enforces ISP and OCP principles as required by Architecture Contract.",
+            "scope_in": "Architecture, interfaces, data flow, failure behavior, and test design",
+            "scope_out": "Cycle sequencing, production implementation code",
+        }
+        res_design = manager.scaffolder.scaffold(
+            artifact_type="design",
+            name="design",
+            skip_validation=True,
+            **design_context,
+        )
+        assert res_design.content
+        assert "{{" not in res_design.content
+        assert "{%" not in res_design.content
+        assert "Representative Design Carrier" in res_design.content
+        assert "Introduce narrow read-only interfaces" in res_design.content
 
-    def test_nineteen_workflow_variants_satisfy_docflow_e02(self) -> None:
-        """DOCFLOW-E02: Every variant expresses required meaning through DI-03 public schemas."""
-        workspace_root = Path(__file__).parents[4]
-        manager = make_artifact_manager(workspace_root)
+        # 3. Planning carrier (covers Feature, Bug, Refactor, Docs, Epic planning semantics)
+        planning_context = {
+            "title": "Representative Planning Carrier",
+            "status": "APPROVED",
+            "version": "1.0",
+            "last_updated": "2026-09-17",
+            "summary": "Decomposition of approved design into dependency-ordered work units.",
+            "cycles": [
+                {
+                    "name": "CY068",
+                    "goal": "Verify workflow carriers and phase semantics",
+                    "tests": ["test_isolated_patched_contracts_loading_and_docflow_e01"],
+                    "success_criteria": ["All tests pass, exact patch applied"],
+                }
+            ],
+            "scope_in": "Work unit breakdown, deliverables, verification, and exit criteria",
+            "scope_out": "Premature implementation changes",
+        }
+        res_planning = manager.scaffolder.scaffold(
+            artifact_type="planning",
+            name="planning",
+            skip_validation=True,
+            **planning_context,
+        )
+        assert res_planning.content
+        assert "{{" not in res_planning.content
+        assert "{%" not in res_planning.content
+        assert "Representative Planning Carrier" in res_planning.content
+        assert "CY068" in res_planning.content
 
-        for artifact_type in ("research", "design", "planning", "validation_report"):
-            schema = manager.get_context_schema(artifact_type)
-            assert schema is not None
-            assert "properties" in schema
-
-        research_props = manager.get_context_schema("research")["properties"]
-        design_props = manager.get_context_schema("design")["properties"]
-        planning_props = manager.get_context_schema("planning")["properties"]
-        validation_props = manager.get_context_schema("validation_report")["properties"]
-
-        # 1. Feature Research: Evidence, findings, expected results, strategy
-        for field in ("findings", "expected_results", "approved_strategy"):
-            assert field in research_props, f"Feature Research missing {field}"
-
-        # 2. Bug Research: Context, findings, scope_in, expected results, strategy
-        for field in (
-            "background",
-            "findings",
-            "scope_in",
-            "expected_results",
-            "approved_strategy",
-        ):
-            assert field in research_props, f"Bug Research missing {field}"
-
-        # 3. Refactor Research: Problems, findings, scope_out, strategy
-        for field in (
-            "problem_statement",
-            "findings",
-            "scope_out",
-            "approved_strategy",
-        ):
-            assert field in research_props, f"Refactor Research missing {field}"
-
-        # 4. Chore Research: Bounded objective, scope, strategy
-        for field in (
-            "problem_statement",
-            "scope_in",
-            "scope_out",
-            "approved_strategy",
-        ):
-            assert field in research_props, f"Chore Research missing {field}"
-
-        # 5. Epic Research: Workstream boundaries, prerequisites, shared strategy
-        for field in ("scope_in", "prerequisites", "approved_strategy"):
-            assert field in research_props, f"Epic Research missing {field}"
-
-        # 6. Feature Design: Requirements, decisions, options
-        for field in (
-            "requirements_functional",
-            "requirements_nonfunctional",
-            "decision",
-            "rationale",
-            "options",
-        ):
-            assert field in design_props, f"Feature Design missing {field}"
-
-        # 7. Bug Design: Smallest causal correction, decisions, constraints
-        for field in (
-            "problem_statement",
-            "decision",
-            "rationale",
-            "constraints",
-        ):
-            assert field in design_props, f"Bug Design missing {field}"
-
-        # 8. Refactor Design: Target responsibilities, decisions, key decisions
-        for field in (
-            "problem_statement",
-            "decision",
-            "rationale",
-            "key_decisions",
-        ):
-            assert field in design_props, f"Refactor Design missing {field}"
-
-        # 9. Epic Design: Cross-workstream decisions, key decisions, constraints
-        for field in ("decision", "key_decisions", "constraints"):
-            assert field in design_props, f"Epic Design missing {field}"
-
-        # 10. Feature Planning: Dependency-ordered work, cycles
-        for field in ("summary", "cycles", "dependencies"):
-            assert field in planning_props, f"Feature Planning missing {field}"
-
-        # 11. Bug Planning: Obligations and dependencies
-        for field in ("summary", "cycles", "dependencies"):
-            assert field in planning_props, f"Bug Planning missing {field}"
-
-        # 12. Refactor Planning: Responsibility moves, dependencies
-        for field in ("summary", "cycles", "dependencies"):
-            assert field in planning_props, f"Refactor Planning missing {field}"
-
-        # 13. Docs Planning: Scope, risks, cycles
-        for field in ("summary", "scope_in", "risks", "cycles"):
-            assert field in planning_props, f"Docs Planning missing {field}"
-
-        # 14. Epic Planning: Cycles, dependencies, milestones
-        for field in ("cycles", "dependencies", "milestones"):
-            assert field in planning_props, f"Epic Planning missing {field}"
-
-        # 15. Feature Validation: Title, validation status, scope
-        for field in ("title", "validation_status", "scope"):
-            assert field in validation_props, f"Feature Validation missing {field}"
-
-        # 16. Bug Validation: Issue reference, status, scope
-        for field in ("issue_number", "validation_status", "scope"):
-            assert field in validation_props, f"Bug Validation missing {field}"
-
-        # 17. Refactor Validation: Cycle, validation status, scope
-        for field in ("cycle", "validation_status", "scope"):
-            assert field in validation_props, f"Refactor Validation missing {field}"
-
-        # 18. Hotfix Validation: Issue reference, validation status, scope
-        for field in ("issue_number", "validation_status", "scope"):
-            assert field in validation_props, f"Hotfix Validation missing {field}"
-
-        # 19. Chore Validation: Validation status, scope
-        for field in ("validation_status", "scope"):
-            assert field in validation_props, f"Chore Validation missing {field}"
+        # 4. Validation Report carrier (covers Feature, Bug, Refactor, Hotfix, Chore)
+        validation_context = {
+            "title": "Representative Validation Carrier",
+            "status": "APPROVED",
+            "version": "1.0",
+            "last_updated": "2026-09-17",
+            "issue_number": 460,
+            "cycle": "CY068",
+            "validation_status": "PASS",
+            "scope": ("Workspace-wide tests and branch gates proving workflow semantics."),
+        }
+        res_validation = manager.scaffolder.scaffold(
+            artifact_type="validation_report",
+            name="validation",
+            skip_validation=True,
+            **validation_context,
+        )
+        assert res_validation.content
+        assert "{{" not in res_validation.content
+        assert "{%" not in res_validation.content
+        assert "Representative Validation Carrier" in res_validation.content
+        assert "CY068" in res_validation.content
+        assert "PASS" in res_validation.content
