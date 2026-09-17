@@ -849,9 +849,216 @@ class TestCY068DocflowE01:
         assert patched_config.merge_policy.pr_allowed_phase == "ready"
 
     def test_nineteen_workflow_variants_satisfy_docflow_e02(self, tmp_path: Path) -> None:
-        """DOCFLOW-E02: Four document carrier templates render without Jinja errors."""
+        """DOCFLOW-E02: Schema-admitted carriers preserve the 19 workflow semantic meanings.
+
+        All four physical carrier schemas/templates are exercised, with traceable assertions
+        covering the union of the nineteen workflow meanings (DI-07 §7.2). The schema-admitted
+        scaffold preserves the complete semantic union supplied through existing carrier fields;
+        final document organization and evidence expansion remain a safe_edit_file responsibility.
+        """
         root = Path(__file__).parents[4]
         manager = make_artifact_manager(root)
+
+        @dataclass(frozen=True)
+        class WorkflowObligation:
+            variant: str
+            carrier: str
+            obligations: str
+            carrier_field: str
+            sentinel: str
+
+        obligations = [
+            # Research carrier variants (DI-07 §7.2)
+            WorkflowObligation(
+                variant="Feature Research",
+                carrier="research",
+                obligations=(
+                    "Evidence, affected consumers, alternatives/risks, "
+                    "expected results and approved strategy"
+                ),
+                carrier_field="findings",
+                sentinel="[SENTINEL-FEAT-RES:evidence-consumers-alternatives-risks-results]",
+            ),
+            WorkflowObligation(
+                variant="Bug Research",
+                carrier="research",
+                obligations=(
+                    "Reproduction/occurrence context, causal evidence, "
+                    "correction boundary, expected results and strategy"
+                ),
+                carrier_field="problem_statement",
+                sentinel="[SENTINEL-BUG-RES:repro-context-causal-evidence-boundary-strategy]",
+            ),
+            WorkflowObligation(
+                variant="Refactor Research",
+                carrier="research",
+                obligations=(
+                    "Responsibility/coupling problems, preservation invariants, "
+                    "exclusions and strategy"
+                ),
+                carrier_field="scope_in",
+                sentinel="[SENTINEL-REF-RES:coupling-problems-preservation-invariants-scope]",
+            ),
+            WorkflowObligation(
+                variant="Chore Research",
+                carrier="research",
+                obligations=(
+                    "Bounded objective, scope, consumers, risks and strategy; "
+                    "persistence remains conditional"
+                ),
+                carrier_field="purpose",
+                sentinel="[SENTINEL-CHORE-RES:bounded-objective-consumers-conditional-persistence]",
+            ),
+            WorkflowObligation(
+                variant="Epic Research",
+                carrier="research",
+                obligations=(
+                    "Workstream/consumer boundaries, assumptions, dependencies, "
+                    "risks and shared strategy"
+                ),
+                carrier_field="background",
+                sentinel="[SENTINEL-EPIC-RES:workstream-boundaries-assumptions-deps-risks]",
+            ),
+            # Design carrier variants (DI-07 §7.2)
+            WorkflowObligation(
+                variant="Feature Design",
+                carrier="design",
+                obligations=(
+                    "Production responsibilities, interfaces, flow/failures, "
+                    "alternatives, test design and migration"
+                ),
+                carrier_field="requirements_functional",
+                sentinel="[SENTINEL-FEAT-DES:responsibilities-interfaces-failures-test-migration]",
+            ),
+            WorkflowObligation(
+                variant="Bug Design",
+                carrier="design",
+                obligations=(
+                    "Smallest causal correction, preserved behavior, failure behavior "
+                    "and regression evidence design"
+                ),
+                carrier_field="problem_statement",
+                sentinel="[SENTINEL-BUG-DES:smallest-causal-correction-preserved-regression-design]",
+            ),
+            WorkflowObligation(
+                variant="Refactor Design",
+                carrier="design",
+                obligations=(
+                    "Target responsibilities/interfaces, preservation, cutover/removals "
+                    "and test architecture"
+                ),
+                carrier_field="key_decisions",
+                sentinel="[SENTINEL-REF-DES:target-responsibilities-cutover-removals-test-arch]",
+            ),
+            WorkflowObligation(
+                variant="Epic Design",
+                carrier="design",
+                obligations=(
+                    "Cross-workstream interfaces, ownership, integration/failures "
+                    "and shared evidence obligations"
+                ),
+                carrier_field="options",
+                sentinel="[SENTINEL-EPIC-DES:cross-workstream-interfaces-integration-evidence]",
+            ),
+            # Planning carrier variants (DI-07 §7.2)
+            WorkflowObligation(
+                variant="Feature Planning",
+                carrier="planning",
+                obligations=(
+                    "Dependency-ordered work, deliverables, verification and exit criteria"
+                ),
+                carrier_field="summary",
+                sentinel="[SENTINEL-FEAT-PLAN:dependency-ordered-deliverables-exit-criteria]",
+            ),
+            WorkflowObligation(
+                variant="Bug Planning",
+                carrier="planning",
+                obligations=("Reproduction/regression/correction obligations and exit evidence"),
+                carrier_field="cycles.goal",
+                sentinel="[SENTINEL-BUG-PLAN:repro-regression-correction-exit-evidence]",
+            ),
+            WorkflowObligation(
+                variant="Refactor Planning",
+                carrier="planning",
+                obligations=(
+                    "Responsibility moves, preservation/removal obligations, "
+                    "dependencies and stop conditions"
+                ),
+                carrier_field="cycles.success_criteria",
+                sentinel="[SENTINEL-REF-PLAN:responsibility-moves-preservation-stop-conditions]",
+            ),
+            WorkflowObligation(
+                variant="Docs Planning",
+                carrier="planning",
+                obligations=(
+                    "Documentation scope/ownership, sources, deliverables, risks and "
+                    "verification; no invented TDD cycles"
+                ),
+                carrier_field="dependencies",
+                sentinel="[SENTINEL-DOCS-PLAN:docs-scope-sources-deliverables-no-invented-cycles]",
+            ),
+            WorkflowObligation(
+                variant="Epic Planning",
+                carrier="planning",
+                obligations=(
+                    "Child ownership, shared obligations/dependencies, acceptance "
+                    "and stop conditions"
+                ),
+                carrier_field="milestones",
+                sentinel="[SENTINEL-EPIC-PLAN:child-ownership-shared-obligations-acceptance]",
+            ),
+            # Validation Report carrier variants (DI-07 §7.2)
+            WorkflowObligation(
+                variant="Feature Validation",
+                carrier="validation_report",
+                obligations=(
+                    "Observed requirement coverage, demonstration, failures, "
+                    "caveats/risks and deferred work"
+                ),
+                carrier_field="scope",
+                sentinel="[SENTINEL-FEAT-VAL:observed-requirement-coverage-demonstration-caveats]",
+            ),
+            WorkflowObligation(
+                variant="Bug Validation",
+                carrier="validation_report",
+                obligations="Observed reproduction correction, regression and preserved behavior",
+                carrier_field="scope",
+                sentinel="[SENTINEL-BUG-VAL:observed-repro-correction-regression-preserved]",
+            ),
+            WorkflowObligation(
+                variant="Refactor Validation",
+                carrier="validation_report",
+                obligations=(
+                    "Observed structural completion/removal, invariants and "
+                    "outstanding failures/caveats"
+                ),
+                carrier_field="scope",
+                sentinel="[SENTINEL-REF-VAL:structural-completion-removal-invariants-caveats]",
+            ),
+            WorkflowObligation(
+                variant="Hotfix Validation",
+                carrier="validation_report",
+                obligations="Correction, containment, preservation and operational risks/caveats",
+                carrier_field="scope",
+                sentinel="[SENTINEL-HOTFIX-VAL:correction-containment-preservation-operational]",
+            ),
+            WorkflowObligation(
+                variant="Chore Validation",
+                carrier="validation_report",
+                obligations=(
+                    "Bounded objective coverage and proportionate observed "
+                    "evidence/risks/deferred work"
+                ),
+                carrier_field="scope",
+                sentinel="[SENTINEL-CHORE-VAL:bounded-objective-proportionate-observed-evidence]",
+            ),
+        ]
+
+        assert len(obligations) == 19
+        assert len({item.sentinel for item in obligations}) == 19
+        assert len({item.variant for item in obligations}) == 19
+
+        sentinel_map = {ob.variant: ob.sentinel for ob in obligations}
 
         # 1. Research carrier (covers Feature, Bug, Refactor, Chore, Epic research semantics)
         research_context = {
@@ -860,29 +1067,50 @@ class TestCY068DocflowE01:
             "version": "1.0",
             "last_updated": "2026-09-17",
             "problem_statement": (
-                "Investigate affected boundaries, reproduction context, and blast radius."
+                f"{sentinel_map['Bug Research']}\n"
+                "Investigate responsibility and coupling problems, reproduction context, "
+                "and workstream boundaries across affected workflows."
             ),
             "goals": [
-                "Map affected code, config, tests, docs, and consumers",
-                "Formulate viable compatibility and migration strategies",
+                "Map affected code, config, tests, docs, and consumers across workstreams",
+                "Formulate viable compatibility, migration, and containment strategies",
+                "Identify preservation invariants, assumptions, dependencies, and risks",
             ],
-            "scope_in": "Production seams, invariant preservation, and strategy options",
+            "purpose": (
+                f"{sentinel_map['Chore Research']}\n"
+                "Establish evidence-backed research covering Feature, Bug, Refactor, "
+                "Chore, and Epic obligations."
+            ),
+            "scope_in": (
+                f"{sentinel_map['Refactor Research']}\n"
+                "Production seams, invariant preservation, alternatives, and strategy options"
+            ),
             "scope_out": "Fix design, cycle sequencing, and child issue creation",
-            "approved_strategy": "Preserve supported contracts without breaking changes",
-            "expected_results": "All existing caller contracts preserved; new behavior additive",
-            "findings": "Root cause identified at interface boundary; blast radius is bounded.",
+            "background": (
+                f"{sentinel_map['Epic Research']}\n"
+                "Causal evidence and architectural seams mapped across consumers and dependencies."
+            ),
+            "findings": (
+                f"{sentinel_map['Feature Research']}\n"
+                "Alternatives evaluated with comparative risk analysis; preservation invariants "
+                "and Epic dependencies documented with causal evidence."
+            ),
+            "approved_strategy": (
+                "Preserve supported contracts without breaking changes; clean-break where required"
+            ),
+            "expected_results": (
+                "All existing caller contracts preserved; new behavior additive and verified"
+            ),
+            "timestamp": "2026-09-17T09:00Z",
+            "prerequisites": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
+            "questions_list": ["Are external consumers pinned to exact schema versions?"],
+            "references": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
+            "related_docs": ["docs/development/issue460/design-workflow-documentation.md"],
         }
         res_research = manager.scaffolder.scaffold(
             artifact_type="research",
-            name="research",
-            skip_validation=True,
             **research_context,
         )
-        assert res_research.content
-        assert "{{" not in res_research.content
-        assert "{%" not in res_research.content
-        assert "Representative Research Carrier" in res_research.content
-        assert "Preserve supported contracts without breaking changes" in res_research.content
 
         # 2. Design carrier (covers Feature, Bug, Refactor, Epic design semantics)
         design_context = {
@@ -891,32 +1119,61 @@ class TestCY068DocflowE01:
             "version": "1.0",
             "last_updated": "2026-09-17",
             "problem_statement": (
-                "Technical design resolving identified root cause and invariant constraints."
+                f"{sentinel_map['Bug Design']}\n"
+                "Technical design resolving root cause, public interfaces, and constraints."
             ),
             "requirements_functional": [
-                "Implement clean-break tool naming",
-                "Maintain backward-compatible schema contracts",
+                (
+                    f"{sentinel_map['Feature Design']}: "
+                    "Target responsibilities, public interfaces, and data/control flow"
+                ),
+                "Failure behavior and cross-workstream integration obligations",
+                "Smallest causal correction preserving existing behavior and cutover/removals",
             ],
             "requirements_nonfunctional": [
-                "No runtime performance degradation",
-                "Strict type-checking compliance",
+                "No runtime performance degradation; strict type-checking compliance",
+                "Durable regression evidence design and test architecture",
             ],
             "decision": "Introduce narrow read-only interfaces and config-driven dispatch.",
             "rationale": "Enforces ISP and OCP principles as required by Architecture Contract.",
+            "purpose": (
+                "Comprehensive design covering Feature, Bug, Refactor, and Epic semantics."
+            ),
             "scope_in": "Architecture, interfaces, data flow, failure behavior, and test design",
             "scope_out": "Cycle sequencing, production implementation code",
+            "constraints": ["Backward compatibility for public tool parameters"],
+            "options": [
+                {
+                    "name": "Config-driven dispatch with narrow read-only interfaces",
+                    "description": (
+                        f"{sentinel_map['Epic Design']}\n"
+                        "Cross-workstream design with explicit failure behavior, "
+                        "test architecture, and clean-break cutover."
+                    ),
+                    "pros": [
+                        "Clear separation of concerns",
+                        "Deterministic regression coverage",
+                    ],
+                    "cons": ["Requires careful sequencing across dependent components"],
+                }
+            ],
+            "key_decisions": [
+                {
+                    "decision": (
+                        f"{sentinel_map['Refactor Design']}\n"
+                        "Smallest causal correction preserving behavior and cutover/removals"
+                    ),
+                    "rationale": ("Enforces ISP and OCP principles without unnecessary breakage"),
+                }
+            ],
+            "related_docs": ["docs/development/issue460/design-workflow-documentation.md"],
+            "timestamp": "2026-09-17T09:00Z",
+            "prerequisites": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
         }
         res_design = manager.scaffolder.scaffold(
             artifact_type="design",
-            name="design",
-            skip_validation=True,
             **design_context,
         )
-        assert res_design.content
-        assert "{{" not in res_design.content
-        assert "{%" not in res_design.content
-        assert "Representative Design Carrier" in res_design.content
-        assert "Introduce narrow read-only interfaces" in res_design.content
 
         # 3. Planning carrier (covers Feature, Bug, Refactor, Docs, Epic planning semantics)
         planning_context = {
@@ -924,50 +1181,106 @@ class TestCY068DocflowE01:
             "status": "APPROVED",
             "version": "1.0",
             "last_updated": "2026-09-17",
-            "summary": "Decomposition of approved design into dependency-ordered work units.",
+            "summary": (
+                f"{sentinel_map['Feature Planning']}\n"
+                "Decomposition of approved design into dependency-ordered work units, "
+                "covering Feature, Bug, Refactor, Docs, and Epic obligations."
+            ),
+            "purpose": "Planning artifact expressing the full union of planning semantics.",
+            "scope_in": (
+                "Work unit breakdown, deliverables, verification, exit criteria, "
+                "and stop conditions"
+            ),
+            "scope_out": "Premature implementation changes",
+            "dependencies": [
+                sentinel_map["Docs Planning"],
+                "DI-07 §7.1 instruction alignment",
+                "DI-03 template suite delivery",
+                "Cross-workstream child issue tracking",
+            ],
             "cycles": [
                 {
                     "name": "CY068",
-                    "goal": "Verify workflow carriers and phase semantics",
+                    "goal": (
+                        f"{sentinel_map['Bug Planning']}: "
+                        "Verify workflow carriers and phase semantics"
+                    ),
                     "tests": ["test_isolated_patched_contracts_loading_and_docflow_e01"],
-                    "success_criteria": ["All tests pass, exact patch applied"],
+                    "success_criteria": [
+                        (
+                            f"{sentinel_map['Refactor Planning']}: "
+                            "Reproduction/regression/correction obligations verified"
+                        ),
+                        "Responsibility moves and preservation obligations satisfied",
+                        "Exit criteria and stop conditions confirmed",
+                    ],
+                    "dependencies": ["CY067"],
                 }
             ],
-            "scope_in": "Work unit breakdown, deliverables, verification, and exit criteria",
-            "scope_out": "Premature implementation changes",
+            "risks": [
+                {
+                    "description": "Schema validation mismatch on optional context fields",
+                    "mitigation": (
+                        "Schema introspection and first-time-right payload verification"
+                    ),
+                }
+            ],
+            "milestones": [
+                (
+                    f"{sentinel_map['Epic Planning']}: "
+                    "M1: Document carrier semantics validated against public schemas"
+                ),
+                "M2: Exit criteria satisfied with objective proof",
+            ],
+            "related_docs": ["docs/development/issue460/design-workflow-documentation.md"],
+            "timestamp": "2026-09-17T09:00Z",
+            "prerequisites": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
         }
         res_planning = manager.scaffolder.scaffold(
             artifact_type="planning",
-            name="planning",
-            skip_validation=True,
             **planning_context,
         )
-        assert res_planning.content
-        assert "{{" not in res_planning.content
-        assert "{%" not in res_planning.content
-        assert "Representative Planning Carrier" in res_planning.content
-        assert "CY068" in res_planning.content
 
         # 4. Validation Report carrier (covers Feature, Bug, Refactor, Hotfix, Chore)
+        validation_scope_elements = [
+            f"{sentinel_map['Feature Validation']}: Requirement coverage and demo",
+            f"{sentinel_map['Bug Validation']}: Reproduction correction and regression prevention",
+            f"{sentinel_map['Refactor Validation']}: Structural completion and invariant proof",
+            f"{sentinel_map['Hotfix Validation']}: Correction, containment, and operational risks",
+            f"{sentinel_map['Chore Validation']}: Bounded objective coverage and evidence",
+        ]
         validation_context = {
             "title": "Representative Validation Carrier",
             "status": "APPROVED",
             "version": "1.0",
             "last_updated": "2026-09-17",
+            "timestamp": "2026-09-17T09:00Z",
             "issue_number": 460,
             "cycle": "CY068",
             "validation_status": "PASS",
-            "scope": ("Workspace-wide tests and branch gates proving workflow semantics."),
+            "scope": "\n\n".join(validation_scope_elements),
         }
         res_validation = manager.scaffolder.scaffold(
             artifact_type="validation_report",
-            name="validation",
-            skip_validation=True,
             **validation_context,
         )
-        assert res_validation.content
-        assert "{{" not in res_validation.content
-        assert "{%" not in res_validation.content
-        assert "Representative Validation Carrier" in res_validation.content
-        assert "CY068" in res_validation.content
-        assert "PASS" in res_validation.content
+
+        rendered_outputs: dict[str, str] = {
+            "research": res_research.content,
+            "design": res_design.content,
+            "planning": res_planning.content,
+            "validation_report": res_validation.content,
+        }
+
+        # Assert no Jinja template tags leaked into rendered output
+        for carrier_name, content in rendered_outputs.items():
+            assert "{{" not in content, f"Unrendered Jinja expression in {carrier_name}"
+            assert "{%" not in content, f"Unrendered Jinja statement in {carrier_name}"
+
+        # Assert all 19 workflow obligations survived into rendered Markdown
+        for item in obligations:
+            rendered = rendered_outputs[item.carrier]
+            assert item.sentinel in rendered, (
+                f"Obligation for '{item.variant}' ({item.carrier}.{item.carrier_field}) "
+                f"was not preserved in rendered Markdown:\n{item.obligations}"
+            )

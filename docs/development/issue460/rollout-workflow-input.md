@@ -646,4 +646,4 @@ In case of rollback:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-09-17 | @imp implementer | Initial CY068 preparation: 19 workflow carriers, target diff, checksums, and DOCFLOW-E01/E02 verification evidence. |
-| 1.1 | 2026-09-17 | @imp implementer | Aligned exact patch and postimage checksum across all 7 workflows, added pre-cycle commit SHA, and verified bidirectional patch application. |
+| 1.1 | 2026-09-17 | @imp implementer | Aligned exact patch and postimage checksum across all 7 workflows, added pre-cycle commit SHA, and verified forward patch application against hashes. |
