@@ -1306,3 +1306,41 @@ class TestGetWorkContextC7ContractsInjection:
         await tool.execute(GetWorkContextInput(), NoteContext())
 
         writer.set_context_loaded.assert_called_once_with("feature/42-test", value=True)
+
+    @pytest.mark.asyncio
+    async def test_c68_docflow_e01_v3_instructions_without_obsolete_syntax(self) -> None:
+        """DOCFLOW-E01: GetWorkContextTool emits V3 instructions without obsolete syntax."""
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        v3_instructions = (
+            "Establish the evidence and strategy boundary for a new feature.\n\n"
+            "[ ] Scaffold the research artifact with scaffold_artifact and refine with "
+            "safe_edit_file.\n"
+            "[ ] Commit with git_add_or_commit."
+        )
+        handover = (
+            "### Feature / Research Hand-over\n"
+            "#### Scope\n"
+            "#### Deliverables\n"
+            "#### Evidence\n"
+            "#### Open Work\n"
+            "#### Review Request\n"
+            "Review requested"
+        )
+        contracts = _make_c7_contracts(
+            workflow="feature",
+            phase="research",
+            sub_role="researcher",
+            phase_instructions=v3_instructions,
+            handover_template=handover,
+        )
+        tool = self._make_c7_tool(contracts_config=contracts, workflow="feature", phase="research")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.sub_role_hint == "researcher"
+        assert result.phase_instructions is not None
+        assert "context=" not in result.phase_instructions
+        assert "scaffold_artifact" in result.phase_instructions
+        assert "Review requested" in (result.handover_template or "")
