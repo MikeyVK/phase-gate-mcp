@@ -15,7 +15,7 @@ Record reviewed source-authoritative host instruction mappings, direct-copy byte
 ## Scope
 
 **In Scope:**
-All 21 catalogued host instruction sources, mapped runtime consumers, release manifest mapping, byte equality checks, lazy cache discovery alignment, and prospective V3 diffs.
+All 21 catalogued host instruction sources, mapped runtime consumers, release manifest mapping, byte equality checks, lazy cache discovery alignment, explicit human scope approval for `.gitignore` maintenance, and prospective V3 diffs.
 
 **Out of Scope:**
 Direct mutation of live host instruction files (AGENTS.md, .agents/, .github/) prior to CY072; modification of server proxy or MCP transport logic; inclusion of cache-reading procedural steps in agent startup instructions.
@@ -32,7 +32,7 @@ Read these first:
 
 ## Summary
 
-Implementation evidence for Cycle 69 (Host instruction source parity) under Issue #460. Verifies source-first host instruction mapping and byte parity, accounts for all 21 catalogued preservation sources, documents lazy cache-reading resource alignment, and stages prospective V3 patches without premature live advertisement.
+Implementation evidence for Cycle 69 (Host instruction source parity) under Issue #460. Verifies source-first host instruction mapping and byte parity, accounts for all 21 catalogued preservation sources, documents lazy cache-reading resource alignment, records explicit human scope approval for `.gitignore` maintenance, and stages prospective V3 patches without premature live advertisement.
 
 ---
 
@@ -41,7 +41,8 @@ Implementation evidence for Cycle 69 (Host instruction source parity) under Issu
 - Document exact host-authoritative source mappings to live runtime consumers.
 - Verify byte parity across all 8 direct-copy source-consumer pairs.
 - Provide explicit disposition for all 21 catalogued host instruction sources.
-- Clarify canonical cache reading reference packaged at `mcp_server/resources/cache_reading.md` and lazy discovery via `pgmcp://docs/cache-reading`.
+- Clarify contractual separation for cache responses and lazy discovery of packaged reference `mcp_server/resources/cache_reading.md` via `pgmcp://docs/cache-reading`.
+- Record human scope approval for repository-level `.gitignore` exclusion of `temp/`.
 - Prepare prospective clean-break V3 tool and procedure diffs for CY072 installation across all affected host instruction files.
 
 ---
@@ -59,7 +60,8 @@ Implementation evidence for Cycle 69 (Host instruction source parity) under Issu
 - [x] DOCFLOW-E03: All 8 direct-copy host instruction pairs are byte-identical.
 - [x] DOCFLOW-E03: All 21 catalogued host instruction sources have explicit disposition.
 - [x] DOCFLOW-E05: Prospective V3 diffs agree with registered V3 tool/schema contracts across all affected host instructions.
-- [x] Lazy cache reading references canonical packaged reference `mcp_server/resources/cache_reading.md` via `pgmcp://docs/cache-reading` without agent startup prompt bloat.
+- [x] Lazy cache reading contractually aligns with `text_presenter.py` and `cache_reading.md` (budget-triggered `pgmcp://docs/cache-reading` reference) without agent startup prompt bloat.
+- [x] Explicit human scope approval obtained and recorded for `.gitignore` inclusion of `temp/`.
 - [x] No inactive V3 contracts advertised in live workspace files prior to CY072.
 
 ---
@@ -126,23 +128,28 @@ All 21 sources identified in `planning-rollout.md#cy069` (DOCFLOW-E03) have an e
 | C123 | `docs/agents/codex/rules/qa.agent.md` | Authoritative source for C121 | Reviewed; preserved unchanged in CY069 | Retain byte parity with C121; read-only role rules remain valid |
 | S040 | `.pgmcp/config/release_manifest.yaml` | Release manifest suite asset mapping | Reviewed; preserved unchanged in CY069 | Retain; maps docs/agents -> agents as release distribution assets |
 
+### 1.4 Explicit Human Scope Approval: Repository `.gitignore` Maintenance
+
+On 2026-09-17, the human operator explicitly directed and approved the inclusion of `temp/` in `.gitignore` alongside `.pgmcp/temp/`. This repository maintenance prevents local ephemeral scratch and probe artifacts from accidentally becoming tracked in git across implementation cycles.
+
 ---
 
 ## 2. Resource Caching Procedure Alignment
 
-CY011 implemented generic bounded presentation, schema-aware caching, and dynamic server hints:
-`Paged result; see pgmcp://docs/cache-reading`.
+CY011 implemented generic bounded presentation, schema-aware caching, and dynamic server hints.
 
 ### 2.1 Uniform Directive Across All Hosts
-All host instruction sources (`AGENTS.md`, `.agents/AGENTS.md`, `docs/agents/antigravity/AGENTS.md`) already share the exact text for Prime Directive 9:
+All host instruction sources (`AGENTS.md`, `.agents/AGENTS.md`, `docs/agents/antigravity/AGENTS.md`) share the exact text for Prime Directive 9:
 > **9. Resource Caching:** All MCP tools cache their structured Pydantic DTO outputs as MCP Resources (`pgmcp://cache/runs/{run_id}`). Tools return a presented text summary and the resource URI. When you need to inspect complete structured data or verbose process logs (e.g. from `run_quality_gates` or `run_tests`), you MUST read the cached resource URI (do not try to parse or scrape the text output).
 
-### 2.2 Canonical Reference and Lazy Cache Discovery
-In accordance with explicit architectural decisions:
-1. **Canonical Reference Document:** The complete cache reading procedure, window traversal instructions, and error-recovery patterns are maintained in [cache_reading.md](../../../mcp_server/resources/cache_reading.md) (`mcp_server/resources/cache_reading.md`), serving as the definitive reference. The user noted that reference documentation logically belongs under `docs/reference/`; any relocation to `docs/reference/` is slated for docs-refactor cycles (CY089-CY093) without creating out-of-scope files in CY069.
-2. **Lazy Discovery Resource URI:** When an MCP response is paginated or cached, the tool dynamically references `pgmcp://docs/cache-reading`. This resource exposes the contents of the canonical reference document directly on demand.
-3. **Proportionality and Lean Startup Instructions:** Agent instructions deliberately omit verbose window traversal, retry, or recovery algorithms. Agents discover and read `pgmcp://docs/cache-reading` lazily when encountering cached resources. This prevents startup prompt bloat while providing full, authoritative procedural guidance.
-4. In CY072, the tool reference in Prime Directive 9 will be updated from `run_quality_gates` to `run_checks`.
+### 2.2 Contractual Separation and Lazy Cache Discovery
+The implementation (`mcp_server/presenters/text_presenter.py:359` and `mcp_server/resources/cache_reading.md:3`) strictly enforces this contract:
+1. **Always Cached:** Every successfully cached response receives a `pgmcp://cache/runs/{run_id}` resource URI.
+2. **Budget-Triggered Reference:** Only when the response size exceeds the configured read budget (`size_chars > cache_read_budget_chars`, default 6,000 Unicode codepoints), the response presentation dynamically appends the reference hint:  
+   `Paged result; see pgmcp://docs/cache-reading`.
+3. **Packaged Reference:** The complete window traversal, integrity hash validation, and safe retry protocol are packaged directly at [cache_reading.md](../../../mcp_server/resources/cache_reading.md) (`mcp_server/resources/cache_reading.md`). The resource `pgmcp://docs/cache-reading` reads and serves this document directly without external repository checkout dependencies.
+4. **Proportionality and Lean Startup Instructions:** Host instructions deliberately omit verbose window traversal, retry, or recovery algorithms. Agents discover and read `pgmcp://docs/cache-reading` lazily only when encountering truncated responses exceeding the read budget.
+5. In CY072, the tool reference in Prime Directive 9 will be updated from `run_quality_gates` to `run_checks`.
 
 ---
 
@@ -152,7 +159,7 @@ Under CY069 requirements, inactive V3 contracts (`run_checks`, `apply_fixes`, `s
 
 ### 3.1 `AGENTS.md` / `docs/agents/vscode/copilot/AGENTS.md` Prospective Diff
 Preimage SHA-256: `2812cc4072e1982ea8080a94adbde8860cfdf75117f2fc16b4857985d232ec11`  
-Postimage SHA-256: `c830c25a072054ff8e7bcfdf9f0868f0efd91244bb0c41fc86a51d28beec9db8`
+Postimage SHA-256: `1e7153fb5565f636f6f887b6b379e66c1f085b836e375b76a2bbfed23e5fab0a`
 
 ```diff
 --- a/AGENTS.md
@@ -189,7 +196,7 @@ Postimage SHA-256: `c830c25a072054ff8e7bcfdf9f0868f0efd91244bb0c41fc86a51d28beec
 
 ### 3.2 `.agents/AGENTS.md` / `docs/agents/codex/AGENTS.md` Prospective Diff
 Preimage SHA-256: `4a7cbab1a3446f1cbd1cbfd53dcd2c13fdbcb1d03b63cc39e46cea7693e1ef7d`  
-Postimage SHA-256: `955743b2d183dcfae29ec97b1ebff954e7d17431e78eb3dc8d1e39b980277dfd`
+Postimage SHA-256: `617c103caf0e5d4bef0c8a6abe7285b88785def57063267b18b12a2d691d3136`
 
 ```diff
 --- a/.agents/AGENTS.md
@@ -263,7 +270,7 @@ Postimage SHA-256: `ab529fb0fafa24d57c39a21548fef026d8b5064bcb7f9edc349134b63960
 
 ### 3.4 `.github/agents/qa.agent.md` / `docs/agents/vscode/copilot/.github/agents/qa.agent.md` Prospective Diff
 Preimage SHA-256: `43421c76e0cff1fd2d9505067030c8c6f9189c08d54a41b4b4a47f40c818a5e3`  
-Postimage SHA-256: `cbebbd2cf771d18bc3fa908e7cf8faecf06368d44747ebc7dbb94879feaa60c4`
+Postimage SHA-256: `0e197ce0e232912cc8fc6e435b0bb232881766cfd7ae62ec29859fcc3b62a47b`
 
 ```diff
 --- a/.github/agents/qa.agent.md
@@ -274,13 +281,13 @@ Postimage SHA-256: `cbebbd2cf771d18bc3fa908e7cf8faecf06368d44747ebc7dbb94879feaa
 +  - phase-gate-mcp/run_checks
 +  - phase-gate-mcp/scaffold_schema
 @@ -90,1 +90,1 @@
--  - running quality gates
-+  - running checks
+-- running quality gates
++- running checks
 ```
 
 ### 3.5 `.github/agents/co.agent.md` / `docs/agents/vscode/copilot/.github/agents/co.agent.md` Prospective Diff
 Preimage SHA-256: `516b44a3f667a8583a042567e7846801b0931b44656255eb9b825202b7a86dcd`  
-Postimage SHA-256: `52d4e6ba5f5fb244a19b222956cfbfd77eb572cc695e69e4ce136dfca56fdfc9`
+Postimage SHA-256: `eeb3c623076200c018943a647d242753149bc77901054fb0ce2326dba043dba1`
 
 ```diff
 --- a/.github/agents/co.agent.md
@@ -290,8 +297,8 @@ Postimage SHA-256: `52d4e6ba5f5fb244a19b222956cfbfd77eb572cc695e69e4ce136dfca56f
 +  - phase-gate-mcp/run_checks
 +  - phase-gate-mcp/scaffold_schema
 @@ -164,1 +165,1 @@
--  - epic phase transitions, commits, quality gates, PR submission, and merge
-+  - epic phase transitions, commits, quality checks, PR submission, and merge
+-- epic phase transitions, commits, quality gates, PR submission, and merge
++- epic phase transitions, commits, quality checks, PR submission, and merge
 ```
 
 ### 3.6 `.agents/rules/research.agent.md` / `docs/agents/codex/rules/research.agent.md` Prospective Diff
@@ -312,7 +319,7 @@ Postimage SHA-256: `742e967fad5b977590feb454030d7f02b28a5fa9fa52cd9617b21170a4ee
 
 In case of rollback:
 - **Pre-cycle Git Commit SHA:** `7ac179e4ece5003b75b32ce9968eaf7dc6632c14`
-1. Remove `docs/development/issue460/rollout-host-input.md` (the sole new cycle-owned file in write-set).
+1. Remove `docs/development/issue460/rollout-host-input.md` (the sole new cycle-owned documentation deliverable).
 2. Live workspace host files remain untouched during CY069 and require no rollback.
 
 ---
