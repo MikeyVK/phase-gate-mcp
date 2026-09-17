@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 68,
-  "last_cycle": 67,
+  "current_cycle": 69,
+  "last_cycle": 68,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -408,6 +408,12 @@
       "name": "Workflow carriers and phase semantics",
       "forced": false,
       "entered": "2026-09-17T05:47:05.991186+00:00"
+    },
+    {
+      "cycle_number": 69,
+      "name": "Host instruction source parity",
+      "forced": false,
+      "entered": "2026-09-17T08:04:33.095701+00:00"
     }
   ],
   "required_phases": [
