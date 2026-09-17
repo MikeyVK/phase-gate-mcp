@@ -4,18 +4,18 @@
 Integration tests for rollout_configuration_compatibility.
 
 Verifies prospective V3 rollout configuration compatibility, schema admission
-against the real 19-package template catalog, obsolete configuration rejection,
-exact patch application with compare-before-write drift refusal, clean-break
-presentation alignment, and native Pyright setting preservation without mutating
-live configurations.
+against the real 19-package template catalog reconciled with project_structure.yaml,
+obsolete configuration rejection, atomic compare-before-write replacement via
+CheckedFileWriter with race-condition drift refusal, clean-break presentation alignment,
+and native Pyright setting preservation without mutating live configurations.
 
 @layer: Tests (Integration)
 @dependencies: [pytest, tomllib, ConfigLoader, ConfigValidator, ArtifactLocationsConfig]
 @responsibilities:
     - Test end-to-end rollout_configuration_compatibility
     - Verify public target loaders accept prospective configs with real 19 template_ids
-    - Verify public target loaders reject obsolete/invalid configs and stale template_ids
-    - Verify compare-before-write patch application with strict preimage mismatch refusal
+    - Reconcile placement roots against owner's project_structure.yaml and design contracts
+    - Verify CheckedFileWriter.replace_if_unchanged atomic replacement and drift refusal
     - Verify presentation.yaml clean break: no legacy quality gates/autofix, full V3 surface
     - Verify pyproject.toml [tool.pyright] deletion preserves native Pyright settings
 """
@@ -40,28 +40,34 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.execution.models import ApplyFixesOutput, RunTestsOutput
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.schemas.execution_outputs import RunChecksOutput
+from mcp_server.utils.atomic_file_writer import CheckedFileWriter, OriginalChangedError
 
+# Authoritative prospective V3 artifacts.yaml reconciled with project_structure.yaml
 PROSPECTIVE_V3_ARTIFACTS_YAML = """version: "2.0.0"
 artifacts:
   architecture:
     default_root: "docs/architecture"
     additional_roots:
+      - "docs/reference"
       - "docs/manuals"
   commit:
     default_root: ".pgmcp/temp/artifacts"
-    additional_roots:
-      - ".phase-gate/temp/artifacts"
   design:
     default_root: "docs/development"
+    additional_roots:
+      - "docs"
   generic_doc:
     default_root: "docs"
     additional_roots:
       - "docs/development"
       - "docs/reference"
+      - "docs/manuals"
   issue:
     default_root: ".github/ISSUE_TEMPLATE"
   planning:
     default_root: "docs/development"
+    additional_roots:
+      - "docs"
   pr:
     default_root: ".github/PULL_REQUEST_TEMPLATE"
   pytest_integration_test:
@@ -71,27 +77,44 @@ artifacts:
   pytest_unit_test:
     default_root: "tests/mcp_server/unit"
     additional_roots:
+      - "tests/backend"
       - "tests/unit"
   python_adapter:
     default_root: "mcp_server/adapters"
+    additional_roots:
+      - "backend/adapters"
   python_class:
     default_root: "mcp_server"
+    additional_roots:
+      - "backend"
   python_protocol:
     default_root: "mcp_server/core/interfaces"
+    additional_roots:
+      - "backend/interfaces"
   python_pydantic_config:
     default_root: "mcp_server/config/schemas"
+    additional_roots:
+      - "mcp_server/schemas"
   python_pydantic_dto:
     default_root: "mcp_server/dtos"
     additional_roots:
+      - "backend/dtos"
       - "mcp_server/schemas"
   python_worker:
     default_root: "mcp_server/workers"
     additional_roots:
+      - "backend/workers"
       - "mcp_server/execution"
   reference:
     default_root: "docs/reference"
+    additional_roots:
+      - "docs/architecture"
+      - "docs/manuals"
+      - "docs/coding_standards"
   research:
     default_root: "docs/development"
+    additional_roots:
+      - "docs"
   typescript_dto:
     default_root: "frontend/src/dtos"
   validation_report:
@@ -259,32 +282,32 @@ PRESENTATION_CHECKS_AND_TESTS_REPLACEMENT = """  run_checks:
 """
 
 
-def apply_compare_before_write(
+def apply_checked_replacement(
     target_path: Path,
     expected_preimage_sha: str,
-    new_content: str | bytes,
+    new_content: str,
     expected_postimage_sha: str,
 ) -> None:
-    """Atomic compare-before-write patch procedure with drift refusal.
+    """Atomic compare-before-write replacement via the production CheckedFileWriter boundary.
 
-    1. Reads existing target file bytes.
-    2. Verifies preimage SHA-256 equals expected_preimage_sha.
-       If mismatch: raises ValueError('preimage_mismatch') without modifying target file.
-    3. Verifies postimage SHA-256 of new_content equals expected_postimage_sha.
-       If mismatch: raises ValueError('postimage_mismatch') without modifying target file.
-    4. Writes new_content to target_path atomically.
+    1. Reads original snapshot bytes from target_path.
+    2. Validates original bytes against expected_preimage_sha.
+    3. Validates new_content bytes against expected_postimage_sha.
+    4. Delegates atomic replace to CheckedFileWriter().replace_if_unchanged().
+       The CheckedFileWriter boundary re-verifies target file content immediately prior
+       to os.replace, raising OriginalChangedError if concurrent modification occurred.
     """
     if not target_path.exists():
         raise FileNotFoundError(f"target file not found: {target_path}")
-    current_bytes = target_path.read_bytes()
-    current_sha = hashlib.sha256(current_bytes).hexdigest()
-    if current_sha != expected_preimage_sha:
+    snapshot_bytes = target_path.read_bytes()
+    snapshot_sha = hashlib.sha256(snapshot_bytes).hexdigest()
+    if snapshot_sha != expected_preimage_sha:
         raise ValueError(
-            f"preimage_mismatch: {target_path} SHA {current_sha} "
+            f"preimage_mismatch: {target_path} SHA {snapshot_sha} "
             f"does not match expected {expected_preimage_sha}"
         )
 
-    new_bytes = new_content.encode("utf-8") if isinstance(new_content, str) else new_content
+    new_bytes = new_content.encode("utf-8")
     new_sha = hashlib.sha256(new_bytes).hexdigest()
     if new_sha != expected_postimage_sha:
         raise ValueError(
@@ -292,7 +315,8 @@ def apply_compare_before_write(
             f"does not match expected {expected_postimage_sha}"
         )
 
-    target_path.write_bytes(new_bytes)
+    replacer = CheckedFileWriter()
+    replacer.replace_if_unchanged(target_path, snapshot_bytes, new_content)
 
 
 def build_prospective_presentation_yaml(live_content: str) -> str:
@@ -462,10 +486,8 @@ class TestRolloutConfiguration:
         with pytest.raises(ConfigError):
             loader.load_artifact_locations_config()
 
-    def test_artifacts_compare_before_write_and_drift_protection(
-        self, temp_workspace: Path
-    ) -> None:
-        """Test compare-before-write, hash assertion, and drift refusal for artifacts.yaml."""
+    def test_artifacts_checked_replacement_and_drift_protection(self, temp_workspace: Path) -> None:
+        """Test CheckedFileWriter replacement, hash assertion, and race drift refusal."""
         root_dir = Path(__file__).resolve().parents[3]
         live_file = root_dir / ".pgmcp" / "config" / "artifacts.yaml"
         isolated_target = temp_workspace / ".pgmcp" / "config" / "artifacts.yaml"
@@ -475,27 +497,33 @@ class TestRolloutConfiguration:
         pre_sha = hashlib.sha256(live_file.read_bytes()).hexdigest()
         post_sha = hashlib.sha256(PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")).hexdigest()
 
-        # Success path on isolated copy
-        apply_compare_before_write(
-            isolated_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha
-        )
+        # Success path on isolated copy using CheckedFileWriter boundary
+        apply_checked_replacement(isolated_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha)
         assert isolated_target.read_bytes() == PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")
         assert hashlib.sha256(isolated_target.read_bytes()).hexdigest() == post_sha
 
-        # Drift protection: simulate concurrent modification
-        drift_target = temp_workspace / "drift_artifacts.yaml"
-        drift_target.write_text("version: 1.0.0\n# concurrent edit\n", encoding="utf-8")
-        drift_bytes_before = drift_target.read_bytes()
+        # Drift protection: simulate concurrent race between snapshot and commit
+        race_target = temp_workspace / "race_artifacts.yaml"
+        race_target.write_bytes(live_file.read_bytes())
+        snapshot_bytes = race_target.read_bytes()
 
-        with pytest.raises(ValueError, match="preimage_mismatch"):
-            apply_compare_before_write(
-                drift_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha
+        # Concurrent modification happens before replacer commits
+        race_target.write_text("version: 1.0.0\n# concurrent race edit\n", encoding="utf-8")
+        drift_bytes = race_target.read_bytes()
+
+        replacer = CheckedFileWriter()
+        with pytest.raises(OriginalChangedError):
+            replacer.replace_if_unchanged(
+                race_target, snapshot_bytes, PROSPECTIVE_V3_ARTIFACTS_YAML
             )
-        # Prove target is demonstrably unaltered after refusal
-        assert drift_target.read_bytes() == drift_bytes_before
+
+        # Target file is demonstrably unaltered after refusal
+        assert race_target.read_bytes() == drift_bytes
+        # Staging file is cleaned up
+        assert not list(temp_workspace.glob("*.staging"))
 
     def test_pyproject_pyright_exact_hunk_and_mismatch_refusal(self, temp_workspace: Path) -> None:
-        """Verify pyproject.toml [tool.pyright] compare-before-write, and drift refusal."""
+        """Verify pyproject.toml [tool.pyright] CheckedFileWriter replacement and drift refusal."""
         root_dir = Path(__file__).resolve().parents[3]
         pyproject_path = root_dir / "pyproject.toml"
         pyproject_raw = pyproject_path.read_text(encoding="utf-8")
@@ -520,17 +548,21 @@ class TestRolloutConfiguration:
         # Success path on isolated copy
         isolated_target = temp_workspace / "pyproject.toml"
         isolated_target.write_bytes(pyproject_path.read_bytes())
-        apply_compare_before_write(isolated_target, pre_sha, patched_pyproject, post_sha)
+        apply_checked_replacement(isolated_target, pre_sha, patched_pyproject, post_sha)
         assert isolated_target.read_bytes() == patched_pyproject.encode("utf-8")
 
-        # Drift protection: concurrent edit refusal
-        drift_target = temp_workspace / "drift_pyproject.toml"
-        drift_target.write_text("[project]\nname = 'concurrent_drift'\n", encoding="utf-8")
-        drift_bytes_before = drift_target.read_bytes()
+        # Drift protection: concurrent race edit refusal
+        race_target = temp_workspace / "race_pyproject.toml"
+        race_target.write_bytes(pyproject_path.read_bytes())
+        snapshot_bytes = race_target.read_bytes()
 
-        with pytest.raises(ValueError, match="preimage_mismatch"):
-            apply_compare_before_write(drift_target, pre_sha, patched_pyproject, post_sha)
-        assert drift_target.read_bytes() == drift_bytes_before
+        race_target.write_text("[project]\nname = 'concurrent_drift'\n", encoding="utf-8")
+        drift_bytes = race_target.read_bytes()
+
+        replacer = CheckedFileWriter()
+        with pytest.raises(OriginalChangedError):
+            replacer.replace_if_unchanged(race_target, snapshot_bytes, patched_pyproject)
+        assert race_target.read_bytes() == drift_bytes
 
     def test_pyrightconfig_native_settings_preservation(self) -> None:
         """Verify pyrightconfig.json natively declares all required compiler flags."""
@@ -602,47 +634,56 @@ class TestRolloutConfiguration:
         )
         validate_presentation_alignment(v3_presenter, v3_contracts)
 
-        # Compare-before-write test
+        # Checked replacement test via CheckedFileWriter
         pre_sha = hashlib.sha256(live_presentation_path.read_bytes()).hexdigest()
         post_sha = hashlib.sha256(patched_content.encode("utf-8")).hexdigest()
 
         isolated_target = temp_workspace / "presentation_target.yaml"
         isolated_target.write_bytes(live_presentation_path.read_bytes())
-        apply_compare_before_write(isolated_target, pre_sha, patched_content, post_sha)
+        apply_checked_replacement(isolated_target, pre_sha, patched_content, post_sha)
         assert isolated_target.read_bytes() == patched_content.encode("utf-8")
 
-        # Drift protection: concurrent edit refusal
-        drift_target = temp_workspace / "drift_presentation.yaml"
-        drift_target.write_text("version: '1.0.0'\n# drifted\n", encoding="utf-8")
-        drift_bytes_before = drift_target.read_bytes()
+        # Drift protection: concurrent race refusal
+        race_target = temp_workspace / "race_presentation.yaml"
+        race_target.write_bytes(live_presentation_path.read_bytes())
+        snapshot_bytes = race_target.read_bytes()
 
-        with pytest.raises(ValueError, match="preimage_mismatch"):
-            apply_compare_before_write(drift_target, pre_sha, patched_content, post_sha)
-        assert drift_target.read_bytes() == drift_bytes_before
+        race_target.write_text("version: '1.0.0'\n# concurrent edit\n", encoding="utf-8")
+        drift_bytes = race_target.read_bytes()
 
-    def test_version_compare_before_write_and_preservation(self, temp_workspace: Path) -> None:
-        """Verify .version compare-before-write, byte preservation, and drift refusal."""
+        replacer = CheckedFileWriter()
+        with pytest.raises(OriginalChangedError):
+            replacer.replace_if_unchanged(race_target, snapshot_bytes, patched_content)
+        assert race_target.read_bytes() == drift_bytes
+
+    def test_version_checked_replacement_and_preservation(self, temp_workspace: Path) -> None:
+        """Verify .version CheckedFileWriter replacement, byte preservation, and drift refusal."""
         root_dir = Path(__file__).resolve().parents[3]
         live_version_path = root_dir / ".pgmcp" / ".version"
         live_bytes = live_version_path.read_bytes()
+        live_text = live_bytes.decode("utf-8")
 
         pre_sha = hashlib.sha256(live_bytes).hexdigest()
         post_sha = pre_sha  # byte-identical preservation
 
         isolated_target = temp_workspace / ".version"
         isolated_target.write_bytes(live_bytes)
-        apply_compare_before_write(isolated_target, pre_sha, live_bytes, post_sha)
+        apply_checked_replacement(isolated_target, pre_sha, live_text, post_sha)
         assert isolated_target.read_bytes() == live_bytes
         assert isolated_target.read_text(encoding="utf-8").strip() == "2.0.0"
 
-        # Drift protection
-        drift_target = temp_workspace / "drift_version"
-        drift_target.write_bytes(b"2.0.1\n")
-        drift_bytes_before = drift_target.read_bytes()
+        # Drift protection: concurrent race refusal
+        race_target = temp_workspace / "race_version"
+        race_target.write_bytes(live_bytes)
+        snapshot_bytes = race_target.read_bytes()
 
-        with pytest.raises(ValueError, match="preimage_mismatch"):
-            apply_compare_before_write(drift_target, pre_sha, live_bytes, post_sha)
-        assert drift_target.read_bytes() == drift_bytes_before
+        race_target.write_bytes(b"2.0.1\n")
+        drift_bytes = race_target.read_bytes()
+
+        replacer = CheckedFileWriter()
+        with pytest.raises(OriginalChangedError):
+            replacer.replace_if_unchanged(race_target, snapshot_bytes, live_text)
+        assert race_target.read_bytes() == drift_bytes
 
     def test_live_configuration_remains_unmutated_in_cy070(self) -> None:
         """Verify that live repository configuration files remain untouched in CY070."""
@@ -696,7 +737,7 @@ class TestRolloutConfiguration:
             "e17c98ebd7bc03771ea0b7faab55b05b9b02b16d0b5c34cada21443c962f5157"
         )
         assert artifacts_post_sha == (
-            "f5a9870c1f3d140a04f6efdf3a46285e5bcd8549d22eec72bf5c976cb08506bb"
+            "2206dc35df61476b9d89b2887b902dc6a4e58fc3076af5ee1106140e4dd4b9d2"
         )
         assert pyproject_pre_sha == (
             "e91b9079e91c2c7ea4c43433c0e635053533696016dfb16160624c994e3cd66f"
@@ -707,7 +748,6 @@ class TestRolloutConfiguration:
         assert presentation_pre_sha == (
             "2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217"
         )
-        # Assert presentation_post_sha
         assert presentation_post_sha == (
             "96e94c62d64e43e0c50389a17c7edf012fa1785ec072d2d4b80b07eb811a9888"
         )

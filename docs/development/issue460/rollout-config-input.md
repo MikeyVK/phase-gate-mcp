@@ -125,22 +125,26 @@ artifacts:
   architecture:
     default_root: "docs/architecture"
     additional_roots:
+      - "docs/reference"
       - "docs/manuals"
   commit:
     default_root: ".pgmcp/temp/artifacts"
-    additional_roots:
-      - ".phase-gate/temp/artifacts"
   design:
     default_root: "docs/development"
+    additional_roots:
+      - "docs"
   generic_doc:
     default_root: "docs"
     additional_roots:
       - "docs/development"
       - "docs/reference"
+      - "docs/manuals"
   issue:
     default_root: ".github/ISSUE_TEMPLATE"
   planning:
     default_root: "docs/development"
+    additional_roots:
+      - "docs"
   pr:
     default_root: ".github/PULL_REQUEST_TEMPLATE"
   pytest_integration_test:
@@ -150,27 +154,44 @@ artifacts:
   pytest_unit_test:
     default_root: "tests/mcp_server/unit"
     additional_roots:
+      - "tests/backend"
       - "tests/unit"
   python_adapter:
     default_root: "mcp_server/adapters"
+    additional_roots:
+      - "backend/adapters"
   python_class:
     default_root: "mcp_server"
+    additional_roots:
+      - "backend"
   python_protocol:
     default_root: "mcp_server/core/interfaces"
+    additional_roots:
+      - "backend/interfaces"
   python_pydantic_config:
     default_root: "mcp_server/config/schemas"
+    additional_roots:
+      - "mcp_server/schemas"
   python_pydantic_dto:
     default_root: "mcp_server/dtos"
     additional_roots:
+      - "backend/dtos"
       - "mcp_server/schemas"
   python_worker:
     default_root: "mcp_server/workers"
     additional_roots:
+      - "backend/workers"
       - "mcp_server/execution"
   reference:
     default_root: "docs/reference"
+    additional_roots:
+      - "docs/architecture"
+      - "docs/manuals"
+      - "docs/coding_standards"
   research:
     default_root: "docs/development"
+    additional_roots:
+      - "docs"
   typescript_dto:
     default_root: "frontend/src/dtos"
   validation_report:
@@ -183,6 +204,24 @@ artifacts:
 3. **Root Normalization & Distinctness:** `default_root` and entries in `additional_roots` must be distinct workspace-relative paths. Duplicate roots within an entry are rejected with `duplicate_artifact_location_root`.
 4. **Target Resolution:** Explicit targets at or below admitted roots require no force; targets outside admitted roots require `force_target`.
 
+### 2.4 Reconciliation with Legacy `project_structure.yaml` and Owner Placement Choices
+
+Under Design §3.2 and QA reconciliation review, the V3 `artifacts.yaml` configuration reconciles with legacy `project_structure.yaml` (`.pgmcp/config/project_structure.yaml`) while eliminating obsolete conventions:
+
+| Template ID | V3 `default_root` | V3 `additional_roots` | Legacy `project_structure.yaml` Alignment | Owner Placement Rationale |
+|---|---|---|---|---|
+| `python_pydantic_dto` | `mcp_server/dtos` | `backend/dtos`, `mcp_server/schemas` | Aligns with `backend/dtos` (line 20) and `mcp_server/schemas` | New canonical location is `mcp_server/dtos`; preserves legacy roots |
+| `python_worker` | `mcp_server/workers` | `backend/workers`, `mcp_server/execution` | Aligns with `backend/workers` (line 28) and execution runner | New canonical location is `mcp_server/workers`; preserves legacy roots |
+| `python_pydantic_config` | `mcp_server/config/schemas` | `mcp_server/schemas` | Aligns with `mcp_server/config/schemas` (line 74) | Canonical config schema root |
+| `commit` | `.pgmcp/temp/artifacts` | *(none)* | Strictly cleans up obsolete `.phase-gate` | Purged `.phase-gate/temp/artifacts` per design-mutation-validation.md:141 |
+| `pytest_unit_test` | `tests/mcp_server/unit` | `tests/backend`, `tests/unit` | Aligns with `tests/backend` (line 120) and legacy `tests/unit` | Preserves legacy test roots alongside canonical server tests |
+| `python_adapter` | `mcp_server/adapters` | `backend/adapters` | Aligns with `backend/adapters` (line 34) | Preserves backend adapter root |
+| `python_protocol` | `mcp_server/core/interfaces` | `backend/interfaces` | Aligns with `backend/interfaces` (line 39) | Preserves backend interface root |
+| `python_class` | `mcp_server` | `backend` | Aligns with `backend` (line 8) | Preserves generic backend root |
+| `reference` | `docs/reference` | `docs/architecture`, `docs/manuals`, `docs/coding_standards` | Aligns with `docs/architecture`, `manuals`, `coding_standards` | Full documentation taxonomy preservation |
+| `research` / `planning` / `design` | `docs/development` | `docs` | Aligns with `docs/development` (line 125) and `docs` root | Development lifecycle documentation |
+| `generic_doc` | `docs` | `docs/development`, `docs/reference`, `docs/manuals` | Complete documentation root support | General documentation scaffolding |
+
 ---
 
 ## 3. Prospective Configuration Diffs, Hashes, and Compare-Before-Write Protection
@@ -192,21 +231,23 @@ Under Planning §4.1 / §4.3 (DOCFLOW-E04) and Rollout CY070, all planned config
 ### 3.1 Compare-Before-Write Drift Protection Protocol
 
 To protect against configuration drift and race conditions during rollout:
-1. Every patch or configuration rewrite verifies that the live file on disk exactly matches the expected **Preimage SHA-256** hash before performing any modification.
-2. If the hash or expected hunk does not match, the application procedure immediately **refuses** with `preimage_mismatch` without altering the target file.
-3. Upon applying the transformation in memory, the resulting bytes are verified against the expected **Postimage SHA-256** hash before being committed to disk.
-4. If a concurrent edit or drift occurred, the procedure refuses and leaves target file bytes demonstrably unaltered.
+1. Rollout uses the production `CheckedFileWriter` boundary (`replace_if_unchanged` in `mcp_server/utils/atomic_file_writer.py`, implementing `ICheckedFileReplacer` in `mcp_server/core/interfaces/file_writer.py`).
+2. Every patch or configuration rewrite verifies that the live file on disk exactly matches the expected **Preimage SHA-256** hash before performing any modification.
+3. If the hash does not match, the application procedure immediately **refuses** with `preimage_mismatch` without altering the target file.
+4. The replacement is staged to an isolated staging file (`.<uuid>.staging`). Immediately prior to replacing the target file via `os.replace`, `CheckedFileWriter` re-reads and guards the target file against the original snapshot bytes.
+5. If a concurrent edit or race condition occurs between snapshot and commit, `CheckedFileWriter` raises `OriginalChangedError`, deletes the staging file, and leaves target file bytes demonstrably unaltered.
+6. Target bytes are verified against the expected **Postimage SHA-256** hash upon successful replacement.
 
 ### 3.2 C004: `.pgmcp/config/artifacts.yaml`
 - **Role:** Workspace artifact location policy.
 - **Preimage SHA-256:** `e17c98ebd7bc03771ea0b7faab55b05b9b02b16d0b5c34cada21443c962f5157`
-- **Postimage SHA-256:** `f5a9870c1f3d140a04f6efdf3a46285e5bcd8549d22eec72bf5c976cb08506bb`
+- **Postimage SHA-256:** `2206dc35df61476b9d89b2887b902dc6a4e58fc3076af5ee1106140e4dd4b9d2`
 
 **Prospective Unified Diff:**
 ```diff
 --- a/.pgmcp/config/artifacts.yaml
 +++ b/.pgmcp/config/artifacts.yaml
-@@ -1,2 +1,56 @@
+@@ -1,2 +1,64 @@
 -version: 1.0.0
 -artifact_types: []
 +version: "2.0.0"
@@ -214,22 +255,26 @@ To protect against configuration drift and race conditions during rollout:
 +  architecture:
 +    default_root: "docs/architecture"
 +    additional_roots:
++      - "docs/reference"
 +      - "docs/manuals"
 +  commit:
 +    default_root: ".pgmcp/temp/artifacts"
-+    additional_roots:
-+      - ".phase-gate/temp/artifacts"
 +  design:
 +    default_root: "docs/development"
++    additional_roots:
++      - "docs"
 +  generic_doc:
 +    default_root: "docs"
 +    additional_roots:
 +      - "docs/development"
 +      - "docs/reference"
++      - "docs/manuals"
 +  issue:
 +    default_root: ".github/ISSUE_TEMPLATE"
 +  planning:
 +    default_root: "docs/development"
++    additional_roots:
++      - "docs"
 +  pr:
 +    default_root: ".github/PULL_REQUEST_TEMPLATE"
 +  pytest_integration_test:
@@ -239,27 +284,44 @@ To protect against configuration drift and race conditions during rollout:
 +  pytest_unit_test:
 +    default_root: "tests/mcp_server/unit"
 +    additional_roots:
++      - "tests/backend"
 +      - "tests/unit"
 +  python_adapter:
 +    default_root: "mcp_server/adapters"
++    additional_roots:
++      - "backend/adapters"
 +  python_class:
 +    default_root: "mcp_server"
++    additional_roots:
++      - "backend"
 +  python_protocol:
 +    default_root: "mcp_server/core/interfaces"
++    additional_roots:
++      - "backend/interfaces"
 +  python_pydantic_config:
 +    default_root: "mcp_server/config/schemas"
++    additional_roots:
++      - "mcp_server/schemas"
 +  python_pydantic_dto:
 +    default_root: "mcp_server/dtos"
 +    additional_roots:
++      - "backend/dtos"
 +      - "mcp_server/schemas"
 +  python_worker:
 +    default_root: "mcp_server/workers"
 +    additional_roots:
++      - "backend/workers"
 +      - "mcp_server/execution"
 +  reference:
 +    default_root: "docs/reference"
++    additional_roots:
++      - "docs/architecture"
++      - "docs/manuals"
++      - "docs/coding_standards"
 +  research:
 +    default_root: "docs/development"
++    additional_roots:
++      - "docs"
 +  typescript_dto:
 +    default_root: "frontend/src/dtos"
 +  validation_report:
