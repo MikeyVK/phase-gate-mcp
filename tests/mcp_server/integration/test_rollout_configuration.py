@@ -5,8 +5,9 @@ Integration tests for rollout_configuration_compatibility.
 
 Verifies prospective V3 rollout configuration compatibility, schema admission
 against the real 19-package template catalog, obsolete configuration rejection,
-exact patch application with drift and mismatch refusal, and native Pyright setting
-preservation without mutating live configurations.
+exact patch application with compare-before-write drift refusal, clean-break
+presentation alignment, and native Pyright setting preservation without mutating
+live configurations.
 
 @layer: Tests (Integration)
 @dependencies: [pytest, tomllib, ConfigLoader, ConfigValidator, ArtifactLocationsConfig]
@@ -14,7 +15,8 @@ preservation without mutating live configurations.
     - Test end-to-end rollout_configuration_compatibility
     - Verify public target loaders accept prospective configs with real 19 template_ids
     - Verify public target loaders reject obsolete/invalid configs and stale template_ids
-    - Verify patch application with strict preimage mismatch refusal (drift protection)
+    - Verify compare-before-write patch application with strict preimage mismatch refusal
+    - Verify presentation.yaml clean break: no legacy quality gates/autofix, full V3 surface
     - Verify pyproject.toml [tool.pyright] deletion preserves native Pyright settings
 """
 
@@ -29,10 +31,15 @@ import pytest
 import yaml
 
 # Project modules
+from mcp_server.bootstrap import SupportedToolContract
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
+from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.execution.models import ApplyFixesOutput, RunTestsOutput
+from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
+from mcp_server.schemas.execution_outputs import RunChecksOutput
 
 PROSPECTIVE_V3_ARTIFACTS_YAML = """version: "2.0.0"
 artifacts:
@@ -97,16 +104,224 @@ PYPROJECT_PYRIGHT_HUNK = (
     "reportFunctionMemberAccess = false\n\n"
 )
 
-PRESENTATION_QUALITY_TARGET = (
+# Presentation prospective patch targets and replacements
+PRESENTATION_RECHECK_TARGET = (
     '    recheck_quality: "📋 REQUIRED NEXT STEP: Run '
     "run_quality_gates(scope='files', files={modified_files}) "
     'to verify that the auto-fixed files now pass all quality checks."'
 )
-PRESENTATION_QUALITY_REPLACEMENT = (
+PRESENTATION_RECHECK_REPLACEMENT = (
     '    recheck_quality: "📋 REQUIRED NEXT STEP: Run '
-    "run_checks(scope='files', files={modified_files}) "
-    'to verify that the auto-fixed files now pass all quality checks."'
+    "run_checks(scope='targets', targets={modified_files}) "
+    'to verify that the applied fixes now pass all checks."'
 )
+
+PRESENTATION_SUGGESTION_TARGET = (
+    '        quality_gates_failed_verbose_suggestion: "Some quality gates failed. '
+    "Rerun the tool with verbose=True to retrieve complete linter/checker tracebacks. "
+    'Suggested command: run_quality_gates({scope_part}, verbose=True)"'
+)
+PRESENTATION_SUGGESTION_REPLACEMENT = (
+    '        checks_failed_verbose_suggestion: "Some checks failed. '
+    "Rerun the tool with verbose=True to retrieve complete tracebacks. "
+    'Suggested command: run_checks(scope={scope_part}, verbose=True)"'
+)
+
+PRESENTATION_AUTOFIX_TARGET = """  auto_fix:
+    category: mutation
+    max_items: 20
+    template_success: |
+      **Auto-Fix Run Completed Successfully**
+      - Gates executed: {gates_executed_count}
+      - Files modified: {modified_files_count}
+    template_failure: |
+      **Auto-Fix Run Failed**
+      - Error: {error_message}
+      - Gates executed: {gates_executed_count}
+      - Files modified: {modified_files_count}
+    collections:
+      - field: gates_executed
+        heading: "Gates executed:"
+        item_template: "- {item}"
+      - field: modified_files
+        heading: "Files modified:"
+        item_template: "- {item}"
+"""
+
+PRESENTATION_APPLYFIXES_REPLACEMENT = """  apply_fixes:
+    category: mutation
+    max_items: 5
+    template_success: "{requested_scope}"
+    template_failure: "{requested_scope}: {error_code}"
+    collections:
+      - field: results
+        heading: "Fixes"
+        item_template: "{fix_id}: {status}; args_source={args_source}"
+    enum_cases:
+      - field: error_code
+        cases:
+          no_configured_fixes: "No fix bindings configured."
+          selection_invalid: "Fix selection invalid."
+          scope_resolution_failed: "Fix scope could not be resolved."
+          adapter_request_rejected: "Internal fix request rejected."
+          operation_interrupted: "Fix operation interrupted."
+          termination_unconfirmed: "Fix termination unconfirmed."
+"""
+
+PRESENTATION_QUALITY_AND_TESTS_TARGET = (
+    "  run_quality_gates:\n"
+    "    category: quality\n"
+    "    max_items: 10\n"
+    "    template_success: |\n"
+    "      Quality gate execution completed.\n"
+    "      - Scope: {scope}\n"
+    "      - File count: {file_count}\n"
+    "      - Overall pass: {overall_pass}\n"
+    "    template_failure: |\n"
+    "      Quality gate execution completed.\n"
+    "      - Scope: {scope}\n"
+    "      - File count: {file_count}\n"
+    "      - Overall pass: {overall_pass}\n"
+    "    collections:\n"
+    "      - field: gates\n"
+    '        heading: "Gate results:"\n'
+    '        item_template: "- {name}: status={status}, passed={passed}, score={score}"\n'
+    "        children:\n"
+    "          - field: findings\n"
+    '            heading: "  Findings:"\n'
+    '            item_template: "  - {file}:{line}:{column} [{code}] {message} '
+    '(severity={severity}, fixable={fixable})"\n'
+    "  run_tests:\n"
+    "    category: testing\n"
+    "    max_items: 5\n"
+    "    template_success: |\n"
+    "      Tests completed (exit {exit_code}).\n"
+    "      - Passed: {passed_count}\n"
+    "      - Failed: {failed_count}\n"
+    "      - Skipped: {skipped_count}\n"
+    "      - Errors: {errors_count}\n"
+    "      - Duration: {duration_seconds}s\n"
+    "      - Coverage: {coverage_pct}%\n"
+    "    template_failure: |\n"
+    "      Tests completed (exit {exit_code}): {error_message}\n"
+    "      - Passed: {passed_count}\n"
+    "      - Failed: {failed_count}\n"
+    "      - Skipped: {skipped_count}\n"
+    "      - Errors: {errors_count}\n"
+    "      - Duration: {duration_seconds}s\n"
+    "      - Coverage: {coverage_pct}%\n"
+    "    collections:\n"
+    "      - field: failures\n"
+    '        heading: "Failures:"\n'
+    '        item_template: "- {test_id} ({location}): {short_reason} '
+    '[collection error: {is_collection_error}]"\n'
+)
+
+PRESENTATION_CHECKS_AND_TESTS_REPLACEMENT = """  run_checks:
+    category: quality
+    max_items: 5
+    template_success: "{requested_scope}: {run_status}; profile={selected_profile}"
+    template_failure: "{requested_scope}: {run_status}; error={error_code}"
+    collections:
+      - field: results
+        heading: "Checks"
+        item_template: "{check_id}: {status}; args_source={args_source}"
+    enum_cases:
+      - field: error_code
+        cases:
+          no_configured_checks: "No checks are configured."
+          default_profile_missing: "No default check profile is configured."
+          selection_invalid: "The check selection is invalid."
+          branch_basis_unavailable: "The branch comparison basis is unavailable."
+          scope_resolution_failed: "The requested scope could not be resolved."
+          adapter_request_rejected: "An adapter rejected the check request."
+          operation_interrupted: "The operation was interrupted."
+          termination_unconfirmed: "Process termination was not confirmed."
+  run_tests:
+    category: testing
+    max_items: 5
+    template_success: "{requested_scope}"
+    template_failure: "{requested_scope}: {error_code}"
+    collections:
+      - field: results
+        heading: "Tests"
+        item_template: "{test_id}: {status}; args_source={args_source}"
+    enum_cases:
+      - field: error_code
+        cases:
+          no_configured_tests: "No test bindings configured."
+          no_active_tests: "No active test bindings."
+          selection_invalid: "Test selection invalid."
+          scope_resolution_failed: "Test scope could not be resolved."
+          adapter_request_rejected: "Internal test request rejected."
+          operation_interrupted: "Test operation interrupted."
+          termination_unconfirmed: "Test termination unconfirmed."
+"""
+
+
+def apply_compare_before_write(
+    target_path: Path,
+    expected_preimage_sha: str,
+    new_content: str | bytes,
+    expected_postimage_sha: str,
+) -> None:
+    """Atomic compare-before-write patch procedure with drift refusal.
+
+    1. Reads existing target file bytes.
+    2. Verifies preimage SHA-256 equals expected_preimage_sha.
+       If mismatch: raises ValueError('preimage_mismatch') without modifying target file.
+    3. Verifies postimage SHA-256 of new_content equals expected_postimage_sha.
+       If mismatch: raises ValueError('postimage_mismatch') without modifying target file.
+    4. Writes new_content to target_path atomically.
+    """
+    if not target_path.exists():
+        raise FileNotFoundError(f"target file not found: {target_path}")
+    current_bytes = target_path.read_bytes()
+    current_sha = hashlib.sha256(current_bytes).hexdigest()
+    if current_sha != expected_preimage_sha:
+        raise ValueError(
+            f"preimage_mismatch: {target_path} SHA {current_sha} "
+            f"does not match expected {expected_preimage_sha}"
+        )
+
+    new_bytes = new_content.encode("utf-8") if isinstance(new_content, str) else new_content
+    new_sha = hashlib.sha256(new_bytes).hexdigest()
+    if new_sha != expected_postimage_sha:
+        raise ValueError(
+            f"postimage_mismatch: generated SHA {new_sha} "
+            f"does not match expected {expected_postimage_sha}"
+        )
+
+    target_path.write_bytes(new_bytes)
+
+
+def build_prospective_presentation_yaml(live_content: str) -> str:
+    """Apply the full clean-break V3 prospective patch to presentation.yaml."""
+    content = live_content
+
+    # 1. Update recheck_quality instruction
+    assert PRESENTATION_RECHECK_TARGET in content
+    content = content.replace(PRESENTATION_RECHECK_TARGET, PRESENTATION_RECHECK_REPLACEMENT, 1)
+
+    # 2. Update suggestion instruction
+    assert PRESENTATION_SUGGESTION_TARGET in content
+    content = content.replace(
+        PRESENTATION_SUGGESTION_TARGET, PRESENTATION_SUGGESTION_REPLACEMENT, 1
+    )
+
+    # 3. Replace auto_fix with apply_fixes
+    auto_fix_target = PRESENTATION_AUTOFIX_TARGET
+    if auto_fix_target not in content:
+        auto_fix_target = auto_fix_target.replace("\n", "\r\n")
+    assert auto_fix_target in content
+    content = content.replace(auto_fix_target, PRESENTATION_APPLYFIXES_REPLACEMENT, 1)
+
+    # 4. Replace run_quality_gates + V2 run_tests with run_checks + V3 run_tests
+    quality_tests_target = PRESENTATION_QUALITY_AND_TESTS_TARGET
+    if quality_tests_target not in content:
+        quality_tests_target = quality_tests_target.replace("\n", "\r\n")
+    assert quality_tests_target in content
+    return content.replace(quality_tests_target, PRESENTATION_CHECKS_AND_TESTS_REPLACEMENT, 1)
 
 
 @pytest.fixture
@@ -168,7 +383,7 @@ class TestRolloutConfiguration:
         }
         assert real_template_ids == expected_packages
 
-    def test_artifacts_location_config_validates_all_19_real_packages(
+    def test_artifacts_location_config_validates_prospective_v3(
         self, temp_workspace: Path, real_template_ids: frozenset[str]
     ) -> None:
         """Verify that ConfigLoader and ConfigValidator accept prospective V3 artifacts.yaml."""
@@ -247,8 +462,40 @@ class TestRolloutConfiguration:
         with pytest.raises(ConfigError):
             loader.load_artifact_locations_config()
 
-    def test_pyproject_pyright_exact_hunk_and_mismatch_refusal(self) -> None:
-        """Verify pyproject.toml [tool.pyright] deletion, hash fidelity, and mismatch refusal."""
+    def test_artifacts_compare_before_write_and_drift_protection(
+        self, temp_workspace: Path
+    ) -> None:
+        """Test compare-before-write, hash assertion, and drift refusal for artifacts.yaml."""
+        root_dir = Path(__file__).resolve().parents[3]
+        live_file = root_dir / ".pgmcp" / "config" / "artifacts.yaml"
+        isolated_target = temp_workspace / ".pgmcp" / "config" / "artifacts.yaml"
+        isolated_target.parent.mkdir(parents=True, exist_ok=True)
+        isolated_target.write_bytes(live_file.read_bytes())
+
+        pre_sha = hashlib.sha256(live_file.read_bytes()).hexdigest()
+        post_sha = hashlib.sha256(PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")).hexdigest()
+
+        # Success path on isolated copy
+        apply_compare_before_write(
+            isolated_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha
+        )
+        assert isolated_target.read_bytes() == PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")
+        assert hashlib.sha256(isolated_target.read_bytes()).hexdigest() == post_sha
+
+        # Drift protection: simulate concurrent modification
+        drift_target = temp_workspace / "drift_artifacts.yaml"
+        drift_target.write_text("version: 1.0.0\n# concurrent edit\n", encoding="utf-8")
+        drift_bytes_before = drift_target.read_bytes()
+
+        with pytest.raises(ValueError, match="preimage_mismatch"):
+            apply_compare_before_write(
+                drift_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha
+            )
+        # Prove target is demonstrably unaltered after refusal
+        assert drift_target.read_bytes() == drift_bytes_before
+
+    def test_pyproject_pyright_exact_hunk_and_mismatch_refusal(self, temp_workspace: Path) -> None:
+        """Verify pyproject.toml [tool.pyright] compare-before-write, and drift refusal."""
         root_dir = Path(__file__).resolve().parents[3]
         pyproject_path = root_dir / "pyproject.toml"
         pyproject_raw = pyproject_path.read_text(encoding="utf-8")
@@ -258,7 +505,7 @@ class TestRolloutConfiguration:
         assert (PYPROJECT_PYRIGHT_HUNK in pyproject_raw) or (crlf_hunk in pyproject_raw)
         hunk = PYPROJECT_PYRIGHT_HUNK if PYPROJECT_PYRIGHT_HUNK in pyproject_raw else crlf_hunk
 
-        # Verify successful application
+        # Build patched content
         patched_pyproject = pyproject_raw.replace(hunk, "", 1)
         parsed_after = tomllib.loads(patched_pyproject)
         assert "pyright" not in parsed_after.get("tool", {})
@@ -267,12 +514,23 @@ class TestRolloutConfiguration:
         assert "mypy" in parsed_after["tool"]
         assert "pytest" in parsed_after["tool"]
 
-        # Mismatch refusal test: if preimage doesn't contain hunk, refuse without overwrite
-        deviated_content = "[project]\nname = 'deviated'\n"
-        if hunk not in deviated_content:
-            with pytest.raises(ValueError, match="preimage_mismatch"):
-                if hunk not in deviated_content:
-                    raise ValueError("preimage_mismatch: hunk not found in target")
+        pre_sha = hashlib.sha256(pyproject_path.read_bytes()).hexdigest()
+        post_sha = hashlib.sha256(patched_pyproject.encode("utf-8")).hexdigest()
+
+        # Success path on isolated copy
+        isolated_target = temp_workspace / "pyproject.toml"
+        isolated_target.write_bytes(pyproject_path.read_bytes())
+        apply_compare_before_write(isolated_target, pre_sha, patched_pyproject, post_sha)
+        assert isolated_target.read_bytes() == patched_pyproject.encode("utf-8")
+
+        # Drift protection: concurrent edit refusal
+        drift_target = temp_workspace / "drift_pyproject.toml"
+        drift_target.write_text("[project]\nname = 'concurrent_drift'\n", encoding="utf-8")
+        drift_bytes_before = drift_target.read_bytes()
+
+        with pytest.raises(ValueError, match="preimage_mismatch"):
+            apply_compare_before_write(drift_target, pre_sha, patched_pyproject, post_sha)
+        assert drift_target.read_bytes() == drift_bytes_before
 
     def test_pyrightconfig_native_settings_preservation(self) -> None:
         """Verify pyrightconfig.json natively declares all required compiler flags."""
@@ -286,36 +544,105 @@ class TestRolloutConfiguration:
         assert config.get("typeCheckingMode") == "strict"
         assert "mcp_server" in config.get("include", [])
 
-    def test_presentation_yaml_patch_and_mismatch_refusal(self, temp_workspace: Path) -> None:
-        """Verify presentation.yaml recheck_quality patch, loading, and mismatch refusal."""
+    def test_presentation_yaml_clean_break_patch_and_drift_refusal(
+        self, temp_workspace: Path
+    ) -> None:
+        """Verify full V3 clean break presentation patch, loading, and drift refusal."""
         root_dir = Path(__file__).resolve().parents[3]
         live_presentation_path = root_dir / ".pgmcp" / "config" / "presentation.yaml"
         live_content = live_presentation_path.read_text(encoding="utf-8")
 
-        # Verify target line is present
-        assert PRESENTATION_QUALITY_TARGET in live_content
+        # Build patched content
+        patched_content = build_prospective_presentation_yaml(live_content)
 
-        # Apply patch on isolated copy
-        patched_content = live_content.replace(
-            PRESENTATION_QUALITY_TARGET, PRESENTATION_QUALITY_REPLACEMENT, 1
-        )
-        assert PRESENTATION_QUALITY_REPLACEMENT in patched_content
-        assert PRESENTATION_QUALITY_TARGET not in patched_content
+        # Clean-break invariants: legacy tools must be completely gone
+        assert "run_quality_gates" not in patched_content
+        assert "auto_fix" not in patched_content
 
-        # Isolated config loader validates patched presentation.yaml
+        # New V3 surfaces must be present
+        assert "apply_fixes" in patched_content
+        assert "run_checks" in patched_content
+        assert "run_tests" in patched_content
+
+        # Write to isolated copy and validate loader acceptance
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        (config_dir / "presentation.yaml").write_text(patched_content, encoding="utf-8")
+        isolated_presentation = config_dir / "presentation.yaml"
+        isolated_presentation.write_text(patched_content, encoding="utf-8")
+
         loader = ConfigLoader(config_dir)
         pres_config = loader.load_presentation_config()
         assert pres_config.version == "1.0.0"
         assert "run_checks" in pres_config.global_settings.next_instruction_texts["recheck_quality"]
+        assert "apply_fixes" in pres_config.tools
+        assert "run_checks" in pres_config.tools
+        assert "run_tests" in pres_config.tools
+        assert "run_quality_gates" not in pres_config.tools
+        assert "auto_fix" not in pres_config.tools
 
-        # Mismatch refusal test: if target line not in file, refuse patch
-        corrupted_content = "version: '1.0.0'\n"
+        # Validate presentation alignment of the new V3 tools against their output models
+        v3_tools_subset = {
+            "run_checks": pres_config.tools["run_checks"],
+            "run_tests": pres_config.tools["run_tests"],
+            "apply_fixes": pres_config.tools["apply_fixes"],
+        }
+        v3_presenter = TextPresenter(
+            config=PresentationConfig.model_validate(
+                {
+                    "version": "1.0.0",
+                    "global": pres_config.global_settings,
+                    "tools": v3_tools_subset,
+                }
+            )
+        )
+        v3_contracts = (
+            SupportedToolContract(name="run_checks", output_model=RunChecksOutput),
+            SupportedToolContract(name="run_tests", output_model=RunTestsOutput),
+            SupportedToolContract(name="apply_fixes", output_model=ApplyFixesOutput),
+        )
+        validate_presentation_alignment(v3_presenter, v3_contracts)
+
+        # Compare-before-write test
+        pre_sha = hashlib.sha256(live_presentation_path.read_bytes()).hexdigest()
+        post_sha = hashlib.sha256(patched_content.encode("utf-8")).hexdigest()
+
+        isolated_target = temp_workspace / "presentation_target.yaml"
+        isolated_target.write_bytes(live_presentation_path.read_bytes())
+        apply_compare_before_write(isolated_target, pre_sha, patched_content, post_sha)
+        assert isolated_target.read_bytes() == patched_content.encode("utf-8")
+
+        # Drift protection: concurrent edit refusal
+        drift_target = temp_workspace / "drift_presentation.yaml"
+        drift_target.write_text("version: '1.0.0'\n# drifted\n", encoding="utf-8")
+        drift_bytes_before = drift_target.read_bytes()
+
         with pytest.raises(ValueError, match="preimage_mismatch"):
-            if PRESENTATION_QUALITY_TARGET not in corrupted_content:
-                raise ValueError("preimage_mismatch: target line not found")
+            apply_compare_before_write(drift_target, pre_sha, patched_content, post_sha)
+        assert drift_target.read_bytes() == drift_bytes_before
+
+    def test_version_compare_before_write_and_preservation(self, temp_workspace: Path) -> None:
+        """Verify .version compare-before-write, byte preservation, and drift refusal."""
+        root_dir = Path(__file__).resolve().parents[3]
+        live_version_path = root_dir / ".pgmcp" / ".version"
+        live_bytes = live_version_path.read_bytes()
+
+        pre_sha = hashlib.sha256(live_bytes).hexdigest()
+        post_sha = pre_sha  # byte-identical preservation
+
+        isolated_target = temp_workspace / ".version"
+        isolated_target.write_bytes(live_bytes)
+        apply_compare_before_write(isolated_target, pre_sha, live_bytes, post_sha)
+        assert isolated_target.read_bytes() == live_bytes
+        assert isolated_target.read_text(encoding="utf-8").strip() == "2.0.0"
+
+        # Drift protection
+        drift_target = temp_workspace / "drift_version"
+        drift_target.write_bytes(b"2.0.1\n")
+        drift_bytes_before = drift_target.read_bytes()
+
+        with pytest.raises(ValueError, match="preimage_mismatch"):
+            apply_compare_before_write(drift_target, pre_sha, live_bytes, post_sha)
+        assert drift_target.read_bytes() == drift_bytes_before
 
     def test_live_configuration_remains_unmutated_in_cy070(self) -> None:
         """Verify that live repository configuration files remain untouched in CY070."""
@@ -327,7 +654,8 @@ class TestRolloutConfiguration:
 
         assert "artifact_types" in live_artifacts.read_text(encoding="utf-8")
         assert "[tool.pyright]" in live_pyproject.read_text(encoding="utf-8")
-        assert PRESENTATION_QUALITY_TARGET in live_presentation.read_text(encoding="utf-8")
+        assert "run_quality_gates" in live_presentation.read_text(encoding="utf-8")
+        assert "auto_fix" in live_presentation.read_text(encoding="utf-8")
         assert live_version.read_text(encoding="utf-8").strip() == "2.0.0"
 
     def test_prospective_configuration_hashes_and_drift_protection(self) -> None:
@@ -352,9 +680,7 @@ class TestRolloutConfiguration:
         presentation_raw = (root_dir / ".pgmcp" / "config" / "presentation.yaml").read_text(
             encoding="utf-8"
         )
-        presentation_patched = presentation_raw.replace(
-            PRESENTATION_QUALITY_TARGET, PRESENTATION_QUALITY_REPLACEMENT, 1
-        )
+        presentation_patched = build_prospective_presentation_yaml(presentation_raw)
         presentation_pre_sha = hashlib.sha256(
             (root_dir / ".pgmcp" / "config" / "presentation.yaml").read_bytes()
         ).hexdigest()
@@ -381,8 +707,9 @@ class TestRolloutConfiguration:
         assert presentation_pre_sha == (
             "2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217"
         )
+        # Assert presentation_post_sha
         assert presentation_post_sha == (
-            "1e0a4f5b03dd38a64279aa9c13ad5f9b1e47cc475521aa2b4efe3c8362e75895"
+            "96e94c62d64e43e0c50389a17c7edf012fa1785ec072d2d4b80b07eb811a9888"
         )
         assert version_pre_sha == (
             "efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1"
@@ -390,23 +717,3 @@ class TestRolloutConfiguration:
         assert version_post_sha == (
             "efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1"
         )
-
-        # Drift protection: simulated patch applicator that strictly verifies preimage hash
-        def apply_staged_configuration_patch(
-            target_path: Path, expected_preimage_sha: str, new_content: str
-        ) -> str:
-            current_bytes = target_path.read_bytes()
-            current_sha = hashlib.sha256(current_bytes).hexdigest()
-            if current_sha != expected_preimage_sha:
-                raise ValueError(
-                    f"preimage_mismatch: {target_path} SHA {current_sha} "
-                    f"does not match expected {expected_preimage_sha}"
-                )
-            return new_content
-
-        # Verify drift protection refusal when preimage differs
-        corrupted_artifacts_path = root_dir / "pyproject.toml"  # mismatched file
-        with pytest.raises(ValueError, match="preimage_mismatch"):
-            apply_staged_configuration_patch(
-                corrupted_artifacts_path, artifacts_pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML
-            )

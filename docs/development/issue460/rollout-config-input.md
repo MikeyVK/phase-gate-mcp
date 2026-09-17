@@ -3,19 +3,19 @@
 # Issue 460 Rollout Config Input: Placement and Rollout Configuration
 
 **Status:** APPROVED  
-**Version:** 2.0  
+**Version:** 3.0  
 **Last Updated:** 2026-09-17
 
 ---
 
 ## Purpose
 
-Record reviewed configuration source mappings, replacement `artifacts.yaml` placement policy for the complete 19-package template suite, `[tool.pyright]` removal hunk, and prospective V3 diffs, preimages, postimages, and drift protection for CY072 cutover.
+Record reviewed configuration source mappings, authoritative replacement `artifacts.yaml` placement policy for the complete 19-package template suite, `[tool.pyright]` removal hunk, and prospective V3 diffs, preimages, postimages, and atomic compare-before-write drift protection for CY072 cutover.
 
 ## Scope
 
 **In Scope:**
-Artifacts location policy for all 19 real template suite packages, presentation and quality configuration compatibility, `pyproject.toml` Pyright cleanup, prospective configuration diffs, SHA-256 pre/postimages, and drift protection against preimage mismatch.
+Authoritative artifacts location policy for all 19 real template suite packages, full PGMCP 3.0 clean break presentation patch (removal of `run_quality_gates` and `auto_fix`, introduction of `apply_fixes`, `run_checks`, and V3 `run_tests`), `pyproject.toml` Pyright cleanup, prospective configuration diffs, exact SHA-256 pre/postimages, and compare-before-write drift refusal protecting target files from concurrent modification.
 
 **Out of Scope:**
 Direct mutation of live configuration files prior to CY072; modification of server proxy or transport logic.
@@ -32,17 +32,18 @@ Read these first:
 
 ## Summary
 
-Implementation evidence for Cycle 70 (Prepared placement and rollout configuration) under Issue #460. Documents V3 configuration migration models, records the exact prospective diffs and SHA-256 pre/postimages for all four affected configurations (`artifacts.yaml`, `pyproject.toml`, `presentation.yaml`, `.version`), proves loader acceptance and rejection of stale aliases on isolated copies against the real 19-package catalog, establishes drift protection / mismatch refusal, and stages prospective diffs without premature live modification.
+Implementation evidence for Cycle 70 (Prepared placement and rollout configuration) under Issue #460. Documents V3 configuration migration models, records exact prospective diffs and SHA-256 pre/postimages for all four affected configurations (`artifacts.yaml`, `pyproject.toml`, `presentation.yaml`, `.version`), proves loader acceptance and rejection of stale aliases on isolated copies against the real 19-package catalog, establishes an atomic compare-before-write patch procedure with verifiable drift protection, and stages prospective diffs without premature live modification.
 
 ---
 
 ## Key Changes
 
-- Prepare exact replacement `artifacts.yaml` location policy and schema validation for all 19 real template packages.
+- Establish single authoritative replacement `artifacts.yaml` location policy and schema validation for all 19 real template packages, byte-identical across documentation, test constant, and postimage hash.
 - Explicitly reject informal aliases (`dto`, `worker`) and unknown packages in accordance with Design contract DI-04 §3.2.
+- Implement full PGMCP 3.0 clean break for `presentation.yaml`: retire all active `run_quality_gates` and `auto_fix` sections and hints, and provide complete equivalent declarative presentation for `apply_fixes`, `run_checks`, and V3 `run_tests`.
 - Record prospective unified diffs and SHA-256 pre/postimages for all 4 affected configurations.
 - Record `[tool.pyright]` deletion hunk and verify preserved Pyright values in `pyrightconfig.json`.
-- Establish and verify drift protection / mismatch refusal protocol across all prospective patches.
+- Establish and verify atomic compare-before-write drift refusal: prove that drifted targets remain demonstrably unaltered after mismatch refusal.
 - Provide executable integration test evidence in `test_rollout_configuration.py`.
 
 ---
@@ -51,8 +52,8 @@ Implementation evidence for Cycle 70 (Prepared placement and rollout configurati
 
 1. CY070: Record configuration delta baseline, prospective diffs, and pre/post SHA-256 hashes in `rollout-config-input.md`.
 2. CY070: Verify target loaders accept prospective configs, cross-validate against the real 19 template packages, and reject obsolete/stale inputs in `test_rollout_configuration.py`.
-3. CY071: Rehearse prospective configuration changes and drift protection against an isolated candidate installation.
-4. CY072: Atomically apply prospective configuration diffs to live workspace files alongside cutover.
+3. CY071: Rehearse prospective configuration changes and compare-before-write drift protection against an isolated candidate installation.
+4. CY072: Atomically apply prospective configuration diffs to live workspace files alongside cutover using compare-before-write.
 
 ---
 
@@ -60,9 +61,10 @@ Implementation evidence for Cycle 70 (Prepared placement and rollout configurati
 
 - [x] DOCFLOW-E04: Prospective configuration diffs agree with registered V3 configuration schemas.
 - [x] DOCFLOW-E04: All 19 real template packages (`.pgmcp/template_suite/*/manifest.yaml`) are explicitly configured with canonical `template_id`s; informal aliases are rejected.
-- [x] DOCFLOW-E04: Isolated target loaders accept prospective configs and reject obsolete structures and unknown template IDs.
+- [x] DOCFLOW-E04: Single authoritative `artifacts.yaml` postimage is byte-identical across document, executable test constant, and SHA-256 hash.
+- [x] DOCFLOW-E04: Full PGMCP 3.0 clean break for `presentation.yaml`: `run_quality_gates` and `auto_fix` completely retired; `apply_fixes`, `run_checks`, and V3 `run_tests` fully configured and validated against DTO models.
 - [x] DOCFLOW-E04: Exact prospective diffs and SHA-256 pre/postimages recorded for `artifacts.yaml`, `pyproject.toml`, `presentation.yaml`, and `.version`.
-- [x] DOCFLOW-E04: Drift protection / mismatch refusal verified: patches refuse to apply if preimages do not match expected hashes/content.
+- [x] DOCFLOW-E04: Atomic compare-before-write drift protection verified: patches refuse to apply if preimages deviate, with proof of unaltered target bytes.
 - [x] `[tool.pyright]` deletion preserves effective Pyright settings via `pyrightconfig.json`.
 - [x] No live configuration mutated prior to CY072 cutover.
 
@@ -78,7 +80,7 @@ Under DI-04 §3.3, DI-05 §7.20, and Planning Path Ownership, CY070 reviews eigh
 | C005 | `.pgmcp/config/quality.yaml` | Legacy quality gates configuration | Reviewed; superseded by modular V3 checks/tests/fixes; live file untouched | CY072 |
 | C006 | `pyproject.toml` | Project configuration | Reviewed; prepare `[tool.pyright]` deletion hunk; live file untouched | CY072 |
 | C063 | `mcp_server/config/settings.py` | Central server settings authority | Reviewed; target wiring proven; live file untouched | CY072 |
-| C106 | `.pgmcp/config/presentation.yaml` | Output and presentation configuration | Reviewed; target tool hints aligned; live file untouched | CY072 |
+| C106 | `.pgmcp/config/presentation.yaml` | Output and presentation configuration | Reviewed; complete V3 clean break prepared; live file untouched | CY072 |
 | S008 | `pyrightconfig.json` | Native Pyright compiler configuration | Reviewed; confirmed canonical source for Pyright flags; untouched | CY022 / CY072 |
 | S017 | `.pgmcp/config/project_structure.yaml` | Legacy project structure | Reviewed; no active dependency in EnforcementRunner; untouched | CY082 |
 | S051 | `.pgmcp/.version` | Version marker scalar | Reviewed; compatibility value retained (`2.0.0\n`); live file untouched | CY072 |
@@ -114,48 +116,61 @@ The 19 canonical template packages present in `.pgmcp/template_suite/*/manifest.
 
 **No informal aliases:** Location keys are exact `manifest.yaml:template_id` references. Aliases such as `dto` or `worker` are invalid and strictly rejected by `ConfigValidator.validate_artifact_locations` with `artifact_location_template_unknown`.
 
-### 2.2 Target V3 Schema Model
-The target configuration schema is defined by `mcp_server.config.schemas.artifact_locations.ArtifactLocationsConfig`:
+### 2.2 Authoritative Target V3 Schema Model
+The target configuration schema is defined by `mcp_server.config.schemas.artifact_locations.ArtifactLocationsConfig`. This YAML represents the single byte-identical target across documentation, executable test constant, and postimage hash:
 
 ```yaml
 version: "2.0.0"
 artifacts:
   architecture:
     default_root: "docs/architecture"
+    additional_roots:
+      - "docs/manuals"
   commit:
-    default_root: ".pgmcp/commits"
+    default_root: ".pgmcp/temp/artifacts"
+    additional_roots:
+      - ".phase-gate/temp/artifacts"
   design:
-    default_root: "docs/design"
-  generic_doc:
     default_root: "docs/development"
+  generic_doc:
+    default_root: "docs"
+    additional_roots:
+      - "docs/development"
+      - "docs/reference"
   issue:
-    default_root: ".pgmcp/issues"
+    default_root: ".github/ISSUE_TEMPLATE"
   planning:
-    default_root: "docs/planning"
+    default_root: "docs/development"
   pr:
-    default_root: ".pgmcp/prs"
+    default_root: ".github/PULL_REQUEST_TEMPLATE"
   pytest_integration_test:
     default_root: "tests/mcp_server/integration"
+    additional_roots:
+      - "tests/integration"
   pytest_unit_test:
     default_root: "tests/mcp_server/unit"
+    additional_roots:
+      - "tests/unit"
   python_adapter:
     default_root: "mcp_server/adapters"
   python_class:
-    default_root: "mcp_server/classes"
+    default_root: "mcp_server"
   python_protocol:
-    default_root: "mcp_server/protocols"
+    default_root: "mcp_server/core/interfaces"
   python_pydantic_config:
     default_root: "mcp_server/config/schemas"
   python_pydantic_dto:
     default_root: "mcp_server/dtos"
     additional_roots:
-      - "mcp_server/models"
+      - "mcp_server/schemas"
   python_worker:
     default_root: "mcp_server/workers"
+    additional_roots:
+      - "mcp_server/execution"
   reference:
     default_root: "docs/reference"
   research:
-    default_root: "docs/research"
+    default_root: "docs/development"
   typescript_dto:
     default_root: "frontend/src/dtos"
   validation_report:
@@ -170,16 +185,17 @@ artifacts:
 
 ---
 
-## 3. Prospective Configuration Diffs, Hashes, and Drift Protection
+## 3. Prospective Configuration Diffs, Hashes, and Compare-Before-Write Protection
 
 Under Planning §4.1 / §4.3 (DOCFLOW-E04) and Rollout CY070, all planned configuration deltas for CY072 are recorded with their prospective unified diffs, SHA-256 preimages, and SHA-256 postimages.
 
-### 3.1 Drift Protection / Mismatch Refusal Protocol
+### 3.1 Compare-Before-Write Drift Protection Protocol
 
 To protect against configuration drift and race conditions during rollout:
 1. Every patch or configuration rewrite verifies that the live file on disk exactly matches the expected **Preimage SHA-256** hash before performing any modification.
 2. If the hash or expected hunk does not match, the application procedure immediately **refuses** with `preimage_mismatch` without altering the target file.
-3. Upon application, the resulting file is verified against the **Postimage SHA-256** hash.
+3. Upon applying the transformation in memory, the resulting bytes are verified against the expected **Postimage SHA-256** hash before being committed to disk.
+4. If a concurrent edit or drift occurred, the procedure refuses and leaves target file bytes demonstrably unaltered.
 
 ### 3.2 C004: `.pgmcp/config/artifacts.yaml`
 - **Role:** Workspace artifact location policy.
@@ -190,47 +206,60 @@ To protect against configuration drift and race conditions during rollout:
 ```diff
 --- a/.pgmcp/config/artifacts.yaml
 +++ b/.pgmcp/config/artifacts.yaml
-@@ -1,2 +1,42 @@
+@@ -1,2 +1,56 @@
 -version: 1.0.0
 -artifact_types: []
 +version: "2.0.0"
 +artifacts:
 +  architecture:
 +    default_root: "docs/architecture"
++    additional_roots:
++      - "docs/manuals"
 +  commit:
-+    default_root: ".pgmcp/commits"
++    default_root: ".pgmcp/temp/artifacts"
++    additional_roots:
++      - ".phase-gate/temp/artifacts"
 +  design:
-+    default_root: "docs/design"
-+  generic_doc:
 +    default_root: "docs/development"
++  generic_doc:
++    default_root: "docs"
++    additional_roots:
++      - "docs/development"
++      - "docs/reference"
 +  issue:
-+    default_root: ".pgmcp/issues"
++    default_root: ".github/ISSUE_TEMPLATE"
 +  planning:
-+    default_root: "docs/planning"
++    default_root: "docs/development"
 +  pr:
-+    default_root: ".pgmcp/prs"
++    default_root: ".github/PULL_REQUEST_TEMPLATE"
 +  pytest_integration_test:
 +    default_root: "tests/mcp_server/integration"
++    additional_roots:
++      - "tests/integration"
 +  pytest_unit_test:
 +    default_root: "tests/mcp_server/unit"
++    additional_roots:
++      - "tests/unit"
 +  python_adapter:
 +    default_root: "mcp_server/adapters"
 +  python_class:
-+    default_root: "mcp_server/classes"
++    default_root: "mcp_server"
 +  python_protocol:
-+    default_root: "mcp_server/protocols"
++    default_root: "mcp_server/core/interfaces"
 +  python_pydantic_config:
 +    default_root: "mcp_server/config/schemas"
 +  python_pydantic_dto:
 +    default_root: "mcp_server/dtos"
 +    additional_roots:
-+      - "mcp_server/models"
++      - "mcp_server/schemas"
 +  python_worker:
 +    default_root: "mcp_server/workers"
++    additional_roots:
++      - "mcp_server/execution"
 +  reference:
 +    default_root: "docs/reference"
 +  research:
-+    default_root: "docs/research"
++    default_root: "docs/development"
 +  typescript_dto:
 +    default_root: "frontend/src/dtos"
 +  validation_report:
@@ -261,10 +290,16 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 - `typeCheckingMode: "strict"` (line 17)
 - `include: ["mcp_server"]` (line 3)
 
-### 3.4 C106: `.pgmcp/config/presentation.yaml`
+### 3.4 C106: `.pgmcp/config/presentation.yaml` (PGMCP 3.0 Clean Break)
 - **Role:** Tool output and instruction presentation configuration.
 - **Preimage SHA-256:** `2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217`
-- **Postimage SHA-256:** `1e0a4f5b03dd38a64279aa9c13ad5f9b1e47cc475521aa2b4efe3c8362e75895`
+- **Postimage SHA-256:** `96e94c62d64e43e0c50389a17c7edf012fa1785ec072d2d4b80b07eb811a9888`
+
+**Clean Break Changes:**
+1. Update `recheck_quality` to reference `run_checks(scope='targets', targets={modified_files})`.
+2. Replace `quality_gates_failed_verbose_suggestion` with `checks_failed_verbose_suggestion` referencing `run_checks`.
+3. Retire legacy `auto_fix` tool presentation section completely; replace with declarative `apply_fixes` presentation config.
+4. Retire legacy `run_quality_gates` tool presentation section completely; replace with declarative `run_checks` and V3 framework-neutral `run_tests` presentation config.
 
 **Prospective Unified Diff:**
 ```diff
@@ -272,14 +307,139 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 +++ b/.pgmcp/config/presentation.yaml
 @@ -60,1 +60,1 @@
 -    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_quality_gates(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
-+    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_checks(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
++    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_checks(scope='targets', targets={modified_files}) to verify that the applied fixes now pass all checks."
+@@ -156,1 +156,1 @@
+-        quality_gates_failed_verbose_suggestion: "Some quality gates failed. Rerun the tool with verbose=True to retrieve complete linter/checker tracebacks. Suggested command: run_quality_gates({scope_part}, verbose=True)"
++        checks_failed_verbose_suggestion: "Some checks failed. Rerun the tool with verbose=True to retrieve complete tracebacks. Suggested command: run_checks(scope={scope_part}, verbose=True)"
+@@ -219,19 +219,18 @@
+-  auto_fix:
+-    category: mutation
+-    max_items: 20
+-    template_success: |
+-      **Auto-Fix Run Completed Successfully**
+-      - Gates executed: {gates_executed_count}
+-      - Files modified: {modified_files_count}
+-    template_failure: |
+-      **Auto-Fix Run Failed**
+-      - Error: {error_message}
+-      - Gates executed: {gates_executed_count}
+-      - Files modified: {modified_files_count}
+-    collections:
+-      - field: gates_executed
+-        heading: "Gates executed:"
+-        item_template: "- {item}"
+-      - field: modified_files
+-        heading: "Files modified:"
+-        item_template: "- {item}"
++  apply_fixes:
++    category: mutation
++    max_items: 5
++    template_success: "{requested_scope}"
++    template_failure: "{requested_scope}: {error_code}"
++    collections:
++      - field: results
++        heading: "Fixes"
++        item_template: "{fix_id}: {status}; args_source={args_source}"
++    enum_cases:
++      - field: error_code
++        cases:
++          no_configured_fixes: "No fix bindings configured."
++          selection_invalid: "Fix selection invalid."
++          scope_resolution_failed: "Fix scope could not be resolved."
++          adapter_request_rejected: "Internal fix request rejected."
++          operation_interrupted: "Fix operation interrupted."
++          termination_unconfirmed: "Fix termination unconfirmed."
+@@ -597,44 +596,38 @@
+-  run_quality_gates:
+-    category: quality
+-    max_items: 10
+-    template_success: |
+-      Quality gate execution completed.
+-      - Scope: {scope}
+-      - File count: {file_count}
+-      - Overall pass: {overall_pass}
+-    template_failure: |
+-      Quality gate execution completed.
+-      - Scope: {scope}
+-      - File count: {file_count}
+-      - Overall pass: {overall_pass}
+-    collections:
+-      - field: gates
+-        heading: "Gate results:"
+-        item_template: "- {name}: status={status}, passed={passed}, score={score}"
+-        children:
+-          - field: findings
+-            heading: "  Findings:"
+-            item_template: "  - {file}:{line}:{column} [{code}] {message} (severity={severity}, fixable={fixable})"
+-  run_tests:
+-    category: testing
+-    max_items: 5
+-    template_success: |
+-      Tests completed (exit {exit_code}).
+-      - Passed: {passed_count}
+-      - Failed: {failed_count}
+-      - Skipped: {skipped_count}
+-      - Errors: {errors_count}
+-      - Duration: {duration_seconds}s
+-      - Coverage: {coverage_pct}%
+-    template_failure: |
+-      Tests completed (exit {exit_code}): {error_message}
+-      - Passed: {passed_count}
+-      - Failed: {failed_count}
+-      - Skipped: {skipped_count}
+-      - Errors: {errors_count}
+-      - Duration: {duration_seconds}s
+-      - Coverage: {coverage_pct}%
+-    collections:
+-      - field: failures
+-        heading: "Failures:"
+-        item_template: "- {test_id} ({location}): {short_reason} [collection error: {is_collection_error}]"
++  run_checks:
++    category: quality
++    max_items: 5
++    template_success: "{requested_scope}: {run_status}; profile={selected_profile}"
++    template_failure: "{requested_scope}: {run_status}; error={error_code}"
++    collections:
++      - field: results
++        heading: "Checks"
++        item_template: "{check_id}: {status}; args_source={args_source}"
++    enum_cases:
++      - field: error_code
++        cases:
++          no_configured_checks: "No checks are configured."
++          default_profile_missing: "No default check profile is configured."
++          selection_invalid: "The check selection is invalid."
++          branch_basis_unavailable: "The branch comparison basis is unavailable."
++          scope_resolution_failed: "The requested scope could not be resolved."
++          adapter_request_rejected: "An adapter rejected the check request."
++          operation_interrupted: "The operation was interrupted."
++          termination_unconfirmed: "Process termination was not confirmed."
++  run_tests:
++    category: testing
++    max_items: 5
++    template_success: "{requested_scope}"
++    template_failure: "{requested_scope}: {error_code}"
++    collections:
++      - field: results
++        heading: "Tests"
++        item_template: "{test_id}: {status}; args_source={args_source}"
++    enum_cases:
++      - field: error_code
++        cases:
++          no_configured_tests: "No test bindings configured."
++          no_active_tests: "No active test bindings."
++          selection_invalid: "Test selection invalid."
++          scope_resolution_failed: "Test scope could not be resolved."
++          adapter_request_rejected: "Internal test request rejected."
++          operation_interrupted: "Test operation interrupted."
++          termination_unconfirmed: "Test termination unconfirmed."
 ```
 
 ### 3.5 S051: `.pgmcp/.version`
 - **Role:** Compatibility version scalar.
 - **Preimage SHA-256:** `efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1`
 - **Postimage SHA-256:** `efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1`
-- **Disposition:** Unchanged. The file contains `2.0.0\n` (7 bytes) and remains byte-identical throughout CY070 and CY071 until retirement in CY072.
+- **Disposition:** Unchanged. The file contains `2.0.0\n` (or CRLF on Windows checkouts) and remains byte-identical throughout CY070 and CY071 until retirement in CY072.
 
 ---
 
@@ -303,15 +463,17 @@ Durable verification for CY070 is provided by the dedicated integration test sui
 [`tests/mcp_server/integration/test_rollout_configuration.py`](../../../tests/mcp_server/integration/test_rollout_configuration.py)
 
 The test suite validates:
-1. `test_real_template_package_catalog_discovery`: Discovers and confirms the 19 real canonical template packages from `.pgmcp/template_suite/*/manifest.yaml`.
+1. `test_real_template_suite_catalog_has_all_19_packages`: Confirms the 19 canonical packages from `.pgmcp/template_suite/*/manifest.yaml`.
 2. `test_artifacts_location_config_validates_prospective_v3`: `ConfigLoader` and `ConfigValidator` successfully load and cross-validate prospective V3 `artifacts.yaml` against real packages.
 3. `test_stale_or_unknown_template_id_rejection`: Confirms that informal aliases (`dto`, `worker`) and unknown package IDs are strictly rejected with `ConfigError("artifact_location_template_unknown")`.
 4. `test_artifacts_location_config_rejects_obsolete_and_duplicate_roots`: Confirms that legacy V1 `artifacts.yaml` (`artifact_types: []`) and duplicate roots within a single entry are strictly rejected.
-5. `test_pyproject_pyright_exact_hunk_and_mismatch_refusal`: Verifies prospective deletion of `[tool.pyright]`, TOML parseability, and mismatch refusal.
-6. `test_pyrightconfig_native_settings_preservation`: Confirms that `pyrightconfig.json` natively declares all compiler flags (`reportFunctionMemberAccess: false`, `3.11`, `Windows`, `strict`).
-7. `test_presentation_yaml_patch_and_mismatch_refusal`: Verifies `presentation.yaml` patch application, `ConfigLoader` acceptance, and mismatch refusal.
-8. `test_live_configuration_remains_unmutated_in_cy070`: Verifies that live `.pgmcp/config/artifacts.yaml`, `pyproject.toml`, `presentation.yaml`, and `.version` remain unmodified on disk during CY070.
-9. `test_prospective_configuration_hashes_and_drift_protection`: Asserts exact SHA-256 pre/postimages for all 4 configs and verifies drift refusal when preimage hashes deviate.
+5. `test_artifacts_compare_before_write_and_drift_protection`: Tests `apply_compare_before_write` for `artifacts.yaml`, proving successful write on match and unchanged bytes on preimage drift.
+6. `test_pyproject_pyright_exact_hunk_and_mismatch_refusal`: Verifies prospective deletion of `[tool.pyright]`, TOML parseability, compare-before-write application, and drift refusal with unchanged target bytes.
+7. `test_pyrightconfig_native_settings_preservation`: Confirms that `pyrightconfig.json` natively declares all compiler flags (`reportFunctionMemberAccess: false`, `3.11`, `Windows`, `strict`).
+8. `test_presentation_yaml_clean_break_patch_and_drift_refusal`: Verifies full V3 clean break patch: `run_quality_gates` and `auto_fix` absence, presence of `apply_fixes`, `run_checks`, and V3 `run_tests`, validation against DTO models via `validate_presentation_alignment`, and compare-before-write drift refusal with unchanged target bytes.
+9. `test_version_compare_before_write_and_preservation`: Verifies byte preservation and drift refusal for `.version`.
+10. `test_live_configuration_remains_unmutated_in_cy070`: Verifies that live `.pgmcp/config/artifacts.yaml`, `pyproject.toml`, `presentation.yaml`, and `.version` remain unmodified on disk during CY070.
+11. `test_prospective_configuration_hashes_and_drift_protection`: Asserts exact SHA-256 pre/postimages for all 4 configs.
 
 ---
 
@@ -339,3 +501,4 @@ In case of rollback:
 |---------|------|--------|---------|
 | 1.0 | 2026-09-17 | @imp implementer | Initial release: configuration source register, artifacts location policy, pyproject deletion hunk, and test verification. |
 | 2.0 | 2026-09-17 | @imp implementer | Remediation: update artifacts.yaml to all 19 real template suite packages, reject informal aliases, add prospective diffs and SHA-256 pre/postimages for all 4 configs, and document drift protection / mismatch refusal. |
+| 3.0 | 2026-09-17 | @imp implementer | Full clean-break remediation: unify artifacts.yaml postimage and hash byte-identically with test constant; expand presentation patch to complete PGMCP 3.0 clean break (retire run_quality_gates and auto_fix, add apply_fixes, run_checks, and V3 run_tests with DTO alignment proof); verify atomic compare-before-write procedure with demonstrable unchanged bytes on drift. |
