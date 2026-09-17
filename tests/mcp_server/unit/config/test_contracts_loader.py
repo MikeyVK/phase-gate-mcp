@@ -25,6 +25,7 @@ import yaml
 
 # Project modules
 from mcp_server.config.loader import ConfigLoader
+from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
     ContractsConfig,
@@ -34,7 +35,17 @@ from mcp_server.config.schemas.contracts_config import (
     WorkflowPhaseEntry,
 )
 from mcp_server.core.exceptions import ConfigError
-from tests.mcp_server.test_support import get_default_server_root, make_artifact_manager
+from mcp_server.core.interfaces.template_catalog import thaw_json
+from mcp_server.core.operation_notes import NoteContext
+from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
+from mcp_server.services.scaffold_operation import ScaffoldOperation
+from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
+from mcp_server.utils.atomic_file_writer import CreateOnlyFileWriter
+from mcp_server.utils.path_resolver import FileArtifactTargetPaths, resolve_temporary_paths
+from tests.mcp_server.fixtures.delivered_templates import load_delivered_template
+from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.unit.execution.test_check_service import compose as compose_check_service
 
 _STUB_INSTR_DICT: dict[str, str] = {
     "sub_role": "test-role",
@@ -848,16 +859,20 @@ class TestCY068DocflowE01:
 
         assert patched_config.merge_policy.pr_allowed_phase == "ready"
 
-    def test_nineteen_workflow_variants_satisfy_docflow_e02(self, tmp_path: Path) -> None:
+    @pytest.mark.asyncio
+    async def test_nineteen_workflow_variants_satisfy_docflow_e02(self, tmp_path: Path) -> None:
         """DOCFLOW-E02: Schema-admitted carriers preserve the 19 workflow semantic meanings.
 
         All four physical carrier schemas/templates are exercised, with traceable assertions
-        covering the union of the nineteen workflow meanings (DI-07 §7.2). The schema-admitted
-        scaffold preserves the complete semantic union supplied through existing carrier fields;
-        final document organization and evidence expansion remain a safe_edit_file responsibility.
+        covering the union of the nineteen workflow meanings (DI-07 §7.2). The canonical V3
+        route is exercised via the delivered catalog, schema admission against package schemas,
+        renderer, and ScaffoldArtifactTool persistence. The schema-admitted scaffold preserves
+        the complete semantic union supplied through existing carrier fields; final document
+        organization and evidence expansion remain a safe_edit_file responsibility.
         """
         root = Path(__file__).parents[4]
-        manager = make_artifact_manager(root)
+        suite = root / ".pgmcp/template_suite"
+        config_root = root / ".pgmcp/config"
 
         @dataclass(frozen=True)
         class WorkflowObligation:
@@ -947,7 +962,7 @@ class TestCY068DocflowE01:
                     "Target responsibilities/interfaces, preservation, cutover/removals "
                     "and test architecture"
                 ),
-                carrier_field="key_decisions",
+                carrier_field="key_decisions.rationale",
                 sentinel="[SENTINEL-REF-DES:target-responsibilities-cutover-removals-test-arch]",
             ),
             WorkflowObligation(
@@ -974,7 +989,7 @@ class TestCY068DocflowE01:
                 variant="Bug Planning",
                 carrier="planning",
                 obligations=("Reproduction/regression/correction obligations and exit evidence"),
-                carrier_field="cycles.goal",
+                carrier_field="work_units.goal",
                 sentinel="[SENTINEL-BUG-PLAN:repro-regression-correction-exit-evidence]",
             ),
             WorkflowObligation(
@@ -984,7 +999,7 @@ class TestCY068DocflowE01:
                     "Responsibility moves, preservation/removal obligations, "
                     "dependencies and stop conditions"
                 ),
-                carrier_field="cycles.success_criteria",
+                carrier_field="work_units.deliverables",
                 sentinel="[SENTINEL-REF-PLAN:responsibility-moves-preservation-stop-conditions]",
             ),
             WorkflowObligation(
@@ -1101,16 +1116,15 @@ class TestCY068DocflowE01:
             "expected_results": (
                 "All existing caller contracts preserved; new behavior additive and verified"
             ),
-            "timestamp": "2026-09-17T09:00Z",
             "prerequisites": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
-            "questions_list": ["Are external consumers pinned to exact schema versions?"],
-            "references": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
-            "related_docs": ["docs/development/issue460/design-workflow-documentation.md"],
+            "questions": ["Are external consumers pinned to exact schema versions?"],
+            "related_docs": [
+                {
+                    "label": "Workflow Design",
+                    "target": "docs/development/issue460/design-workflow-documentation.md",
+                }
+            ],
         }
-        res_research = manager.scaffolder.scaffold(
-            artifact_type="research",
-            **research_context,
-        )
 
         # 2. Design carrier (covers Feature, Bug, Refactor, Epic design semantics)
         design_context = {
@@ -1160,20 +1174,22 @@ class TestCY068DocflowE01:
             "key_decisions": [
                 {
                     "decision": (
-                        f"{sentinel_map['Refactor Design']}\n"
                         "Smallest causal correction preserving behavior and cutover/removals"
                     ),
-                    "rationale": ("Enforces ISP and OCP principles without unnecessary breakage"),
+                    "rationale": (
+                        f"{sentinel_map['Refactor Design']}\n"
+                        "Enforces ISP and OCP principles without unnecessary breakage"
+                    ),
                 }
             ],
-            "related_docs": ["docs/development/issue460/design-workflow-documentation.md"],
-            "timestamp": "2026-09-17T09:00Z",
             "prerequisites": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
+            "related_docs": [
+                {
+                    "label": "Workflow Design",
+                    "target": "docs/development/issue460/design-workflow-documentation.md",
+                }
+            ],
         }
-        res_design = manager.scaffolder.scaffold(
-            artifact_type="design",
-            **design_context,
-        )
 
         # 3. Planning carrier (covers Feature, Bug, Refactor, Docs, Epic planning semantics)
         planning_context = {
@@ -1198,31 +1214,38 @@ class TestCY068DocflowE01:
                 "DI-03 template suite delivery",
                 "Cross-workstream child issue tracking",
             ],
-            "cycles": [
+            "work_units": [
                 {
-                    "name": "CY068",
+                    "id": "CY068",
+                    "name": "Workflow carriers and phase semantics",
                     "goal": (
                         f"{sentinel_map['Bug Planning']}: "
                         "Verify workflow carriers and phase semantics"
                     ),
-                    "tests": ["test_isolated_patched_contracts_loading_and_docflow_e01"],
-                    "success_criteria": [
-                        (
-                            f"{sentinel_map['Refactor Planning']}: "
-                            "Reproduction/regression/correction obligations verified"
-                        ),
-                        "Responsibility moves and preservation obligations satisfied",
-                        "Exit criteria and stop conditions confirmed",
+                    "deliverables": [
+                        {
+                            "id": "DOCFLOW-E01",
+                            "description": "Verify isolated contracts loading and hash integrity",
+                        },
+                        {
+                            "id": "DOCFLOW-E02",
+                            "description": (
+                                f"{sentinel_map['Refactor Planning']}: "
+                                "Reproduction, regression, correction, and preservation obligations"
+                            ),
+                        },
                     ],
+                    "exit_criteria": (
+                        "All 19 workflow semantic meanings preserved in rendered output"
+                    ),
                     "dependencies": ["CY067"],
+                    "stop_conditions": ["Preservation obligations satisfied"],
                 }
             ],
             "risks": [
                 {
                     "description": "Schema validation mismatch on optional context fields",
-                    "mitigation": (
-                        "Schema introspection and first-time-right payload verification"
-                    ),
+                    "mitigation": "Schema introspection and first-time-right payload verification",
                 }
             ],
             "milestones": [
@@ -1232,14 +1255,14 @@ class TestCY068DocflowE01:
                 ),
                 "M2: Exit criteria satisfied with objective proof",
             ],
-            "related_docs": ["docs/development/issue460/design-workflow-documentation.md"],
-            "timestamp": "2026-09-17T09:00Z",
             "prerequisites": ["docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"],
+            "related_docs": [
+                {
+                    "label": "Workflow Design",
+                    "target": "docs/development/issue460/design-workflow-documentation.md",
+                }
+            ],
         }
-        res_planning = manager.scaffolder.scaffold(
-            artifact_type="planning",
-            **planning_context,
-        )
 
         # 4. Validation Report carrier (covers Feature, Bug, Refactor, Hotfix, Chore)
         validation_scope_elements = [
@@ -1254,23 +1277,82 @@ class TestCY068DocflowE01:
             "status": "APPROVED",
             "version": "1.0",
             "last_updated": "2026-09-17",
-            "timestamp": "2026-09-17T09:00Z",
             "issue_number": 460,
             "cycle": "CY068",
             "validation_status": "PASS",
             "scope": "\n\n".join(validation_scope_elements),
         }
-        res_validation = manager.scaffolder.scaffold(
-            artifact_type="validation_report",
-            **validation_context,
-        )
 
-        rendered_outputs: dict[str, str] = {
-            "research": res_research.content,
-            "design": res_design.content,
-            "planning": res_planning.content,
-            "validation_report": res_validation.content,
+        carriers = {
+            "research": research_context,
+            "design": design_context,
+            "planning": planning_context,
+            "validation_report": validation_context,
         }
+
+        rendered_outputs: dict[str, str] = {}
+
+        for template_id, context in carriers.items():
+            delivered = load_delivered_template(
+                source_suite=suite,
+                source_package=suite / template_id,
+                config_root=config_root,
+                destination=tmp_path / f"delivered_{template_id}",
+                template_id=template_id,
+            )
+
+            # 1. Canonical V3 rendering via delivered catalog and renderer
+            content = delivered.renderer.render(
+                template_id,
+                context,
+                delivered.provenance,
+            )
+            rendered_outputs[template_id] = content
+
+            # 2. Canonical V3 public scaffold tool execution
+            run_root = tmp_path / f"run_{template_id}"
+            run_root.mkdir(parents=True, exist_ok=True)
+            profile = delivered.catalog.get(template_id).policy.output_profile
+            checks, _, _ = compose_check_service(
+                run_root,
+                ("passed",),
+                profile_id=profile,
+            )
+            locations = ArtifactLocationsConfig.model_validate(
+                {"version": "2.0.0", "artifacts": {template_id: {"default_root": "outputs"}}}
+            )
+            resolver = ArtifactTargetResolver(
+                paths=FileArtifactTargetPaths(run_root),
+                temporary_artifacts_root=resolve_temporary_paths(
+                    run_root / "server"
+                ).artifacts_root,
+                locations=locations,
+            )
+            identity = ArtifactIdentity.model_validate(thaw_json(delivered.provenance))
+            operation = ScaffoldOperation(
+                catalog=delivered.catalog,
+                identities=(identity,),
+                targets=resolver,
+                render=delivered.renderer.render,
+                checks=checks,
+                creator=CreateOnlyFileWriter(),
+                workspace_root=run_root,
+            )
+            tool = ScaffoldArtifactTool(operation=operation, catalog=delivered.catalog)
+            assert tool.args_model is not None
+            tool_input = tool.args_model(
+                artifact_type=template_id,
+                file_name=f"{template_id}.md",
+                target_path="outputs",
+                force_target=True,
+                context=context,
+                validation="report",
+            )
+            exec_result = await tool.execute(tool_input, NoteContext())
+            assert exec_result.operation.success is True
+            assert exec_result.operation.written is True
+            saved_content = (run_root / f"outputs/{template_id}.md").read_text(encoding="utf-8")
+            assert saved_content == content
 
         # Assert no Jinja template tags leaked into rendered output
         for carrier_name, content in rendered_outputs.items():
