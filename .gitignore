@@ -80,6 +80,9 @@ Kraken_Trading_History/
 .phase-gate/temp/
 .pgmcp/temp/
 
+# Ephemeral workspace temp directory
+temp/
+
 # QA artifact logs (legacy CWD-relative location, superseded by .phase-gate/logs/qa_logs/)
 temp/qa_logs/
 
