@@ -351,54 +351,28 @@ schema:
 
 ### 1.8 `pgmcp://rules/coding_standards` (Implemented)
 
-**Description:** Aggregated summary of all coding standards from `docs/coding_standards/`. Enables agent to understand and apply project rules without reading multiple files.
+**Description:** Snapshot of the execution policies validated at target-server startup. The URI remains available for policy discovery; the full coding rules remain in `docs/coding_standards/`.
 
-**Data Format:** `json`
+**Data Format:** JSON, `schema_version: 1`. The resource uses the same immutable `checks.yaml`, `tests.yaml`, and `fixes.yaml` models as the active tools. Changes to those files take effect after server restart. These fields describe configured policy, not observed results or a promised coverage score.
 
-**Refresh Trigger:** File watcher on `docs/coding_standards/*.md`
-
-```yaml
-schema:
-  type: object
-  properties:
-    tdd_workflow:
-      type: object
-      properties:
-        phases: { type: array, items: { type: string }, description: "RED, GREEN, REFACTOR" }
-        commit_conventions:
-          type: object
-          properties:
-            types: { type: array, items: { type: string }, examples: ["test", "feat", "refactor", "docs"] }
-            message_template: { type: string }
-        branch_naming:
-          type: object
-          properties:
-            patterns: { type: array, items: { type: string }, examples: ["feature/*", "bug/*", "docs/*"] }
-    quality_gates:
-      type: array
-      items:
-        type: object
-        properties:
-          gate_number: { type: integer }
-          name: { type: string }
-          command: { type: string }
-          expected_score: { type: string }
-    code_style:
-      type: object
-      properties:
-        max_line_length: { type: integer, default: 100 }
-        import_grouping: { type: array, items: { type: string }, examples: ["Standard library", "Third-party", "Project modules"] }
-        file_header_required: { type: boolean }
-        docstring_style: { type: string, default: "Google Style" }
-    anti_patterns:
-      type: array
-      items:
-        type: object
-        properties:
-          name: { type: string }
-          description: { type: string }
-          detection: { type: string }
+```json
+{
+  "schema_version": 1,
+  "run_checks": {
+    "default_profile": "<profile ID or null>",
+    "profiles": {"<profile ID>": ["<check ID>"]},
+    "bindings": {"<check ID>": {"adapter_id": "<adapter ID>", "capability": "<capability ID>"}}
+  },
+  "run_tests": {
+    "bindings": {"<test ID>": {"adapter_id": "<adapter ID>", "capability": "<capability ID>", "active": true}}
+  },
+  "apply_fixes": {
+    "bindings": {"<fix ID>": {"adapter_id": "<adapter ID>", "capability": "<capability ID>"}}
+  }
+}
 ```
+
+The maps contain the configured IDs, including inactive test bindings. The response has no numbered quality gates, `active_gates`, or `coverage_min` field.
 
 ---
 

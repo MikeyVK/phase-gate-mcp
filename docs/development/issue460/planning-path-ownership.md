@@ -12,6 +12,8 @@ New exact paths have a creation owner and every planned revisit below. Generated
 
 126 consumers.
 
+CY073 QA-found resource prerequisite (user's standing authorization for bounded QA-designated corrections): C055's target resource handoff, C124's V3 standards resource projection and C126's resource-reference section gain a CY073 write episode. CY090 retains unrelated standards/documentation reconciliation; no old `quality.yaml` authority returns.
+
 | ID | Exact path | Primary owner | Ordered write episodes | Ordered review episodes | Bounded disposition |
 |---|---|---|---|---|---|
 | C001 | `docs/coding_standards/CODE_STYLE.md` | [CY093](planning-rollout.md#cy093) | CY093 | None | Edit affected authority/navigation only; retain reviewed-unaffected material with explicit reason. |
@@ -145,7 +147,7 @@ New exact paths have a creation owner and every planned revisit below. Generated
 
 151 tests and helpers.
 
-CY073 test-retirement amendment (user-authorized, 2026-09-23): for T001, T005, T008, T012, T013, T015, T016, T019, T020, T021, T022, T076 and T078, CY073 is an additional final write episode for the legacy test file. This overrides the later test-file retirement timing shown below, after the Design-mapped public V3 claims are verified. Later listed episodes review absence and successors; they do not recreate the old tests. Production-file ownership is unchanged.
+CY073 test-retirement amendment (user-authorized, 2026-09-23): for T001, T005, T008, T012, T013, T015, T016, T019, T020, T021, T022, T076 and T078, CY073 is an additional final write episode for the legacy test file. This overrides the later test-file retirement timing shown below, after the Design-mapped public V3 claims are verified. Later listed episodes review absence and successors; they do not recreate the old tests. The QA-found resource prerequisite adds a CY073 write episode for T151 and the existing `tests/mcp_server/integration/mcp_server/test_server_startup.py` read assertion. Other production-file ownership is unchanged.
 
 | ID | Exact path | Primary owner | Ordered write episodes | Ordered review episodes | Bounded disposition |
 |---|---|---|---|---|---|

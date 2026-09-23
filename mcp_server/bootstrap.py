@@ -763,7 +763,15 @@ class ServerBootstrapper:
                 managers=managers,
                 target_v3_tools=target_tools,
             )
-            resources = self._build_resources(configs, managers)
+            resources = self._build_resources(
+                configs,
+                managers,
+                standards=StandardsResource(
+                    checks=checks_config,
+                    tests=tests_config,
+                    fixes=fixes_config,
+                ),
+            )
 
             # 7. Presentation & Alignment
             text_presenter = TextPresenter(
@@ -1393,11 +1401,14 @@ class ServerBootstrapper:
     def _build_resources(
         self,
         configs: ConfigLayer,  # noqa: ARG002
-        managers: ManagerGraph,  # noqa: ARG002
+        managers: ManagerGraph,
+        *,
+        standards: StandardsResource | None = None,
     ) -> list[BaseResource]:
         """Compose the list of available resources."""
         resources: list[BaseResource] = []
-        resources.append(StandardsResource())
+        if standards is not None:
+            resources.append(standards)
         resources.append(StatusResource())
         resources.append(CachedResponseResource(cache=managers.response_cache))
         resources.append(CacheReadGuideResource())

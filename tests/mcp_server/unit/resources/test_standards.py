@@ -1,69 +1,96 @@
-# tests/unit/mcp_server/resources/test_standards.py
-"""Tests for standards resource.
+"""Public contract tests for the configured standards resource."""
 
-@layer: Tests (Unit)
-@dependencies: pytest, json, mcp_server.resources.standards
-"""
-# pyright: reportCallIssue=false, reportAttributeAccessIssue=false
-
-# Standard library
 import json
 
-# Third-party
 import pytest
 
-# Module under test
+from mcp_server.config.schemas import ChecksConfig, FixesConfig, TestsConfig
 from mcp_server.resources.standards import StandardsResource
 
 
+def resource() -> StandardsResource:
+    """Inject a small validated policy snapshot with active and inactive entries."""
+    checks = ChecksConfig.model_validate(
+        {
+            "checks": {
+                "lint": {
+                    "adapter_id": "ruff",
+                    "capability": "lint",
+                    "timeout_seconds": 30,
+                    "default_args": [],
+                },
+                "format": {
+                    "adapter_id": "ruff",
+                    "capability": "format",
+                    "timeout_seconds": 30,
+                    "default_args": [],
+                },
+            },
+            "profiles": {"review": {"checks": ["lint", "format"]}},
+            "profiles_by_extension": {".py": "review"},
+            "run_checks": {"default_profile": "review"},
+        }
+    )
+    tests = TestsConfig.model_validate(
+        {
+            "tests": {
+                "unit": {
+                    "adapter_id": "pytest",
+                    "capability": "tests",
+                    "timeout_seconds": 60,
+                    "default_args": [],
+                    "active": True,
+                },
+                "optional": {
+                    "adapter_id": "pytest",
+                    "capability": "tests",
+                    "timeout_seconds": 60,
+                    "default_args": [],
+                    "active": False,
+                },
+            }
+        }
+    )
+    fixes = FixesConfig.model_validate(
+        {
+            "fixes": {
+                "format": {
+                    "adapter_id": "ruff",
+                    "capability": "format",
+                    "timeout_seconds": 30,
+                    "default_args": [],
+                }
+            }
+        }
+    )
+    return StandardsResource(checks=checks, tests=tests, fixes=fixes)
+
+
 @pytest.mark.asyncio
-async def test_standards_resource_read() -> None:
-    """Test that standards resource returns valid JSON with required fields."""
-    resource = StandardsResource()
-    content = await resource.read("pgmcp://rules/coding_standards")
+async def test_standards_resource_projects_validated_policy_without_legacy_gates() -> None:
+    policy = json.loads(await resource().read("pgmcp://rules/coding_standards"))
+    assert policy == {
+        "schema_version": 1,
+        "run_checks": {
+            "default_profile": "review",
+            "profiles": {"review": ["lint", "format"]},
+            "bindings": {
+                "lint": {"adapter_id": "ruff", "capability": "lint"},
+                "format": {"adapter_id": "ruff", "capability": "format"},
+            },
+        },
+        "run_tests": {
+            "bindings": {
+                "unit": {"adapter_id": "pytest", "capability": "tests", "active": True},
+                "optional": {"adapter_id": "pytest", "capability": "tests", "active": False},
+            }
+        },
+        "apply_fixes": {"bindings": {"format": {"adapter_id": "ruff", "capability": "format"}}},
+    }
 
-    data = json.loads(content)
-    assert data["python"]["version"] == ">=3.11"
-    assert data["testing"]["coverage_min"] == 80
 
-
-def test_standards_resource_metadata() -> None:
-    """Test that standards resource has correct URI pattern and description."""
-    resource = StandardsResource()
-    assert resource.uri_pattern == "pgmcp://rules/coding_standards"
-    assert "coding standards" in resource.description
-
-
-@pytest.mark.asyncio
-async def test_standards_resource_reads_active_gates_from_quality_yaml() -> None:
-    """Test that standards resource dynamically reads active_gates from quality.yaml.
-
-    This verifies WP8 requirement: standards.py should read from quality.yaml
-    instead of returning hardcoded JSON.
-    """
-    resource = StandardsResource()
-    content = await resource.read("pgmcp://rules/coding_standards")
-
-    data = json.loads(content)
-
-    # Should include active_gates field from quality.yaml
-    assert "quality_gates" in data, "Missing quality_gates section"
-    assert "active_gates" in data["quality_gates"], "Missing active_gates field"
-
-    # Should have the 7 configured gates from quality.yaml
-    # (gate5_tests and gate6_coverage removed in C0 per F1: Remove pytest/coverage)
-    active_gates = data["quality_gates"]["active_gates"]
-    assert isinstance(active_gates, list), "active_gates should be a list"
-    assert len(active_gates) == 7, f"Expected 7 active gates, got {len(active_gates)}"
-
-    # Verify expected gate names from quality.yaml
-    expected_gates = [
-        "gate0_ruff_format",
-        "gate1_formatting",
-        "gate2_imports",
-        "gate3_line_length",
-        "gate4_types",
-        "gate4_pyright",
-        "gate4_types_mcp",
-    ]
-    assert active_gates == expected_gates, f"Expected {expected_gates}, got {active_gates}"
+def test_standards_resource_keeps_public_uri_and_description() -> None:
+    configured = resource()
+    assert configured.matches("pgmcp://rules/coding_standards")
+    assert not configured.matches("pgmcp://rules/other")
+    assert "coding standards" in configured.description
