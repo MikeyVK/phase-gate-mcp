@@ -64,7 +64,7 @@ The process fixture was changed to accept explicit command/CWD/environment and d
 
 The named prerequisite corrections were completed and reviewed on 2026-09-23. Resume with the actual CY071 startup composition and isolated installed rehearsal under its approved write-set. Reuse the focused passing migration regression and preservation tests; do not add an unrelated test campaign.
 
-The normal entrypoint and running server were not switched. The 2026-09-17 takeover made no commit, cycle transition, deployment, or server restart. The later blocker repair has a RED regression commit and is to be committed separately; CY071 is still active. Existing work and the runtime lock were preserved. Do not reset the branch or remove inherited untracked files: dirty preimages were not captured before the other agent began CY071, so a complete cycle-owned inverse is not yet available.
+The normal entrypoint and running server were not switched. The 2026-09-17 takeover made no commit, cycle transition, deployment, or server restart. The later blocker repair has separate RED and GREEN commits; CY071 is still active. Existing work and the runtime lock were preserved. Do not reset the branch or remove inherited untracked files: dirty preimages were not captured before the other agent began CY071, so a complete cycle-owned inverse is not yet available.
 
 ## Related documentation
 
