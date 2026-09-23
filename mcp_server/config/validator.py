@@ -111,15 +111,16 @@ class ConfigValidator:
         self,
         policies: OperationPoliciesConfig,
         workflow: WorkflowConfig,
-        structure: ProjectStructureConfig,
-        artifact: ArtifactRegistryConfig,
+        structure: ProjectStructureConfig | None,
+        artifact: ArtifactRegistryConfig | None,
         contracts: ContractsConfig,
         workphases: WorkphasesConfig,
     ) -> None:
         """Validate startup relationships across already loaded config objects."""
         known_workflows = set(workflow.workflows)
         known_phases = set(workphases.phases)
-        known_artifact_types = set(artifact.list_type_ids())
+        if (structure is None) != (artifact is None):
+            raise ConfigError("Legacy structure and artifact registry must be supplied together")
 
         self._validate_phase_contracts(
             workflow=workflow,
@@ -128,10 +129,11 @@ class ConfigValidator:
             known_phases=known_phases,
         )
         self._validate_operation_policies(policies=policies, known_phases=known_phases)
-        self._validate_project_structure(
-            structure=structure,
-            known_artifact_types=known_artifact_types,
-        )
+        if structure is not None and artifact is not None:
+            self._validate_project_structure(
+                structure=structure,
+                known_artifact_types=set(artifact.list_type_ids()),
+            )
         self._validate_merge_policy_phase(
             contracts=contracts,
             known_phases=known_phases,

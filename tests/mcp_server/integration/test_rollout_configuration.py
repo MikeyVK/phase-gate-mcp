@@ -111,6 +111,8 @@ PYPROJECT_PYRIGHT_HUNK = (
     "# Pydantic v2 integration - prevents FieldInfo type inference issues\n"
     "reportFunctionMemberAccess = false\n\n"
 )
+PYPROJECT_AGENT_ASSET_OLD = '    "assets/**/.*",\n'
+PYPROJECT_AGENT_ASSET_NEW = '    "assets/**/.*",\n    "assets/**/.github/**/*",\n'
 
 # Presentation prospective patch targets and replacements
 PRESENTATION_RECHECK_TARGET = (
@@ -330,7 +332,66 @@ def build_prospective_presentation_yaml(live_content: str) -> str:
     if quality_tests_target not in content:
         quality_tests_target = quality_tests_target.replace("\n", "\r\n")
     assert quality_tests_target in content
-    return content.replace(quality_tests_target, PRESENTATION_CHECKS_AND_TESTS_REPLACEMENT, 1)
+    content = content.replace(quality_tests_target, PRESENTATION_CHECKS_AND_TESTS_REPLACEMENT, 1)
+
+    # V3 scaffold and edit outputs no longer expose the legacy wrapper fields.
+    old_scaffold = """  scaffold_artifact:
+    category: scaffold
+    max_items: 20
+    template_success: "Scaffolded artifact '{name}' of type '{artifact_type}' successfully."
+    template_failure: "Scaffolding '{name}' of type '{artifact_type}' failed: {error_message}."
+    collections:
+      - field: files_created
+        heading: "Files created:"
+        item_template: "- {item}"
+      - field: missing_fields
+        heading: "Missing fields:"
+        item_template: "- {item}"
+      - field: provided_fields
+        heading: "Provided fields:"
+        item_template: "- {item}"
+"""
+    new_scaffold = """  scaffold_artifact:
+    category: scaffold
+    template_success: "Scaffolded {template_id}: {output_path}; validation={validation_status}."
+    template_failure: "Scaffolding {template_id} failed: {error_code}."
+"""
+    old_schema = (
+        '    template_success: "Retrieved schema for artifact type '
+        "'{artifact_type}' successfully.\"\n"
+    )
+    new_schema = """    template_success: "Retrieved schema for {template_id} successfully."
+"""
+    old_edit = (
+        "  safe_edit_file:\n"
+        "    category: mutation\n"
+        "    max_items: 10\n"
+        "    template_success: \"File '{path}' processed in '{mode}' mode "
+        "(validation passed: {passed}, written: {written}, "
+        'diff available: {has_diff})."\n'
+        "    template_failure: \"File '{path}' was rejected in '{mode}' mode "
+        '(validation passed: {passed}, written: {written}): {error_message}"\n'
+        "    collections:\n"
+        "      - field: issues\n"
+        '        heading: "Validation issues:"\n'
+        '        item_template: "- [{severity}] {message} '
+        '(line {line}, column {column}, code {code})"\n'
+    )
+    new_edit = """  safe_edit_file:
+    category: mutation
+    template_success: "Edited {path}; written={written}; validation={validation_status}."
+    template_failure: "Edit {path} failed: {error_code}."
+"""
+    for old, new in (
+        (old_scaffold, new_scaffold),
+        (old_schema, new_schema),
+        (old_edit, new_edit),
+    ):
+        if old not in content:
+            old = old.replace("\n", "\r\n")
+        assert old in content
+        content = content.replace(old, new, 1)
+    return content
 
 
 @pytest.fixture
@@ -520,6 +581,10 @@ class TestRolloutConfiguration:
 
         # Build patched content
         patched_pyproject = pyproject_raw.replace(hunk, "", 1)
+        assert patched_pyproject.count(PYPROJECT_AGENT_ASSET_OLD) == 1
+        patched_pyproject = patched_pyproject.replace(
+            PYPROJECT_AGENT_ASSET_OLD, PYPROJECT_AGENT_ASSET_NEW, 1
+        )
         parsed_after = tomllib.loads(patched_pyproject)
         assert "pyright" not in parsed_after.get("tool", {})
         assert "project" in parsed_after
@@ -699,6 +764,10 @@ class TestRolloutConfiguration:
         crlf_hunk = PYPROJECT_PYRIGHT_HUNK.replace("\n", "\r\n")
         hunk = PYPROJECT_PYRIGHT_HUNK if PYPROJECT_PYRIGHT_HUNK in pyproject_raw else crlf_hunk
         pyproject_patched = pyproject_raw.replace(hunk, "", 1)
+        assert pyproject_patched.count(PYPROJECT_AGENT_ASSET_OLD) == 1
+        pyproject_patched = pyproject_patched.replace(
+            PYPROJECT_AGENT_ASSET_OLD, PYPROJECT_AGENT_ASSET_NEW, 1
+        )
         pyproject_pre_sha = hashlib.sha256((root_dir / "pyproject.toml").read_bytes()).hexdigest()
         pyproject_post_sha = hashlib.sha256(pyproject_patched.encode("utf-8")).hexdigest()
 
@@ -728,13 +797,13 @@ class TestRolloutConfiguration:
             "e91b9079e91c2c7ea4c43433c0e635053533696016dfb16160624c994e3cd66f"
         )
         assert pyproject_post_sha == (
-            "957d76949f2f1f7bf7da4cbcfa91ed706e0f79f7be495753f9eddd27f9eecfca"
+            "6d3fe1e3738140a3699c1664894e06e00ff38b3d7a88e206097bf7b46cdedaae"
         )
         assert presentation_pre_sha == (
             "2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217"
         )
         assert presentation_post_sha == (
-            "96e94c62d64e43e0c50389a17c7edf012fa1785ec072d2d4b80b07eb811a9888"
+            "d03744fc142852abe4e5eac53bbf2d04f374f44916fa11fc82121e59320b8e33"
         )
         assert version_pre_sha == (
             "efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1"

@@ -78,6 +78,24 @@ class BootstrapResult(BaseModel):
     actual_unchanged: bool = True
 
 
+def read_installation_state(path: Path) -> InstallationState | None:
+    """Read one closed installation document without a write-capable dependency."""
+
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise TypeError("installation_document_object_required")
+        return InstallationState.model_validate(payload, strict=True)
+    except (OSError, ValueError, TypeError, ValidationError) as exc:
+        raise MCPError(
+            "installation_state_invalid",
+            code="ERR_CONFIG",
+            params={"path": str(path)},
+        ) from exc
+
+
 class InstallationStateRepository:
     """Read and explicitly publish one installation.json document."""
 
@@ -88,19 +106,7 @@ class InstallationStateRepository:
     def read(self) -> InstallationState | None:
         """Read the closed document; missing state means checkpoint-less."""
 
-        if not self._path.exists():
-            return None
-        try:
-            payload = json.loads(self._path.read_text(encoding="utf-8"))
-            if not isinstance(payload, dict):
-                raise TypeError("installation_document_object_required")
-            return InstallationState.model_validate(payload, strict=True)
-        except (OSError, ValueError, TypeError, ValidationError) as exc:
-            raise MCPError(
-                "installation_state_invalid",
-                code="ERR_CONFIG",
-                params={"path": str(self._path)},
-            ) from exc
+        return read_installation_state(self._path)
 
     def publish(self, state: InstallationState) -> None:
         """Publish a validated state through the injected atomic writer."""

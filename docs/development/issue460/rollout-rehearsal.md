@@ -2,13 +2,13 @@
 <!-- template=generic_doc version=43c84181 created=2026-09-17T16:47Z updated=2026-09-17 -->
 # CY071: Target Startup Composition and Launch Rehearsal
 
-**Status:** PREREQUISITES REPAIRED — CY071 OPEN  
-**Version:** 1.0.2  
+**Status:** CY071 OPEN — ISOLATED READBACK TEST REHEARSAL PENDING  
+**Version:** 1.0.4  
 **Last Updated:** 2026-09-23
 
 ## Purpose
 
-Record the interrupted CY071 takeover, verified prerequisites, unfinished work, and the evidence needed before launch rehearsal can continue. This is not a successful rehearsal or cutover authorization.
+Record the CY071 startup composition, isolated installed candidate rehearsal, verified prerequisites, and remaining release conditions. This is not cutover authorization.
 
 ## Blockers identified on 2026-09-17
 
@@ -46,25 +46,25 @@ On 2026-09-17 the owner chose **“Leg blokkade vast en stop hier”**. On 2026-
 - Focused `run_tests` on the new legacy migration regression, existing fresh and V3 force paths, fresh activation, backup collision, and four interruption recovery cases: **9 passed, 0 failed**; cached result `pgmcp://cache/runs/70ce3959074843779718554d119a9b5c`.
 - File-scoped `run_quality_gates` on the three production files and renewal integration test: **all applicable gates passed** (Ruff format/lint, imports, line length, Pyright, mypy); cached result `pgmcp://cache/runs/08ebbd028f9d44389a13eb33e200a535`.
 - Independent findings-only reviewer rechecked migration ownership, backup and recovery facts, exact prepared diffs/hashes, and V3 signatures; **no remaining material finding** in this bounded repair. This is not independent workflow GO/NOGO.
-- This repair does not fulfill CY071.D1/D2. Target bootstrap composition, isolated installed candidate startup, candidate readback rehearsal, and the planned normal-dispatch diff remain open under CY071.
+- The prerequisite repair was a separate bounded episode. CY071 startup composition and installed candidate evidence are recorded below.
 
-## Unfinished takeover work
+## CY071 target rehearsal, 2026-09-23
 
-The previous agent left modified `bootstrap.py` and state plus untracked process support, startup tests, and this report. Production startup was not repaired during this takeover. Its independently identified issues remain:
+`bootstrap_target()` now explicitly reads the target root, installation checkpoint and V3 configuration under the DI-06 lock, admits one immutable template/catalog snapshot, derives source identities, and composes the six V3 schema/mutation/check/test/fix tools with unchanged unrelated tools. `bootstrap()` remains the legacy normal entrypoint. The candidate uses an isolated source copy and wheel; only that copy applies the prepared `cli.py` dispatch, configuration and `[tool.pyright]` changes. The live CLI, configuration and TOML remain unchanged.
 
-1. Placeholder generation fingerprints instead of identities derived from admitted source bytes.
-2. A renderer environment without a loader; immutable catalog rendering is not yet wired.
-3. Missing installation compatibility validation in target startup.
-4. Target construction still depends on legacy configuration/managers and fabricates a registry after a broad exception.
-5. Scratch-root wiring does not use the central validation directory.
+The candidate test initializes an independent workspace, performs a real stdio MCP handshake, checks unique V3 tool names, reads a large stored planning result through cache windows with a SHA-256 check, resolves the candidate's actual budget-triggered `pgmcp://docs/cache-reading` hint, and verifies that an admitted schema remains available after its source manifest is temporarily renamed. It then exercises ordinary legacy-upgrade refusal, explicit owner-force migration, and a second real handshake. Target unit/integration checks cover lock exclusion and unresolved-recovery refusal. Focused startup/config tests: **18 passed**, `pgmcp://cache/runs/55b397973b084be485bae83b996457f4`; installed-candidate readback, cache hint, six exact host patches and packaged-asset parity: **1 passed**, `pgmcp://cache/runs/c45879105823461580df81addb7831f3`. Focused prospective configuration tests: **11 passed**, `pgmcp://cache/runs/c13d37b35d5d47cb9e9a2ae928a67b3e`. File-scoped quality gates on seven affected code/test files passed after the package-data correction, `pgmcp://cache/runs/079af2ea0bbd4995bdd347c50ffb07ad`. The latter supersedes the earlier installed-candidate-only pass `pgmcp://cache/runs/fa7587e2909e4264b1351d66357abc41`.
 
-The process fixture was changed to accept explicit command/CWD/environment and drain stdout/stderr with bounded waits. This is **unfinished, unverified work**: inherited startup tests still use its old invocation API and must be adapted before the complete file can run. At the 2026-09-17 takeover, only the two then-present migration regression cases were run. The durable replacement now lives in the existing renewal integration test. No successful startup, separate installed candidate, normal-entrypoint switch, immutable-catalog rehearsal, or candidate readback migration is claimed.
+Exact rehearsed live input SHA-256 values: `mcp_server/cli.py` `c78e86beb0294ce8e9ac890338e55d5842861ac526743b7d3588d8f8856271dc`; `pyproject.toml` `e91b9079e91c2c7ea4c43433c0e635053533696016dfb16160624c994e3cd66f`; `.pgmcp/config/artifacts.yaml` `e17c98ebd7bc03771ea0b7faab55b05b9b02b16d0b5c34cada21443c962f5157`; `.pgmcp/config/presentation.yaml` `2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217`; `.pgmcp/config/release_manifest.yaml` `564dd20dccfde4229e73a5888ed55f9367e18a402fba14d785c13d2a54162f3b`. The prepared presentation postimage is `d03744fc142852abe4e5eac53bbf2d04f374f44916fa11fc82121e59320b8e33`; the prepared `pyproject.toml` LF postimage, including the explicit hidden `.github` agent-asset package-data glob, is `6d3fe1e3738140a3699c1664894e06e00ff38b3d7a88e206097bf7b46cdedaae`. The candidate CLI substitutions use exact single-occurrence preimages in `test_target_startup.py` and fail on drift. The `[tool.pyright]` deletion is likewise exact; the focused configuration tests recheck preserved native values.
 
-## Resume and recovery boundary
+Open evidence: the exact R004/R005/R006 test-source hunks have not yet been applied and run in an isolated candidate copy; the candidate process readback above proves the runtime behavior but does not discharge that separate test-migration requirement. The unchanged live preimage SHA-256 values are R004 `0fcf8f42276c80e2ee109a49ed72cdd1f3eaeb1873bf7e3d20d3dd2ae55f517f`, R005 `13312592a6a8e7aaf30de69ade42f878a3c9d5ed10291c4fee74c54f3b3384ed`, and R006 `efa2500e004ea5e83f200493cca1c92ef4876682bbe66ede7cf80309a46513e1`. Current legacy R006 save/update/fresh-cache tests remain passing, **2 passed**, `pgmcp://cache/runs/4b63ef2913db441b974e09af9dba0010`. All six CY069 host instruction patches were applied with exact preimage and postimage hashes to isolated candidate sources, then byte-compared with their packaged `mcp_server/assets/agents` destinations; the live host files remain unchanged. Independent findings-only QA identified three stop conditions before the subsequent owner decision: isolated R004/R005/R006 source-hunk rehearsal was missing; dirty intermediate preimages were unavailable; and the schema-reference and CY070 input corrections were outside the original CY071 write-set. The owner explicitly resolved the latter two on 2026-09-23 as recorded below. QA did not verify a code defect, run tests, or independently read the cached results. No live activation, server restart or phase transition has occurred.
 
-The named prerequisite corrections were completed and reviewed on 2026-09-23. Resume with the actual CY071 startup composition and isolated installed rehearsal under its approved write-set. Reuse the focused passing migration regression and preservation tests; do not add an unrelated test campaign.
+## Owner decision, provenance, and recovery boundary
 
-The normal entrypoint and running server were not switched. The 2026-09-17 takeover made no commit, cycle transition, deployment, or server restart. The later blocker repair has separate RED and GREEN commits; CY071 is still active. Existing work and the runtime lock were preserved. Do not reset the branch or remove inherited untracked files: dirty preimages were not captured before the other agent began CY071, so a complete cycle-owned inverse is not yet available.
+On 2026-09-23 the owner explicitly added two bounded corrections to CY071 scope: the schema-reference edge capture in `mcp_server/services/template_contract_loader.py` (original owner CY003), and the prospective configuration/package corrections in `docs/development/issue460/rollout-config-input.md` plus `tests/mcp_server/integration/test_rollout_configuration.py` (original owner CY070). The CY071 implementation commit must name both additions and their original ownership for provenance. This decision does not authorize unrelated changes in those files.
+
+The last commit before CY071 was `275f27f0659c6a41fb29842129612fa593e024df`, not `a84ff8ed05ccdbdd1afb8a42f0ead8fb2502bafc` as an earlier draft incorrectly stated. The owner formally accepts that committed pre-CY071 state as the source-code recovery baseline, including the loss of later CY071 work if that baseline is ever chosen. Three verified later Git checkpoints exist: `e88aa3489031dc4c226a99258c8d96d3530bb888` (legacy-migration regression), `2f8f4e39461a4d384370a069ddb072ad87f4a7f3` (migration and prepared-contract repairs), and `a84ff8ed05ccdbdd1afb8a42f0ead8fb2502bafc` (repair evidence). The last is the nearest committed checkpoint, but it does not include the current uncommitted target-startup work. The intermediate dirty bytes before this continuation were not recorded and are not asserted recoverable.
+
+CY071 has no live dispatch or installation activation to roll back. Its Git checkpoints are optional source-code recovery choices if implementation evidence fails; use a reviewed, scoped revert of cycle-owned changes while preserving unrelated state. `.pgmcp/template_upgrade.lock` is operational state, not a cycle-owned source artifact. CY072's later live activation needs a different recovery route: if MCP cannot start, stop the launcher and use verified code/config/suite and installation backups plus the DI-06 activation journal and renewal recovery command described in [DI-06](design-distribution.md). Do not hand-edit an installation checkpoint or clear the lock. The remaining CY071 release item is the isolated R004/R005/R006 test-source rehearsal, followed by independent QA.
 
 ## Related documentation
 
@@ -81,3 +81,6 @@ The normal entrypoint and running server were not switched. The 2026-09-17 takeo
 | 1.0.0 | 2026-09-17 | Prior implementation agent | Initial draft |
 | 1.0.1 | 2026-09-17 | @imp implementer | Record takeover blockers, focused failed evidence, unfinished work and owner stop decision |
 | 1.0.2 | 2026-09-23 | @imp implementer | Record bounded prerequisite repair, focused evidence, and remaining CY071 work |
+| 1.0.3 | 2026-09-23 | @imp implementer | Record installed target startup/readback evidence, hashes, open rehearsal requirements and recovery limit |
+
+| 1.0.4 | 2026-09-23 | @imp implementer | Record owner-approved CY071 scope additions, corrected Git checkpoints, and pre-CY071 recovery baseline |

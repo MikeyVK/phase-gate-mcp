@@ -10,12 +10,12 @@
 
 ## Purpose
 
-Record reviewed configuration source mappings, authoritative replacement `artifacts.yaml` placement policy for the complete 19-package template suite, `[tool.pyright]` removal hunk, and prospective V3 diffs, preimages, postimages, and atomic compare-before-write drift protection for CY072 cutover.
+Record reviewed configuration source mappings, authoritative replacement `artifacts.yaml` placement policy for the complete 19-package template suite, `[tool.pyright]` removal and hidden agent-asset packaging hunks, and prospective V3 diffs, preimages, postimages, and atomic compare-before-write drift protection for CY072 cutover.
 
 ## Scope
 
 **In Scope:**
-Authoritative artifacts location policy for all 19 real template suite packages, full PGMCP 3.0 clean break presentation patch (removal of `run_quality_gates` and `auto_fix`, introduction of `apply_fixes`, `run_checks`, and V3 `run_tests`), `pyproject.toml` Pyright cleanup, prospective configuration diffs, exact SHA-256 pre/postimages, and compare-before-write drift refusal protecting target files from concurrent modification.
+Authoritative artifacts location policy for all 19 real template suite packages, full PGMCP 3.0 clean break presentation patch (removal of `run_quality_gates` and `auto_fix`, introduction of `apply_fixes`, `run_checks`, and V3 `run_tests`), `pyproject.toml` Pyright cleanup and hidden agent-asset packaging, prospective configuration diffs, exact SHA-256 pre/postimages, and compare-before-write drift refusal protecting target files from concurrent modification.
 
 **Out of Scope:**
 Direct mutation of live configuration files prior to CY072; modification of server proxy or transport logic.
@@ -309,18 +309,22 @@ To protect against configuration drift and race conditions during rollout:
 ### 3.3 C006: `pyproject.toml`
 - **Role:** Project configuration.
 - **Preimage SHA-256:** `e91b9079e91c2c7ea4c43433c0e635053533696016dfb16160624c994e3cd66f`
-- **Postimage SHA-256:** `957d76949f2f1f7bf7da4cbcfa91ed706e0f79f7be495753f9eddd27f9eecfca`
+- **Postimage SHA-256 (LF):** `6d3fe1e3738140a3699c1664894e06e00ff38b3d7a88e206097bf7b46cdedaae`
 
 **Prospective Unified Diff:**
 ```diff
 --- a/pyproject.toml
 +++ b/pyproject.toml
+@@ -44,0 +45 @@
++    "assets/**/.github/**/*",
 @@ -123,4 +123,0 @@
 -[tool.pyright]
 -# Pydantic v2 integration - prevents FieldInfo type inference issues
 -reportFunctionMemberAccess = false
 -
 ```
+
+The additional explicit package-data glob is required because the installed wheel otherwise omits `.github/agents/*.agent.md` beneath mapped host assets, even though staging contains them. The isolated candidate verifies all six patched source files byte-equal their installed destinations. No live TOML bytes change in CY070/CY071.
 
 **Native Setting Preservation (CY022 Alignment):**  
 Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration drift because `pyrightconfig.json` is already authoritative for the compiler settings:
@@ -333,22 +337,23 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 ### 3.4 C106: `.pgmcp/config/presentation.yaml` (PGMCP 3.0 Clean Break)
 - **Role:** Tool output and instruction presentation configuration.
 - **Preimage SHA-256:** `2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217`
-- **Postimage SHA-256:** `96e94c62d64e43e0c50389a17c7edf012fa1785ec072d2d4b80b07eb811a9888`
+- **Postimage SHA-256:** `d03744fc142852abe4e5eac53bbf2d04f374f44916fa11fc82121e59320b8e33`
 
 **Clean Break Changes:**
 1. Update `recheck_quality` to reference `run_checks(scope='targets', targets={modified_files})`.
 2. Replace `quality_gates_failed_verbose_suggestion` with `checks_failed_verbose_suggestion` referencing `run_checks`.
 3. Retire legacy `auto_fix` tool presentation section completely; replace with declarative `apply_fixes` presentation config.
 4. Retire legacy `run_quality_gates` tool presentation section completely; replace with declarative `run_checks` and V3 framework-neutral `run_tests` presentation config.
+5. Rebind `scaffold_artifact`, `scaffold_schema`, and `safe_edit_file` presentation to their V3 output models; remove legacy wrapper fields and collections that no longer exist.
 
 **Prospective Unified Diff:**
 ```diff
 --- a/.pgmcp/config/presentation.yaml
 +++ b/.pgmcp/config/presentation.yaml
-@@ -60,1 +60,1 @@
+@@ -60 +60 @@
 -    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_quality_gates(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
 +    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_checks(scope='targets', targets={modified_files}) to verify that the applied fixes now pass all checks."
-@@ -156,1 +156,1 @@
+@@ -156 +156 @@
 -        quality_gates_failed_verbose_suggestion: "Some quality gates failed. Rerun the tool with verbose=True to retrieve complete linter/checker tracebacks. Suggested command: run_quality_gates({scope_part}, verbose=True)"
 +        checks_failed_verbose_suggestion: "Some checks failed. Rerun the tool with verbose=True to retrieve complete tracebacks. Suggested command: run_checks(scope={scope_part}, verbose=True)"
 @@ -219,19 +219,18 @@
@@ -389,9 +394,28 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 +          adapter_request_rejected: "Internal fix request rejected."
 +          operation_interrupted: "Fix operation interrupted."
 +          termination_unconfirmed: "Fix termination unconfirmed."
-@@ -597,44 +596,38 @@
+@@ -581,13 +580,2 @@
+-    max_items: 20
+-    template_success: "Scaffolded artifact '{name}' of type '{artifact_type}' successfully."
+-    template_failure: "Scaffolding '{name}' of type '{artifact_type}' failed: {error_message}."
+-    collections:
+-      - field: files_created
+-        heading: "Files created:"
+-        item_template: "- {item}"
+-      - field: missing_fields
+-        heading: "Missing fields:"
+-        item_template: "- {item}"
+-      - field: provided_fields
+-        heading: "Provided fields:"
+-        item_template: "- {item}"
++    template_success: "Scaffolded {template_id}: {output_path}; validation={validation_status}."
++    template_failure: "Scaffolding {template_id} failed: {error_code}."
+@@ -596,2 +584,2 @@
+-    template_success: "Retrieved schema for artifact type '{artifact_type}' successfully."
 -  run_quality_gates:
--    category: quality
++    template_success: "Retrieved schema for {template_id} successfully."
++  run_checks:
+@@ -599,19 +587,18 @@
 -    max_items: 10
 -    template_success: |
 -      Quality gate execution completed.
@@ -411,9 +435,25 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 -          - field: findings
 -            heading: "  Findings:"
 -            item_template: "  - {file}:{line}:{column} [{code}] {message} (severity={severity}, fixable={fixable})"
--  run_tests:
--    category: testing
--    max_items: 5
++    max_items: 5
++    template_success: "{requested_scope}: {run_status}; profile={selected_profile}"
++    template_failure: "{requested_scope}: {run_status}; error={error_code}"
++    collections:
++      - field: results
++        heading: "Checks"
++        item_template: "{check_id}: {status}; args_source={args_source}"
++    enum_cases:
++      - field: error_code
++        cases:
++          no_configured_checks: "No checks are configured."
++          default_profile_missing: "No default check profile is configured."
++          selection_invalid: "The check selection is invalid."
++          branch_basis_unavailable: "The branch comparison basis is unavailable."
++          scope_resolution_failed: "The requested scope could not be resolved."
++          adapter_request_rejected: "An adapter rejected the check request."
++          operation_interrupted: "The operation was interrupted."
++          termination_unconfirmed: "Process termination was not confirmed."
+@@ -621,20 +608,16 @@
 -    template_success: |
 -      Tests completed (exit {exit_code}).
 -      - Passed: {passed_count}
@@ -434,29 +474,6 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 -      - field: failures
 -        heading: "Failures:"
 -        item_template: "- {test_id} ({location}): {short_reason} [collection error: {is_collection_error}]"
-+  run_checks:
-+    category: quality
-+    max_items: 5
-+    template_success: "{requested_scope}: {run_status}; profile={selected_profile}"
-+    template_failure: "{requested_scope}: {run_status}; error={error_code}"
-+    collections:
-+      - field: results
-+        heading: "Checks"
-+        item_template: "{check_id}: {status}; args_source={args_source}"
-+    enum_cases:
-+      - field: error_code
-+        cases:
-+          no_configured_checks: "No checks are configured."
-+          default_profile_missing: "No default check profile is configured."
-+          selection_invalid: "The check selection is invalid."
-+          branch_basis_unavailable: "The branch comparison basis is unavailable."
-+          scope_resolution_failed: "The requested scope could not be resolved."
-+          adapter_request_rejected: "An adapter rejected the check request."
-+          operation_interrupted: "The operation was interrupted."
-+          termination_unconfirmed: "Process termination was not confirmed."
-+  run_tests:
-+    category: testing
-+    max_items: 5
 +    template_success: "{requested_scope}"
 +    template_failure: "{requested_scope}: {error_code}"
 +    collections:
@@ -473,6 +490,16 @@ Removing `[tool.pyright]` from `pyproject.toml` introduces zero configuration dr
 +          adapter_request_rejected: "Internal test request rejected."
 +          operation_interrupted: "Test operation interrupted."
 +          termination_unconfirmed: "Test termination unconfirmed."
+@@ -643,7 +626,2 @@
+-    max_items: 10
+-    template_success: "File '{path}' processed in '{mode}' mode (validation passed: {passed}, written: {written}, diff available: {has_diff})."
+-    template_failure: "File '{path}' was rejected in '{mode}' mode (validation passed: {passed}, written: {written}): {error_message}"
+-    collections:
+-      - field: issues
+-        heading: "Validation issues:"
+-        item_template: "- [{severity}] {message} (line {line}, column {column}, code {code})"
++    template_success: "Edited {path}; written={written}; validation={validation_status}."
++    template_failure: "Edit {path} failed: {error_code}."
 ```
 
 ### 3.5 S051: `.pgmcp/.version`
@@ -508,7 +535,7 @@ The test suite validates:
 3. `test_stale_or_unknown_template_id_rejection`: Confirms that informal aliases (`dto`, `worker`) and unknown package IDs are strictly rejected with `ConfigError("artifact_location_template_unknown")`.
 4. `test_artifacts_location_config_rejects_obsolete_and_duplicate_roots`: Confirms that legacy V1 `artifacts.yaml` (`artifact_types: []`) and duplicate roots within a single entry are strictly rejected.
 5. `test_artifacts_checked_replacement_and_drift_protection`: Tests `CheckedFileWriter` replacement for `artifacts.yaml`, proving successful write on match, concurrency race rejection with `OriginalChangedError`, and unchanged target bytes.
-6. `test_pyproject_pyright_exact_hunk_and_mismatch_refusal`: Verifies prospective deletion of `[tool.pyright]`, TOML parseability, compare-before-write application, and drift refusal with unchanged target bytes.
+6. `test_pyproject_pyright_exact_hunk_and_mismatch_refusal`: Verifies prospective deletion of `[tool.pyright]` and explicit hidden-agent-asset packaging, TOML parseability, compare-before-write application, and drift refusal with unchanged target bytes.
 7. `test_pyrightconfig_native_settings_preservation`: Confirms that `pyrightconfig.json` natively declares all compiler flags (`reportFunctionMemberAccess: false`, `3.11`, `Windows`, `strict`).
 8. `test_presentation_yaml_clean_break_patch_and_drift_refusal`: Verifies full V3 clean break patch: `run_quality_gates` and `auto_fix` absence, presence of `apply_fixes`, `run_checks`, and V3 `run_tests`, validation against DTO models via `validate_presentation_alignment`, and compare-before-write drift refusal with unchanged target bytes.
 9. `test_version_checked_replacement_and_preservation`: Verifies byte preservation and `CheckedFileWriter` drift refusal for `.version`.

@@ -27,6 +27,12 @@ class TemplateContractLoader:
         if not suite_root.is_absolute():
             raise ValueError("absolute_suite_root_required")
         self._suite_root = suite_root.resolve()
+        self._reference_edges: set[tuple[str, str, str]] = set()
+
+    @property
+    def reference_edges(self) -> tuple[tuple[str, str, str], ...]:
+        """Return admitted cross-file schema references for generation provenance."""
+        return tuple(sorted(self._reference_edges))
 
     def load_context_schema(self, schema_path: Path) -> FrozenJsonObject:
         """Prepare a fresh snapshot; subsequent validation never reopens schema files."""
@@ -38,6 +44,13 @@ class TemplateContractLoader:
 
         def read_reference(referrer: str, reference: str) -> tuple[str, JsonSchema]:
             target, floor = self._reference_path(Path(referrer), reference)
+            self._reference_edges.add(
+                (
+                    Path(referrer).relative_to(self._suite_root).as_posix(),
+                    target.relative_to(self._suite_root).as_posix(),
+                    reference,
+                )
+            )
             previous = reference_floors.get((referrer, str(target)), floor)
             while not previous.is_relative_to(floor):
                 floor = floor.parent
