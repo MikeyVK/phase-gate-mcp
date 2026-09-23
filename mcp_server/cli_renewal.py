@@ -76,6 +76,8 @@ def build_default_operation(
         if settings.server.template_root is not None
         else managed_root
     )
+    legacy_root = server_root / "templates" if actual_root == managed_root else None
+    legacy_version_path = server_root / ".version" if actual_root == managed_root else None
     candidate_root = server_root / "upgrade"
     proposal_root = server_root / "proposal"
     config_root = Path(settings.server.resolved_config_root).resolve()
@@ -139,6 +141,8 @@ def build_default_operation(
         json_writer=writer,
         move=os.replace,
         read_installation=repository.read,
+        legacy_root=legacy_root,
+        legacy_version_path=legacy_version_path,
     )
     proposal = TemplateProposalService(
         actual_root=actual_root,
@@ -171,6 +175,8 @@ def build_default_operation(
         proposal_root=proposal_root,
         pgmcp_version=settings.server.version,
         managed=actual_root == managed_root,
+        legacy_root=legacy_root,
+        legacy_version_path=legacy_version_path,
         supplied_candidate_root=(
             supplied_candidate_root.resolve()
             if supplied_candidate_root is not None

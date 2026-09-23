@@ -159,7 +159,7 @@ Under CY069 requirements, inactive V3 contracts (`run_checks`, `apply_fixes`, `s
 
 ### 3.1 `AGENTS.md` / `docs/agents/vscode/copilot/AGENTS.md` Prospective Diff
 Preimage SHA-256: `2812cc4072e1982ea8080a94adbde8860cfdf75117f2fc16b4857985d232ec11`  
-Postimage SHA-256: `1e7153fb5565f636f6f887b6b379e66c1f085b836e375b76a2bbfed23e5fab0a`
+Postimage SHA-256 (CRLF retained): `0cf5faeddc019a01d847bb06aab15dddb380cfee69eb1549c9630b67c25c5a07`
 
 ```diff
 --- a/AGENTS.md
@@ -169,8 +169,9 @@ Postimage SHA-256: `1e7153fb5565f636f6f887b6b379e66c1f085b836e375b76a2bbfed23e5f
  | Action | ✅ USE THIS | ❌ NEVER USE |
  |--------|-------------|------------|
 -| Edit file | `safe_edit_file(path, operation, mode)` | `run_in_terminal("Set-Content")` |
-+| Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
- | Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
++| Edit file | `safe_edit_file(path, operation, validation)` | `run_in_terminal("Set-Content")` |
+-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
++| Scaffold code/docs | `scaffold_artifact(artifact_type, file_name, context)` | Manual creation |
  | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 @@ -80,6 +80,6 @@
  ### Quality & Testing
@@ -179,10 +180,10 @@ Postimage SHA-256: `1e7153fb5565f636f6f887b6b379e66c1f085b836e375b76a2bbfed23e5f
 -| Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 -| Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
 -| Validate template | `validate_template(path, template_type)` | Manual review |
-+| Run checks | `run_checks(scope, targets, profile, bindings)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
-+| Run tests | `run_tests(scope, targets, options)` | `run_in_terminal("pytest")` |
-+| Apply fixes | `apply_fixes(files, bindings)` | Manual mass edits |
-@@ -116,4 +116,4 @@
++| Run checks | `run_checks(scope, targets, profile, checks, args, timeout_seconds)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
++| Run tests | `run_tests(scope, targets, tests, args, timeout_seconds)` | `run_in_terminal("pytest")` |
++| Apply fixes | `apply_fixes(scope, targets, fixes, args, timeout_seconds)` | Manual mass edits |
+@@ -115,5 +115,5 @@
  ❌ **FORBIDDEN (use MCP tool instead):**
  - **File operations** → use `safe_edit_file` / `scaffold_artifact`
  - **Git operations** → use `git_*` tools (see matrix above)
@@ -196,7 +197,7 @@ Postimage SHA-256: `1e7153fb5565f636f6f887b6b379e66c1f085b836e375b76a2bbfed23e5f
 
 ### 3.2 `.agents/AGENTS.md` / `docs/agents/codex/AGENTS.md` Prospective Diff
 Preimage SHA-256: `4a7cbab1a3446f1cbd1cbfd53dcd2c13fdbcb1d03b63cc39e46cea7693e1ef7d`  
-Postimage SHA-256: `617c103caf0e5d4bef0c8a6abe7285b88785def57063267b18b12a2d691d3136`
+Postimage SHA-256 (CRLF retained): `56777b9ff7931a92e96ac3b4480f33356b425b683368d6c30ee5693240b77e32`
 
 ```diff
 --- a/.agents/AGENTS.md
@@ -206,8 +207,9 @@ Postimage SHA-256: `617c103caf0e5d4bef0c8a6abe7285b88785def57063267b18b12a2d691d
  | Action | ✅ USE THIS | ❌ NEVER USE |
  |--------|-------------|------------|
 -| Edit file | `safe_edit_file(path, operation, mode)` | `run_in_terminal("Set-Content")` |
-+| Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
- | Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
++| Edit file | `safe_edit_file(path, operation, validation)` | `run_in_terminal("Set-Content")` |
+-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
++| Scaffold code/docs | `scaffold_artifact(artifact_type, file_name, context)` | Manual creation |
  | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 @@ -80,6 +80,6 @@
  ### Quality & Testing
@@ -216,10 +218,10 @@ Postimage SHA-256: `617c103caf0e5d4bef0c8a6abe7285b88785def57063267b18b12a2d691d
 -| Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 -| Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
 -| Validate template | `validate_template(path, template_type)` | Manual review |
-+| Run checks | `run_checks(scope, targets, profile, bindings)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
-+| Run tests | `run_tests(scope, targets, options)` | `run_in_terminal("pytest")` |
-+| Apply fixes | `apply_fixes(files, bindings)` | Manual mass edits |
-@@ -116,4 +116,4 @@
++| Run checks | `run_checks(scope, targets, profile, checks, args, timeout_seconds)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
++| Run tests | `run_tests(scope, targets, tests, args, timeout_seconds)` | `run_in_terminal("pytest")` |
++| Apply fixes | `apply_fixes(scope, targets, fixes, args, timeout_seconds)` | Manual mass edits |
+@@ -115,5 +115,5 @@
  ❌ **FORBIDDEN (use MCP tool instead):**
  - **File operations** → use `safe_edit_file` / `scaffold_artifact`
  - **Git operations** → use `git_*` tools (see matrix above)
@@ -233,7 +235,7 @@ Postimage SHA-256: `617c103caf0e5d4bef0c8a6abe7285b88785def57063267b18b12a2d691d
 
 ### 3.3 `docs/agents/antigravity/AGENTS.md` Prospective Diff
 Preimage SHA-256: `a147cea6d8f0a598ad6855561631819a5b39e002cb05ccf2aa15fe90264dddcb`  
-Postimage SHA-256: `ab529fb0fafa24d57c39a21548fef026d8b5064bcb7f9edc349134b6396098fd`
+Postimage SHA-256 (CRLF retained): `856c51f663a5a9a0ec3087d2f9b12cb69012043f92de12e0d6561818a1454f38`
 
 ```diff
 --- a/docs/agents/antigravity/AGENTS.md
@@ -243,8 +245,9 @@ Postimage SHA-256: `ab529fb0fafa24d57c39a21548fef026d8b5064bcb7f9edc349134b63960
  | Action | ✅ USE THIS | ❌ NEVER USE |
  |--------|-------------|------------|
 -| Edit file | `safe_edit_file(path, operation, mode)` | `run_in_terminal("Set-Content")` |
-+| Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
- | Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
++| Edit file | `safe_edit_file(path, operation, validation)` | `run_in_terminal("Set-Content")` |
+-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
++| Scaffold code/docs | `scaffold_artifact(artifact_type, file_name, context)` | Manual creation |
  | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 @@ -80,6 +80,6 @@
  ### Quality & Testing
@@ -253,10 +256,10 @@ Postimage SHA-256: `ab529fb0fafa24d57c39a21548fef026d8b5064bcb7f9edc349134b63960
 -| Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 -| Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
 -| Validate template | `validate_template(path, template_type)` | Manual review |
-+| Run checks | `run_checks(scope, targets, profile, bindings)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
-+| Run tests | `run_tests(scope, targets, options)` | `run_in_terminal("pytest")` |
-+| Apply fixes | `apply_fixes(files, bindings)` | Manual mass edits |
-@@ -116,4 +116,4 @@
++| Run checks | `run_checks(scope, targets, profile, checks, args, timeout_seconds)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
++| Run tests | `run_tests(scope, targets, tests, args, timeout_seconds)` | `run_in_terminal("pytest")` |
++| Apply fixes | `apply_fixes(scope, targets, fixes, args, timeout_seconds)` | Manual mass edits |
+@@ -115,5 +115,5 @@
  ❌ **FORBIDDEN (use MCP tool instead):**
  - **File operations** → use `safe_edit_file` / `scaffold_artifact`
  - **Git operations** → use `git_*` tools (see matrix above)

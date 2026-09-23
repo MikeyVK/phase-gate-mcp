@@ -100,8 +100,8 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 
 ### 5.1 Checksums
 - **Target File:** `.pgmcp/config/contracts.yaml`
-- **Preimage SHA-256:** `9610d38bf943c687e8c200b626259b3f107b69d4e9d0a40e44f38c91f8194d10`
-- **Postimage SHA-256:** `0c358a2d3170dd9a0758238a27e952b1cd646d08d771672df184cbee4e80f5d0`
+- **Preimage SHA-256 (raw bytes, CRLF):** `9610d38bf943c687e8c200b626259b3f107b69d4e9d0a40e44f38c91f8194d10`
+- **Postimage SHA-256 (UTF-8 text with LF line endings after universal-newline decoding):** `008a84d242a7fc5c3d56f211553348d5a820905874bf237dab42f90c01f2ce50`
 
 ### 5.2 Exact Patch (Unified Diff)
 ```diff
@@ -118,7 +118,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                or planning commitment leaked into Research.
 +            [ ] Obtain the current Research context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Apply the relevant
 +                DOCUMENTATION_STANDARD boundaries and add concrete source links. Self-check that
 +                claims are evidenced, test blast radius is explicit, and no design or planning
@@ -137,7 +137,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Self-check phase and document boundaries.
 +            [ ] Obtain the current Design context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Record the chosen
 +                direction, rejected alternatives, production and test design, validation
 +                obligations, risks, and planning consequences with source links. Self-check phase
@@ -156,7 +156,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                cycles={...}, deliverables=[...]) after verifying IDs, ordering, and dependencies.
 +            [ ] Obtain the current Planning context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Apply Documentation
 +                Standard boundaries and keep document cycles identical to the structured payload.
 +                Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs,
@@ -167,16 +167,18 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 @@ -257,7 +263,7 @@
                    and commit with sub_phase='refactor' only when cleanup changed files
  
-             [ ] Use run_tests(path='<focused scope>') and
+-            [ ] Use run_tests(path='<focused scope>') and
++            [ ] Use run_tests(scope='targets', targets=['tests/example_test.py']) and
 -                run_quality_gates(scope='files', files=[...]) proportionally. Do not run the full
-+                run_checks(scope='files') proportionally on affected files. Do not run the full
++                run_checks(scope='targets', targets=['src/example.py']) proportionally on affected files. Do not run the full
                  suite here; Validation owns the workspace-wide run.
  
              [ ] Perform a producer self-check against cycle deliverables, direct diff evidence,
 @@ -313,7 +319,7 @@
                  high-risk production/test surface to observable evidence.
  
-             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-            [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
++            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
 -                gates with run_quality_gates(scope='branch'). Reuse nothing stale; if a check
 +                gates with run_checks(scope='branch'). Reuse nothing stale; if a check
                  fails, preserve exact evidence and report FAIL rather than weakening criteria.
@@ -194,7 +196,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Do not claim independent QA approval.
 +            [ ] Create the validation artifact if absent: obtain the context schema via
 +                scaffold_schema if not already available, scaffold with
-+                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context, and refine
 +                with safe_edit_file; otherwise update the existing phase artifact. A valid scaffold
 +                is not phase completion. Record scope, exact outcomes, deliverable mapping, Design
 +                and Approved Strategy alignment, demonstration/fallback, failures, caveats, and
@@ -210,7 +212,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
@@ -225,7 +227,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Keep fix design and planning out.
 +            [ ] Obtain the current Research context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Apply relevant
 +                Documentation Standard boundaries; link evidence and state reproduction, root
 +                cause, blast radius, corrected behavior, risks, and strategy. Keep fix design and
@@ -244,7 +246,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Self-check phase and document boundaries.
 +            [ ] Obtain the current Design context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Record chosen
 +                correction, rejected alternatives, production/test design, preservation
 +                obligations, validation evidence, and planning consequences. Self-check phase and
@@ -263,7 +265,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                value, and cleanup ownership before saving.
 +            [ ] Obtain the current Planning context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Keep document cycles
 +                identical to save_planning_deliverables(issue_number=N, ...); verify IDs, ordering,
 +                dependencies, regression value, and cleanup ownership before saving.
@@ -273,16 +275,18 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 @@ -730,7 +743,7 @@
                    sub_phase='refactor' only when files changed
  
-             [ ] Use run_tests(path='<focused scope>') and
+-            [ ] Use run_tests(path='<focused scope>') and
++            [ ] Use run_tests(scope='targets', targets=['tests/example_test.py']) and
 -                run_quality_gates(scope='files', files=[...]) proportionally. Validation owns the
-+                run_checks(scope='files') proportionally on affected files. Validation owns the
++                run_checks(scope='targets', targets=['src/example.py']) proportionally on affected files. Validation owns the
                  full suite and branch-wide gates.
  
              [ ] Self-check the diff against root cause, corrected behavior, cycle deliverables,
 @@ -786,7 +799,7 @@
                  preservation constraints, and high-risk production/test surfaces to evidence.
  
-             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-            [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
++            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
 -                gates with run_quality_gates(scope='branch'). Preserve exact failures and report
 +                gates with run_checks(scope='branch'). Preserve exact failures and report
                  FAIL; do not weaken criteria or reinterpret the plan.
@@ -300,7 +304,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Do not claim independent QA approval.
 +            [ ] Create Validation if absent: obtain the context schema via scaffold_schema if not
 +                already available, scaffold with
-+                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context, and refine
 +                with safe_edit_file; otherwise update it. A valid scaffold is not phase completion.
 +                Record exact full-suite/gate/regression results, root-cause and corrected-behavior
 +                proof, deliverable/design/strategy mapping, demonstration/fallback, failures,
@@ -316,23 +320,25 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
 @@ -988,7 +1003,7 @@
                    files changed
  
-             [ ] Use run_tests(path='<focused scope>') and
+-            [ ] Use run_tests(path='<focused scope>') and
++            [ ] Use run_tests(scope='targets', targets=['tests/example_test.py']) and
 -                run_quality_gates(scope='files', files=[...]) proportionally. Validation owns the
-+                run_checks(scope='files') proportionally on affected files. Validation owns the
++                run_checks(scope='targets', targets=['src/example.py']) proportionally on affected files. Validation owns the
                  full suite and branch-wide gates.
  
              [ ] Self-check failure correction, containment, rollback exposure when relevant,
 @@ -1042,7 +1057,7 @@
                  slice exit criteria, and high-risk production/test surfaces to evidence.
  
-             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-            [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
++            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
 -                gates with run_quality_gates(scope='branch'). Preserve exact failures and report
 +                gates with run_checks(scope='branch'). Preserve exact failures and report
                  FAIL rather than weakening criteria. Explicitly rerun the focused hotfix regression
@@ -349,7 +355,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                notes, caveats, and deferred work. Do not claim independent QA approval.
 +            [ ] Create Validation if absent: obtain the context schema via scaffold_schema if not
 +                already available, scaffold with
-+                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context, and refine
 +                with safe_edit_file; otherwise update it. A valid scaffold is not phase completion.
 +                Record exact tests/gates/regression evidence, correction and containment mapping,
 +                demonstration/fallback, failures, rollback notes, caveats, and deferred work. Do
@@ -365,7 +371,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
@@ -380,7 +386,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Keep target design and cycles out.
 +            [ ] Obtain the current Research context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Apply Documentation
 +                Standard boundaries; link evidence and record current structure, invariants, blast
 +                radius, seams, risks, expected outcomes, and strategy. Keep target design and
@@ -398,7 +404,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                transition/cleanup, validation obligations, risks, and planning consequences.
 +            [ ] Obtain the current Design context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Record target/rejected
 +                structures, preservation mapping, production/test design, transition/cleanup,
 +                validation obligations, risks, and planning consequences.
@@ -415,7 +421,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                deliverables=[...]); verify order, IDs, preservation, cleanup, and dependencies.
 +            [ ] Obtain the current Planning context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Keep cycles identical to
 +                save_planning_deliverables(issue_number=N, ...); verify order, IDs, preservation,
 +                cleanup, and dependencies.
@@ -425,16 +431,18 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 @@ -1444,7 +1468,7 @@
                    rerun focused tests and file gates, and commit sub_phase='refactor' when changed
  
-             [ ] Use run_tests(path='<focused scope>') and
+-            [ ] Use run_tests(path='<focused scope>') and
++            [ ] Use run_tests(scope='targets', targets=['tests/example_test.py']) and
 -                run_quality_gates(scope='files', files=[...]) proportionally. Validation owns the
-+                run_checks(scope='files') proportionally on affected files. Validation owns the
++                run_checks(scope='targets', targets=['src/example.py']) proportionally on affected files. Validation owns the
                  full suite and branch gates.
  
              [ ] Self-check diff purity, responsibility/dependency direction, invariants, behavior,
 @@ -1499,7 +1523,7 @@
                  Inspect for remnants, dependency-direction violations, and test/helper coupling.
  
-             [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
+-            [ ] Run the single workspace-wide suite with run_tests(scope='full') and branch-wide
++            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
 -                gates with run_quality_gates(scope='branch'). Preserve exact failure evidence and
 +                gates with run_checks(scope='branch'). Preserve exact failure evidence and
                  report FAIL rather than weakening preservation criteria.
@@ -451,7 +459,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                checks, failures, demonstration/fallback, risks, and deferred work.
 +            [ ] Create Validation if absent: obtain the context schema via scaffold_schema if not
 +                already available, scaffold with
-+                scaffold_artifact(artifact_type='validation_report', name='validation'), and refine
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context, and refine
 +                with safe_edit_file; otherwise update it. A valid scaffold is not phase completion.
 +                Record exact suite/gate results, deliverable and cleanup mapping,
 +                invariant/behavior/design/strategy alignment, structural checks, failures,
@@ -467,7 +475,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
@@ -483,7 +491,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                and Documentation Standard compliance.
 +            [ ] Obtain the current Planning context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Verify boundary, source
 +                mapping, dependencies, review criteria, and Documentation Standard compliance.
  
@@ -497,16 +505,17 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
 @@ -1956,7 +1983,7 @@
                  stale terms, missed consumers, and unsupported claims.
              [ ] After final implementation changes run once:
-                 - run_tests(scope='full')
+-                - run_tests(scope='full')
++                - run_tests(scope='workspace')
 -                - run_quality_gates(scope='branch', verbose=True)
-+                - run_checks(scope='branch', verbose=True)
++                - run_checks(scope='branch')
                  Read both cached resources. Add narrow checks only for a material gap;
                  do not duplicate fresh evidence.
              [ ] Explain failures directly. Do not accept stale/unexplained broad results
@@ -518,7 +527,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
@@ -535,7 +544,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Keep child issue creation, selected decomposition, design, and execution out.
 +            [ ] Obtain the current Research context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='research', name='research') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Complete Research with
 +                initiative framing, candidate workstreams, blast radius, dependencies, shared
 +                proof obligations, assumptions/risks, Approved Strategy, and expected Planning
@@ -556,7 +565,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                and no hidden Design or implementation work.
 +            [ ] Obtain the current Planning context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='planning', name='planning') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Verify complete
 +                Research/strategy traceability, non-overlapping child ownership, executable
 +                dependencies, and no hidden Design or implementation work.
@@ -576,7 +585,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                Commit with git_add_or_commit(workflow_phase='design',
 +            [ ] Obtain the current Design context schema via scaffold_schema if not already
 +                available. Create the initial document with
-+                scaffold_artifact(artifact_type='design', name='design') and refine it with
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
 +                safe_edit_file. A valid scaffold is not phase completion. Verify
 +                Research/Planning/strategy traceability, child usability, architecture/test
 +                quality, coordination consequences, and applicable Documentation Standard
@@ -592,7 +601,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
 -                scaffold_artifact(artifact_type='pr', name='pr', context={...}).
 +            [ ] Obtain the PR context schema via scaffold_schema if not already available.
 +                Scaffold the PR body with
-+                scaffold_artifact(artifact_type='pr', name='pr') and refine with safe_edit_file.
++                scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine with safe_edit_file.
                  Include delivered scope, exact verification evidence, closure claims,
                  residual risks, deferred work, tracking state, and links to primary artifacts.
                  Use only supported claims; stop if scope or closure intent is ambiguous.
@@ -612,7 +621,7 @@ These literal inventories violated DI-07 D-WORKFLOW-03 and created schema drift.
   - `pr_allowed_phase == "ready"` is preserved.
   - Obsolete `context=` and `run_quality_gates` strings are completely absent.
   - V3 tool names (`run_checks`, `run_tests`, `safe_edit_file`, `scaffold_artifact`) are present in expected phases.
-  - Postimage hash matches `0c358a2d3170dd9a0758238a27e952b1cd646d08d771672df184cbee4e80f5d0`.
+  - Postimage hash matches `008a84d242a7fc5c3d56f211553348d5a820905874bf237dab42f90c01f2ce50`.
 
 ### 6.2 DOCFLOW-E02 Evidence
 - **Automated Test:** `tests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02`

@@ -159,6 +159,8 @@ class TemplateRenewalService:
         supplied_candidate_root: Path,
         pgmcp_version: str,
         managed: bool,
+        legacy_root: Path | None = None,
+        legacy_version_path: Path | None = None,
         read_installation: Callable[[], InstallationState | None],
         publish_installation: Callable[[InstallationState], None],
         admit: Callable[[Path], SuiteSnapshot],
@@ -172,7 +174,10 @@ class TemplateRenewalService:
         recovery_pending: Callable[[], bool],
     ) -> None:
         roots = (actual_root, candidate_root, proposal_root, supplied_candidate_root)
-        if any(not root.is_absolute() for root in roots):
+        legacy_roots = tuple(
+            root for root in (legacy_root, legacy_version_path) if root is not None
+        )
+        if any(not root.is_absolute() for root in (*roots, *legacy_roots)):
             raise MCPError("absolute_template_renewal_roots_required", code="ERR_CONFIG")
         self._actual_root = actual_root
         self._candidate_root = candidate_root
@@ -180,6 +185,8 @@ class TemplateRenewalService:
         self._supplied_candidate_root = supplied_candidate_root
         self._pgmcp_version = pgmcp_version
         self._managed = managed
+        self._legacy_root = legacy_root
+        self._legacy_version_path = legacy_version_path
         self._read_installation = read_installation
         self._publish_installation = publish_installation
         self._admit = admit
@@ -283,7 +290,8 @@ class TemplateRenewalService:
             self._resolve(checkpoint, actual, candidate, resolve_components)
             return
         if force:
-            if not self._managed or actual is None:
+            legacy_migration = actual is None and self._has_legacy_installation()
+            if not self._managed or (actual is None and not legacy_migration):
                 self._reject(
                     "external_root_force_forbidden"
                     if not self._managed
@@ -294,6 +302,14 @@ class TemplateRenewalService:
             self._pending = (actual, candidate, None)
             return
         if checkpoint is None:
+            if self._managed and actual is None and self._has_legacy_installation():
+                self._last_result = RenewalResult(
+                    outcome="checkpoint_required",
+                    candidate_disposition="staged",
+                    candidate_path=self._candidate_root,
+                    available_actions=(RenewalAction(kind="force_template_upgrade"),),
+                )
+                return
             self._bootstrap(actual, candidate)
             return
         if not self._managed or actual is None:
@@ -311,6 +327,17 @@ class TemplateRenewalService:
             self._fail("proposal_invalid", "complete proposal", error)
             return
         self._pending = (actual, candidate, analysis)
+
+    def _has_legacy_installation(self) -> bool:
+        return any(
+            path is not None and (path.exists() or path.is_symlink() or self._is_junction(path))
+            for path in (self._legacy_root, self._legacy_version_path)
+        )
+
+    @staticmethod
+    def _is_junction(path: Path) -> bool:
+        checker = getattr(path, "is_junction", None)
+        return bool(checker and checker())
 
     def _bootstrap(self, actual: SuiteSnapshot | None, candidate: SuiteSnapshot) -> None:
         if self._managed and actual is None:
@@ -350,7 +377,7 @@ class TemplateRenewalService:
             self._activate_proposal(
                 self._proposal_root if analysis is not None else self._candidate_root,
                 self._pgmcp_version,
-                actual is None,
+                actual is None and not force,
                 force,
             )
         except (MCPError, OSError, ValueError, TypeError) as error:
@@ -375,10 +402,10 @@ class TemplateRenewalService:
             else any(item.selected != item.actual for item in analysis.decisions)
         )
         outcome: RenewalOutcome = (
-            "fresh_installed"
-            if actual is None
-            else "forced_candidate_installed"
+            "forced_candidate_installed"
             if force
+            else "fresh_installed"
+            if actual is None
             else "activated_with_conflicts"
             if result.candidate_retained
             else "activated"
@@ -410,6 +437,10 @@ class TemplateRenewalService:
         self._last_result = RenewalResult(
             outcome="rolled_back"
             if result.outcome == "rolled_back"
+            else "forced_candidate_installed"
+            if result.force_applied
+            else "fresh_installed"
+            if result.fresh_applied
             else ("activated_with_conflicts" if result.candidate_retained else "activated"),
             actual_changed=result.actual_changed,
             checkpoint_effect=result.checkpoint_effect,

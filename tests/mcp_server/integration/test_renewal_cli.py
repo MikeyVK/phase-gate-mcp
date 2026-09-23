@@ -358,22 +358,20 @@ def test_first_legacy_upgrade_requires_owner_migration(renewal_case: RenewalCase
     legacy_root = renewal_case.server / "templates"
     legacy_root.mkdir()
     legacy_file = legacy_root / "owner-customization.txt"
+    empty_dir = legacy_root / "empty-owner-directory"
+    empty_dir.mkdir()
     original = b"owner customization must survive migration\n"
     legacy_file.write_bytes(original)
     (renewal_case.server / ".version").write_text("2.0.0\n", encoding="utf-8")
 
-    code, _out, _err, operation = _run(
-        renewal_case, supplied=renewal_case.source
-    )
+    code, _out, _err, operation = _run(renewal_case, supplied=renewal_case.source)
     assert code == 2
     assert _result(operation).outcome == "checkpoint_required"
     assert legacy_file.read_bytes() == original
     assert not renewal_case.actual.exists()
     assert not (renewal_case.server / "installation.json").exists()
 
-    code, out, err, operation = _run(
-        renewal_case, "--force-template-upgrade"
-    )
+    code, out, err, operation = _run(renewal_case, "--force-template-upgrade")
     result = _result(operation)
     assert code == 0, out + err
     assert result.outcome == "forced_candidate_installed"
@@ -382,6 +380,7 @@ def test_first_legacy_upgrade_requires_owner_migration(renewal_case: RenewalCase
         path.read_bytes() == original
         for path in result.backup_path.rglob("owner-customization.txt")
     )
+    assert (result.backup_path / "legacy" / "templates" / empty_dir.name).is_dir()
     assert legacy_file.read_bytes() == original
     assert renewal_case.actual.is_dir()
     assert (renewal_case.server / "installation.json").is_file()

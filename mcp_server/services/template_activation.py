@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 from collections.abc import Callable, Iterator
@@ -108,6 +109,25 @@ class SuiteIdentity(BaseModel):
         return self
 
 
+class LegacyBackupFile(BaseModel):
+    """Exact legacy file identity needed to verify an interrupted migration backup."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    path: str
+    sha256: str
+
+    @model_validator(mode="after")
+    def validate_file_fact(self) -> LegacyBackupFile:
+        relative = Path(self.path)
+        if relative.is_absolute() or ".." in relative.parts or len(self.sha256) != 64:
+            raise ValueError("activation_legacy_backup_fact_invalid")
+        try:
+            int(self.sha256, 16)
+        except ValueError as error:
+            raise ValueError("activation_legacy_backup_fact_invalid") from error
+        return self
+
+
 class ActivationRecord(BaseModel):
     """Immutable facts published before the first authoritative directory move."""
 
@@ -118,11 +138,25 @@ class ActivationRecord(BaseModel):
     target_installation: InstallationState
     retain_candidate: bool
     backup_path: Path | None
+    legacy_backup_files: tuple[LegacyBackupFile, ...] = ()
+    legacy_backup_directories: tuple[str, ...] = ()
+    force: bool = False
+    fresh: bool = False
 
     @model_validator(mode="after")
     def validate_target(self) -> ActivationRecord:
         if not self.target_suite.present or self.target_installation.template_checkpoint is None:
             raise ValueError("activation_target_incomplete")
+        directories = self.legacy_backup_directories
+        if (
+            len(set(directories)) != len(directories)
+            or tuple(sorted(directories)) != directories
+            or any(
+                Path(directory).is_absolute() or ".." in Path(directory).parts or "\\" in directory
+                for directory in directories
+            )
+        ):
+            raise ValueError("activation_legacy_backup_directories_invalid")
         return self
 
     @field_serializer("prior_installation", "target_installation")
@@ -139,6 +173,8 @@ class ActivationResult:
     backup_path: Path | None
     actual_changed: bool = False
     checkpoint_effect: Literal["unchanged", "created", "advanced"] = "unchanged"
+    force_applied: bool = False
+    fresh_applied: bool = False
 
 
 def _completed_result(
@@ -157,6 +193,8 @@ def _completed_result(
         record.backup_path,
         actual_changed=record.prior_suite != record.target_suite,
         checkpoint_effect=effect,
+        force_applied=record.force,
+        fresh_applied=record.fresh,
     )
 
 
@@ -168,6 +206,10 @@ def _require_owned_endpoint(path: Path) -> None:
 def _is_junction(path: Path) -> bool:
     checker = getattr(path, "is_junction", None)
     return bool(checker and checker())
+
+
+def _path_entry_present(path: Path) -> bool:
+    return path.exists() or path.is_symlink() or _is_junction(path)
 
 
 class UpgradeLock:
@@ -231,8 +273,17 @@ class ActivationFiles:
         json_writer: JsonWriter,
         move: Callable[[Path, Path], None],
         read_installation: Callable[[], InstallationState | None],
+        legacy_root: Path | None = None,
+        legacy_version_path: Path | None = None,
     ) -> None:
         self.paths = ActivationPaths(server_root)
+        self._legacy_root = legacy_root
+        self._legacy_version_path = legacy_version_path
+        if any(
+            path is not None and not path.is_relative_to(self.paths.root)
+            for path in (legacy_root, legacy_version_path)
+        ):
+            raise ValueError("activation_legacy_source_outside_root")
         self._json_writer = json_writer
         self._move = move
         self._read_installation = read_installation
@@ -291,20 +342,145 @@ class ActivationFiles:
             self.discard(target)
             raise
 
+    def _legacy_sources(self) -> tuple[tuple[str, bytes], ...]:
+        sources: list[tuple[str, bytes]] = []
+        root = self._legacy_root
+        if root is not None and _path_entry_present(root):
+            if root.is_symlink() or _is_junction(root) or not root.is_dir():
+                raise MCPError("template_legacy_backup_source_invalid", code="ERR_CONFIG")
+            resolved_root = root.resolve()
+            for source in sorted(root.rglob("*")):
+                if (
+                    source.is_symlink()
+                    or _is_junction(source)
+                    or not source.resolve().is_relative_to(resolved_root)
+                ):
+                    raise MCPError("template_legacy_backup_source_invalid", code="ERR_CONFIG")
+                if source.is_dir():
+                    continue
+                if not source.is_file():
+                    raise MCPError("template_legacy_backup_source_invalid", code="ERR_CONFIG")
+                relative = source.relative_to(root).as_posix()
+                sources.append((f"templates/{relative}", source.read_bytes()))
+        version_path = self._legacy_version_path
+        if version_path is not None and _path_entry_present(version_path):
+            if (
+                version_path.is_symlink()
+                or _is_junction(version_path)
+                or not version_path.is_file()
+                or not version_path.resolve().is_relative_to(self.paths.root)
+            ):
+                raise MCPError("template_legacy_backup_source_invalid", code="ERR_CONFIG")
+            sources.append((".version", version_path.read_bytes()))
+        return tuple(sorted(sources))
+
+    def _legacy_directories(self) -> tuple[str, ...]:
+        root = self._legacy_root
+        if root is None or not _path_entry_present(root):
+            return ()
+        if root.is_symlink() or _is_junction(root) or not root.is_dir():
+            raise MCPError("template_legacy_backup_source_invalid", code="ERR_CONFIG")
+        resolved_root = root.resolve()
+        directories = ["templates"]
+        for source in sorted(root.rglob("*")):
+            if (
+                source.is_symlink()
+                or _is_junction(source)
+                or not source.resolve().is_relative_to(resolved_root)
+            ):
+                raise MCPError("template_legacy_backup_source_invalid", code="ERR_CONFIG")
+            if source.is_dir():
+                directories.append(f"templates/{source.relative_to(root).as_posix()}")
+        return tuple(sorted(directories))
+
+    @staticmethod
+    def _legacy_backup_facts(
+        sources: tuple[tuple[str, bytes], ...],
+    ) -> tuple[LegacyBackupFile, ...]:
+        return tuple(
+            LegacyBackupFile(path=relative, sha256=hashlib.sha256(content).hexdigest())
+            for relative, content in sources
+        )
+
+    def legacy_backup_matches(
+        self,
+        path: Path,
+        expected_files: tuple[LegacyBackupFile, ...],
+        expected_directories: tuple[str, ...],
+    ) -> bool:
+        legacy = path / "legacy"
+        if not expected_files and not expected_directories:
+            return not _path_entry_present(legacy)
+        if legacy.is_symlink() or _is_junction(legacy) or not legacy.is_dir():
+            return False
+        resolved_legacy = legacy.resolve()
+        actual_files: list[LegacyBackupFile] = []
+        actual_directories: list[str] = []
+        for source in sorted(legacy.rglob("*")):
+            if (
+                source.is_symlink()
+                or _is_junction(source)
+                or not source.resolve().is_relative_to(resolved_legacy)
+            ):
+                return False
+            relative = source.relative_to(legacy).as_posix()
+            if source.is_dir():
+                actual_directories.append(relative)
+                continue
+            if not source.is_file():
+                return False
+            actual_files.append(
+                LegacyBackupFile(
+                    path=relative,
+                    sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+                )
+            )
+        return (
+            tuple(actual_files) == expected_files
+            and tuple(actual_directories) == expected_directories
+        )
+
     def create_backup(
         self,
         path: Path,
         prior: SuiteSnapshot | None,
         installation: InstallationState | None,
-    ) -> None:
+    ) -> tuple[tuple[LegacyBackupFile, ...], tuple[str, ...]]:
         _require_owned_endpoint(path)
+        sources = self._legacy_sources() if prior is None else ()
+        directories = self._legacy_directories() if prior is None else ()
         path.mkdir(parents=False, exist_ok=False)
-        if prior is not None:
-            self.write_sources(path / "template_suite", prior.sources)
-        if installation is not None:
-            self._json_writer(
-                path / "installation.json", installation.model_dump(mode="json", exclude_none=True)
-            )
+        try:
+            if prior is not None:
+                self.write_sources(path / "template_suite", prior.sources)
+            if installation is not None:
+                self._json_writer(
+                    path / "installation.json",
+                    installation.model_dump(mode="json", exclude_none=True),
+                )
+            legacy_root = path / "legacy"
+            for relative in directories:
+                destination = legacy_root / relative
+                if not destination.resolve().is_relative_to(legacy_root):
+                    raise MCPError("template_legacy_backup_path_invalid", code="ERR_CONFIG")
+                destination.mkdir(parents=True, exist_ok=True)
+            for relative, content in sources:
+                destination = legacy_root / relative
+                if not destination.resolve().is_relative_to(legacy_root):
+                    raise MCPError("template_legacy_backup_path_invalid", code="ERR_CONFIG")
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(content)
+            facts = self._legacy_backup_facts(sources)
+            if (
+                not self.legacy_backup_matches(path, facts, directories)
+                or self._legacy_sources() != sources
+                or self._legacy_directories() != directories
+            ):
+                raise MCPError("template_activation_backup_invalid", code="ERR_CONFIG")
+            return facts, directories
+        except (OSError, ValueError, MCPError):
+            self.discard(path)
+            raise
 
     def backup_installation(self, path: Path) -> InstallationState | None:
         target = path / "installation.json"
@@ -456,18 +632,24 @@ class TemplateActivationService:
             pgmcp_version=pgmcp_version, template_checkpoint=checkpoint
         )
         self._files.write_sources(paths.next, proposal.sources)
+        backup: Path | None = None
+        backup_created = False
         try:
             prepared = self._snapshot(paths.next)
             if prepared is None or prepared.sources != proposal.sources:
                 raise MCPError("template_activation_preparation_changed", code="ERR_CONFIG")
-            backup = None
+            legacy_backup_files: tuple[LegacyBackupFile, ...] = ()
+            legacy_backup_directories: tuple[str, ...] = ()
             if force:
                 instant = self._clock()
                 if instant.tzinfo is None:
                     raise ValueError("activation_clock_timezone_required")
                 stamp = instant.astimezone(UTC).strftime("%Y%m%dT%H%M%S%fZ")
                 backup = paths.root.parent / f".pgmcp_template_backup_{stamp}"
-                self._files.create_backup(backup, prior, previous_installation)
+                legacy_backup_files, legacy_backup_directories = self._files.create_backup(
+                    backup, prior, previous_installation
+                )
+                backup_created = True
                 backup_snapshot = self._snapshot(backup / "template_suite")
                 if (
                     _identity(backup_snapshot) != _identity(prior)
@@ -477,6 +659,9 @@ class TemplateActivationService:
                         and backup_snapshot.sources != prior.sources
                     )
                     or self._files.backup_installation(backup) != previous_installation
+                    or not self._files.legacy_backup_matches(
+                        backup, legacy_backup_files, legacy_backup_directories
+                    )
                 ):
                     raise MCPError("template_activation_backup_invalid", code="ERR_CONFIG")
             record = ActivationRecord(
@@ -486,11 +671,17 @@ class TemplateActivationService:
                 target_installation=target_installation,
                 retain_candidate=retain,
                 backup_path=backup,
+                legacy_backup_files=legacy_backup_files,
+                legacy_backup_directories=legacy_backup_directories,
+                force=force,
+                fresh=fresh,
             )
             self._files.publish_record(record)
         except (OSError, ValueError, MCPError):
             if not paths.record.exists():
                 self._files.discard(paths.next)
+                if backup_created and backup is not None:
+                    self._files.discard(backup)
             raise
         if prior is not None:
             self._files.move(paths.actual, paths.previous)
@@ -527,8 +718,14 @@ class TemplateActivationService:
                     raise ValueError("unowned_activation_backup")
                 _require_owned_endpoint(backup)
                 if (
-                    _identity(self._snapshot(backup / "template_suite")) != record.prior_suite
+                    not backup.is_dir()
+                    or _identity(self._snapshot(backup / "template_suite")) != record.prior_suite
                     or self._files.backup_installation(backup) != record.prior_installation
+                    or not self._files.legacy_backup_matches(
+                        backup,
+                        record.legacy_backup_files,
+                        record.legacy_backup_directories,
+                    )
                 ):
                     raise ValueError("unrecognized_activation_backup")
         except (MCPError, OSError, ValueError) as error:
