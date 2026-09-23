@@ -1,34 +1,41 @@
 """Integration test configuration for MCP server tests.
 
 @layer: Tests (Support)
-@dependencies: pytest, unittest.mock, mcp_server.server
+@dependencies: pytest, unittest.mock, mcp_server.bootstrap
 """
 
 from collections.abc import Generator
+from pathlib import Path
+from shutil import copytree
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import make_test_server
 
 
 @pytest.fixture
-def server() -> Generator[MCPServer, None, None]:
-    """
-    Create an MCPServer instance with mocked GitHub dependencies.
+def server(tmp_path: Path, pytestconfig: pytest.Config) -> Generator[MCPServer, None, None]:
+    """Compose the public V3 server in an isolated workspace with mocked GitHub calls."""
+    source = pytestconfig.rootpath / ".pgmcp"
+    target = tmp_path / ".pgmcp"
+    config_root = target / "config"
+    template_root = target / "template_suite"
+    copytree(source / "config", config_root)
+    copytree(source / "template_suite", template_root)
 
-    This patches the GitHubAdapter at the manager level so all GitHub
-    operations return mock data instead of hitting the real API.
-    Uses explicit Settings to avoid inheriting PGMCP_SERVER_NAME from the
-    """
-    # Patch the GitHubAdapter at the point where it's instantiated
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(tmp_path),
+            config_root=str(config_root),
+            template_root=str(template_root),
+            bypass_version_check=True,
+        )
+    )
     with patch("mcp_server.managers.github_manager.GitHubAdapter") as mock_adapter_class:
-        # Configure the mock adapter
         mock_adapter = MagicMock()
         mock_adapter.list_issues.return_value = []
         mock_adapter_class.return_value = mock_adapter
-
-        settings = Settings(server=ServerSettings())
-        yield make_test_server(settings=settings)
+        yield ServerBootstrapper(settings).bootstrap_target()
