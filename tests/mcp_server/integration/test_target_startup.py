@@ -27,6 +27,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -254,29 +255,25 @@ def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
 
 
 def _active_launcher_runtime() -> tuple[Path, str]:
-    """Recover the launcher PATH before PytestRunner's documented test-only prefix."""
-    launcher = json.loads((REPO_ROOT / ".vscode/mcp.json").read_text(encoding="utf-8"))
-    configured = launcher["servers"]["phase-gate-mcp"]
-    assert configured["type"] == "stdio"
-    assert configured["command"] == "python"
+    """Recover the active Codex launcher before PytestRunner's test-only prefix."""
+    launcher = tomllib.loads((REPO_ROOT / ".codex/config.toml").read_text(encoding="utf-8"))
+    configured = launcher["mcp_servers"]["phase_gate_mcp"]
+    launcher_python = Path(configured["command"]).resolve()
+    assert launcher_python == Path(sys.executable).resolve(), "active_launcher_interpreter_mismatch"
     assert configured["args"] == ["-m", "mcp_server.core.proxy"]
-    assert configured["cwd"] == "${workspaceFolder}"
-    assert configured["env"]["PYTHONPATH"] == "${workspaceFolder}"
-    assert configured["env"]["PGMCP_WORKSPACE_ROOT"] == "${workspaceFolder}"
+    assert Path(configured["cwd"]).resolve() == REPO_ROOT.resolve()
+    assert Path(configured["env"]["PYTHONPATH"]).resolve() == REPO_ROOT.resolve()
+    assert Path(configured["env"]["PGMCP_WORKSPACE_ROOT"]).resolve() == REPO_ROOT.resolve()
     assert configured["env"]["PGMCP_SERVER_PROJECT_DIR"] == ".pgmcp"
+    assert "VIRTUAL_ENV" not in configured["env"]
+    assert "PATH" not in configured["env"]
 
-    python_dir = str(Path(sys.executable).parent)
-    runner_prefix = f"{python_dir}{os.pathsep}"
+    runner_prefix = f"{launcher_python.parent}{os.pathsep}"
     test_path = os.environ["PATH"]
     assert test_path[: len(runner_prefix)].casefold() == runner_prefix.casefold(), (
         "pytest_runner_path_prefix_mismatch"
     )
-    launcher_path = test_path[len(runner_prefix) :]
-    # VS Code resolves the configured command to the active interpreter before
-    # the proxy launches this server; PATH lookup inside that process may differ.
-    launcher_python = Path(sys.executable).resolve()
-    assert launcher_python.is_file()
-    return launcher_python, launcher_path
+    return launcher_python, test_path[len(runner_prefix) :]
 
 
 def _installed_environment(distribution: InstalledDistribution, workspace: Path) -> dict[str, str]:
