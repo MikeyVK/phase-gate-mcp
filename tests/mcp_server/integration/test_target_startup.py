@@ -270,6 +270,129 @@ def _installed_environment(distribution: InstalledDistribution, workspace: Path)
     return env
 
 
+def _rehearse_readback_test_sources(
+    distribution: InstalledDistribution, candidate: Path, temporary_root: Path
+) -> None:
+    """Run unchanged R004/R005 and a preimage-checked R006 target copy."""
+    test_root = temporary_root / "candidate_tests"
+    test_root.mkdir()
+    shutil.copytree(
+        REPO_ROOT / "tests",
+        test_root / "tests",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache"),
+    )
+    candidate_config = test_root / ".pgmcp/config"
+    candidate_config.parent.mkdir()
+    shutil.copytree(candidate / ".pgmcp/config", candidate_config)
+    shutil.copytree(REPO_ROOT / ".pgmcp/templates", test_root / ".pgmcp/templates")
+    repo = GitRepo.init(str(test_root))
+    marker = test_root / "README.md"
+    marker.write_text("Isolated candidate test root\n", encoding="utf-8")
+    repo.index.add([str(marker)])
+    repo.index.commit("Initialize candidate test root")
+
+    preimages = {
+        "unit/tools/test_project_tools.py": (
+            "0fcf8f42276c80e2ee109a49ed72cdd1f3eaeb1873bf7e3d20d3dd2ae55f517f"
+        ),
+        "unit/managers/test_project_manager.py": (
+            "13312592a6a8e7aaf30de69ade42f878a3c9d5ed10291c4fee74c54f3b3384ed"
+        ),
+        "integration/test_project_plan_readback.py": (
+            "efa2500e004ea5e83f200493cca1c92ef4876682bbe66ede7cf80309a46513e1"
+        ),
+    }
+    for relative, expected in preimages.items():
+        source = test_root / "tests/mcp_server" / relative
+        assert hashlib.sha256(source.read_bytes()).hexdigest() == expected
+
+    readback = test_root / "tests/mcp_server/integration/test_project_plan_readback.py"
+    source = readback.read_text(encoding="utf-8")
+    source = _replace_exact_once(
+        source,
+        "import hashlib\n",
+        "import hashlib\nimport shutil\nfrom pathlib import Path\n\nimport mcp_server\n",
+    )
+    source = _replace_exact_once(
+        source,
+        "    settings = Settings(\n",
+        """    suite_source = Path(mcp_server.__file__).resolve().parent / "assets/template_suite"
+    shutil.copytree(suite_source, legacy_suite_roots.server / "template_suite")
+    settings = Settings(
+""",
+    )
+    source = _replace_exact_once(
+        source,
+        "            template_root=str(legacy_suite_roots.templates),\n",
+        """            template_root=str(legacy_suite_roots.server / "template_suite"),
+            bypass_version_check=False,
+""",
+    )
+    source = _replace_exact_once(
+        source,
+        "    manager = make_project_manager(legacy_suite_roots.workspace)\n",
+        """    (legacy_suite_roots.server / "installation.json").write_text(
+        json.dumps({"pgmcp_version": settings.server.version}), encoding="utf-8"
+    )
+    manager = make_project_manager(legacy_suite_roots.workspace)
+""",
+    )
+    source = _replace_exact_once(
+        source,
+        "    server = ServerBootstrapper(settings).bootstrap()\n",
+        "    server = ServerBootstrapper(settings).bootstrap_target()\n",
+    )
+    source = _replace_exact_once(
+        source,
+        "    restarted = ServerBootstrapper(settings).bootstrap()\n",
+        "    restarted = ServerBootstrapper(settings).bootstrap_target()\n",
+    )
+    readback.write_text(source, encoding="utf-8")
+
+    env = _installed_environment(distribution, test_root)
+    env["PYTHONPATH"] = os.pathsep.join((str(distribution.root), str(test_root)))
+    run = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "-n",
+            "0",
+            "--rootdir",
+            str(test_root),
+            str(test_root / "tests/mcp_server/unit/tools/test_project_tools.py")
+            + "::TestGetProjectPlanTool::test_get_plan_returns_complete_stored_planning",
+            str(test_root / "tests/mcp_server/unit/tools/test_project_tools.py")
+            + "::TestGetProjectPlanTool::test_get_plan_rejects_invalid_stored_planning",
+            str(test_root / "tests/mcp_server/unit/tools/test_project_tools.py")
+            + "::TestSavePlanningDeliverablesTool"
+            + "::test_save_planning_deliverables_tool_persists_to_projects_json",
+            str(test_root / "tests/mcp_server/unit/tools/test_project_tools.py")
+            + "::TestUpdatePlanningDeliverablesTool"
+            + "::test_update_planning_deliverables_tool_updates_existing_deliverable_by_id",
+            str(test_root / "tests/mcp_server/unit/managers/test_project_manager.py")
+            + "::TestPlanningDeliverablesSchema"
+            + "::test_planning_deliverables_stored_in_projects_json",
+            str(test_root / "tests/mcp_server/unit/managers/test_project_manager.py")
+            + "::TestProjectManagerVersioning"
+            + "::test_query_preserves_invalid_planning_and_existing_backup",
+            str(test_root / "tests/mcp_server/unit/managers/test_project_manager.py")
+            + "::TestProjectManagerVersioning"
+            + "::test_commands_preserve_invalid_planning_backup_behavior",
+            str(readback),
+        ],
+        cwd=test_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=180,
+        check=False,
+    )
+    (test_root / "rehearsal-output.txt").write_text(run.stdout + run.stderr, encoding="utf-8")
+    assert run.returncode == 0, run.stdout + run.stderr
+
+
 class TestTargetStartup:
     """Integration test suite for target_startup_composition_and_launch_rehearsal."""
 
@@ -402,6 +525,11 @@ class TestTargetStartup:
             assert "auto_fix" in tool_names
             assert "run_checks" not in tool_names
             assert "apply_fixes" not in tool_names
+
+    def test_installed_candidate_readback_test_sources(self, tmp_path: Path) -> None:
+        """Run prepared R004/R005/R006 test copies against an installed candidate."""
+        distribution = _installed_candidate(tmp_path)
+        _rehearse_readback_test_sources(distribution, tmp_path / "candidate_source", tmp_path)
 
     def test_installed_candidate_init_migration_and_mcp_handshake(self, tmp_path: Path) -> None:
         """Rehearse one installed V3 candidate across fresh and owner-migrated roots."""
