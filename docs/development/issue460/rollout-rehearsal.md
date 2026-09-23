@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-09-17T16:47Z updated=2026-09-17 -->
 # CY071: Target Startup Composition and Launch Rehearsal
 
-**Status:** CY071 EVIDENCE READY FOR INDEPENDENT QA  
-**Version:** 1.0.5  
+**Status:** CY071 LAUNCH PARITY RECHECK REQUESTED  
+**Version:** 1.0.6  
 **Last Updated:** 2026-09-23
 
 ## Purpose
@@ -58,6 +58,14 @@ Exact rehearsed live input SHA-256 values: `mcp_server/cli.py` `c78e86beb0294ce8
 
 The R004/R005/R006 test-source rehearsal now runs against a separately installed candidate. The exact live preimage SHA-256 values are R004 `0fcf8f42276c80e2ee109a49ed72cdd1f3eaeb1873bf7e3d20d3dd2ae55f517f`, R005 `13312592a6a8e7aaf30de69ade42f878a3c9d5ed10291c4fee74c54f3b3384ed`, and R006 `efa2500e004ea5e83f200493cca1c92ef4876682bbe66ede7cf80309a46513e1`. R004/R005 need no semantic hunk: selected stored-plan, invalid-query-byte and command-recovery tests run unchanged with isolated candidate config. The isolated R006 copy acquires the installed `assets/template_suite`, writes a matching version-only installation state, selects that suite root and `bypass_version_check=False`, and changes its two direct `bootstrap()` calls to `bootstrap_target()`; every save/update/fresh-cache/full-window assertion remains unchanged. These changes use exact single-occurrence preimage replacements in `test_target_startup.py`; the live R004/R005/R006 bytes remain unchanged for CY072. Focused nested candidate result: **15 passed**, outer PGMCP result `pgmcp://cache/runs/01e3112aa6504f1c8c5c419c56479b85`. The unchanged live R006 tests also passed, **2 passed**, `pgmcp://cache/runs/4b63ef2913db441b974e09af9dba0010`. File-scoped quality gates on the rehearsal test passed, `pgmcp://cache/runs/241f4d5432d44be783fc22c6b634ccca`. All six CY069 host instruction patches were applied with exact preimage and postimage hashes to isolated candidate sources, then byte-compared with their packaged `mcp_server/assets/agents` destinations; the live host files remain unchanged. Independent findings-only QA identified three stop conditions before the subsequent owner decision: isolated R004/R005/R006 source-hunk rehearsal was missing; dirty intermediate preimages were unavailable; and the schema-reference and CY070 input corrections were outside the original CY071 write-set. The owner explicitly resolved the latter two on 2026-09-23 as recorded below. QA did not verify a code defect, run tests, or independently read the cached results. No live activation, server restart or phase transition has occurred.
 
+## Launch parity correction after independent NOGO
+
+Independent `@qa` returned NOGO for CY071.D2 because the installed candidate inherited `PytestRunner`'s test-only `PATH` prefix and `VIRTUAL_ENV`; this could change `shutil.which` adapter discovery. The correction is confined to the existing candidate test and this report. No production bootstrap, adapter loader, live launcher, or live installation bytes changed.
+
+The active [VS Code launcher](../../../.vscode/mcp.json) specifies stdio `python -m mcp_server.core.proxy`, workspace CWD, workspace `PYTHONPATH`, `PGMCP_WORKSPACE_ROOT`, and `.pgmcp` project directory. `health_check` identified the running server as PID 23548; a read-only Windows process inspection showed both proxy and server launched through `C:\temp\pgmcp\.venv\Scripts\python.exe -m mcp_server`. A read-only inspection of that server process's effective environment showed no `VIRTUAL_ENV`, `PATH` SHA-256 `a638ed877a5a9c82c732735c925859dedf2912037dff5ace06c714f3f22a7602`, `PYTHONPATH=C:/temp/pgmcp`, `PGMCP_WORKSPACE_ROOT=C:/temp/pgmcp`, and `PGMCP_SERVER_PROJECT_DIR=.pgmcp`. Under that `PATH`, adapter discovery resolves `python` to `C:\Users\miche\AppData\Local\Programs\Python\Python313\python.EXE` and `node` to `C:\Program Files\nodejs\node.EXE`. This is distinct from the effective MCP interpreter: VS Code has resolved its configured command to the workspace virtual environment before the proxy starts. Looking up `python` again inside the server is therefore not a valid interpreter comparison; the initial corrected test failed on exactly that mistaken assertion, `pgmcp://cache/runs/ae48f40c0b9e4b63a13949d9fc3b18b9`.
+
+The candidate test now checks the launcher declaration, uses the active MCP interpreter (`sys.executable`) for init, upgrade, proxy and a real subprocess probe, removes the exact `PATH` prefix and `VIRTUAL_ENV` inserted by [PytestRunner](../../../mcp_server/managers/pytest_runner.py), and retains the installed candidate's intentional `PYTHONPATH` and workspace overrides. The probe observes its effective interpreter, CWD, `PATH`, `VIRTUAL_ENV`, `PYTHONPATH`, project root and `shutil.which('python'/'node')`; assertions compare them to the reconstructed active launch values before the installed fresh-init and owner-migration handshakes. The two affected tests passed, `pgmcp://cache/runs/4b3ec6da937a4231b6591a196ba5d982`, including the unchanged 15-case nested R004/R005/R006 readback rehearsal. File-scoped gates on the test passed, `pgmcp://cache/runs/ed79c9a2da3a49df8484cbb166b22b71`. Independent `@qa` must recheck this correction before any CY072 transition.
+
 ## Owner decision, provenance, and recovery boundary
 
 On 2026-09-23 the owner explicitly added two bounded corrections to CY071 scope: the schema-reference edge capture in `mcp_server/services/template_contract_loader.py` (original owner CY003), and the prospective configuration/package corrections in `docs/development/issue460/rollout-config-input.md` plus `tests/mcp_server/integration/test_rollout_configuration.py` (original owner CY070). Commit `677b291489092d1d4e202dde6a74016c7658fb2c` names both additions and their original CY003/CY070 ownership for provenance. This decision does not authorize unrelated changes in those files.
@@ -82,6 +90,6 @@ CY071 has no live dispatch or installation activation to roll back. Its Git chec
 | 1.0.1 | 2026-09-17 | @imp implementer | Record takeover blockers, focused failed evidence, unfinished work and owner stop decision |
 | 1.0.2 | 2026-09-23 | @imp implementer | Record bounded prerequisite repair, focused evidence, and remaining CY071 work |
 | 1.0.3 | 2026-09-23 | @imp implementer | Record installed target startup/readback evidence, hashes, open rehearsal requirements and recovery limit |
-
 | 1.0.4 | 2026-09-23 | @imp implementer | Record owner-approved CY071 scope additions, corrected Git checkpoints, and pre-CY071 recovery baseline |
 | 1.0.5 | 2026-09-23 | @imp implementer | Record isolated installed-candidate R004/R005/R006 rehearsal and focused evidence |
+| 1.0.6 | 2026-09-23 | @imp implementer | Reconstruct active VS Code launch environment and close QA's launch-parity finding with focused evidence |

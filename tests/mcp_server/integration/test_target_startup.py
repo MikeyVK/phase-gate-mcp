@@ -253,8 +253,41 @@ def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
     return distribution
 
 
+def _active_launcher_runtime() -> tuple[Path, str]:
+    """Recover the launcher PATH before PytestRunner's documented test-only prefix."""
+    launcher = json.loads((REPO_ROOT / ".vscode/mcp.json").read_text(encoding="utf-8"))
+    configured = launcher["servers"]["phase-gate-mcp"]
+    assert configured["type"] == "stdio"
+    assert configured["command"] == "python"
+    assert configured["args"] == ["-m", "mcp_server.core.proxy"]
+    assert configured["cwd"] == "${workspaceFolder}"
+    assert configured["env"]["PYTHONPATH"] == "${workspaceFolder}"
+    assert configured["env"]["PGMCP_WORKSPACE_ROOT"] == "${workspaceFolder}"
+    assert configured["env"]["PGMCP_SERVER_PROJECT_DIR"] == ".pgmcp"
+
+    python_dir = str(Path(sys.executable).parent)
+    runner_prefix = f"{python_dir}{os.pathsep}"
+    test_path = os.environ["PATH"]
+    assert test_path[: len(runner_prefix)].casefold() == runner_prefix.casefold(), (
+        "pytest_runner_path_prefix_mismatch"
+    )
+    launcher_path = test_path[len(runner_prefix) :]
+    # VS Code resolves the configured command to the active interpreter before
+    # the proxy launches this server; PATH lookup inside that process may differ.
+    launcher_python = Path(sys.executable).resolve()
+    assert launcher_python.is_file()
+    return launcher_python, launcher_path
+
+
 def _installed_environment(distribution: InstalledDistribution, workspace: Path) -> dict[str, str]:
+    launcher_python, launcher_path = _active_launcher_runtime()
+    assert launcher_python.is_file()
     env = os.environ.copy()
+    env["PATH"] = launcher_path
+    assert env.get("VIRTUAL_ENV") == str(launcher_python.parent.parent), (
+        "pytest_runner_virtual_env_mismatch"
+    )
+    env.pop("VIRTUAL_ENV")
     env.update(
         {
             "PYTHONPATH": str(distribution.root),
@@ -268,6 +301,41 @@ def _installed_environment(distribution: InstalledDistribution, workspace: Path)
     for key in ("PGMCP_CONFIG_ROOT", "PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
         env.pop(key, None)
     return env
+
+
+def _assert_candidate_launch_parity(python: Path, workspace: Path, env: dict[str, str]) -> None:
+    """Observe the subprocess values that govern startup and adapter lookup."""
+    probe = subprocess.run(
+        [
+            str(python),
+            "-c",
+            "import json, os, shutil, sys; "
+            "print(json.dumps({'python': sys.executable, 'cwd': os.getcwd(), "
+            "'path': os.environ['PATH'], 'virtual_env': os.environ.get('VIRTUAL_ENV'), "
+            "'python_adapter': shutil.which('python'), 'node_adapter': shutil.which('node'), "
+            "'pythonpath': os.environ.get('PYTHONPATH'), "
+            "'workspace': os.environ.get('PGMCP_WORKSPACE_ROOT'), "
+            "'project_dir': os.environ.get('PGMCP_SERVER_PROJECT_DIR')}))",
+        ],
+        cwd=workspace,
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    assert probe.returncode == 0, probe.stdout + probe.stderr
+    observed = json.loads(probe.stdout)
+    _, launcher_path = _active_launcher_runtime()
+    assert Path(observed["python"]).resolve() == python
+    assert Path(observed["cwd"]).resolve() == workspace.resolve()
+    assert observed["path"] == launcher_path
+    assert observed["virtual_env"] == env.get("VIRTUAL_ENV")
+    assert observed["python_adapter"] == shutil.which("python", path=launcher_path)
+    assert observed["node_adapter"] == shutil.which("node", path=launcher_path)
+    assert observed["pythonpath"] == env["PYTHONPATH"]
+    assert observed["workspace"] == str(workspace)
+    assert observed["project_dir"] == ".pgmcp"
 
 
 def _rehearse_readback_test_sources(
@@ -539,12 +607,14 @@ class TestTargetStartup:
             pytest.fail(f"candidate_build_rehearsal_failed:{exc!r}")
         assert distribution.root.resolve().is_relative_to(tmp_path.resolve())
         assert not distribution.root.resolve().is_relative_to(REPO_ROOT.resolve())
-        launch = [sys.executable, "-m", "mcp_server.core.proxy"]
+        launcher_python, _ = _active_launcher_runtime()
+        launch = [str(launcher_python), "-m", "mcp_server.core.proxy"]
 
         fresh = distribution.workspace
         fresh_env = _installed_environment(distribution, fresh)
+        _assert_candidate_launch_parity(launcher_python, fresh, fresh_env)
         initialized = subprocess.run(
-            [sys.executable, "-m", "mcp_server", "--init"],
+            [str(launcher_python), "-m", "mcp_server", "--init"],
             cwd=fresh,
             env=fresh_env,
             text=True,
@@ -661,8 +731,9 @@ class TestTargetStartup:
         shutil.copytree(distribution.root / "mcp_server/assets/config", legacy_root / "config")
         (legacy_root / ".version").write_text("2.0.0\n", encoding="utf-8")
         legacy_env = _installed_environment(distribution, legacy)
+        _assert_candidate_launch_parity(launcher_python, legacy, legacy_env)
         ordinary = subprocess.run(
-            [sys.executable, "-m", "mcp_server", "--upgrade"],
+            [str(launcher_python), "-m", "mcp_server", "--upgrade"],
             cwd=legacy,
             env=legacy_env,
             text=True,
@@ -674,7 +745,7 @@ class TestTargetStartup:
         assert (legacy_root / "templates").is_dir()
         forced = subprocess.run(
             [
-                sys.executable,
+                str(launcher_python),
                 "-m",
                 "mcp_server",
                 "--upgrade",
