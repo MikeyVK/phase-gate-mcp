@@ -28,7 +28,7 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-- `tests/mcp_server/integration/test_scaffold_public_v3.py` (one public unknown-selection envelope case).
+None.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -527,7 +527,7 @@ None.
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `tests/mcp_server/integration/test_scaffold_public_v3.py` (one public unknown-selection envelope case).
 
 - Remove each legacy helper import at the first deleted production dependency, even though final removal of empty/exhausted helper files and registrations is separately scheduled. Other helper seams such as QAManager are owned by their later consumer-removal cycles.
 
