@@ -42,6 +42,7 @@ include = ["mcp_server*"]
 mcp_server = [
     "assets/**/*",
     "assets/**/.*",
+    "assets/**/.github/**/*",
     "bundled_adapters/**/*",
     "bundled_adapters/**/.*",
     "execution/contracts/*.json",
@@ -119,10 +120,6 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["ANN", "ARG"]
-
-[tool.pyright]
-# Pydantic v2 integration - prevents FieldInfo type inference issues
-reportFunctionMemberAccess = false
 
 
 [tool.coverage.run]

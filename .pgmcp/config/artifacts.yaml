@@ -1,2 +1,61 @@
-version: 1.0.0
-artifact_types: []
+version: "2.0.0"
+artifacts:
+  architecture:
+    default_root: "docs/architecture"
+    additional_roots:
+      - "docs/reference"
+  commit:
+    default_root: ".pgmcp/temp/artifacts"
+  design:
+    default_root: "docs/development"
+    additional_roots:
+      - "docs"
+  generic_doc:
+    default_root: "docs"
+    additional_roots:
+      - "docs/reference"
+      - "docs/manuals"
+  issue:
+    default_root: ".github/ISSUE_TEMPLATE"
+  planning:
+    default_root: "docs/development"
+    additional_roots:
+      - "docs"
+  pr:
+    default_root: ".github/PULL_REQUEST_TEMPLATE"
+  pytest_integration_test:
+    default_root: "tests/mcp_server/integration"
+  pytest_unit_test:
+    default_root: "tests/mcp_server/unit"
+    additional_roots:
+      - "tests/backend"
+  python_adapter:
+    default_root: "mcp_server/adapters"
+  python_class:
+    default_root: "mcp_server"
+  python_protocol:
+    default_root: "mcp_server/core/interfaces"
+  python_pydantic_config:
+    default_root: "mcp_server/config/schemas"
+  python_pydantic_dto:
+    default_root: "mcp_server/dtos"
+    additional_roots:
+      - "backend/dtos"
+  python_worker:
+    default_root: "mcp_server/workers"
+    additional_roots:
+      - "backend/workers"
+  reference:
+    default_root: "docs/reference"
+    additional_roots:
+      - "docs/architecture"
+      - "docs/manuals"
+      - "docs/coding_standards"
+  research:
+    default_root: "docs/development"
+    additional_roots:
+      - "docs"
+  typescript_dto:
+    default_root: "frontend/src/dtos"
+  validation_report:
+    default_root: "docs/development"

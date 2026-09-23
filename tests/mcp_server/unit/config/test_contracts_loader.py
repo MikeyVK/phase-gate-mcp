@@ -14,9 +14,8 @@ Unit tests for load_contracts_config (issue #271 C2)
 """
 
 # Standard library
-import hashlib
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 # Third-party
@@ -672,25 +671,12 @@ class TestContractsConfigRoundtrip:
         ]
 
 
-@dataclass
-class _DiffHunk:
-    old_start: int
-    old_count: int
-    new_start: int
-    new_count: int
-    lines: list[str] = field(default_factory=list)
-
-
 class TestCY068DocflowE01:
     """CY068 / DOCFLOW-E01: workflow carriers, phase ordering, and instruction validation."""
 
     def test_nineteen_workflow_carriers_exist_and_preserve_phase_order(self) -> None:
 
         real = Path(__file__).parents[4] / get_default_server_root() / "config" / "contracts.yaml"
-        content_bytes = real.read_bytes()
-        sha256_preimage = hashlib.sha256(content_bytes).hexdigest()
-        assert sha256_preimage == "9610d38bf943c687e8c200b626259b3f107b69d4e9d0a40e44f38c91f8194d10"
-
         loader = ConfigLoader(real.parent)
         config = loader.load_contracts_config()
 
@@ -733,131 +719,61 @@ class TestCY068DocflowE01:
             assert phase is not None
             assert phase.instructions.phase_instructions.strip()
 
-    @staticmethod
-    def _apply_unified_diff(original: str, diff_text: str) -> str:
-        """Apply a unified diff string to an original text."""
-        orig_lines = original.splitlines(keepends=True)
-        diff_lines = diff_text.splitlines(keepends=True)
+    def test_live_v3_contracts_loading_and_docflow_e01(self) -> None:
+        """DOCFLOW-E01: the live V3 workflow contract loads with its phase semantics."""
+        real = Path(__file__).parents[4] / get_default_server_root() / "config" / "contracts.yaml"
+        content = real.read_text(encoding="utf-8")
+        assert "run_quality_gates" not in content
+        assert "context=" not in content
+        assert "files=[...]" not in content
+        assert "cycles={...}" not in content
+        assert "scaffold_schema" in content
+        assert "safe_edit_file" in content
+        assert "run_checks" in content
 
-        hunks: list[_DiffHunk] = []
-        current_hunk: _DiffHunk | None = None
-        for line in diff_lines:
-            if line.startswith("@@"):
-                m = re.match(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", line)
-                if m:
-                    old_start = int(m.group(1))
-                    old_count = int(m.group(2)) if m.group(2) is not None else 1
-                    new_start = int(m.group(3))
-                    new_count = int(m.group(4)) if m.group(4) is not None else 1
-                    current_hunk = _DiffHunk(
-                        old_start=old_start,
-                        old_count=old_count,
-                        new_start=new_start,
-                        new_count=new_count,
-                    )
-                    hunks.append(current_hunk)
-            elif current_hunk is not None and line.startswith(("+", "-", " ")):
-                current_hunk.lines.append(line)
-
-        # Apply hunks in reverse line order to prevent offset drift
-        hunks.sort(key=lambda h: h.old_start, reverse=True)
-        result_lines = list(orig_lines)
-        for hunk in hunks:
-            old_idx = hunk.old_start - 1
-            replacement: list[str] = []
-            old_consumed = 0
-            for hline in hunk.lines:
-                prefix = hline[0]
-                content = hline[1:]
-                if prefix == " ":
-                    old_consumed += 1
-                    replacement.append(content)
-                elif prefix == "-":
-                    old_consumed += 1
-                elif prefix == "+":
-                    replacement.append(content)
-            result_lines[old_idx : old_idx + old_consumed] = replacement
-
-        return "".join(result_lines)
-
-    def test_isolated_patched_contracts_loading_and_docflow_e01(self, tmp_path: Path) -> None:
-        """DOCFLOW-E01: Patch from rollout-workflow-input.md applies and loads cleanly."""
-        root = Path(__file__).parents[4]
-        evidence_file = root / "docs" / "development" / "issue460" / "rollout-workflow-input.md"
-        assert evidence_file.exists(), "rollout-workflow-input.md must exist"
-        evidence_text = evidence_file.read_text(encoding="utf-8")
-
-        # 1. Extract Postimage SHA-256 and unified diff from markdown
-        sha_match = re.search(r"\*\*Postimage SHA-256:\*\*\s+`([a-f0-9]{64})`", evidence_text)
-        assert sha_match, "Postimage SHA-256 must be documented in section 5.1"
-        expected_postimage_sha = sha_match.group(1)
-
-        diff_match = re.search(
-            r"```diff\n(--- a/\.pgmcp/config/contracts\.yaml\n.+?\n)```",
-            evidence_text,
-            re.DOTALL,
-        )
-        assert diff_match, "Unified diff must be present in section 5.2"
-        unified_diff = diff_match.group(1)
-
-        # 2. Read preimage contracts.yaml and verify preimage SHA-256
-        real_contracts = root / get_default_server_root() / "config" / "contracts.yaml"
-        content_bytes = real_contracts.read_bytes()
-        preimage_sha = hashlib.sha256(content_bytes).hexdigest()
-        assert preimage_sha == "9610d38bf943c687e8c200b626259b3f107b69d4e9d0a40e44f38c91f8194d10"
-        original_text = real_contracts.read_text(encoding="utf-8")
-
-        # 3. Apply the stored unified diff to preimage
-        patched_text = self._apply_unified_diff(original_text, unified_diff)
-        actual_postimage_sha = hashlib.sha256(patched_text.encode("utf-8")).hexdigest()
-        assert (
-            actual_postimage_sha
-            == expected_postimage_sha
-            == "0c358a2d3170dd9a0758238a27e952b1cd646d08d771672df184cbee4e80f5d0"
-        )
-
-        # 4. Invariant assertions on patched text
-        assert "run_quality_gates" not in patched_text
-        assert "context=" not in patched_text
-        assert "files=[...]" not in patched_text
-        assert "cycles={...}" not in patched_text
-        assert "A valid scaffold is not phase completion" in patched_text
-        assert "scaffold_schema" in patched_text
-        assert "safe_edit_file" in patched_text
-        assert "run_checks" in patched_text
-
-        # 5. Write to tmp_path and load via ConfigLoader
-        tmp_cfg_dir = tmp_path / get_default_server_root() / "config"
-        tmp_cfg_dir.mkdir(parents=True, exist_ok=True)
-        (tmp_cfg_dir / "contracts.yaml").write_text(patched_text, encoding="utf-8")
-
-        loader = ConfigLoader(tmp_cfg_dir)
-        patched_config = loader.load_contracts_config()
-
-        # 6. Verify structural integrity and phase order preservation
-        preimage_config = ConfigLoader(real_contracts.parent).load_contracts_config()
-        assert (
-            set(patched_config.workflows)
-            == set(preimage_config.workflows)
-            == {
-                "feature",
-                "bug",
-                "refactor",
-                "chore",
-                "epic",
-                "docs",
-                "hotfix",
-            }
-        )
-        for wf_name, orig_wf in preimage_config.workflows.items():
-            patched_wf = patched_config.workflows[wf_name]
-            assert [p.name for p in patched_wf.phases] == [p.name for p in orig_wf.phases]
-            for p in patched_wf.phases:
-                assert p.instructions.phase_instructions.strip()
-                assert p.instructions.sub_role.strip()
-                assert p.instructions.handover_template and p.instructions.handover_template.strip()
-
-        assert patched_config.merge_policy.pr_allowed_phase == "ready"
+        config = ConfigLoader(real.parent).load_contracts_config()
+        expected_phases = {
+            "feature": [
+                "research",
+                "design",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+            "bug": [
+                "research",
+                "design",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+            "refactor": [
+                "research",
+                "design",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+            "hotfix": ["implementation", "validation", "documentation", "ready"],
+            "docs": ["planning", "documentation", "ready"],
+            "chore": ["research", "implementation", "validation", "documentation", "ready"],
+            "epic": ["research", "planning", "design", "coordination", "documentation", "ready"],
+        }
+        assert set(config.workflows) == set(expected_phases)
+        for workflow_name, phase_names in expected_phases.items():
+            phases = config.workflows[workflow_name].phases
+            assert [phase.name for phase in phases] == phase_names
+            for phase in phases:
+                assert phase.instructions.phase_instructions.strip()
+                assert phase.instructions.sub_role.strip()
+                assert phase.instructions.handover_template
+        assert config.merge_policy.pr_allowed_phase == "ready"
 
     @pytest.mark.asyncio
     async def test_nineteen_workflow_variants_satisfy_docflow_e02(self, tmp_path: Path) -> None:

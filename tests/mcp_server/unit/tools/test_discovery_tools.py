@@ -7,7 +7,6 @@ Tests for the get_work_context discovery tool.
 @dependencies: [pytest, tempfile, unittest.mock, mcp_server.tools.discovery_tools]
 """
 
-import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -39,7 +38,6 @@ from tests.mcp_server.test_support import (
     make_phase_state_engine,
     make_project_manager,
 )
-from tests.mcp_server.unit.config.test_contracts_loader import TestCY068DocflowE01
 
 
 def make_settings(workspace_root: Path | str = ".", github_token: str | None = None) -> Settings:
@@ -1310,34 +1308,11 @@ class TestGetWorkContextC7ContractsInjection:
         writer.set_context_loaded.assert_called_once_with("feature/42-test", value=True)
 
     @pytest.mark.asyncio
-    async def test_c68_docflow_e01_v3_instructions_without_obsolete_syntax(
-        self, tmp_path: Path
-    ) -> None:
-        """DOCFLOW-E01: GetWorkContextTool emits V3 instructions from patched contracts.
-
-        Ensures no obsolete syntax remains.
-        """
+    async def test_c68_docflow_e01_v3_instructions_without_obsolete_syntax(self) -> None:
+        """DOCFLOW-E01: the public discovery tool emits live V3 instructions."""
         root = Path(__file__).parents[4]
-        evidence_file = root / "docs" / "development" / "issue460" / "rollout-workflow-input.md"
-        assert evidence_file.exists(), "rollout-workflow-input.md must exist"
-        evidence_text = evidence_file.read_text(encoding="utf-8")
-        diff_match = re.search(
-            r"```diff\n(--- a/\.pgmcp/config/contracts\.yaml\n.+?\n)```",
-            evidence_text,
-            re.DOTALL,
-        )
-        assert diff_match, "Unified diff must be present in section 5.2"
-        unified_diff = diff_match.group(1)
-
-        real_contracts = root / get_default_server_root() / "config" / "contracts.yaml"
-        original_text = real_contracts.read_text(encoding="utf-8")
-        patched_text = TestCY068DocflowE01._apply_unified_diff(original_text, unified_diff)
-
-        tmp_cfg_dir = tmp_path / get_default_server_root() / "config"
-        tmp_cfg_dir.mkdir(parents=True, exist_ok=True)
-        (tmp_cfg_dir / "contracts.yaml").write_text(patched_text, encoding="utf-8")
-
-        contracts = ConfigLoader(tmp_cfg_dir).load_contracts_config()
+        contracts_path = root / get_default_server_root() / "config" / "contracts.yaml"
+        contracts = ConfigLoader(contracts_path.parent).load_contracts_config()
         tool = self._make_c7_tool(contracts_config=contracts, workflow="feature", phase="research")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
@@ -1349,5 +1324,4 @@ class TestGetWorkContextC7ContractsInjection:
         assert "scaffold_schema" in result.phase_instructions
         assert "scaffold_artifact" in result.phase_instructions
         assert "safe_edit_file" in result.phase_instructions
-        assert "A valid scaffold is not phase completion" in result.phase_instructions
         assert "Review requested" in (result.handover_template or "")

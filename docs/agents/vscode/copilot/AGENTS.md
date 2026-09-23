@@ -73,16 +73,16 @@ reading; do not load unrelated documents by default.
 ### File Operations
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Edit file | `safe_edit_file(path, operation, mode)` | `run_in_terminal("Set-Content")` |
-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
+| Edit file | `safe_edit_file(path, operation, validation)` | `run_in_terminal("Set-Content")` |
+| Scaffold code/docs | `scaffold_artifact(artifact_type, file_name, context)` | Manual creation |
 | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 
 ### Quality & Testing
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
-| Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
-| Validate template | `validate_template(path, template_type)` | Manual review |
+| Run checks | `run_checks(scope, targets, profile, checks, args, timeout_seconds)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
+| Run tests | `run_tests(scope, targets, tests, args, timeout_seconds)` | `run_in_terminal("pytest")` |
+| Apply fixes | `apply_fixes(scope, targets, fixes, args, timeout_seconds)` | Manual mass edits |
 
 ### Project & Phase Management
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -116,7 +116,7 @@ reading; do not load unrelated documents by default.
 - **File operations** → use `safe_edit_file` / `scaffold_artifact`
 - **Git operations** → use `git_*` tools (see matrix above)
 - **Test execution** → use `run_tests` tool
-- **Quality gates** → use `run_quality_gates` tool
+- **Quality checks** → use `run_checks` / `apply_fixes` tool
 
 **Default rule: If unsure, ask yourself "Is there an MCP tool for this?" If yes → use it. If no → ask user permission first.**
 
@@ -154,7 +154,7 @@ or merely create shallow or tautological asserts to satisfy tooling.
 6. **Human-in-the-Loop:** Tooling and branch locks enforce PR-merge approval; Ready does not duplicate that check. `force_phase_transition` requires approval + reason.
 7. **Quality Gates:** Use the scope and timing required by the active phase and plan. Reuse fresh passing evidence unless subsequent changes invalidate it.
 8. **Type-Checking Consistency:** Resolve typing issues using [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md). No global disables; targeted ignores only as last resort.
-9. **Resource Caching:** All MCP tools cache their structured Pydantic DTO outputs as MCP Resources (`pgmcp://cache/runs/{run_id}`). Tools return a presented text summary and the resource URI. When you need to inspect complete structured data or verbose process logs (e.g. from `run_quality_gates` or `run_tests`), you MUST read the cached resource URI (do not try to parse or scrape the text output).
+9. **Resource Caching:** All MCP tools cache their structured Pydantic DTO outputs as MCP Resources (`pgmcp://cache/runs/{run_id}`). Tools return a presented text summary and the resource URI. When you need to inspect complete structured data or verbose process logs (e.g. from `run_checks` or `run_tests`), you MUST read the cached resource URI (do not try to parse or scrape the text output).
 
 ---
 

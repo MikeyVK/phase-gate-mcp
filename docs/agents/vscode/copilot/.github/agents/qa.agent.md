@@ -21,8 +21,8 @@ tools:
   - phase-gate-mcp/get_work_context
   - phase-gate-mcp/get_project_plan
   - phase-gate-mcp/run_tests
-  - phase-gate-mcp/run_quality_gates
-  - phase-gate-mcp/validate_template
+  - phase-gate-mcp/run_checks
+  - phase-gate-mcp/scaffold_schema
   - phase-gate-mcp/git_status
   - phase-gate-mcp/git_diff_stat
   - phase-gate-mcp/git_list_branches
@@ -87,7 +87,7 @@ Allowed in QA mode:
 - searching code and docs
 - checking diffs
 - running tests
-- running quality gates
+- running checks
 - reading MCP workflow state and project plans
 
 Exception:

@@ -533,85 +533,54 @@ class TestRolloutConfiguration:
             loader.load_artifact_locations_config()
 
     def test_artifacts_checked_replacement_and_drift_protection(self, temp_workspace: Path) -> None:
-        """Test CheckedFileWriter replacement, hash assertion, and race drift refusal."""
-        root_dir = Path(__file__).resolve().parents[3]
-        live_file = root_dir / ".pgmcp" / "config" / "artifacts.yaml"
-        isolated_target = temp_workspace / ".pgmcp" / "config" / "artifacts.yaml"
-        isolated_target.parent.mkdir(parents=True, exist_ok=True)
-        isolated_target.write_bytes(live_file.read_bytes())
-
-        pre_sha = hashlib.sha256(live_file.read_bytes()).hexdigest()
+        """A legacy location file can be replaced atomically, while drift is refused."""
+        legacy = "version: 1.0.0\nartifact_types: []\n"
+        isolated_target = temp_workspace / "artifacts.yaml"
+        isolated_target.write_text(legacy, encoding="utf-8")
+        pre_sha = hashlib.sha256(isolated_target.read_bytes()).hexdigest()
         post_sha = hashlib.sha256(PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")).hexdigest()
 
-        # Success path on isolated copy using CheckedFileWriter boundary
         apply_checked_replacement(isolated_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha)
         assert isolated_target.read_bytes() == PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")
-        assert hashlib.sha256(isolated_target.read_bytes()).hexdigest() == post_sha
 
-        # Drift protection: simulate concurrent race between snapshot and commit
         race_target = temp_workspace / "race_artifacts.yaml"
-        race_target.write_bytes(live_file.read_bytes())
+        race_target.write_text(legacy, encoding="utf-8")
         snapshot_bytes = race_target.read_bytes()
-
-        # Concurrent modification happens before replacer commits
         race_target.write_text("version: 1.0.0\n# concurrent race edit\n", encoding="utf-8")
         drift_bytes = race_target.read_bytes()
-
-        replacer = CheckedFileWriter()
         with pytest.raises(OriginalChangedError):
-            replacer.replace_if_unchanged(
+            CheckedFileWriter().replace_if_unchanged(
                 race_target, snapshot_bytes, PROSPECTIVE_V3_ARTIFACTS_YAML
             )
-
-        # Target file is demonstrably unaltered after refusal
         assert race_target.read_bytes() == drift_bytes
-        # Staging file is cleaned up
         assert not list(temp_workspace.glob("*.staging"))
 
     def test_pyproject_pyright_exact_hunk_and_mismatch_refusal(self, temp_workspace: Path) -> None:
-        """Verify pyproject.toml [tool.pyright] CheckedFileWriter replacement and drift refusal."""
+        """The landed TOML keeps native Pyright settings and refuses a drifting edit."""
         root_dir = Path(__file__).resolve().parents[3]
-        pyproject_path = root_dir / "pyproject.toml"
-        pyproject_raw = pyproject_path.read_text(encoding="utf-8")
+        current = (root_dir / "pyproject.toml").read_text(encoding="utf-8")
+        assert "[tool.pyright]" not in current
+        assert current.count(PYPROJECT_AGENT_ASSET_NEW) == 1
+        parsed = tomllib.loads(current)
+        assert "pyright" not in parsed.get("tool", {})
+        assert {"ruff", "mypy", "pytest"} <= set(parsed["tool"])
 
-        # Verify expected hunk is in the preimage
-        crlf_hunk = PYPROJECT_PYRIGHT_HUNK.replace("\n", "\r\n")
-        assert (PYPROJECT_PYRIGHT_HUNK in pyproject_raw) or (crlf_hunk in pyproject_raw)
-        hunk = PYPROJECT_PYRIGHT_HUNK if PYPROJECT_PYRIGHT_HUNK in pyproject_raw else crlf_hunk
-
-        # Build patched content
-        patched_pyproject = pyproject_raw.replace(hunk, "", 1)
-        assert patched_pyproject.count(PYPROJECT_AGENT_ASSET_OLD) == 1
-        patched_pyproject = patched_pyproject.replace(
-            PYPROJECT_AGENT_ASSET_OLD, PYPROJECT_AGENT_ASSET_NEW, 1
-        )
-        parsed_after = tomllib.loads(patched_pyproject)
-        assert "pyright" not in parsed_after.get("tool", {})
-        assert "project" in parsed_after
-        assert "ruff" in parsed_after["tool"]
-        assert "mypy" in parsed_after["tool"]
-        assert "pytest" in parsed_after["tool"]
-
-        pre_sha = hashlib.sha256(pyproject_path.read_bytes()).hexdigest()
-        post_sha = hashlib.sha256(patched_pyproject.encode("utf-8")).hexdigest()
-
-        # Success path on isolated copy
+        legacy = current.replace(PYPROJECT_AGENT_ASSET_NEW, PYPROJECT_AGENT_ASSET_OLD, 1)
+        legacy += "\n" + PYPROJECT_PYRIGHT_HUNK
         isolated_target = temp_workspace / "pyproject.toml"
-        isolated_target.write_bytes(pyproject_path.read_bytes())
-        apply_checked_replacement(isolated_target, pre_sha, patched_pyproject, post_sha)
-        assert isolated_target.read_bytes() == patched_pyproject.encode("utf-8")
+        isolated_target.write_text(legacy, encoding="utf-8")
+        pre_sha = hashlib.sha256(isolated_target.read_bytes()).hexdigest()
+        post_sha = hashlib.sha256(current.encode("utf-8")).hexdigest()
+        apply_checked_replacement(isolated_target, pre_sha, current, post_sha)
+        assert isolated_target.read_text(encoding="utf-8") == current
 
-        # Drift protection: concurrent race edit refusal
         race_target = temp_workspace / "race_pyproject.toml"
-        race_target.write_bytes(pyproject_path.read_bytes())
+        race_target.write_text(legacy, encoding="utf-8")
         snapshot_bytes = race_target.read_bytes()
-
         race_target.write_text("[project]\nname = 'concurrent_drift'\n", encoding="utf-8")
         drift_bytes = race_target.read_bytes()
-
-        replacer = CheckedFileWriter()
         with pytest.raises(OriginalChangedError):
-            replacer.replace_if_unchanged(race_target, snapshot_bytes, patched_pyproject)
+            CheckedFileWriter().replace_if_unchanged(race_target, snapshot_bytes, current)
         assert race_target.read_bytes() == drift_bytes
 
     def test_pyrightconfig_native_settings_preservation(self) -> None:
@@ -629,81 +598,49 @@ class TestRolloutConfiguration:
     def test_presentation_yaml_clean_break_patch_and_drift_refusal(
         self, temp_workspace: Path
     ) -> None:
-        """Verify full V3 clean break presentation patch, loading, and drift refusal."""
+        """The landed V3 presentation loads, aligns, and rejects a drifting edit."""
         root_dir = Path(__file__).resolve().parents[3]
-        live_presentation_path = root_dir / ".pgmcp" / "config" / "presentation.yaml"
-        live_content = live_presentation_path.read_text(encoding="utf-8")
-
-        # Build patched content
-        patched_content = build_prospective_presentation_yaml(live_content)
-
-        # Clean-break invariants: legacy tools must be completely gone
-        assert "run_quality_gates" not in patched_content
-        assert "auto_fix" not in patched_content
-
-        # New V3 surfaces must be present
-        assert "apply_fixes" in patched_content
-        assert "run_checks" in patched_content
-        assert "run_tests" in patched_content
-
-        # Write to isolated copy and validate loader acceptance
+        live_path = root_dir / ".pgmcp" / "config" / "presentation.yaml"
+        live_content = live_path.read_text(encoding="utf-8")
+        assert "run_quality_gates" not in live_content
+        assert "auto_fix" not in live_content
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        isolated_presentation = config_dir / "presentation.yaml"
-        isolated_presentation.write_text(patched_content, encoding="utf-8")
+        (config_dir / "presentation.yaml").write_text(live_content, encoding="utf-8")
 
-        loader = ConfigLoader(config_dir)
-        pres_config = loader.load_presentation_config()
-        assert pres_config.version == "1.0.0"
+        pres_config = ConfigLoader(config_dir).load_presentation_config()
         assert "run_checks" in pres_config.global_settings.next_instruction_texts["recheck_quality"]
-        assert "apply_fixes" in pres_config.tools
-        assert "run_checks" in pres_config.tools
-        assert "run_tests" in pres_config.tools
+        assert {"run_checks", "run_tests", "apply_fixes"} <= set(pres_config.tools)
         assert "run_quality_gates" not in pres_config.tools
         assert "auto_fix" not in pres_config.tools
-
-        # Validate presentation alignment of the new V3 tools against their output models
-        v3_tools_subset = {
-            "run_checks": pres_config.tools["run_checks"],
-            "run_tests": pres_config.tools["run_tests"],
-            "apply_fixes": pres_config.tools["apply_fixes"],
+        v3_subset = {
+            name: pres_config.tools[name] for name in ("run_checks", "run_tests", "apply_fixes")
         }
-        v3_presenter = TextPresenter(
+        presenter = TextPresenter(
             config=PresentationConfig.model_validate(
                 {
-                    "version": "1.0.0",
+                    "version": pres_config.version,
                     "global": pres_config.global_settings,
-                    "tools": v3_tools_subset,
+                    "tools": v3_subset,
                 }
             )
         )
-        v3_contracts = (
-            SupportedToolContract(name="run_checks", output_model=RunChecksOutput),
-            SupportedToolContract(name="run_tests", output_model=RunTestsOutput),
-            SupportedToolContract(name="apply_fixes", output_model=ApplyFixesOutput),
+        validate_presentation_alignment(
+            presenter,
+            (
+                SupportedToolContract(name="run_checks", output_model=RunChecksOutput),
+                SupportedToolContract(name="run_tests", output_model=RunTestsOutput),
+                SupportedToolContract(name="apply_fixes", output_model=ApplyFixesOutput),
+            ),
         )
-        validate_presentation_alignment(v3_presenter, v3_contracts)
 
-        # Checked replacement test via CheckedFileWriter
-        pre_sha = hashlib.sha256(live_presentation_path.read_bytes()).hexdigest()
-        post_sha = hashlib.sha256(patched_content.encode("utf-8")).hexdigest()
-
-        isolated_target = temp_workspace / "presentation_target.yaml"
-        isolated_target.write_bytes(live_presentation_path.read_bytes())
-        apply_checked_replacement(isolated_target, pre_sha, patched_content, post_sha)
-        assert isolated_target.read_bytes() == patched_content.encode("utf-8")
-
-        # Drift protection: concurrent race refusal
         race_target = temp_workspace / "race_presentation.yaml"
-        race_target.write_bytes(live_presentation_path.read_bytes())
+        race_target.write_text(live_content, encoding="utf-8")
         snapshot_bytes = race_target.read_bytes()
-
         race_target.write_text("version: '1.0.0'\n# concurrent edit\n", encoding="utf-8")
         drift_bytes = race_target.read_bytes()
-
-        replacer = CheckedFileWriter()
         with pytest.raises(OriginalChangedError):
-            replacer.replace_if_unchanged(race_target, snapshot_bytes, patched_content)
+            CheckedFileWriter().replace_if_unchanged(race_target, snapshot_bytes, live_content)
         assert race_target.read_bytes() == drift_bytes
 
     def test_version_checked_replacement_and_preservation(self, temp_workspace: Path) -> None:
@@ -735,79 +672,14 @@ class TestRolloutConfiguration:
             replacer.replace_if_unchanged(race_target, snapshot_bytes, live_text)
         assert race_target.read_bytes() == drift_bytes
 
-    def test_live_configuration_remains_unmutated_in_cy070(self) -> None:
-        """Verify that live repository configuration files remain untouched in CY070."""
+    def test_live_v3_configuration_cutover(self) -> None:
+        """The workspace now selects the public V3 configuration."""
         root_dir = Path(__file__).resolve().parents[3]
-        live_artifacts = root_dir / ".pgmcp" / "config" / "artifacts.yaml"
-        live_pyproject = root_dir / "pyproject.toml"
-        live_presentation = root_dir / ".pgmcp" / "config" / "presentation.yaml"
-        live_version = root_dir / ".pgmcp" / ".version"
-
-        assert "artifact_types" in live_artifacts.read_text(encoding="utf-8")
-        assert "[tool.pyright]" in live_pyproject.read_text(encoding="utf-8")
-        assert "run_quality_gates" in live_presentation.read_text(encoding="utf-8")
-        assert "auto_fix" in live_presentation.read_text(encoding="utf-8")
-        assert live_version.read_text(encoding="utf-8").strip() == "2.0.0"
-
-    def test_prospective_configuration_hashes_and_drift_protection(self) -> None:
-        """Compute and verify SHA-256 pre/postimages and drift protection for all 4 configs."""
-        root_dir = Path(__file__).resolve().parents[3]
-
-        # 1. artifacts.yaml
-        artifacts_pre_bytes = (root_dir / ".pgmcp" / "config" / "artifacts.yaml").read_bytes()
-        artifacts_post_bytes = PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")
-        artifacts_pre_sha = hashlib.sha256(artifacts_pre_bytes).hexdigest()
-        artifacts_post_sha = hashlib.sha256(artifacts_post_bytes).hexdigest()
-
-        # 2. pyproject.toml
-        pyproject_raw = (root_dir / "pyproject.toml").read_text(encoding="utf-8")
-        crlf_hunk = PYPROJECT_PYRIGHT_HUNK.replace("\n", "\r\n")
-        hunk = PYPROJECT_PYRIGHT_HUNK if PYPROJECT_PYRIGHT_HUNK in pyproject_raw else crlf_hunk
-        pyproject_patched = pyproject_raw.replace(hunk, "", 1)
-        assert pyproject_patched.count(PYPROJECT_AGENT_ASSET_OLD) == 1
-        pyproject_patched = pyproject_patched.replace(
-            PYPROJECT_AGENT_ASSET_OLD, PYPROJECT_AGENT_ASSET_NEW, 1
-        )
-        pyproject_pre_sha = hashlib.sha256((root_dir / "pyproject.toml").read_bytes()).hexdigest()
-        pyproject_post_sha = hashlib.sha256(pyproject_patched.encode("utf-8")).hexdigest()
-
-        # 3. presentation.yaml
-        presentation_raw = (root_dir / ".pgmcp" / "config" / "presentation.yaml").read_text(
-            encoding="utf-8"
-        )
-        presentation_patched = build_prospective_presentation_yaml(presentation_raw)
-        presentation_pre_sha = hashlib.sha256(
-            (root_dir / ".pgmcp" / "config" / "presentation.yaml").read_bytes()
-        ).hexdigest()
-        presentation_post_sha = hashlib.sha256(presentation_patched.encode("utf-8")).hexdigest()
-
-        # 4. .version
-        version_bytes = (root_dir / ".pgmcp" / ".version").read_bytes()
-        version_pre_sha = hashlib.sha256(version_bytes).hexdigest()
-        version_post_sha = version_pre_sha
-
-        # Assert exact pre/post SHA-256 hashes
-        assert artifacts_pre_sha == (
-            "e17c98ebd7bc03771ea0b7faab55b05b9b02b16d0b5c34cada21443c962f5157"
-        )
-        assert artifacts_post_sha == (
-            "2249bbc6fbcf2990606b67faaeee5a51afaff67f73707336815643a70744c94c"
-        )
-        assert pyproject_pre_sha == (
-            "e91b9079e91c2c7ea4c43433c0e635053533696016dfb16160624c994e3cd66f"
-        )
-        assert pyproject_post_sha == (
-            "6d3fe1e3738140a3699c1664894e06e00ff38b3d7a88e206097bf7b46cdedaae"
-        )
-        assert presentation_pre_sha == (
-            "2a51cbf0d6a62cb92b6ba2d302477410de299104185da4170aa64dfa67f70217"
-        )
-        assert presentation_post_sha == (
-            "d03744fc142852abe4e5eac53bbf2d04f374f44916fa11fc82121e59320b8e33"
-        )
-        assert version_pre_sha == (
-            "efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1"
-        )
-        assert version_post_sha == (
-            "efdfae9d0dc9b09f9524df6c401bf7143a882469c6243bfbcb0bbeaefe9aa3c1"
-        )
+        config_dir = root_dir / ".pgmcp" / "config"
+        artifacts = ConfigLoader(config_dir).load_artifact_locations_config()
+        assert artifacts.version == "2.0.0"
+        assert "[tool.pyright]" not in (root_dir / "pyproject.toml").read_text(encoding="utf-8")
+        assert not (config_dir / "quality.yaml").exists()
+        presentation = ConfigLoader(config_dir).load_presentation_config()
+        assert {"run_checks", "run_tests", "apply_fixes"} <= set(presentation.tools)
+        assert "run_quality_gates" not in presentation.tools

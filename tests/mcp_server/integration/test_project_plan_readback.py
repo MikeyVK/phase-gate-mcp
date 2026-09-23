@@ -8,6 +8,8 @@
 import hashlib
 import json
 import re
+import shutil
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -23,6 +25,7 @@ from mcp.types import (
 )
 from pydantic import AnyUrl
 
+import mcp_server
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.server import MCPServer
@@ -161,20 +164,26 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     legacy_suite_roots: SuiteRoots, cycle_count: int
 ) -> None:
     """A fresh bootstrap cache regenerates full saved and updated planning."""
+    suite_source = Path(mcp_server.__file__).resolve().parent / "assets/template_suite"
+    shutil.copytree(suite_source, legacy_suite_roots.server / "template_suite")
     settings = Settings(
         server=ServerSettings(
             workspace_root=str(legacy_suite_roots.workspace),
             server_root_dir=legacy_suite_roots.server.name,
             config_root=str(legacy_suite_roots.config),
-            template_root=str(legacy_suite_roots.templates),
+            template_root=str(legacy_suite_roots.server / "template_suite"),
+            bypass_version_check=False,
         )
+    )
+    (legacy_suite_roots.server / "installation.json").write_text(
+        json.dumps({"pgmcp_version": settings.server.version}), encoding="utf-8"
     )
     manager = make_project_manager(legacy_suite_roots.workspace)
     manager.initialize_project(53, "Planning readback", "feature")
     expected = _planning_payload(cycle_count)
     manager.save_planning_deliverables(53, expected)
 
-    server = ServerBootstrapper(settings).bootstrap()
+    server = ServerBootstrapper(settings).bootstrap_target()
     old_uri = await _call_plan(server)
     first = await _read_resource(server, old_uri)
     assert first["planning_deliverables"] == expected
@@ -185,7 +194,7 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     manager.update_planning_deliverables(53, {"cycles": {"cycles": [revised_cycle]}})
     expected["cycles"]["cycles"][0] = revised_cycle
 
-    restarted = ServerBootstrapper(settings).bootstrap()
+    restarted = ServerBootstrapper(settings).bootstrap_target()
     with pytest.raises(ValueError, match="No cached data found"):
         await _read_resource(restarted, old_uri)
     new_uri = await _call_plan(restarted)

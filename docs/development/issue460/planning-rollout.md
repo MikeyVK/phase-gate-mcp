@@ -457,7 +457,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). R004/R005/R006 have one live cutover owner: CY072. Check their recorded preimages, apply only the exact test hunks rehearsed with the candidate in CY071, and run those same assertions against the landed normal bootstrap, including public full-response/window reconstruction. R002/R003 remain read-only. A new hunk, changed fixture policy or mismatched preimage stops the cycle and returns preparation to CY071; no new migration decision belongs here. D1/D2 and this cycle's R-CY072, preserved behavior and independent stop/go apply to these exact additional seams.
 
-Existing source IDs: C003, C004, C005, C006, C008, C009, C010, C011, C012, C013, C014, C015, C016, C017, C019, C020, C021, C022, C023, C024, C025, C055, C056, C063, C106, C121, C122, C123, S051, T006, T091, T096, R004, R005, R006.
+Existing source IDs: C003, C004, C005, C006, C008, C009, C010, C011, C012, C013, C014, C015, C016, C017, C019, C020, C021, C022, C023, C024, C025, C055, C056, C063, C106, C121, C122, C123, S051, T006, T066, T091, T096, T138, R004, R005, R006.
+
+Owner-authorized bounded QA finding (2026-09-23): T066 and T138 contain CY068 preparation-only assertions that reapply the prospective contracts patch to the live preimage and therefore fail after the CY072 cutover. CY072 may update only those stale assertions to verify the landed V3 contract, retaining the nineteen workflow-carrier and public `get_work_context` claims. Their original owner remains CY068; this addition changes no production boundary or migration strategy. The earlier owner authorization for proportionate, independently identified test maintenance applies to these two files.
+
+Independent QA also identified stale CY070 preparation-only assertions in `tests/mcp_server/integration/test_rollout_configuration.py` after the exact live config cutover. CY072 may maintain only that file's affected preimage/drift checks so they prove the landed V3 config while retaining the isolated drift and native-Pyright claims; its original owner remains CY070. This is the same owner-authorized proportional test-maintenance exception, with no new production seam.
 
 Read-only review/preservation IDs: S008, S049, S050, R002, R003. For a previously deleted source this means absence/import-closure review, never recreation.
 
@@ -485,8 +489,10 @@ Named durable proof files:
 - `tests/mcp_server/unit/managers/test_project_manager.py`
 - `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_v3_cutover.py`
+- `tests/mcp_server/unit/config/test_contracts_loader.py`
+- `tests/mcp_server/unit/tools/test_discovery_tools.py`
 
-Existing affected test/helper sources: T006, T091, T096. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
+Existing affected test/helper sources: T006, T066, T091, T096, T138. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY072, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
