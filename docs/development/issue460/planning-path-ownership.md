@@ -145,6 +145,8 @@ New exact paths have a creation owner and every planned revisit below. Generated
 
 151 tests and helpers.
 
+CY073 test-retirement amendment (user-authorized, 2026-09-23): for T001, T005, T008, T012, T013, T015, T016, T019, T020, T021, T022, T076 and T078, CY073 is an additional final write episode for the legacy test file. This overrides the later test-file retirement timing shown below, after the Design-mapped public V3 claims are verified. Later listed episodes review absence and successors; they do not recreate the old tests. Production-file ownership is unchanged.
+
 | ID | Exact path | Primary owner | Ordered write episodes | Ordered review episodes | Bounded disposition |
 |---|---|---|---|---|---|
 | T001 | `tests/mcp_server/acceptance/test_issue56_acceptance.py` | [CY053](planning-artifacts-mutation.md#cy053) | CY053, CY074 | None | Adapt or consolidate public scaffold/error/persistence claim; old redundant suite removed only once CY057/CY058 proves its replacement. |

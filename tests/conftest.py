@@ -10,7 +10,6 @@
 import pytest
 
 pytest_plugins = [
-    "tests.mcp_server.fixtures.artifact_test_harness",
     "tests.mcp_server.fixtures.workflow_fixtures",
     "tests.mcp_server.fixtures.suite_roots",
 ]

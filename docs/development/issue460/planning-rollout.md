@@ -28,7 +28,7 @@ New exact paths:
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `tests/mcp_server/integration/test_scaffold_public_v3.py` (one public unknown-selection envelope case).
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -515,7 +515,9 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). Include R004/R005/R006 in test_support import/fixture closure before the first scaffold dependency is deleted. Keep project-manager support that still has callers; these rows authorize review only. D1/D2 and this cycle's R-CY073, preserved behavior and independent stop/go apply to these exact additional seams.
 
-Existing source IDs: S012, S013, S016, T004, T014, T048, T075, T099.
+Existing source IDs: S012, S013, S016, T001, T004, T005, T008, T012, T013, T014, T015, T016, T019, T020, T021, T022, T048, T075, T076, T078, T099.
+
+CY073 scope amendment (user-authorized, 2026-09-23): retire the thirteen legacy tests that directly consume `artifact_test_harness` or `make_artifact_manager`, together with their now-exhausted test builders. Their surviving public claims are covered by the V3 scaffold, operation, catalog, identity and header tests; add only a missing public unknown-selection case if that claim is not yet explicit. This advances test retirement from CY074/CY079 (or assigns previously unowned T016/T022), not production retirement or any Approved Strategy. Later cycles treat these removed paths as absence/import-closure review, never recreation. No template-content assertions are added.
 
 Read-only review/preservation IDs: R004, R005, R006. For a previously deleted source this means absence/import-closure review, never recreation.
 
@@ -544,7 +546,7 @@ Named durable proof files:
 - `tests/mcp_server/unit/test_server.py`
 - `tests/mcp_server/unit/tools/test_cycle_tools.py`
 
-Existing affected test/helper sources: S012, S013, S016, T004, T014, T048, T075, T099. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
+Existing affected test/helper sources: S012, S013, S016, T001, T004, T005, T008, T012, T013, T014, T015, T016, T019, T020, T021, T022, T048, T075, T076, T078, T099. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY073, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 

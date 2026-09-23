@@ -28,7 +28,6 @@ from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
-from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
     PhaseConfigContext,
@@ -38,7 +37,6 @@ from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
@@ -437,23 +435,6 @@ def make_directory_policy_resolver(
     return DirectoryPolicyResolver(config)
 
 
-def make_template_scaffolder(
-    workspace_root: Path | str | None = None,
-    registry: ArtifactRegistryConfig | None = None,
-    renderer: object | None = None,
-) -> TemplateScaffolder:
-    """Build a TemplateScaffolder with explicit registry injection."""
-    resolved_registry = registry or cast(
-        ArtifactRegistryConfig,
-        _load_config(
-            workspace_root,
-            "artifacts.yaml",
-            "load_artifact_registry_config",
-        ),
-    )
-    return TemplateScaffolder(registry=resolved_registry, renderer=renderer)
-
-
 def make_metadata_parser(
     workspace_root: Path | str | None = None,
     config: ScaffoldMetadataConfig | None = None,
@@ -507,33 +488,6 @@ def make_qa_manager(
         quality_state_repository=resolved_quality_state_repo,
         git_context_reader=resolved_git_context_reader,
         state_reader=resolved_state_reader,
-    )
-
-
-def make_artifact_manager(workspace_root: Path | str) -> ArtifactManager:
-    """Build an ArtifactManager with explicit registry and project structure config."""
-    registry = cast(
-        ArtifactRegistryConfig,
-        _load_config(
-            workspace_root,
-            "artifacts.yaml",
-            "load_artifact_registry_config",
-        ),
-    )
-    project_structure = cast(
-        ProjectStructureConfig,
-        _load_config(
-            workspace_root,
-            "project_structure.yaml",
-            "load_project_structure_config",
-            artifact_registry=registry,
-        ),
-    )
-    return ArtifactManager(
-        workspace_root=workspace_root,
-        registry=registry,
-        project_structure_config=project_structure,
-        server_root=Path(workspace_root) / get_default_server_root(),
     )
 
 
