@@ -351,3 +351,37 @@ def test_completed_recovery_without_changes_omits_restart(
     assert _tree_bytes(case.actual) == before
     assert (case.server / "installation.json").read_bytes() == before_installation
     assert not files.paths.record.exists()
+
+
+def test_first_legacy_upgrade_requires_owner_migration(renewal_case: RenewalCase) -> None:
+    """Existing legacy bytes require a staged decision and verified force backup."""
+    legacy_root = renewal_case.server / "templates"
+    legacy_root.mkdir()
+    legacy_file = legacy_root / "owner-customization.txt"
+    original = b"owner customization must survive migration\n"
+    legacy_file.write_bytes(original)
+    (renewal_case.server / ".version").write_text("2.0.0\n", encoding="utf-8")
+
+    code, _out, _err, operation = _run(
+        renewal_case, supplied=renewal_case.source
+    )
+    assert code == 2
+    assert _result(operation).outcome == "checkpoint_required"
+    assert legacy_file.read_bytes() == original
+    assert not renewal_case.actual.exists()
+    assert not (renewal_case.server / "installation.json").exists()
+
+    code, out, err, operation = _run(
+        renewal_case, "--force-template-upgrade"
+    )
+    result = _result(operation)
+    assert code == 0, out + err
+    assert result.outcome == "forced_candidate_installed"
+    assert result.backup_path is not None
+    assert any(
+        path.read_bytes() == original
+        for path in result.backup_path.rglob("owner-customization.txt")
+    )
+    assert legacy_file.read_bytes() == original
+    assert renewal_case.actual.is_dir()
+    assert (renewal_case.server / "installation.json").is_file()
