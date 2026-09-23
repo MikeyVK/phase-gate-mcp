@@ -471,10 +471,9 @@ class ActivationFiles:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(content)
             facts = self._legacy_backup_facts(sources)
-            if (
-                not self.legacy_backup_matches(path, facts, directories)
-                or self._legacy_sources() != sources
-                or self._legacy_directories() != directories
+            if not self.legacy_backup_matches(path, facts, directories) or (
+                prior is None
+                and (self._legacy_sources() != sources or self._legacy_directories() != directories)
             ):
                 raise MCPError("template_activation_backup_invalid", code="ERR_CONFIG")
             return facts, directories

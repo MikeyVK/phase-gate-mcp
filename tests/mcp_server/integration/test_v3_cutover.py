@@ -9,7 +9,6 @@ import sys
 import tomllib
 from pathlib import Path
 
-from mcp_server.bootstrap import ServerBootstrapper
 from tests.mcp_server.fixtures.server_process import run_server_process
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -26,15 +25,9 @@ V3_TOOLS = {
 class TestV3Cutover:
     """Verify the activated workspace through composition and the real launcher."""
 
-    def test_landed_bootstrap_selects_v3_once(self) -> None:
-        assert (REPO_ROOT / ".pgmcp/installation.json").is_file()
-        server = ServerBootstrapper().bootstrap_target()
-        names = [tool.name for tool in server.tools]
-        assert len(names) == len(set(names))
-        assert set(names) >= V3_TOOLS
-        assert not {"run_quality_gates", "auto_fix"} & set(names)
-
     def test_configured_stdio_entrypoint_discovers_v3_tools(self) -> None:
+        assert (REPO_ROOT / ".pgmcp/installation.json").is_file()
+        assert not (REPO_ROOT / ".pgmcp/config/quality.yaml").exists()
         launcher = tomllib.loads((REPO_ROOT / ".codex/config.toml").read_text(encoding="utf-8"))
         configured = launcher["mcp_servers"]["phase_gate_mcp"]
         python = Path(configured["command"]).resolve()
@@ -51,9 +44,18 @@ class TestV3Cutover:
             env["PATH"] = env["PATH"][len(prefix) :]
             env.pop("VIRTUAL_ENV")
         env.update(configured["env"])
+        env.update(
+            {
+                "PGMCP_BYPASS_VERSION_CHECK": "false",
+                "PYTHONNOUSERSITE": "1",
+                "PYTHONUTF8": "1",
+            }
+        )
+        for key in ("PGMCP_CONFIG_ROOT", "PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
+            env.pop(key, None)
 
         with run_server_process(
-            [str(python), *configured["args"]], cwd=REPO_ROOT, env=env
+            [str(python), *configured["args"]], cwd=REPO_ROOT, env=env, timeout=30
         ) as process:
             info = process.initialize(client_name="pytest-v3-cutover")
             assert info["serverInfo"]["name"] == "phase-gate-mcp"

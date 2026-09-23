@@ -38,68 +38,61 @@ def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_run() -> None:
-    """Test that main() bootstraps and runs the server when no arguments provided."""
+    """Normal dispatch selects the V3 bootstrap."""
     mock_server = MagicMock()
-    mock_bootstrapper_instance = MagicMock()
-    mock_bootstrapper_instance.bootstrap.return_value = mock_server
+    bootstrapper = MagicMock()
+    bootstrapper.bootstrap_target.return_value = mock_server
 
     with (
         patch("mcp_server.config.settings.metadata.version", return_value="3.0.0"),
-        patch("mcp_server.cli.ServerBootstrapper", return_value=mock_bootstrapper_instance),
+        patch("mcp_server.cli.ServerBootstrapper", return_value=bootstrapper),
         patch("asyncio.run") as mock_asyncio_run,
         patch("sys.argv", ["mcp-server"]),
     ):
         main()
-        mock_bootstrapper_instance.bootstrap.assert_called_once()
+        bootstrapper.bootstrap_target.assert_called_once()
         mock_asyncio_run.assert_called_once_with(mock_server.run())
 
 
 def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """Test that --init copies assets to resolved_server_root."""
+    """Initialization copies assets and delegates checkpoint creation to renewal."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-
     settings = Settings(
-        server=ServerSettings(
-            workspace_root=str(workspace),
-            server_root_dir=".pgmcp",
-        )
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
-
-    # Set up mock assets dir
     mock_assets = tmp_path / "mock_assets"
     (mock_assets / "config").mkdir(parents=True)
-    (mock_assets / "templates").mkdir(parents=True)
+    (mock_assets / "template_suite").mkdir(parents=True)
     (mock_assets / "config" / "workflows.yaml").touch()
     import shutil  # noqa: PLC0415
 
-    orig_copytree = shutil.copytree
+    original_copytree = shutil.copytree
 
     def mock_copytree(src, dst, *args, **kwargs):
-        shutil.copytree = orig_copytree
+        shutil.copytree = original_copytree
         try:
             return shutil.copytree(mock_assets, dst, *args, **kwargs)
         finally:
             shutil.copytree = mock_copytree
 
+    operation = MagicMock()
+    operation.last_result.exit_code = 0
     with (
         patch("sys.argv", ["mcp-server", "--init"]),
-        patch("sys.exit") as mock_exit,
+        patch("sys.exit", side_effect=SystemExit(0)),
         patch("shutil.copytree", side_effect=mock_copytree),
+        patch("mcp_server.cli_renewal.build_default_operation", return_value=operation),
+        contextlib.suppress(SystemExit),
     ):
-        mock_exit.side_effect = SystemExit(0)
-        with contextlib.suppress(SystemExit):
-            main(settings)
-
-        mock_exit.assert_called_with(0)
+        main(settings)
 
     server_root = workspace / ".pgmcp"
-    assert (server_root / "config").exists()
-    assert (server_root / "templates").exists()
-    assert (server_root / "config" / "workflows.yaml").exists()
-    version_file = server_root / ".version"
-    assert version_file.exists()
-    assert version_file.read_text(encoding="utf-8").strip() == settings.server.version
+    assert (server_root / "config/workflows.yaml").is_file()
+    assert (server_root / "template_suite").is_dir()
+    assert not (server_root / ".version").exists()
+    operation.execute.assert_called_once_with()
+    assert "Successfully initialized" in capsys.readouterr().out
 
 
 def test_cli_fails_fast_when_state_dir_missing(
@@ -162,198 +155,136 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
 
 def test_cli_init_flat_copy(tmp_path: Path) -> None:
-    """Test that --init copies the entire assets directory and ignores template_registry.json."""
+    """Initialization retains the existing asset-copy boundary."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-
     settings = Settings(
-        server=ServerSettings(
-            workspace_root=str(workspace),
-            server_root_dir=".pgmcp",
-        )
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
+    operation = MagicMock()
+    operation.last_result.exit_code = 0
 
     with (
         patch("sys.argv", ["mcp-server", "--init"]),
-        patch("sys.exit") as mock_exit,
+        patch("sys.exit", side_effect=SystemExit(0)),
         patch("shutil.copytree") as mock_copytree,
+        patch("mcp_server.cli_renewal.build_default_operation", return_value=operation),
+        contextlib.suppress(SystemExit),
     ):
-        mock_exit.side_effect = SystemExit(0)
-        with contextlib.suppress(SystemExit):
-            main(settings)
+        main(settings)
 
-        # Should be called once with assets_dir and resolved_server_root
-        mock_copytree.assert_called_once()
-        args, kwargs = mock_copytree.call_args
-
-        # Verify source and target paths
-        assert args[0].name == "assets"
-        assert args[1] == workspace / ".pgmcp"
-        assert kwargs.get("dirs_exist_ok") is True
-
-        # Verify ignore patterns ignore template_registry.json
-        ignore_func = kwargs.get("ignore")
-        assert ignore_func is not None
-        # ignore_func takes (directory_path, list_of_names) and returns a list of names to ignore
-        ignored = ignore_func(str(workspace), ["workflows.yaml", "template_registry.json"])
-        assert "template_registry.json" in ignored
-        assert "workflows.yaml" not in ignored
+    mock_copytree.assert_called_once()
+    args, kwargs = mock_copytree.call_args
+    assert args[0].name == "assets"
+    assert args[1] == workspace / ".pgmcp"
+    assert kwargs.get("dirs_exist_ok") is True
+    ignored = kwargs["ignore"](str(workspace), ["workflows.yaml", "template_registry.json"])
+    assert "template_registry.json" in ignored
+    assert "workflows.yaml" not in ignored
+    operation.execute.assert_called_once_with()
 
 
 def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
-    """Test that CLI boots DegradedMCPServer when ConfigError is raised."""
+    """A target-bootstrap configuration error selects the degraded server."""
     from unittest.mock import AsyncMock  # noqa: PLC0415
 
     from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
 
     workspace = tmp_path / "workspace"
-    workspace.mkdir()
-    server_root = workspace / ".pgmcp"
-    server_root.mkdir()
-
+    (workspace / ".pgmcp").mkdir(parents=True)
     settings = Settings(
-        server=ServerSettings(
-            workspace_root=str(workspace),
-            server_root_dir=".pgmcp",
-        )
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
-
     with (
         patch("sys.argv", ["mcp-server"]),
-        patch("mcp_server.bootstrap.ServerBootstrapper.bootstrap") as mock_bootstrap,
-        patch("mcp_server.cli.Settings.from_env", return_value=settings),
+        patch(
+            "mcp_server.bootstrap.ServerBootstrapper.bootstrap_target",
+            side_effect=ConfigError("Corrupt artifacts.yaml config"),
+        ),
+        patch("mcp_server.server.DegradedMCPServer") as degraded,
     ):
-        mock_bootstrap.side_effect = ConfigError("Corrupt artifacts.yaml config")
-
-        # Patch DegradedMCPServer class
-        with patch("mcp_server.server.DegradedMCPServer") as mock_degraded_server:
-            mock_server_instance = mock_degraded_server.return_value
-            mock_server_instance.run = AsyncMock()
-
-            main(settings)
-
-            mock_degraded_server.assert_called_once_with(settings, "Corrupt artifacts.yaml config")
-            mock_server_instance.run.assert_called_once()
+        degraded.return_value.run = AsyncMock()
+        main(settings)
+        degraded.assert_called_once_with(settings, "Corrupt artifacts.yaml config")
+        degraded.return_value.run.assert_called_once()
 
 
 def test_cli_degraded_server_on_version_mismatch(tmp_path: Path) -> None:
-    """Test that CLI boots DegradedMCPServer on version validation failure."""
+    """A target-bootstrap version error selects the degraded server."""
     from unittest.mock import AsyncMock  # noqa: PLC0415
 
+    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+
     workspace = tmp_path / "workspace"
-    workspace.mkdir()
-    server_root = workspace / ".pgmcp"
-    server_root.mkdir()
-
-    # Create a mismatched version file
-    version_file = server_root / ".version"
-    version_file.write_text("9.9.9\n", encoding="utf-8")
-
+    (workspace / ".pgmcp").mkdir(parents=True)
     settings = Settings(
-        server=ServerSettings(
-            workspace_root=str(workspace),
-            server_root_dir=".pgmcp",
-            bypass_version_check=False,
-        )
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
-
     with (
         patch("sys.argv", ["mcp-server"]),
-        patch("mcp_server.cli.Settings.from_env", return_value=settings),
-        patch("mcp_server.server.DegradedMCPServer") as mock_degraded_server,
+        patch(
+            "mcp_server.bootstrap.ServerBootstrapper.bootstrap_target",
+            side_effect=ConfigError("Workspace version mismatch"),
+        ),
+        patch("mcp_server.server.DegradedMCPServer") as degraded,
     ):
-        mock_server_instance = mock_degraded_server.return_value
-        mock_server_instance.run = AsyncMock()
-
+        degraded.return_value.run = AsyncMock()
         main(settings)
-
-        # Verify DegradedMCPServer was initialized with version mismatch error
-        mock_degraded_server.assert_called_once()
-        assert "Workspace version mismatch" in mock_degraded_server.call_args[0][1]
+        degraded.assert_called_once_with(settings, "Workspace version mismatch")
 
 
-def test_cli_upgrade_missing_server_root_exits_1(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """Verify --upgrade when .pgmcp is missing prints error and exits code 1."""
+def test_cli_upgrade_missing_server_root_exits_1(tmp_path: Path) -> None:
+    """Upgrade dispatch forwards the renewal result without a legacy precheck."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     settings = Settings(
         server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
-
     with (
-        patch("sys.exit") as mock_exit,
         patch("sys.argv", ["mcp-server", "--upgrade"]),
+        patch("mcp_server.cli_renewal.main", return_value=1) as renewal,
+        patch("sys.exit", side_effect=SystemExit(1)) as exit_process,
+        contextlib.suppress(SystemExit),
     ):
-        mock_exit.side_effect = SystemExit(1)
-        with contextlib.suppress(SystemExit):
-            main(settings=settings)
-
-        mock_exit.assert_called_with(1)
-        captured = capsys.readouterr()
-        assert "Error: Server root directory" in captured.err
+        main(settings)
+        renewal.assert_called_once_with(["--upgrade"], settings=settings)
+        exit_process.assert_called_once_with(1)
 
 
-def test_cli_upgrade_success_exits_0(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """Verify --upgrade triggers upgrader service and exits code 0 on success."""
+def test_cli_upgrade_success_exits_0(tmp_path: Path) -> None:
+    """Upgrade dispatch returns a successful renewal status."""
     workspace = tmp_path / "workspace"
-    server_root = workspace / ".pgmcp"
-    server_root.mkdir(parents=True)
+    workspace.mkdir()
     settings = Settings(
         server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
-
-    mock_upgrader_instance = MagicMock()
-    mock_log = MagicMock()
-    mock_log.from_version = "1.0.0"
-    mock_log.to_version = "2.0.0"
-    mock_upgrader_instance.execute_upgrade.return_value = mock_log
-
     with (
-        patch(
-            "mcp_server.services.workspace_upgrader.WorkspaceUpgrader",
-            return_value=mock_upgrader_instance,
-        ),
-        patch("sys.exit") as mock_exit,
         patch("sys.argv", ["mcp-server", "--upgrade"]),
+        patch("mcp_server.cli_renewal.main", return_value=0) as renewal,
+        patch("sys.exit", side_effect=SystemExit(0)) as exit_process,
+        contextlib.suppress(SystemExit),
     ):
-        mock_exit.side_effect = SystemExit(0)
-        with contextlib.suppress(SystemExit):
-            main(settings=settings)
-
-        mock_exit.assert_called_with(0)
-        captured = capsys.readouterr()
-        assert "Successfully upgraded server workspace" in captured.out
+        main(settings)
+        renewal.assert_called_once_with(["--upgrade"], settings=settings)
+        exit_process.assert_called_once_with(0)
 
 
-def test_cli_upgrade_failure_exits_1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """Verify --upgrade handles upgrader exception, prints error to stderr, and exits code 1."""
+def test_cli_upgrade_failure_exits_1(tmp_path: Path) -> None:
+    """Upgrade dispatch returns a failed renewal status."""
     workspace = tmp_path / "workspace"
-    server_root = workspace / ".pgmcp"
-    server_root.mkdir(parents=True)
+    workspace.mkdir()
     settings = Settings(
         server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
     )
-
-    mock_upgrader_instance = MagicMock()
-    mock_upgrader_instance.execute_upgrade.side_effect = RuntimeError("Upgrade failed")
-
     with (
-        patch(
-            "mcp_server.services.workspace_upgrader.WorkspaceUpgrader",
-            return_value=mock_upgrader_instance,
-        ),
-        patch("sys.exit") as mock_exit,
         patch("sys.argv", ["mcp-server", "--upgrade"]),
+        patch("mcp_server.cli_renewal.main", return_value=1) as renewal,
+        patch("sys.exit", side_effect=SystemExit(1)) as exit_process,
+        contextlib.suppress(SystemExit),
     ):
-        mock_exit.side_effect = SystemExit(1)
-        with contextlib.suppress(SystemExit):
-            main(settings=settings)
-
-        mock_exit.assert_called_with(1)
-        captured = capsys.readouterr()
-        assert "Error upgrading server root: Upgrade failed" in captured.err
+        main(settings)
+        renewal.assert_called_once_with(["--upgrade"], settings=settings)
+        exit_process.assert_called_once_with(1)
 
 
 def test_version_consistency() -> None:

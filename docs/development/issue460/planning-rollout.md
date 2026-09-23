@@ -463,6 +463,8 @@ Owner-authorized bounded QA finding (2026-09-23): T066 and T138 contain CY068 pr
 
 Independent QA also identified stale CY070 preparation-only assertions in `tests/mcp_server/integration/test_rollout_configuration.py` after the exact live config cutover. CY072 may maintain only that file's affected preimage/drift checks so they prove the landed V3 config while retaining the isolated drift and native-Pyright claims; its original owner remains CY070. This is the same owner-authorized proportional test-maintenance exception, with no new production seam.
 
+Owner-approved CY072 correction (2026-09-23; provenance: CY071 installed-candidate rehearsal and CY066 activation): independent QA found that R006's exact rehearsal hunk selects only packaged `assets/template_suite`, absent in this source checkout. Keep packaged assets preferred and use the checked-out `.pgmcp/template_suite` only for this source-layout fixture; preserve all readback assertions. A separate mixed-root force attempt exposed an unconditional legacy-inventory comparison after the prior V3 suite had already been backed up. Limit the activation correction to checking live legacy inventory only when that inventory is part of the backup, and add one public force-activation regression with a prior V3 suite plus retained legacy files. These two exact corrections are explicitly approved for CY072 instead of a return to CY071; all other stop/go rules and the no-new-algorithm boundary remain.
+
 Read-only review/preservation IDs: S008, S049, S050, R002, R003. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:

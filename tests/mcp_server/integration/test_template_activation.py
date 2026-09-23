@@ -149,6 +149,7 @@ def _service(
     *,
     json_writer: Callable[[Path, dict[str, object]], None] | None = None,
     move: Callable[[Path, Path], None] = os.replace,
+    include_legacy: bool = False,
 ) -> TemplateActivationService:
     writer = json_writer or AtomicJsonWriter().write_json
     repository = InstallationStateRepository(case.server / "installation.json", writer=writer)
@@ -157,6 +158,8 @@ def _service(
         json_writer=writer,
         move=move,
         read_installation=repository.read,
+        legacy_root=case.server / "templates" if include_legacy else None,
+        legacy_version_path=case.server / ".version" if include_legacy else None,
     )
     assert files.paths.actual == case.server / "template_suite"
     assert files.paths.candidate == case.server / "upgrade"
@@ -448,6 +451,38 @@ def test_forced_activation_keeps_verified_backup(activation_case: ActivationCase
     assert backup.parent == case.server.parent
     assert _tree_bytes(backup / "template_suite") == prior_tree
     assert (backup / "installation.json").read_bytes() == prior_installation
+    assert actual.evidence.to_checkpoint() != candidate.evidence.to_checkpoint()
+
+
+def test_forced_activation_with_prior_v3_preserves_retained_legacy(
+    activation_case: ActivationCase,
+) -> None:
+    """A prior V3 backup remains valid when obsolete legacy files coexist."""
+    case = activation_case
+    actual, candidate = _prepare_transition(case)
+    prior_tree = _tree_bytes(case.actual)
+    prior_installation = (case.server / "installation.json").read_bytes()
+    legacy_root = case.server / "templates"
+    legacy_root.mkdir()
+    (legacy_root / "legacy.txt").write_bytes(b"retained legacy")
+    (legacy_root / "empty").mkdir()
+    version = case.server / ".version"
+    version.write_bytes(b"2.0.0\r\n")
+
+    service = _service(case, include_legacy=True)
+    service.activate(case.proposal, pgmcp_version="3.0.0", force=True)
+
+    result = service.last_result
+    assert result is not None
+    assert result.outcome == "activated"
+    assert result.backup_path is not None
+    assert _tree_bytes(result.backup_path / "template_suite") == prior_tree
+    assert (result.backup_path / "installation.json").read_bytes() == prior_installation
+    assert not (result.backup_path / "legacy").exists()
+    assert (legacy_root / "legacy.txt").read_bytes() == b"retained legacy"
+    assert (legacy_root / "empty").is_dir()
+    assert version.read_bytes() == b"2.0.0\r\n"
+    assert _admit(case)(case.actual).evidence.to_checkpoint() == candidate.evidence.to_checkpoint()
     assert actual.evidence.to_checkpoint() != candidate.evidence.to_checkpoint()
 
 

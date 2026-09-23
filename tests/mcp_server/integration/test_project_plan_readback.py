@@ -165,6 +165,9 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
 ) -> None:
     """A fresh bootstrap cache regenerates full saved and updated planning."""
     suite_source = Path(mcp_server.__file__).resolve().parent / "assets/template_suite"
+    if not suite_source.is_dir():
+        suite_source = Path(__file__).resolve().parents[3] / ".pgmcp/template_suite"
+    assert suite_source.is_dir(), "v3_template_suite_source_missing"
     shutil.copytree(suite_source, legacy_suite_roots.server / "template_suite")
     settings = Settings(
         server=ServerSettings(
