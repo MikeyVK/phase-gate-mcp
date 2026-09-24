@@ -30,7 +30,6 @@ from mcp_server.core.interfaces.execution import (
 )
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
-    ArtifactRegistryConfig,
     OperationPoliciesConfig,
     ProjectStructureConfig,
     WorkflowConfig,
@@ -112,16 +111,12 @@ class ConfigValidator:
         policies: OperationPoliciesConfig,
         workflow: WorkflowConfig,
         structure: ProjectStructureConfig | None,
-        artifact: ArtifactRegistryConfig | None,
         contracts: ContractsConfig,
         workphases: WorkphasesConfig,
     ) -> None:
         """Validate startup relationships across already loaded config objects."""
         known_workflows = set(workflow.workflows)
         known_phases = set(workphases.phases)
-        if (structure is None) != (artifact is None):
-            raise ConfigError("Legacy structure and artifact registry must be supplied together")
-
         self._validate_phase_contracts(
             workflow=workflow,
             contracts=contracts,
@@ -129,11 +124,8 @@ class ConfigValidator:
             known_phases=known_phases,
         )
         self._validate_operation_policies(policies=policies, known_phases=known_phases)
-        if structure is not None and artifact is not None:
-            self._validate_project_structure(
-                structure=structure,
-                known_artifact_types=set(artifact.list_type_ids()),
-            )
+        if structure is not None:
+            self._validate_project_structure(structure)
         self._validate_merge_policy_phase(
             contracts=contracts,
             known_phases=known_phases,
@@ -170,21 +162,10 @@ class ConfigValidator:
                     f"{sorted(unknown_policy_phases)}"
                 )
 
-    def _validate_project_structure(
-        self,
-        structure: ProjectStructureConfig,
-        known_artifact_types: set[str],
-    ) -> None:
+    def _validate_project_structure(self, structure: ProjectStructureConfig) -> None:
         known_directories = set(structure.directories)
 
         for directory_path, policy in structure.directories.items():
-            unknown_artifact_types = set(policy.allowed_artifact_types) - known_artifact_types
-            if unknown_artifact_types:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown artifact types: "
-                    f"{sorted(unknown_artifact_types)}"
-                )
-
             if policy.parent is not None and policy.parent not in known_directories:
                 raise ConfigError(
                     f"Directory '{directory_path}' references unknown parent: '{policy.parent}'"

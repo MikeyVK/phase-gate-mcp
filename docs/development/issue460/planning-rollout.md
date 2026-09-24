@@ -703,7 +703,9 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C055, C057, C058, C060, C061, C080, C081, C085, C086, C107, S049, S050, T015, T048, T049, T059, T061, T062, T063, T064, T068, T069, T077, T091, T095, T099.
+Existing source IDs: C055, C057, C058, C060, C061, C080, C081, C085, C086, C107, S049, S050, T002, T003, T010, T015, T018, T048, T049, T059, T061, T062, T063, T064, T067, T068, T069, T073, T074, T077, T091, T095, T097, T098, T099.
+
+Additional existing exact path discovered by import closure: `tests/mcp_server/test_artifacts_yaml_type_field.py` (retired registry-only test; no frozen source ID).
 
 Read-only review/preservation IDs: C064, C066. For a previously deleted source this means absence/import-closure review, never recreation.
 
@@ -716,6 +718,7 @@ Previously introduced paths revisited in this cycle:
 None.
 
 - Close this cycle's specific retired exports/imports in shared schemas/interfaces/test_support and mixed tool-input tests at the same boundary; preserve unrelated GateReport/GateViolation workflow contracts.
+- Import-closure amendment: T002 and T010 contain only retired artifact-registry loader claims; T003, T067, T073 and T074 are limited to their registry-dependent setup/assertions and retain unrelated project-structure, label, workflow and validator behavior. T018 is retired because its two public validation claims are already proved by current V3 `test_schema_public_v3.py` and `test_scaffold_public_v3.py` (including whole-schema resource equality and extra-field rejection); T097 and T098 retain their server/cycle claims by composing focused dispatch without the removed quality.yaml source, while their registration cases use isolated V3 target startup. The unindexed existing `tests/mcp_server/test_artifacts_yaml_type_field.py` is limited to retired artifact-registry type assertions. No new test or product behavior is authorized by this amendment.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -729,7 +732,7 @@ Named durable proof files:
 - `tests/mcp_server/unit/services/test_artifact_identity.py`
 - `tests/mcp_server/integration/test_schema_public_v3.py`
 
-Existing affected test/helper sources: S050, T015, T048, T049, T059, T061, T062, T063, T064, T068, T069, T077, T091, T095, T099. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
+Existing affected test/helper sources: S050, T002, T003, T010, T015, T018, T048, T049, T059, T061, T062, T063, T064, T067, T068, T069, T073, T074, T077, T091, T095, T097, T098, T099, plus the unindexed exact test path above. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY077, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 

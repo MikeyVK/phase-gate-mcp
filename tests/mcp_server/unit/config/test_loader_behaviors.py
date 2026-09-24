@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/config/test_loader_behaviors.py
 # template=unit_test version=manual created=2026-03-26T00:00Z updated=
 """Focused behavioral tests for ConfigLoader helper branches.
@@ -17,8 +15,9 @@ from mcp_server.config.loader import (
     normalize_config_root,
     resolve_config_root,
 )
-from mcp_server.config.schemas import ArtifactRegistryConfig, WorkflowConfig
+from mcp_server.config.schemas import WorkflowConfig
 from mcp_server.core.exceptions import ConfigError
+from tests.mcp_server.test_support import get_default_server_root
 
 
 def _write_yaml(path: Path, content: str) -> Path:
@@ -37,26 +36,6 @@ def _minimal_workflow_config() -> WorkflowConfig:
                 "description": "Feature workflow",
             }
         },
-    )
-
-
-def _minimal_artifact_registry() -> ArtifactRegistryConfig:
-    return ArtifactRegistryConfig(
-        version="1.0.0",
-        artifact_types=[
-            {
-                "type": "code",
-                "type_id": "dto",
-                "name": "DTO",
-                "description": "Data transfer object",
-                "file_extension": ".py",
-                "state_machine": {
-                    "states": ["draft"],
-                    "initial_state": "draft",
-                    "valid_transitions": [],
-                },
-            }
-        ],
     )
 
 
@@ -142,24 +121,6 @@ def test_load_enforcement_config_allows_missing_file(tmp_path: Path) -> None:
     assert loader.load_enforcement_config().enforcement == []
 
 
-def test_load_artifact_registry_rejects_empty_yaml(tmp_path: Path) -> None:
-    config_root = tmp_path / get_default_server_root() / "config"
-    artifacts_path = _write_yaml(config_root / "artifacts.yaml", "")
-    loader = ConfigLoader(config_root)
-
-    with pytest.raises(ConfigError, match="Empty artifact registry"):
-        loader.load_artifact_registry_config(config_path=artifacts_path)
-
-
-def test_load_artifact_registry_rejects_non_mapping_root(tmp_path: Path) -> None:
-    config_root = tmp_path / get_default_server_root() / "config"
-    artifacts_path = _write_yaml(config_root / "artifacts.yaml", "- dto\n")
-    loader = ConfigLoader(config_root)
-
-    with pytest.raises(ConfigError, match="expected mapping"):
-        loader.load_artifact_registry_config(config_path=artifacts_path)
-
-
 def test_load_operation_policies_uses_workflow_loader_fallback(tmp_path: Path) -> None:
     config_root = tmp_path / get_default_server_root() / "config"
     _write_yaml(
@@ -206,28 +167,8 @@ def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None
         loader.load_operation_policies_config(config_path=policies_path)
 
 
-def test_load_project_structure_uses_registry_loader_fallback(tmp_path: Path) -> None:
+def test_load_project_structure_from_explicit_config(tmp_path: Path) -> None:
     config_root = tmp_path / get_default_server_root() / "config"
-    _write_yaml(
-        config_root / "artifacts.yaml",
-        """
-version: "1.0.0"
-artifact_types:
-  - type: code
-    type_id: dto
-    name: DTO
-    description: Data transfer object
-    file_extension: .py
-    generate_test: false
-    required_fields: []
-    optional_fields: []
-    state_machine:
-      states: [draft]
-      initial_state: draft
-      valid_transitions: []
-""".strip()
-        + "\n",
-    )
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
@@ -258,30 +199,6 @@ def test_load_project_structure_requires_directories_key(tmp_path: Path) -> None
         loader.load_project_structure_config(config_path=structure_path)
 
 
-def test_load_project_structure_rejects_unknown_artifact_type(tmp_path: Path) -> None:
-    config_root = tmp_path / get_default_server_root() / "config"
-    structure_path = _write_yaml(
-        config_root / "project_structure.yaml",
-        """
-version: "1.0.0"
-directories:
-  backend:
-    description: Backend code
-    allowed_artifact_types: [worker]
-    allowed_extensions: [.py]
-    require_scaffold_for: []
-""".strip()
-        + "\n",
-    )
-    loader = ConfigLoader(config_root)
-
-    with pytest.raises(ConfigError, match="references unknown artifact types"):
-        loader.load_project_structure_config(
-            config_path=structure_path,
-            artifact_registry=_minimal_artifact_registry(),
-        )
-
-
 def test_load_project_structure_rejects_unknown_parent_reference(tmp_path: Path) -> None:
     config_root = tmp_path / get_default_server_root() / "config"
     structure_path = _write_yaml(
@@ -306,10 +223,7 @@ directories:
     loader = ConfigLoader(config_root)
 
     with pytest.raises(ConfigError, match="references unknown parent"):
-        loader.load_project_structure_config(
-            config_path=structure_path,
-            artifact_registry=_minimal_artifact_registry(),
-        )
+        loader.load_project_structure_config(config_path=structure_path)
 
 
 # ---------------------------------------------------------------------------

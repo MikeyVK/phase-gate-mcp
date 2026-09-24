@@ -8,7 +8,6 @@ TDD: These tests FAIL before the GREEN implementation.
 
 from __future__ import annotations
 
-import inspect
 import json
 import shutil
 from pathlib import Path
@@ -24,7 +23,6 @@ from mcp_server.managers.enforcement_runner import (
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.tools.admin_tools import (
     RestartServerTool,
 )
@@ -327,26 +325,6 @@ class TestAdminToolsRestartMarker:
         assert result == server_root / ".restart_marker"
 
 
-# ---------------------------------------------------------------------------
-# template_registry — default arg not .pgmcp-based
-# ---------------------------------------------------------------------------
-
-
-class TestTemplateRegistryDefaultArg:
-    """TemplateRegistry default registry_path must not hardcode .pgmcp."""
-
-    def test_default_registry_path_is_not_cwd_dot_phase_gate(self) -> None:
-        """TemplateRegistry() without args: no hardcoded default path."""
-        sig = inspect.signature(TemplateRegistry.__init__)
-        default = sig.parameters["registry_path"].default
-
-        # Default should be None (not a .pgmcp Path)
-        expected_path = f"{get_default_server_root()}/template_registry.json"
-        assert default is None or str(default) != expected_path, (
-            f"Registry path should not be {expected_path}, got: {default}"
-        )
-
-
 # ===========================================================================
 # C2 RED — TDD Cycle 2: no-fallback enforcement
 
@@ -515,24 +493,3 @@ class TestNormalizeConfigRootNoPhaseGateFallback:
         except (FileNotFoundError, ValueError):
             # Raising is preferred — no .pgmcp path was produced
             pass
-
-
-# ---------------------------------------------------------------------------
-# TemplateRegistry — constructing with None must not silently use .pgmcp
-# ---------------------------------------------------------------------------
-
-
-class TestTemplateRegistryNoPhaseGateFallback:
-    """TemplateRegistry with registry_path=None must raise, not silently use .pgmcp."""
-
-    def test_none_registry_path_raises_or_no_phase_gate(self) -> None:
-        """TemplateRegistry() without args: registry_path must not resolve to .pgmcp.
-
-        RED: current __init__ body sets
-            self.registry_path = Path(f"{get_default_server_root()}/template_registry.json")
-        when registry_path is None. The instance attribute silently contains
-        get_default_server_root().
-        """
-        with pytest.raises((ValueError, TypeError)):
-            # Must raise when no explicit registry_path is provided
-            TemplateRegistry()

@@ -10,7 +10,6 @@ import yaml
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from mcp_server.config.schemas import (
-    ArtifactRegistryConfig,
     ChecksConfig,
     ContractsConfig,
     ContributorConfig,
@@ -229,118 +228,6 @@ class ConfigLoader:
         data, resolved_path = self._load_yaml("workphases.yaml", config_path=config_path)
         return self._validate_schema(WorkphasesConfig, data, resolved_path)
 
-    def load_artifact_registry_config(
-        self,
-        config_path: Path | None = None,
-    ) -> ArtifactRegistryConfig:
-        legacy_dir = self.config_root / "artifacts"
-        if legacy_dir.is_dir():
-            raise ConfigError(
-                "Legacy config/artifacts/ directory is no longer supported under the "
-                "Template Packages contract. Fix: Move all artifact modular configuration "
-                "files to templates/config/ and delete this directory.",
-                file_path=str(legacy_dir),
-            )
-
-        if config_path is None:
-            resolved_path = Path(self.config_root) / "artifacts.yaml"
-        else:
-            resolved_path = Path(config_path).resolve()
-
-        if not resolved_path.exists():
-            raise ConfigError(
-                "Artifact registry not found: "
-                f"{resolved_path}. Expected: config/artifacts.yaml. "
-                "Fix: Create config/artifacts.yaml manually or restore from backup.",
-                file_path=str(resolved_path),
-            )
-
-        try:
-            with resolved_path.open(encoding="utf-8") as file_handle:
-                raw_loaded = yaml.safe_load(file_handle)
-        except yaml.YAMLError as exc:
-            raise ConfigError(
-                "Invalid YAML syntax: "
-                f"{exc}. Fix: Check YAML syntax; common issues are incorrect "
-                "indentation, missing colons, and unquoted special characters. "
-                "Use a YAML validator.",
-                file_path=str(resolved_path),
-            ) from exc
-
-        if raw_loaded is None:
-            raw_loaded = {}
-        elif not isinstance(raw_loaded, dict):
-            raise ConfigError(
-                f"Invalid YAML root in {resolved_path.name}: expected mapping",
-                file_path=str(resolved_path),
-            )
-
-        index_version = raw_loaded.get("version", "1.0.0")
-        merged_artifact_types = list(raw_loaded.get("artifact_types", []))
-
-        if config_path is not None:
-            config_dir = resolved_path.parent
-        else:
-            config_dir = (
-                Path(self.template_root) / "config" if self.template_root else resolved_path.parent
-            )
-        if not config_dir.is_dir():
-            if not merged_artifact_types:
-                raise ConfigError(
-                    "Empty artifact registry: no artifact types defined",
-                    file_path=str(resolved_path),
-                )
-        else:
-            yaml_files = sorted(
-                [
-                    f
-                    for f in config_dir.iterdir()
-                    if (
-                        f.is_file()
-                        and f.suffix in (".yaml", ".yml")
-                        and f.name not in ("artifacts.yaml", resolved_path.name)
-                    )
-                ]
-            )
-            for filepath in yaml_files:
-                try:
-                    with filepath.open(encoding="utf-8") as fh:
-                        file_data = yaml.safe_load(fh)
-                except yaml.YAMLError as exc:
-                    raise ConfigError(
-                        f"Invalid YAML syntax: {exc}.",
-                        file_path=str(filepath),
-                    ) from exc
-                if file_data is None:
-                    continue
-                if isinstance(file_data, dict) and (
-                    "version" in file_data or "artifact_types" in file_data
-                ):
-                    continue
-                if isinstance(file_data, list):
-                    merged_artifact_types.extend(file_data)
-                elif isinstance(file_data, dict):
-                    merged_artifact_types.append(file_data)
-                else:
-                    raise ConfigError(
-                        "Invalid YAML structure in modular file: "
-                        f"expected mapping or list, got {type(file_data).__name__}",
-                        file_path=str(filepath),
-                    )
-
-        if not merged_artifact_types:
-            raise ConfigError(
-                "Empty artifact registry: no artifact types defined",
-                file_path=str(resolved_path),
-            )
-
-        full_config = {
-            "version": index_version,
-            "artifact_types": merged_artifact_types,
-        }
-
-        return self._validate_schema(ArtifactRegistryConfig, full_config, resolved_path)
-
     def load_contributor_config(self, config_path: Path | None = None) -> ContributorConfig:
         data, resolved_path = self._load_yaml("contributors.yaml", config_path=config_path)
         return self._validate_schema(ContributorConfig, data, resolved_path)
@@ -377,7 +264,6 @@ class ConfigLoader:
     def load_project_structure_config(
         self,
         config_path: Path | None = None,
-        artifact_registry: ArtifactRegistryConfig | None = None,
     ) -> ProjectStructureConfig:
         data, resolved_path = self._load_yaml(
             "project_structure.yaml",
@@ -398,12 +284,6 @@ class ConfigLoader:
             },
         }
         config = self._validate_schema(ProjectStructureConfig, payload, resolved_path)
-        effective_artifact_registry = artifact_registry or self.load_artifact_registry_config()
-        self._validate_project_structure_artifact_types(
-            config,
-            effective_artifact_registry,
-            resolved_path,
-        )
         self._validate_project_structure_parent_references(config, resolved_path)
         return config
 
@@ -440,23 +320,6 @@ class ConfigLoader:
             config_path=config_path,
         )
         return self._validate_schema(ContractsConfig, data, resolved_path)
-
-    def _validate_project_structure_artifact_types(
-        self,
-        config: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
-        resolved_path: Path,
-    ) -> None:
-        valid_types = set(artifact_registry.list_type_ids())
-        for directory_path, policy in config.directories.items():
-            invalid_types = set(policy.allowed_artifact_types) - valid_types
-            if invalid_types:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown artifact types: "
-                    f"{sorted(invalid_types)}. Valid types from artifact registry: "
-                    f"{sorted(valid_types)}",
-                    file_path=str(resolved_path),
-                )
 
     def _validate_project_structure_parent_references(
         self,

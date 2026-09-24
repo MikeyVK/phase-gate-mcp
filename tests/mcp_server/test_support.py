@@ -39,7 +39,6 @@ from mcp_server.managers.quality_state_repository import FileQualityStateReposit
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
 from mcp_server.schemas import (
-    ArtifactRegistryConfig,
     ContractsConfig,
     GitConfig,
     ProjectStructureConfig,
@@ -395,11 +394,10 @@ def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine
     """Build a PolicyEngine with explicit config objects."""
     config_root = resolve_config_root(
         workspace_root,
-        required_paths=("policies.yaml", "git.yaml", "workflows.yaml", "artifacts.yaml"),
+        required_paths=("policies.yaml", "git.yaml", "workflows.yaml", "project_structure.yaml"),
     )
     loader = ConfigLoader(config_root)
-    artifact_registry = loader.load_artifact_registry_config()
-    project_structure = loader.load_project_structure_config(artifact_registry=artifact_registry)
+    project_structure = loader.load_project_structure_config()
     return PolicyEngine(
         config_root=config_root,
         operation_config=loader.load_operation_policies_config(),
@@ -415,21 +413,12 @@ def make_directory_policy_resolver(
     """Build a DirectoryPolicyResolver with explicit project structure config."""
     config = project_structure_config
     if config is None:
-        registry = cast(
-            ArtifactRegistryConfig,
-            _load_config(
-                workspace_root,
-                "artifacts.yaml",
-                "load_artifact_registry_config",
-            ),
-        )
         config = cast(
             ProjectStructureConfig,
             _load_config(
                 workspace_root,
                 "project_structure.yaml",
                 "load_project_structure_config",
-                artifact_registry=registry,
             ),
         )
     return DirectoryPolicyResolver(config)
@@ -513,6 +502,34 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
     resolved_settings = settings or ServerSettings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
     return bootstrapper.bootstrap()
+
+
+def make_dispatch_server(settings: Settings) -> MCPServer:
+    """Compose the current request handler for focused tool-dispatch tests."""
+    from mcp_server.config.loader import ConfigLoader  # noqa: PLC0415
+    from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
+    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
+        SchemaResourcePresenter,
+    )
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+    from mcp_server.server import MCPServer  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+
+    server_root = Path(settings.server.workspace_root) / settings.server.server_root_dir
+    presentation = ConfigLoader(
+        config_root=server_root / "config",
+        template_root=server_root / "template_suite",
+    ).load_presentation_config()
+    return MCPServer(
+        settings=settings,
+        tools=[],
+        resources=[],
+        presenter=ResponsePresenter(
+            text_presenter=TextPresenter(config=presentation),
+            resource_presenter=SchemaResourcePresenter(),
+        ),
+        publisher=ResponseCacheManager(),
+    )
 
 
 def assert_itool_result(

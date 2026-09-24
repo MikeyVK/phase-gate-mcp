@@ -1,12 +1,5 @@
 """Pure config schema package for C_LOADER migration."""
 
-from mcp_server.config.schemas.artifact_registry_config import (
-    ArtifactDefinition,
-    ArtifactRegistryConfig,
-    ArtifactType,
-    StateMachine,
-    StateMachineTransition,
-)
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
@@ -66,10 +59,7 @@ __all__ = [
     "FixesConfig",
     "FixBinding",
     "FixId",
-    "ArtifactDefinition",
     "ArtifactLoggingConfig",
-    "ArtifactRegistryConfig",
-    "ArtifactType",
     "BranchLocalArtifact",
     "CapabilitiesMetadata",
     "ChecksConfig",
@@ -105,8 +95,6 @@ __all__ = [
     "QualityGate",
     "ScaffoldMetadataConfig",
     "ScopeConfig",
-    "StateMachine",
-    "StateMachineTransition",
     "SuccessCriteria",
     "TextViolationsParsing",
     "ViolationDTO",

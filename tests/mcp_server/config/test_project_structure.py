@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/config/test_project_structure.py
 """Unit tests for ProjectStructureConfig model.
 
@@ -16,19 +14,12 @@ import pytest
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
-    ArtifactRegistryConfig,
     DirectoryPolicy,
     OperationPoliciesConfig,
     ProjectStructureConfig,
 )
 from mcp_server.core.exceptions import ConfigError
-
-
-def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(
-        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
-    )
-    return loader.load_artifact_registry_config(config_path=config_path)
+from tests.mcp_server.test_support import get_default_server_root
 
 
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
@@ -182,16 +173,10 @@ class TestProjectStructureConfig:
 class TestProjectStructureIntegration:
     """Integration tests for ProjectStructureConfig."""
 
-    def test_all_three_configs_load(self) -> None:
-        """Test all three foundation configs load successfully."""
-        component_config = _load_artifact_registry()
+    def test_operation_policies_and_project_structure_load(self) -> None:
+        """Test the remaining foundation configs load successfully."""
         operation_config = _load_operation_policies()
         structure_config = _load_project_structure()
-
-        type_ids = component_config.list_type_ids()
-        assert len(type_ids) > 0
-        assert "dto" in type_ids
-        assert "worker" in type_ids
 
         assert len(operation_config.operations) == 3
         assert len(structure_config.directories) >= 10

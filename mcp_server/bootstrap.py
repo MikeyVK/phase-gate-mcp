@@ -36,7 +36,6 @@ from pydantic import BaseModel
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
-    ArtifactRegistryConfig,
     ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
@@ -108,7 +107,6 @@ from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideRes
 from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.resources.standards import StandardsResource
 from mcp_server.resources.status import StatusResource
-from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.server import MCPServer
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.artifact_identity import (
@@ -226,7 +224,6 @@ class ConfigLayer:
     scope_config: ScopeConfig
     milestone_config: MilestoneConfig
     contributor_config: ContributorConfig
-    artifact_registry: ArtifactRegistryConfig | None
     project_structure_config: ProjectStructureConfig | None
     operation_policies_config: OperationPoliciesConfig
     enforcement_config: EnforcementConfig
@@ -238,7 +235,6 @@ class ConfigLayer:
 class ManagerGraph:
     """Immutable graph of instantiated managers and services."""
 
-    template_registry: TemplateRegistry | None
     git_manager: GitManager
     state_repository: FileStateRepository
     workflow_status_resolver: WorkflowStatusResolver
@@ -397,22 +393,11 @@ class ServerBootstrapper:
         # Validate workspace version
         self._validate_version()
 
-        # Initialize template registry
-        server_root = settings.server.resolved_server_root
-        registry_path = server_root / "template_registry.json"
-
-        if not registry_path.exists():
-            registry_path.parent.mkdir(parents=True, exist_ok=True)
-            lifecycle_logger.info("Bootstrapping template registry: %s", registry_path)
-
-        template_registry = TemplateRegistry(registry_path=registry_path)
-        lifecycle_logger.info("Template registry initialized")
-
         # Build ConfigLayer
         configs = self._build_config_layer()
 
         # Build ManagerGraph
-        managers = self._build_manager_graph(configs, template_registry)
+        managers = self._build_manager_graph(configs)
 
         # Build Tools and Resources
         tool_assembly = self._build_tool_assembly(configs, managers)
@@ -587,7 +572,6 @@ class ServerBootstrapper:
                 policies=operation_policies_config,
                 workflow=workflow_config,
                 structure=None,
-                artifact=None,
                 contracts=contracts_config,
                 workphases=workphases_config,
             )
@@ -628,14 +612,13 @@ class ServerBootstrapper:
                 scope_config=scope_config,
                 milestone_config=milestone_config,
                 contributor_config=contributor_config,
-                artifact_registry=None,
                 project_structure_config=None,
                 operation_policies_config=operation_policies_config,
                 enforcement_config=enforcement_config,
                 contracts_config=contracts_config,
                 presentation_config=presentation_config,
             )
-            managers = self._build_manager_graph(configs, None)
+            managers = self._build_manager_graph(configs)
 
             # Target V3 service engines
             target_resolver = ArtifactTargetResolver(
@@ -834,10 +817,7 @@ class ServerBootstrapper:
         scope_config = config_loader.load_scope_config()
         milestone_config = config_loader.load_milestone_config()
         contributor_config = config_loader.load_contributor_config()
-        artifact_registry = config_loader.load_artifact_registry_config()
-        project_structure_config = config_loader.load_project_structure_config(
-            artifact_registry=artifact_registry
-        )
+        project_structure_config = config_loader.load_project_structure_config()
         operation_policies_config = config_loader.load_operation_policies_config()
         enforcement_config = config_loader.load_enforcement_config()
         contracts_config = config_loader.load_contracts_config()
@@ -847,7 +827,6 @@ class ServerBootstrapper:
             policies=operation_policies_config,
             workflow=workflow_config,
             structure=project_structure_config,
-            artifact=artifact_registry,
             contracts=contracts_config,
             workphases=workphases_config,
         )
@@ -862,7 +841,6 @@ class ServerBootstrapper:
             scope_config=scope_config,
             milestone_config=milestone_config,
             contributor_config=contributor_config,
-            artifact_registry=artifact_registry,
             project_structure_config=project_structure_config,
             operation_policies_config=operation_policies_config,
             enforcement_config=enforcement_config,
@@ -870,9 +848,7 @@ class ServerBootstrapper:
             presentation_config=presentation_config,
         )
 
-    def _build_manager_graph(
-        self, configs: ConfigLayer, template_registry: TemplateRegistry | None
-    ) -> ManagerGraph:
+    def _build_manager_graph(self, configs: ConfigLayer) -> ManagerGraph:
         """Instantiate all managers and services."""
         workspace_root = Path(self._settings.server.workspace_root)
         server_root = workspace_root / self._settings.server.server_root_dir
@@ -962,7 +938,6 @@ class ServerBootstrapper:
         )
         response_cache = ResponseCacheManager(max_size=50)
         return ManagerGraph(
-            template_registry=template_registry,
             git_manager=git_manager,
             state_repository=state_repository,
             workflow_status_resolver=workflow_status_resolver,

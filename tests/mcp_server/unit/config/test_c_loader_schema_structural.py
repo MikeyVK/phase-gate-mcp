@@ -21,7 +21,6 @@ import yaml
 import mcp_server.config.schemas.scaffold_metadata_config as scaffold_schema
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
-    ArtifactRegistryConfig,
     ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
@@ -112,28 +111,6 @@ def config_root(tmp_path: Path) -> Path:
                     "terminal": True,
                 },
             },
-        },
-    )
-    write_yaml(
-        "artifacts.yaml",
-        {
-            "version": "1.0.0",
-            "artifact_types": [
-                {
-                    "type": "code",
-                    "type_id": "dto",
-                    "name": "DTO",
-                    "description": "Data transfer object",
-                    "file_extension": ".py",
-                    "required_fields": ["name"],
-                    "optional_fields": [],
-                    "state_machine": {
-                        "states": ["CREATED"],
-                        "initial_state": "CREATED",
-                        "valid_transitions": [],
-                    },
-                }
-            ],
         },
     )
     write_yaml(
@@ -299,15 +276,14 @@ def test_loader_raises_on_missing_git_yaml(tmp_path: Path) -> None:
         loader.load_git_config()
 
 
-def test_loader_exposes_all_fifteen_schema_methods() -> None:
-    """C_LOADER.2 requires explicit load_* coverage for all 15 schemas."""
+def test_loader_exposes_all_fourteen_schema_methods() -> None:
+    """C_LOADER.2 requires explicit load_* coverage for all 14 retained schemas."""
     for method_name in (
         "load_git_config",
         "load_label_config",
         "load_scope_config",
         "load_workflow_config",
         "load_workphases_config",
-        "load_artifact_registry_config",
         "load_contributor_config",
         "load_issue_config",
         "load_milestone_config",
@@ -321,18 +297,16 @@ def test_loader_exposes_all_fifteen_schema_methods() -> None:
         assert hasattr(ConfigLoader, method_name), f"Missing ConfigLoader.{method_name}()"
 
 
-def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -> None:
-    """ConfigLoader must construct all 15 migrated schema types."""
+def test_loader_loads_all_fourteen_migrated_schema_instances(config_root: Path) -> None:
+    """ConfigLoader must construct all 14 retained schema types."""
     loader = ConfigLoader(config_root=config_root)
     workflow_config = loader.load_workflow_config()
-    artifact_registry = loader.load_artifact_registry_config()
 
     assert isinstance(loader.load_git_config(), GitConfig)
     assert isinstance(loader.load_label_config(), LabelConfig)
     assert isinstance(loader.load_scope_config(), ScopeConfig)
     assert isinstance(workflow_config, WorkflowConfig)
     assert isinstance(loader.load_workphases_config(), WorkphasesConfig)
-    assert isinstance(artifact_registry, ArtifactRegistryConfig)
     assert isinstance(loader.load_contributor_config(), ContributorConfig)
     assert isinstance(loader.load_issue_config(), IssueConfig)
     assert isinstance(loader.load_milestone_config(), MilestoneConfig)
@@ -341,7 +315,7 @@ def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -
         OperationPoliciesConfig,
     )
     assert isinstance(
-        loader.load_project_structure_config(artifact_registry=artifact_registry),
+        loader.load_project_structure_config(),
         ProjectStructureConfig,
     )
     assert isinstance(loader.load_quality_config(), QualityConfig)
@@ -357,7 +331,6 @@ def _assert_no_self_loading_methods() -> None:
         ScopeConfig,
         WorkflowConfig,
         WorkphasesConfig,
-        ArtifactRegistryConfig,
         ContributorConfig,
         IssueConfig,
         MilestoneConfig,
@@ -394,7 +367,7 @@ def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
         )
 
 
-def test_all_fifteen_schema_classes_have_no_self_loading_methods() -> None:
+def test_all_fourteen_schema_classes_have_no_self_loading_methods() -> None:
     """Pure schema classes must not contain self-loading or singleton state."""
     _assert_no_self_loading_methods()
 
@@ -408,7 +381,6 @@ def test_config_package_contains_no_legacy_wrapper_modules() -> None:
     """The legacy config compatibility wrapper files must be deleted flag-day."""
     config_dir = Path(__file__).resolve().parents[4] / "mcp_server" / "config"
     legacy_wrappers = {
-        "artifact_registry_config.py",
         "compat_roots.py",
         "contributor_config.py",
         "git_config.py",
