@@ -1909,6 +1909,12 @@ Existing affected test/helper sources: T030, T040. Adapt or retire only their ma
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY103, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY103 execution evidence
+
+Pre-cycle commit: `4ba22137757400d975d7ab8178c508f58999fb67`; removal commit: `d6602c5e92b8bbe235d9f453747a0ec8e6b62a4d`. Seven exact source/test paths were resolved within `C:\\temp\\pgmcp`, SHA-256 checked, then removed; the pre-cycle Git commit preserves their preimages. The cycle-owned inverse is that seven-file deletion plus the CY103 plan amendment and `.pgmcp/state.json` transition. The two deferred YAML files have exact path/hash and source/removal-commit recovery records in `deferred-work.md`; no YAML feature was implemented. Active runtime, catalog, template and fixture-selection search found no reference to the five removed source files. T054 and T056 are the only temporary source-reading test exceptions for A048/A054 and are CY104-owned; they are not CY103 behavior evidence.
+
+The named current catalog/schema modules passed 45/45 (`pgmcp://cache/runs/bf690c3354c94bb0b0561caeb2270900`). Existing V3 unit/integration generation modules passed 10/10 (`pgmcp://cache/runs/ee20b3b2eecc4c07b963bf9c66f1d17d`) for CODE-E07 fixture scope, autouse and explicit content. T030/T040 tested only removed macro source and supply no executable evidence. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY104
 
 **Retire exhausted tier bases**
