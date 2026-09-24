@@ -1,36 +1,12 @@
-"""
-RED tests for Task 1.6: Concrete template existence and basic scaffolding.
-
-Documents requirement that 4 concrete templates must exist and scaffold successfully:
-- dto.py.jinja2
-- service_command.py.jinja2
-- generic.py.jinja2
-- design.md.jinja2
+"""Legacy concrete-template inventory retained for CY095 disposition.
 
 @layer: Tests (Integration)
-@dependencies: pytest, pathlib, mcp_server.config.loader, mcp_server.config.schemas,
-    mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
+@dependencies: pytest, tests.mcp_server.test_support
 """
-
-from pathlib import Path
 
 import pytest
 
-from mcp_server.config.loader import ConfigLoader
-from mcp_server.config.schemas import ArtifactRegistryConfig
-from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
-from mcp_server.scaffolding.renderer import JinjaRenderer
 from tests.mcp_server.test_support import get_template_root
-
-
-def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
-
-    settings = Settings.from_env()
-    resolved_config_root = Path(settings.server.resolved_config_root)
-    resolved_template_root = Path(settings.server.resolved_template_root)
-    loader = ConfigLoader(resolved_config_root, template_root=resolved_template_root)
-    return loader.load_artifact_registry_config(config_path=config_path)
 
 
 class TestConcreteTemplateExistence:
@@ -68,127 +44,6 @@ class TestConcreteTemplateExistence:
 
         # REQUIREMENT: Concrete template for design doc artifact type
         assert design_template.exists(), f"Missing: {design_template}"
-
-
-class TestScaffoldedOutputCodingStandards:
-    """Test that scaffolded output adheres to coding standards (Task 1.6 RED).
-
-    REQUIREMENT: Generated code must include:
-    - Module docstring with @layer, @dependencies, @responsibilities
-    - Import section headers: "# Standard library", "# Third-party", "# Project modules"
-    """
-
-    def test_scaffolded_dto_has_module_docstring_with_annotations(self) -> None:
-        """Scaffolded DTO must have module docstring with @layer/@dependencies/@responsibilities.
-
-        RED: This test WILL FAIL until tier1_base_code adds module_docstring block.
-        """
-        # Setup scaffolder
-        registry = _load_artifact_registry()
-        renderer = JinjaRenderer(template_dir=get_template_root())
-        scaffolder = TemplateScaffolder(registry=registry, renderer=renderer)
-
-        # Scaffold DTO with coding standards context
-        result = scaffolder.scaffold(
-            artifact_type="dto",
-            name="TestDTO",
-            layer="Backend (DTOs)",
-            dependencies=["pydantic", "typing"],
-            responsibilities=["Define data contract", "Validate input"],
-            fields=[
-                {"name": "id", "type": "str", "description": "Unique identifier"},
-                {"name": "value", "type": "int", "description": "Numeric value"},
-            ],
-            frozen=True,
-            examples=[{"id": "test-123", "value": 42}],
-        )
-
-        # REQUIREMENT: Module docstring must exist after SCAFFOLD header (2-line format)
-        content = result.content
-        lines = content.split("\n")
-
-        # In 2-line format:
-        # Line 0: # filepath
-        # Line 1: # template=... metadata
-        # Line 2: (blank or docstring start)
-        assert lines[0].startswith("#"), "Line 0 should be filepath comment"
-        assert "template=" in lines[1], "Line 1 should have metadata"
-
-        # Module docstring should follow SCAFFOLD metadata (line 2 or after blank line)
-        docstring_start_idx = 2
-        # Skip blank line if present
-        if not lines[docstring_start_idx].strip():
-            docstring_start_idx = 3
-
-        assert lines[docstring_start_idx].strip().startswith('"""'), (
-            f"Module docstring must follow SCAFFOLD header, found: {lines[docstring_start_idx]}"
-        )
-
-        # Collect full docstring
-        docstring_lines = []
-        in_docstring = False
-        for line in lines[docstring_start_idx:]:
-            if '"""' in line:
-                if not in_docstring:
-                    in_docstring = True
-                    docstring_lines.append(line)
-                else:
-                    docstring_lines.append(line)
-                    break
-            elif in_docstring:
-                docstring_lines.append(line)
-
-        docstring_text = "\n".join(docstring_lines)
-
-        # REQUIREMENT: Must contain @layer
-        assert "@layer:" in docstring_text, "Module docstring must contain @layer annotation"
-        assert "Backend (DTOs)" in docstring_text, "Module docstring must contain layer value"
-
-        # REQUIREMENT: Must contain @dependencies
-        assert "@dependencies:" in docstring_text, (
-            "Module docstring must contain @dependencies annotation"
-        )
-
-        # REQUIREMENT: Must contain @responsibilities
-        assert "@responsibilities:" in docstring_text, (
-            "Module docstring must contain @responsibilities annotation"
-        )
-
-    def test_scaffolded_generic_has_complete_coding_standards(self) -> None:
-        """Scaffolded generic class must have both module docstring AND import headers.
-
-        RED: This test WILL FAIL until both features are implemented.
-        """
-        # Setup scaffolder
-        registry = _load_artifact_registry()
-        renderer = JinjaRenderer(template_dir=get_template_root())
-        scaffolder = TemplateScaffolder(registry=registry, renderer=renderer)
-
-        # Scaffold generic class WITH imports to test section headers
-        result = scaffolder.scaffold(
-            artifact_type="generic",
-            name="TestClass",
-            layer="Backend (Utils)",
-            dependencies=["os", "sys"],
-            responsibilities=["Utility functionality"],
-            imports={
-                "stdlib": ["import os", "import sys"],
-                "third_party": ["from typing import Any"],
-                "project": ["from myproject.utils import Something"],
-            },
-        )
-
-        content = result.content
-
-        # REQUIREMENT 1: Module docstring with annotations
-        assert "@layer:" in content
-        assert "@dependencies:" in content
-        assert "@responsibilities:" in content
-
-        # REQUIREMENT 2: Import section headers (only when imports present)
-        assert "# Standard library" in content
-        assert "# Third-party" in content
-        assert "# Project modules" in content
 
 
 class TestConcreteTemplateStructure:

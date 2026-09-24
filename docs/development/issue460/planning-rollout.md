@@ -584,7 +584,7 @@ Previously introduced paths revisited in this cycle:
 - `tests/mcp_server/fixtures/installed_distribution.py` (only optional active-launcher interpreter for the installed-candidate wheel build/install/probes; default behavior for other callers remains unchanged).
 - `tests/mcp_server/integration/test_target_startup.py` (only retire obsolete pre-cutover candidate preparation and duplicate candidate-readback rehearsal while retaining installed fresh/migration/stdio assertions).
 
-- Only retire named obsolete bodies/imports/tests. Existing test rows may already have migrated; delete only superseded claims and retain their Design-mandated observable successors. A remaining caller stops this cycle and requires an explicit bounded amendment before removal.
+- Only retire named obsolete bodies/imports/tests. Existing test rows may already have migrated; delete only superseded claims and retain their Design-mandated observable successors. T009 is limited to its TemplateScaffolder-dependent output cases and imports; preserve its unrelated cases for CY095. T079 contains only TemplateScaffolder signature/NoteContext cases and retires after the already-proved public error/schema successors. This amendment closes the two additional direct test imports found before deletion; any further caller still stops this cycle for a bounded amendment.
 
 - Close the last ArtifactManager imports in T013/T015/T077/T080 here even when later registry/metadata/location-only assertions survive. Their later cycles may handle only claims independent of the deleted manager.
 
@@ -620,7 +620,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C066, C088, C089, C090, T048, T082, T083, T084, T085, T086.
+Existing source IDs: C066, C088, C089, C090, T009, T048, T079, T082, T083, T084, T085, T086.
 
 Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
 
@@ -644,7 +644,7 @@ Named durable proof files:
 - `tests/mcp_server/integration/test_scaffold_operation_v3.py`
 - `tests/mcp_server/integration/test_schema_public_v3.py`
 
-Existing affected test/helper sources: T048, T082, T083, T084, T085, T086. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
+Existing affected test/helper sources: T009, T048, T079, T082, T083, T084, T085, T086. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY075, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
