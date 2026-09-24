@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 95,
-  "last_cycle": 94,
+  "current_cycle": 96,
+  "last_cycle": 95,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -570,6 +570,12 @@
       "name": "Retire legacy specialized code/test sources",
       "forced": false,
       "entered": "2026-09-24T12:44:19.338141+00:00"
+    },
+    {
+      "cycle_number": 96,
+      "name": "Retire legacy phase-document roots",
+      "forced": false,
+      "entered": "2026-09-24T12:49:18.671144+00:00"
     }
   ],
   "required_phases": [
