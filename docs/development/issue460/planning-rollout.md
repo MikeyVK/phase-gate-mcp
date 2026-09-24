@@ -1863,6 +1863,10 @@ Existing affected test/helper sources: T032, T033, T034, T035, T042, T043. Adapt
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY102, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY102 execution evidence
+
+Pre-cycle commit: `cee6387d79e9848678e489cbbee43369a5214191`. Each of the twelve enumerated source/test paths was resolved under `C:\\temp\\pgmcp` and SHA-256 checked before deletion; Git preserves exact preimages. The cycle-owned inverse is the committed twelve-file deletion and `.pgmcp/state.json` transition. The six old tests asserted source-project-specific Jinja macros (DI, exception, lifecycle, log enricher, translator, automatic typed ID); no runtime or current package imports them. The three named V3 worker/unit/integration modules passed together: 15/15, cached result `pgmcp://cache/runs/31c1223a0d07400c9dbd58d55bf88ecb`. Fresh unaffected CY099 DTO/config/adapter-family evidence covers explicitly supplied defaults and logging; no rejected project defaults are reintroduced. Active source/config/suite/test/host-agent/template graph search found no remaining import of the six removed macros. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY103
 
 **Remove unreachable YAML and test seeds and agent hints**
