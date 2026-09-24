@@ -271,11 +271,11 @@ CY081 QA-designated late-discovery test closure: the frozen catalog omitted `tes
 | T116 | `tests/mcp_server/unit/managers/test_extract_violations_array.py` | [CY022](planning-execution.md#cy022) | CY022, CY084 | CY087 | Retained native diagnostic facts through Pyright/Ruff adapter evidence; generic field-map/offset/fixability DSL retired at CY086/CY087. |
 | T117 | `tests/mcp_server/unit/managers/test_files_for_gate.py` | [CY026](planning-execution.md#cy026) | CY017, CY026, CY059, CY086 | None | Split selection/runtime/native/public cases into their bounded earlier cycles; no generic parser or global QA harness. |
 | T118 | `tests/mcp_server/unit/managers/test_filter_files_removed.py` | [CY086](planning-rollout.md#cy086) | CY086 | None | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
-| T119 | `tests/mcp_server/unit/managers/test_legacy_parsers_removed.py` | [CY084](planning-rollout.md#cy084) | CY084 | CY087 | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
+| T119 | `tests/mcp_server/unit/managers/test_legacy_parsers_removed.py` | [CY084](planning-rollout.md#cy084) | CY084 | CY087 | Retire private-symbol tombstones and the QAManager import; CY087 reviews absence while native/public parser evidence remains in its owning adapter tests. |
 | T120 | `tests/mcp_server/unit/managers/test_parse_json_violations_nested.py` | [CY022](planning-execution.md#cy022) | CY022, CY084 | CY087 | Retained native diagnostic facts through Pyright/Ruff adapter evidence; generic field-map/offset/fixability DSL retired at CY086/CY087. |
 | T121 | `tests/mcp_server/unit/managers/test_parse_json_violations_options.py` | [CY022](planning-execution.md#cy022) | CY020, CY022, CY084 | CY087 | Retained native diagnostic facts through Pyright/Ruff adapter evidence; generic field-map/offset/fixability DSL retired at CY086/CY087. |
 | T122 | `tests/mcp_server/unit/managers/test_parse_json_violations.py` | [CY022](planning-execution.md#cy022) | CY020, CY022, CY084 | CY087 | Retained native diagnostic facts through Pyright/Ruff adapter evidence; generic field-map/offset/fixability DSL retired at CY086/CY087. |
-| T123 | `tests/mcp_server/unit/managers/test_parse_text_violations_defaults.py` | [CY084](planning-rollout.md#cy084) | CY084 | CY087 | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
+| T123 | `tests/mcp_server/unit/managers/test_parse_text_violations_defaults.py` | [CY084](planning-rollout.md#cy084) | CY084 | CY087 | Retire obsolete generic text-parser defaults and its unused QAManager fixture; CY087 reviews absence without recreating the legacy DSL. |
 | T124 | `tests/mcp_server/unit/managers/test_parse_text_violations.py` | [CY021](planning-execution.md#cy021) | CY021, CY084 | CY087 | Mypy native text including unmatched notes; no generic regex/default severity promise. |
 | T125 | `tests/mcp_server/unit/managers/test_pyright_severity_mapping.py` | [CY022](planning-execution.md#cy022) | CY022, CY084 | CY087 | Retained native diagnostic facts through Pyright/Ruff adapter evidence; generic field-map/offset/fixability DSL retired at CY086/CY087. |
 | T126 | `tests/mcp_server/unit/managers/test_pytest_helpers_removed.py` | [CY086](planning-rollout.md#cy086) | CY086 | None | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
@@ -556,7 +556,7 @@ The new-source register records CY059's inward projection operation and the narr
 | `mcp_server/bundled_adapters/pyright/manifest.yaml` | [CY022](planning-execution.md#cy022) | CY022 |
 | `mcp_server/bundled_adapters/pyright/check.cjs` | [CY022](planning-execution.md#cy022) | CY022 |
 | `mcp_server/bundled_adapters/pyright/package.json` | [CY022](planning-execution.md#cy022) | CY022 |
-| `tests/mcp_server/integration/adapters/test_pyright.py` | [CY022](planning-execution.md#cy022) | CY022 |
+| `tests/mcp_server/integration/adapters/test_pyright.py` | [CY022](planning-execution.md#cy022) | CY022, CY084 |
 | `mcp_server/bundled_adapters/typescript_syntax/manifest.yaml` | [CY023](planning-execution.md#cy023) | CY023 |
 | `mcp_server/bundled_adapters/typescript_syntax/check.cjs` | [CY023](planning-execution.md#cy023) | CY023 |
 | `mcp_server/bundled_adapters/typescript_syntax/package.json` | [CY023](planning-execution.md#cy023) | CY023 |

@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import os
-import re
 import subprocess
 import tomllib
 from dataclasses import dataclass, replace
@@ -402,11 +401,7 @@ def test_native_configuration_preservation_and_editor_target(
     package = pyright_package
     original_toml = (pytestconfig.rootpath / "pyproject.toml").read_bytes()
     toml = original_toml.decode().replace("\r\n", "\n")
-    without_duplicate = re.sub(r"(?ms)^\[tool\.pyright\]\n.*?(?=^\[|\Z)", "", toml)
-    original_settings = tomllib.loads(toml)
-    removed_settings = tomllib.loads(without_duplicate)
-    assert original_settings["tool"].pop("pyright") == {"reportFunctionMemberAccess": False}
-    assert original_settings == removed_settings
+    assert "pyright" not in tomllib.loads(toml).get("tool", {})
     config = json.loads((pytestconfig.rootpath / "pyrightconfig.json").read_text())
     assert config["pythonVersion"] == "3.11" and config["pythonPlatform"] == "Windows"
     assert config["reportFunctionMemberAccess"] is False
@@ -438,7 +433,7 @@ def test_native_configuration_preservation_and_editor_target(
     toml_path.write_text(toml, encoding="utf-8")
     old_config = {**config, "pythonVersion": "3.13"}
     config_path.write_text(json.dumps(old_config))
-    legacy = native(
+    direct = native(
         native_pyright,
         package.workspace,
         args=(
@@ -454,11 +449,11 @@ def test_native_configuration_preservation_and_editor_target(
             "--outputjson",
         ),
     )
-    assert legacy.returncode == 1
+    assert direct.returncode == 1
     config_path.write_text(json.dumps(config))
     code, before = invoke(package, args=("--level", "warning", "--warnings"))
     assert code == 1
-    actual = assert_json_evidence(before, legacy)
+    actual = assert_json_evidence(before, direct)
     diagnostics = actual["generalDiagnostics"]
     assert isinstance(diagnostics, list)
     facts = [item for item in diagnostics if isinstance(item, dict)]
@@ -468,10 +463,6 @@ def test_native_configuration_preservation_and_editor_target(
     assert sum(item.get("rule") == "reportAssignmentType" for item in facts) == 1
     assert not any(item.get("rule") == "reportArgumentType" for item in facts)
     assert not any(item.get("rule") == "reportFunctionMemberAccess" for item in facts)
-    toml_path.write_text(without_duplicate, encoding="utf-8")
-    code, after = invoke(package, args=("--level", "warning", "--warnings"))
-    assert code == 1
-    assert_json_evidence(after, legacy)
     config_path.write_text(json.dumps(old_config))
     editor = native(native_pyright, package.workspace, args=("--outputjson",))
     editor_facts = native_json(editor.stdout)["generalDiagnostics"]
