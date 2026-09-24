@@ -1816,6 +1816,10 @@ Existing affected test/helper sources: None. Adapt or retire only their mapped D
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY101, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY101 execution evidence
+
+Pre-cycle commit: `df2fc1fdadd4e40e82523cd603afde32310f9fed`; removal commit: `1811e99f7410f4af79b9979005ccf3d2f70b3525`. The six exact rejected Resource/Service/Tool template and YAML paths were resolved under `C:\\temp\\pgmcp` and SHA-256 checked before deletion; the pre-cycle Git commit preserves their source for targeted recovery and future provenance. The cycle-owned inverse is that six-file deletion plus `.pgmcp/state.json`. No production tool, service, resource class, generated source, or admitted template package changed. The named V3 public schema/scaffold modules passed 16/16 (`pgmcp://cache/runs/51e02ab514dd4943859bd1f5fdaa7f93`); a single existing catalog admission test passed 1/1, nine deselected (`pgmcp://cache/runs/10d5e43d97404cda9e2b74a8173aac70`). Active source/config/suite/test/host-agent search found no remaining old source or macro selector, closing CY099's temporary source-only imports. The separate future YAML recovery trace is owned by CY103; its historical-source and removal-commit facts must be recorded there, not by widening this six-path deletion. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY102
 
 **Remove source-project specialization patterns**
