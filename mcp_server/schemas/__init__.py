@@ -20,11 +20,6 @@ from mcp_server.config.schemas.issue_config import IssueConfig
 from mcp_server.config.schemas.label_config import LabelConfig
 from mcp_server.config.schemas.milestone_config import MilestoneConfig
 from mcp_server.config.schemas.operation_policies_config import OperationPoliciesConfig
-from mcp_server.config.schemas.quality_config import (
-    JsonViolationsParsing,
-    TextViolationsParsing,
-    ViolationDTO,
-)
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
@@ -56,14 +51,11 @@ __all__ = [
     "EnforcementRule",
     "GitConfig",
     "IssueConfig",
-    "JsonViolationsParsing",
     "LabelConfig",
     "MergePolicy",
     "MilestoneConfig",
     "OperationPoliciesConfig",
     "ScopeConfig",
-    "TextViolationsParsing",
-    "ViolationDTO",
     "WorkflowConfig",
     "WorkflowEntry",
     "WorkflowPhaseEntry",

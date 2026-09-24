@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 86,
-  "last_cycle": 85,
+  "current_cycle": 87,
+  "last_cycle": 86,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -516,6 +516,12 @@
       "name": "Retire quality orchestration and old check/fix tools",
       "forced": false,
       "entered": "2026-09-24T10:46:35.730650+00:00"
+    },
+    {
+      "cycle_number": 87,
+      "name": "Retire generic native-parser DSL",
+      "forced": false,
+      "entered": "2026-09-24T11:23:21.058130+00:00"
     }
   ],
   "required_phases": [

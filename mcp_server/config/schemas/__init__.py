@@ -26,11 +26,6 @@ from mcp_server.config.schemas.operation_policies_config import (
     OperationPolicy,
 )
 from mcp_server.config.schemas.presentation_config import PresentationConfig
-from mcp_server.config.schemas.quality_config import (
-    JsonViolationsParsing,
-    TextViolationsParsing,
-    ViolationDTO,
-)
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.tests_config import TestBinding, TestId, TestsConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig, WorkflowTemplate
@@ -55,7 +50,6 @@ __all__ = [
     "GitConfig",
     "IssueConfig",
     "IssueTypeEntry",
-    "JsonViolationsParsing",
     "Label",
     "LabelConfig",
     "LabelPattern",
@@ -68,8 +62,6 @@ __all__ = [
     "PhaseDefinition",
     "PresentationConfig",
     "ScopeConfig",
-    "TextViolationsParsing",
-    "ViolationDTO",
     "WorkflowConfig",
     "WorkflowEntry",
     "WorkflowPhaseEntry",
