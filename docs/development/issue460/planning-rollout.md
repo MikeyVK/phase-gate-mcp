@@ -1357,7 +1357,7 @@ Pre-cycle commit: `6a2f42d8a9c66cffb3f07f83f5702e88e7758625`. The cycle-owned in
 - **Semantic predecessors:** [CY077](planning-rollout.md#cy077), [CY078](planning-rollout.md#cy078), [CY079](planning-rollout.md#cy079), [CY080](planning-rollout.md#cy080), [CY081](planning-rollout.md#cy081), [CY082](planning-rollout.md#cy082), [CY083](planning-rollout.md#cy083), [CY086](planning-rollout.md#cy086), [CY087](planning-rollout.md#cy087), [CY088](planning-rollout.md#cy088).
 - **Shared-file predecessors:** None.
 - **Authority:** [DI-07 §7.5; XC-01](design-workflow-documentation.md).
-- **CY092.D1 — bounded result:** Update seven catalogued subsystem/config/tool/naming diagrams to exact responsibility/dependency boundaries.
+- **CY092.D1 — bounded result:** Update six catalogued subsystem/config/tool/naming diagrams to exact responsibility/dependency boundaries.
 - **Preserved behavior:** No diagram becomes alternate catalog/schema/policy; unrelated architecture preserved.
 - **CY092.D2 — independent evidence:** Diagram-to-public composition/owners crosscheck, local links, no obsolete active registry/parser authority.
 - **Rollback:** R-CY092: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
@@ -1386,6 +1386,10 @@ Documentation evidence: compare the exact named sources against their Design dis
 Existing affected test/helper sources: None. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY092, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
+
+### CY092 execution evidence
+
+Pre-cycle commit: `69fbdf3f0f4a2fa3c903a325db06ed8328127e6f`. The cycle-owned inverse is the committed diff for the six enumerated diagram paths; `.pgmcp/state.json` records the cycle transition. No other dirty or untracked workspace file is in this recovery set. The diagrams were checked against `mcp_server/bootstrap.py`, the active config/catalog/tool implementations, and the approved suite and workflow design. Their local Markdown links resolve; obsolete registry/parser references occur only as explicit retired-boundary notes. This documentation-only cycle adds no runtime code, tests, or gates. Independent review is requested without a producer GO claim.
 
 ## CY093
 

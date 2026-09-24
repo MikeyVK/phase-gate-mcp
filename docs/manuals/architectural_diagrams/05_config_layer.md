@@ -1,98 +1,59 @@
-<!-- docs/mcp_server/architectural_diagrams/05_config_layer.md -->
-<!-- template=architecture version=8b924f78 created=2026-03-13T19:06Z updated=2026-03-13 -->
-# Config Layer
+<!-- docs/manuals/architectural_diagrams/05_config_layer.md -->
+<!-- template=architecture -->
+# Configuration Layer
 
-**Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-03-13
+**Status:** Current architecture overview
 
----
+## Purpose and scope
 
-## Purpose
+Configuration has distinct runtime, workspace-declaration, and template-package owners. This diagram describes how the active V3 bootstrap selects them; the schemas and manifests remain the field-level authority.
 
-Show the config layer: which configuration files exist, where they live, and which components
-load them.
-
-## Scope
-
-**In Scope:** `mcp_server/config/` Python modules, `.pgmcp/` YAML files, load relationships
-
-**Out of Scope:** Pydantic schema detail, template system (`scaffolding/`)
-
----
-
-## 1. Two Config Domains
-
-Two distinct configuration domains exist side by side. The Python domain contains stable
-server-wide settings; the YAML domain contains per-project, per-branch configuration that
-changes without server restarts.
+## 1. Configuration ownership and loading
 
 ```mermaid
 graph TD
-    subgraph Python Config
-        SC["mcp_server/config/<br/>16 modules<br/>(Pydantic BaseSettings)"]
-        SC --> GC["git_config.py"]
-        SC --> QC["quality_config.py"]
-        SC --> WF["workflows.py"]
-        SC --> SET["settings.py<br/>(server root)"]
-    end
-    subgraph YAML Config
-        PG[".pgmcp/"]
-        PG --> ENF["enforcement.yaml<br/>(enforcement rules)"]
-        PG --> PC["phase_contracts.yaml<br/>(exit gates per phase)"]
-        PG --> ART["artifacts.yaml<br/>(scaffold registry)"]
-        PG --> WFY["workflows.yaml<br/>(phase definitions)"]
-    end
+    Settings["Settings.from_env()<br/>server, logging, GitHub, resolved roots"]
+    Root["resolved server/config/template roots"]
+    Bootstrap["ServerBootstrapper.bootstrap_target()"]
+    Loader["ConfigLoader"]
+    Runtime["runtime and workflow declarations"]
+    ExecutionConfig["checks.yaml<br/>tests.yaml<br/>fixes.yaml<br/>adapters.yaml"]
+    ArtifactConfig["artifacts.yaml<br/>artifact locations"]
+    Templates["template_suite/<br/>manifest, policy, context schema, content"]
+    Schemas["config/schemas/"]
+    Catalog["resolved template / adapter catalogs"]
 
-    Managers["managers/"] -->|"constructor injection"| SC
-    Managers -->|"runtime load"| PG
+    Settings --> Root
+    Root --> Bootstrap
+    Bootstrap --> Loader
+    Loader --> Runtime
+    Loader --> ExecutionConfig
+    Loader --> ArtifactConfig
+    Runtime --> Schemas
+    ExecutionConfig --> Schemas
+    ArtifactConfig --> Schemas
+    Root --> Templates
+    Templates --> Catalog
+    Loader --> Catalog
+    Catalog --> Bootstrap
 ```
 
-Changes to `.pgmcp/` YAML files take effect without a server restart. Changes to
-`mcp_server/config/` require a restart (or `restart_server` in dev).
+`Settings.from_env()` owns deployment settings and root resolution. Bootstrap passes the selected configuration and template roots to `ConfigLoader`. The loader validates workspace declarations against typed schemas. Template manifests and package files define scaffold package identity, policy, context schema, and content; discovery and resolution build the runtime catalogs.
 
----
+## 2. Change and authority boundaries
 
-## 2. Load Relationships
+| Input | Owner and effect |
+|---|---|
+| Environment and optional settings overlay | Runtime settings and resolved roots, owned by the settings models |
+| Workspace YAML declarations | Workflow/lifecycle policy and named check, test, fix, adapter-trust, and artifact-location choices; validated by `ConfigLoader` and schemas |
+| Native executable settings | Native tool/adapter owner; PGMCP declarations do not install or probe executables |
+| Template package files | Manifest-defined package identity, policy, schema, and rendered content |
 
-| Consumer | Loads from Python config | Loads from YAML |
-|----------|--------------------------|-----------------|
-| `PhaseStateEngine` | `WorkflowsConfig` | `phase_contracts.yaml`, `workflows.yaml` |
-| `EnforcementRunner` | — | `enforcement.yaml` |
-| `ArtifactManager` | `ArtifactRegistryConfig` | `artifacts.yaml` |
-| `ProjectManager` | `ProjectStructureConfig` | `workflows.yaml` |
-| `GitManager` | `GitConfig` | — |
-| `QAManager` | `QualityConfig` | — |
+These inputs are loaded during target startup; editing YAML does not imply hot reload. Existing workspace configuration remains owner-controlled. V3 uses explicit configuration roots and does not activate legacy `quality.yaml` or `QualityConfig` as a generic parser or runtime authority.
 
----
+## Related diagrams and references
 
-## Constraints & Decisions
-
-| Decision | Rationale | Alternatives Rejected |
-|----------|-----------|----------------------|
-| Two config domains intentionally separated | Python config for deployment settings; YAML for project behaviour | Single YAML for everything (loses type-safety) |
-| Constructor injection for Python config | Managers are testable without global state | `from mcp_server.config import settings` everywhere |
-
----
-
-## Known Architectural Issues
-
-| ID | Component | Issue | Severity |
-|----|-----------|-------|----------|
-| RC-6 | `phase_contracts.yaml` | Hardcoded `docs/development/issue257/planning.md` and `design.md` — works only for issue #257, breaks for every other branch | High |
-
----
-
-## Related Documentation
-
-- **[02_workflow_state_subsystem.md][related-1]**
-- **[04_enforcement_layer.md][related-2]**
-
-[related-1]: 02_workflow_state_subsystem.md
-[related-2]: 04_enforcement_layer.md
----
-
-## Version History
-
-| 1.1 | 2026-07-08 | Agent | Reconcile `.phase-gate` with `.pgmcp` and fix relative links (#420) |
-| 1.0 | 2026-03-13 | Agent | Initial draft |
+- [Workflow state subsystem](02_workflow_state_subsystem.md)
+- [Enforcement layer](04_enforcement_layer.md)
+- [Configuration consumers](10_config_consumers.md)
+- [Configuration and template loading](../../reference/config-loading-architecture.md)

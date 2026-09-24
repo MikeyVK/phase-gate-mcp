@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 91,
-  "last_cycle": 90,
+  "current_cycle": 92,
+  "last_cycle": 91,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -546,6 +546,12 @@
       "name": "Deployment and setup references",
       "forced": false,
       "entered": "2026-09-24T12:16:35.461974+00:00"
+    },
+    {
+      "cycle_number": 92,
+      "name": "Architecture diagrams",
+      "forced": false,
+      "entered": "2026-09-24T12:27:27.622268+00:00"
     }
   ],
   "required_phases": [

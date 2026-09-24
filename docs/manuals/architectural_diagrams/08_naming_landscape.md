@@ -1,144 +1,45 @@
-<!-- docs/mcp_server/architectural_diagrams/08_naming_landscape.md -->
-<!-- template=architecture version=8b924f78 created=2026-03-13T19:07Z updated=2026-03-13 -->
+<!-- docs/manuals/architectural_diagrams/08_naming_landscape.md -->
 # Naming Landscape
 
-**Status:** CURRENT
-**Version:** 1.1
-**Last Updated:** 2026-04-23
-
----
+**Status:** Architecture overview; public names are defined by runtime schemas.
+**Last Updated:** 2026-09-24
 
 ## Purpose
 
-Overview of all file → class → MCP tool name combinations and the naming inconsistencies
-identified across the tool layer.
+Explain the boundary between implementation module names, public MCP tool names, and
+public template-package identities. This page is not an exhaustive tool or template
+inventory. The registered schemas and resolved template catalog provide the active
+names.
 
-## Scope
+## Names at the public boundaries
 
-**In Scope:** All tool files, class names, MCP tool names, naming patterns
+| Boundary | Naming authority | Example |
+|---|---|---|
+| MCP operation | Registered tool name and input schema | `scaffold_artifact`, `scaffold_schema` |
+| Template package | `manifest.yaml:template_id` | `python_pydantic_dto`, `typescript_dto` |
+| Stored package directory | Suite discovery/storage only | Directory name does not define package identity |
 
-**Out of Scope:** Implementation detail, non-tool modules
+The package identifier is language/framework-qualified where the artifact contract
+requires it. The runtime resolves unique package IDs from the admitted suite and exposes
+the available IDs through the tool schema. Do not infer a public name from a Python
+filename, class name, or physical package directory.
 
----
+Tool source filenames may reflect implementation structure and are not required to
+mirror public MCP names. For current tool inputs and outputs, use the
+[modular tool reference](../../reference/tools/README.md) and the registered schemas.
+For the package identity and extension contract, use the
+[template library usage guide](../../reference/TEMPLATE_LIBRARY_USAGE.md).
 
-## 1. Naming Conventions
+## Historical filename note
 
-Three conventions apply across the tool layer. Violations are marked ⚠.
+The former `template_validation_tool.py` / `validate_template` operation is retired.
+Suite admission and configured output checks own their respective validation boundaries;
+there is no separate public template-validation tool.
 
-| Convention | Rule | Example ✅ | Violation ⚠ |
-|------------|------|------------|-------------|
-| File name | `*_tools.py` (plural) | `git_tools.py` | `git_fetch_tool.py` |
-| Class name | `PascalCase` + domain noun | `TransitionPhaseTool` | — |
-| MCP tool name | `snake_case` verb_noun, consistent word order | `transition_cycle` | `force_phase_transition` ↔ `force_cycle_transition` |
-| Base class visibility | `_` prefix = module-private | `_MyInternal` | `_BaseTransitionTool` (imported cross-module) |
+## Related architecture
 
----
+- [Tool layer](03_tool_layer.md)
+- [Scaffolding subsystem](09_scaffolding_subsystem.md)
+- [Configuration consumers](10_config_consumers.md)
+- [Template package identity and resolution](../../development/issue460/design-suite-resolution.md)
 
-## 2. File → Class → MCP Name Matrix
-
-Full mapping of all tool files. ⚠ marks known inconsistencies.
-
-| File | Class | MCP Tool Name | Issue |
-|------|-------|---------------|-------|
-| `git_tools.py` | `CreateBranchTool` | `create_branch` | — |
-| `git_tools.py` | `GitStatusTool` | `git_status` | — |
-| `git_tools.py` | `GitCommitTool` | `git_add_or_commit` | — |
-| `git_tools.py` | `GitRestoreTool` | `git_restore` | — |
-| `git_tools.py` | `GitCheckoutTool` | `git_checkout` | — |
-| `git_tools.py` | `GitPushTool` | `git_push` | — |
-| `git_tools.py` | `GitMergeTool` | `git_merge` | — |
-| `git_tools.py` | `GitDeleteBranchTool` | `git_delete_branch` | — |
-| `git_tools.py` | `GitStashTool` | `git_stash` | — |
-| `git_tools.py` | `GetParentBranchTool` | `get_parent_branch` | — |
-| `git_tools.py` | `CheckMergeTool` | `check_merge` | — |
-| `git_analysis_tools.py` | `GitListBranchesTool` | `git_list_branches` | — |
-| `git_analysis_tools.py` | `GitDiffTool` | `git_diff_stat` | Class name differs from MCP name suffix |
-| `git_fetch_tool.py` ⚠ | `GitFetchTool` | `git_fetch` | Singular filename |
-| `git_pull_tool.py` ⚠ | `GitPullTool` | `git_pull` | Singular filename |
-| `phase_tools.py` | `TransitionPhaseTool` | `transition_phase` | — |
-| `phase_tools.py` | `ForcePhaseTransitionTool` | `force_phase_transition` ⚠ | Word order crossed |
-| `cycle_tools.py` | `TransitionCycleTool` | `transition_cycle` | — |
-| `cycle_tools.py` | `ForceCycleTransitionTool` | `force_cycle_transition` ⚠ | Word order crossed |
-| `project_tools.py` | `InitializeProjectTool` | `initialize_project` | — |
-| `project_tools.py` | `GetProjectPlanTool` | `get_project_plan` | — |
-| `project_tools.py` | `SavePlanningDeliverablesTool` | `save_planning_deliverables` | — |
-| `project_tools.py` | `UpdatePlanningDeliverablesTool` | `update_planning_deliverables` | — |
-| `issue_tools.py` | `CreateIssueTool` | `create_issue` | — |
-| `issue_tools.py` | `GetIssueTool` | `get_issue` | — |
-| `issue_tools.py` | `ListIssuesTool` | `list_issues` | — |
-| `issue_tools.py` | `UpdateIssueTool` | `update_issue` | — |
-| `issue_tools.py` | `CloseIssueTool` | `close_issue` | — |
-| `label_tools.py` | `ListLabelsTool` | `list_labels` | — |
-| `label_tools.py` | `CreateLabelTool` | `create_label` | — |
-| `label_tools.py` | `DeleteLabelTool` | `delete_label` | — |
-| `label_tools.py` | `RemoveLabelsTool` | `remove_labels` | — |
-| `label_tools.py` | `AddLabelsTool` | `add_labels` | — |
-| `milestone_tools.py` | `ListMilestonesTool` | `list_milestones` | — |
-| `milestone_tools.py` | `CreateMilestoneTool` | `create_milestone` | — |
-| `milestone_tools.py` | `CloseMilestoneTool` | `close_milestone` | — |
-| `pr_tools.py` | `SubmitPRTool` | `submit_pr` | Replaced deleted public `create_pr` path |
-| `pr_tools.py` | `ListPRsTool` | `list_prs` | — |
-| `pr_tools.py` | `MergePRTool` | `merge_pr` | — |
-| `pr_tools.py` | `GetPRTool` | `get_pr` | — |
-| `quality_tools.py` | `RunQualityGatesTool` | `run_quality_gates` | — |
-| `test_tools.py` | `RunTestsTool` | `run_tests` | — |
-| `template_validation_tool.py` ⚠ | `ValidateTemplateTool` | `validate_template` | Singular filename |
-| `scaffold_artifact.py` ⚠ | `ScaffoldArtifactTool` | `scaffold_artifact` | No `_tool` suffix |
-| `safe_edit_tool.py` ⚠ | `SafeEditTool` | `safe_edit_file` | No `_tools` plural |
-| `health_tools.py` | `HealthCheckTool` | `health_check` | — |
-| `admin_tools.py` | `RestartServerTool` | `restart_server` | — |
-| `discovery_tools.py` | `GetWorkContextTool` | `get_work_context` | — |
-
----
-
-## 3. Word Order Inconsistency (MCP names)
-
-The phase and cycle tools use a crossed word order pattern:
-
-| Intended pattern | Actual MCP name | Verdict |
-|-----------------|-----------------|---------|
-| `transition_phase` | `transition_phase` | ✅ |
-| `force_transition_phase` | `force_phase_transition` ⚠ | Crossed |
-| `transition_cycle` | `transition_cycle` | ✅ |
-| `force_transition_cycle` | `force_cycle_transition` ⚠ | Crossed |
-
-Both are internally consistent (phase and cycle mirror each other), but the `force_*`
-variants swap verb and domain noun compared to the non-force variants. A rename to
-`force_transition_phase` / `force_transition_cycle` would align all four.
-
----
-
-## Constraints & Decisions
-
-| Decision | Rationale | Alternatives Rejected |
-|----------|-----------|----------------------|
-| Document naming conventions explicitly | Conventions are followed for ~85% of tools; making them explicit enables automated drift detection | Implicit conventions (already caused the current deviations) |
-
----
-
-## Known Architectural Issues
-
-| ID | Component | Issue | Severity |
-|----|-----------|-------|----------|
-| KPI-11 | `git_fetch_tool.py`, `git_pull_tool.py`, `template_validation_tool.py` | Singular filenames deviate from `*_tools.py` convention | Low |
-| KPI-11 | `scaffold_artifact.py`, `safe_edit_tool.py` | No `_tools` suffix pattern at all | Low |
-| KPI-12 | `force_phase_transition`, `force_cycle_transition` | Word order crossed vs. `transition_phase` / `transition_cycle` | Medium |
-| KPI-11 | `_BaseTransitionTool` | Underscore prefix implies module-private; imported cross-module | Medium |
-
----
-
-## Related Documentation
-
-- **[docs/mcp_server/architectural_diagrams/03_tool_layer.md][related-1]**
-- **[docs/development/issue257/GAP_ANALYSE_ISSUE257.md][related-2]**
-
-[related-1]: docs/mcp_server/architectural_diagrams/03_tool_layer.md
-[related-2]: docs/development/issue257/GAP_ANALYSE_ISSUE257.md
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-03-13 | Agent | Initial draft |
