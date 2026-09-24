@@ -500,6 +500,19 @@ async def test_native_three_step_chain_preserves_format_and_partial_lint_writes(
         timeout=15,
     )
     after_lint = source.read_bytes()
+    native_version = (
+        subprocess.run(
+            [sys.executable, "-m", "ruff", "--version"],
+            cwd=tmp_path,
+            capture_output=True,
+            check=True,
+            timeout=15,
+        )
+        .stdout.decode()
+        .strip()
+        .removeprefix("ruff ")
+    )
+    assert native_version
     assert formatted.returncode == 0 and linted.returncode == 1
     assert original != after_format != after_lint
     assert b"import os" not in after_lint and b"unknown_name" in after_lint
@@ -532,7 +545,9 @@ async def test_native_three_step_chain_preserves_format_and_partial_lint_writes(
     assert output.results[2].adapter is None and output.results[2].reason == "not_started"
     failed = output.results[1]
     assert failed.evidence is not None
-    assert failed.external_tools is not None and failed.external_tools[0].version == "0.15.6"
+    assert failed.external_tools is not None and len(failed.external_tools) == 1
+    assert failed.external_tools[0].tool_id == "ruff"
+    assert failed.external_tools[0].version == native_version
     assert "F821" in failed.evidence.model_dump_json()
     assert failed.capture is not None and failed.capture.exit_code == 1
     assert ApplyFixesOutput.model_validate_json(output.model_dump_json()) == output

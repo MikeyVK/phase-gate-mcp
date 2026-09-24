@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 84,
-  "last_cycle": 83,
+  "current_cycle": 85,
+  "last_cycle": 84,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -504,6 +504,12 @@
       "name": "Close QAManager-dependent parser test imports",
       "forced": false,
       "entered": "2026-09-24T10:28:33.154618+00:00"
+    },
+    {
+      "cycle_number": 85,
+      "name": "Close QAManager-dependent fix and state test imports",
+      "forced": false,
+      "entered": "2026-09-24T10:38:24.909074+00:00"
     }
   ],
   "required_phases": [
