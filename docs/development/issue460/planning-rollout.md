@@ -1600,7 +1600,7 @@ Previously introduced paths revisited in this cycle:
 
 None.
 
-- Before deleting any listed source, require its named successor evidence and zero remaining runtime/template/fixture imports. Tests for the same removed source are adapted or removed in this same cycle; unrelated portions remain.
+- Before deleting any listed source, require its named successor evidence and zero reachable runtime/catalog/active fixture-selector imports. The only permitted temporary source-only edges are A016/A017/A020 to A066/A071 as identified in CY099.D2; they are excluded, unregistered CY101-owned roots, not active behavior, and CY101 must close them. Tests for the removed macros are adapted or removed in this cycle; unrelated portions remain.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -1674,9 +1674,9 @@ Pre-cycle commit: `ef13e9de7d3473a59e9b731b1a91f66ae0696020`. The six enumerated
 - **Semantic predecessors:** [CY031](planning-artifacts-mutation.md#cy031), [CY041](planning-artifacts-mutation.md#cy041), [CY094](planning-rollout.md#cy094), [CY095](planning-rollout.md#cy095), [CY096](planning-rollout.md#cy096), [CY097](planning-rollout.md#cy097), [CY098](planning-rollout.md#cy098).
 - **Shared-file predecessors:** [CY039](planning-artifacts-mutation.md#cy039), [CY037](planning-artifacts-mutation.md#cy037), [CY033](planning-artifacts-mutation.md#cy033).
 - **Authority:** [DI-01/02 §9; DI-03 code/doc §9](design-code-test-artifacts.md).
-- **CY099.D1 — bounded result:** Remove only legacy Python/testing macros after every concrete Python consumer has migrated.
+- **CY099.D1 — bounded result:** Remove only legacy Python/testing macros after every admitted or selected concrete Python consumer has migrated. The rejected, unregistered CY101-owned Resource/Service/Tool roots are not active consumers.
 - **Preserved behavior:** Shared syntax/link/fixture/omission claims already in public family coverage.
-- **CY099.D2 — independent evidence:** Graph reachability/import scan plus affected family proof; remove direct macro tests only after named successor coverage.
+- **CY099.D2 — independent evidence:** Graph reachability/import scan proves no runtime, catalog, or active fixture selector reaches removed macros, plus affected family proof. The only temporary source-only imports are A016 resource→A071 logging, A017 service_command→A066 async and A071 logging, and A020 tool→A071 logging; CY101 closes those rejected roots. Their legacy renderability is not claimed after CY099.
 - **Rollback:** R-CY099: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY099.D1 and CY099.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -1714,6 +1714,10 @@ Named durable proof files:
 Existing affected test/helper sources: T031, T036, T037, T038, T039, T041. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY099, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
+
+### CY099 execution evidence
+
+Pre-cycle commit: `b8d26fee1aff7bfed92470ea401005e73e1265af`. All twelve enumerated macro/test paths were resolved within `C:\\temp\\pgmcp` and SHA-256 checked before deletion; Git retains their exact preimages. The cycle-owned inverse is the committed twelve-file deletion plus the QA-advised reachability clarification. The six retired tests asserted old macro source/Jinja details; current package behavior is owned by the eight named V3 modules, which passed together: 40/40, cached result `pgmcp://cache/runs/a2d565dd285f43b394e6e35b314d0491`. A post-deletion active source/config/suite/test/host-agent search found no reachable macro selector. The only surviving source-only imports are exactly A016 resource→A071 logging, A017 service_command→A066 async and A071 logging, and A020 tool→A071 logging. These excluded, unregistered legacy roots are scheduled for deletion in CY101 and cannot be rendered after this cycle; no active behavior or legacy renderability is claimed. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
 
 ## CY100
 
