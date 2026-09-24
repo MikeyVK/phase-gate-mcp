@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 80,
-  "last_cycle": 79,
+  "current_cycle": 81,
+  "last_cycle": 80,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -480,6 +480,12 @@
       "name": "Retire parallel component scaffolders",
       "forced": false,
       "entered": "2026-09-24T09:12:41.705549+00:00"
+    },
+    {
+      "cycle_number": 81,
+      "name": "Retire legacy validator and validate_template stack",
+      "forced": false,
+      "entered": "2026-09-24T09:18:03.731500+00:00"
     }
   ],
   "required_phases": [

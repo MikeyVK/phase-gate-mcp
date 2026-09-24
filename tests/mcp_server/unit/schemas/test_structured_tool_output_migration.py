@@ -3,15 +3,13 @@
 """Approved structured DTO clean-break contract tests.
 
 @layer: Tests (Unit)
-@dependencies: [pydantic, validation.base, tool_outputs]
+@dependencies: [pydantic, tool_outputs]
 @responsibilities:
-    - Verify canonical frozen validation-record serialization
     - Verify structured workflow state and numeric pytest duration
     - Verify obsolete presentation fields have no compatibility aliases
 """
 
 import pytest
-from pydantic import ValidationError
 
 from mcp_server.schemas.tool_outputs import (
     AutoFixOutput,
@@ -19,47 +17,13 @@ from mcp_server.schemas.tool_outputs import (
     LabelOperationOutput,
     PhaseTransitionOutput,
     RunTestsOutput,
-    SafeEditOutput,
     ScaffoldArtifactOutput,
     WorkflowStateStatus,
 )
-from mcp_server.validation.base import ValidationIssue
 
 
 class TestStructuredToolOutputMigration:
     """Clean-break DTO contracts."""
-
-    def test_validation_issue_is_frozen_serializable_and_reused_by_safe_edit(
-        self,
-    ) -> None:
-        issue = ValidationIssue(
-            message="Invalid syntax",
-            severity="error",
-            line=4,
-            column=7,
-            code="E001",
-        )
-
-        output = SafeEditOutput(
-            path="example.py",
-            passed=False,
-            issues=(issue,),
-            mode="strict",
-            written=False,
-        )
-
-        assert output.issues[0] is issue
-        assert output.model_dump(mode="json")["issues"] == [
-            {
-                "message": "Invalid syntax",
-                "line": 4,
-                "column": 7,
-                "code": "E001",
-                "severity": "error",
-            }
-        ]
-        with pytest.raises(ValidationError):
-            issue.message = "changed"  # type: ignore[misc]
 
     @pytest.mark.parametrize(
         "status",

@@ -193,10 +193,8 @@ from mcp_server.tools.project_tools import (
 )
 from mcp_server.tools.quality_tools import AutoFixTool, RunQualityGatesTool
 from mcp_server.tools.run_tests_tool import RunTestsTool as TargetRunTestsTool
-from mcp_server.tools.safe_edit_tool import SafeEditTool
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool as TargetScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool as TargetScaffoldSchemaTool
-from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.utils.atomic_file_writer import (
     CheckedFileWriter,
@@ -1014,8 +1012,6 @@ class ServerBootstrapper:
             ),
             CheckMergeTool(manager=managers.git_manager),
             RunQualityGatesTool(manager=qa_manager),
-            SafeEditTool(),
-            TemplateValidationTool(),
             HealthCheckTool(),
             RestartServerTool(
                 server_root=(Path(settings.server.workspace_root) / settings.server.server_root_dir)
@@ -1212,7 +1208,6 @@ class ServerBootstrapper:
                 state_engine=managers.phase_state_engine,
             ),
             CheckMergeTool(manager=managers.git_manager),
-            TemplateValidationTool(),
             HealthCheckTool(),
             RestartServerTool(
                 server_root=(Path(settings.server.workspace_root) / settings.server.server_root_dir)

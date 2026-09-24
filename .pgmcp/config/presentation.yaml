@@ -625,19 +625,3 @@ tools:
     category: mutation
     template_success: "Edited {path}; written={written}; validation={validation_status}."
     template_failure: "Edit {path} failed: {error_code}."
-  validate_template:
-    category: query
-    max_items: 10
-    template_success: |
-      Template validation completed.
-      - Passed: {passed}
-      - Errors: {errors_count}
-    template_failure: |
-      Template validation completed.
-      - Passed: {passed}
-      - Errors: {errors_count}
-    collections:
-      - field: errors
-        heading: "Validation errors:"
-        item_template: "- [{severity}] {message}"
-

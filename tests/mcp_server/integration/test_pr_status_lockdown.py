@@ -13,7 +13,7 @@ Verifies that:
 @dependencies: [pytest, unittest.mock,
     mcp_server.tools.git_tools,
     mcp_server.tools.git_pull_tool,
-    mcp_server.tools.safe_edit_tool,
+    mcp_server.tools.edit_tool,
     mcp_server.tools.code_tools,
     mcp_server.tools.scaffold_tool,
     mcp_server.tools.project_tools,
@@ -47,6 +47,7 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
+from mcp_server.tools.edit_tool import SafeEditTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
     CreateBranchTool,
@@ -63,7 +64,6 @@ from mcp_server.tools.project_tools import (
     SavePlanningDeliverablesTool,
     UpdatePlanningDeliverablesTool,
 )
-from mcp_server.tools.safe_edit_tool import SafeEditTool
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -85,7 +85,7 @@ BRANCH_MUTATING_TOOLS: list[type[Any]] = [
     GitDeleteBranchTool,
     # git_pull_tool
     GitPullTool,
-    # safe_edit_tool
+    # safe_edit_file
     SafeEditTool,
     # scaffold_artifact
     ScaffoldArtifactTool,

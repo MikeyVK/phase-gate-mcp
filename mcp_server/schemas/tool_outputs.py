@@ -11,7 +11,6 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.schemas.deliverables import CyclePlanningModel
-from mcp_server.validation.base import ValidationIssue
 
 
 class BaseToolOutput(BaseModel):
@@ -546,24 +545,7 @@ class SafeEditOutput(BaseToolOutput):
 
     path: str
     passed: bool
-    issues: tuple[ValidationIssue, ...] = ()
     mode: str
     written: bool
     diff: str | None = None
     has_diff: bool = False
-
-
-class TemplateValidationErrorDTO(BaseModel):
-    """Single template validation error."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    severity: str
-    message: str
-
-
-class TemplateValidationOutput(BaseToolOutput):
-    """Output for TemplateValidationTool."""
-
-    passed: bool
-    errors_count: int
-    errors: list[TemplateValidationErrorDTO] = Field(default_factory=list)

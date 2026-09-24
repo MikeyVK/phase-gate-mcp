@@ -244,7 +244,6 @@ class TestTargetStartup:
             "git_status",
             "git_diff_stat",
             "get_work_context",
-            "validate_template",
             "health_check",
             "restart_server",
             "initialize_project",
@@ -391,7 +390,6 @@ class TestTargetStartup:
             assert len(names) == len(set(names))
             assert set(names) >= TARGET_V3_TOOL_NAMES
             assert not {"run_quality_gates", "auto_fix"} & set(names)
-            assert "validate_template" in names
 
             plan_response = proc.send_request(
                 "tools/call",

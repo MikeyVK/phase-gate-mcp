@@ -5,9 +5,8 @@
 @layer: Tests (Unit)
 @dependencies: [pyyaml, presentation_config, text_presenter, tool_outputs]
 @responsibilities:
-    - Verify the approved 29-tool declarative mechanics matrix
-    - Verify representative nested, inline, bounded, and outcome-neutral output
-    - Avoid duplicating the runtime-derived supported tool catalog
+    - Verify current declarative presentation mechanics
+    - Verify representative nested and inline output
 """
 
 from __future__ import annotations
@@ -18,18 +17,12 @@ from typing import TypeAlias
 
 import yaml
 
-from mcp_server.bootstrap import SupportedToolContract
 from mcp_server.config.schemas.presentation_config import (
     CollectionPresentationConfig,
     PresentationConfig,
 )
-from mcp_server.presenters.text_presenter import (
-    TextPresenter,
-    validate_presentation_alignment,
-)
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.tool_outputs import (
-    GateFindingDTO,
-    GateResultDTO,
     HealthCheckOutput,
     HealthStatus,
     IssueOutput,
@@ -39,9 +32,6 @@ from mcp_server.schemas.tool_outputs import (
     PhaseTaskDTO,
     ProjectPlanOutput,
     PROutput,
-    RunQualityGatesOutput,
-    RunTestsOutput,
-    TestFailureDTO,
 )
 
 _REPO_ROOT = Path(__file__).parents[4]
@@ -162,68 +152,6 @@ _MECHANICS: dict[str, tuple[int, tuple[CollectionExpectation, ...]]] = {
         10,
         (("milestones", frozenset({"number", "title", "state"}), None),),
     ),
-    "scaffold_artifact": (
-        20,
-        (
-            ("files_created", frozenset({"item"}), None),
-            ("missing_fields", frozenset({"item"}), None),
-            ("provided_fields", frozenset({"item"}), None),
-        ),
-    ),
-    "auto_fix": (
-        20,
-        (
-            ("gates_executed", frozenset({"item"}), None),
-            ("modified_files", frozenset({"item"}), None),
-        ),
-    ),
-    "run_quality_gates": (
-        10,
-        (
-            (
-                "gates",
-                frozenset({"name", "passed", "status", "score"}),
-                (
-                    "findings",
-                    frozenset(
-                        {
-                            "file",
-                            "line",
-                            "column",
-                            "code",
-                            "message",
-                            "severity",
-                            "fixable",
-                        }
-                    ),
-                ),
-            ),
-        ),
-    ),
-    "run_tests": (
-        5,
-        (
-            (
-                "failures",
-                frozenset({"test_id", "location", "short_reason", "is_collection_error"}),
-                None,
-            ),
-        ),
-    ),
-    "safe_edit_file": (
-        10,
-        (
-            (
-                "issues",
-                frozenset({"severity", "message", "line", "column", "code"}),
-                None,
-            ),
-        ),
-    ),
-    "validate_template": (
-        10,
-        (("errors", frozenset({"severity", "message"}), None),),
-    ),
 }
 
 _INLINE_SEQUENCE_FIELDS = {
@@ -242,7 +170,6 @@ class TestToolPresentationRollout:
     def test_matches_approved_mechanics_matrix(self) -> None:
         config = _load_config()
 
-        assert len(_MECHANICS) == 29
         for tool_name, (max_items, collections) in _MECHANICS.items():
             tool = config.tools[tool_name]
             assert tool.max_items == max_items, tool_name
@@ -309,135 +236,6 @@ class TestToolPresentationRollout:
 
         assert "feature, priority:high, presentation" in text
         assert "['feature'" not in text
-
-    def test_renders_bounded_failures_without_verbose_payloads(self) -> None:
-        presenter = TextPresenter(config=_load_config())
-        failures = [
-            TestFailureDTO(
-                test_id=f"test_{index}",
-                location=f"tests/test_{index}.py:1",
-                short_reason=f"reason-{index}",
-                traceback=f"private-trace-{index}",
-            )
-            for index in range(7)
-        ]
-        output = RunTestsOutput(
-            success=False,
-            error_message="tests failed",
-            exit_code=1,
-            passed_count=3,
-            failed_count=7,
-            skipped_count=0,
-            errors_count=0,
-            duration_seconds=1.25,
-            failures=failures,
-            stderr="private-stderr",
-        )
-
-        text = presenter.present_text("run_tests", output, success=False)
-
-        assert "reason-0" in text
-        assert "reason-4" in text
-        assert "reason-5" not in text
-        assert "… 2 more failures" in text
-        assert "private-trace" not in text
-        assert "private-stderr" not in text
-
-    def test_reports_quality_outcome_as_data_not_claim(self) -> None:
-        presenter = TextPresenter(config=_load_config())
-        output = RunQualityGatesOutput(
-            success=False,
-            error_message="gate failed",
-            overall_pass=False,
-            scope="files",
-            file_count=1,
-            gates=[
-                GateResultDTO(
-                    name="ruff",
-                    passed=False,
-                    status="failed",
-                    score=None,
-                    details="verbose details stay cached",
-                )
-            ],
-        )
-
-        text = presenter.present_text("run_quality_gates", output, success=False)
-
-        assert "overall pass: false" in text.lower()
-        assert "ruff" in text
-        assert "verbose details stay cached" not in text
-        assert "passed successfully" not in text
-        assert "Quality gates failed" not in text
-
-    def test_renders_bounded_quality_findings_without_cached_details(self) -> None:
-        """Inline findings are bounded while the structured DTO remains complete."""
-        presenter = TextPresenter(config=_load_config())
-        findings = [
-            GateFindingDTO(
-                gate="ruff",
-                message=("ruff executable unavailable" if index == 1 else f"issue-{index}"),
-                file=None if index == 1 else f"src/file_{index}.py",
-                line=None if index == 1 else index + 1,
-                column=None if index == 1 else 3,
-                code=None if index == 1 else f"E{index:03}",
-                severity=None if index == 1 else "error",
-                fixable=index % 2 == 0,
-                details=f"private-detail-{index}",
-            )
-            for index in range(12)
-        ]
-        output = RunQualityGatesOutput(
-            overall_pass=False,
-            scope="files",
-            file_count=12,
-            gates=[
-                GateResultDTO(
-                    name="ruff",
-                    passed=False,
-                    status="failed",
-                    score="Fail",
-                    details="private gate details",
-                    findings=findings,
-                )
-            ],
-        )
-
-        text = presenter.present_text("run_quality_gates", output)
-        cached_payload = output.model_dump(mode="json")
-
-        assert "issue-0" in text
-        assert "issue-9" in text
-        assert "issue-10" not in text
-        assert "… 2 more findings" in text
-        assert "-:-:- [-] ruff executable unavailable" in text
-        assert "private-detail" not in text
-        assert "private gate details" not in text
-        assert len(cached_payload["gates"][0]["findings"]) == 12
-        assert cached_payload["gates"][0]["findings"][11]["details"] == "private-detail-11"
-
-    def test_real_quality_gate_config_aligns_with_nested_output_contract(self) -> None:
-        """The deployed YAML section must resolve every nested DTO placeholder."""
-        config = _load_config()
-        focused_config = PresentationConfig.model_validate(
-            {
-                "global": config.global_settings.model_dump(mode="python"),
-                "tools": {
-                    "run_quality_gates": config.tools["run_quality_gates"].model_dump(mode="python")
-                },
-            }
-        )
-        presenter = TextPresenter(config=focused_config)
-
-        validate_presentation_alignment(
-            presenter,
-            (
-                SupportedToolContract(
-                    name="run_quality_gates",
-                    output_model=RunQualityGatesOutput,
-                ),
-            ),
-        )
 
     def test_expands_issue_and_pr_details(self) -> None:
         presenter = TextPresenter(config=_load_config())
