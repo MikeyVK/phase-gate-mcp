@@ -221,24 +221,6 @@ force-transition operation when its explicit approval contract applies.
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Not Initialized:** Returns error if project not initialized
 
-#### Example Error (Attempting to Skip)
-
-**Request:**
-```json
-{
-  "branch": "feature/123-oauth",
-  "to_phase": "merge-prep"  // Trying to skip from "red" to "merge-prep"
-}
-```
-
-**Response:**
-```json
-{
-  "success": false,
-  "error": "Invalid phase transition: cannot skip from 'red' to 'merge-prep'. Next phase is 'green'. Use force_phase_transition if intentional."
-}
-```
-
 ---
 
 ### force_phase_transition
@@ -269,9 +251,9 @@ The bounded text contains the normal transition fields and gate evidence plus
 ```json
 {
   "branch": "feature/123-oauth",
-  "to_phase": "merge-prep",
-  "skip_reason": "Emergency hotfix: critical security vulnerability discovered",
-  "human_approval_message": "Approved by Tech Lead (John Doe) - immediate merge required"
+  "to_phase": "implementation",
+  "skip_reason": "Urgent fix requires an approved skip of intermediate phases",
+  "human_approval_message": "Approved by the project owner for this specific phase skip"
 }
 ```
 
