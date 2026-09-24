@@ -7,7 +7,7 @@
 @dependencies: pytest, mcp.types, mcp_server.tools.cycle_tools, tests.mcp_server.test_support
 """
 
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from shutil import copytree
 from typing import Any
@@ -39,13 +39,6 @@ TRANSITION_ADVISORY_NOTE = (
     "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
     "to load the current phase context for this branch."
 )
-
-
-@pytest.fixture(autouse=True)
-def _without_retired_quality_config() -> Iterator[None]:
-    """Match the active V3 composition, which has no legacy quality config."""
-    with patch("mcp_server.config.loader.ConfigLoader.load_quality_config", return_value=None):
-        yield
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:

@@ -187,7 +187,6 @@ global:
 
         docs_dir_not_found_add_files: "Add markdown files to document project"
 
-        quality_state_write_failed_recovery: "Quality state write failed — retry the quality gates run: {error_details}"
 
         pytest_timeout_recovery: "Tests timed out after {timeout}s. Run a smaller subset or raise the timeout."
 

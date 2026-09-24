@@ -33,13 +33,10 @@ from mcp_server.managers.phase_contract_resolver import (
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.qa_manager import QAManager
-from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.schemas import (
     ContractsConfig,
     GitConfig,
-    QualityConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -52,7 +49,6 @@ from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
-    from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
     from mcp_server.server import MCPServer
 
@@ -400,46 +396,6 @@ def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine
     )
 
 
-def make_qa_manager(
-    workspace_root: Path | str | None = None,
-    quality_config: QualityConfig | None = None,
-    quality_state_repository: IQualityStateRepository | None = None,
-    git_context_reader: IGitContextReader | None = None,
-    state_reader: IStateReader | None = None,
-) -> QAManager:
-    """Build a QAManager with explicit quality config injection."""
-    resolved_quality = quality_config or cast(
-        QualityConfig,
-        _load_config(
-            workspace_root,
-            "quality.yaml",
-            "load_quality_config",
-        ),
-    )
-    resolved_workspace = Path(workspace_root) if workspace_root is not None else None
-    resolved_quality_state_repo: IQualityStateRepository = quality_state_repository or (
-        FileQualityStateRepository(
-            backing_file=resolved_workspace / get_default_server_root() / "quality_state.json"
-        )
-        if resolved_workspace is not None
-        else MagicMock()
-    )
-    resolved_git_context_reader: IGitContextReader = git_context_reader or MagicMock()
-    if state_reader is not None:
-        resolved_state_reader: IStateReader = state_reader
-    else:
-        _default_sr = MagicMock()
-        _default_sr.load.side_effect = FileNotFoundError
-        resolved_state_reader = _default_sr
-    return QAManager(
-        workspace_root=resolved_workspace,
-        quality_config=resolved_quality,
-        quality_state_repository=resolved_quality_state_repo,
-        git_context_reader=resolved_git_context_reader,
-        state_reader=resolved_state_reader,
-    )
-
-
 def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
     """Create CreateIssueTool with explicit config objects and a mock manager."""
     dependencies = load_issue_tool_dependencies()
@@ -461,7 +417,7 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
 
     resolved_settings = settings or ServerSettings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
-    return bootstrapper.bootstrap()
+    return bootstrapper.bootstrap_target()
 
 
 def make_dispatch_server(settings: Settings) -> MCPServer:

@@ -22,8 +22,6 @@ from mcp_server.config.schemas.milestone_config import MilestoneConfig
 from mcp_server.config.schemas.operation_policies_config import OperationPoliciesConfig
 from mcp_server.config.schemas.quality_config import (
     JsonViolationsParsing,
-    QualityConfig,
-    QualityGate,
     TextViolationsParsing,
     ViolationDTO,
 )
@@ -63,8 +61,6 @@ __all__ = [
     "MergePolicy",
     "MilestoneConfig",
     "OperationPoliciesConfig",
-    "QualityConfig",
-    "QualityGate",
     "ScopeConfig",
     "TextViolationsParsing",
     "ViolationDTO",

@@ -1,16 +1,8 @@
 # tests/mcp_server/unit/managers/test_quality_state_repository.py
-"""C5 (C_QA_STATE_SPLIT): IQualityStateRepository protocol and FileQualityStateRepository.
-
-Tests verify:
-- IQualityStateRepository protocol exists in mcp_server.core.interfaces
-- Protocol has load() -> QualityState and apply(mutate) -> None
-- FileQualityStateRepository.load() returns QualityState() when backing file absent
-- FileQualityStateRepository.load() returns persisted state when file present
-- FileQualityStateRepository.apply() persists mutation via mutate callback
-- FileQualityStateRepository satisfies IQualityStateRepository protocol
+"""Legacy quality-state persistence behavior retained until CY088 removal.
 
 @layer: Tests (Unit)
-@dependencies: pathlib, mcp_server.core.interfaces, mcp_server.managers.quality_state_repository
+@dependencies: pathlib, mcp_server.managers.quality_state_repository
 """
 # pyright: reportPrivateUsage=false
 
@@ -22,38 +14,12 @@ from pathlib import Path
 
 import mcp_server.managers.quality_state_repository as _qsr_module
 
-# RED: will fail with ImportError until C5 GREEN adds IQualityStateRepository
-from mcp_server.core.interfaces import IQualityStateRepository
-
 # RED: will fail with ModuleNotFoundError until C5 GREEN creates quality_state_repository.py
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 
 # RED: will fail with ModuleNotFoundError until C5 GREEN creates quality_state.py
 from mcp_server.state.quality_state import QualityState
 from tests.mcp_server.test_support import get_default_server_root
-
-
-class TestIQualityStateRepositoryProtocol:
-    """IQualityStateRepository protocol is defined in mcp_server.core.interfaces."""
-
-    def test_protocol_importable(self) -> None:
-        """IQualityStateRepository is importable from mcp_server.core.interfaces."""
-        assert IQualityStateRepository is not None
-
-    def test_protocol_has_load_method(self) -> None:
-        """IQualityStateRepository protocol declares load()."""
-        assert hasattr(IQualityStateRepository, "load")
-
-    def test_protocol_has_apply_method(self) -> None:
-        """IQualityStateRepository protocol declares apply()."""
-        assert hasattr(IQualityStateRepository, "apply")
-
-    def test_concrete_class_satisfies_protocol(self, tmp_path: Path) -> None:
-        """FileQualityStateRepository satisfies IQualityStateRepository runtime check."""
-        repo = FileQualityStateRepository(
-            backing_file=tmp_path / get_default_server_root() / "quality_state.json"
-        )
-        assert isinstance(repo, IQualityStateRepository)
 
 
 class TestQualityState:

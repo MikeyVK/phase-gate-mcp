@@ -28,7 +28,6 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
-    QualityConfig,
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
@@ -40,7 +39,7 @@ from tests.mcp_server.test_support import get_default_server_root
 
 @pytest.fixture
 def config_root(tmp_path: Path) -> Path:
-    """Create a minimal config root covering all 12 retained schemas."""
+    """Create a minimal config root covering all 11 retained schemas."""
 
     config_dir = tmp_path / get_default_server_root() / "config"
 
@@ -149,34 +148,6 @@ def config_root(tmp_path: Path) -> Path:
             },
         },
     )
-    write_yaml(
-        "quality.yaml",
-        {
-            "version": "1.0.0",
-            "artifact_logging": {
-                "enabled": True,
-                "output_dir": "temp/qa_logs",
-                "max_files": 200,
-            },
-            "active_gates": [],
-            "gates": {
-                "ruff": {
-                    "name": "Ruff",
-                    "description": "Lint",
-                    "execution": {
-                        "command": ["ruff", "check"],
-                        "timeout_seconds": 60,
-                        "working_dir": None,
-                    },
-                    "success": {"exit_codes_ok": [0]},
-                    "capabilities": {
-                        "file_types": [".py"],
-                        "supports_autofix": False,
-                    },
-                }
-            },
-        },
-    )
     write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": []})
     write_yaml(
         "contracts.yaml",
@@ -236,8 +207,8 @@ def test_loader_raises_on_missing_git_yaml(tmp_path: Path) -> None:
         loader.load_git_config()
 
 
-def test_loader_exposes_all_twelve_schema_methods() -> None:
-    """C_LOADER.2 requires explicit load_* coverage for all 12 retained schemas."""
+def test_loader_exposes_all_eleven_schema_methods() -> None:
+    """C_LOADER.2 requires explicit load_* coverage for all 11 retained schemas."""
     for method_name in (
         "load_git_config",
         "load_label_config",
@@ -248,15 +219,14 @@ def test_loader_exposes_all_twelve_schema_methods() -> None:
         "load_issue_config",
         "load_milestone_config",
         "load_operation_policies_config",
-        "load_quality_config",
         "load_enforcement_config",
         "load_contracts_config",
     ):
         assert hasattr(ConfigLoader, method_name), f"Missing ConfigLoader.{method_name}()"
 
 
-def test_loader_loads_all_twelve_migrated_schema_instances(config_root: Path) -> None:
-    """ConfigLoader must construct all 12 retained schema types."""
+def test_loader_loads_all_eleven_migrated_schema_instances(config_root: Path) -> None:
+    """ConfigLoader must construct all 11 retained schema types."""
     loader = ConfigLoader(config_root=config_root)
     workflow_config = loader.load_workflow_config()
 
@@ -272,7 +242,6 @@ def test_loader_loads_all_twelve_migrated_schema_instances(config_root: Path) ->
         loader.load_operation_policies_config(),
         OperationPoliciesConfig,
     )
-    assert isinstance(loader.load_quality_config(), QualityConfig)
     assert isinstance(loader.load_enforcement_config(), EnforcementConfig)
     assert isinstance(loader.load_contracts_config(), ContractsConfig)
 
@@ -288,7 +257,6 @@ def _assert_no_self_loading_methods() -> None:
         IssueConfig,
         MilestoneConfig,
         OperationPoliciesConfig,
-        QualityConfig,
         EnforcementConfig,
         ContractsConfig,
     ):
@@ -318,7 +286,7 @@ def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
         )
 
 
-def test_all_twelve_schema_classes_have_no_self_loading_methods() -> None:
+def test_all_eleven_schema_classes_have_no_self_loading_methods() -> None:
     """Pure schema classes must not contain self-loading or singleton state."""
     _assert_no_self_loading_methods()
 
@@ -339,7 +307,6 @@ def test_config_package_contains_no_legacy_wrapper_modules() -> None:
         "label_config.py",
         "milestone_config.py",
         "operation_policies.py",
-        "quality_config.py",
         "scope_config.py",
         "workflows.py",
         "workphases_config.py",

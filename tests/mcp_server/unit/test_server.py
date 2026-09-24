@@ -10,7 +10,7 @@ import logging
 import os
 import shutil
 import subprocess
-from collections.abc import AsyncGenerator, Awaitable, Callable, Iterator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
@@ -104,13 +104,6 @@ def _patch_server_settings(
 
     mock.return_value = settings
     mock.from_env.return_value = settings
-
-
-@pytest.fixture(autouse=True)
-def _without_retired_quality_config() -> Iterator[None]:
-    """Match the active V3 composition, which has no legacy quality config."""
-    with patch("mcp_server.config.loader.ConfigLoader.load_quality_config", return_value=None):
-        yield
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:

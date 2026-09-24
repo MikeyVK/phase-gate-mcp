@@ -157,6 +157,7 @@ def test_closed_yaml_rejects_invalid_obligations_and_legacy_fields(
         VALID_CHECKS + "run_checks: {}\n",
         "checks: {1: {}}\nprofiles: {}\nprofiles_by_extension: {}\nrun_checks: {}\n",
         "checks: []\nprofiles: {}\nprofiles_by_extension: {}\nrun_checks: {}\n",
+        "checks: [\n",
     ],
 )
 def test_yaml_mapping_admission_rejects_duplicate_or_non_object_keys(

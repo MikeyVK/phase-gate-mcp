@@ -21,7 +21,6 @@ from mcp_server.config.schemas import (
     MilestoneConfig,
     OperationPoliciesConfig,
     PresentationConfig,
-    QualityConfig,
     ScopeConfig,
     TestsConfig,
     WorkflowConfig,
@@ -258,10 +257,6 @@ class ConfigLoader:
             },
         }
         return self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
-
-    def load_quality_config(self, config_path: Path | None = None) -> QualityConfig:
-        data, resolved_path = self._load_yaml("quality.yaml", config_path=config_path)
-        return self._validate_schema(QualityConfig, data, resolved_path)
 
     def load_enforcement_config(self, config_path: Path | None = None) -> EnforcementConfig:
         data, resolved_path = self._load_yaml(

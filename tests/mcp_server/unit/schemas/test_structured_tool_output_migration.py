@@ -12,7 +12,6 @@
 import pytest
 
 from mcp_server.schemas.tool_outputs import (
-    AutoFixOutput,
     GetWorkContextOutput,
     LabelOperationOutput,
     PhaseTransitionOutput,
@@ -50,7 +49,6 @@ class TestStructuredToolOutputMigration:
     @pytest.mark.parametrize(
         ("model", "removed_fields"),
         [
-            (AutoFixOutput, {"formatted_modified_files"}),
             (GetWorkContextOutput, {"invalid_phase_warning"}),
             (LabelOperationOutput, {"formatted_labels"}),
             (

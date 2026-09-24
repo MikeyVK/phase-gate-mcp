@@ -54,9 +54,6 @@ from mcp_server.core.interfaces.itool_response_cache import (
 from mcp_server.core.interfaces.itool_response_cache import (
     IToolResponseReader as IToolResponseReader,
 )
-from mcp_server.core.interfaces.quality import (
-    IQualityStateRepository as IQualityStateRepository,
-)
 from mcp_server.core.interfaces.state import (
     IStateReader as IStateReader,
 )

@@ -24,19 +24,6 @@ class BaseToolOutput(BaseModel):
     post_tool_instruction: str | None = None
 
 
-class AutoFixOutput(BaseToolOutput):
-    """Output for AutoFixTool."""
-
-    modified_files: list[str] = Field(
-        default_factory=list, description="List of files modified by the tool"
-    )
-    modified_files_count: int = Field(default=0, description="Count of modified files")
-    gates_executed: list[str] = Field(
-        default_factory=list, description="List of quality gates executed"
-    )
-    gates_executed_count: int = Field(default=0, description="Count of executed gates")
-
-
 class HealthStatus(StrEnum):
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
@@ -476,42 +463,6 @@ class ScaffoldSchemaOutput(BaseToolOutput):
 
     artifact_type: str
     schema_data: dict[str, Any]
-
-
-class GateFindingDTO(BaseModel):
-    """Structured finding produced by a single quality gate."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    gate: str
-    message: str
-    file: str | None = None
-    line: int | None = None
-    column: int | None = None
-    code: str | None = None
-    severity: str | None = None
-    fixable: bool = False
-    details: str | None = None
-
-
-class GateResultDTO(BaseModel):
-    """Single gate run result."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    name: str
-    passed: bool
-    status: str
-    score: str | None = None
-    details: str = ""
-    findings: list[GateFindingDTO] = Field(default_factory=list)
-
-
-class RunQualityGatesOutput(BaseToolOutput):
-    """Output for RunQualityGatesTool."""
-
-    overall_pass: bool
-    scope: str
-    file_count: int
-    gates: list[GateResultDTO] = Field(default_factory=list)
 
 
 class SafeEditOutput(BaseToolOutput):

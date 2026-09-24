@@ -45,7 +45,6 @@ from mcp_server.config.schemas import (
     MilestoneConfig,
     OperationPoliciesConfig,
     PresentationConfig,
-    QualityConfig,
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
@@ -60,7 +59,7 @@ from mcp_server.core.interfaces import (
     IToolResponseReader,
 )
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
-from mcp_server.core.logging import get_logger, setup_logging
+from mcp_server.core.logging import get_logger
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
@@ -83,8 +82,6 @@ from mcp_server.managers.phase_contract_resolver import (
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.qa_manager import QAManager
-from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_repository import BranchValidatedStateReader, FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
@@ -189,7 +186,6 @@ from mcp_server.tools.project_tools import (
     SavePlanningDeliverablesTool,
     UpdatePlanningDeliverablesTool,
 )
-from mcp_server.tools.quality_tools import AutoFixTool, RunQualityGatesTool
 from mcp_server.tools.run_tests_tool import RunTestsTool as TargetRunTestsTool
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool as TargetScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool as TargetScaffoldSchemaTool
@@ -213,7 +209,6 @@ class ConfigLayer:
     git_config: GitConfig
     workflow_config: WorkflowConfig
     workphases_config: WorkphasesConfig
-    quality_config: QualityConfig | None
     label_config: LabelConfig
     issue_config: IssueConfig
     scope_config: ScopeConfig
@@ -238,8 +233,6 @@ class ManagerGraph:
     workflow_state_mutator: WorkflowStateMutator
     context_loaded_cache: ContextLoadedCache
     phase_state_engine: PhaseStateEngine
-    quality_state_repository: FileQualityStateRepository
-    qa_manager: QAManager | None
     github_manager: GitHubManager
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
@@ -371,69 +364,6 @@ class ServerBootstrapper:
     def __init__(self, settings: Settings | None = None) -> None:
         """Initialize bootstrapper with settings."""
         self._settings = settings or Settings.from_env()
-
-    def bootstrap(self) -> MCPServer:
-        """Bootstrap logging, config, registry, and managers, and return MCPServer."""
-        settings = self._settings
-
-        # Configure logging
-        _server_root_early = settings.server.resolved_server_root
-        _logs_dir_early = _server_root_early / settings.server.logs_dir
-        _audit_log = settings.logging.audit_log or str(_logs_dir_early / "mcp_audit.log")
-        setup_logging(settings.logging.level, _audit_log)
-
-        lifecycle_logger.info("MCP server starting via bootstrapper")
-
-        # Validate workspace version
-        self._validate_version()
-
-        # Build ConfigLayer
-        configs = self._build_config_layer()
-
-        # Build ManagerGraph
-        managers = self._build_manager_graph(configs)
-
-        # Build Tools and Resources
-        tool_assembly = self._build_tool_assembly(configs, managers)
-        resources = self._build_resources(configs, managers)
-
-        presentation_config = configs.presentation_config
-        text_presenter = TextPresenter(
-            config=presentation_config,
-            collection_renderer=CollectionTextRenderer(
-                presentation_config.global_settings.formatting
-            ),
-            budget_limiter=TextBudgetLimiter(
-                max_text_response_bytes=(
-                    presentation_config.global_settings.max_text_response_bytes
-                ),
-                formatting=presentation_config.global_settings.formatting,
-            ),
-        )
-        validate_presentation_alignment(
-            text_presenter,
-            tool_assembly.supported_contracts,
-        )
-        resource_presenter = SchemaResourcePresenter()
-        presenter = ResponsePresenter(
-            text_presenter=text_presenter,
-            resource_presenter=resource_presenter,
-        )
-
-        # Decorate core tools using ToolFactory composition root
-        factory = CoreToolFactory(
-            enforcement_runner=managers.enforcement_runner,
-            workspace_root=Path(settings.server.workspace_root),
-        )
-        tools = [factory.create_tool(tool) for tool in tool_assembly.active_tools]
-
-        return MCPServer(
-            settings=settings,
-            tools=tools,
-            resources=resources,
-            presenter=presenter,
-            publisher=managers.response_cache,
-        )
 
     def bootstrap_target(self) -> MCPServer:
         """Compose and return the target V3 MCPServer under the DI-06 startup lock."""
@@ -599,7 +529,6 @@ class ServerBootstrapper:
                 git_config=git_config,
                 workflow_config=workflow_config,
                 workphases_config=workphases_config,
-                quality_config=None,
                 label_config=label_config,
                 issue_config=issue_config,
                 scope_config=scope_config,
@@ -803,7 +732,6 @@ class ServerBootstrapper:
         git_config = config_loader.load_git_config()
         workflow_config = config_loader.load_workflow_config()
         workphases_config = config_loader.load_workphases_config()
-        quality_config = config_loader.load_quality_config()
         label_config = config_loader.load_label_config()
         issue_config = config_loader.load_issue_config()
         scope_config = config_loader.load_scope_config()
@@ -825,7 +753,6 @@ class ServerBootstrapper:
             git_config=git_config,
             workflow_config=workflow_config,
             workphases_config=workphases_config,
-            quality_config=quality_config,
             label_config=label_config,
             issue_config=issue_config,
             scope_config=scope_config,
@@ -841,7 +768,6 @@ class ServerBootstrapper:
         """Instantiate all managers and services."""
         workspace_root = Path(self._settings.server.workspace_root)
         server_root = workspace_root / self._settings.server.server_root_dir
-        logs_dir = server_root / self._settings.server.logs_dir
 
         git_manager = GitManager(
             git_config=configs.git_config,
@@ -892,21 +818,6 @@ class ServerBootstrapper:
             context_loaded_writer=context_loaded_cache,
             server_root=server_root,
         )
-        quality_state_repository = FileQualityStateRepository(
-            backing_file=server_root / "quality_state.json"
-        )
-        qa_manager = (
-            QAManager(
-                workspace_root=workspace_root,
-                quality_config=configs.quality_config,
-                logs_dir=logs_dir,
-                quality_state_repository=quality_state_repository,
-                git_context_reader=git_manager,
-                state_reader=branch_validated_reader,
-            )
-            if configs.quality_config is not None
-            else None
-        )
         github_manager = GitHubManager(
             issue_config=configs.issue_config,
             label_config=configs.label_config,
@@ -936,210 +847,10 @@ class ServerBootstrapper:
             workflow_state_mutator=workflow_state_mutator,
             context_loaded_cache=context_loaded_cache,
             phase_state_engine=phase_state_engine,
-            quality_state_repository=quality_state_repository,
-            qa_manager=qa_manager,
             github_manager=github_manager,
             pr_status_cache=pr_status_cache,
             enforcement_runner=enforcement_runner,
             response_cache=response_cache,
-        )
-
-    def _build_tool_assembly(
-        self,
-        configs: ConfigLayer,
-        managers: ManagerGraph,
-    ) -> ToolAssembly:
-        """Compose all supported tools and select the settings-dependent active subset."""
-        settings = self._settings
-        qa_manager = managers.qa_manager
-        if qa_manager is None:
-            raise ConfigError("Legacy tool assembly requires legacy quality manager")
-        branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
-        merge_readiness_context = MergeReadinessContext(
-            terminal_phase=configs.workphases_config.get_terminal_phase(),
-            pr_allowed_phase=configs.contracts_config.get_pr_allowed_phase(),
-            branch_local_artifacts=tuple(
-                configs.contracts_config.merge_policy.branch_local_artifacts
-            ),
-        )
-
-        base_tools: list[ICoreTool[Any, Any]] = [
-            CreateBranchTool(manager=managers.git_manager),
-            GitStatusTool(manager=managers.git_manager),
-            GitCommitTool(
-                manager=managers.git_manager,
-                phase_guard=build_phase_guard(
-                    state_reader=branch_validated_reader,
-                    phase_contract_resolver=managers.phase_contract_resolver,
-                ),
-                commit_type_resolver=build_commit_type_resolver(
-                    managers.phase_state_engine,
-                    managers.phase_contract_resolver,
-                ),
-                state_engine=managers.phase_state_engine,
-                phase_contract_resolver=managers.phase_contract_resolver,
-            ),
-            GitCheckoutTool(
-                manager=managers.git_manager,
-                state_engine=managers.phase_state_engine,
-                context_loaded_writer=managers.context_loaded_cache,
-            ),
-            GitFetchTool(manager=managers.git_manager),
-            GitPullTool(
-                manager=managers.git_manager,
-                state_engine=managers.phase_state_engine,
-                context_loaded_writer=managers.context_loaded_cache,
-            ),
-            GitPushTool(manager=managers.git_manager),
-            GitMergeTool(manager=managers.git_manager),
-            GitDeleteBranchTool(manager=managers.git_manager),
-            GitStashTool(manager=managers.git_manager),
-            GitRestoreTool(manager=managers.git_manager),
-            GitListBranchesTool(manager=managers.git_manager),
-            GitDiffTool(manager=managers.git_manager),
-            GetParentBranchTool(
-                manager=managers.git_manager,
-                state_engine=managers.phase_state_engine,
-            ),
-            CheckMergeTool(manager=managers.git_manager),
-            RunQualityGatesTool(manager=qa_manager),
-            HealthCheckTool(),
-            RestartServerTool(
-                server_root=(Path(settings.server.workspace_root) / settings.server.server_root_dir)
-            ),
-            InitializeProjectTool(
-                workspace_root=Path(settings.server.workspace_root),
-                manager=managers.project_manager,
-                git_manager=managers.git_manager,
-                state_engine=managers.phase_state_engine,
-                contracts_config=configs.contracts_config,
-            ),
-            GetProjectPlanTool(manager=managers.project_manager),
-            SavePlanningDeliverablesTool(manager=managers.project_manager),
-            UpdatePlanningDeliverablesTool(manager=managers.project_manager),
-            TransitionPhaseTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=managers.project_manager,
-                state_engine=managers.phase_state_engine,
-                server_root=(
-                    Path(settings.server.workspace_root) / settings.server.server_root_dir
-                ),
-                workphases_config=configs.workphases_config,
-            ),
-            ForcePhaseTransitionTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=managers.project_manager,
-                state_engine=managers.phase_state_engine,
-                server_root=(
-                    Path(settings.server.workspace_root) / settings.server.server_root_dir
-                ),
-                workphases_config=configs.workphases_config,
-            ),
-            TransitionCycleTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=managers.project_manager,
-                state_engine=managers.phase_state_engine,
-                git_manager=managers.git_manager,
-                gate_runner=managers.workflow_gate_runner,
-                server_root=(
-                    Path(settings.server.workspace_root) / settings.server.server_root_dir
-                ),
-            ),
-            ForceCycleTransitionTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=managers.project_manager,
-                state_engine=managers.phase_state_engine,
-                git_manager=managers.git_manager,
-                gate_runner=managers.workflow_gate_runner,
-                server_root=(
-                    Path(settings.server.workspace_root) / settings.server.server_root_dir
-                ),
-            ),
-            GetWorkContextTool(
-                settings=settings,
-                git_manager=managers.git_manager,
-                project_manager=managers.project_manager,
-                state_engine=managers.phase_state_engine,
-                github_manager=managers.github_manager,
-                workphases_config=configs.workphases_config,
-                workflow_status_resolver=managers.workflow_status_resolver,
-                contracts_config=configs.contracts_config,
-                context_loaded_writer=managers.context_loaded_cache,
-            ),
-        ]
-
-        issue_tools: list[ICoreTool[Any, Any]] = [
-            CreateIssueTool(
-                manager=managers.github_manager,
-                issue_config=configs.issue_config,
-                milestone_config=configs.milestone_config,
-                contracts_config=configs.contracts_config,
-                label_config=configs.label_config,
-                scope_config=configs.scope_config,
-                git_config=configs.git_config,
-            ),
-            ListIssuesTool(manager=managers.github_manager),
-            GetIssueTool(manager=managers.github_manager),
-            CloseIssueTool(manager=managers.github_manager),
-            UpdateIssueTool(manager=managers.github_manager),
-        ]
-
-        credential_tools: list[ICoreTool[Any, Any]] = [
-            ListPRsTool(
-                manager=managers.github_manager,
-                git_config=configs.git_config,
-            ),
-            GetPRTool(manager=managers.github_manager),
-            MergePRTool(
-                manager=managers.github_manager,
-                git_config=configs.git_config,
-                pr_status_writer=managers.pr_status_cache,
-            ),
-            SubmitPRTool(
-                git_manager=managers.git_manager,
-                github_manager=managers.github_manager,
-                pr_status_writer=managers.pr_status_cache,
-                merge_readiness_context=merge_readiness_context,
-                branch_parent_reader=BranchStateParentReader(
-                    state_reader=managers.state_repository,
-                    git_config=configs.git_config,
-                ),
-            ),
-            AddLabelsTool(
-                manager=managers.github_manager,
-                label_config=configs.label_config,
-                workphases_config=configs.workphases_config,
-            ),
-            ListLabelsTool(
-                manager=managers.github_manager,
-                label_config=configs.label_config,
-            ),
-            CreateLabelTool(
-                manager=managers.github_manager,
-                label_config=configs.label_config,
-                workphases_config=configs.workphases_config,
-            ),
-            DeleteLabelTool(
-                manager=managers.github_manager,
-                label_config=configs.label_config,
-            ),
-            RemoveLabelsTool(
-                manager=managers.github_manager,
-                label_config=configs.label_config,
-            ),
-            ListMilestonesTool(manager=managers.github_manager),
-            CreateMilestoneTool(manager=managers.github_manager),
-            CloseMilestoneTool(manager=managers.github_manager),
-        ]
-
-        auto_fix_tool = AutoFixTool(qa_manager=qa_manager)
-        supported_tools = (*base_tools, *issue_tools, *credential_tools, auto_fix_tool)
-        active_tools = (
-            supported_tools if settings.github.token else (*base_tools, *issue_tools, auto_fix_tool)
-        )
-        return ToolAssembly.create(
-            supported_tools=supported_tools,
-            active_tools=active_tools,
         )
 
     def _build_target_tool_assembly(
