@@ -1,279 +1,70 @@
-"""Unit tests for TemplateEngine (Issue #108 Cycle 1).
-
-Tests TemplateEngine extracted from mcp_server/scaffolding/renderer.py
-to backend/services/template_engine.py for reusability.
-
-@layer: Tests (Unit)
-@dependencies: [pytest, pathlib, mcp_server.services.template_engine]
-"""
-
-import tempfile
+"""Unit tests for the injected-environment TemplateEngine contract."""
 
 import pytest
 from jinja2 import DictLoader, Environment, StrictUndefined, TemplateNotFound, UndefinedError
 
 from mcp_server.services.template_engine import TemplateEngine
-from tests.mcp_server.test_support import get_template_root
 
 
-class TestTemplateEngineInitialization:
-    """Test TemplateEngine initialization and configuration."""
-
-    def test_accepts_template_root_parameter(self) -> None:
-        """TemplateEngine accepts template_root as Path or str."""
-        template_root = get_template_root()
-
-        # Should accept Path
-        engine = TemplateEngine(template_root=template_root)
-        assert engine.template_root == template_root
-
-        # Should accept str
-        engine_str = TemplateEngine(template_root=str(template_root))
-        assert engine_str.template_root == template_root
-
-    def test_accepts_template_dir_parameter(self) -> None:
-        """TemplateEngine accepts template_dir (backwards compatibility)."""
-        template_dir = get_template_root()
-
-        # Should accept template_dir as alias for template_root
-        engine = TemplateEngine(template_dir=template_dir)
-        assert engine.template_root == template_dir
-
-        # Should accept str
-        engine_str = TemplateEngine(template_dir=str(template_dir))
-        assert engine_str.template_root == template_dir
-
-    def test_raises_on_nonexistent_root(self) -> None:
-        """TemplateEngine raises ValueError if root doesn't exist."""
-        with pytest.raises(ValueError, match="Template root does not exist"):
-            TemplateEngine(template_root="/nonexistent/path")
-
-
-class TestTemplateEngineRendering:
-    """Test basic template rendering functionality."""
-
-    @pytest.fixture
-    def engine(self) -> TemplateEngine:
-        """Provide TemplateEngine with test templates."""
-        template_root = get_template_root()
-        return TemplateEngine(template_root=template_root)
-
-    def test_renders_simple_template(self, engine: TemplateEngine) -> None:
-        """TemplateEngine renders template with context variables."""
-        # Use a simple tier0 template
-        output = engine.render(
-            "tier0_base_artifact.jinja2",
-            artifact_type="test",
-            version_hash="abc123",
-            timestamp="2026-02-13T15:00:00Z",
-            output_path="test.py",
-            format="python",
-        )
-
-        assert "test.py" in output
-        assert "template=test" in output
-        assert "version=abc123" in output
-
-    def test_raises_on_missing_template(self, engine: TemplateEngine) -> None:
-        """TemplateEngine raises TemplateNotFound for missing templates."""
-        with pytest.raises(TemplateNotFound):
-            engine.render("nonexistent_template.jinja2")
-
-
-class TestTemplateEngineInheritance:
-    """Test 5-tier template inheritance support (Issue #72)."""
-
-    @pytest.fixture
-    def engine(self) -> TemplateEngine:
-        """Provide TemplateEngine with test templates."""
-        template_root = get_template_root()
-        return TemplateEngine(template_root=template_root)
-
-    def test_supports_extends_chain(self, engine: TemplateEngine) -> None:
-        """TemplateEngine resolves {% extends %} inheritance chain."""
-        # Use dto.py template which extends tier2 → tier1 → tier0
-        output = engine.render(
-            "concrete/dto.py.jinja2",
-            artifact_type="dto",
-            version_hash="test_v1",
-            timestamp="2026-02-13T15:00:00Z",
-            output_path="test_dto.py",
-            format="python",
-            name="TestDTO",
-            layer="dtos",
-            dependencies=[],
-            description="Test DTO",
-            fields=[{"name": "id", "type": "str", "description": "ID"}],
-            validators=[],
-            examples=["TestDTO(id='test')"],
-            frozen=True,
-        )
-
-        # Should have tier0 SCAFFOLD metadata
-        assert "# test_dto.py" in output
-        assert "template=dto" in output
-
-        # Should have tier1 module structure
-        assert "@layer: dtos" in output
-
-        # Should have tier2 Python imports
-        assert "from pydantic import" in output
-
-        # Should have concrete DTO class
-        assert "class TestDTO" in output
-
-
-class TestTemplateEngineCustomFilters:
-    """Test custom Jinja2 filters."""
-
-    @pytest.fixture
-    def engine(self) -> TemplateEngine:
-        """Provide TemplateEngine with test templates."""
-        template_root = get_template_root()
-        return TemplateEngine(template_root=template_root)
-
-    def test_pascalcase_filter(self, engine: TemplateEngine) -> None:
-        """TemplateEngine provides pascalcase filter."""
-        # Create test template inline
-        template_str = "{{ name | pascalcase }}"
-        output = engine.env.from_string(template_str).render(name="test_name")
-        assert output == "TestName"
-
-    def test_snakecase_filter(self, engine: TemplateEngine) -> None:
-        """TemplateEngine provides snakecase filter."""
-        template_str = "{{ name | snakecase }}"
-        output = engine.env.from_string(template_str).render(name="TestName")
-        assert output == "test_name"
-
-    def test_kebabcase_filter(self, engine: TemplateEngine) -> None:
-        """TemplateEngine provides kebabcase filter."""
-        template_str = "{{ name | kebabcase }}"
-        output = engine.env.from_string(template_str).render(name="TestName")
-        assert output == "test-name"
-
-    def test_validate_identifier_filter(self, engine: TemplateEngine) -> None:
-        """TemplateEngine provides validate_identifier filter."""
-        template_str = "{{ name | validate_identifier }}"
-
-        # Valid identifier
-        output = engine.env.from_string(template_str).render(name="valid_name")
-        assert output == "valid_name"
-
-        # Invalid identifier should raise
-        with pytest.raises((ValueError, UndefinedError)):  # Jinja2 error from filter
-            engine.env.from_string(template_str).render(name="123invalid")
-
-
-class TestTemplateEngineErrorHandling:
-    """Test error handling and messages."""
-
-    @pytest.fixture
-    def engine(self) -> TemplateEngine:
-        """Provide TemplateEngine with test templates."""
-        template_root = get_template_root()
-        return TemplateEngine(template_root=template_root)
-
-    def test_template_not_found_message(self, engine: TemplateEngine) -> None:
-        """TemplateNotFound includes helpful template name."""
-        with pytest.raises(TemplateNotFound) as exc_info:
-            engine.render("missing/template.jinja2")
-
-        assert "missing/template.jinja2" in str(exc_info.value)
-
-    def test_missing_template_boundary_contract(self, engine: TemplateEngine) -> None:
-        """Missing template raises raw TemplateNotFound for MCP boundary wrapping.
-
-        Contract: TemplateEngine returns raw jinja2.TemplateNotFound (no ExecutionError wrapping).
-        MCP server tools MUST catch TemplateNotFound at boundary and wrap in ExecutionError.
-
-        This test validates:
-        1. TemplateEngine raises TemplateNotFound (not ExecutionError)
-        2. Exception includes template name for debugging
-        3. Exception is catchable for boundary normalization
-
-        Rationale: backend/services cannot import mcp_server exceptions (circular dependency).
-        Exception normalization is MCP boundary concern (see design.md §3.2).
-        """
-        # Verify raw Jinja2 exception propagates (not wrapped in ExecutionError)
-        with pytest.raises(TemplateNotFound) as exc_info:
-            engine.render("nonexistent/missing_template.jinja2")
-
-        # Verify exception message contains template name (enables boundary wrapping)
-        error_message = str(exc_info.value)
-        assert "missing_template.jinja2" in error_message or "nonexistent" in error_message
-
-        # Verify exception type is exactly TemplateNotFound (not subclass or wrapper)
-        assert type(exc_info.value).__name__ == "TemplateNotFound"
-        assert exc_info.value.__class__.__module__ == "jinja2.exceptions"
-
-    def test_missing_variable_error(self, engine: TemplateEngine) -> None:
-        """Missing required variable raises clear error."""
-        # Create template that truly requires a variable
-        template_str = "{{ required_var.field }}"  # Will raise on missing required_var
-
-        with pytest.raises((UndefinedError, Exception)) as exc_info:
-            engine.env.from_string(template_str).render()
-
-        # Error should mention undefined/missing
-        error_msg = str(exc_info.value).lower()
-        assert "undefined" in error_msg or "required_var" in error_msg
-
-
-class TestTemplateEngineDiscovery:
-    """Test template discovery and listing."""
-
-    @pytest.fixture
-    def engine(self) -> TemplateEngine:
-        """Provide TemplateEngine with test templates."""
-        template_root = get_template_root()
-        return TemplateEngine(template_root=template_root)
-
-    def test_list_templates_returns_jinja2_files(self, engine: TemplateEngine) -> None:
-        """list_templates() returns all .jinja2 files."""
-        templates = engine.list_templates()
-
-        # Should find concrete templates
-        assert "concrete/dto.py.jinja2" in templates
-        assert "concrete/worker.py.jinja2" in templates
-
-        # Should find tier templates
-        assert "tier0_base_artifact.jinja2" in templates
-
-        # All returned paths should be strings
-        assert all(isinstance(t, str) for t in templates)
-
-    def test_list_templates_returns_relative_paths(self, engine: TemplateEngine) -> None:
-        """list_templates() returns paths relative to template_root."""
-        templates = engine.list_templates()
-
-        # Should not contain absolute paths
-        for template in templates:
-            assert not template.startswith("/")
-            assert not template.startswith("\\")
-            # Should not contain drive letters (Windows)
-            assert not (len(template) > 1 and template[1] == ":")
-
-    def test_list_templates_empty_for_empty_dir(self) -> None:
-        """list_templates() returns empty list if template_root has no templates."""
-        # Create engine with a directory that exists but has no templates
-        with tempfile.TemporaryDirectory() as tmpdir:
-            engine = TemplateEngine(template_root=tmpdir)
-            templates = engine.list_templates()
-            assert templates == []
-
-
-def test_injected_environment_renders_explicit_content_without_file_roots() -> None:
-    """The catalog supplies its captured templates and a separate content namespace."""
+@pytest.fixture
+def engine() -> TemplateEngine:
+    """Provide an engine backed only by an explicitly supplied environment."""
     environment = Environment(
-        loader=DictLoader({"selected": "{{ content.flag }}|{{ content.count }}"}),
+        loader=DictLoader(
+            {
+                "selected": "{{ artifact_type }}|{{ version_hash }}",
+                "content": "{{ content.flag }}|{{ content.count }}",
+            }
+        ),
         undefined=StrictUndefined,
     )
-    engine = TemplateEngine(environment=environment)
-    assert engine.render_context("selected", {"content": {"flag": False, "count": 0}}) == "False|0"
-    assert engine.list_templates() == ["selected"]
+    return TemplateEngine(environment=environment)
 
 
-def test_injected_environment_cannot_be_combined_with_a_filesystem_root() -> None:
-    """One engine has one explicit source authority."""
-    with pytest.raises(ValueError):
-        TemplateEngine(template_root=get_template_root(), environment=Environment())
+def test_renders_named_template_from_injected_environment(engine: TemplateEngine) -> None:
+    output = engine.render("selected", artifact_type="test", version_hash="abc123")
+    assert output == "test|abc123"
+
+
+def test_render_context_preserves_explicit_values(engine: TemplateEngine) -> None:
+    assert engine.render_context("content", {"content": {"flag": False, "count": 0}}) == "False|0"
+
+
+def test_raises_on_missing_template(engine: TemplateEngine) -> None:
+    with pytest.raises(TemplateNotFound, match="missing/template.jinja2"):
+        engine.render("missing/template.jinja2")
+
+
+@pytest.mark.parametrize(
+    ("filter_name", "value", "expected"),
+    [
+        ("pascalcase", "test_name", "TestName"),
+        ("snakecase", "TestName", "test_name"),
+        ("kebabcase", "TestName", "test-name"),
+    ],
+)
+def test_custom_case_filters(
+    engine: TemplateEngine,
+    filter_name: str,
+    value: str,
+    expected: str,
+) -> None:
+    template = engine.env.from_string("{{ value | " + filter_name + " }}")
+    assert template.render(value=value) == expected
+
+
+def test_validate_identifier_filter_rejects_invalid_identifier(
+    engine: TemplateEngine,
+) -> None:
+    template = engine.env.from_string("{{ value | validate_identifier }}")
+    assert template.render(value="valid_name") == "valid_name"
+    with pytest.raises((ValueError, UndefinedError)):
+        template.render(value="123invalid")
+
+
+def test_missing_variable_raises_under_strict_undefined(
+    engine: TemplateEngine,
+) -> None:
+    template = engine.env.from_string("{{ required_var.field }}")
+    with pytest.raises(UndefinedError):
+        template.render()
