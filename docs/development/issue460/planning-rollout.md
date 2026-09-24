@@ -1958,6 +1958,12 @@ Existing affected test/helper sources: T028, T053, T054, T056. Adapt or retire o
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY104, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY104 execution evidence
+
+Pre-cycle commit: `7a0b94b01aeb051afecf6e77a898714309255fea`. Nine exact legacy tier-base paths and four source-bound test paths were resolved within `C:\\temp\\pgmcp`, SHA-256 checked and removed; Git preserves their preimages. The cycle-owned inverse is these thirteen deletions and the `.pgmcp/state.json` transition. T028/T053/T054/T056 contained only direct old-tier rendering, inheritance, metadata, block-token or deferred-YAML assertions. Their concrete Python, TypeScript, document, link, omission and fixture behaviors already belong to current V3 family tests; no unrelated workflow assertions were removed. The temporary CY103 T054/T056 YAML references are closed. Search across active `mcp_server`, template and test sources found no remaining import, render or source read of the removed tier files.
+
+The three named current catalog/shared-Python/shared-document proof modules passed 53/53 after deletion (`pgmcp://cache/runs/12cc2f4396b541bc851b043f63038fdd`); the pre-deletion shared-family baseline passed 14/14 (`pgmcp://cache/runs/9aba887f95bf4beeb89c8f9c3db6a50f`). No full suite or branch-wide gate was run. Independent review is requested without a producer GO claim.
+
 ## CY105
 
 **Retire exhausted legacy test harness**
