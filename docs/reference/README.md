@@ -4,7 +4,7 @@
 
 **Status:** DEFINITIVE
 **Version:** 1.0
-**Last Updated:** 2026-06-04
+**Last Updated:** 2026-09-24
 
 ---
 
@@ -18,33 +18,31 @@ Navigation index for the template/scaffolding documentation cluster. Start here 
 
 | Document | Audience | Use when you want to… |
 |---|---|---|
-| [docs/manuals/architecture.md](../manuals/architecture.md) | Architecture, contributors | Understand the three-layer pipeline model; learn how to add a new artifact type; understand Layer 3 tier hierarchy |
+| [docs/manuals/architecture.md](../manuals/architecture.md) | Architecture, contributors | Understand the current server composition and responsibilities |
+| [architectural diagrams](../manuals/architectural_diagrams/09_scaffolding_subsystem.md) | Contributors | Follow the startup-resolved suite and generic scaffolding flow |
 | [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) | Agent users, contributors | Use `scaffold_artifact` and `scaffold_schema`; understand what context to provide; add a new artifact type step by step |
 | [template_metadata_format.md](template_metadata_format.md) | Template editors | Understand package identity and the `pgmcp:v1` provenance record in scaffolded artifacts |
 | [tools/scaffolding.md](tools/scaffolding.md) | Agent users | Complete reference for `scaffold_artifact` and `scaffold_schema` MCP tool parameters, returns, errors, and examples |
 
 ---
 
-## Three-Layer Architecture (quick summary)
+## Start here
 
-The scaffolding pipeline has three layers:
+- Use [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) to discover packages,
+  inspect their caller schemas, scaffold valid input, and follow the extension procedure.
+- Use [tools/scaffolding.md](tools/scaffolding.md) for current `scaffold_schema` and
+  `scaffold_artifact` tool schemas, results, and examples.
+- Use [template_metadata_format.md](template_metadata_format.md) for the compact
+  provenance record written to generated artifacts.
+- Use the [architecture manual](../manuals/architecture.md) and
+  [scaffolding subsystem diagram](../manuals/architectural_diagrams/09_scaffolding_subsystem.md)
+  for current responsibility boundaries.
 
-| Layer | Location | Role |
-|---|---|---|
-| 1 — Context schema | `mcp_server/schemas/contexts/` | User-facing. Pydantic validation. You provide this. |
-| 2 — RenderContext schema | `mcp_server/schemas/render_contexts/` | System-internal. Adds lifecycle fields. |
-| 3 — Jinja2 template | `.pgmcp/templates/concrete/` | Output rendering. `TEMPLATE_METADATA` is the variable contract SSOT. |
-
-**To add a new artifact type, all six steps are required:**
-
-1. Create Context schema in `mcp_server/schemas/contexts/<type>.py`
-2. Create RenderContext schema in `mcp_server/schemas/render_contexts/<type>.py`
-3. Export both from `mcp_server/schemas/__init__.py`
-4. Add the new type to the artifact-to-Context registry in `mcp_server/managers/artifact_manager.py`
-5. Enable the type in `.pgmcp/templates/config.yaml`
-6. Create the Jinja2 template in `.pgmcp/templates/concrete/<type>.<ext>.jinja2`
-
-> Steps 1–4 require Python source code changes.
+The template suite owns package manifests, JSON Schemas, templates, and shared
+components. Startup resolves the configured suite into one immutable catalog. The
+physical package directory is a storage location; `manifest.yaml:template_id` is the
+package identity. This index does not duplicate the catalog, package IDs, fields, or
+paths.
 
 ---
 
@@ -52,5 +50,6 @@ The scaffolding pipeline has three layers:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2 | 2026-09-24 | Agent | Replace obsolete three-layer registry recipe with current suite-discovery navigation |
 | 1.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ path in header |
 | 1.0 | 2026-06-04 | Agent | Initial navigation surface for template/scaffolding cluster (#286) |

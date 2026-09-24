@@ -2,9 +2,14 @@
 <!-- template=generic_doc version=43c84181 created=2026-02-16T22:45:00Z updated= -->
 # Migration Guide: v1.x → v2.0
 
-**Status:** APPROVED  
+**Status:** HISTORICAL — approved for the v1.x to v2.0 commit-scope migration  
 **Version:** 2.0.0  
 **Last Updated:** 2026-02-16
+
+> **Supersession:** This guide records the historical commit-scope migration only. It is
+> not the current workspace, configuration, or template-suite upgrade procedure. For
+> first-v3 workspace migration, see the [workspace upgrade guide](../setup/workspace-upgrade.md).
+> The instructions below describe the v2.0 contract in effect when this guide was written.
 
 ---
 
@@ -16,7 +21,7 @@ Guide teams to migrate from phase-first commit scopes to workflow-first commit s
 
 **In Scope:**
 Commit message format migration, workflow phase mapping, sub-phase usage, validation workflow.
-*Note: For automated workspace configuration directory upgrades (`.pgmcp/`), use `pgmcp --upgrade` (see [README.md](../../README.md)).*
+*Current first-v3 workspace migration guidance is maintained in the [workspace upgrade guide](../setup/workspace-upgrade.md); it is separate from this historical commit-scope migration.*
 
 **Out of Scope:**
 Runtime trading logic, infrastructure changes, unrelated refactors.
