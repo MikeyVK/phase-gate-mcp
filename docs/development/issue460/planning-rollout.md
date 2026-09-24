@@ -1532,9 +1532,9 @@ Pre-cycle commit: `4aba405779ffee5848fd92877c40db73d2cb5cf9`. Each of the 15 enu
 - **Semantic predecessors:** [CY042](planning-artifacts-mutation.md#cy042), [CY043](planning-artifacts-mutation.md#cy043), [CY044](planning-artifacts-mutation.md#cy044), [CY045](planning-artifacts-mutation.md#cy045), [CY046](planning-artifacts-mutation.md#cy046), [CY047](planning-artifacts-mutation.md#cy047), [CY048](planning-artifacts-mutation.md#cy048), [CY049](planning-artifacts-mutation.md#cy049), [CY050](planning-artifacts-mutation.md#cy050), [CY051](planning-artifacts-mutation.md#cy051), [CY072](planning-rollout.md#cy072).
 - **Shared-file predecessors:** None.
 - **Authority:** [DI-03 documents §9](design-document-tracking-artifacts.md).
-- **CY096.D1 — bounded result:** Delete only old Research/Design/Planning/Validation concrete roots/configs; close their actual root-rendering tests.
+- **CY096.D1 — bounded result:** Delete only the owned Research/Design/Planning/Validation concrete roots/configs and close T045/T046. T011/T027 are mixed, CY097-owned direct-render tests and remain temporary test-only exceptions until their CY097 disposition.
 - **Preserved behavior:** Nineteen workflow meanings, original PR defects, structured links/refs/checklists and commit semantics.
-- **CY096.D2 — independent evidence:** DOC family evidence and no active legacy render paths; approved phase content not discarded as obsolete prose.
+- **CY096.D2 — independent evidence:** DOC family evidence and no runtime/catalog or active fixture-selector dependency on the removed roots; identify T011/T027 as temporary legacy test requests, not behavioral proof, and preserve approved phase content.
 - **Rollback:** R-CY096: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY096.D1 and CY096.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -1552,7 +1552,7 @@ Previously introduced paths revisited in this cycle:
 
 None.
 
-- Before deleting any listed source, require its named successor evidence and zero remaining runtime/template/fixture imports. Tests for the same removed source are adapted or removed in this same cycle; unrelated portions remain.
+- Before deleting any listed source, require its named successor evidence and zero remaining runtime/catalog/active fixture-selector imports. Close CY096-owned T045/T046 in this cycle. T011/T027 are the only named temporary test-only direct-render exceptions: they also exercise CY097-owned Architecture/Reference/Generic roots and their mixed assertions are reviewed/adapted or retired in CY097; they are not CY096 behavioral evidence. Preserve unrelated assertions.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -1568,6 +1568,10 @@ Named durable proof files:
 Existing affected test/helper sources: T045, T046. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY096, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
+
+### CY096 execution evidence
+
+Pre-cycle commit: `1cd49f955c1c22f238cd8e825a446b4a60fb5924`. Each of the ten enumerated paths was resolved within `C:\\temp\\pgmcp` and SHA-256 checked before deletion; their exact preimages remain recoverable from that Git commit. The cycle-owned inverse is the committed ten-file deletion plus the scoped D1/D2/prerequisite clarification. T045/T046 contained only retired Design source/tier/render claims; the surviving Design package test owns behavior. The four named V3 document-family modules passed together: 17/17, cached result `pgmcp://cache/runs/bd20fba7caf246bfa157834c0943d2b4`. Active source/config/suite/host-agent search found no runtime or catalog selection of removed roots; the only remaining direct render references are T011 and T027, the two explicitly named CY097 test-only exceptions. They were not run as CY096 behavior proof or edited out of scope. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
 
 ## CY097
 
