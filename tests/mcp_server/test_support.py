@@ -37,13 +37,11 @@ from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
 from mcp_server.schemas import (
     ContractsConfig,
     GitConfig,
     ProjectStructureConfig,
     QualityConfig,
-    ScaffoldMetadataConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -422,22 +420,6 @@ def make_directory_policy_resolver(
             ),
         )
     return DirectoryPolicyResolver(config)
-
-
-def make_metadata_parser(
-    workspace_root: Path | str | None = None,
-    config: ScaffoldMetadataConfig | None = None,
-) -> ScaffoldMetadataParser:
-    """Build a ScaffoldMetadataParser with explicit metadata config."""
-    metadata_config = config or cast(
-        ScaffoldMetadataConfig,
-        _load_config(
-            workspace_root,
-            "scaffold_metadata.yaml",
-            "load_scaffold_metadata_config",
-        ),
-    )
-    return ScaffoldMetadataParser(metadata_config)
 
 
 def make_qa_manager(

@@ -1,15 +1,5 @@
 # mcp_server/schemas/__init__.py
-"""MCP Server validation schemas for artifact scaffolding.
-
-Two-Schema Pattern:
-- Context: User-facing schemas (no lifecycle fields)
-- RenderContext: System-enriched schemas (Context + LifecycleMixin)
-
-Infrastructure:
-- LifecycleMixin: System-managed fields (output_path, scaffold_created, template_id, version_hash)
-- BaseContext: Abstract base for all Context schemas
-- BaseRenderContext: Abstract base for all RenderContext schemas
-"""
+"""MCP server schema exports for current tool operations and configuration."""
 
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
@@ -38,15 +28,9 @@ from mcp_server.config.schemas.quality_config import (
     TextViolationsParsing,
     ViolationDTO,
 )
-from mcp_server.config.schemas.scaffold_metadata_config import (
-    CommentPattern,
-    MetadataField,
-    ScaffoldMetadataConfig,
-)
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
-from mcp_server.schemas.base import BaseContext, BaseRenderContext
 from mcp_server.schemas.error_outputs import (
     CacheErrorOutput,
     EnforcementErrorOutput,
@@ -54,14 +38,10 @@ from mcp_server.schemas.error_outputs import (
     ToolErrorOutput,
     ValidationErrorOutput,
 )
-from mcp_server.schemas.mixins.lifecycle import LifecycleMixin
 from mcp_server.schemas.tool_outputs import BaseToolOutput
 
 __all__ = [
     # Infrastructure
-    "LifecycleMixin",
-    "BaseContext",
-    "BaseRenderContext",
     "BaseToolOutput",
     "ToolErrorOutput",
     "ValidationErrorOutput",
@@ -71,7 +51,6 @@ __all__ = [
     # Config schemas and value objects
     "BranchLocalArtifact",
     "CheckSpec",
-    "CommentPattern",
     "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
@@ -83,13 +62,11 @@ __all__ = [
     "JsonViolationsParsing",
     "LabelConfig",
     "MergePolicy",
-    "MetadataField",
     "MilestoneConfig",
     "OperationPoliciesConfig",
     "ProjectStructureConfig",
     "QualityConfig",
     "QualityGate",
-    "ScaffoldMetadataConfig",
     "ScopeConfig",
     "TextViolationsParsing",
     "ViolationDTO",

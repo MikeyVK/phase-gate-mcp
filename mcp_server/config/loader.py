@@ -23,7 +23,6 @@ from mcp_server.config.schemas import (
     PresentationConfig,
     ProjectStructureConfig,
     QualityConfig,
-    ScaffoldMetadataConfig,
     ScopeConfig,
     TestsConfig,
     WorkflowConfig,
@@ -290,16 +289,6 @@ class ConfigLoader:
     def load_quality_config(self, config_path: Path | None = None) -> QualityConfig:
         data, resolved_path = self._load_yaml("quality.yaml", config_path=config_path)
         return self._validate_schema(QualityConfig, data, resolved_path)
-
-    def load_scaffold_metadata_config(
-        self,
-        config_path: Path | None = None,
-    ) -> ScaffoldMetadataConfig:
-        data, resolved_path = self._load_yaml(
-            "scaffold_metadata.yaml",
-            config_path=config_path,
-        )
-        return self._validate_schema(ScaffoldMetadataConfig, data, resolved_path)
 
     def load_enforcement_config(self, config_path: Path | None = None) -> EnforcementConfig:
         data, resolved_path = self._load_yaml(

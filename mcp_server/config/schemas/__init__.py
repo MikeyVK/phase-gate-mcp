@@ -42,11 +42,6 @@ from mcp_server.config.schemas.quality_config import (
     TextViolationsParsing,
     ViolationDTO,
 )
-from mcp_server.config.schemas.scaffold_metadata_config import (
-    CommentPattern,
-    MetadataField,
-    ScaffoldMetadataConfig,
-)
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.tests_config import TestBinding, TestId, TestsConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig, WorkflowTemplate
@@ -64,7 +59,6 @@ __all__ = [
     "CapabilitiesMetadata",
     "ChecksConfig",
     "CheckSpec",
-    "CommentPattern",
     "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
@@ -81,7 +75,6 @@ __all__ = [
     "Label",
     "LabelConfig",
     "LabelPattern",
-    "MetadataField",
     "MergePolicy",
     "MilestoneConfig",
     "MilestoneEntry",
@@ -93,7 +86,6 @@ __all__ = [
     "PresentationConfig",
     "QualityConfig",
     "QualityGate",
-    "ScaffoldMetadataConfig",
     "ScopeConfig",
     "SuccessCriteria",
     "TextViolationsParsing",

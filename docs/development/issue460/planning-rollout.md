@@ -745,7 +745,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 - **Authority:** [DI-01/02 §9; Shared §12](design-suite-resolution.md).
 - **CY078.D1 — bounded result:** Remove legacy source-header metadata config/parser and lifecycle exports plus their explicitly named test imports; retain V3 first-line reader and separate context/provenance.
 - **Preserved behavior:** Generation/header/schema claims already proved; no history replacement or edits to existing artifacts.
-- **CY078.D2 — independent evidence:** Collect T090 and all surviving listed test files after removal; no imports of removed base/lifecycle/parser. Header adversarial cases and real scaffold context isolation remain covered.
+- **CY078.D2 — independent evidence:** Record T090 retirement as an absence/import-closure observation and collect all surviving listed test files after removal; no imports of removed base/lifecycle/parser. Header adversarial cases and real scaffold context isolation remain covered.
 - **Rollback:** R-CY078: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY078.D1 and CY078.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -764,6 +764,7 @@ Previously introduced paths revisited in this cycle:
 None.
 
 - Close this cycle's specific retired exports/imports in shared schemas/interfaces/test_support and mixed tool-input tests at the same boundary; preserve unrelated GateReport/GateViolation workflow contracts.
+- Test disposition: T013 was already absent. T050–T052, T065, T088 and T090 contain only retired Tier 0 metadata/lifecycle assertions and are removed, without replacement content tests. Existing V3 header-reader and public scaffold tests carry the retained behavioral claims; T064 keeps its unrelated loader assertions.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
