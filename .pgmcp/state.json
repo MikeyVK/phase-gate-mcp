@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 93,
-  "last_cycle": 92,
+  "current_cycle": 94,
+  "last_cycle": 93,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -558,6 +558,12 @@
       "name": "Architecture manuals and reference navigation",
       "forced": false,
       "entered": "2026-09-24T12:34:23.199713+00:00"
+    },
+    {
+      "cycle_number": 94,
+      "name": "Retire legacy Pydantic/class sources",
+      "forced": false,
+      "entered": "2026-09-24T12:40:15.441596+00:00"
     }
   ],
   "required_phases": [

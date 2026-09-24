@@ -1439,7 +1439,7 @@ Pre-cycle commit: `d8ca47766571cb144dbae0e31a40841554a4a62a`. The cycle-owned in
 - **Semantic predecessors:** [CY032](planning-artifacts-mutation.md#cy032), [CY033](planning-artifacts-mutation.md#cy033), [CY034](planning-artifacts-mutation.md#cy034), [CY035](planning-artifacts-mutation.md#cy035), [CY072](planning-rollout.md#cy072), [CY080](planning-rollout.md#cy080).
 - **Shared-file predecessors:** None.
 - **Authority:** [DI-03 code §9; DI-01/02 §9](design-code-test-artifacts.md).
-- **CY094.D1 — bounded result:** Remove only old DTO/config/class/protocol configs/roots and related obsolete fixture assertions.
+- **CY094.D1 — bounded result:** Remove only the nine owned old DTO/config/class/protocol template sources. Related obsolete T023 source assertions are owned by CY095 and are retired there, not expanded into this write-set.
 - **Preserved behavior:** CY032/CY033/CY034/CY035 semantic contracts and explicit fields/imports/defaults remain.
 - **CY094.D2 — independent evidence:** Replacement package evidence plus no active legacy config/render imports; captured Git source rollback.
 - **Rollback:** R-CY094: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
@@ -1473,6 +1473,10 @@ Named durable proof files:
 Existing affected test/helper sources: None. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY094, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
+
+### CY094 execution evidence
+
+Pre-cycle commit: `03c31da676a1ec446fb68530976ba27804abb5e6`. Before deletion, each of the nine enumerated source paths was resolved under `C:\\temp\\pgmcp` and SHA-256 checked; their exact preimages remain recoverable from that Git commit. The cycle-owned inverse is the committed nine-file deletion diff plus this card clarification; `.pgmcp/state.json` records the transition. No unrelated dirty or untracked file is in the recovery set. A search over active server, test, host-agent, and documentation sources found no production import or current config/render selection of the nine old paths. The four named V3 successor test modules passed together: 20/20, Python 3.13.7 and pytest 9.0.2, cached result `pgmcp://cache/runs/0085441d44fb4b9591452a77bdaa4a10`. T023 still asserts old source-file presence but is explicitly owned for removal in CY095; it was not used as behavioral proof and was not edited out of scope. Independent review is requested without a producer GO claim.
 
 ## CY095
 
