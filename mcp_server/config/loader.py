@@ -21,7 +21,6 @@ from mcp_server.config.schemas import (
     MilestoneConfig,
     OperationPoliciesConfig,
     PresentationConfig,
-    ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
     TestsConfig,
@@ -260,32 +259,6 @@ class ConfigLoader:
         }
         return self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
 
-    def load_project_structure_config(
-        self,
-        config_path: Path | None = None,
-    ) -> ProjectStructureConfig:
-        data, resolved_path = self._load_yaml(
-            "project_structure.yaml",
-            config_path=config_path,
-        )
-        directories = data.get("directories")
-        if not isinstance(directories, dict):
-            raise ConfigError(
-                f"Missing 'directories' key in {resolved_path.name}",
-                file_path=str(resolved_path),
-            )
-
-        payload = {
-            **data,
-            "directories": {
-                directory_path: {"path": directory_path, **directory_data}
-                for directory_path, directory_data in directories.items()
-            },
-        }
-        config = self._validate_schema(ProjectStructureConfig, payload, resolved_path)
-        self._validate_project_structure_parent_references(config, resolved_path)
-        return config
-
     def load_quality_config(self, config_path: Path | None = None) -> QualityConfig:
         data, resolved_path = self._load_yaml("quality.yaml", config_path=config_path)
         return self._validate_schema(QualityConfig, data, resolved_path)
@@ -309,18 +282,6 @@ class ConfigLoader:
             config_path=config_path,
         )
         return self._validate_schema(ContractsConfig, data, resolved_path)
-
-    def _validate_project_structure_parent_references(
-        self,
-        config: ProjectStructureConfig,
-        resolved_path: Path,
-    ) -> None:
-        for directory_path, policy in config.directories.items():
-            if policy.parent is not None and policy.parent not in config.directories:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown parent: '{policy.parent}'",
-                    file_path=str(resolved_path),
-                )
 
     def _resolve_yaml_path(self, file_name: str | Path, config_path: Path | None = None) -> Path:
         if config_path is None:

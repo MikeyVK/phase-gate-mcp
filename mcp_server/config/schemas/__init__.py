@@ -26,10 +26,6 @@ from mcp_server.config.schemas.operation_policies_config import (
     OperationPolicy,
 )
 from mcp_server.config.schemas.presentation_config import PresentationConfig
-from mcp_server.config.schemas.project_structure_config import (
-    DirectoryPolicy,
-    ProjectStructureConfig,
-)
 from mcp_server.config.schemas.quality_config import (
     ArtifactLoggingConfig,
     CapabilitiesMetadata,
@@ -62,7 +58,6 @@ __all__ = [
     "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
-    "DirectoryPolicy",
     "EnforcementAction",
     "EnforcementConfig",
     "EnforcementRule",
@@ -82,7 +77,6 @@ __all__ = [
     "OperationPolicy",
     "PhaseContractPhase",
     "PhaseDefinition",
-    "ProjectStructureConfig",
     "PresentationConfig",
     "QualityConfig",
     "QualityGate",

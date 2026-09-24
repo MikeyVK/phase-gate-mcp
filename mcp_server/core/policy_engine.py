@@ -12,11 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from mcp_server.config.loader import ConfigLoader
-from mcp_server.core.directory_policy_resolver import (
-    DirectoryPolicyResolver,
-    ResolvedDirectoryPolicy,
-)
-from mcp_server.schemas import GitConfig, OperationPoliciesConfig, ProjectStructureConfig
+from mcp_server.schemas import GitConfig, OperationPoliciesConfig
 
 
 @dataclass
@@ -28,7 +24,6 @@ class PolicyDecision:
     operation: str
     path: str | None = None
     phase: str | None = None
-    directory_policy: ResolvedDirectoryPolicy | None = None
     context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -36,8 +31,7 @@ class PolicyDecision:
 class PolicyEngine:
     """Policy decision engine (config-driven).
 
-    Completely config-driven - no hardcoded rules.
-    Delegates to OperationPoliciesConfig and DirectoryPolicyResolver.
+    Applies operation policies and configured commit conventions.
     """
 
     def __init__(
@@ -45,12 +39,10 @@ class PolicyEngine:
         config_root: Path | str,
         operation_config: OperationPoliciesConfig,
         git_config: GitConfig,
-        project_structure_config: ProjectStructureConfig,
     ) -> None:
         """Initialize PolicyEngine with injected configs and explicit reload root."""
         self._config_root = Path(config_root)
         self._operation_config = operation_config
-        self._directory_resolver = DirectoryPolicyResolver(project_structure_config)
         self._git_config = git_config
 
         # Audit trail
@@ -65,10 +57,10 @@ class PolicyEngine:
     ) -> PolicyDecision:
         """Make policy decision for operation.
 
-        Decision Algorithm:
-        1. Check operation-level phase policy (WANNEER)
-        2. If path provided, check directory policy (WAAR)
-        3. Combine results + provide reason
+        Decision algorithm:
+        1. Check operation-level phase policy.
+        2. Apply operation-specific path checks when a path is provided.
+        3. Check configured commit prefixes for commit operations.
 
         Args:
             operation: Operation ID (scaffold, create_file, commit)
@@ -98,28 +90,8 @@ class PolicyEngine:
                 self._log_decision(decision)
                 return decision
 
-            # Check path-based policies (if path provided)
+            # Check operation-specific path policies (if a path is provided).
             if path:
-                # Delegate to DirectoryPolicyResolver (SRP)
-                dir_policy = self._directory_resolver.resolve(path)
-
-                # Check component type (if provided in context)
-                component_type = context.get("component_type")
-                if component_type and not dir_policy.allows_component_type(component_type):
-                    decision = PolicyDecision(
-                        allowed=False,
-                        reason=f"Component type '{component_type}' not allowed in "
-                        f"'{dir_policy.path}'. Allowed types: "
-                        f"{dir_policy.allowed_component_types or 'all'}",
-                        operation=operation,
-                        path=path,
-                        phase=phase,
-                        directory_policy=dir_policy,
-                        context=context,
-                    )
-                    self._log_decision(decision)
-                    return decision
-
                 # Check blocked patterns (create_file operation)
                 if operation == "create_file" and op_policy.is_path_blocked(path):
                     decision = PolicyDecision(
@@ -129,7 +101,6 @@ class PolicyEngine:
                         operation=operation,
                         path=path,
                         phase=phase,
-                        directory_policy=dir_policy,
                         context=context,
                     )
                     self._log_decision(decision)
@@ -144,7 +115,6 @@ class PolicyEngine:
                         operation=operation,
                         path=path,
                         phase=phase,
-                        directory_policy=dir_policy,
                         context=context,
                     )
                     self._log_decision(decision)
@@ -176,7 +146,6 @@ class PolicyEngine:
                 operation=operation,
                 path=path,
                 phase=phase,
-                directory_policy=self._directory_resolver.resolve(path) if path else None,
                 context=context,
             )
             self._log_decision(decision)
@@ -222,4 +191,3 @@ class PolicyEngine:
         loader = ConfigLoader(self._config_root)
         self._operation_config = loader.load_operation_policies_config()
         self._git_config = loader.load_git_config()
-        self._directory_resolver = DirectoryPolicyResolver(loader.load_project_structure_config())

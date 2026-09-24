@@ -45,7 +45,6 @@ from mcp_server.config.schemas import (
     MilestoneConfig,
     OperationPoliciesConfig,
     PresentationConfig,
-    ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
     WorkflowConfig,
@@ -222,7 +221,6 @@ class ConfigLayer:
     scope_config: ScopeConfig
     milestone_config: MilestoneConfig
     contributor_config: ContributorConfig
-    project_structure_config: ProjectStructureConfig | None
     operation_policies_config: OperationPoliciesConfig
     enforcement_config: EnforcementConfig
     contracts_config: ContractsConfig
@@ -569,7 +567,6 @@ class ServerBootstrapper:
             validator.validate_startup(
                 policies=operation_policies_config,
                 workflow=workflow_config,
-                structure=None,
                 contracts=contracts_config,
                 workphases=workphases_config,
             )
@@ -610,7 +607,6 @@ class ServerBootstrapper:
                 scope_config=scope_config,
                 milestone_config=milestone_config,
                 contributor_config=contributor_config,
-                project_structure_config=None,
                 operation_policies_config=operation_policies_config,
                 enforcement_config=enforcement_config,
                 contracts_config=contracts_config,
@@ -815,7 +811,6 @@ class ServerBootstrapper:
         scope_config = config_loader.load_scope_config()
         milestone_config = config_loader.load_milestone_config()
         contributor_config = config_loader.load_contributor_config()
-        project_structure_config = config_loader.load_project_structure_config()
         operation_policies_config = config_loader.load_operation_policies_config()
         enforcement_config = config_loader.load_enforcement_config()
         contracts_config = config_loader.load_contracts_config()
@@ -824,7 +819,6 @@ class ServerBootstrapper:
         ConfigValidator().validate_startup(
             policies=operation_policies_config,
             workflow=workflow_config,
-            structure=project_structure_config,
             contracts=contracts_config,
             workphases=workphases_config,
         )
@@ -839,7 +833,6 @@ class ServerBootstrapper:
             scope_config=scope_config,
             milestone_config=milestone_config,
             contributor_config=contributor_config,
-            project_structure_config=project_structure_config,
             operation_policies_config=operation_policies_config,
             enforcement_config=enforcement_config,
             contracts_config=contracts_config,

@@ -34,7 +34,6 @@ from mcp_server.config.schemas import (
     MilestoneConfig,
     OperationPoliciesConfig,
     PresentationConfig,
-    ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
     WorkflowConfig,
@@ -185,7 +184,6 @@ class TestBootstrap:
             "scope_config": MagicMock(spec=ScopeConfig),
             "milestone_config": MagicMock(spec=MilestoneConfig),
             "contributor_config": MagicMock(spec=ContributorConfig),
-            "project_structure_config": MagicMock(spec=ProjectStructureConfig),
             "operation_policies_config": MagicMock(spec=OperationPoliciesConfig),
             "enforcement_config": MagicMock(spec=EnforcementConfig),
             "contracts_config": MagicMock(spec=ContractsConfig),
@@ -247,7 +245,6 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
     mock_loader.load_scope_config.return_value = MagicMock(spec=ScopeConfig)
     mock_loader.load_milestone_config.return_value = MagicMock(spec=MilestoneConfig)
     mock_loader.load_contributor_config.return_value = MagicMock(spec=ContributorConfig)
-    mock_loader.load_project_structure_config.return_value = MagicMock(spec=ProjectStructureConfig)
     mock_loader.load_operation_policies_config.return_value = MagicMock(
         spec=OperationPoliciesConfig
     )

@@ -9,7 +9,7 @@ before the MCP server starts accepting requests.
 @dependencies: [mcp_server.core.exceptions, mcp_server.schemas]
 @responsibilities:
     - Validate contracts.yaml phase references against workphases catalog
-    - Validate policy and project-structure references across config objects
+    - Validate operation policy references across config objects
 """
 
 from __future__ import annotations
@@ -31,7 +31,6 @@ from mcp_server.core.interfaces.execution import (
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
     OperationPoliciesConfig,
-    ProjectStructureConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -110,7 +109,6 @@ class ConfigValidator:
         self,
         policies: OperationPoliciesConfig,
         workflow: WorkflowConfig,
-        structure: ProjectStructureConfig | None,
         contracts: ContractsConfig,
         workphases: WorkphasesConfig,
     ) -> None:
@@ -124,8 +122,6 @@ class ConfigValidator:
             known_phases=known_phases,
         )
         self._validate_operation_policies(policies=policies, known_phases=known_phases)
-        if structure is not None:
-            self._validate_project_structure(structure)
         self._validate_merge_policy_phase(
             contracts=contracts,
             known_phases=known_phases,
@@ -160,15 +156,6 @@ class ConfigValidator:
                 raise ConfigError(
                     f"Operation '{operation_id}' references unknown phases: "
                     f"{sorted(unknown_policy_phases)}"
-                )
-
-    def _validate_project_structure(self, structure: ProjectStructureConfig) -> None:
-        known_directories = set(structure.directories)
-
-        for directory_path, policy in structure.directories.items():
-            if policy.parent is not None and policy.parent not in known_directories:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown parent: '{policy.parent}'"
                 )
 
     def _validate_merge_policy_phase(

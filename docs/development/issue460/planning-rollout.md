@@ -928,7 +928,9 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C055, C057, C058, C060, C079, C107, S017, S018, S019, S020, S021, S022, S023, T003, T047, T067, T068, T073, T080, T095, T099.
+Existing source IDs: C055, C057, C058, C060, C079, C107, S017, S018, S019, S020, S021, S022, S023, T003, T047, T048, T064, T067, T068, T073, T074, T080, T091, T095, T099.
+
+CY082 bounded test-import closure (independent QA finding under the user's proportional-correction authorization): T048 `tests/mcp_server/test_support.py` removes only old project-structure/resolver imports and its exhausted resolver builder while preserving the PolicyEngine helper with current operation/Git config; T064 removes only old loader/schema/fixture/assertion rows; T074 removes only the retired `structure` startup fixture; T091 removes only the old schema import, ConfigLayer field mock and loader-method mock. Their original owner episodes remain provenance. The rollout-configuration integration test mentions project_structure only in comments, so it is not a CY082 behavior or import blocker and is outside this write-set. Retain all unrelated workflow, config, bootstrap and policy claims.
 
 Read-only review/preservation IDs: C064. For a previously deleted source this means absence/import-closure review, never recreation.
 

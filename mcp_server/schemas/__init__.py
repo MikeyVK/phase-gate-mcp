@@ -20,7 +20,6 @@ from mcp_server.config.schemas.issue_config import IssueConfig
 from mcp_server.config.schemas.label_config import LabelConfig
 from mcp_server.config.schemas.milestone_config import MilestoneConfig
 from mcp_server.config.schemas.operation_policies_config import OperationPoliciesConfig
-from mcp_server.config.schemas.project_structure_config import ProjectStructureConfig
 from mcp_server.config.schemas.quality_config import (
     JsonViolationsParsing,
     QualityConfig,
@@ -64,7 +63,6 @@ __all__ = [
     "MergePolicy",
     "MilestoneConfig",
     "OperationPoliciesConfig",
-    "ProjectStructureConfig",
     "QualityConfig",
     "QualityGate",
     "ScopeConfig",

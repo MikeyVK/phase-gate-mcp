@@ -20,7 +20,6 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
     ContractsConfig,
     OperationPoliciesConfig,
-    ProjectStructureConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -64,21 +63,6 @@ class TestConfigValidator:
                     "description": "Feature workflow",
                 }
             },
-        )
-
-    @pytest.fixture
-    def project_structure(self) -> ProjectStructureConfig:
-        return ProjectStructureConfig(
-            directories={
-                "src": {
-                    "path": "src",
-                    "parent": None,
-                    "description": "Source",
-                    "allowed_artifact_types": ["dto"],
-                    "allowed_extensions": [".py"],
-                    "require_scaffold_for": [],
-                }
-            }
         )
 
     @pytest.fixture
@@ -126,14 +110,12 @@ class TestConfigValidator:
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
         phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         validator.validate_startup(
             policies=operation_policies,
             workflow=workflow_config,
-            structure=project_structure,
             contracts=phase_contracts,
             workphases=workphases_config,
         )
@@ -143,7 +125,6 @@ class TestConfigValidator:
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         contracts = ContractsConfig.model_validate(
@@ -169,7 +150,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
                 contracts=contracts,
                 workphases=workphases_config,
             )
@@ -179,7 +159,6 @@ class TestConfigValidator:
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         contracts = ContractsConfig.model_validate(
@@ -205,7 +184,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
                 contracts=contracts,
                 workphases=workphases_config,
             )
@@ -214,7 +192,6 @@ class TestConfigValidator:
         self,
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
-        project_structure: ProjectStructureConfig,
     ) -> None:
         workflow_config = WorkflowConfig(
             version="1.0.0",
@@ -256,7 +233,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
                 contracts=contracts,
                 workphases=workphases_config,
             )
@@ -265,7 +241,6 @@ class TestConfigValidator:
         self,
         validator: ConfigValidator,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
         phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
@@ -287,29 +262,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
-                contracts=phase_contracts,
-                workphases=workphases_config,
-            )
-
-    def test_validate_startup_raises_on_unknown_project_structure_parent(
-        self,
-        validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
-        workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
-        phase_contracts: ContractsConfig,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        project_structure.directories["tests"] = project_structure.directories["src"].model_copy(
-            update={"path": "tests", "parent": "missing"}
-        )
-
-        with pytest.raises(ConfigError, match="unknown parent"):
-            validator.validate_startup(
-                policies=operation_policies,
-                workflow=workflow_config,
-                structure=project_structure,
                 contracts=phase_contracts,
                 workphases=workphases_config,
             )

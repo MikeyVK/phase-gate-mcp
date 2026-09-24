@@ -22,7 +22,6 @@ from mcp_server.config.loader import (
 )
 from mcp_server.config.settings import Settings as RealSettings
 from mcp_server.config.validator import ConfigValidator
-from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.interfaces import GateReport
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
@@ -40,7 +39,6 @@ from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.schemas import (
     ContractsConfig,
     GitConfig,
-    ProjectStructureConfig,
     QualityConfig,
     WorkflowConfig,
     WorkphasesConfig,
@@ -392,34 +390,14 @@ def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine
     """Build a PolicyEngine with explicit config objects."""
     config_root = resolve_config_root(
         workspace_root,
-        required_paths=("policies.yaml", "git.yaml", "workflows.yaml", "project_structure.yaml"),
+        required_paths=("policies.yaml", "git.yaml", "workflows.yaml"),
     )
     loader = ConfigLoader(config_root)
-    project_structure = loader.load_project_structure_config()
     return PolicyEngine(
         config_root=config_root,
         operation_config=loader.load_operation_policies_config(),
         git_config=loader.load_git_config(),
-        project_structure_config=project_structure,
     )
-
-
-def make_directory_policy_resolver(
-    workspace_root: Path | str | None = None,
-    project_structure_config: ProjectStructureConfig | None = None,
-) -> DirectoryPolicyResolver:
-    """Build a DirectoryPolicyResolver with explicit project structure config."""
-    config = project_structure_config
-    if config is None:
-        config = cast(
-            ProjectStructureConfig,
-            _load_config(
-                workspace_root,
-                "project_structure.yaml",
-                "load_project_structure_config",
-            ),
-        )
-    return DirectoryPolicyResolver(config)
 
 
 def make_qa_manager(
