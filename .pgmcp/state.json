@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 87,
-  "last_cycle": 86,
+  "current_cycle": 88,
+  "last_cycle": 87,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -522,6 +522,12 @@
       "name": "Retire generic native-parser DSL",
       "forced": false,
       "entered": "2026-09-24T11:23:21.058130+00:00"
+    },
+    {
+      "cycle_number": 88,
+      "name": "Retire auto replay state",
+      "forced": false,
+      "entered": "2026-09-24T11:32:03.174397+00:00"
     }
   ],
   "required_phases": [

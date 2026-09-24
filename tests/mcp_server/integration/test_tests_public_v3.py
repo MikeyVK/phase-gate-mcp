@@ -132,9 +132,6 @@ async def test_scopes_defaults_and_explicit_inactive_selection_survive_transport
 ) -> None:
     target = tmp_path / "selected.py"
     target.write_bytes(b"original source")
-    marker = tmp_path / ".pgmcp" / "quality_state.json"
-    marker.parent.mkdir()
-    marker.write_bytes(b'{"unrelated": true}')
     runtime = RecordingTestRuntime((passed(), passed()))
     composition = compose(tmp_path, pytestconfig, runtime)
     arguments: dict[str, JsonValue] = {"scope": scope, "args": {"second": []}}
@@ -161,7 +158,6 @@ async def test_scopes_defaults_and_explicit_inactive_selection_survive_transport
     assert result.results[0].message == "Native collection succeeded."
     assert result.results[0].external_tools == () and result.results[0].evidence is None
     assert target.read_bytes() == b"original source"
-    assert marker.read_bytes() == b'{"unrelated": true}'
 
 
 @pytest.mark.asyncio
