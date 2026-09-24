@@ -54,7 +54,7 @@ This example follows the current design package's required context fields; optio
 
 The result reports the selected template identity, package version/fingerprint, output path when written, check observations, validation status, and persistence/failure facts. `enforce` prevents persistence when required checks fail; `report` retains check outcomes while permitting persistence according to the operation contract. Native check availability and execution are reported as observed facts, not converted into an assumed pass.
 
-A generated header, when defined by the selected package, records provenance. The header is not an alternate schema or package registry. Package manifests, context schema and policy own their respective facts; artifact-location config selects default destinations. Use [editing.md](editing.md) for changes to an existing file.
+Every newly scaffolded artifact carries the compact `pgmcp:v1` provenance record on its first physical line. The record is not an alternate schema or package registry. Package manifests, context schema and policy own their respective facts; artifact-location config selects default destinations. Use [editing.md](editing.md) for changes to an existing file.
 
 ## Related references
 

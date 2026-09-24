@@ -7,7 +7,7 @@ The server separates runtime settings, workspace declarations, and template pack
 
 [`Settings.from_env()`](../../mcp_server/config/settings.py) builds the server, logging, and GitHub settings. It accepts an optional YAML overlay from `PGMCP_CONFIG_PATH`; environment variables override the server fields (`PGMCP_SERVER_NAME`, `PGMCP_WORKSPACE_ROOT`, `PGMCP_SERVER_PROJECT_DIR`, `PGMCP_CONFIG_ROOT`, `PGMCP_TEMPLATE_ROOT`, `PGMCP_LOGS_DIR`), GitHub fields (`GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_PROJECT_NUMBER`, `GITHUB_TOKEN`), and `LOG_LEVEL`. The exact fields/defaults are defined in the settings models.
 
-By default, the server root is `<workspace_root>/<server_root_dir>`; its config and template roots are `config` and `templates` beneath it. `PGMCP_CONFIG_ROOT` and `PGMCP_TEMPLATE_ROOT` provide explicit root overrides. Runtime settings do not replace workspace declarations.
+By default, the server root is `<workspace_root>/<server_root_dir>`; the active V3 bootstrap reads configuration from its `config` directory and the template suite from its `template_suite` directory. `PGMCP_CONFIG_ROOT` and `PGMCP_TEMPLATE_ROOT` provide explicit root overrides. Runtime settings do not replace workspace declarations.
 
 ## Workspace declarations
 
