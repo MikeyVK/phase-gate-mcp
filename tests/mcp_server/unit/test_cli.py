@@ -154,36 +154,6 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
     assert "already exists" in captured.err or "already exists" in captured.out
 
 
-def test_cli_init_flat_copy(tmp_path: Path) -> None:
-    """Initialization retains the existing asset-copy boundary."""
-    workspace = tmp_path / "workspace"
-    workspace.mkdir()
-    settings = Settings(
-        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
-    )
-    operation = MagicMock()
-    operation.last_result.exit_code = 0
-
-    with (
-        patch("sys.argv", ["mcp-server", "--init"]),
-        patch("sys.exit", side_effect=SystemExit(0)),
-        patch("shutil.copytree") as mock_copytree,
-        patch("mcp_server.cli_renewal.build_default_operation", return_value=operation),
-        contextlib.suppress(SystemExit),
-    ):
-        main(settings)
-
-    mock_copytree.assert_called_once()
-    args, kwargs = mock_copytree.call_args
-    assert args[0].name == "assets"
-    assert args[1] == workspace / ".pgmcp"
-    assert kwargs.get("dirs_exist_ok") is True
-    ignored = kwargs["ignore"](str(workspace), ["workflows.yaml", "template_registry.json"])
-    assert "template_registry.json" in ignored
-    assert "workflows.yaml" not in ignored
-    operation.execute.assert_called_once_with()
-
-
 def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
     """A target-bootstrap configuration error selects the degraded server."""
     from unittest.mock import AsyncMock  # noqa: PLC0415

@@ -57,7 +57,6 @@ def main(settings: Settings | None = None) -> None:
                 assets_dir,
                 resolved_server_root,
                 dirs_exist_ok=True,
-                ignore=shutil.ignore_patterns("template_registry.json"),
             )
 
             from mcp_server.cli_renewal import build_default_operation  # noqa: PLC0415
