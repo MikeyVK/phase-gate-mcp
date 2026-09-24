@@ -1616,6 +1616,10 @@ Existing affected test/helper sources: T011, T027. Adapt or retire only their ma
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY097, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY097 execution evidence
+
+Pre-cycle commit: `34eadaca6f6a812f7aed9b0ec53916b07b940188`. All eight enumerated source/test paths were resolved under `C:\\temp\\pgmcp` and SHA-256 checked before deletion; Git preserves their exact preimages. The cycle-owned inverse is the committed eight-file deletion and `.pgmcp/state.json` transition. T011/T027 contained only direct rendering and old source-layout assertions; Research/Planning/Design semantics already had CY096's 17/17 V3 family proof. The three named current Architecture/Reference/Generic Document modules passed together: 12/12, cached result `pgmcp://cache/runs/9959b7b315f445fa9e4e3ee943071084`. Active production, config, suite, host-agent, and test search found no remaining selection of these or CY096's removed document roots and no import of T011/T027. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY098
 
 **Retire legacy tracking roots**
