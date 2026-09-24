@@ -15,10 +15,10 @@ graph LR
     CLI["CLI / bootstrap_target()"]
     Bootstrap["bootstrap.py<br/>composition root"]
     Config["config/<br/>settings, schemas, ConfigLoader"]
-    Managers["managers/<br/>workflow, Git, GitHub, enforcement, state/cache"]
+    Managers["managers/<br/>workflow, Git, GitHub, enforcement"]
     Services["services/<br/>domain operations"]
     Execution["execution/<br/>adapter catalog and native execution"]
-    Adapters["adapters/<br/>native adapter implementations"]
+    Adapters["bundled_adapters/ and trusted workspace_adapters/<br/>native check/test/fix implementations"]
     Tools["tools/<br/>ICoreTool implementations"]
     Core["core/<br/>interfaces, decorators, ToolFactory"]
     Server["server.py<br/>MCP protocol registration"]
@@ -33,7 +33,6 @@ graph LR
     Bootstrap --> Tools
     Bootstrap --> Resources
     Managers --> Config
-    Managers --> Services
     Services --> Execution
     Execution --> Adapters
     Tools --> Core
@@ -52,9 +51,9 @@ The graph shows the main composition path, not every permitted import. Bootstrap
 |---|---|
 | `config/` | Environment-backed runtime settings, typed workspace declarations, and template/config loading |
 | `bootstrap.py` | Runtime composition: `ConfigLayer`, `ManagerGraph`, `ToolAssembly`, tool wrappers, resources, and server |
-| `managers/` | Workflow/state, Git and GitHub operations, enforcement, and runtime caches |
+| `managers/` | Workflow/state-engine, Git and GitHub operations, and enforcement |
 | `services/` | Focused domain operations composed by bootstrap or managers |
-| `execution/` and `adapters/` | Adapter discovery/trust, native process execution, and adapter implementations |
+| `execution/`, `bundled_adapters/`, trusted `workspace_adapters/` | Native adapter discovery/trust, process execution, and check/test/fix implementations |
 | `tools/` | Typed MCP-facing operations implementing `ICoreTool` |
 | `core/`, `server.py` | Core tool contracts/wrappers and MCP protocol handlers |
 | `resources/`, `presenters/` | Resource reads and presentation of server/tool results |
