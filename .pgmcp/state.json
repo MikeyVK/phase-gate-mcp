@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 74,
-  "last_cycle": 73,
+  "current_cycle": 75,
+  "last_cycle": 74,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -444,6 +444,12 @@
       "name": "Retire obsolete scaffold tool and manager route",
       "forced": false,
       "entered": "2026-09-23T22:06:39.905889+00:00"
+    },
+    {
+      "cycle_number": 75,
+      "name": "Retire obsolete template scaffolder route",
+      "forced": false,
+      "entered": "2026-09-24T05:56:42.618780+00:00"
     }
   ],
   "required_phases": [

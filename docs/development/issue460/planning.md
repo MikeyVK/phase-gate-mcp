@@ -172,6 +172,18 @@ These rules are included in every cycle's exit criteria.
 
 Full-suite execution and branch-wide gates belong once to Validation after implementation/retirement. Docs-only cycles use semantic, link and source-copy evidence without artificial tests. Tests obey production architecture/typing standards; no broad disables.
 
+### CY075–CY105 test-retirement addendum (approved 2026-09-24)
+
+The remaining retirement cycles must leave a clean suite that proves approved current behavior with the fewest durable tests needed. Design dispositions apply to the affected claim, not automatically to every assertion in a mixed file. Removal of a legacy implementation never creates a one-for-one obligation to recreate its tests.
+
+- For each affected test or helper, classify its relevant claim as (a) current public behavior to retain, (b) an approved migration input/outcome to retain, (c) obsolete behavior with no retained claim, or (d) unrelated behavior to preserve. Record the existing successor proof or the explicit no-retained-behavior rationale. Remove obsolete and duplicate cases and close their imports, fixtures and plugin registrations; keep unrelated cases in mixed files.
+- Reuse fresh named V3 proofs. Add or adapt a test only when an approved current invariant is genuinely uncovered; use the narrowest public behavioral observation and an independent expected fact. Do not add regression coverage for retired classes, signatures, algorithms, registry/tier structures, old output, or fixture mechanics merely to replace a deleted test.
+- Generated-artifact checks may prove schema admission, usable output, caller-supplied data, and expressly approved protocol/content semantics. Do not snapshot incidental template prose, fixed headings, source layout or implementation tokens. Assert exact bytes only where the approved contract expressly requires them.
+- A legacy installation or workspace may be a test input only to prove the supported V3 migration, renewal, preservation or recovery outcome. The obsolete upgrader or legacy output is not itself a retained behavior.
+- Each CY075–CY105 hand-over records a compact test delta: retired cases/helpers, adapted cases, new durable cases (if any), reused successor proof, and the rationale for any surviving legacy-origin case. Independent QA checks this against the Design disposition and rejects unneeded suite expansion or lost current behavior. Missing callers outside an exact write-set still require the scoped Planning amendment in V4/V5; this addendum does not widen any card.
+
+This clarification changes no approved product contract, Design disposition, cycle write-set or Validation-phase gate.
+
 ## Separate role and activation proof
 
 | Boundary | Native/internal owner | Public composition | Retirement gate |
