@@ -208,7 +208,7 @@ The current files remain recoverable through Git history and this durable specif
 
 **Issue-460 Git recovery trace (Research F-14/F-14A/F-14B, deferred YAML disposition):** Both files were incomplete, unregistered seeds removed in CY103. Recover their final source from pre-removal commit `4ba22137757400d975d7ab8178c508f58999fb67`; removal commit: `d6602c5e92b8bbe235d9f453747a0ec8e6b62a4d`.
 
-| Exact historical source path | Pre-removal SHA-256 |
+| Exact historical source path | Pre-removal Windows working-tree SHA-256 (CRLF bytes) |
 |---|---|
 | `.pgmcp/templates/tier1_base_config.jinja2` | `B624150DB5499F7C37CC8F60E82AB1D9AB45685B5F3FE89F9306EB0DB8C8BC21` |
 | `.pgmcp/templates/tier2_base_yaml.jinja2` | `5CD78E1F28C5985FBBB007CC8C54FB47AB7D0D99353D0155F5A04906811CF87F` |
