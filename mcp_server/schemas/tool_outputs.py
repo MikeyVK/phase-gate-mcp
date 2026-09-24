@@ -514,32 +514,6 @@ class RunQualityGatesOutput(BaseToolOutput):
     gates: list[GateResultDTO] = Field(default_factory=list)
 
 
-class TestFailureDTO(BaseModel):
-    """DTO for a single test failure."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    test_id: str
-    location: str
-    short_reason: str
-    traceback: str = ""
-    is_collection_error: bool = False
-
-
-class RunTestsOutput(BaseToolOutput):
-    """Output for RunTestsTool."""
-
-    exit_code: int
-    passed_count: int
-    failed_count: int
-    skipped_count: int
-    errors_count: int
-    duration_seconds: float | None = None
-    failures: list[TestFailureDTO] = Field(default_factory=list)
-    coverage_pct: float | None = None
-    lf_cache_was_empty: bool = False
-    stderr: str = ""
-
-
 class SafeEditOutput(BaseToolOutput):
     """Output for SafeEditTool."""
 

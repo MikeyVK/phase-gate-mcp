@@ -47,9 +47,6 @@ from mcp_server.core.interfaces.ipresenter import (
 from mcp_server.core.interfaces.ipresenter import (
     ITextPresenter as ITextPresenter,
 )
-from mcp_server.core.interfaces.ipytest_runner import (
-    IPytestRunner as IPytestRunner,
-)
 from mcp_server.core.interfaces.itool import ITool as ITool
 from mcp_server.core.interfaces.itool_response_cache import (
     IToolResponsePublisher as IToolResponsePublisher,

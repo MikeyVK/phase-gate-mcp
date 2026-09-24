@@ -16,7 +16,6 @@ from mcp_server.schemas.tool_outputs import (
     GetWorkContextOutput,
     LabelOperationOutput,
     PhaseTransitionOutput,
-    RunTestsOutput,
     ScaffoldArtifactOutput,
     WorkflowStateStatus,
 )
@@ -47,19 +46,6 @@ class TestStructuredToolOutputMigration:
 
         assert output.workflow_state_status is status
         assert output.valid_phases == ("research", "design")
-
-    def test_run_tests_uses_numeric_optional_duration(self) -> None:
-        output = RunTestsOutput(
-            exit_code=0,
-            passed_count=3,
-            failed_count=0,
-            skipped_count=0,
-            errors_count=0,
-            duration_seconds=0.42,
-        )
-
-        assert output.duration_seconds == 0.42
-        assert "summary_line" not in type(output).model_fields
 
     @pytest.mark.parametrize(
         ("model", "removed_fields"),

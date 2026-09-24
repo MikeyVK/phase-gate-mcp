@@ -19,7 +19,6 @@ from mcp_server.core.interfaces.context import IContextLoadedReader, IContextLoa
 from mcp_server.core.interfaces.gate import GateReport, GateViolation, IWorkflowGateRunner
 from mcp_server.core.interfaces.git import IBranchParentReader, IGitContextReader
 from mcp_server.core.interfaces.ipr_status import IPRStatusReader, IPRStatusWriter, PRStatus
-from mcp_server.core.interfaces.ipytest_runner import IPytestRunner
 from mcp_server.core.interfaces.quality import IQualityStateRepository
 from mcp_server.core.interfaces.state import IStateReader, IStateRepository
 from mcp_server.core.interfaces.workflow import IWorkflowStateMutator
@@ -38,7 +37,6 @@ class TestInterfaceImports:
         assert PRStatus is not None
         assert IPRStatusReader is not None
         assert IPRStatusWriter is not None
-        assert IPytestRunner is not None
         assert IGitContextReader is not None
         assert IBranchParentReader is not None
         assert IQualityStateRepository is not None

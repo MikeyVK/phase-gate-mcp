@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 82,
-  "last_cycle": 81,
+  "current_cycle": 83,
+  "last_cycle": 82,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -492,6 +492,12 @@
       "name": "Retire project_structure and hidden naming",
       "forced": false,
       "entered": "2026-09-24T09:48:01.010729+00:00"
+    },
+    {
+      "cycle_number": 83,
+      "name": "Retire generic Pytest runner",
+      "forced": false,
+      "entered": "2026-09-24T10:07:13.555322+00:00"
     }
   ],
   "required_phases": [

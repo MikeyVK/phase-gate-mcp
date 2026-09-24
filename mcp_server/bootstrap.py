@@ -83,7 +83,6 @@ from mcp_server.managers.phase_contract_resolver import (
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_repository import BranchValidatedStateReader, FileStateRepository
@@ -194,7 +193,6 @@ from mcp_server.tools.quality_tools import AutoFixTool, RunQualityGatesTool
 from mcp_server.tools.run_tests_tool import RunTestsTool as TargetRunTestsTool
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool as TargetScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool as TargetScaffoldSchemaTool
-from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.utils.atomic_file_writer import (
     CheckedFileWriter,
     CreateOnlyFileWriter,
@@ -1009,7 +1007,6 @@ class ServerBootstrapper:
             RestartServerTool(
                 server_root=(Path(settings.server.workspace_root) / settings.server.server_root_dir)
             ),
-            RunTestsTool(runner=PytestRunner(), settings=settings),
             InitializeProjectTool(
                 workspace_root=Path(settings.server.workspace_root),
                 manager=managers.project_manager,

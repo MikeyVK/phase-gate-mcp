@@ -971,7 +971,9 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C055, C085, C086, C106, C107, C108, C110, C114, T048, T075, T091, T099, T106, T110, T127, T137, T140.
+Existing source IDs: C055, C085, C086, C106, C107, C108, C110, C114, T048, T075, T091, T099, T106, T110, T127, T134, T137, T140.
+
+CY083 bounded DTO/test-fixture import closure (independent QA finding under the user's proportional-correction authorization): C086 removes only the old `TestFailureDTO` and `RunTestsOutput` paired with the retiring `test_tools.py`; the active V3 models in `execution.models` remain. T134 receives a narrow CY083 episode to retire only its old numeric-duration/RunTestsOutput case while preserving unrelated workflow and structured-output assertions. T137 and T140 solely test the removed runner/tool; after both retire, T106 `fake_pytest_runner.py` has no consumers and its type-only import prevents closure, so retire it in CY083. CY105 reviews T106 absence rather than recreating it. No numeric/verbose compatibility alias or replacement fake is added.
 
 Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
 

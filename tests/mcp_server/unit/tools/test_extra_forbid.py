@@ -46,7 +46,6 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesInput,
 )
 from mcp_server.tools.quality_tools import RunQualityGatesInput
-from mcp_server.tools.test_tools import RunTestsInput
 
 
 class TestExtraForbidOnAllInputModels:
@@ -136,8 +135,6 @@ class TestExtraForbidOnAllInputModels:
             (UpdatePlanningDeliverablesInput, {"issue_number": 1, "planning_deliverables": {}}),
             # quality
             (RunQualityGatesInput, {}),
-            # test_tools
-            (RunTestsInput, {"path": "tests/"}),
         ],
     )
     def test_extra_field_raises_validation_error(

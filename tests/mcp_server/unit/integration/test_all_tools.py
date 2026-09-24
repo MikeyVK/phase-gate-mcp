@@ -13,7 +13,6 @@ import pytest
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitPushResult
-from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.schemas.github_models import IssueReadModel
 
 # Git Tools
@@ -47,7 +46,6 @@ from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 
 # Quality Tools
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
-from mcp_server.tools.test_tools import RunTestsTool
 
 
 def make_mock_git_config() -> MagicMock:
@@ -220,7 +218,6 @@ def make_core_tools() -> list[object]:
         make_git_delete_branch_tool(),
         make_run_quality_gates_tool(),
         HealthCheckTool(),
-        RunTestsTool(runner=PytestRunner()),
     ]
 
 
@@ -527,7 +524,6 @@ class TestToolSchemas:
     def test_all_dev_tools_have_schemas(self) -> None:
         tools = [
             HealthCheckTool(),
-            RunTestsTool(runner=PytestRunner()),
         ]
         for tool in tools:
             schema = tool.input_schema
