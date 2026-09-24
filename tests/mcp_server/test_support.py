@@ -71,13 +71,6 @@ def get_default_server_root() -> str:
         return ".pgmcp"
 
 
-def get_template_root() -> Path:
-    """Get the template root directory from settings."""
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
-
-    return Settings.from_env().server.resolved_template_root
-
-
 class _NopGateRunner:
     """No-op gate runner for unit tests: all gates pass, correct cycle-based detection.
 

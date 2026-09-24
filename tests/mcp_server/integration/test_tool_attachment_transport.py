@@ -154,20 +154,28 @@ async def test_listing_exposes_operation_schema_only(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_legacy_stdio_startup_and_handshake(
-    legacy_suite_workspace: Path, pytestconfig: pytest.Config
-) -> None:
-    """Use the normal entry point and version check with isolated actual legacy assets."""
+async def test_v3_stdio_startup_and_handshake(tmp_path: Path, pytestconfig: pytest.Config) -> None:
+    """Use the real MCP SDK to verify isolated V3 startup and tool listing."""
     server_directory = ServerSettings().server_root_dir
-    shutil.copyfile(
-        pytestconfig.rootpath / server_directory / ".version",
-        legacy_suite_workspace / server_directory / ".version",
+    source = pytestconfig.rootpath / server_directory
+    target = tmp_path / server_directory
+    config_root = target / "config"
+    template_root = target / "template_suite"
+    shutil.copytree(source / "config", config_root)
+    shutil.copytree(source / "template_suite", template_root)
+    shutil.copyfile(source / ".version", target / ".version")
+    (target / "installation.json").write_text(
+        json.dumps({"pgmcp_version": Settings().server.version}), encoding="utf-8"
     )
     parameters = StdioServerParameters(
         command=sys.executable,
         args=["-m", "mcp_server"],
         cwd=pytestconfig.rootpath,
-        env={"PGMCP_WORKSPACE_ROOT": str(legacy_suite_workspace)},
+        env={
+            "PGMCP_WORKSPACE_ROOT": str(tmp_path),
+            "PGMCP_CONFIG_ROOT": str(config_root),
+            "PGMCP_TEMPLATE_ROOT": str(template_root),
+        },
     )
     with anyio.fail_after(30):
         async with stdio_client(parameters) as (read, write), ClientSession(read, write) as client:
@@ -175,5 +183,4 @@ async def test_legacy_stdio_startup_and_handshake(
             assert initialized.serverInfo.name
             listing = await client.list_tools()
             names = {tool.name for tool in listing.tools}
-            # Degraded startup exposes health_check alone; these require full legacy assembly.
             assert {"health_check", "scaffold_artifact", "get_project_plan"} <= names

@@ -512,7 +512,7 @@ The new-source register records CY059's inward projection operation and the narr
 | `tests/mcp_server/integration/test_prepared_tool_contract.py` | [CY008](planning-execution.md#cy008) | CY008 |
 | `mcp_server/core/tool_execution.py` | [CY009](planning-execution.md#cy009) | CY009 |
 | `mcp_server/presenters/schema_resource_presenter.py` | [CY009](planning-execution.md#cy009) | CY009 |
-| `tests/mcp_server/integration/test_tool_attachment_transport.py` | [CY009](planning-execution.md#cy009) | CY009 |
+| `tests/mcp_server/integration/test_tool_attachment_transport.py` | [CY009](planning-execution.md#cy009) | CY009, CY105 (QA-designated stdio-handshake V3 fixture adaptation only) |
 | `tests/mcp_server/integration/test_cache_fidelity_v3.py` | [CY010](planning-execution.md#cy010) | CY010 |
 | `tests/mcp_server/integration/test_execution_presentation_v3.py` | [CY011](planning-execution.md#cy011) | CY011 |
 | `mcp_server/config/schemas/adapter_manifest.py` | [CY012](planning-execution.md#cy012) | CY012 |

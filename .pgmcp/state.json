@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 104,
-  "last_cycle": 103,
+  "current_cycle": 105,
+  "last_cycle": 104,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -624,6 +624,12 @@
       "name": "Retire exhausted tier bases",
       "forced": false,
       "entered": "2026-09-24T15:23:03.392934+00:00"
+    },
+    {
+      "cycle_number": 105,
+      "name": "Retire exhausted legacy test harness",
+      "forced": false,
+      "entered": "2026-09-24T15:26:31.225360+00:00"
     }
   ],
   "required_phases": [

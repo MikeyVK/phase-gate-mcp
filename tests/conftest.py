@@ -28,6 +28,6 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
     # Configure default templates and config roots for settings path resolution in tests
     os.environ["PGMCP_TEMPLATE_ROOT"] = str(
-        (_project_root / dev_server_root / "templates").resolve()
+        (_project_root / dev_server_root / "template_suite").resolve()
     )
     os.environ["PGMCP_CONFIG_ROOT"] = str((_project_root / dev_server_root / "config").resolve())
