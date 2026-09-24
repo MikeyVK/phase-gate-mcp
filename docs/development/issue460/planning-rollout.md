@@ -1600,7 +1600,7 @@ Previously introduced paths revisited in this cycle:
 
 None.
 
-- Before deleting any listed source, require its named successor evidence and zero reachable runtime/catalog/active fixture-selector imports. The only permitted temporary source-only edges are A016/A017/A020 to A066/A071 as identified in CY099.D2; they are excluded, unregistered CY101-owned roots, not active behavior, and CY101 must close them. Tests for the removed macros are adapted or removed in this cycle; unrelated portions remain.
+- Before deleting any listed source, require its named successor evidence and zero remaining runtime/template/fixture imports. Tests for the same removed source are adapted or removed in this same cycle; unrelated portions remain.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -1694,7 +1694,7 @@ Previously introduced paths revisited in this cycle:
 
 None.
 
-- Before deleting any listed source, require its named successor evidence and zero remaining runtime/template/fixture imports. Tests for the same removed source are adapted or removed in this same cycle; unrelated portions remain.
+- Before deleting any listed source, require its named successor evidence and zero reachable runtime/catalog/active fixture-selector imports. The only temporary source-only edges are A016/A017/A020 to A066/A071 as identified in CY099.D2; these rejected, unregistered CY101-owned roots are not active behavior, and CY101 closes them. Tests for the removed macros are adapted or removed in this cycle; unrelated portions remain.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
