@@ -975,6 +975,8 @@ Existing source IDs: C055, C085, C086, C106, C107, C108, C110, C114, T048, T075,
 
 CY083 bounded DTO/test-fixture import closure (independent QA finding under the user's proportional-correction authorization): C086 removes only the old `TestFailureDTO` and `RunTestsOutput` paired with the retiring `test_tools.py`; the active V3 models in `execution.models` remain. T134 receives a narrow CY083 episode to retire only its old numeric-duration/RunTestsOutput case while preserving unrelated workflow and structured-output assertions. T137 and T140 solely test the removed runner/tool; after both retire, T106 `fake_pytest_runner.py` has no consumers and its type-only import prevents closure, so retire it in CY083. CY105 reviews T106 absence rather than recreating it. No numeric/verbose compatibility alias or replacement fake is added.
 
+CY083 xdist stop-proof amendment (independent QA NOGO on `c8f46c6a6c4355f54146a5e994320a684b495a26`, under the user's proportional-correction authorization): the existing `tests/mcp_server/integration/adapters/test_pytest.py` cancellation test previously used `args=()` and proved only plain Pytest descendant stopping, while its separate `-n 2` test proved normal completion. In that named durable proof file, adapt the existing cancellation test to launch `-n 2`, observe the xdist worker and its child as distinct live PIDs, then cancel and confirm both stopped via OS process handles. This is the only added test-file write in CY083; no new harness, production change or legacy content test is introduced.
+
 Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:

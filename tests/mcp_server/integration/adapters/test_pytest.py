@@ -294,7 +294,7 @@ def is_running(pid: int) -> bool:
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(os.name != "nt", reason="Windows process-tree evidence")
-async def test_cancellation_stops_native_pytest_descendant(native_case: NativeCase) -> None:
+async def test_cancellation_stops_xdist_worker_and_descendant(native_case: NativeCase) -> None:
     case = native_case
     child = case.workspace / "child.py"
     child.write_text(
@@ -303,7 +303,9 @@ async def test_cancellation_stops_native_pytest_descendant(native_case: NativeCa
         encoding="utf-8",
     )
     case.source.write_text(
-        "import subprocess, sys, time\n\ndef test_spawn():\n"
+        "import os, pathlib, subprocess, sys, time\n\ndef test_spawn():\n"
+        "    assert os.environ.get('PYTEST_XDIST_WORKER')\n"
+        "    pathlib.Path('worker.pid').write_text(str(os.getpid()))\n"
         "    subprocess.Popen([sys.executable, 'child.py'], "
         "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n"
         "    time.sleep(60)\n",
@@ -313,22 +315,28 @@ async def test_cancellation_stops_native_pytest_descendant(native_case: NativeCa
         AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
             launch=binding_for(case).launch,
             workspace_root=case.workspace,
-            request=SelectionCheckRequest(operation="tests", targets=(str(case.source),), args=()),
+            request=SelectionCheckRequest(
+                operation="tests", targets=(str(case.source),), args=("-n", "2")
+            ),
             response_contract=role_response_contract(),
             timeout_seconds=20,
         )
     )
     try:
         async with asyncio.timeout(12):
-            while not (case.workspace / "child.pid").exists():
+            while not all((case.workspace / name).exists() for name in ("worker.pid", "child.pid")):
                 await asyncio.sleep(0.02)
-        pid = int((case.workspace / "child.pid").read_text())
-        assert is_running(pid)
+        worker_pid = int((case.workspace / "worker.pid").read_text())
+        child_pid = int((case.workspace / "child.pid").read_text())
+        assert worker_pid != child_pid
+        assert is_running(worker_pid)
+        assert is_running(child_pid)
         task.cancel()
         outcome = await task
         assert isinstance(outcome, InvocationCancelled)
         assert outcome.termination_problem is None
-        assert not is_running(pid)
+        assert not is_running(worker_pid)
+        assert not is_running(child_pid)
     finally:
         if not task.done():
             task.cancel()
