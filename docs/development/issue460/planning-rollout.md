@@ -1663,6 +1663,10 @@ Existing affected test/helper sources: None. Adapt or retire only their mapped D
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY098, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY098 execution evidence
+
+Pre-cycle commit: `ef13e9de7d3473a59e9b731b1a91f66ae0696020`. The six enumerated legacy Issue/PR/Commit roots/configs were resolved under `C:\\temp\\pgmcp` and SHA-256 checked before deletion; Git retains their exact preimages. The cycle-owned inverse is the committed six-file deletion and `.pgmcp/state.json` transition. No test or production source in the scoped active search selected these paths. The current Issue, PR, and Commit package tests passed together: 12/12, cached result `pgmcp://cache/runs/7894070454014430a9f56e9344c15d57`; they exercise body/message semantics and native framing. A post-deletion active source/config/suite/host-agent scan found no old-root selector or import. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY099
 
 **Retire portable Python/test macro sources**
