@@ -435,3 +435,13 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 | 1.2 | 2026-08-24 | Defer any explicit command/query service artifact family after approving removal of the current broad Service and hidden subtype routing |
 | 1.1 | 2026-08-24 | Add deferred F-18 runtime discovery, reconcile the approved Generic boundary, and remove any implied suite-wide method-body rule |
 | 1.0 | 2026-08-24 | Consolidate all issue-460 deferred work and preserve the Generic Python approval boundary |
+
+## Deferred Work Notice: Native Adapter Robustness for Large Selections
+
+**Decision:** explicitly deferred outside issue #460 by the human owner during Validation on 2026-09-24.
+**Future owner:** coordination, to create and triage a separate PGMCP issue; no issue has yet been created.
+**Suggested issue title:** Audit and harden shipped adapters for large selections and native invocation limits.
+
+The authoritative finding and follow-up acceptance boundaries are recorded as **D-VAL-01** in [Validation — Deferred Work](validation.md#deferred-work), with F-VAL-01 native launch evidence and command-length measurements. Audit all nine shipped adapter packages and every implemented check/test/fix role for analogous selection-to-native execution limits, recording applicability individually. Preserve the generic role contracts as the starting constraint; tool-specific execution strategies belong inside adapters. No universal batching strategy or contract expansion is approved.
+
+This defers robustness follow-up, not the F-20 adapter extension suite itself. Missing validation evidence remains visible; this notice does not turn unavailable checks into passing evidence or authorize issue-460 repair cycles. Coordination should link its new issue back to the validation notice.

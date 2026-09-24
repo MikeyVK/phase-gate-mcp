@@ -220,7 +220,7 @@ Only this validation report and the existing phase-transition state are intended
 
 ## Failures
 
-- F-VAL-01: Required branch checks cannot launch native tools with the current branch target selection on Windows. Current source appends the target list to native argv; this is consistent with the observed command-length failures. Large explicit selections need a supported length-safe execution route; bounded target batches can provide useful evidence without first changing production code. Equivalent complete coverage must be documented.
+- F-VAL-01: Required branch checks could not launch native tools with the current branch target selection on Windows. Repair is explicitly deferred outside #460 as D-VAL-01 below, including an audit of all shipped adapters. This remains an observed evidence limitation, not an issue-460 implementation task; no blanket batching workaround or equivalent coverage is assumed.
 - F-VAL-02: Full-suite completion evidence is unavailable after the MCP client timeout. Determine the existing run's fate or a supported durable-result route before authorizing/repeating a replacement run.
 
 
@@ -252,9 +252,21 @@ Keep V460.1–V460.5 explicitly incomplete until required evidence is available;
 ## Deferred Work
 
 
-### Resolve native branch launch limits and missing full-suite completion evidence through a bounded implementation/tooling follow-up.
+### D-VAL-01 — Audit native execution robustness across all shipped adapters
 
-The validation contract requires reporting failures without redesigning or patching the implementation.
+**Disposition:** Deferred outside issue #460 by explicit owner decision on 2026-09-24. Coordination owns creation and triage of a separate issue; no follow-up issue has been created here.
+
+**Suggested issue title:** Audit and harden shipped adapters for large selections and native invocation limits.
+
+**Confirmed trigger:** F-VAL-01: the branch selection becomes one oversized native command line in Ruff, Mypy and Pyright, producing WinError 206 / ENAMETOOLONG. See the cached branch operation and the command-length diagnosis below.
+
+**Follow-up scope:** Inventory every shipped adapter package and each implemented check/test/fix role. Review selection-to-native invocation, platform command/argument limits, quoting and path handling, large selections, native discovery semantics, and actionable failure evidence. Establish applicability per adapter instead of assuming every adapter has the same defect. Where internal batching or alternative transport is considered, prove preserved cross-file semantics, complete coverage, aggregate outcomes and diagnostics, lifecycle limits, and fix-role mutation/failure behavior. Exercise representative boundary cases on supported platforms.
+
+**Contract boundary:** Preserve the existing generic role request/response contracts as the starting constraint. Keep native-tool execution knowledge inside adapters; do not make agents or generic orchestration calculate tool-specific command limits. No contract expansion or universal batching design is approved by this deferral.
+
+**Issue-460 consequence:** No adapter repair or additional implementation cycle for D-VAL-01 belongs to this issue. The observed unavailable branch checks remain recorded validation evidence; deferring the repair does not convert them into passing checks or by itself close V460.4. Missing full-suite completion evidence remains a separate finding, not part of this deferral.
+
+**Coordination hand-off:** Create the separate issue from this notice and link it back here. Future Research must distinguish confirmed defects, equivalent risks in other adapters, and tool-specific non-applicability; define acceptance evidence before choosing remedies.
 
 
 
@@ -319,7 +331,7 @@ Adapter manifests request executable=python; bootstrap resolves it through shuti
 
 ### Remaining work
 
-Resolve length-safe selection execution with explicit preservation of native semantics; fix misleading Ruff failure classification; select and document the intended full-suite native discovery boundary; reconcile the client/adapter timeout budgets and native environments. These are findings and candidate remediation boundaries, not an implementation patch or a changed Approved Strategy. No production files, ACLs, scratch directories, dependencies or client configuration were changed.
+D-VAL-01 length-safe native execution and the all-adapter robustness audit are deferred outside issue #460 for coordination to create a separate issue. Other findings remain under discussion: misleading Ruff failure classification, the intended full-suite native discovery boundary, client/adapter timeout budgets and native environments. No remediation of those other findings is selected by the D-VAL-01 deferral. No production files, ACLs, scratch directories, dependencies or client configuration were changed.
 
 ## Refactor / Validation Hand-over
 
@@ -340,7 +352,7 @@ One workspace test attempt returned only a 120-second MCP timeout. One branch ch
 
 ### Open Work
 
-F-VAL-01 native launch length; F-VAL-02 missing full execution completion plus diagnosed root-scope collection failures; F-VAL-04 misleading Ruff classification. F-VAL-03 is withdrawn by the investigation addendum. Full V460.1–V460.5 closure and independent review remain open. Native Ruff version discrepancy and historical Mypy failures remain recorded above.
+D-VAL-01 / F-VAL-01: adapter launch robustness is explicitly deferred outside #460; coordination must create a separate issue covering all shipped adapters and link it to this notice. The unavailable branch-check evidence remains visible. F-VAL-02 missing full execution completion and the separately diagnosed root-scope collection failures, plus F-VAL-04 misleading Ruff classification, remain under discussion. F-VAL-03 is withdrawn by the investigation addendum. Full V460.1–V460.5 closure and independent review remain open. Native Ruff version discrepancy and historical Mypy failures remain recorded above.
 
 ### Review Request
 
