@@ -1,123 +1,136 @@
 <!-- docs\setup\dev-isolation.md -->
 <!-- template=generic_doc version=43c84181 created=2026-07-08T05:42Z updated= -->
+
 # Developer Isolation
 
 **Status:** APPROVED  
-**Version:** 1.0  
-**Last Updated:** 2026-07-08
+**Version:** 1.1  
+**Last Updated:** 2026-09-24
 
 ---
 
 ## Purpose
 
-Establish development isolation where the active running server instance operates from a packaged wheel installed in a stable virtual environment, completely decoupled from the active development codebase python source files.
+Run the installed PGMCP package from a dedicated Python environment while it operates
+on a separate development checkout. This verifies that the launched server imports the
+installed wheel, while workspace state and owner-managed configuration remain in their
+configured roots.
 
 ## Prerequisites
 
-Read these first:
-1. Python 3.10+
-2. pip
-3. build package installed
----
+- Python 3.11 or later and pip.
+- The `build` package in the development environment (`python -m pip install build`).
+- Owner-installed native executables required by the configured check, test, and fix
+  adapters in the stable runtime environment. PGMCP does not install native dependencies
+  during setup or renewal.
 
-## Summary
+## Roots and ownership
 
-This guide documents the developer isolation setup, virtual environment separation, env variables configuration, and the workflow loop to build and run the MCP server hermetically.
-
-
-
-
-
----
-
-## Architecture
-
-The developer isolation model ensures the active running server instance operates from a stable python environment while interacting with the active development repository.
+The default workspace root is the launch working directory. The default server-data root
+is `.pgmcp/` under that workspace. Configuration resolves to
+`<server-root>/config` and the managed template suite to
+`<server-root>/template_suite`, unless `PGMCP_CONFIG_ROOT` or
+`PGMCP_TEMPLATE_ROOT` selects another path. An explicit root remains authoritative and
+owner-managed; package defaults are initial-install material and migration references,
+not a fallback that silently fills an existing configuration.
 
 ```mermaid
 graph TD
-    subgraph Dev_Environment [Development Environment]
-        DevCode[Development Source Code<br>mcp_server/]
-        DevVenv[.venv<br>python -m pytest]
-    end
-
-    subgraph Run_Environment [Stable Execution Environment]
-        StableVenv[pgmcp_stable_venv<br>pip install dist/whl]
-    end
-
-    subgraph State_Config [Workspace State]
-        PgmcpState[.pgmcp/state.json]
-        PgmcpTemp[.pgmcp/templates/]
-    end
-
-    StableVenv -->|CWD / PGMCP_WORKSPACE_ROOT| DevCode
-    StableVenv -->|Reads/Writes| PgmcpState
-    StableVenv -->|Loads Templates| PgmcpTemp
-    DevVenv -->|Tests Source| DevCode
+    Source[Development checkout] -->|build_package.py and release manifest| Assets[Packaged assets]
+    Assets -->|wheel package data| Wheel[Installed wheel in stable venv]
+    Wheel -->|launched with checkout as workspace root| Workspace[Development workspace]
+    Workspace --> ServerRoot[.pgmcp server data]
+    ServerRoot --> Config[config: owner-managed after initialization]
+    ServerRoot --> Suite[template_suite: active managed suite]
+    Wheel --> Adapters[bundled adapters stay in package]
+    Owner[Owner provisions native executables] --> Runtime[Stable runtime environment]
+    Adapters --> Runtime
 ```
 
-## Step-by-Step
+## Build and install the wheel
 
-Follow these steps to configure isolation:
+Create a stable runtime environment, build the package from the checkout, then install
+the generated wheel into that environment:
 
-1. Create the stable execution environment:
-   ```powershell
-   python -m venv pgmcp_stable_venv
-   ```
-2. Build the server wheel package from the development repository:
-   ```powershell
-   python scripts/build_package.py
-   ```
-3. Install the wheel into the stable execution environment:
-   ```powershell
-   ./pgmcp_stable_venv/Scripts/pip install dist/phase_gate_mcp-1.0.0-py3-none-any.whl --force-reinstall
-   ```
-4. Setup settings in your IDE to point the MCP server configuration to the stable python executable while setting the CWD or workspace root environment variable to the development repository directory.
+```powershell
+python -m venv pgmcp_stable_venv
+python -m pip install build
+python scripts/build_package.py
 
-## Environment Variables
+$wheel = Get-ChildItem .\dist\phase_gate_mcp-*.whl | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+& .\pgmcp_stable_venv\Scripts\python.exe -m pip install --force-reinstall $wheel.FullName
+```
 
-| Variable | Value | Purpose |
-| --- | --- | --- |
-| `PGMCP_WORKSPACE_ROOT` | Path to dev workspace | Ensures the server acts on the codebase under development. |
-| `PGMCP_SERVER_PROJECT_DIR` | `.pgmcp` | Directs the server state directory within the workspace. |
-| `PYTHONPATH` | *Empty* / *Unset* | Prevents stable server from importing local un-packaged Python source files. |
+The build assembles `mcp_server/assets/` from
+`.pgmcp/config/release_manifest.yaml` and then builds the wheel. The wheel includes
+those assets plus `mcp_server/bundled_adapters/` as package data. Official adapters
+remain inside the package; they are not copied into the workspace. Native programs such
+as checkers or test runners must be installed and available in the environment that
+launches the adapter. Workspace adapters under the server root remain owner-managed and
+must be explicitly trusted in configuration.
 
-## Development Workflow
+## Initialize or migrate a workspace
 
-Maintain isolation using this workflow cycle:
-1. Edit code and tests in the dev workspace.
-2. Run unit and integration tests locally in `.venv`:
-   ```powershell
-   pytest tests/
-   ```
-3. Run linter and quality checks:
-   ```powershell
-   run_quality_gates
-   ```
-4. Re-compile package assets and rebuild the wheel:
-   ```powershell
-   python scripts/build_package.py
-   ```
-5. Re-install the new wheel in the stable environment:
-   ```powershell
-   ./pgmcp_stable_venv/Scripts/pip install dist/phase_gate_mcp-1.0.0-py3-none-any.whl --force-reinstall
-   ```
+Set `PGMCP_WORKSPACE_ROOT` to the development checkout and
+`PGMCP_SERVER_PROJECT_DIR` to the intended server-data directory (default: `.pgmcp`).
+For a new workspace, `pgmcp --init` requires that the resolved server root does not
+already exist. It copies packaged assets into that root and runs the normal renewal
+operation to establish installation state. It is not an upgrade command.
+
+For a pre-v3 workspace, run `pgmcp --upgrade`. A first-v3 workspace without a trusted
+component checkpoint is preserved and reports `checkpoint_required` (exit code 2) after
+staging and validating the candidate; it does not silently replace the active suite.
+For a managed root, the owner may choose `--force-template-upgrade`, which makes a
+verified backup before installing the candidate, or first reconcile a complete valid v3
+suite and use `--accept-template-baseline` to record the baseline without copying over
+that reconciled suite. For an external template root, the owner decides and performs or
+authorizes the equivalent migration; PGMCP does not force-replace it.
+
+The effective configuration root, including an external `PGMCP_CONFIG_ROOT`, remains
+owner-controlled during renewal. Review and explicitly migrate existing configuration
+against the shipped defaults when needed; renewal does not silently fill, translate, or
+overwrite it. See the [workspace upgrade guide](workspace-upgrade.md).
+
+## Launch the installed server against the checkout
+
+Configure the MCP client to use the stable environment's Python executable and the
+installed package's proxy entrypoint. Keep the checkout as the working directory for
+workspace operations, and leave `PYTHONPATH` unset so imports resolve from the installed
+environment:
+
+```json
+{
+  "command": "C:/path/to/pgmcp_stable_venv/Scripts/python.exe",
+  "args": ["-m", "mcp_server.core.proxy"],
+  "cwd": "C:/path/to/development-checkout",
+  "env": {
+    "PGMCP_WORKSPACE_ROOT": "C:/path/to/development-checkout",
+    "PGMCP_SERVER_PROJECT_DIR": ".pgmcp"
+  }
+}
+```
+
+Add other owner-selected settings such as `PGMCP_CONFIG_ROOT`,
+`PGMCP_TEMPLATE_ROOT`, and GitHub credentials as required. Do not copy credentials
+into tracked setup files.
+
+## Development and reload loop
+
+1. Edit source and workspace files in the checkout.
+2. Run development checks in the development environment as required by the active
+   workflow contract.
+3. Rebuild and reinstall the wheel when testing package changes.
+4. Restart the MCP server after installing package changes or changing startup-loaded
+   configuration or the active template suite. If launch environment variables change,
+   relaunch the client so the new environment reaches the proxy and child server.
+5. Verify the installed version and effective roots through the normal runtime context
+   before relying on the session.
+
+No health-first gate is required for this reload procedure.
 
 ## Related Documentation
-- **[docs/coding_standards/DOCUMENTATION_STANDARD.md][related-1]**
-- **[docs/development/issue420/research.md][related-2]**
-- **[docs/development/issue420/design.md][related-3]**
 
-<!-- Link definitions -->
-
-[related-1]: docs/coding_standards/DOCUMENTATION_STANDARD.md
-[related-2]: docs/development/issue420/research.md
-[related-3]: docs/development/issue420/design.md
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-07-08 | Agent | Initial draft |
+- [Workspace upgrade guide](workspace-upgrade.md)
+- [Release assets procedure](../reference/release-assets-procedure.md)
+- [Server configuration](../reference/server-configuration.md)
+- [Package source and build script](../../scripts/build_package.py)

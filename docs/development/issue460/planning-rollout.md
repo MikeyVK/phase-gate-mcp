@@ -1346,6 +1346,10 @@ Existing affected test/helper sources: None. Adapt or retire only their mapped D
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY091, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY091 execution evidence
+
+Pre-cycle commit: `6a2f42d8a9c66cffb3f07f83f5702e88e7758625`. The cycle-owned inverse is the committed diff for `README.md`, `docs/setup/workspace-upgrade.md`, `docs/manuals/github-setup.md`, `docs/setup/dev-isolation.md`, and `docs/reference/release-assets-procedure.md`; the separately tracked `.pgmcp/state.json` carries cycle state. No other dirty or untracked workspace file is part of this recovery set. The current CLI, settings resolver, release manifest, build path, and installed-launch boundary were compared with the instructions. All local links in these five pages resolve. The changes are documentation-only, so no runtime test or quality gate was rerun; earlier runtime evidence remains unchanged. Independent review is requested without a producer GO claim.
+
 ## CY092
 
 **Architecture diagrams**

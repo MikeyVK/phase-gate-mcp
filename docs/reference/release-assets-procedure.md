@@ -68,10 +68,10 @@ does not package active runtime locations.
 
 ## 2. Release Manifest Specification (`release_manifest.yaml`)
 
-A structured configuration file `release_manifest.yaml` located under `.pgmcp/config/release_manifest.yaml` defines which files are release-bound and packaged into the wheel assets:
+The authoritative manifest is `.pgmcp/config/release_manifest.yaml`. The current
+manifest maps these repository sources into `mcp_server/assets/`:
 
 ```yaml
-version: "1.0.0"
 assets:
   - source: ".pgmcp/config"
     target: "config"
@@ -87,7 +87,17 @@ assets:
     target: "docs/reference"
   - source: "docs/setup"
     target: "docs/setup"
+  - source: "CHANGELOG.md"
+    target: "docs/CHANGELOG.md"
+  - source: "README.md"
+    target: "docs/README.md"
+  - source: "LICENSE"
+    target: "LICENSE"
 ```
+
+The repository manifest is the source of truth for package asset mappings. Keep
+consumer copies of host instructions synchronized with their declared direct-copy
+sources; build assets are generated outputs, not separately edited sources.
 
 Official adapters are authored under `mcp_server/bundled_adapters/` and remain in
 that package path in the wheel. They are package data, not release-manifest assets,
@@ -106,23 +116,61 @@ During the Python wheel compilation step:
 
 ---
 
-## 4. Bootstrapping Execution (`pgmcp --init`)
+## 4. Bootstrapping and renewal
 
-The CLI `pgmcp --init` performs a strict flat copy of `mcp_server/assets/` to `.pgmcp/` in the user's workspace:
-- It checks if `.pgmcp/` already exists. If yes, it aborts (idempotency guard).
-- If no, it copies `mcp_server/assets/` directly to `.pgmcp/`.
-- No files are written outside `.pgmcp/` to keep the user's project workspace clean.
+### 4.1 Fresh initialization (`pgmcp --init`)
+
+`pgmcp --init` resolves the server root from `PGMCP_WORKSPACE_ROOT` and
+`PGMCP_SERVER_PROJECT_DIR` (default: `<workspace>/.pgmcp`). It exits with an error if
+that resolved root already exists. Otherwise, it creates the root, copies packaged
+assets into it, then runs the normal renewal operation to validate the active suite and
+publish installation state. This is fresh initialization, not an in-place migration.
+
+The asset copy is rooted at the resolved server root; do not describe it as always
+writing to a literal `.pgmcp/` or as a general guarantee about unrelated workspace
+paths. An explicit `PGMCP_CONFIG_ROOT` remains the effective owner-managed configuration
+root, and `PGMCP_TEMPLATE_ROOT` selects the active suite root when set. External roots
+remain owner-controlled. Defaults shipped in the wheel seed a fresh installation and
+serve as references for an explicit migration; they do not silently replace populated
+configuration.
+
+Official adapter packages remain in `mcp_server/bundled_adapters/` inside the wheel and
+are not copied into the workspace. Their native executables are installed and maintained
+by the environment owner. Renewal does not install or probe those dependencies.
+
+### 4.2 Existing pre-v3 workspace
+
+For an existing workspace, use `pgmcp --upgrade`, not `--init`. On first v3 suite
+migration, the command preserves the existing actual suite, stages and validates the
+candidate, and may report `checkpoint_required` with exit code 2. That result requires an
+owner decision; it does not activate the candidate or authorize configuration overwrite.
+
+For a managed root, `--force-template-upgrade` performs a verified backup before
+replacing the complete suite. If local customization must be retained, reconcile a
+complete valid v3 suite first, then use `--accept-template-baseline` to acknowledge the
+baseline without copying candidate files over that suite. For an external template root,
+the external owner controls the equivalent migration and checkpoint decision; PGMCP does
+not assume force-replacement authority.
+
+There is no automatic external rollout or deployment in this procedure. After a package
+install, active suite change, or startup-loaded configuration change, restart the MCP
+server. A change to launch environment variables may require closing and relaunching the
+client so the proxy and child server inherit the new environment. No health-first gate is
+part of this procedure.
 
 ---
 
 ## Related Documentation
 
+- [Workspace upgrade guide](../setup/workspace-upgrade.md)
+- [Developer isolation guide](../setup/dev-isolation.md)
+- [Server configuration](server-configuration.md)
 - **[docs/manuals/user-guide.md][related-1]**
 - **[Adding a First-Class Workflow][related-2]**
 
 <!-- Link definitions -->
 
-[related-1]: docs/manuals/user-guide.md
+[related-1]: ../manuals/user-guide.md
 [related-2]: workflow-extension-guide.md
 
 ---
