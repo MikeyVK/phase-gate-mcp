@@ -18,7 +18,6 @@ import pytest
 
 from mcp_server.config.loader import normalize_config_root
 from mcp_server.core.interfaces import IStateReader
-from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import (
     EnforcementConfig,
     EnforcementRunner,
@@ -326,45 +325,6 @@ class TestAdminToolsRestartMarker:
         monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert result == server_root / ".restart_marker"
-
-
-# ---------------------------------------------------------------------------
-# F6 / artifact_manager — ephemeral temp uses workspace_root
-# ---------------------------------------------------------------------------
-
-
-class TestArtifactManagerEphemeralTemp:
-    """ArtifactManager ephemeral temp dir must be workspace_root-relative."""
-
-    def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
-        """Path(f"{get_default_server_root()}/temp") must be replaced
-        with self.server_root / 'temp'."""
-        state_root = tmp_path / get_default_server_root()
-        state_root.mkdir()
-        (state_root / "template_registry.json").touch()
-
-        manager = ArtifactManager(
-            workspace_root=tmp_path,
-            server_root=state_root,
-            registry=MagicMock(),
-        )
-
-        # The internal server_root should be the injected one
-        assert manager.server_root == state_root
-
-    def test_template_registry_path_not_cwd_relative(self, tmp_path: Path) -> None:
-        """template_registry path must be based on server_root, not CWD."""
-        state_root = tmp_path / get_default_server_root()
-        state_root.mkdir()
-        registry_path = state_root / "template_registry.json"
-
-        manager = ArtifactManager(
-            workspace_root=tmp_path,
-            server_root=state_root,
-            registry=MagicMock(),
-            template_registry=TemplateRegistry(registry_path=registry_path),
-        )
-        assert str(tmp_path) in str(manager.template_registry.registry_path)
 
 
 # ---------------------------------------------------------------------------

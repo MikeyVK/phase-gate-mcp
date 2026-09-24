@@ -45,7 +45,6 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces import ICoreTool, IToolResponsePublisher
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_execution import ToolExecution
-from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
@@ -221,7 +220,6 @@ class TestBootstrap:
             "quality_state_repository": MagicMock(spec=FileQualityStateRepository),
             "qa_manager": MagicMock(spec=QAManager),
             "github_manager": MagicMock(spec=GitHubManager),
-            "artifact_manager": MagicMock(spec=ArtifactManager),
             "pr_status_cache": MagicMock(spec=PRStatusCache),
             "enforcement_runner": MagicMock(spec=EnforcementRunner),
             "response_cache": MagicMock(spec=IToolResponsePublisher),
@@ -551,7 +549,6 @@ class TestServerBootstrapperToolsAndResources:
             bootstrapper = ServerBootstrapper(mock_settings)
             server = bootstrapper.bootstrap()
             resource_uris = {r.uri_pattern for r in server.resources}
-            assert "pgmcp://rules/coding_standards" in resource_uris
             assert "pgmcp://github/issues" not in resource_uris
 
     def test_build_resources_with_github_token(self) -> None:
@@ -577,7 +574,6 @@ class TestServerBootstrapperToolsAndResources:
             bootstrapper = ServerBootstrapper(mock_settings)
             server = bootstrapper.bootstrap()
             resource_uris = {r.uri_pattern for r in server.resources}
-            assert "pgmcp://rules/coding_standards" in resource_uris
             assert "pgmcp://github/issues" in resource_uris
 
 
@@ -606,12 +602,3 @@ class TestMCPServerBootstrap:
         assert server._settings is mock_settings  # pyright: ignore[reportPrivateUsage]  # unavoidable test-infrastructure necessity to verify the constructor stores the settings dependency
         assert server.tools is mock_tools
         assert server.resources is mock_resources
-
-    def test_make_test_server_creates_valid_server(self) -> None:
-        """Verify make_test_server helper creates a valid MCPServer instance."""
-        from tests.mcp_server.test_support import make_test_server  # noqa: PLC0415
-
-        server = make_test_server()
-        assert isinstance(server, MCPServer)
-        assert server.tools is not None
-        assert server.resources is not None

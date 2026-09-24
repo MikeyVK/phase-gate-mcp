@@ -249,6 +249,8 @@ async def test_context_rejection_attaches_the_same_schema_as_discovery(
     delivered: DeliveredTemplate,
 ) -> None:
     composition = compose(tmp_path, pytestconfig, delivered, "passed")
+    admitted = composition.server.tools[0].input_schema["properties"]["artifact_type"]["enum"]
+    assert set(admitted) == {package.manifest.template_id for package in delivered.catalog.packages}
     rejected, result = await invoke(
         composition,
         "scaffold_artifact",
@@ -321,8 +323,9 @@ async def test_creation_fault_retains_passed_checks_and_exact_error_details(
         {"target_path": "/outside"},
         {"force_target": True},
         {"artifact_type": "unknown"},
+        {"extra_field": "rejected"},
     ],
-    ids=["basename", "relative-target", "force-needs-target", "unknown-selection"],
+    ids=["basename", "relative-target", "force-needs-target", "unknown-selection", "extra-field"],
 )
 async def test_malformed_scaffold_input_stops_at_the_public_envelope(
     tmp_path: Path,

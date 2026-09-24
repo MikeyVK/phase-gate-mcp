@@ -73,7 +73,6 @@ from mcp_server.execution.content_input import FileContentScratch
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
 from mcp_server.execution.test_service import TestRunManager
-from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.branch_parent_reader import BranchStateParentReader
 from mcp_server.managers.deliverable_checker import DeliverableChecker
 from mcp_server.managers.enforcement_runner import EnforcementRunner
@@ -197,8 +196,6 @@ from mcp_server.tools.project_tools import (
 from mcp_server.tools.quality_tools import AutoFixTool, RunQualityGatesTool
 from mcp_server.tools.run_tests_tool import RunTestsTool as TargetRunTestsTool
 from mcp_server.tools.safe_edit_tool import SafeEditTool
-from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
-from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool as TargetScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool as TargetScaffoldSchemaTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
@@ -254,7 +251,6 @@ class ManagerGraph:
     quality_state_repository: FileQualityStateRepository
     qa_manager: QAManager | None
     github_manager: GitHubManager
-    artifact_manager: ArtifactManager | None
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
     response_cache: IToolResponsePublisher | IToolResponseReader
@@ -954,21 +950,6 @@ class ServerBootstrapper:
             contributor_config=configs.contributor_config,
             git_config=configs.git_config,
         )
-        artifact_manager = (
-            ArtifactManager(
-                workspace_root=workspace_root,
-                server_root=server_root,
-                template_registry=template_registry,
-                registry=configs.artifact_registry,
-                project_structure_config=configs.project_structure_config,
-            )
-            if (
-                template_registry is not None
-                and configs.artifact_registry is not None
-                and configs.project_structure_config is not None
-            )
-            else None
-        )
         pr_status_cache = PRStatusCache(github_manager=github_manager)
         enforcement_runner = EnforcementRunner(
             workspace_root=workspace_root,
@@ -994,7 +975,6 @@ class ServerBootstrapper:
             quality_state_repository=quality_state_repository,
             qa_manager=qa_manager,
             github_manager=github_manager,
-            artifact_manager=artifact_manager,
             pr_status_cache=pr_status_cache,
             enforcement_runner=enforcement_runner,
             response_cache=response_cache,
@@ -1008,9 +988,8 @@ class ServerBootstrapper:
         """Compose all supported tools and select the settings-dependent active subset."""
         settings = self._settings
         qa_manager = managers.qa_manager
-        artifact_manager = managers.artifact_manager
-        if qa_manager is None or artifact_manager is None:
-            raise ConfigError("Legacy tool assembly requires legacy managers")
+        if qa_manager is None:
+            raise ConfigError("Legacy tool assembly requires legacy quality manager")
         branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
         merge_readiness_context = MergeReadinessContext(
             terminal_phase=configs.workphases_config.get_terminal_phase(),
@@ -1115,8 +1094,6 @@ class ServerBootstrapper:
                     Path(settings.server.workspace_root) / settings.server.server_root_dir
                 ),
             ),
-            ScaffoldArtifactTool(manager=artifact_manager),
-            ScaffoldSchemaTool(manager=artifact_manager),
             GetWorkContextTool(
                 settings=settings,
                 git_manager=managers.git_manager,

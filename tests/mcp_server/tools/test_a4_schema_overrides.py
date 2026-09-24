@@ -5,9 +5,8 @@ Covers:
 - ForcePhaseTransitionTool: to_phase.enum from WorkphasesConfig
 - InitializeProjectTool: workflow_name.enum from ContractsConfig
 - CreateIssueTool: issue_type.enum, priority.enum, scope.enum, title.maxLength from configs
-- ScaffoldArtifactTool: artifact_type.enum from registry
 
-@dependencies: phase_tools, project_tools, issue_tools, scaffold_artifact
+@dependencies: phase_tools, project_tools, issue_tools
 """
 
 from unittest.mock import MagicMock
@@ -17,7 +16,6 @@ import pytest
 from mcp_server.tools.issue_tools import CreateIssueTool
 from mcp_server.tools.phase_tools import ForcePhaseTransitionTool, TransitionPhaseTool
 from mcp_server.tools.project_tools import InitializeProjectTool
-from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
 
 
 def _make_workphases_config(phases: dict | None = None) -> MagicMock:
@@ -61,12 +59,6 @@ def _make_git_config(max_length: int = 72) -> MagicMock:
     config = MagicMock()
     config.issue_title_max_length = max_length
     return config
-
-
-def _make_artifact_manager(type_ids: list[str] | None = None) -> MagicMock:
-    manager = MagicMock()
-    manager.registry.list_type_ids.return_value = type_ids or ["dto", "design", "worker"]
-    return manager
 
 
 class TestTransitionPhaseToolSchema:
@@ -173,20 +165,3 @@ class TestCreateIssueToolSchema:
     def test_title_has_max_length(self, tool: CreateIssueTool) -> None:
         schema = tool.input_schema
         assert schema["properties"]["title"].get("maxLength") == 72
-
-
-class TestScaffoldArtifactToolSchema:
-    """C3: ScaffoldArtifactTool.input_schema injects artifact_type.enum from registry."""
-
-    @pytest.fixture
-    def tool(self) -> ScaffoldArtifactTool:
-        return ScaffoldArtifactTool(manager=_make_artifact_manager(["dto", "design", "worker"]))
-
-    def test_artifact_type_has_enum(self, tool: ScaffoldArtifactTool) -> None:
-        schema = tool.input_schema
-        assert "enum" in schema["properties"]["artifact_type"]
-
-    def test_artifact_type_enum_contains_known_types(self, tool: ScaffoldArtifactTool) -> None:
-        schema = tool.input_schema
-        enum_values = schema["properties"]["artifact_type"]["enum"]
-        assert set(enum_values) == {"dto", "design", "worker"}

@@ -17,6 +17,7 @@ class InstalledDistribution:
     wheel: Path
     root: Path
     workspace: Path
+    python_executable: Path | None = None
 
     def python(
         self,
@@ -29,7 +30,9 @@ class InstalledDistribution:
         """Run with installed PGMCP ahead of provisioned third-party dependencies."""
         return subprocess.run(
             [
-                sys.executable,
+                str(self.python_executable)
+                if self.python_executable is not None
+                else sys.executable,
                 "-I",
                 "-c",
                 "import sys; sys.path.insert(0, sys.argv.pop(1))\n" + code,
@@ -46,8 +49,13 @@ class InstalledDistribution:
         )
 
 
-def build_installed_distribution(source: Path, temporary_root: Path) -> InstalledDistribution:
+def build_installed_distribution(
+    source: Path, temporary_root: Path, *, python_executable: Path | None = None
+) -> InstalledDistribution:
     """Stage current sources, build without fetching, and install only that wheel."""
+    if python_executable is not None:
+        assert python_executable.is_absolute() and python_executable.is_file()
+    runtime = str(python_executable) if python_executable is not None else sys.executable
     assert not temporary_root.resolve().is_relative_to(source.resolve())
     stage = temporary_root / "build"
     stage.mkdir(parents=True)
@@ -61,7 +69,7 @@ def build_installed_distribution(source: Path, temporary_root: Path) -> Installe
     copy_assets(source, stage / "mcp_server/assets", manifest)
     wheels = temporary_root / "wheels"
     built = subprocess.run(
-        [sys.executable, "-m", "build", "--wheel", "--no-isolation", "--outdir", str(wheels)],
+        [runtime, "-m", "build", "--wheel", "--no-isolation", "--outdir", str(wheels)],
         cwd=stage,
         text=True,
         capture_output=True,
@@ -74,7 +82,7 @@ def build_installed_distribution(source: Path, temporary_root: Path) -> Installe
     installed = temporary_root / "installed"
     result = subprocess.run(
         [
-            sys.executable,
+            runtime,
             "-m",
             "pip",
             "install",
@@ -94,7 +102,7 @@ def build_installed_distribution(source: Path, temporary_root: Path) -> Installe
     assert result.returncode == 0, result.stdout + result.stderr
     workspace = temporary_root / "workspace"
     workspace.mkdir()
-    return InstalledDistribution(artifacts[0], installed, workspace)
+    return InstalledDistribution(artifacts[0], installed, workspace, python_executable)
 
 
 CATALOG_PROBE = r"""

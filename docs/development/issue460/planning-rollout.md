@@ -570,7 +570,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C055, C064, C097, C098, T001, T005, T008, T012, T013, T015, T020, T021, T048, T076, T077, T078, T079, T080, T091, T103, T104.
+Existing source IDs: C055, C064, C097, C098, T001, T005, T008, T012, T013, T014, T015, T017, T020, T021, T048, T060, T075, T076, T077, T078, T079, T080, T091, T095, T099, T103, T104.
 
 Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
 
@@ -580,11 +580,17 @@ None.
 
 Previously introduced paths revisited in this cycle:
 
-None.
+- `tests/mcp_server/integration/test_scaffold_public_v3.py` (only catalog-derived admitted enum and strict extra-field behavior, as successors for T060/T099).
+- `tests/mcp_server/fixtures/installed_distribution.py` (only optional active-launcher interpreter for the installed-candidate wheel build/install/probes; default behavior for other callers remains unchanged).
+- `tests/mcp_server/integration/test_target_startup.py` (only retire obsolete pre-cutover candidate preparation and duplicate candidate-readback rehearsal while retaining installed fresh/migration/stdio assertions).
 
 - Only retire named obsolete bodies/imports/tests. Existing test rows may already have migrated; delete only superseded claims and retain their Design-mandated observable successors. A remaining caller stops this cycle and requires an explicit bounded amendment before removal.
 
 - Close the last ArtifactManager imports in T013/T015/T077/T080 here even when later registry/metadata/location-only assertions survive. Their later cycles may handle only claims independent of the deleted manager.
+
+- CY074 startup-fixture amendment (independent QA NOGO; user-approved clean post-cutover disposition, 2026-09-24): `tests/mcp_server/integration/test_target_startup.py` is a newly added exact test path; T048 names the separate `test_support.py` file. Retire the candidate-only R004/R005/R006 source-copy rehearsal and pre-cutover host/pyproject/config/CLI patch steps. The landed live R004/R005/R006 claims remain executable (15 focused tests passed). Build the installed candidate from current V3 source; retain fresh installation, owner-migrated upgrade/readback and real stdio handshake assertions. Compare the interpreter observed inside the launched candidate with the configured launcher, not with the separate pytest runner; preserve PATH and installed module-origin checks. No production change or skipped installed migration test is permitted.
+
+- CY074 import-closure amendment (independent QA preflight, 2026-09-24): six additional existing test files still import the modules retired here. Retire T017's legacy all-type manager smoke only after mapping its family rendering and complete installed-catalog claims to the existing V3 package-family and catalog tests, and its public routing claim to `test_scaffold_public_v3.py`; no template-content assertions are added. In T014 substitute the V3 scaffold tool class while retaining PR-lock coverage. In T060 retire only the old registry-derived enum assertions after checking the V3 catalog-derived public schema successor, preserving phase/issue/workflow assertions. In T075 retire only the old schema tool member of the mixed tool list, retaining all unrelated tools and schema/name checks. In T095 retire only the ArtifactManager-specific root class after checking explicit-root V3 target and atomic-writer proofs, retaining unrelated state/root tests. In T099 retire only the old scaffold input row after checking V3 strict public admission, retaining other input models. These six changes are import closure, not new production scope; a missing successor stops the affected deletion.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
@@ -595,7 +601,7 @@ Named durable proof files:
 - `tests/mcp_server/integration/test_schema_public_v3.py`
 - `tests/mcp_server/integration/test_scaffold_public_v3.py`
 
-Existing affected test/helper sources: T001, T005, T008, T012, T013, T015, T020, T021, T048, T076, T077, T078, T079, T080, T091, T103, T104. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
+Existing affected test/helper sources: T001, T005, T008, T012, T013, T014, T015, T017, T020, T021, T048, T060, T075, T076, T077, T078, T079, T080, T091, T095, T099, T103, T104. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY074, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
