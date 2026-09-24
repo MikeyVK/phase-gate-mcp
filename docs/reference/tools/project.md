@@ -153,12 +153,12 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 #### Reading large cached plans
 
-The normal text presentation retains a short cache URI. Only complete cached results
-larger than the configured read budget also link to `pgmcp://docs/cache-reading`.
-That MCP resource serves the packaged [cache-reading reference](../../../mcp_server/resources/cache_reading.md),
-including the unchanged window, integrity, truncation, and safe retry protocol.
-It is available without a repository checkout. For an expired cached plan, repeat
-the read-only `get_project_plan` query and use its new run URI.
+The response includes the run-specific `pgmcp://cache/runs/{run_id}` URI. If the
+complete result exceeds the configured cache-read budget, the presentation also points
+to `pgmcp://docs/cache-reading`. That packaged guide defines the bounded window,
+integrity, truncation, and retry protocol. It is available without a repository checkout.
+If this read-only plan query's cached result has expired, repeat `get_project_plan` and
+start again from the new run URI; never combine windows from separate runs.
 
 #### Example Usage
 
@@ -205,18 +205,13 @@ the complete `passing_gates` and `skipped_gates` sequences remain in the cached
 ```json
 {
   "branch": "feature/123-oauth",
-  "to_phase": "green"
+  "to_phase": "design"
 }
 ```
 
-**With human approval:**
-```json
-{
-  "branch": "feature/123-oauth",
-  "to_phase": "documentation",
-  "human_approval_message": "Tests passing, code reviewed, ready for docs"
-}
-```
+Use the next phase allowed by the branch's configured workflow and current state. A
+sequential transition cannot skip intervening phases; use the separately documented
+force-transition operation when its explicit approval contract applies.
 
 #### Behavior Notes
 
@@ -530,43 +525,9 @@ Phase state is **synchronized** with git branch operations:
 
 ---
 
-## Common Workflows
+## Workflow examples
 
-### Starting a New Feature
-
-```
-1. create_branch(name="feature/123-oauth", base_branch="main")
-2. git_checkout(branch="feature/123-oauth")
-3. initialize_project(issue_number=123, issue_title="Add OAuth2", workflow_name="feature")
-```
-
-### TDD Cycle with Phase Transitions
-
-```
-1. transition_phase(branch="feature/123-oauth", to_phase="red")
-2. scaffold_artifact(artifact_type="dto", name="OAuthToken")
-3. git_add_or_commit(workflow_phase="implementation", sub_phase="red", cycle_number=1, message="Add failing test for OAuthToken")
-4. transition_phase(branch="feature/123-oauth", to_phase="green")
-5. safe_edit_file(...)  # Implement
-6. run_tests(path="tests/test_oauth.py")
-7. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Implement OAuthToken")
-```
-
-### Emergency Phase Skip (Hotfix)
-
-```
-1. force_phase_transition(
-     branch="bug/456-security",
-     to_phase="merge-prep",
-     skip_reason="Critical security vulnerability - zero-day exploit",
-     human_approval_message="CTO approval (Jane Smith) - immediate production deployment"
-   )
-2. git_push(set_upstream=True)
-3. submit_pr(title="HOTFIX: Security patch", body="...", head="bug/456-security")
-4. merge_pr(pr_number=78, merge_method="merge")
-```
-
----
+Use `get_work_context` and the current project, phase, and cycle tool schemas for the active branch. The workflow order and required evidence come from `.pgmcp/config/contracts.yaml` and the stored project plan; avoid copying a fixed sequence of tool calls into this reference.
 
 ## Related Documentation
 

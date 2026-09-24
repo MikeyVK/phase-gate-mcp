@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 89,
-  "last_cycle": 88,
+  "current_cycle": 90,
+  "last_cycle": 89,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -534,6 +534,12 @@
       "name": "Scaffold and schema reference migration",
       "forced": false,
       "entered": "2026-09-24T11:46:39.383616+00:00"
+    },
+    {
+      "cycle_number": 90,
+      "name": "Execution and evidence references",
+      "forced": false,
+      "entered": "2026-09-24T12:01:11.967680+00:00"
     }
   ],
   "required_phases": [

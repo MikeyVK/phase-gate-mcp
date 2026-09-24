@@ -7,35 +7,41 @@
 **Version:** 1.0
 **Last Updated:** 2026-05-11
 
-**Source:** [mcp_server/config/settings.py](../../../mcp_server/config/settings.py)
-**Tests:** [tests/mcp_server/unit/config/test_settings.py](../../../tests/mcp_server/unit/config/test_settings.py) (12 tests)
+**Source:** [mcp_server/config/settings.py](../../mcp_server/config/settings.py)
+**Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py) (12 tests)
 
 ---
 
 ## Overview
 
-The MCP server derives **all file-system paths** from a single root (`PGMCP_WORKSPACE_ROOT`).  
-Paths are composed at startup by `Settings.from_env()` — no hard-coded locations exist in the
-server code.  Override any segment via environment variable; use a YAML overlay for bulk
-configuration.
+The server resolves its workspace and server-data roots at startup. `PGMCP_WORKSPACE_ROOT`
+defaults to the process working directory; `PGMCP_SERVER_PROJECT_DIR` selects a child
+server-data directory. Configuration and template-suite roots can independently be
+redirected with `PGMCP_CONFIG_ROOT` and `PGMCP_TEMPLATE_ROOT`; when set, those paths are
+authoritative even when they lie outside the server-data directory. Relative paths in
+server settings resolve from the workspace root unless a setting documents another base.
 
 ---
 ## Path Derivation Chain
 
 ```
-PGMCP_WORKSPACE_ROOT          (default: cwd)
-└── PGMCP_SERVER_PROJECT_DIR  (default: .pgmcp)         → server_root
-    ├── config/                                        → config_root  (always server_root/config)
-    └── PGMCP_LOGS_DIR        (default: logs)            → logs_dir
-        ├── mcp_audit.log                              → audit log    (LOG_LEVEL controls verbosity)
-        └── qa_logs/                                   → QA artifact logs (gate failures only)
+PGMCP_WORKSPACE_ROOT (default: cwd)
+└── PGMCP_SERVER_PROJECT_DIR (default: .pgmcp) → server_root
+    ├── PGMCP_CONFIG_ROOT (optional) → effective config root
+    ├── PGMCP_TEMPLATE_ROOT (optional) → active template-suite root
+    └── PGMCP_LOGS_DIR (default: logs) → logs_dir
+        └── mcp_audit.log (unless PGMCP_AUDIT_LOG overrides it)
+
+Without an explicit config/template root, each root is resolved under server_root.
 ```
 
 | Path segment | Environment variable | Default |
 |---|---|---|
 | `workspace_root` | `PGMCP_WORKSPACE_ROOT` | `os.getcwd()` |
-| `server_root` | `PGMCP_SERVER_PROJECT_DIR` | `.pgmcp` |
-| `logs_dir` | `PGMCP_LOGS_DIR` | `logs` |
+| `server_root` | `PGMCP_SERVER_PROJECT_DIR` | `.pgmcp` under workspace root |
+| `config_root` | `PGMCP_CONFIG_ROOT` | `config` under server_root |
+| `template_root` | `PGMCP_TEMPLATE_ROOT` | `template_suite` under server_root |
+| `logs_dir` | `PGMCP_LOGS_DIR` | `logs` under server_root |
 
 ---
 
@@ -49,7 +55,9 @@ PGMCP_WORKSPACE_ROOT          (default: cwd)
 | `PGMCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
 | `PGMCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
 | `PGMCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
-| `PGMCP_BYPASS_VERSION_CHECK` | `server.bypass_version_check` | `False` | Set to `true` to skip workspace version validation checks. (To upgrade outdated workspaces to server v2.0.0, run `pgmcp --upgrade`). |
+| `PGMCP_CONFIG_ROOT` | `server.config_root` | unset | Use this configuration directory as the effective source; it remains owner-managed. |
+| `PGMCP_TEMPLATE_ROOT` | `server.template_root` | unset | Use this template-suite directory as the active root; external roots remain owner-managed. |
+| `PGMCP_BYPASS_VERSION_CHECK` | `server.bypass_version_check` | `False` | Set to `true` only to bypass the documented workspace-version validation. It does not migrate config or create a template-suite checkpoint. |
 
 ### Logging
 
@@ -88,7 +96,7 @@ settings: Settings = Settings.from_env()
 | `workspace_root` | `str` | `PGMCP_WORKSPACE_ROOT` | `os.getcwd()` |
 | `server_root_dir` | `str` | `PGMCP_SERVER_PROJECT_DIR` | `\".pgmcp\"` |
 | `logs_dir` | `str` | `PGMCP_LOGS_DIR` | `"logs"` |
-| `config_root` | `str \| None` | `PGMCP_CONFIG_ROOT` | `None` — **dead field; not used by `server.py`.** Kept in `settings.py` for backward compat only. |
+| `config_root` | `str \| None` | `PGMCP_CONFIG_ROOT` | `None` — resolves to `server_root/config` unless overridden. |
 | `bypass_version_check` | `bool` | `PGMCP_BYPASS_VERSION_CHECK` | `False` (automatically defaults to `True` during pytest runs) |
 
 ### `LogSettings`
@@ -135,24 +143,15 @@ Environment variables always take precedence over YAML values.
 
 ---
 
-## Quality Gate Artifact Logs
+## Checks, tests, and fixes
 
-The QA manager writes artifact logs **only on gate failure**.  Location:
-
-```
-logs_dir / "qa_logs" / <timestamp>_<gate_name>.log
-```
-
-By default this resolves to `.pgmcp/logs/qa_logs/`.
-
-To override, add `output_dir` to `.pgmcp/config/quality.yaml`:
-
-```yaml
-artifact_logging:
-  enabled: true
-  max_files: 200
-  output_dir: "custom/qa_logs"   # relative to workspace_root
-```
+The server loads check, test, and fix policy from the effective configuration root.
+These policies are validated and held as startup configuration; changes take effect
+when the MCP server restarts. Tool responses report operation results and may publish
+the complete structured result through `pgmcp://cache/runs/{run_id}`. The
+`pgmcp://rules/coding_standards` resource describes configured policy, not observed
+passes, numbered gates, or a coverage score. There is no `quality.yaml` authority or
+QA artifact-log location in this configuration contract.
 
 ---
 
@@ -173,10 +172,9 @@ Resulting paths:
 ```
 /repos/myproject/
 └── .pgmcp/
-    ├── config/        (config_root)
+    ├── config/        (config_root, unless redirected)
     └── logs/
-        ├── mcp_audit.log
-        └── qa_logs/   (written only on gate failure)
+        └── mcp_audit.log (unless redirected)
 ```
 
 ### Custom server directory
@@ -192,10 +190,9 @@ Resulting paths:
 ```
 /repos/myproject/
 └── .workflow/
-    ├── config/
+    ├── config/          (unless redirected)
     └── output/logs/
-        ├── mcp_audit.log
-        └── qa_logs/
+        └── mcp_audit.log (unless redirected)
 ```
 
 ---

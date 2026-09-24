@@ -46,8 +46,14 @@ confirm the requested action. `list_issues`, `list_prs`, `list_labels`, and
 `list_milestones` render at most ten records, preserve adapter/DTO order, and report the
 omitted count when more records exist. Flat label sequences use the same ten-item bound.
 
-The cache remains authoritative for complete collections and intentionally omitted
-metadata. The presenter does not sort, filter, or mutate GitHub results.
+The cache is authoritative for complete collections and intentionally omitted metadata;
+the presenter does not sort, filter, or mutate results. Read the full URI printed in the
+tool response. If details are too large, use the `pgmcp://docs/cache-reading` resource
+for bounded windows and integrity checks. Retry only safe read-only queries after cache
+loss; never replay a mutation or other non-repeatable operation to reconstruct its result.
+
+A cached tool result is evidence of that operation's response, not a quality-gate pass.
+Check the returned fields and any explicit failure status before reporting an outcome.
 
 ---
 

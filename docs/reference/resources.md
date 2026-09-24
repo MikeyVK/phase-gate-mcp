@@ -7,7 +7,7 @@
 
 ## 1. Resources
 
-Resources provide read-only, queryable context to the AI agent. They represent the current state of the project and are refreshed based on source changes.
+Resources expose read-only data through MCP URIs. This reference distinguishes proposed resources from those currently registered; a section marked **Planned** is not an available endpoint. Current tool-result resources include `pgmcp://cache/runs/{run_id}`, and policy discovery is provided by `pgmcp://rules/coding_standards`. Resource content is not evidence that a check or test passed unless it explicitly contains that operation's result.
 
 ---
 
@@ -29,7 +29,7 @@ schema:
       description: "Date the status doc was last updated"
     quick_status:
       type: string
-      description: "One-line summary (e.g., '456 tests passing')"
+      description: "Optional evidence-backed summary; do not infer a pass from configured policy."
     summary_table:
       type: array
       description: "Layer-by-layer breakdown"
@@ -37,9 +37,8 @@ schema:
         type: object
         properties:
           layer: { type: string, examples: ["Strategy DTOs", "Shared DTOs", "Core Services"] }
-          tests_passing: { type: integer }
-          tests_total: { type: integer }
-          quality_gates: { type: string, examples: ["10/10"] }
+          tests_passing: { type: [integer, "null"] }
+          tests_total: { type: [integer, "null"] }
           status: { type: string, enum: ["✅ Complete", "🔄 In Progress", "🔴 Not Started"] }
     recent_updates:
       type: array
@@ -58,28 +57,25 @@ schema:
 
 example_output: |
   {
-    "last_updated": "2025-12-02",
-    "quick_status": "456 tests passing (100% coverage), all quality gates 10/10",
+    "last_updated": "<date from source>",
+    "quick_status": "<summary grounded in recorded evidence>",
     "summary_table": [
-      { "layer": "Strategy DTOs", "tests_passing": 145, "tests_total": 145, "quality_gates": "10/10", "status": "✅ Complete" },
-      { "layer": "Execution DTOs", "tests_passing": 50, "tests_total": 50, "quality_gates": "10/10", "status": "✅ Complete" }
+      { "layer": "<layer>", "tests_passing": null, "tests_total": null, "status": "🔄 In Progress" }
     ],
-    "recent_updates": [
-      { "date": "2025-12-02", "description": "StrategyDirective: Added ExecutionPolicy field", "commit_hash": "cb7c761" }
-    ],
-    "technical_debt": { "open_items": 5, "resolved_items": 8 }
+    "recent_updates": [],
+    "technical_debt": { "open_items": null, "resolved_items": null }
   }
 ```
 
 ---
 
-### 1.2 `pgmcp://status/phase` (Planned)
+### 1.2 `pgmcp://status/phase` (Implemented)
 
-**Description:** Derived state showing current development phase based on Git branch, GitHub Project board, and active issues. Helps agent understand what mode to operate in.
+**Description:** Read-time snapshot of the current Git branch, a coarse phase inferred from the branch name, working-tree cleanliness, and read timestamp. It does not load the workflow phase from project state or query GitHub Projects.
 
-**Data Format:** `json`
+**Data Format:** JSON
 
-**Refresh Trigger:** Git hook (branch change) + GitHub webhook/polling
+**Refresh:** Recomputed when the resource is read.
 
 ```yaml
 schema:
@@ -137,13 +133,13 @@ example_output: |
 
 ---
 
-### 1.3 `pgmcp://github/issues` (Planned)
+### 1.3 `pgmcp://github/issues` (Implemented)
 
 **Description:** Comprehensive view of GitHub issues with filtering by state, labels, milestone, and project.
 
 **Data Format:** `json`
 
-**Refresh Trigger:** Polling (TTL: 60 seconds) or webhook
+**Refresh:** Read-time snapshot of open issues from the configured GitHub adapter; no polling TTL or webhook refresh is promised.
 
 **Dependencies:** `GITHUB_TOKEN` environment variable
 
@@ -374,9 +370,28 @@ schema:
 
 The maps contain the configured IDs, including inactive test bindings. The response has no numbered quality gates, `active_gates`, or `coverage_min` field.
 
+
+### 1.9 `pgmcp://cache/runs/{run_id}` (Implemented)
+
+Each tool response that successfully publishes a result includes its run-specific cache URI.
+A plain read returns the complete cached JSON result. For large results, use
+`?offset=<codepoint-offset>&limit=<1-12000>` with both parameters present; pages report
+the run ID, total codepoint length, SHA-256, text window, and next offset. Follow pages
+contiguously and verify the same run ID, hash, and total length before parsing the
+assembled JSON. If a window is truncated, retry that same offset with a smaller limit.
+On cache loss or hash change, discard partial data. Repeat only a safe read-only query;
+never rerun a mutation or other non-repeatable producer to recover its cached result.
+See the packaged [cache-reading guide](../../mcp_server/resources/cache_reading.md) or the
+`pgmcp://docs/cache-reading` resource for the full protocol.
+
+### 1.10 `pgmcp://docs/cache-reading` (Implemented)
+
+Serves the packaged cache-window guide, including limits, contiguous paging, integrity
+verification, and safe retry rules. It is documentation, not a cached tool result.
+
 ---
 
-### 1.9 `pgmcp://templates/list` (Planned)
+### 1.11 `pgmcp://templates/list` (Planned)
 
 **Description:** Provides the complete template hierarchy and guidance on when to use each template. Sourced from `docs/reference/templates/README.md`.
 

@@ -131,7 +131,7 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
         5. Server returns success response
         6. Server schedules exit with code 42 (delayed)
         7. Parent process (VS Code) detects exit and restarts server
-        8. Agent calls verify_server_restarted() to confirm
+        8. Client observes the new server session after the supervisor restarts it
         9. Agent continues with testing/next cycle
 
         Args:
@@ -220,7 +220,7 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
             sys.stderr.flush()
 
             # Signal proxy to restart by printing marker
-            print("__MCP_RESTART_REQUEST__", file=sys.stderr, flush=True)
+            print("__MCP_RESTART_REQUEST__", file=sys.stderr, flush=True)  # noqa: T201 - proxy protocol marker
             sys.stdout.flush()
 
             # Exit with code 42 (legacy supervisor support)
@@ -258,43 +258,11 @@ def restart_server(server_root: Path, reason: str = "code changes") -> None:
 def verify_server_restarted(
     since_timestamp: float, server_root: Path | None = None
 ) -> dict[str, Any]:
-    """Verify that server restarted after given timestamp.
+    """Inspect the restart marker after ``since_timestamp`` from Python.
 
-    **Purpose:** Allow agent to confirm restart completed before continuing.
-
-    Agent workflow:
-    1. Record timestamp: before_restart = time.time()
-    2. Call restart_server(reason="...")
-    3. [Wait for server to restart]
-    4. Call verify_server_restarted(since_timestamp=before_restart)
-    5. If restarted=True: Continue with testing
-    6. If restarted=False: Error - restart failed
-
-    Args:
-        since_timestamp: Unix timestamp before restart request.
-                         Server must have restarted AFTER this time.
-
-    Returns:
-        Dictionary with verification result:
-        {
-            "restarted": bool,           # True if restart confirmed
-            "restart_timestamp": float,  # When restart occurred
-            "current_pid": int,          # Current process ID
-            "previous_pid": int,         # PID before restart (from marker)
-            "reason": str,               # Restart reason (from marker)
-            "time_since_restart": float  # Seconds since restart
-        }
-
-    Example:
-        before = time.time()
-        restart_server(reason="Load changes")
-        # [Server restarts]
-        result = verify_server_restarted(since_timestamp=before)
-        if result["restarted"]:
-            print(f"Restart confirmed! Reason: {result['reason']}")
-            run_tests(...)
-        else:
-            raise Exception("Server restart failed!")
+    This internal helper is not registered as an MCP tool. It reports marker
+    observations; a caller must separately observe the new server session.
+    Pass ``server_root`` explicitly or provide ``PGMCP_CONFIG_ROOT``.
     """
     logger = get_logger("tools.admin")
 

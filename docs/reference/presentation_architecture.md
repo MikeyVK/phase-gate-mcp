@@ -3,8 +3,8 @@
 # Presentation Architecture and Resource Delegation
 
 **Status:** DEFINITIVE  
-**Version:** 2.2.0  
-**Last Updated:** 2026-09-13
+**Version:** 2.3.0  
+**Last Updated:** 2026-09-24
 
 **Configuration:** [presentation.yaml](../../.pgmcp/config/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
@@ -90,19 +90,12 @@ user-facing presentation strings.
 
 ## Runtime Tool Catalog
 
-`ServerBootstrapper` constructs one `ToolAssembly` containing:
-
-- `supported_tools`: all 50 tool implementations supported by this server build;
-- `supported_contracts`: the minimal derived pair of tool name and concrete Pydantic
-  output model for each supported tool;
-- `active_tools`: the settings-dependent subset exposed to the MCP client.
-
-With a GitHub token, all 50 tools are active. Without a token, 38 tools remain active;
-the twelve PR, label, and milestone tools are inactive. The supported catalog remains
-complete in both modes so configuration drift is detected independently of credentials.
-
-The catalog is derived from the constructed tools at runtime. It is not maintained as a
-second static tool metadata file.
+`ServerBootstrapper` constructs a `ToolAssembly` with the supported tool contracts and
+the settings-dependent active tools exposed to the MCP client. The supported contract
+catalog is derived from the constructed tool instances and their concrete output models;
+it is not a second static tool list. Read current tool names and schemas from the live
+server composition. Credential settings may change which tools are active without
+changing what the build supports.
 
 ## Declarative Presentation Configuration
 
@@ -229,54 +222,50 @@ MCP `isError` continues to derive from operation success.
 ## Cache and Client Guidance
 
 The inline projection is sufficient when it contains the information needed for the
-current action. Read the cached resource when completeness, fields intentionally omitted
-from the projection, or verbose diagnostics are required. Examples include complete Git
-output, diffs, test tracebacks, quality-gate process details, and complete validation
+current action. Read the cached resource when completeness, intentionally omitted fields,
+or available native evidence and diagnostics are required. Examples include complete Git
+output, diffs, test/check/fix result records and captured evidence, and resolved context
 schemas.
 
-Do not parse the presented Markdown to reconstruct DTO data. The resource is the
-structured contract.
+Do not parse presented Markdown to reconstruct DTO data. The resource is the structured
+operation contract, subject to the fields and bounded capture represented by that DTO.
+For large results, follow the configured cache-reading hint and packaged cache-reading
+guide; it describes safe windows and integrity checks without replaying a mutation.
 
-`scaffold_schema` is a deliberate resource-oriented exception: the text identifies the
-artifact type, while the nested JSON Schema remains in the cached DTO.
+`scaffold_schema` also supplies its selected context schema as a separate schema
+attachment. The operation DTO and attachment have separate ownership and serialization
+paths.
 
-## Structured Quality-Gate Findings
+## Configured Execution Evidence
 
-`run_quality_gates` uses the same generic nested-collection path as the other structured
-tools:
+The V3 execution tools use the same generic presentation and cache path as other tools.
+`run_checks`, `run_tests`, and `apply_fixes` return their factual operation DTOs;
+configured templates render bounded result rows while the cache retains the full serialized
+DTO. Result order follows the operation contract. Presentation limits and the final
+8,000-byte ceiling affect only inline text.
 
-| DTO level | Ordered collection |
-|---|---|
-| `RunQualityGatesOutput` | `gates: list[GateResultDTO]` |
-| `GateResultDTO` | `findings: list[GateFindingDTO]` |
-| `GateFindingDTO` | Structured diagnostic fields; no child collection |
+The operation envelope and the native outcome answer different questions. Inspect
+`success` and any `error_code` for operation or consumer failures; inspect each
+result's status, reason, evidence, adapter identity, and bounded capture for observed
+native work. A check or test can report a substantive failed result without that result
+being converted into a protocol error. An unavailable adapter, rejected internal request,
+interruption, or unconfirmed termination remains an operational fact. Do not infer
+success from a heading or from the absence of an inline diagnostic.
 
-`QAManager` and `ViolationParser` normalize checker diagnostics and operational
-failures. `RunQualityGatesTool` performs only structural adaptation into the public
-DTO: the enclosing gate supplies `gate`, manager `col` becomes `column`, and
-`rule` becomes `code`. The presenter does not parse messages or checker-specific
-text.
+`apply_fixes` applies selected fixes in request order and stops when work cannot continue
+or a selected fix does not pass. Earlier native changes may already have occurred. Its
+result rows distinguish completed work from unavailable or not-executed work; the
+operation does not promise rollback. Inspect affected files, then choose an authorized
+narrow recheck or recovery. The system does not automatically chain fixes and checks.
 
-`presentation.yaml` declares `findings` as a child collection of `gates`. Gate and
-finding order remain identical to the DTO. The tool's `max_items=10` independently
-limits the inline gate collection and every gate's inline finding collection; the final
-8,000-byte limiter still bounds the complete response.
-
-The inline item projection contains optional location and code, required message,
-severity, and fixability. Generic None formatting makes message-only operational
-failures explicit without a tool-specific rendering branch. Gate-level and finding-level
-`details` remain cache-only.
-
-The complete `RunQualityGatesOutput` is published before presentation. Consequently,
-every finding and raw diagnostic remains available through the cached MCP Resource even
-when collection omission or final byte truncation shortens the chat response. Clients
-must read that resource for exhaustive evidence and must not reconstruct findings from
-Markdown.
+The complete operation DTO is published before presentation. Use the cached resource
+when you need result fields or evidence omitted by the bounded text, and do not reconstruct
+those facts from Markdown.
 
 ## Primary Implementation and Evidence
 
 - [Structured tool-output schemas](../../mcp_server/schemas/tool_outputs.py)
-- [Quality-gate structural adapter](../../mcp_server/tools/quality_tools.py)
+- [Check, test, and fix tools](../../mcp_server/tools/check_tools.py), [run tests](../../mcp_server/tools/run_tests_tool.py), and [apply fixes](../../mcp_server/tools/fix_tools.py)
 - [Presentation configuration schema](../../mcp_server/config/schemas/presentation_config.py)
 - [Text presenter and startup alignment](../../mcp_server/presenters/text_presenter.py)
 - [Collection renderer](../../mcp_server/presenters/collection_text_renderer.py)
@@ -299,6 +288,7 @@ Markdown.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 2.3.0 | 2026-09-24 | @imp | Align execution evidence and runtime catalog guidance with the V3 check/test/fix surface |
 | 2.1.0 | 2026-08-22 | Agent | Document nested structured quality-gate findings and complete cached evidence |
 | 2.2.0 | 2026-09-13 | Agent | Document operation/attachment transport and required-null cache fidelity |
 | 2.0.0 | 2026-08-22 | Agent | Document bounded declarative projection, runtime catalog alignment, ordered collections, and final byte limiting |
