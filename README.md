@@ -31,8 +31,8 @@ Each workflow defines an ordered sequence of phases (e.g. `research → design �
 ## Core Capabilities
 
 - **Phase & cycle state management** — tracks active phase and TDD cycle via `.pgmcp/state.json`; blocks progression until contracts are met
-- **Intelligent scaffolding** — generates code, documents, and test files from a centralised template registry with schema validation
-- **Quality gates** — runs Ruff (format + lint), Pyright, import checks, and line-length checks before allowing commits or PRs
+- **Schema-guided scaffolding** — resolves a selected template suite, validates its context schema, and renders the requested artifact
+- **Configured checks, tests, and fixes** — runs the adapters selected by the active workflow and requested scope
 - **Repository orchestration** — native Git and GitHub integrations for branching, committing, PR creation, issue tracking, and label management
 - **Config-driven policy enforcement** — workflow rules, phase contracts, artifact requirements, and quality thresholds defined in YAML
 
@@ -45,8 +45,6 @@ mcp_server/
 ├── core/          # Phase state engine, proxy, operation notes, error handling
 ├── managers/      # State persistence, git operations, and workflow services
 ├── tools/         # MCP tool interfaces exposed to the agent
-├── scaffolders/   # Jinja2 template engine and scaffold orchestration
-├── scaffolding/   # Scaffolding metadata and registry helpers
 ├── validation/    # File and artifact validators
 ├── config/        # Settings, schema loading, config contracts
 ├── schemas/       # Pydantic schemas for all internal contracts
