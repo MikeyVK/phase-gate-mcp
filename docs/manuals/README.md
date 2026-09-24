@@ -15,9 +15,8 @@ the current tool details:
 - [docs/reference/tools/scaffolding.md](../reference/tools/scaffolding.md) for `scaffold_artifact`
 - [docs/reference/tools/discovery.md](../reference/tools/discovery.md) for `get_work_context`, health checks, and server restarts
 
-[docs/reference/MCP_TOOLS.md](../reference/MCP_TOOLS.md) is a legacy consolidated
-overview. Use it for broad orientation only; where it differs from the modular reference
-suite or live tool schemas, the modular references and schemas are authoritative.
+[docs/reference/MCP_TOOLS.md](../reference/MCP_TOOLS.md) is a navigation entry point.
+The modular tool references and live schemas own exact public contracts.
 
 This directory links the MCP server architecture and operational guidance around those references.
 

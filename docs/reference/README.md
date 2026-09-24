@@ -20,9 +20,9 @@ Navigation index for the template/scaffolding documentation cluster. Start here 
 |---|---|---|
 | [docs/manuals/architecture.md](../manuals/architecture.md) | Architecture, contributors | Understand the current server composition and responsibilities |
 | [architectural diagrams](../manuals/architectural_diagrams/09_scaffolding_subsystem.md) | Contributors | Follow the startup-resolved suite and generic scaffolding flow |
-| [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) | Agent users, contributors | Use `scaffold_artifact` and `scaffold_schema`; understand what context to provide; add a new artifact type step by step |
+| [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) | Agent users, contributors | Use `scaffold_artifact` and `scaffold_schema`; understand caller context, extension principles, and ownership |
 | [template_metadata_format.md](template_metadata_format.md) | Template editors | Understand package identity and the `pgmcp:v1` provenance record in scaffolded artifacts |
-| [tools/scaffolding.md](tools/scaffolding.md) | Agent users | Complete reference for `scaffold_artifact` and `scaffold_schema` MCP tool parameters, returns, errors, and examples |
+| [tools/scaffolding.md](tools/scaffolding.md) | Agent users | Current scaffold and schema tool behavior, with links to live schemas for exact inputs and results |
 
 ---
 
