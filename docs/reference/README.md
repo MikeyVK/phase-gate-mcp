@@ -20,9 +20,7 @@ Navigation index for the template/scaffolding documentation cluster. Start here 
 |---|---|---|
 | [docs/manuals/architecture.md](../manuals/architecture.md) | Architecture, contributors | Understand the three-layer pipeline model; learn how to add a new artifact type; understand Layer 3 tier hierarchy |
 | [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) | Agent users, contributors | Use `scaffold_artifact` and `scaffold_schema`; understand what context to provide; add a new artifact type step by step |
-| [TEMPLATE_LIBRARY_QUICK_REFERENCE.md](TEMPLATE_LIBRARY_QUICK_REFERENCE.md) | Agent users | Quick lookup: which artifact types exist, minimum required context, template paths |
-| [template_metadata_format.md](template_metadata_format.md) | Template editors | Understand the `TEMPLATE_METADATA` block format; write validation rules for new templates; understand enforcement levels |
-| [validation_api.md](validation_api.md) | Developers | `TemplateAnalyzer` and `LayeredTemplateValidator` API; programmatic template validation |
+| [template_metadata_format.md](template_metadata_format.md) | Template editors | Understand package identity and the `pgmcp:v1` provenance record in scaffolded artifacts |
 | [tools/scaffolding.md](tools/scaffolding.md) | Agent users | Complete reference for `scaffold_artifact` and `scaffold_schema` MCP tool parameters, returns, errors, and examples |
 
 ---

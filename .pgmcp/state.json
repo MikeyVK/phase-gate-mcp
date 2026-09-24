@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 88,
-  "last_cycle": 87,
+  "current_cycle": 89,
+  "last_cycle": 88,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -528,6 +528,12 @@
       "name": "Retire auto replay state",
       "forced": false,
       "entered": "2026-09-24T11:32:03.174397+00:00"
+    },
+    {
+      "cycle_number": 89,
+      "name": "Scaffold and schema reference migration",
+      "forced": false,
+      "entered": "2026-09-24T11:46:39.383616+00:00"
     }
   ],
   "required_phases": [
