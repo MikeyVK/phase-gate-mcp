@@ -1874,9 +1874,9 @@ Pre-cycle commit: `cee6387d79e9848678e489cbbee43369a5214191`. Each of the twelve
 - **Semantic predecessors:** [CY102](planning-rollout.md#cy102).
 - **Shared-file predecessors:** [CY039](planning-artifacts-mutation.md#cy039).
 - **Authority:** [Research F-14/F-14A/F-14B/deferred YAML; DI-03 §9](design-integration-review.md).
-- **CY103.D1 — bounded result:** Delete the explicitly unreachable YAML bases, empty test seeds and agent-hint pattern; record exact Git recovery trace for deferred YAML only.
+- **CY103.D1 — bounded result:** Delete the explicitly unreachable YAML bases, empty test seeds and agent-hint pattern; record exact Git recovery trace for deferred YAML only. T054/T056 retain only temporary test-only references to A048/A054 until their CY104-owned adaptation or removal; their unrelated assertions remain in CY104.
 - **Preserved behavior:** No retained generated/runtime classes deleted; future YAML recovery trace records exact historical source/removal commit.
-- **CY103.D2 — independent evidence:** Approved no-retained-behavior dispositions, zero source imports, CODE-E07 fixture capacity retained and exact source SHA/path recovery trace; no new deferred feature implementation.
+- **CY103.D2 — independent evidence:** Approved no-retained-behavior dispositions, zero active runtime/catalog/fixture selections or imports, CODE-E07 fixture capacity retained and exact source SHA/path recovery trace; no new deferred feature implementation. T054/T056 are the only temporary source-reading test exceptions and provide no CY103 behavior evidence.
 - **Rollback:** R-CY103: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY103.D1 and CY103.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -1894,7 +1894,7 @@ Previously introduced paths revisited in this cycle:
 
 None.
 
-- Before deleting any listed source, require its named successor evidence and zero remaining runtime/template/fixture imports. Tests for the same removed source are adapted or removed in this same cycle; unrelated portions remain.
+- Before deleting any listed source, require its named successor evidence and zero remaining active runtime/template/catalog/fixture selections or imports. T054/T056 are the only temporary test-only source references to A048/A054; CY104 closes them while preserving unrelated assertions. Tests for the other removed sources are adapted or removed in this same cycle.
 
 Scope is limited to D1 and these enumerated paths. All unrelated behavior, all other file slices and all paths outside this set are excluded. Shared-file ownership grants only the stated seam; it is never blanket refactoring permission.
 
