@@ -1521,6 +1521,10 @@ Existing affected test/helper sources: T009, T023, T024, T025. Adapt or retire o
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY095, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY095 execution evidence
+
+Pre-cycle commit: `4aba405779ffee5848fd92877c40db73d2cb5cf9`. Each of the 15 enumerated source/test paths was resolved under `C:\\temp\\pgmcp` and SHA-256 checked before deletion; its exact preimage remains recoverable from that Git commit. The cycle-owned inverse is the committed deletion diff and `.pgmcp/state.json` transition. T009, T023, T024, and T025 contained only old concrete-root existence, tier-import, metadata, or direct-render claims; none carried a surviving independent behavior assertion. The five named V3 successor test modules passed together: 24/24, Python 3.13.7 and pytest 9.0.2, cached result `pgmcp://cache/runs/314297b9cf44444eb7744e8ba52816ff`. Active server/config/suite/host-agent/test search found no import or selection of these removed paths or test modules. No runtime production code changed; no broader gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY096
 
 **Retire legacy phase-document roots**
