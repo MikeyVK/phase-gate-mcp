@@ -1770,6 +1770,10 @@ Existing affected test/helper sources: T029, T055. Adapt or retire only their ma
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY100, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
 
+### CY100 execution evidence
+
+Pre-cycle commit: `b1427e69f12b84922d627f6989a18e8aeb34c699`. The seven Markdown macro paths and two test paths were resolved under `C:\\temp\\pgmcp` and SHA-256 checked before deletion; Git preserves exact preimages. The cycle-owned inverse is the committed nine-file deletion and `.pgmcp/state.json` transition. T029's eighth A057 assertion was only file-existence inventory and A057 remains CY103-owned; T055 asserted the old A051 tier-two link layout and A051 remains CY104-owned. Neither assertion is durable behavior. The current shared-document module passed 5/5 (`pgmcp://cache/runs/eaddfda26c3a4e509a61fe29b4eb9f5e`). Fresh unaffected V3 document-family evidence from CY096 17/17, CY097 12/12, and CY098 12/12 covers the other ten named successor modules; only retired source/test paths changed since those runs. Active source/config/suite/host-agent/template graph search found no remaining imports of the seven deleted macros. No broader suite or gate was rerun. Independent review is requested without a producer GO claim.
+
 ## CY101
 
 **Remove rejected Resource/Service/Tool artifact sources**
