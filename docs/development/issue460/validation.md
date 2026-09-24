@@ -3,7 +3,7 @@
 # Issue 460 Refactor Validation
 
 **Status:** Blocked — required execution evidence unavailable; independent review requested
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** 2026-09-24
 
 
@@ -220,7 +220,7 @@ Only this validation report and the existing phase-transition state are intended
 
 ## Failures
 
-- F-VAL-01: Required branch checks cannot launch native tools with the current branch target selection on Windows. Current source appends the target list to native argv; this is consistent with the observed command-length failures. A scoped implementation repair is required before claiming branch-gate completion.
+- F-VAL-01: Required branch checks cannot launch native tools with the current branch target selection on Windows. Current source appends the target list to native argv; this is consistent with the observed command-length failures. Large explicit selections need a supported length-safe execution route; bounded target batches can provide useful evidence without first changing production code. Equivalent complete coverage must be documented.
 - F-VAL-02: Full-suite completion evidence is unavailable after the MCP client timeout. Determine the existing run's fate or a supported durable-result route before authorizing/repeating a replacement run.
 
 
@@ -268,11 +268,58 @@ The validation contract requires reporting failures without redesigning or patch
 - [Architecture principles](<../../coding_standards/ARCHITECTURE_PRINCIPLES.md>)
 
 
-## F-VAL-03 — Unresolved startup-discovery obligation
+## Investigation addendum — 2026-09-24
 
-[CY069.D1/D2](planning-rollout.md#cy069) requires the general cache-reading procedure in authoritative host startup sources and a fresh-agent observation including truncation retry and expired-cache recovery. [Host preparation scope](rollout-host-input.md#scope) explicitly excludes startup procedural steps; its lazy-discovery contract deliberately omits traversal/retry/recovery from startup. The inspected owner-decision records do not explicitly supersede this Planning obligation. Current source/copy equality cannot resolve this semantic conflict. V460.5 therefore remains incomplete pending authoritative reconciliation or the missing evidence; no cache-API defect is inferred.
+### F-VAL-03 withdrawn: documented intentional refinement
 
-Carrier evidence entry points: `tests/mcp_server/unit/config/test_contracts_loader.py` tests at lines 677, 722 and 779 cover nineteen variants and actual persistence of four composite phase documents. The sentinel assertions prove carrier capacity, not nineteen independently reviewed completed documents. The research/design/planning/validation artifact integration tests add field, link, ordering and minimal-content claims. Eight mapped host source/copy pairs were byte-compared by the bounded findings-only reviewer; all matched. The installed-startup test separately compares six packaged host assets. These are distinct evidence scopes.
+The prior classification missed [CY011.D1/D2](planning-execution.md#cy011): it explicitly records the **session-approved refinement of 2026-09-17**, with a short budget-triggered guide reference and the packaged resource owning unchanged window/integrity/safe-retry instructions. [Host preparation](rollout-host-input.md#22-contractual-separation-and-lazy-cache-discovery) deliberately implements lazy discovery. The owner has also explicitly reconfirmed that this is intentional. This is not an implementation blocker. Stale generalized CY069/hub wording and unavailable historical fresh-agent proof are documentation/provenance reconciliation, not a reason to replay cutover.
+
+### Scope and command-length diagnosis
+
+The read-only current branch selection at HEAD 625b29a4 contains 593 existing paths, including 136 nonignored untracked files, with 266 deleted paths recorded separately. Only 217 selected paths have a .py extension. The longest individual absolute path is 128 characters. Reconstruction with the local interpreter and Python Windows list2cmdline yields 41,939/41,946/41,917 UTF-16 units including terminating NUL for Ruff format/lint and Mypy. These are reconstructed argv measurements, not an intercepted native process command; the live adapter's PATH-selected interpreter can differ. All exceed CreateProcessW's 32,767-unit command-line limit. With untracked paths excluded analytically, the reconstructed Ruff lint command is 28,351 units. No files were removed or ignored to obtain this comparison.
+
+GitAdapter.get_branch_changes includes tracked merge-base/index/worktree changes and nonignored untracked paths. ScopeResolver converts existing paths to absolute paths; adapters append all targets to one native argv. Therefore ignored-by-native extensions still consume command-line space before the native process can filter them. This is native-child launch failure, not a long individual filename, MCP payload limit, or test timeout. The measured backup/untracked contribution materially pushes the current selection past the Windows limit. There is no automatic native argv batching or response-file route in the inspected implementation.
+
+### Workspace traversal and Windows access failures
+
+Workspace passes one root path; configured passes no explicit native targets. Consequently workspace Pytest bypasses testpaths selection and recursively discovers from the root under native recursion rules. Pytest does not inherit Git ignores. Current norecursedirs does not exclude all local scratch locations.
+
+A diagnostic-only collection run with scope=workspace, args python_tests=[--collect-only,-q,-n,0], timeout_seconds=90 returned native exit 2: **2,602 tests collected, five collection errors in 13.52 seconds**. Full cached tracebacks name:
+- .pytest_cache_ci
+- .tmp/pytest-of-1Voudig
+- temp/cy086-ruff
+- temp/cy087-ruff-after
+- temp/cy087-ruff-baseline
+
+Each raises PermissionError/WinError 5 while os.scandir enumerates a directory. This identifies denied filesystem reads, not a generic timeout. Resource: pgmcp://cache/runs/e6c5f7f5e27b42bdbb830ac813601599.
+
+With the same collection options but scope=configured, native discovery used testpaths=tests/mcp_server: **2,601 tests collected, exit 0, in 2.13 seconds**. Resource: pgmcp://cache/runs/eb1ed8a32dd749e09e94dc42f86c2a10. This proves successful collection only, not passing test execution; it does not retroactively determine the earlier timed-out run.
+
+Ruff format also reproduces access errors when targeting .pytest_cache_ci, .tmp and temp separately (resources 2161c16436354c689bb93c36a48e7ade, 81d6da3976014585b4ca6971a1adbf40, 3ba7e8d9532a472a9284662c00c20c3f). The native Ruff diagnostic omits the exact denied child path. Targeting mcp_server/docs/scripts instead returns 184/6/1 already-formatted files. Targeting tests reports two actual formatting differences and 276 already-formatted files, without access errors. The two differences are test_contracts_loader.py and test_artifact_identity.py. Disabling Ruff caching does not remove the workspace access failure (9a35c9cbb205441284079c6cfd4311a7).
+
+### F-VAL-04 — Ruff diagnostic classification changes under verbose output
+
+The same workspace formatting failure without verbose yields execution_error and the access-denied message. With --verbose it yields invalid_configuration and a benign first debug line about using pyproject.toml, although the native evidence still ends in the access-denied error. Source: mcp_server/bundled_adapters/ruff/check.py _message and _classify_native_failure. The latter scans all output for broad markers including configuration; the former can select the first debug line. This is a concrete error-classification/message defect, distinct from cache loss. Resource: pgmcp://cache/runs/b43a3af617c74b62ba0f0d5ea13859b9 (complete operation 177,822 characters, fully read through windows).
+
+### Cache contract and actual retention
+
+[DI-05 diagnostic capture](design-execution-adapters.md) and [Shared presentation boundary](design-shared-contracts.md) require native evidence, typed error details and ProcessCapture in the complete operation cache, not inline dumps. Formal adapter stdout is limited to 8 MiB; supplemental adapter stderr retains at most 256 KiB with explicit head/tail truncation. Accepted JSON stdout intentionally has null capture fragments: the decoded role response is stored instead. Native stdout/stderr belongs in evidence.data.
+
+For WinError 206 the native child never started, so no native stdout/stderr exists: the OS exception is retained in message and evidence is null. For actual native failures, the inspected cache contains diffs, complete available native error text and Pytest tracebacks. The verbose Ruff operation and workspace collection operation were reconstructed through all cache windows. No confirmed cache-retention contract violation was found. The producer's earlier summary failed to explain available evidence sufficiently.
+
+The adapter uses subprocess capture_output for its native child and emits its formal response only after completion. Thus native progress is buffered inside the adapter, not streamed as cache entries; the server publishes the final DTO after tool execution. A client timeout before receipt may leave no delivered resource URI. No background-job handle or timeout-recovery lookup is exposed by the current run_tests tool.
+
+### Timeout history and runtime identity
+
+.codex/config.toml is Git-ignored. Its local creation and last-write timestamps are both 2026-09-23 08:00:24 UTC. Available session history first confirms this exact workspace configuration with tool_timeout_sec=120 at 2026-09-23 17:59:57 UTC. These facts establish it predates this validation; they do not prove the exact original edit or author. The producer made no timeout-config change.
+
+The original full-suite request already specified timeout_seconds=1200, while the MCP client failed after 120 seconds. Those are separate budgets. Raising the adapter budget alone cannot address the client deadline; nor can either timeout repair the now-confirmed root-scope collection failures.
+
+Adapter manifests request executable=python; bootstrap resolves it through shutil.which, not automatically the server's sys.executable. The observed live Ruff version is 0.14.13 and Pytest is 9.0.2; cache traces use the system Python313 installation. The server launcher being a venv Python does not itself establish native adapter environment parity.
+
+### Remaining work
+
+Resolve length-safe selection execution with explicit preservation of native semantics; fix misleading Ruff failure classification; select and document the intended full-suite native discovery boundary; reconcile the client/adapter timeout budgets and native environments. These are findings and candidate remediation boundaries, not an implementation patch or a changed Approved Strategy. No production files, ACLs, scratch directories, dependencies or client configuration were changed.
 
 ## Refactor / Validation Hand-over
 
@@ -293,8 +340,9 @@ One workspace test attempt returned only a 120-second MCP timeout. One branch ch
 
 ### Open Work
 
-F-VAL-01 native launch length; F-VAL-02 missing test completion; F-VAL-03 startup-discovery plan conflict. Full V460.1–V460.5 closure and independent review remain open. Native Ruff version discrepancy and historical Mypy failures remain recorded above.
+F-VAL-01 native launch length; F-VAL-02 missing full execution completion plus diagnosed root-scope collection failures; F-VAL-04 misleading Ruff classification. F-VAL-03 is withdrawn by the investigation addendum. Full V460.1–V460.5 closure and independent review remain open. Native Ruff version discrepancy and historical Mypy failures remain recorded above.
 
 ### Review Request
 
 Review requested. Resume an independently invoked `pgmcp-qa` validator review before deciding the bounded remediation and resumption route.
+
