@@ -34,7 +34,7 @@ Each workflow defines an ordered sequence of phases (e.g. `research → design �
 - **Schema-guided scaffolding** — resolves a selected template suite, validates its context schema, and renders the requested artifact
 - **Configured checks, tests, and fixes** — runs the adapters selected by the active workflow and requested scope
 - **Repository orchestration** — native Git and GitHub integrations for branching, committing, PR creation, issue tracking, and label management
-- **Config-driven policy enforcement** — workflow rules, phase contracts, artifact requirements, and quality thresholds defined in YAML
+- **Config-driven policy enforcement** — workflow rules, phase contracts, configured check/test/fix selection, and evidence requirements defined in YAML
 
 ---
 
@@ -45,7 +45,6 @@ mcp_server/
 ├── core/          # Phase state engine, proxy, operation notes, error handling
 ├── managers/      # State persistence, git operations, and workflow services
 ├── tools/         # MCP tool interfaces exposed to the agent
-├── validation/    # File and artifact validators
 ├── config/        # Settings, schema loading, config contracts
 ├── schemas/       # Pydantic schemas for all internal contracts
 └── assets/        # Packaged release assets (templates, configs, docs)

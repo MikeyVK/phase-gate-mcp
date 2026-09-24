@@ -28,7 +28,7 @@ Renewal stages and validates a candidate, compares it with the active suite and 
 
 ### When a trustworthy template baseline is missing
 
-If the active suite has no trustworthy checkpoint, renewal reports `checkpoint_required`, returns exit code `2`, leaves the active suite unchanged, and retains the staged candidate. Exit code 2 means owner action is required; it is not a successful activation or an ordinary execution failure.
+If no checkpoint exists and the complete active suite cannot be established as equal to the validated candidate, renewal reports `checkpoint_required`, returns exit code `2`, leaves the active suite unchanged, and retains the staged candidate. An equal active suite can establish its initial checkpoint automatically; follow the actual CLI outcome. Exit code 2 means owner action is required; it is not a successful activation or an ordinary execution failure.
 
 After reviewing the actual local suite and the staged candidate, choose one explicit action:
 

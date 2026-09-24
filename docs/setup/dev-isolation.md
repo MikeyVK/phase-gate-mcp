@@ -12,9 +12,9 @@
 ## Purpose
 
 Run the installed PGMCP package from a dedicated Python environment while it operates
-on a separate development checkout. This verifies that the launched server imports the
-installed wheel, while workspace state and owner-managed configuration remain in their
-configured roots.
+on a separate development checkout. Launch from a neutral working directory outside
+the checkout so Python resolves the proxy and child server from the installed wheel,
+while `PGMCP_WORKSPACE_ROOT` directs workspace operations to the checkout.
 
 ## Prerequisites
 
@@ -77,9 +77,11 @@ For a new workspace, `pgmcp --init` requires that the resolved server root does 
 already exist. It copies packaged assets into that root and runs the normal renewal
 operation to establish installation state. It is not an upgrade command.
 
-For a pre-v3 workspace, run `pgmcp --upgrade`. A first-v3 workspace without a trusted
-component checkpoint is preserved and reports `checkpoint_required` (exit code 2) after
-staging and validating the candidate; it does not silently replace the active suite.
+For a pre-v3 workspace, run `pgmcp --upgrade`. When no trusted checkpoint exists and
+the complete active suite cannot be established as equal to the validated candidate,
+renewal preserves the active suite and reports `checkpoint_required` (exit code 2)
+after staging and validation. An equal active suite can establish its initial checkpoint
+automatically; renewal does not silently replace a differing suite.
 For a managed root, the owner may choose `--force-template-upgrade`, which makes a
 verified backup before installing the candidate, or first reconcile a complete valid v3
 suite and use `--accept-template-baseline` to record the baseline without copying over
@@ -94,15 +96,17 @@ overwrite it. See the [workspace upgrade guide](workspace-upgrade.md).
 ## Launch the installed server against the checkout
 
 Configure the MCP client to use the stable environment's Python executable and the
-installed package's proxy entrypoint. Keep the checkout as the working directory for
-workspace operations, and leave `PYTHONPATH` unset so imports resolve from the installed
-environment:
+installed package's proxy entrypoint. Use an existing neutral working directory outside
+the source checkout for the process `cwd`; point `PGMCP_WORKSPACE_ROOT` at the checkout
+for workspace operations. Leave `PYTHONPATH` unset. Python puts the process working
+directory on its module search path for `-m`, so launching from the checkout would load
+its source package instead of the installed wheel:
 
 ```json
 {
   "command": "C:/path/to/pgmcp_stable_venv/Scripts/python.exe",
   "args": ["-m", "mcp_server.core.proxy"],
-  "cwd": "C:/path/to/development-checkout",
+  "cwd": "C:/path/to/neutral-launch-dir",
   "env": {
     "PGMCP_WORKSPACE_ROOT": "C:/path/to/development-checkout",
     "PGMCP_SERVER_PROJECT_DIR": ".pgmcp"
@@ -123,8 +127,10 @@ into tracked setup files.
 4. Restart the MCP server after installing package changes or changing startup-loaded
    configuration or the active template suite. If launch environment variables change,
    relaunch the client so the new environment reaches the proxy and child server.
-5. Verify the installed version and effective roots through the normal runtime context
-   before relying on the session.
+5. From the same neutral working directory and stable interpreter, inspect
+   `mcp_server.__file__` and confirm that it resolves inside the stable environment's
+   `site-packages`, not the source checkout. Verify the effective workspace and server
+   roots through the normal runtime context before relying on the session.
 
 No health-first gate is required for this reload procedure.
 
