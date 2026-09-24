@@ -181,7 +181,7 @@ workflows:
                 architecture, typing, and quality standards.
 
             [ ] Assign the narrowest useful tests and file-scoped gates per cycle. Reserve one
-                workspace-wide test run and branch-wide gates for Validation; do not repeat fresh
+                full native-configured test run and branch-wide gates for Validation; do not repeat fresh
                 evidence without an invalidating change.
 
             [ ] If planning discovery is delegated, provide direct artifacts and source paths,
@@ -262,7 +262,7 @@ workflows:
 
             [ ] Use run_tests(scope='targets', targets=['tests/example_test.py']) and
                 run_checks(scope='targets', targets=['src/example.py']) proportionally on affected files. Do not run the full
-                suite here; Validation owns the workspace-wide run.
+                suite here; Validation owns the full native-configured test run.
 
             [ ] Perform a producer self-check against cycle deliverables, direct diff evidence,
                 architecture, and Approved Strategy. An optional adversarial preflight must seek
@@ -316,7 +316,7 @@ workflows:
             [ ] Map every planned deliverable, design constraint, strategy obligation, and
                 high-risk production/test surface to observable evidence.
 
-            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
+            [ ] Run the single full native-configured test suite with run_tests(scope='configured') and branch-wide
                 gates with run_checks(scope='branch'). Reuse nothing stale; if a check
                 fails, preserve exact evidence and report FAIL rather than weakening criteria.
 
@@ -431,7 +431,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 
@@ -660,7 +660,7 @@ workflows:
                 Mechanical cleanup without behavior change needs no artificial RED.
                 Hold all test code to production architecture, typing, and quality standards.
 
-            [ ] Assign focused tests and file gates per cycle. Reserve one workspace-wide test run
+            [ ] Assign focused tests and file gates per cycle. Reserve one full native-configured test run
                 and branch-wide gates for Validation; repeat evidence only after invalidation.
 
             [ ] Conditional delegated discovery receives direct artifacts/paths, bounded causal or
@@ -796,7 +796,7 @@ workflows:
             [ ] Map root cause, reproduction, corrected behavior, planned deliverables, design and
                 preservation constraints, and high-risk production/test surfaces to evidence.
 
-            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
+            [ ] Run the single full native-configured test suite with run_tests(scope='configured') and branch-wide
                 gates with run_checks(scope='branch'). Preserve exact failures and report
                 FAIL; do not weaken criteria or reinterpret the plan.
 
@@ -908,7 +908,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 
@@ -1054,7 +1054,7 @@ workflows:
             [ ] Map original failure, supported behavior, containment/rollback obligations,
                 slice exit criteria, and high-risk production/test surfaces to evidence.
 
-            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
+            [ ] Run the single full native-configured test suite with run_tests(scope='configured') and branch-wide
                 gates with run_checks(scope='branch'). Preserve exact failures and report
                 FAIL rather than weakening criteria. Explicitly rerun the focused hotfix regression
                 if the full suite does not expose corrected behavior.
@@ -1163,7 +1163,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 
@@ -1520,7 +1520,7 @@ workflows:
                 supported behavior, architecture constraint, and strategy boundary to evidence.
                 Inspect for remnants, dependency-direction violations, and test/helper coupling.
 
-            [ ] Run the single workspace-wide suite with run_tests(scope='workspace') and branch-wide
+            [ ] Run the single full native-configured test suite with run_tests(scope='configured') and branch-wide
                 gates with run_checks(scope='branch'). Preserve exact failure evidence and
                 report FAIL rather than weakening preservation criteria.
 
@@ -1630,7 +1630,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 
@@ -1828,7 +1828,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 
@@ -1980,7 +1980,7 @@ workflows:
             [ ] Inspect full branch diff/status for expansion, unintended or missing files,
                 stale terms, missed consumers, and unsupported claims.
             [ ] After final implementation changes run once:
-                - run_tests(scope='workspace')
+                - run_tests(scope='configured')
                 - run_checks(scope='branch')
                 Read both cached resources. Add narrow checks only for a material gap;
                 do not duplicate fresh evidence.
@@ -2069,7 +2069,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 
@@ -2416,7 +2416,7 @@ workflows:
                   and its completed phases
                 - reuse fresh authoritative evidence and rerun only invalidated required checks
                   at the narrowest sufficient scope
-                - run or repeat the workspace-wide suite only when the selected workflow
+                - run or repeat the full native-configured test suite only when the selected workflow
                   requires it and that evidence is stale or missing
                 - stop on missing required evidence or any unresolved failure
 

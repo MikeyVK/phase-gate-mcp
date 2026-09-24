@@ -358,3 +358,20 @@ D-VAL-01 / F-VAL-01: adapter launch robustness is explicitly deferred outside #4
 
 Review requested. Resume an independently invoked `pgmcp-qa` validator review before deciding the bounded remediation and resumption route.
 
+
+## Owner-approved validation configuration correction — 2026-09-24
+
+The owner explicitly authorized fixing point 2 inside issue #460: validation workflow instructions must use run_tests(scope='configured') for the complete native-configured suite, while explicit directories/files remain scope='targets'. The five prescribed test invocations in contracts.yaml now use configured; full-suite wording is aligned. Explicit workspace root selection remains available for deliberate native discovery from the root. No adapter contract or selection implementation changes.
+
+Pytest norecursedirs replaces its defaults rather than extending them. Restore all native default exclusions, retain repository-specific exclusions, and exclude temp/tmp scratch directories. The restored .* excludes hidden cache, temporary and template-backup trees. testpaths remains tests/mcp_server; no marker filters or narrower testpaths were introduced. This addresses traversal selection, not the underlying Windows ACLs.
+
+YAML/TOML edits use safe_edit_file(validation='report') because no artifact validation profile is selected for these files (enforce returned validation_blocked with selected_source=none and selection_reason=absent). Verification uses existing contract/config tests and native collection. This bounded owner-authorized configuration correction does not reopen the deferred D-VAL-01 adapter robustness implementation scope.
+
+### Verification of the approved scope/configuration correction
+
+- run_tests(scope='targets', targets=['tests/mcp_server/unit/config/test_contracts_loader.py', 'tests/mcp_server/unit/config/test_contracts_config.py', 'tests/mcp_server/unit/test_pytest_config.py'], args={'python_tests': ['-q', '-n', '0']}, timeout_seconds=90): 58 passed, 1 failed. Both contract test modules passed. The failure is test_qa_tests_relocated_to_integration_directory, asserting that the absent tests/mcp_server/integration/test_qa.py exists; it is unrelated to discovery exclusions or scope instruction changes and remains open. Cache: pgmcp://cache/runs/a7351c2facea434b91e706eae790d5ca.
+- run_tests(scope='configured', args={'python_tests': ['--collect-only', '-q', '-n', '0']}, timeout_seconds=90): 2,601 tests collected, exit 0, 2.57 seconds. Cache: pgmcp://cache/runs/e84ab6dbd3ec4386ad0e2160d51e436d.
+- Identical collection options with scope='workspace': 2,601 tests collected, exit 0, 2.25 seconds; the five former access-denied collection errors are absent. Cache: pgmcp://cache/runs/01900aa049184f14949034cddfeec15c.
+- Both collection resources were read completely in contiguous windows. Successful collection does not establish full-suite execution or passing tests. The configured collection count is unchanged from the pre-edit 2,601 baseline; root collection previously found 2,602 plus five errors.
+
+After the supported server restart, get_work_context returned the updated configured-scope validation instruction (pgmcp://cache/runs/b4e49d3d05cc4526b77de42a93bdad91), proving the active server loaded the revised contract. Independent review remains requested; full-suite completion, deferred adapter launch robustness and other unresolved findings remain separate.
