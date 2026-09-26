@@ -3,9 +3,9 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "implementation",
+  "current_phase": "planning",
   "current_cycle": 108,
-  "last_cycle": 107,
+  "last_cycle": 108,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -660,7 +660,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "CY107 exact-target Mypy review exposed 418 pre-existing test typing errors; QA requires a bounded Planning exception with a pre-CY107 baseline comparison before accepting D2.",
+  "skip_reason": "CY108 durable original-process-handle RED evidence found three confirmed-stop outcomes returning while original children remain unsignaled; the existing CY108 stop condition explicitly requires a scoped runtime Planning amendment before production edits.",
   "issue_title": "Audit scaffolding schema-template rendering contracts",
   "parent_branch": "main",
   "created_at": "2026-08-22T19:45:36.738143+00:00",
@@ -856,8 +856,16 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-26T20:11:53.125333+00:00",
+      "human_approval_message": "The issue owner instructed: 'leg deze cycles vast laat qa agent toetsen, corrigeer indien noodzakelijk en ga daarna over tot implementatie volgens de regels in agents.md en gebruikmakend van de workflow en tooling van pgmcp!'",
+      "forced": true,
+      "skip_reason": "CY108 durable original-process-handle RED evidence found three confirmed-stop outcomes returning while original children remain unsignaled; the existing CY108 stop condition explicitly requires a scoped runtime Planning amendment before production edits."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
