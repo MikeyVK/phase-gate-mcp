@@ -6,6 +6,8 @@ import asyncio
 import ctypes
 import sys
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from ctypes import wintypes
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,6 +50,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function main() {
   if (mode === 'child') {
     fs.writeFileSync(root + '/' + label + '.pid', String(process.pid));
+    while (!fs.existsSync(root + '/' + label + '.armed')) await sleep(5);
     await sleep(Number(process.argv[5]));
     fs.writeFileSync(root + '/' + label + '.done', 'finished');
     return;
@@ -61,6 +64,8 @@ async function main() {
     child.unref();
   }
   while (!fs.existsSync(root + '/first.pid') || !fs.existsSync(root + '/second.pid'))
+    await sleep(5);
+  while (!fs.existsSync(root + '/first.armed') || !fs.existsSync(root + '/second.armed'))
     await sleep(5);
   const response = JSON.stringify({decision: {status: 'passed'}, external_tools: [],
                                   evidence: {format: 'text', data: '{}'}});
@@ -114,8 +119,8 @@ def child_pids(case: LifecycleCase) -> tuple[int, ...]:
     return tuple(int((case.root / f"{name}.pid").read_text()) for name in ("first", "second"))
 
 
-def is_alive(pid: int) -> bool:
-    """Independent OS-handle evidence, not the runtime's own completion answer."""
+def _process_api() -> ctypes.WinDLL:
+    """Bind only the Windows calls needed for original-process observations."""
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     kernel.OpenProcess.restype = wintypes.HANDLE
@@ -123,33 +128,57 @@ def is_alive(pid: int) -> bool:
     kernel.WaitForSingleObject.restype = wintypes.DWORD
     kernel.CloseHandle.argtypes = [wintypes.HANDLE]
     kernel.CloseHandle.restype = wintypes.BOOL
-    handle = kernel.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE only.
+    return kernel
+
+
+def _open_process(pid: int) -> int:
+    handle = _process_api().OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE only.
     if not handle:
-        error = ctypes.get_last_error()
-        if error == 87:  # ERROR_INVALID_PARAMETER: process no longer exists.
-            return False
-        raise ctypes.WinError(error)
+        raise ctypes.WinError(ctypes.get_last_error())
+    return int(handle)
+
+
+def _handle_is_alive(handle: int) -> bool:
+    """Inspect a retained handle, never a later lookup of a reusable PID."""
+    status = int(_process_api().WaitForSingleObject(handle, 0))
+    assert status in (0, 258)
+    return status == 258
+
+
+@contextmanager
+def retained_children(case: LifecycleCase) -> Iterator[tuple[int, ...]]:
+    """Hold both original children while the invocation completes."""
+    kernel = _process_api()
+    handles: list[int] = []
     try:
-        status = int(kernel.WaitForSingleObject(handle, 0))
-        assert status in (0, 258)
-        return status == 258
+        for pid in child_pids(case):
+            handles.append(_open_process(pid))
+        for name in ("first", "second"):
+            (case.root / f"{name}.armed").touch()
+        yield tuple(handles)
     finally:
-        kernel.CloseHandle(handle)
+        for handle in handles:
+            assert kernel.CloseHandle(handle)
 
 
 async def test_response_and_parent_exit_wait_for_parallel_work(
     lifecycle_case: LifecycleCase,
 ) -> None:
-    result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
-        launch=launch_for(lifecycle_case, "normal"),
-        workspace_root=lifecycle_case.root,
-        request=lifecycle_case.request,
-        response_contract=response_contract(),
-        timeout_seconds=5,
+    task = asyncio.create_task(
+        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+            launch=launch_for(lifecycle_case, "normal"),
+            workspace_root=lifecycle_case.root,
+            request=lifecycle_case.request,
+            response_contract=response_contract(),
+            timeout_seconds=5,
+        )
     )
+    await wait_for_children(lifecycle_case)
+    with retained_children(lifecycle_case) as children:
+        result = await task
+        assert not any(_handle_is_alive(handle) for handle in children)
     assert isinstance(result, InvocationCompleted)
     assert all((lifecycle_case.root / f"{name}.done").exists() for name in ("first", "second"))
-    assert not any(is_alive(pid) for pid in child_pids(lifecycle_case))
     assert result.capture.stderr.observed_bytes == STDERR_LIMIT + 37
     assert result.capture.stderr.truncated
     assert (lifecycle_case.root / "target.txt").read_text() == "keep"
@@ -167,17 +196,22 @@ async def test_response_and_parent_exit_wait_for_parallel_work(
 async def test_failure_stops_live_children_and_keeps_primary_cause(
     lifecycle_case: LifecycleCase, mode: str, reason: AdapterCallFailureReason
 ) -> None:
-    result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
-        launch=launch_for(lifecycle_case, mode),
-        workspace_root=lifecycle_case.root,
-        request=lifecycle_case.request,
-        response_contract=response_contract(),
-        timeout_seconds=1 if mode == "late" else 5,
+    task = asyncio.create_task(
+        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+            launch=launch_for(lifecycle_case, mode),
+            workspace_root=lifecycle_case.root,
+            request=lifecycle_case.request,
+            response_contract=response_contract(),
+            timeout_seconds=1 if mode == "late" else 5,
+        )
     )
+    await wait_for_children(lifecycle_case)
+    with retained_children(lifecycle_case) as children:
+        result = await task
+        assert not any(_handle_is_alive(handle) for handle in children)
     assert isinstance(result, InvocationFailed)
     assert result.failure.reason is reason
     assert result.termination_problem is None
-    assert not any(is_alive(pid) for pid in child_pids(lifecycle_case))
     assert not any(lifecycle_case.root.glob("*.done"))
     assert (lifecycle_case.root / "target.txt").read_text() == "keep"
     assert result.capture.stdout.head is not None
@@ -200,11 +234,12 @@ async def test_cancellation_is_typed_and_confirmed_before_return(
         )
     )
     await wait_for_children(lifecycle_case)
-    task.cancel()
-    result = await task
+    with retained_children(lifecycle_case) as children:
+        task.cancel()
+        result = await task
+        assert not any(_handle_is_alive(handle) for handle in children)
     assert isinstance(result, InvocationCancelled)
     assert result.termination_problem is None
-    assert not any(is_alive(pid) for pid in child_pids(lifecycle_case))
     assert (lifecycle_case.root / "target.txt").read_text() == "keep"
 
 
@@ -268,21 +303,22 @@ async def test_unconfirmed_stop_preserves_cause_and_shared_five_second_budget(
     )
     try:
         await wait_for_children(lifecycle_case)
-        if cancel:
-            start = time.monotonic()
-            task.cancel()
-        result = await task
-        elapsed = time.monotonic() - start
-        assert 4.5 <= elapsed < 8.5
-        if cancel:
-            assert isinstance(result, InvocationCancelled)
-            assert InvocationCancelled.model_validate_json(result.model_dump_json()) == result
-        else:
-            assert isinstance(result, InvocationFailed)
-            assert result.failure.reason is AdapterCallFailureReason.TIMEOUT
-            assert InvocationFailed.model_validate_json(result.model_dump_json()) == result
-        assert result.termination_problem is TerminationProblem.UNCONFIRMED
-        assert all(is_alive(pid) for pid in child_pids(lifecycle_case))
+        with retained_children(lifecycle_case) as children:
+            if cancel:
+                start = time.monotonic()
+                task.cancel()
+            result = await task
+            elapsed = time.monotonic() - start
+            assert 4.5 <= elapsed < 8.5
+            if cancel:
+                assert isinstance(result, InvocationCancelled)
+                assert InvocationCancelled.model_validate_json(result.model_dump_json()) == result
+            else:
+                assert isinstance(result, InvocationFailed)
+                assert result.failure.reason is AdapterCallFailureReason.TIMEOUT
+                assert InvocationFailed.model_validate_json(result.model_dump_json()) == result
+            assert result.termination_problem is TerminationProblem.UNCONFIRMED
+            assert all(_handle_is_alive(handle) for handle in children)
         assert result.capture.exit_code == 0
         assert result.capture.stdout.head is not None
         assert result.capture.stderr.observed_bytes == STDERR_LIMIT + 37
@@ -301,22 +337,29 @@ async def test_setup_failure_retains_created_process_and_confirms_its_stop(
     lifecycle_case: LifecycleCase, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     observed_pids: list[int] = []
+    observed_handles: list[int] = []
 
     def fail_assignment(_job: WindowsJob, pid: int) -> None:
         observed_pids.append(pid)
+        observed_handles.append(_open_process(pid))
         raise OSError("injected job assignment failure")
 
     monkeypatch.setattr(WindowsJob, "attach_and_resume", fail_assignment)
-    result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
-        launch=launch_for(lifecycle_case, "normal"),
-        workspace_root=lifecycle_case.root,
-        request=lifecycle_case.request,
-        response_contract=response_contract(),
-        timeout_seconds=5,
-    )
-    assert isinstance(result, InvocationFailed)
-    assert result.failure.reason is AdapterCallFailureReason.PROCESS_FAILED
-    assert result.capture.exit_code is not None
-    assert result.termination_problem is None
-    assert len(observed_pids) == 1
-    assert not is_alive(observed_pids[0])
+    try:
+        result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+            launch=launch_for(lifecycle_case, "normal"),
+            workspace_root=lifecycle_case.root,
+            request=lifecycle_case.request,
+            response_contract=response_contract(),
+            timeout_seconds=5,
+        )
+        assert isinstance(result, InvocationFailed)
+        assert result.failure.reason is AdapterCallFailureReason.PROCESS_FAILED
+        assert result.capture.exit_code is not None
+        assert result.termination_problem is None
+        assert len(observed_pids) == len(observed_handles) == 1
+        assert not _handle_is_alive(observed_handles[0])
+    finally:
+        kernel = _process_api()
+        for handle in observed_handles:
+            assert kernel.CloseHandle(handle)

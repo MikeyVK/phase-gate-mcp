@@ -2088,6 +2088,10 @@ Independent CY107 review subsequently confirmed the audit side-effect was remove
 - **Rollback:** R-CY108, the inverse of this one test path and cycle state.
 - **Stop/go:** If an original child unexpectedly remains alive in a confirmed-stop case, or is unexpectedly stopped in an intentionally unconfirmed case, stop and explicitly amend Planning for a scoped runtime repair; do not convert the test finding into an unapproved production change. Independent QA decides progression.
 
+### CY108 RED finding
+
+R-CY108 begins at `a4898aa33476183f42d62d8aa1ae224f1fc0f2a7`. The pre-change nine lifecycle cases passed under four workers (`pgmcp://cache/runs/27dab1333ad54c7496c11a56e4cb46a8`). The test-only change retains Windows process handles for the original children while the invocation runs; a short child/parent acknowledgement barrier ensures handles are acquired before a fast parent response or stop. Confirmed outcomes now assert the retained handles are signaled; the two intentionally `UNCONFIRMED` outcomes assert the originals remain live before explicit teardown. No production path has been edited. Ruff format/lint, Mypy and Pyright pass on the test file (`pgmcp://cache/runs/bcb57671f9b64b7494ede45d4f819207`). The nine cases now yield three failures and six passes under four workers (`pgmcp://cache/runs/45be8eac08a14f65a2cfd7efb056582b`): crash, invalid response and deadline expiry report confirmed stop while at least one original child handle remains unsignaled at return. An exploratory check on the invalid-response case found three job-accounted processes and `IsProcessInJob` true for both children before completion (`pgmcp://cache/runs/6a53ce70ada64cf0b383d515e8ed0d6d`); that private-introspection instrumentation was then removed from the durable test. Per the stop/go rule, implementation stops for a bounded Planning amendment; no runtime change may proceed on the existing CY108 write-set.
+
 ## CY109
 
 **Resolve test-source Ruff import debt**
