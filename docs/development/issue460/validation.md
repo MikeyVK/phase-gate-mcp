@@ -375,3 +375,17 @@ YAML/TOML edits use safe_edit_file(validation='report') because no artifact vali
 - Both collection resources were read completely in contiguous windows. Successful collection does not establish full-suite execution or passing tests. The configured collection count is unchanged from the pre-edit 2,601 baseline; root collection previously found 2,602 plus five errors.
 
 After the supported server restart, get_work_context returned the updated configured-scope validation instruction (pgmcp://cache/runs/b4e49d3d05cc4526b77de42a93bdad91), proving the active server loaded the revised contract. Independent review remains requested; full-suite completion, deferred adapter launch robustness and other unresolved findings remain separate.
+
+## Timeout provenance and authorization investigation — owner scope refinement, 2026-09-26
+
+**Owner-provided historical evidence:** Before issue #460, run_tests calls could run longer than 120 seconds. This is an explicit regression baseline to investigate; it is not yet independently reconstructed from old run receipts. The owner does not recall authorizing introduction of the observed 120-second client limit. Do not infer unauthorized implementation or an author solely from this discrepancy.
+
+**Required investigation:**
+- Reconstruct the earlier successful long-running call path: host/client, configuration, native execution budget, elapsed time and returned evidence. Distinguish the prior run_tests timeout parameter from a whole MCP-call deadline.
+- Trace the introduction of .codex/config.toml tool_timeout_sec=120 through available local configuration/session history and setup scripts. Git ignores this file; timestamps and first observed reads are not proof of writer, approval or introduction time.
+- Map each budget independently: native tool, PGMCP adapter invocation, bounded termination, complete multi-adapter tool operation and MCP client/transport. Identify owners, defaults, overrides and aggregate overhead.
+- Trace Research/Approved Strategy, Design, Planning, implementation commits and user authorization for each changed boundary. A document labelled human-approved is a claim to trace, not independent proof that a separate client limit was approved.
+- Establish actual client timeout/cancellation behavior, process-tree termination, late result handling, cache publication/discoverability, and what the agent/user can know before retrying. Do not infer the fate of the original interrupted run from code inspection alone.
+- Extend the provenance audit to adjacent issue-460 execution/client settings and materially changed defaults to identify other unapproved decisions, distinguishing approved changes, missing provenance, implementation departures and host-only configuration.
+
+**Owner requirement:** Tool deadlines are acceptable when intentionally designed with clear PGMCP behavior and correct failure/result handling. Merely increasing a client value does not close the finding or authorize a new asynchronous execution design. No timeout setting or execution code is changed by this investigation refinement.
