@@ -2040,6 +2040,14 @@ The owner authorized these bounded corrections after validation of CY001–CY105
 - **Rollback:** R-CY106, the scoped inverse of these five files and cycle state only.
 - **Stop/go:** Stop on changed audit semantics, new schema/adapter behavior, out-of-set writes, or failed D2. Independent QA decides progression.
 
+### CY106 execution evidence
+
+R-CY106 is commit `e65b1ebc0f5c1ba2938077c72ad74bbbd7b0def9`; the cycle-owned inverse consists of the five exact production-file edits and the cycle-state transition, with this evidence paragraph removable separately. No unrelated tracked file was dirty before the cycle; the pre-existing untracked installation, lock and backup files were left untouched.
+
+D1: The existing audit tests provided a genuine RED baseline. An initial concurrent tool invocation hit the active startup lock (`pgmcp://cache/runs/01289052653d4de9a1097d0ee9295fe3`); the serial retry reached both assertions and failed because no audit log was created (`pgmcp://cache/runs/3aa3331270ee45b4a7d48c07f2ca43a2`). The configured Mypy baseline reported exactly seven errors across the five write-set files (`pgmcp://cache/runs/cbc959e2e80d4adb9ececeb6d3b44a16`). The repair invokes the existing configured logging facility during target bootstrap, restores the startup lifecycle event, imports ContentInputPreparer from its defining module, exposes the concrete shared response cache only at the composition graph, narrows the known immutable object schema into a native mapping, and casts the validated health tool only at its dynamic decorator boundary. Public schemas, audit message/level, startup lock, cache consumer interface widths and adapter contracts are unchanged.
+
+D2: Both audit lifecycle tests pass (`pgmcp://cache/runs/d746579e2d8c4a1ea3dd4183d8d84bfd`); 25 prepared-input/schema/decorator/startup tests pass (`pgmcp://cache/runs/934409dc94b3409694da29c92f83cb8d`); 19 logging/server/boundary tests pass (`pgmcp://cache/runs/a4c06dd17bd04812b27dfa1a02cb19b2`). All four configured exact-file gates pass on the five production paths: Ruff format/lint 0.15.6, Mypy 1.19.1 and Pyright 1.1.408 (`pgmcp://cache/runs/8e92a5eb18514adab66285899a2b952e`). Pytest 9.0.2 used `scope=targets`, `python_tests`, `args={python_tests:[-n,0]}` for focused evidence; parallel safety is CY107, and the complete parallel suite remains Validation. The diff contains no added test, ignored type error, adapter change or out-of-set production edit. Independent implementation-cycle review is requested without a producer GO claim.
+
 ## CY107
 
 **Make server tests safe for parallel workers**

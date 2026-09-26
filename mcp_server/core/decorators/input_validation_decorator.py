@@ -89,7 +89,8 @@ class InputValidationDecorator(ITool[TOutput | ValidationErrorOutput], Generic[T
                 validated = self._input_contract.validate(params)
             else:
                 # Preserve the public wire contract before Python model construction.
-                jsonschema.validate(instance=params, schema=thaw_json(attachment_schema))
+                schema_data = {key: thaw_json(value) for key, value in attachment_schema.items()}
+                jsonschema.validate(instance=params, schema=schema_data)
                 validated = (
                     self.args_model.model_validate(params) if self.args_model is not None else None
                 )

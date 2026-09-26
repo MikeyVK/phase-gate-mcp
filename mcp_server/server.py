@@ -6,7 +6,7 @@ import sys
 import time
 import uuid
 from io import TextIOWrapper
-from typing import Any
+from typing import Any, cast
 
 import anyio
 from mcp.server import Server
@@ -19,7 +19,7 @@ from mcp.types import (
     TextContent,
     Tool,
 )
-from pydantic import AnyUrl
+from pydantic import AnyUrl, BaseModel
 
 # Config
 from mcp_server.config.settings import Settings
@@ -28,6 +28,7 @@ from mcp_server.config.settings import Settings
 # Resources
 # Scaffolding infrastructure (Issue #72)
 from mcp_server.core.decorators import InputValidationDecorator, ToolErrorHandlerDecorator
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
@@ -253,7 +254,7 @@ class DegradedMCPServer(MCPServer):
 
     def __init__(self, settings: Settings, reason: str) -> None:
         """Initialize the degraded server with only the health check tool."""
-        from mcp_server.schemas.tool_outputs import HealthStatus  # noqa: PLC0415
+        from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus  # noqa: PLC0415
         from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
 
         health_tool = HealthCheckTool(
@@ -263,7 +264,14 @@ class DegradedMCPServer(MCPServer):
 
         super().__init__(
             settings=settings,
-            tools=[ToolErrorHandlerDecorator(InputValidationDecorator(health_tool))],
+            # The decorator validates HealthCheckInput before invoking this typed tool.
+            tools=[
+                ToolErrorHandlerDecorator(
+                    InputValidationDecorator[HealthCheckOutput](
+                        cast(ICoreTool[BaseModel, HealthCheckOutput], health_tool)
+                    )
+                )
+            ],
             resources=[],
             presenter=None,
             publisher=None,

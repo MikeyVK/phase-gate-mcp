@@ -50,7 +50,8 @@ def prepare_model_input(model: type[TModel]) -> PreparedToolInputContract[TModel
     schema = freeze_json(resolve_schema_refs(model.model_json_schema()))
     if not isinstance(schema, FrozenJsonObject):
         raise TypeError("tool_input_schema_must_be_object")
-    validator = Draft202012Validator(thaw_json(schema))
+    schema_data = {key: thaw_json(value) for key, value in schema.items()}
+    validator = Draft202012Validator(schema_data)
 
     def admit(raw: JsonObject) -> TModel:
         errors: list[InitErrorDetails] = [

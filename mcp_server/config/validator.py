@@ -46,7 +46,8 @@ class ConfigValidator:
         frozen = freeze_json(context)
         if not isinstance(frozen, FrozenJsonObject):
             raise ValueError("template_context_object_required")
-        Draft202012Validator(thaw_json(schema)).validate(thaw_json(frozen))
+        schema_data = {key: thaw_json(value) for key, value in schema.items()}
+        Draft202012Validator(schema_data).validate(thaw_json(frozen))
         return frozen
 
     def validate_template_policy(self, policy: TemplatePolicy, profiles: frozenset[str]) -> None:

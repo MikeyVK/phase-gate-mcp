@@ -53,20 +53,16 @@ from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.exceptions import ConfigError, MCPError
-from mcp_server.core.interfaces import (
-    ICoreTool,
-    IToolResponsePublisher,
-    IToolResponseReader,
-)
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_selection import CheckSelector, FileScopePaths, ScopeResolver
-from mcp_server.execution.check_service import CheckService, ContentInputPreparer
-from mcp_server.execution.content_input import FileContentScratch
+from mcp_server.execution.check_service import CheckService
+from mcp_server.execution.content_input import ContentInputPreparer, FileContentScratch
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
 from mcp_server.execution.test_service import TestRunManager
@@ -236,7 +232,7 @@ class ManagerGraph:
     github_manager: GitHubManager
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
-    response_cache: IToolResponsePublisher | IToolResponseReader
+    response_cache: ResponseCacheManager
 
 
 @dataclass(frozen=True)
@@ -383,6 +379,9 @@ class ServerBootstrapper:
         upgrade_lock.acquire()
 
         try:
+            setup_logging(log_level=settings.logging.level, audit_log=settings.logging.audit_log)
+            lifecycle_logger.info("MCP server starting")
+
             # 2. Check for unresolved recovery record
             recovery_record_path = server_root / "template_upgrade.json"
             if recovery_record_path.exists():
