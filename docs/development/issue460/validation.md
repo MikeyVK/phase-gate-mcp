@@ -2,9 +2,9 @@
 
 # Issue 460 Refactor Validation
 
-**Status:** Blocked — required execution evidence unavailable; independent review requested
-**Version:** 1.1
-**Last Updated:** 2026-09-24
+**Status:** Revalidation completed with failures and evidence gaps; independent review requested
+**Version:** 1.2
+**Last Updated:** 2026-09-26
 
 
 ## Purpose
@@ -13,11 +13,11 @@ Record observed validation evidence and blocking gaps without declaring independ
 
 ## Scope In
 
-Authoritative plan/strategy review, bounded structural and test-source inspection, one workspace-wide test attempt, one branch-wide python_review check run, and observed failure reporting.
+Authoritative plan/strategy review, accepted deferral reconciliation, bounded structural inspection, complete configured test selection executed in four nonoverlapping partitions, branch checks and diagnostic directory checks. The current revalidation below supersedes earlier execution status; earlier sections retain historical provenance.
 
 ## Scope Out
 
-Production/test fixes, changed native settings, dependency installation, repeated full-suite execution after an uncertain timeout, external-workspace migration, release, merge and phase progression.
+Production/test repairs, dependency installation, deferred adapter redesign, external-workspace migration, release, merge and phase progression. Previously approved configured test defaults, exclusions and the local 300-second client deadline remain in force.
 
 ## Prerequisites
 
@@ -46,7 +46,64 @@ Refactor issue #460, branch refactor/460-audit-scaffolding-schema-template-contr
 
 
 
-## Obligations
+## Current revalidation — 2026-09-26
+
+This is the current producer validation result, not independent QA approval. Accepted adapter deferrals are described in [deferred work](deferred-work.md): large native argument lists and native option/result semantics across all nine adapters remain coordination follow-up. They do not reopen generic adapter contracts. The approved lazy cache-guide deviation is provenance reconciliation, not a missing implementation.
+
+### Complete selected suite
+
+All calls used `run_tests`, Pytest 9.0.2, `-q -n 4 --tb=short`. Targets and configured exclusions form disjoint partitions of the previously collected 2,601 items. No failing tests were excluded from this accounting.
+
+| Selection | Passed | Failed | Other | Native duration | Cached result |
+|---|---:|---:|---|---:|---|
+| targets: tests/mcp_server/unit | 1888 | 3 | 1 XPASS | 88.23s | pgmcp://cache/runs/ef7bc031d1a74b499b08bb8d443020a7 |
+| configured; ignore unit and integration directories | 113 | 0 | 1 skipped | 5.33s | pgmcp://cache/runs/ad91721208c54f16a15e9ea3dc3d8460 |
+| targets: tests/mcp_server/integration; ignore adapters subdirectory | 426 | 10 | none | 202.04s | pgmcp://cache/runs/0cfa5092dc0d480e9282f1ced51dfc87 |
+| targets: tests/mcp_server/integration/adapters | 143 | 16 | none | 95.46s | pgmcp://cache/runs/959642df909140b3bd52e06cc77adeb1 |
+| Total | 2570 | 29 | 1 skipped, 1 XPASS | | |
+
+The full configured attempt first reached its explicit 240-second adapter deadline and returned `unavailable/timeout/adapter_deadline_expired`, with `termination_problem=null` (pgmcp://cache/runs/c60499b1de374e6b9af647b7ef805d82). It supplied no partial native counts. The completed partitions used 240-second deadlines except the residual configured partition (90 seconds). This replaces the earlier unknown 120-second client outcome with bounded evidence; it does not turn the timed-out attempt into a pass.
+
+### Failure interpretation
+
+- **16 Ruff conformance failures:** installed Ruff is 0.14.13; assertions require 0.15.6. This is a validation-environment mismatch, not evidence that all sixteen native behaviors are broken. No dependency was silently upgraded and no assertion was relaxed.
+- **Seven live-workspace lock failures:** two unit tool-registration tests copy the active `.pgmcp/template_upgrade.lock` and receive WinError 33; three pipeline tests attempt bootstrap against the occupied template-upgrade lock; two real stdio handshake tests subsequently time out after their child server exits with `template_upgrade_locked`. These are concrete fixture/workspace-isolation concerns. They are distinct from workspace traversal exclusions and deferred long argv handling.
+- **Two audit lifecycle failures:** startup creates no expected `test_audit.log`; shutdown then cannot read that file. Tests: `integration/mcp_server/test_server_lifecycle.py`.
+- **One obsolete path assertion:** `unit/test_pytest_config.py::test_qa_tests_relocated_to_integration_directory` expects missing `integration/test_qa.py`.
+- **One installed-distribution prerequisite failure:** wheel construction stops at `ERROR Missing dependencies: wheel`. Installed catalog/entrypoint assertions are therefore not reached; this is not proof of a malformed wheel.
+- **Two process-lifecycle failures under parallel load:** timeout/crash cases observed a child still alive at `test_process_stopping.py:180`. A focused rerun of that entire module with `-q --tb=short -n 0`, deadline 90 seconds, passed all nine tests in 13.92s (pgmcp://cache/runs/5f24cfe4b51b4122a79d95d95301374d). Keep this as an unresolved timing/isolation finding, not a confirmed deterministic process-termination defect and not an adapter deferral.
+
+Warnings, the XPASS, and noisy restart-test stderr remain in the full caches. Native exit zero for the residual partition is not a claim of silent stderr.
+
+### Quality checks
+
+The exact branch call again could not launch its four native checks: WinError 206 for Ruff/Mypy and ENAMETOOLONG for Pyright (pgmcp://cache/runs/e1cb79d60bd348808cf0425f43aa5170). This is the accepted D-VAL-01 deferral, not a passing branch gate.
+
+Diagnostic targets `mcp_server, tests/mcp_server, scripts` yielded:
+
+- Ruff format: two files would change, 457 already formatted. Files: `unit/config/test_contracts_loader.py` and `unit/services/test_artifact_identity.py`.
+- Ruff lint: 61 diagnostics, including 50 E402 import-order findings in tests, six T201 print findings, and five typing/import findings. Cache: pgmcp://cache/runs/b7d8048ed53140619c191a161262bf20.
+- Pyright: 462 files, zero errors/warnings, 31.19s. Cache: pgmcp://cache/runs/af35264dddd349e68b4220f61a6d3f16.
+- Mypy initially stopped after six errors: missing jsonschema stubs and duplicate module identity for `scripts/build_package.py` (pgmcp://cache/runs/0b45ac5b34e54532822bf3de0bb3e0ad). Repeating with only `mcp_server, tests/mcp_server` completed: 1,232 errors in 126 of 461 checked files, nine production diagnostics and 1,223 test diagnostics (pgmcp://cache/runs/0d9e2905575d4eccb4d37118f68ca598).
+
+Directory discovery differs from explicit branch-file semantics, including native exclusions and archived paths. These are useful diagnostic results, not an equivalent branch gate or proof that every diagnostic is introduced by #460. Baseline attribution remains open; accepted adapter deferrals do not automatically waive native findings.
+
+### Current obligation assessment
+
+| Obligation | Current assessment |
+|---|---|
+| V460.1 | Partial: all 79 legacy template paths absent, C084 docstring-only; bounded active-code search finds no retired runtime imports or generic executor tool coupling. Complete 126/151/79/57 semantic closure and review of every new path are not certified by path presence alone. |
+| V460.2 | Substantial fresh public/consumer/native coverage; aggregate not passing, notably Ruff version mismatch and parallel lifecycle failures. Adapter repairs remain deferred. |
+| V460.3 | Not established: fresh installed-distribution proof blocked by missing wheel; two real configured-workspace handshake tests hit the active lock. Other renewal/recovery tests are included in the completed integration partition. |
+| V460.4 | Complete selected-suite execution obtained, but failures remain. Branch invocation limitation is deferred; diagnostic checks do not establish a green gate. |
+| V460.5 | Fresh unit carrier tests passed, including nineteen variants and rendered/persisted carrier semantics; all eight documented source/copy pairs are SHA256-identical. Mocked consumer checks are not counted as native-tool proof. |
+
+No production repair or new strategy change was made during revalidation. Non-deferred findings and evidence gaps above need disposition before closure. Independent QA review is requested against this current assessment, the full cached diagnostics and the accepted deferral boundaries.
+
+## Historical obligations and initial assessment
+
+The following obligation details and later dated investigation sections retain the earlier record. Their execution statuses are superseded by the current revalidation above.
+
 
 
 ### V460.1 — exact source closure and architecture review
