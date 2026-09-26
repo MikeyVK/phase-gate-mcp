@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/config/test_loader.py
 # template=unit_test version= created=2026-04-09T00:00Z updated=
 """
@@ -14,6 +12,7 @@ from pathlib import Path
 
 # Project modules
 from mcp_server.config.loader import ConfigLoader
+from tests.mcp_server.test_support import get_default_server_root
 
 
 def _workflow_yaml_without_phases() -> str:

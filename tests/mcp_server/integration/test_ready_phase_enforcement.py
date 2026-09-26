@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/integration/test_ready_phase_enforcement.py
 # template=unit_test version= created=2026-04-09T00:00Z updated=
 """
@@ -46,6 +44,7 @@ from mcp_server.managers.enforcement_runner import (
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.tools.git_tools import GitCommitTool
 from mcp_server.tools.pr_tools import SubmitPRTool
+from tests.mcp_server.test_support import get_default_server_root
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 

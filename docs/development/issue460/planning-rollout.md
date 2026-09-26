@@ -2114,6 +2114,10 @@ The widened lifecycle/process-runtime selection now passes 27/27 under four work
 - **Rollback:** R-CY109, scoped inverse of these ten test paths and cycle state.
 - **Stop/go:** Stop on semantic import-order dependency that needs a larger redesign or out-of-set write. Independent QA decides progression.
 
+### CY109 implementation evidence
+
+The ten-file baseline passed 50 tests with one existing xpass under four workers (`pgmcp://cache/runs/337798bf483242c59eb5a07420efb67a`); native Ruff format passed and lint reported the expected E402 inventory (`pgmcp://cache/runs/c9a0741141da4d9eb60168a033058531`). Each file had `get_default_server_root` imported before its module docstring. The import now follows the docstring inside Ruff's sorted import block. The diff contains only that import move in the ten approved paths. The moved import binds `get_default_server_root` but does not call it at import time; the helper body calls `Settings.from_env` only when tests invoke it. Ruff places that helper import after the other imports. No test module sets state between imports, and the same collected tests pass before and after the reorder, so no required import-order dependency was observed. The same selection passed 50 tests with one xpass under four workers after the edit (`pgmcp://cache/runs/b481d48b4fce473190bb658e3435ee4c`); native Ruff lint and format both pass (`pgmcp://cache/runs/4ac793cd0ada4fcfa245104e5cdc9ef2`). Independent QA review is requested; producer evidence does not claim GO.
+
 ## CY110
 
 **Resolve production-source Ruff lint debt**

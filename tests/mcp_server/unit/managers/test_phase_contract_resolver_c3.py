@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests\mcp_server\unit\managers\test_phase_contract_resolver_c3.py
 # template=unit_test version=3d15d309 created=2026-05-02T18:35Z updated=
 """
@@ -31,6 +29,7 @@ from mcp_server.config.schemas.contracts_config import (
 )
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
+from tests.mcp_server.test_support import get_default_server_root
 
 _STUB_INSTRUCTIONS = PhaseInstructionsSpec(
     sub_role="test-role",

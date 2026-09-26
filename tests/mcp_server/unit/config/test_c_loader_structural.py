@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/config/test_c_loader_structural.py
 """
 Structural regression tests for config-path and legacy exception kwargs.
@@ -18,6 +16,8 @@ and legacy hint/blocker/recovery kwargs in production code.
 # Standard library
 import ast
 from pathlib import Path
+
+from tests.mcp_server.test_support import get_default_server_root
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[4]
 PRODUCTION_ROOT = WORKSPACE_ROOT / "mcp_server"
