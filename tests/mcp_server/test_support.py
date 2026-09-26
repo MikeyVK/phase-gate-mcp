@@ -11,6 +11,7 @@ import os
 from collections.abc import Callable
 from functools import partial
 from pathlib import Path
+from shutil import copy2, copytree
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
@@ -401,6 +402,17 @@ def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
         scope_config=dependencies["scope_config"],
         git_config=dependencies["git_config"],
     )
+
+
+def copy_server_startup_inputs(source_workspace: Path, target_workspace: Path) -> Path:
+    """Copy only stable V3 inputs needed by a real startup subprocess."""
+    source_root = source_workspace / get_default_server_root()
+    target_root = target_workspace / get_default_server_root()
+    target_root.mkdir(parents=True, exist_ok=True)
+    for directory_name in ("config", "template_suite"):
+        copytree(source_root / directory_name, target_root / directory_name)
+    copy2(source_root / "installation.json", target_root / "installation.json")
+    return target_workspace
 
 
 def make_test_server(settings: Settings | None = None) -> MCPServer:

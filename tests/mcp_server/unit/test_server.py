@@ -51,11 +51,19 @@ TRANSITION_ADVISORY_NOTE = (
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
-    shutil.copytree(
-        repo_root / get_default_server_root(),
-        workspace_root / get_default_server_root(),
-        dirs_exist_ok=True,
-    )
+    source_root = repo_root / get_default_server_root()
+    target_root = workspace_root / get_default_server_root()
+    target_root.mkdir(parents=True, exist_ok=True)
+    for directory_name in ("config", "template_suite"):
+        shutil.copytree(
+            source_root / directory_name,
+            target_root / directory_name,
+            dirs_exist_ok=True,
+        )
+    for file_name in ("state.json", "deliverables.json"):
+        source_file = source_root / file_name
+        if source_file.exists():
+            shutil.copy2(source_file, target_root / file_name)
     deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
     if deliverables_file.exists():
         try:

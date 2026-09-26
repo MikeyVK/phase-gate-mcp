@@ -2065,6 +2065,12 @@ Amended CY106 RED/GREEN: the two new observable regression cases failed against 
 - **Rollback:** R-CY107, the scoped inverse of the enumerated test/support paths and cycle state only.
 - **Stop/go:** Stop if isolation changes production startup semantics, loses a real handshake assertion, or requires an unlisted write. Independent QA decides progression.
 
+### CY107 execution evidence
+
+R-CY107 begins at `57d661ca55bac0c6e95aa138abf2b3e8b50af54d`; the inverse diff is limited to the nine changed test/support paths and cycle state. The tests use private writable roots and copy only startup inputs, never the active repository lock. Both real proxy/stdio tests retain launcher and V3 tool-catalog observations. No production path, runner, adapter, lock setting, marker, or forced serial-suite policy changed.
+
+D2: All eight named test modules pass together under four Pytest workers: 49 passed, Pytest 9.0.2/xdist 3.8.0 (`pgmcp://cache/runs/1cb5cafab42049abb5488edee9716943`). The two full live-startup modules contribute eight passing cases under four workers (`pgmcp://cache/runs/ac619e945bae4718926ebc630d76ebaa`); the two specifically retained real handshakes also passed as a separate four-worker selection (`pgmcp://cache/runs/2b0b65a301694a95a29192d1e25600ac`). Ruff 0.15.6 format/lint and Pyright 1.1.408 pass on the exact nine changed paths (`pgmcp://cache/runs/0d9387d52c4f483fa06a74a417b500cb`). Configured production Mypy 1.19.1 passed on 184 sources in CY106 and no production/config input has changed since (`pgmcp://cache/runs/b914277f20014c10b16260b23d967fc0`). Explicit-target test Mypy remains **failed**, per the approved narrow D2 exception: the same nine targets, native configuration and Mypy 1.19.1 reported 418 errors at the pre-CY107 commit (`pgmcp://cache/runs/efbcbfde6e1b440ab5af5035ce2637c3`) and 417 in the current worktree (`pgmcp://cache/runs/014078f4d038429995b3f4d427e1198b`). Comparing diagnostic multisets after stripping only line numbers yields zero new diagnostics and one removed `unused-ignore` in `test_validate_tool_arguments.py`; file identity, code, message and multiplicity were preserved. The existing typing debt remains a failed diagnostic, not a green gate. Complete-suite proof remains Validation. Independent implementation-cycle review is requested without a producer GO claim.
+
 ## CY108
 
 **Discriminate actual child-process lifetime**

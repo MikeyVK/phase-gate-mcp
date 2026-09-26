@@ -42,7 +42,10 @@ from tests.mcp_server.fixtures.installed_distribution import (
     build_installed_distribution,
 )
 from tests.mcp_server.fixtures.server_process import run_server_process
-from tests.mcp_server.test_support import make_project_manager
+from tests.mcp_server.test_support import (
+    copy_server_startup_inputs,
+    make_project_manager,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -304,17 +307,18 @@ class TestTargetStartup:
         after_stat = recovery_path.stat()
         assert before_stat.st_mtime == after_stat.st_mtime
 
-    def test_real_server_process_handshake_default_target(self) -> None:
+    def test_real_server_process_handshake_default_target(self, tmp_path: Path) -> None:
         """Verify real subprocess handshake on normal startup publishes target tools."""
+        workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
         env = os.environ.copy()
         env["PYTHONPATH"] = str(REPO_ROOT)
-        env["PGMCP_WORKSPACE_ROOT"] = str(REPO_ROOT)
+        env["PGMCP_WORKSPACE_ROOT"] = str(workspace)
         env["PGMCP_SERVER_PROJECT_DIR"] = ".pgmcp"
         for key in ("PGMCP_CONFIG_ROOT", "PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
             env.pop(key, None)
         with run_server_process(
             [sys.executable, "-m", "mcp_server.core.proxy"],
-            cwd=REPO_ROOT,
+            cwd=workspace,
             env=env,
         ) as proc:
             info = proc.initialize(client_name="pytest-target", client_version="1.0.0")

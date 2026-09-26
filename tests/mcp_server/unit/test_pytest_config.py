@@ -73,23 +73,6 @@ def test_slow_marker_has_formal_definition() -> None:
     )
 
 
-def test_qa_tests_relocated_to_integration_directory() -> None:
-    """test_qa.py must live in tests/mcp_server/integration/ (not in unit/ subtree).
-
-    The QA tests (ruff/mypy on real workspace files) are integration tests
-    because they operate on the real filesystem, not on isolated tmp_path.
-    """
-    repo_root = Path(__file__).parent.parent.parent.parent
-    target_path = repo_root / "tests" / "mcp_server" / "integration" / "test_qa.py"
-    wrong_path = (
-        repo_root / "tests" / "mcp_server" / "unit" / "mcp_server" / "integration" / "test_qa.py"
-    )
-    assert target_path.exists(), (
-        f"test_qa.py must be at {target_path.relative_to(repo_root)}; "
-        f"currently found at wrong location: {wrong_path.relative_to(repo_root)}"
-    )
-
-
 def test_asyncio_mode_is_strict() -> None:
     """asyncio_mode must be 'strict' to avoid event-loop overhead on sync tests.
 

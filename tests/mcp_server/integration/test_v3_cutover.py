@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TypedDict, cast
 
 from tests.mcp_server.fixtures.server_process import run_server_process
+from tests.mcp_server.test_support import copy_server_startup_inputs
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 V3_TOOLS = {
@@ -98,12 +99,13 @@ def _assert_v3_catalog(
 class TestV3Cutover:
     """Verify the activated workspace and a fresh installed distribution."""
 
-    def test_configured_stdio_entrypoint_discovers_v3_tools(self) -> None:
+    def test_configured_stdio_entrypoint_discovers_v3_tools(self, tmp_path: Path) -> None:
         assert (REPO_ROOT / ".pgmcp/installation.json").is_file()
         assert not (REPO_ROOT / ".pgmcp/config/quality.yaml").exists()
         python, configured = _launcher()
-        env = _launch_environment(python, configured, workspace=REPO_ROOT, package_root=REPO_ROOT)
-        _assert_v3_catalog(python, configured, REPO_ROOT, env)
+        workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
+        env = _launch_environment(python, configured, workspace=workspace, package_root=REPO_ROOT)
+        _assert_v3_catalog(python, configured, workspace, env)
 
     def test_fresh_installed_init_and_startup(self, tmp_path: Path) -> None:
         python, configured = _launcher()
