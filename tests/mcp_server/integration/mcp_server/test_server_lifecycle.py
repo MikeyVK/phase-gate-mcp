@@ -80,3 +80,29 @@ async def test_server_shutdown_logged_to_audit(tmp_path: Path) -> None:
     ]
 
     assert len(shutdown_entries) >= 1, "Should log server shutdown"
+
+
+def test_repeated_bootstrap_replaces_audit_destination(tmp_path: Path) -> None:
+    """A later server composition must not write startup to an earlier audit file."""
+    first_log = tmp_path / "first_audit.jsonl"
+    second_log = tmp_path / "second_audit.jsonl"
+
+    with patch("mcp_server.managers.github_manager.GitHubAdapter") as mock_adapter_class:
+        mock_adapter = MagicMock()
+        mock_adapter.list_issues.return_value = []
+        mock_adapter_class.return_value = mock_adapter
+
+        make_test_server(settings=_make_test_settings(first_log))
+        assert first_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+
+        make_test_server(settings=_make_test_settings(second_log))
+        assert first_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+        assert second_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+
+        disabled_settings = _make_test_settings(tmp_path / "unused_audit.jsonl")
+        disabled_settings.logging.audit_log = None
+        make_test_server(settings=disabled_settings)
+
+    assert first_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+    assert second_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+    assert not (tmp_path / "unused_audit.jsonl").exists()

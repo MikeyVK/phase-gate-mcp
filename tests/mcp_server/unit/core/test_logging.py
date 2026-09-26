@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import contextlib
+import io
 import json
 import logging
 from pathlib import Path
@@ -89,3 +90,50 @@ def test_setup_logging_creates_parent_dir(tmp_path: Path) -> None:
 
     assert log_file.exists()
     assert "Test nested audit" in log_file.read_text(encoding="utf-8")
+
+
+def test_reconfigure_logging_closes_owned_handlers_and_keeps_foreign_handler(
+    tmp_path: Path,
+) -> None:
+    """A new audit destination must not retain old files or duplicate output."""
+    _reset_mcp_server_logger()
+    root_logger = logging.getLogger("mcp_server")
+    foreign_output = io.StringIO()
+    foreign_handler = logging.StreamHandler(foreign_output)
+    root_logger.addHandler(foreign_handler)
+    first_path = tmp_path / "first.jsonl"
+    second_path = tmp_path / "second.jsonl"
+    audit_logger = get_logger("server_lifecycle")
+
+    try:
+        setup_logging(log_level="INFO", audit_log=str(first_path))
+        first_handler = next(
+            handler for handler in root_logger.handlers if isinstance(handler, logging.FileHandler)
+        )
+        audit_logger.info("first event")
+
+        setup_logging(log_level="INFO", audit_log=str(first_path))
+        audit_logger.info("same destination event")
+        assert first_path.read_text(encoding="utf-8").count("same destination event") == 1
+        assert first_handler not in root_logger.handlers
+        assert first_handler.stream is None
+
+        setup_logging(log_level="INFO", audit_log=str(second_path))
+        audit_logger.info("second event")
+        assert "second event" not in first_path.read_text(encoding="utf-8")
+        assert second_path.read_text(encoding="utf-8").count("second event") == 1
+
+        second_handler = next(
+            handler for handler in root_logger.handlers if isinstance(handler, logging.FileHandler)
+        )
+        setup_logging(log_level="INFO", audit_log=None)
+        audit_logger.info("audit disabled event")
+        assert "audit disabled event" not in first_path.read_text(encoding="utf-8")
+        assert "audit disabled event" not in second_path.read_text(encoding="utf-8")
+        assert second_handler not in root_logger.handlers
+        assert second_handler.stream is None
+        assert foreign_handler in root_logger.handlers
+        assert "audit disabled event" in foreign_output.getvalue()
+    finally:
+        _reset_mcp_server_logger()
+        foreign_output.close()
