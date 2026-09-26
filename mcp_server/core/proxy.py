@@ -162,7 +162,8 @@ class MCPProxy:
             with open(audit_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry) + "\n")
         except OSError as e:
-            print(f"[PROXY ERROR] Audit log failed: {e}", file=sys.stderr, flush=True)
+            sys.stderr.write(f"[PROXY ERROR] Audit log failed: {e}\n")
+            sys.stderr.flush()
 
     def log(self, message: str, level: str = "INFO", **extra: Any) -> None:  # noqa: ANN401
         """Log to both stderr (VS Code Output) and audit log.
@@ -172,7 +173,8 @@ class MCPProxy:
             level: Log level
             **extra: Additional audit log fields
         """
-        print(f"[PROXY] {message}", file=sys.stderr, flush=True)
+        sys.stderr.write(f"[PROXY] {message}\n")
+        sys.stderr.flush()
         self.audit_log(message, level, **extra)
 
     def _spawn_server_in_context(self, env: dict[str, str]) -> None:
@@ -333,7 +335,8 @@ class MCPProxy:
             # Forward JSON-RPC messages to VS Code
             try:
                 json.loads(line)  # Validate JSON
-                print(line, flush=True)  # Forward to VS Code
+                sys.stdout.write(f"{line}\n")  # Forward to VS Code
+                sys.stdout.flush()
             except json.JSONDecodeError:
                 pass  # Skip non-JSON lines (server internal logs)
 
@@ -382,7 +385,8 @@ class MCPProxy:
                 )
 
             # Forward server logs to VS Code Output (stderr)
-            print(f"[SERVER] {line}", file=sys.stderr, flush=True)
+            sys.stderr.write(f"[SERVER] {line}\n")
+            sys.stderr.flush()
 
     def trigger_restart(self) -> None:
         """Perform transparent server restart."""
@@ -480,7 +484,8 @@ class MCPProxy:
                                 "id": msg_id,
                                 "error": {"code": -32602, "message": error_msg},
                             }
-                            print(json.dumps(err_response), flush=True)
+                            sys.stdout.write(f"{json.dumps(err_response)}\n")
+                            sys.stdout.flush()
 
                         continue  # Skip sending to server
 

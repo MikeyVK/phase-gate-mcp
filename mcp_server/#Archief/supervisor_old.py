@@ -31,7 +31,8 @@ def log(message: str) -> None:
         message: Log message to write to stderr
     """
     timestamp = datetime.now(UTC).isoformat()
-    print(f"[{timestamp}] [SUPERVISOR] {message}", file=sys.stderr, flush=True)
+    sys.stderr.write(f"[{timestamp}] [SUPERVISOR] {message}\n")
+    sys.stderr.flush()
 
 
 def run_server() -> int:
