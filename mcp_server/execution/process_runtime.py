@@ -475,6 +475,7 @@ class WindowsJob:
         self._kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         self._member_handles: dict[int, wintypes.HANDLE] = {}
         self._observation_failed = False
+        self._stop_total_before: int | None = None
         self._configure_api()
         self._handle = self._kernel32.CreateJobObjectW(None, None)
         if not self._handle:
@@ -552,22 +553,29 @@ class WindowsJob:
     def attach_and_resume(self, pid: int) -> None:
         """Assign a suspended process to this job before resuming its threads."""
         process = self._kernel32.OpenProcess(
-            self._PROCESS_SET_QUOTA | self._PROCESS_TERMINATE,
+            self._PROCESS_SET_QUOTA
+            | self._PROCESS_TERMINATE
+            | self._PROCESS_QUERY_LIMITED_INFORMATION
+            | self._SYNCHRONIZE,
             False,
             pid,
         )
         if not process:
             raise ctypes.WinError(ctypes.get_last_error())
+        retained = False
         try:
             if not self._kernel32.AssignProcessToJobObject(self._handle, process):
                 raise ctypes.WinError(ctypes.get_last_error())
+            self._member_handles[pid] = process
+            retained = True
             try:
                 self._resume_threads(pid)
             except BaseException:
                 self.terminate()
                 raise
         finally:
-            self._close_handle(process)
+            if not retained:
+                self._close_handle(process)
 
     def _resume_threads(self, pid: int) -> None:
         snapshot = self._kernel32.CreateToolhelp32Snapshot(self._TH32CS_SNAPTHREAD, 0)
@@ -667,9 +675,15 @@ class WindowsJob:
             raise
 
     def members_finished(self) -> bool:
-        """Confirm every retained original process handle is signaled."""
+        """Confirm every assigned process was observed and its handle is signaled."""
         if self._observation_failed:
             raise OSError("job_member_observation_failed")
+        if (
+            self._stop_total_before is not None
+            and self.total_processes() != self._stop_total_before
+        ):
+            self._observation_failed = True
+            raise OSError("job_member_started_during_stop")
         for handle in self._member_handles.values():
             status = int(self._kernel32.WaitForSingleObject(handle, 0))
             if status == 258:  # WAIT_TIMEOUT
@@ -678,8 +692,7 @@ class WindowsJob:
                 raise ctypes.WinError(ctypes.get_last_error())
         return True
 
-    def active_processes(self) -> int:
-        """Return the number of currently active processes in this job."""
+    def _accounting(self) -> _JobObjectBasicAccountingInformation:
         info = _JobObjectBasicAccountingInformation()
         returned = wintypes.DWORD()
         if not self._kernel32.QueryInformationJobObject(
@@ -690,15 +703,36 @@ class WindowsJob:
             ctypes.byref(returned),
         ):
             raise ctypes.WinError(ctypes.get_last_error())
-        return int(info.ActiveProcesses)
+        return info
+
+    def active_processes(self) -> int:
+        """Return the number of currently active processes in this job."""
+        return int(self._accounting().ActiveProcesses)
+
+    def total_processes(self) -> int:
+        """Return the cumulative number of processes ever assigned to this job."""
+        return int(self._accounting().TotalProcesses)
 
     def terminate(self) -> None:
-        """Retain member identities, then terminate the associated process tree."""
+        """Detect members born between the snapshot and Job termination."""
+        try:
+            total_before: int | None = self.total_processes()
+        except OSError:
+            total_before = None
+            self._observation_failed = True
+        self._stop_total_before = total_before
         try:
             self.observe_members()
         finally:
             if not self._kernel32.TerminateJobObject(self._handle, 1):
                 raise ctypes.WinError(ctypes.get_last_error())
+            try:
+                total_after = self.total_processes()
+            except OSError:
+                self._observation_failed = True
+            else:
+                if total_before is None or total_after != total_before:
+                    self._observation_failed = True
 
     def close(self) -> None:
         """Close retained process handles and the owned kill-on-close Job handle."""

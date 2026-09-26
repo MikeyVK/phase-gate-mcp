@@ -57,7 +57,7 @@ async function main() {
   }
   fs.writeFileSync(root + '/parent.pid', String(process.pid));
   for await (const chunk of process.stdin) { /* Consume the request through EOF. */ }
-  const duration = mode === 'normal' ? '350' : '15000';
+  const duration = mode === 'normal' ? '350' : mode === 'transient' ? '100' : '15000';
   for (const name of ['first', 'second']) {
     const child = spawn(process.execPath, [__filename, 'child', root, name, duration],
                         {stdio: 'ignore', detached: true});
@@ -67,6 +67,20 @@ async function main() {
     await sleep(5);
   while (!fs.existsSync(root + '/first.armed') || !fs.existsSync(root + '/second.armed'))
     await sleep(5);
+  if (mode === 'transient') {
+    while (!fs.existsSync(root + '/first.done') || !fs.existsSync(root + '/second.done'))
+      await sleep(5);
+    await sleep(100);
+  }
+  if (mode === 'race') {
+    while (!fs.existsSync(root + '/spawn-late.request')) await sleep(5);
+    const late = spawn(process.execPath, [__filename, 'child', root, 'late', '15000'],
+                       {stdio: 'ignore', detached: true});
+    late.unref();
+    while (!fs.existsSync(root + '/late.pid')) await sleep(5);
+    setInterval(() => {}, 1000);
+    return;
+  }
   const response = JSON.stringify({decision: {status: 'passed'}, external_tools: [],
                                   evidence: {format: 'text', data: '{}'}});
   if (mode === 'oversize') {
@@ -331,6 +345,84 @@ async def test_unconfirmed_stop_preserves_cause_and_shared_five_second_budget(
         if not task.done():
             task.cancel()
             await task
+
+
+async def test_completed_transient_children_do_not_require_historical_handles(
+    lifecycle_case: LifecycleCase,
+) -> None:
+    """Already-finished short-lived Job members do not block a valid response."""
+    task = asyncio.create_task(
+        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+            launch=launch_for(lifecycle_case, "transient"),
+            workspace_root=lifecycle_case.root,
+            request=lifecycle_case.request,
+            response_contract=response_contract(),
+            timeout_seconds=5,
+        )
+    )
+    await wait_for_children(lifecycle_case)
+    for name in ("first", "second"):
+        (lifecycle_case.root / f"{name}.armed").touch()
+    result = await task
+    assert isinstance(result, InvocationCompleted)
+    assert all((lifecycle_case.root / f"{name}.done").exists() for name in ("first", "second"))
+
+
+async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
+    lifecycle_case: LifecycleCase, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A Job member created after the snapshot must make confirmation fail closed."""
+    original_observe = WindowsJob.observe_members
+    original_terminate = WindowsJob.terminate
+    terminating = False
+    late_handles: list[int] = []
+
+    def observe_then_spawn(job: WindowsJob) -> None:
+        original_observe(job)
+        if not terminating or late_handles:
+            return
+        (lifecycle_case.root / "spawn-late.request").touch()
+        deadline = time.monotonic() + 2
+        late_pid = lifecycle_case.root / "late.pid"
+        while not late_pid.exists():
+            if time.monotonic() >= deadline:
+                raise AssertionError("late child did not start in the stop window")
+            time.sleep(0.005)
+        late_handles.append(_open_process(int(late_pid.read_text())))
+        (lifecycle_case.root / "late.armed").touch()
+
+    def terminate_with_spawn(job: WindowsJob) -> None:
+        nonlocal terminating
+        terminating = True
+        original_terminate(job)
+
+    monkeypatch.setattr(WindowsJob, "observe_members", observe_then_spawn)
+    monkeypatch.setattr(WindowsJob, "terminate", terminate_with_spawn)
+    task = asyncio.create_task(
+        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+            launch=launch_for(lifecycle_case, "race"),
+            workspace_root=lifecycle_case.root,
+            request=lifecycle_case.request,
+            response_contract=response_contract(),
+            timeout_seconds=1,
+        )
+    )
+    try:
+        await wait_for_children(lifecycle_case)
+        with retained_children(lifecycle_case):
+            result = await task
+        assert len(late_handles) == 1
+        assert isinstance(result, InvocationFailed)
+        assert result.failure.reason is AdapterCallFailureReason.TIMEOUT
+        assert result.termination_problem is TerminationProblem.UNCONFIRMED
+        assert not (lifecycle_case.root / "late.done").exists()
+    finally:
+        if not task.done():
+            task.cancel()
+            await task
+        kernel = _process_api()
+        for handle in late_handles:
+            assert kernel.CloseHandle(handle)
 
 
 async def test_setup_failure_retains_created_process_and_confirms_its_stop(
