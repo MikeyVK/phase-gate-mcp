@@ -108,7 +108,7 @@ def _patch_server_settings(
     settings.github.owner = "test"
     settings.github.repo = "repo"
     settings.logging.level = "INFO"
-    settings.logging.audit_log = ".logs/mcp_audit.log"
+    settings.logging.audit_log = None
 
     mock.return_value = settings
     mock.from_env.return_value = settings
