@@ -1621,7 +1621,7 @@
                 },
                 {
                   "id": "CY107.D2",
-                  "description": "The seven observed lock-sensitive cases and any additional shared-root cases in the named files pass under at least four workers; exact affected modules and file gates pass. Verify that live subprocess cases still exercise the real handshake. Full suite waits for Validation. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy107."
+                  "description": "The seven observed lock-sensitive cases and any additional shared-root cases in the named files pass under at least four workers; all affected modules pass. Ruff format/lint and Pyright pass on the exact changed test/support paths, and configured production Mypy remains green. Explicit-target test Mypy is reported as failed against an identical pre-CY107 target/config/tool-version baseline; compare normalized diagnostic multisets, fix any new error, and record any remaining existing debt without calling this gate green. This narrow exception applies only to CY107's pre-existing test-source typing debt; no test filter, ignore, adapter change, or wider gate waiver is authorized. Verify that live subprocess cases still exercise the real handshake. Full suite waits for Validation. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy107."
                 }
               ],
               "exit_criteria": "Stop if isolation changes production startup semantics, loses a real handshake assertion, or requires an unlisted write. Independent QA decides progression."
