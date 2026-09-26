@@ -3,7 +3,7 @@
 # Issue 460 Refactor Validation
 
 **Status:** Revalidation completed with failures and evidence gaps; independent review requested
-**Version:** 1.2
+**Version:** 1.3
 **Last Updated:** 2026-09-26
 
 
@@ -17,7 +17,7 @@ Authoritative plan/strategy review, accepted deferral reconciliation, bounded st
 
 ## Scope Out
 
-Production/test repairs, dependency installation, deferred adapter redesign, external-workspace migration, release, merge and phase progression. Previously approved configured test defaults, exclusions and the local 300-second client deadline remain in force.
+Production/test repairs, deferred adapter redesign, external-workspace migration, release, merge and phase progression. Test-environment dependencies were corrected during the follow-up investigation below; configured test defaults, exclusions and the local 300-second client deadline remain in force.
 
 ## Prerequisites
 
@@ -46,9 +46,43 @@ Refactor issue #460, branch refactor/460-audit-scaffolding-schema-template-contr
 
 
 
-## Current revalidation — 2026-09-26
+## Follow-up: environment correction and failure diagnosis — 2026-09-26
 
-This is the current producer validation result, not independent QA approval. Accepted adapter deferrals are described in [deferred work](deferred-work.md): large native argument lists and native option/result semantics across all nine adapters remain coordination follow-up. They do not reopen generic adapter contracts. The approved lazy cache-guide deviation is provenance reconciliation, not a missing implementation.
+This follow-up supersedes the environment and cause assessments below; the earlier 2,601-item result remains the historical complete-selection attempt. No complete suite was repeated after dependency correction, so do not recalculate its aggregate pass/fail totals as if all cases were rerun.
+
+### Test environment
+
+The MCP test runner uses system Python 3.13.7. It had Ruff 0.14.13 and no `wheel`; the bundled Ruff requirements specify 0.15.6, and `pyproject.toml` requires `wheel` for package builds. The project's existing `.venv` already held Ruff 0.15.6 and wheel 0.46.3, but that was not the interpreter used by `run_tests`. After the sandbox denied pip network access (WinError 10013), an escalated pip installation placed Ruff 0.15.6 and wheel 0.48.0 in the runner's Python. This changed the local Python environment, not repository files or adapter contracts.
+
+Focused `run_tests` receipts after correction:
+
+| Selection | Result | Cache |
+|---|---|---|
+| Ruff check and fix native integration modules, `-q --tb=short -n 2` | 33 passed, 3 warnings, 12.59s | pgmcp://cache/runs/b56c361e7cca4d7e8cf99ee190869fe1 |
+| Complete installed-distribution integration test, `-q --tb=short -n 0` | 1 passed, 1 warning, 28.04s | pgmcp://cache/runs/c6e143bb841642d080f61657069898f5 |
+
+These directly clear the prior 16 Ruff-version failures and one missing-wheel failure in focused reruns. They do not certify the other former suite failures or every V460.3 migration case.
+
+### Cause and baseline assessment
+
+- **Seven lock failures, two fixture mechanisms.** `unit/test_server.py::_bootstrap_workspace_configs` copies the entire active `.pgmcp` into `tmp_path`, including the open `template_upgrade.lock`; Windows copy raises WinError 33 in two tests. Three pipeline tests call `make_test_server()` without passing their temporary workspace, so `Settings.from_env()` boots against this repository and collides with the live lock. Two real subprocess handshake tests explicitly set `PGMCP_WORKSPACE_ROOT` to this repository and their new server exits with `template_upgrade_locked`. The lock is an intentional DI-06 startup exclusion; the test setup and live-check method require separate dispositions. No lock was deleted or bypassed.
+- **Audit logging is a branch regression.** The two failing lifecycle tests are byte-identical to `main` and fail again in isolation (pgmcp://cache/runs/cb2a5a622d9d4ec19b90263587ead87b). Main's `ServerBootstrapper.bootstrap` called `setup_logging(settings.logging.level, audit_log)` and logged `MCP server starting via bootstrapper`. Current `bootstrap_target` neither calls `setup_logging` nor logs any startup message; only `shutdown` still logs. The configured audit path is never opened on this runtime path. Preserve this as a current issue-460 behavior gap rather than treating both tests as obsolete.
+- **Stale test path is already designed for retirement.** The unchanged `unit/test_pytest_config.py` asserts that `integration/test_qa.py` exists. It exists on `main` but issue-460 path ledger T107/CY026 explicitly moves its claims to successor tests and retires that file. This single surviving assertion conflicts with the approved retirement.
+- **Parallel process lifetime remains unresolved.** The full integration partition observed two live child PIDs in timeout/crash cases. The same nine-case module passed serially (pgmcp://cache/runs/5f24cfe4b51b4122a79d95d95301374d), passed with four workers (9/9; pgmcp://cache/runs/b3b768e74a60457fb1e9db00f8b86a71), and the full execution integration directory passed with four workers (39/39; pgmcp://cache/runs/4a90ffd9f1a94e17a64aee7507c3b7be). This narrows the trigger to broader load or cross-suite interaction. It does not prove that process termination is always correct under the required full-suite conditions.
+
+### Quality provenance
+
+Installing `types-jsonschema` 4.26.0.20260518 in the runner clarified Mypy output. `run_checks(scope="configured", checks=["python_types"])` then checked 184 production files and failed with **7 errors in 5 issue-460-touched files**: three `jsonschema` schema-argument types, one HealthCheckTool decorator variance, one non-exported `ContentInputPreparer`, and two publisher/reader union mismatches (pgmcp://cache/runs/1621b4147ec3432a874f435b08e25e13). Before stubs, this same configured selection showed nine errors, five of them missing-stub reports (pgmcp://cache/runs/be1c0dbb155646d1a1140ff4c03f0ca8). The earlier 1,232-error invocation explicitly selected `mcp_server` plus `tests/mcp_server`; the configured native Mypy scope is production `mcp_server`. The 1,232 result is broad diagnostic debt, not the configured gate result.
+
+With Ruff 0.15.6, a bounded target check of `mcp_server, tests/mcp_server, scripts` passed format on 460 files and failed lint with 61 diagnostics (pgmcp://cache/runs/1684a3432c8a4c709c32888350c55fcf). The prior two formatting findings were version-sensitive and no longer reproduce. All 61 lint diagnostics are in 14 files whose SHA-256 bytes exactly match `main`; their codes are E402 ×50, T201 ×6, ANN401 ×3, ARG002 ×1 and PLC0415 ×1. Compared with main's `pyproject.toml`, this branch removed global ANN401 and ARG002 ignores, accounting for four newly admitted diagnostics in unchanged source. The other rule selections remain, but no native main-branch lint run was executed; source identity alone does not certify baseline pass/fail.
+
+`run_checks(scope="configured", checks=["python_format","python_lint"])` expanded Ruff's native discovery into archived documentation: format returned unavailable after access denied (os error 5), reporting 469 formatted files; lint reported 191 errors, including archived examples, and a native access warning (pgmcp://cache/runs/bfb9ce644ab842f39d000ce974851cf4). This selection is not equivalent to the bounded directory or required branch check. Add the configured-discovery/access case to the deferred all-adapter selection audit; do not mark any unavailable gate passed.
+
+The remaining implementation candidates are the seven production typing errors, audit bootstrap behavior, the retired-test assertion, and test fixture/live-handshake isolation. Process lifetime needs one discriminating broader-load reproduction before a fix is selected. Validation remains **FAIL**; independently reviewed closure of V460.1–V460.5 is still pending.
+
+## Previous complete-selection revalidation — 2026-09-26
+
+This was the producer validation result before the follow-up dependency correction above; it was not independent QA approval. Accepted adapter deferrals are described in [deferred work](deferred-work.md): large native argument lists and native option/result semantics across all nine adapters remain coordination follow-up. They do not reopen generic adapter contracts. The approved lazy cache-guide deviation is provenance reconciliation, not a missing implementation.
 
 ### Complete selected suite
 
@@ -88,7 +122,7 @@ Diagnostic targets `mcp_server, tests/mcp_server, scripts` yielded:
 
 Directory discovery differs from explicit branch-file semantics, including native exclusions and archived paths. These are useful diagnostic results, not an equivalent branch gate or proof that every diagnostic is introduced by #460. Baseline attribution remains open; accepted adapter deferrals do not automatically waive native findings.
 
-### Current obligation assessment
+### Obligation assessment at the prior run
 
 | Obligation | Current assessment |
 |---|---|
