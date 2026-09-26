@@ -19,7 +19,7 @@
       "created_at": "2026-08-22T19:45:36.727213+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 105,
+          "total": 110,
           "cycles": [
             {
               "cycle_number": 1,
@@ -1595,6 +1595,81 @@
                 }
               ],
               "exit_criteria": "CY105.D1 and CY105.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof."
+            },
+            {
+              "cycle_number": 106,
+              "name": "Restore startup audit and satisfy production typing",
+              "deliverables": [
+                {
+                  "id": "CY106.D1",
+                  "description": "Restore configured startup audit event and resolve seven configured production Mypy diagnostics in the five exact CY106 production files; preserve schemas, startup lock, and adapter contracts."
+                },
+                {
+                  "id": "CY106.D2",
+                  "description": "Both audit lifecycle cases, configured production Mypy, affected startup/schema/input-validation tests and exact-file gates pass; record R-CY106 and cache receipts."
+                }
+              ],
+              "exit_criteria": "D1/D2 and V1\u2013V6 pass within the exact five-file write-set; stop on audit/schema/adapter semantic change or failed evidence; independent QA determines progression."
+            },
+            {
+              "cycle_number": 107,
+              "name": "Make server tests safe for parallel workers",
+              "deliverables": [
+                {
+                  "id": "CY107.D1",
+                  "description": "Give shared-root server tests private writable roots in the seven named test files; revisit only two named shared helpers as needed and retire only the obsolete test_qa.py path assertion in test_pytest_config.py."
+                },
+                {
+                  "id": "CY107.D2",
+                  "description": "Seven observed lock-sensitive cases and other affected named modules pass with at least four workers, preserving real proxy/stdio handshake and launcher proof; exact-file gates pass."
+                }
+              ],
+              "exit_criteria": "D1/D2 and V1\u2013V6 pass within the ten named test/support files; stop on lost real handshake, production lock change, whole-repository copy, forced serial/exclusion, or unlisted write; independent QA determines progression."
+            },
+            {
+              "cycle_number": 108,
+              "name": "Discriminate actual child-process lifetime",
+              "deliverables": [
+                {
+                  "id": "CY108.D1",
+                  "description": "In test_process_stopping.py retain original child process handles before invocation completes and assert those handles signal afterward; preserve nine lifecycle claims and five-second budget."
+                },
+                {
+                  "id": "CY108.D2",
+                  "description": "All nine lifecycle cases and wider relevant parallel integration selection pass; distinguish original-handle state from post-run PID reuse."
+                }
+              ],
+              "exit_criteria": "D1/D2 and V1\u2013V6 pass within the single test file; stop and amend Planning if an original child remains alive or runtime editing is required; independent QA determines progression."
+            },
+            {
+              "cycle_number": 109,
+              "name": "Resolve test-source Ruff import debt",
+              "deliverables": [
+                {
+                  "id": "CY109.D1",
+                  "description": "Resolve 50 E402 diagnostics in the ten exact test files named in CY109 without a global ignore or altered test semantics."
+                },
+                {
+                  "id": "CY109.D2",
+                  "description": "Native Ruff lint/format and affected tests on the ten files pass; inspect import-order side effects."
+                }
+              ],
+              "exit_criteria": "D1/D2 and V1\u2013V6 pass within the ten-file write-set; stop on semantic import-order dependency or unlisted write; independent QA determines progression."
+            },
+            {
+              "cycle_number": 110,
+              "name": "Resolve production-source Ruff lint debt",
+              "deliverables": [
+                {
+                  "id": "CY110.D1",
+                  "description": "Resolve six T201, three ANN401, one ARG002 and one PLC0415 finding in the four exact CY110 production files while preserving transport bytes and public behavior."
+                },
+                {
+                  "id": "CY110.D2",
+                  "description": "Native Ruff lint/format on the four files and affected proxy, phase and cycle behavior tests pass, including transport-byte proof."
+                }
+              ],
+              "exit_criteria": "D1/D2 and V1\u2013V6 pass within the four-file write-set; stop on behavior change, unlisted write or failed evidence; independent QA determines progression."
             }
           ]
         },

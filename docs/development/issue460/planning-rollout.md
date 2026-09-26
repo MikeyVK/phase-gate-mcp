@@ -2022,3 +2022,65 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 Pre-cycle commit: `8a9005014fe8b8f4c9d27cf8874d1033bb877131`. The cycle-owned inverse is the exact T048 unused-function removal, S012 test-session template-root correction, one QA-designated transport test fixture adaptation, two planning provenance edits and the `.pgmcp/state.json` transition. T004 and T106 were already absent; import/plugin search found no remaining callers. S012 registers only the active workflow and suite-root fixtures; S013/S016 and T014/T074/T095/T097/T098 remain unchanged with active claims. R004/R005/R006 still call the retained `make_project_manager` helper, so none was removed. T048's `get_template_root()` had zero Python callers and was the sole demonstrably exhausted surviving helper.
 
 The first nine-module run had 132 passed and four startup failures (`pgmcp://cache/runs/d855b2ffc2ef41799df18be6f6e109a8`): S012 pointed at retired `.pgmcp/templates`, and the old SDK-handshake fixture copied only legacy assets. After the bounded corrections, the seven unaffected named modules passed 129/129 (`pgmcp://cache/runs/6379d9a9011848b1a39a51c64fc64a2f`), pipeline passed 3/3 (`pgmcp://cache/runs/9f70310f56294869b0a170b8818755f6`), and the complete real MCP-SDK transport module passed 4/4 (`pgmcp://cache/runs/392e07cb7dfa496b88e5b0726e3a71eb`). Settings and suite-root tests passed 30/30 (`pgmcp://cache/runs/9846a27c61774100b7fc7f55835af235`). Thus all nine named CY105 modules have current passing evidence without a broad suite. File format, lint and Pyright checks passed (`pgmcp://cache/runs/37cc671f7cfe4e36bd06421179422787`). Mypy reported 14 errors (`pgmcp://cache/runs/f6c97540d26144909958563f67cea4ab`), all in unchanged lines of the three files (12 T048, one S012, one transport); it remains a failed pre-existing gate and is not claimed as passing. No production file or retained workflow/PR assertion changed. Independent review is requested without a producer GO claim.
+
+## Validation fix-cycle amendment — 2026-09-26
+
+The owner authorized these bounded corrections after validation of CY001–CY105. They preserve the approved Research and Design strategy. The diagnostic inventory and deferred adapter work remain in [validation.md](validation.md); only the five cards below are active issue-460 implementation scope. Each card inherits hub V1–V6, including the exact pre-cycle SHA, scoped inverse diff, focused governed-tool evidence, and independent QA review. The serial order is CY106 → CY107 → CY108 → CY109 → CY110. Complete parallel suite and branch/configured gates remain Validation obligations after CY110. Stop and amend Planning if a finding needs a path or boundary outside the listed write-set.
+
+## CY106
+
+**Restore startup audit and satisfy production typing**
+
+- **Predecessor:** CY105 and independent approval of this Planning amendment.
+- **Authority:** Approved Research F-20/DI-08, existing audit behavior, and the binding typing playbook. No adapter contract or audit schema change.
+- **CY106.D1 — bounded result:** Restore the configured audit startup event lost during the V3 cut-over and resolve the seven observed configured production Mypy diagnostics. Exact production write-set: `mcp_server/bootstrap.py`, `mcp_server/server.py`, `mcp_server/core/interfaces/tool_input_contract.py`, `mcp_server/config/validator.py`, `mcp_server/core/decorators/input_validation_decorator.py`. Reuse existing audit tests; a test edit requires a separately named and justified Planning amendment.
+- **Preserve/exclude:** Preserve the active startup lock duration, audit payload/level contract, public tool input schema, validator behavior, and dependency injection. No generic runner or adapter changes.
+- **CY106.D2 — evidence:** Both existing startup audit lifecycle cases pass; configured production Mypy passes; affected startup, input-validation, and schema tests and exact-file gates pass. Record native versions and full cache resources.
+- **Rollback:** R-CY106, the scoped inverse of these five files and cycle state only.
+- **Stop/go:** Stop on changed audit semantics, new schema/adapter behavior, out-of-set writes, or failed D2. Independent QA decides progression.
+
+## CY107
+
+**Make server tests safe for parallel workers**
+
+- **Predecessor:** CY106; test-workspace isolation follows DI-08.
+- **Authority:** [DI-08](design-test-architecture.md), especially isolated roots and retained real proxy/stdio observations.
+- **CY107.D1 — bounded result:** Replace shared-repository bootstrap only in `tests/mcp_server/unit/test_server.py`, `tests/mcp_server/integration/test_pipeline_e2e.py`, `tests/mcp_server/integration/test_target_startup.py`, `tests/mcp_server/integration/test_v3_cutover.py`, `tests/mcp_server/integration/mcp_server/test_server_tool_registration.py`, `tests/mcp_server/integration/mcp_server/test_server_lifecycle.py`, and `tests/mcp_server/unit/server/test_validate_tool_arguments.py`. Revisit `tests/mcp_server/test_support.py` and `tests/mcp_server/integration/mcp_server/conftest.py` only if shared isolated-root support is necessary. In `tests/mcp_server/unit/test_pytest_config.py`, retire only the obsolete `test_qa.py` path assertion; preserve current config-selection proof.
+- **Preserve/exclude:** Keep real proxy/stdio V3 tool-catalog and launcher assertions. Give each worker/test a private writable root, with only the minimal config/suite/install inputs needed for startup. No whole-repository copy, production lock change, test exclusion marker, or forced serial suite.
+- **CY107.D2 — evidence:** The seven observed lock-sensitive cases and any additional shared-root cases in the named files pass under at least four workers; exact affected modules and file gates pass. Verify that live subprocess cases still exercise the real handshake. Full suite waits for Validation.
+- **Rollback:** R-CY107, the scoped inverse of the enumerated test/support paths and cycle state only.
+- **Stop/go:** Stop if isolation changes production startup semantics, loses a real handshake assertion, or requires an unlisted write. Independent QA decides progression.
+
+## CY108
+
+**Discriminate actual child-process lifetime**
+
+- **Predecessor:** CY107, because parallel tests expose process-lifetime races.
+- **Authority:** Existing process-stopping design and approved five-second stop budget.
+- **CY108.D1 — bounded result:** In `tests/mcp_server/integration/execution/test_process_stopping.py` only, retain handles to the original child processes before the invocation finishes and assert those handles have signaled afterward. A post-run PID lookup alone is not evidence of the original child's lifetime.
+- **Preserve/exclude:** Preserve all nine lifecycle claims, the five-second budget, and actual cancellation/timeout behavior. No speculative runtime edit.
+- **CY108.D2 — evidence:** All nine lifecycle cases and a wider relevant integration selection pass with parallel workers; original-handle observations are reported separately from PID reuse.
+- **Rollback:** R-CY108, the inverse of this one test path and cycle state.
+- **Stop/go:** If an original child remains alive, stop and explicitly amend Planning for a scoped runtime repair; do not convert the test finding into an unapproved production change. Independent QA decides progression.
+
+## CY109
+
+**Resolve test-source Ruff import debt**
+
+- **Predecessor:** CY108; the lint inventory is the Ruff 0.15.6 resource `pgmcp://cache/runs/1684a3432c8a4c709c32888350c55fcf`.
+- **CY109.D1 — bounded result:** Resolve the 50 E402 findings in exactly `tests/mcp_server/config/test_operation_policies.py`, `tests/mcp_server/integration/test_ready_phase_enforcement.py`, `tests/mcp_server/unit/adapters/test_git_adapter_neutralize_to_base.py`, `tests/mcp_server/unit/adapters/test_git_adapter_skip_paths.py`, `tests/mcp_server/unit/config/test_c_loader_structural.py`, `tests/mcp_server/unit/config/test_loader.py`, `tests/mcp_server/unit/managers/test_deliverable_checker.py`, `tests/mcp_server/unit/managers/test_enforcement_runner_unit.py`, `tests/mcp_server/unit/managers/test_git_manager_skip_paths.py`, and `tests/mcp_server/unit/managers/test_phase_contract_resolver_c3.py`.
+- **Preserve/exclude:** Preserve imports' required initialization order, collection, and assertions. No global Ruff ignore, rule relaxation, or unrelated cleanup.
+- **CY109.D2 — evidence:** Native Ruff lint/format on these exact files passes; their affected tests pass. Review import-order side effects explicitly.
+- **Rollback:** R-CY109, scoped inverse of these ten test paths and cycle state.
+- **Stop/go:** Stop on semantic import-order dependency that needs a larger redesign or out-of-set write. Independent QA decides progression.
+
+## CY110
+
+**Resolve production-source Ruff lint debt**
+
+- **Predecessor:** CY109; same bounded Ruff inventory.
+- **CY110.D1 — bounded result:** Resolve six T201, three ANN401, one ARG002, and one PLC0415 finding in exactly `mcp_server/#Archief/supervisor_old.py`, `mcp_server/core/proxy.py`, `mcp_server/managers/phase_state_engine.py`, and `mcp_server/tools/cycle_tools.py`.
+- **Preserve/exclude:** Preserve proxy stdout/stderr transport bytes, the public constructor and extension behavior, phase/cycle behavior, and archived module's observable behavior. No blanket suppression or generic contract change.
+- **CY110.D2 — evidence:** Native Ruff lint/format on these exact files passes; affected proxy, phase, and cycle tests pass, including transport-byte assertions where present.
+- **Rollback:** R-CY110, scoped inverse of these four paths and cycle state.
+- **Stop/go:** Stop on behavior-changing lint fixes, an unlisted write, or failed affected tests. Independent QA decides progression.
