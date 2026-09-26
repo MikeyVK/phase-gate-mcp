@@ -88,7 +88,10 @@ class AsyncioAdapterProcess:
 
     async def wait_finished(self) -> None:
         await self.wait()
-        while self._job.active_processes():
+        while True:
+            self._job.observe_members()
+            if self._job.active_processes() == 0 and self._job.members_finished():
+                return
             await asyncio.sleep(PROCESS_POLL_SECONDS)
 
     def kill(self) -> None:
@@ -314,7 +317,15 @@ class AdapterProcessRuntime:
                     reason=AdapterCallFailureReason.INVALID_RESPONSE, message=str(exc)
                 )
             ) from exc
-        await process.wait_finished()
+        try:
+            await process.wait_finished()
+        except OSError as exc:
+            raise _CallFailedError(
+                AdapterCallFailure(
+                    reason=AdapterCallFailureReason.PROCESS_FAILED,
+                    message=str(exc) or type(exc).__name__,
+                )
+            ) from exc
         await asyncio.gather(input_task, stderr_task)
         return response_contract.complete(response, invocation.capture(accepted=True))
 
@@ -447,6 +458,11 @@ class WindowsJob:
     _KILL_ON_JOB_CLOSE = 0x00002000
     _JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9
     _JOB_OBJECT_BASIC_ACCOUNTING_INFORMATION = 1
+    _JOB_OBJECT_BASIC_PROCESS_ID_LIST = 3
+    _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    _SYNCHRONIZE = 0x00100000
+    _ERROR_INVALID_PARAMETER = 87
+    _ERROR_MORE_DATA = 234
     _PROCESS_TERMINATE = 0x0001
     _PROCESS_SET_QUOTA = 0x0100
     _THREAD_SUSPEND_RESUME = 0x0002
@@ -457,6 +473,8 @@ class WindowsJob:
         if os.name != "nt":
             raise OSError("WindowsJob requires Windows")
         self._kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self._member_handles: dict[int, wintypes.HANDLE] = {}
+        self._observation_failed = False
         self._configure_api()
         self._handle = self._kernel32.CreateJobObjectW(None, None)
         if not self._handle:
@@ -499,6 +517,14 @@ class WindowsJob:
         kernel32.QueryInformationJobObject.restype = wintypes.BOOL
         kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
         kernel32.CloseHandle.restype = wintypes.BOOL
+        kernel32.IsProcessInJob.argtypes = [
+            wintypes.HANDLE,
+            wintypes.HANDLE,
+            ctypes.POINTER(wintypes.BOOL),
+        ]
+        kernel32.IsProcessInJob.restype = wintypes.BOOL
+        kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel32.WaitForSingleObject.restype = wintypes.DWORD
         kernel32.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
         kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
         kernel32.Thread32First.argtypes = [wintypes.HANDLE, ctypes.POINTER(_ThreadEntry32)]
@@ -578,6 +604,80 @@ class WindowsJob:
         if resumed == 0:
             raise OSError("suspended_process_thread_not_found")
 
+    def _member_pids(self) -> tuple[int, ...]:
+        """Read the complete current Job member list, including nested jobs."""
+        capacity = 8
+        while capacity <= 65536:
+            buffer = ctypes.create_string_buffer(8 + capacity * ctypes.sizeof(ctypes.c_size_t))
+            returned = wintypes.DWORD()
+            if not self._kernel32.QueryInformationJobObject(
+                self._handle,
+                self._JOB_OBJECT_BASIC_PROCESS_ID_LIST,
+                buffer,
+                ctypes.sizeof(buffer),
+                ctypes.byref(returned),
+            ):
+                error = ctypes.get_last_error()
+                if error == self._ERROR_MORE_DATA:
+                    capacity *= 2
+                    continue
+                raise ctypes.WinError(error)
+            assigned = wintypes.DWORD.from_buffer(buffer, 0).value
+            listed = wintypes.DWORD.from_buffer(buffer, 4).value
+            if listed < assigned:
+                capacity = max(capacity * 2, assigned)
+                continue
+            if listed > capacity:
+                raise OSError("job_member_list_invalid")
+            ids = (ctypes.c_size_t * listed).from_buffer(buffer, 8)
+            return tuple(int(pid) for pid in ids)
+        raise OSError("job_member_list_too_large")
+
+    def observe_members(self) -> None:
+        """Retain handles to original Job members before their PIDs can be reused."""
+        try:
+            for pid in self._member_pids():
+                if pid in self._member_handles:
+                    continue
+                handle = self._kernel32.OpenProcess(
+                    self._SYNCHRONIZE | self._PROCESS_QUERY_LIMITED_INFORMATION,
+                    False,
+                    pid,
+                )
+                if not handle:
+                    error = ctypes.get_last_error()
+                    if error == self._ERROR_INVALID_PARAMETER:
+                        continue  # Member exited between the Job query and OpenProcess.
+                    raise ctypes.WinError(error)
+                retained = False
+                try:
+                    membership = wintypes.BOOL()
+                    if not self._kernel32.IsProcessInJob(
+                        handle, self._handle, ctypes.byref(membership)
+                    ):
+                        raise ctypes.WinError(ctypes.get_last_error())
+                    if membership.value:
+                        self._member_handles[pid] = handle
+                        retained = True
+                finally:
+                    if not retained:
+                        self._close_handle(handle)
+        except OSError:
+            self._observation_failed = True
+            raise
+
+    def members_finished(self) -> bool:
+        """Confirm every retained original process handle is signaled."""
+        if self._observation_failed:
+            raise OSError("job_member_observation_failed")
+        for handle in self._member_handles.values():
+            status = int(self._kernel32.WaitForSingleObject(handle, 0))
+            if status == 258:  # WAIT_TIMEOUT
+                return False
+            if status != 0:  # WAIT_OBJECT_0
+                raise ctypes.WinError(ctypes.get_last_error())
+        return True
+
     def active_processes(self) -> int:
         """Return the number of currently active processes in this job."""
         info = _JobObjectBasicAccountingInformation()
@@ -593,13 +693,28 @@ class WindowsJob:
         return int(info.ActiveProcesses)
 
     def terminate(self) -> None:
-        """Request termination of every process currently assigned to the job."""
-        if not self._kernel32.TerminateJobObject(self._handle, 1):
-            raise ctypes.WinError(ctypes.get_last_error())
+        """Retain member identities, then terminate the associated process tree."""
+        try:
+            self.observe_members()
+        finally:
+            if not self._kernel32.TerminateJobObject(self._handle, 1):
+                raise ctypes.WinError(ctypes.get_last_error())
 
     def close(self) -> None:
-        """Close the owned job handle, invoking kill-on-close semantics."""
+        """Close retained process handles and the owned kill-on-close Job handle."""
+        error: OSError | None = None
+        for member in self._member_handles.values():
+            try:
+                self._close_handle(member)
+            except OSError as exc:
+                error = error or exc
+        self._member_handles.clear()
         handle = self._handle
         if handle:
-            self._close_handle(handle)
+            try:
+                self._close_handle(handle)
+            except OSError as exc:
+                error = error or exc
             self._handle = None
+        if error is not None:
+            raise error
