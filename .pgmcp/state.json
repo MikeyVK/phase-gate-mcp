@@ -3,9 +3,9 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "implementation",
+  "current_phase": "planning",
   "current_cycle": 106,
-  "last_cycle": 105,
+  "last_cycle": 106,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -648,7 +648,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Validation exposed bounded issue-460 fixes; reopen Planning to append exact CY106-CY110 write sets and evidence criteria before implementation, without changing approved Research or Design strategy.",
+  "skip_reason": "Independent CY106 implementation QA found persistent global logging handlers on repeated bootstrap; current five-production-file CY106 write-set excludes the logging owner and regression test, so reopen Planning for the bounded two-path amendment before repair.",
   "issue_title": "Audit scaffolding schema-template rendering contracts",
   "parent_branch": "main",
   "created_at": "2026-08-22T19:45:36.738143+00:00",
@@ -812,8 +812,16 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-26T19:10:56.471722+00:00",
+      "human_approval_message": "Issue owner explicitly authorized: 'leg deze cycles vast laat qa agent toetsen, corrigeer indien noodzakelijk en ga daarna over tot implementatie volgens de regels in agents.md en gebruikmakend van de workflow en tooling van pgmcp!' This includes correcting QA findings through the required workflow.",
+      "forced": true,
+      "skip_reason": "Independent CY106 implementation QA found persistent global logging handlers on repeated bootstrap; current five-production-file CY106 write-set excludes the logging owner and regression test, so reopen Planning for the bounded two-path amendment before repair."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
