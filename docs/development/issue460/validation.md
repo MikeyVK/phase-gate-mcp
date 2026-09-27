@@ -2,7 +2,7 @@
 
 # Issue 460 Refactor Validation
 
-**Status:** Validation FAIL as producer evidence status: the post-CY113 full suite is green, while the required branch gate remains unavailable on Windows; independent Validation review is pending
+**Status:** Validation PARTIAL with an owner-approved issue-460 branch-gate evidence exception; the post-CY113 full suite is green, the branch gate remains unavailable, and independent re-review is pending
 **Version:** 2.0
 **Last Updated:** 2026-09-27
 
@@ -36,7 +36,7 @@ Production/test repairs, deferred adapter redesign, external-workspace migration
 
 ## Validation Status
 
-FAIL
+PARTIAL
 
 
 
@@ -69,13 +69,19 @@ The one XPASS and the post-suite `SystemExit(42)` task-exception log match the e
 - **V460.4:** The required complete suite is now green. The exact branch gate remains **unavailable** because its native command lines exceed Windows limits; D-VAL-01 owns that adapter repair. The configured Ruff archive findings and access failure remain visible, while the active-tree selections and configured production typing results provide bounded evidence. There is no assertion of exact branch-gate equivalence or a green branch check. The owner previously stated that missing green-check proof alone is not proof of a code defect; independent Validation QA must judge whether this explicit evidence limitation can be accepted for #460.
 - **V460.5:** CY112/113 changed no workflow carrier or mapped instruction source/copy pair. The earlier independent review of nineteen carriers and eight byte-identical pairs remains applicable; CY111's active scaffold guidance correction remains in place. No new semantic claim is inferred from sentinel counts.
 
-**Producer status: FAIL pending independent Validation review.** The new suite and architecture findings are resolved, but the phase instruction requires an honest failure status while the mandatory branch invocation cannot run. This is an evidence limitation, not an observed regression in the active code. D-VAL-01 through D-VAL-04 retain their expressly bounded follow-up scopes; the owner has not authorized a broad live mutation audit of `safe_edit_file` or `apply_fixes`. Documentation phase still owns DOC-VAL-01's explicit configured-gate-versus-diagnostic guidance if Validation advances. Independent QA alone may determine GO/NOGO and any accepted disposition of the unavailable branch gate.
+**Producer status: PARTIAL under the owner's explicit issue-460 exception, pending independent Validation re-review.** The suite and architecture findings are resolved; the mandatory branch invocation is still unavailable and is never claimed as PASS. This is an accepted evidence limitation for this issue, not an observed regression in the active code. D-VAL-01 through D-VAL-04 retain their expressly bounded follow-up scopes; the owner has not authorized a broad live mutation audit of `safe_edit_file` or `apply_fixes`. Documentation phase still owns DOC-VAL-01's explicit configured-gate-versus-diagnostic guidance if Validation advances. Independent QA alone may determine GO/NOGO and any accepted disposition of the unavailable branch gate.
 
 ### Independent Validation re-review — 2026-09-27
 
 The separately invoked independent `@qa validation-reviewer` returned **NOGO for Validation → Documentation under the current V460.4 and phase contract** on report commit `3dbb489a90baa0962572d236a9fbdd7dd0f88808`. QA independently reproduced the branch pre-launch failures: Ruff format/lint and Mypy WinError 206, Pyright ENAMETOOLONG (`pgmcp://cache/runs/c3115667351b48dab1e6e22c44e731aa`). Its own full configured suite passed **2,619/2,621 selected items** with one skip and one XPASS, eight workers, exit 0 in 223.33s (`pgmcp://cache/runs/212503613ec146f5a61349691908c960`). Configured Mypy/Pyright passed 185 production sources; bounded active-tree Ruff/Pyright checks also passed (`pgmcp://cache/runs/3150d378953c49d8811a825fa382b1af`, `pgmcp://cache/runs/4c8404f9276244cfbdd6cd865ca87605`). QA confirmed the 130 archived-demo T201 findings are outside the #460 branch diff. The CY112 and CY113 independent Implementation GO decisions remain intact.
 
 QA classifies this as a **proof/gate NOGO, not a demonstrated code regression**. The current branch tool exposes neither a runnable result nor an inspectable exact current-target inventory from which to prove complete equivalent coverage. The minimal ordinary closure is that exact inventory plus bounded native results for each of the four checks, with explicit Ruff access/archive disposition. Alternatively, the owner may explicitly approve a narrow exception or amend the mandatory acceptance criterion, with residual risk recorded; neither route may be represented as a passed branch gate. No exception or forced phase transition is inferred from the owner's prior preference for pragmatic evidence.
+
+### Owner-approved issue-460 evidence exception — 2026-09-27
+
+After reading the independent Validation NOGO and the concrete alternatives, the owner explicitly chose **"Expliciete uitzondering voor #460"** for the missing branch-gate result. This decision changes only the issue-460 phase-exit evidence requirement: Validation may advance on the independently green full suite, independently green configured production Mypy/Pyright, bounded active-source Ruff/Pyright results, completed structural and public-behavior evidence, and an explicit record that the native branch gate did not execute. It does **not** relabel any unavailable result as passed, waive a demonstrated failure in active changed code, or change the default gate contract for later issues. The three archived demo files with 130 configured Ruff T201 findings remain pre-existing, outside the #460 branch diff, and are not silently described as clean. The separate Ruff access-denied outcome remains unresolved diagnostic evidence.
+
+The residual risk is that the exact current-target selection of the 744-path branch diff was not inspectable and therefore no per-check branch-equivalent result was proven. D-VAL-01 owns native command-length robustness and the all-adapter option/selection audit; coordination must create and track its follow-up issue. D-VAL-02 through D-VAL-04 retain their own bounded follow-up scopes. The owner accepts this **missing proof for #460** to avoid treating an adapter launch limitation as a code regression. Independent QA must re-review against this explicit exception before any Validation → Documentation transition; its earlier NOGO remains the verdict under the previous, unexcepted criterion.
 
 ## Earlier validation pass before CY112/CY113 — 2026-09-27
 
