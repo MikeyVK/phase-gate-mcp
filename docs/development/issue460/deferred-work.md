@@ -419,7 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
-| 1.18 | 2026-09-27 | Record the owner-requested full public-tool behavior audit and its first concrete Git branch-listing seed as D-VAL-04 |
+| 1.18 | 2026-09-27 | Constrain D-VAL-04 to issue-460-affected public routes; retain the Git branch-listing observation as a separate general backlog candidate |
 | 1.17 | 2026-09-27 | Record the owner-deferred active-documentation Lychee baseline as D-VAL-03 while retaining the optional live link-review capability |
 | 1.16 | 2026-09-27 | Record owner-deferred safe-edit text-model and line-ending semantics review as D-VAL-02 for a separate coordination-owned issue |
 | 1.15 | 2026-09-07 | Supersede verify_only deferral after explicit human scope expansion; route removal and full validation-policy alignment into the narrow Research amendment |
@@ -482,12 +482,14 @@ The authoritative finding is **D-VAL-03** in [Validation — Deferred Work](vali
 
 The future issue must define the active-documentation inventory, run bounded native checks, classify and repair local-path and fragment failures, document justified exclusions, and prove the final selected inventory. It must decide separately whether a workflow or CI gate should require this profile. Coordinate any large-selection limitations with D-VAL-01; do not change the generic adapter contracts or silently replace the lightweight Markdown preflight. Coordination should link the new issue to D-VAL-03 and the approved [Markdown/Lychee Design boundary](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking).
 
-## Deferred Work Notice: Full Public-Tool Behavior Audit
+## Deferred Work Notice: Issue-460-Affected Public-Route Behavior
 
-**Decision:** owner-requested follow-up investigation outside issue #460 on 2026-09-27.
+**Decision:** owner-requested, bounded follow-up investigation outside issue #460 on 2026-09-27.
 **Future owner:** coordination, to create an audit issue and route confirmed repairs to bounded tool-family issues; no follow-up issue has yet been created.
-**Suggested issue title:** Audit daily-use behavior and resource evidence across the public PGMCP tool catalog.
+**Suggested issue title:** Audit daily-use behavior of the public routes affected by issue #460.
 
-The authoritative scope and first observations are **D-VAL-04** in [Validation — Deferred Work](validation.md#d-val-04--audit-everyday-behavior-across-the-full-public-tool-catalog). The current catalog contains 49 public tools. The #460 refactor changed shared registration/admission/presentation/cache behavior and replaced six V3 scaffold/edit/quality routes, so a few passing non-mutating calls are only a sample. The first concrete seed is `git_list_branches`: native worktree `+` markers appear as fabricated `+` branch records and, in verbose mode, shift the real branch name into `commit_hash` (`pgmcp://cache/runs/44be0998d88b4d919726c96e592a0dc9`, `pgmcp://cache/runs/a909aa78a1cf421d95f602479450888d`). Whether this predates #460 must be established before attributing it to the refactor. The lightweight Markdown preflight's angle-wrapped-link warnings overlap the existing D-VAL-01 adapter-semantic audit, and the broad Lychee baseline remains D-VAL-03.
+The authoritative scope is **D-VAL-04** in [Validation — Deferred Work](validation.md#d-val-04--audit-daily-use-behavior-of-issue-460-affected-public-routes). It covers `scaffold_schema`, `scaffold_artifact`, `safe_edit_file`, `run_checks`, `run_tests`, and `apply_fixes`, including their changed shared registration, input-admission, presentation and cache path only where those routes exercise it. It does not extend to all 49 public tools merely because the wrapper is shared. Other routes enter only after a specific #460 behavior change is traced and recorded.
 
-The audit should map all 49 tools to supported inputs, compact response, complete resource DTO, actionability of negative/error results and actual side effects. Use live read-only routes where safe and isolated disposable workspaces or controlled remotes/doubles for mutating Git, workflow and GitHub routes; do not exercise them against the active issue branch or real GitHub state merely to fill a matrix. Reuse genuine integration evidence and file separate, scoped repair issues only for demonstrated behavior gaps. This follow-up does not relax the current #460 Validation obligations or grant a blanket GO.
+Read-only samples already exist for `scaffold_schema`, `run_checks` and `run_tests`; they do not certify every accepted scope or failure. The owner will choose the acceptable isolated effect-verification route separately for each mutating tool, `scaffold_artifact`, `safe_edit_file` and `apply_fixes`, before a live mutation probe. Compare each affected route's admitted input, compact response, complete cached DTO, actionable errors and actual effect with the approved contract. Reuse genuine public integration evidence and file separate repairs only for demonstrated gaps. Coordinate adapter-specific findings with D-VAL-01 and the broad Lychee baseline with D-VAL-03.
+
+The observed `git_list_branches` worktree-marker parsing defect (`pgmcp://cache/runs/44be0998d88b4d919726c96e592a0dc9`, `pgmcp://cache/runs/a909aa78a1cf421d95f602479450888d`) is a separate general backlog candidate. The changed git adapter does not by itself prove that #460 changed this tool's parser. It is excluded from D-VAL-04 unless a concrete regression trace establishes otherwise. This follow-up does not relax #460 Validation or grant a blanket GO.

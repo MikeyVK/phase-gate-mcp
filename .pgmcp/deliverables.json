@@ -19,7 +19,7 @@
       "created_at": "2026-08-22T19:45:36.727213+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 111,
+          "total": 113,
           "cycles": [
             {
               "cycle_number": 1,
@@ -1693,6 +1693,40 @@
                 }
               ],
               "exit_criteria": "Stop on an unlisted edit, failed focused Markdown check, broken direct-copy parity, or any still-invalid scaffold instruction. No aliases, static ID inventory, adapter change, F-VAL-06 census rewrite, or broad test-Mypy cleanup. Independent QA decides progression."
+            },
+            {
+              "cycle_number": 112,
+              "name": "Put shared template identity values below the service boundary",
+              "deliverables": [
+                {
+                  "id": "CY112.D1",
+                  "description": "One pure shared template-identity value module owns TemplateId, TemplatePackageVersion, CompactFingerprint, frozen ArtifactIdentity and edge-kind type; existing constraints are moved without duplicate authorities."
+                },
+                {
+                  "id": "CY112.D2",
+                  "description": "Core header-reader interface and installation config schema no longer import identity services; identity service no longer imports template graph for a type; direct production and fixture consumers use canonical value ownership without changing generation or public contracts."
+                },
+                {
+                  "id": "CY112.D3",
+                  "description": "Focused identity/header/checkpoint/catalog/public schema/scaffold/renewal tests and exact-file gates pass; before/after JSON schemas and representative provenance values match; directed import closure is verified."
+                }
+              ],
+              "exit_criteria": "Stop on changed JSON schema/provenance bytes, public registration, out-of-set imports or writes, failed focused gates, or non-GO independent QA."
+            },
+            {
+              "cycle_number": 113,
+              "name": "Make late-child process test wait for a complete PID",
+              "deliverables": [
+                {
+                  "id": "CY113.D1",
+                  "description": "Late-child process test waits for nonempty parseable PID within existing deadline, preserving explicit failure and all fail-closed process assertions; first/second helper changes only if same race is evidenced."
+                },
+                {
+                  "id": "CY113.D2",
+                  "description": "Relevant real process-runtime/lifecycle cases pass repeatedly with at least four Pytest workers; exact-file Ruff and configured typing outcomes are recorded without changing production stop logic or serializing/excluding the suite."
+                }
+              ],
+              "exit_criteria": "Stop on weakened assertions, hidden skip or serial-only policy, a new flaky focused result, out-of-set write, failed gates, or non-GO independent QA."
             }
           ]
         },
