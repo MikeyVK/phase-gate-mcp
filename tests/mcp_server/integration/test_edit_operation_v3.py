@@ -24,6 +24,8 @@ from mcp_server.services.edit_construction import (
 from mcp_server.services.edit_construction import (
     EditProfileSelection,
     ReplaceOperation,
+    PatternReplaceOperation,
+    AppendOperation,
     RewriteOperation,
     construct_edit,
     select_profile,
@@ -399,3 +401,70 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
         assert (tmp_path / issue.path).read_bytes() == b"pro"
     else:
         assert list(tmp_path.glob("*.staging")) == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("original", "command", "expected", "changed"),
+    [
+        (
+            b"alpha\r\nbeta\r\n",
+            ReplaceOperation(target_content="beta", replacement="BETA"),
+            b"alpha\r\nBETA\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            ReplaceOperation(target_content="beta", replacement="BETA\nGAMMA"),
+            b"alpha\r\nBETA\r\nGAMMA\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\n",
+            AppendOperation(content="beta"),
+            b"alpha\r\nbeta\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern="beta", replacement="BETA"),
+            b"alpha\r\nBETA\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\nlast\r",
+            ReplaceOperation(target_content="beta", replacement="BETA"),
+            b"alpha\r\nBETA\nlast\r",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern="absent", replacement="X"),
+            b"alpha\r\nbeta\r\n",
+            False,
+        ),
+        (
+            b"alpha\nbeta\n",
+            ReplaceOperation(target_content="beta", replacement="BETA\r\nGAMMA"),
+            b"alpha\nBETA\r\nGAMMA\n",
+            True,
+        ),
+    ],
+)
+async def test_targeted_edits_preserve_original_line_terminators(
+    tmp_path: Path,
+    original: bytes,
+    command: EditCommand,
+    expected: bytes,
+    changed: bool,
+) -> None:
+    service, runtime = operation(tmp_path, ("passed",))
+    target = tmp_path / "notes.md"
+    target.write_bytes(original)
+
+    result = await service.execute(path=target.name, operation=command)
+
+    assert result.written and result.validation_status == "passed"
+    assert result.content_changed is changed
+    assert target.read_bytes() == expected
+    assert runtime.requests[0][0].model_dump()["content"] == expected.decode("utf-8")
