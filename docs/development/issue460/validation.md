@@ -3,8 +3,8 @@
 # Issue 460 Refactor Validation
 
 **Status:** Revalidation completed with failures and evidence gaps; independent review requested
-**Version:** 1.3
-**Last Updated:** 2026-09-26
+**Version:** 1.4
+**Last Updated:** 2026-09-27
 
 
 ## Purpose
@@ -377,6 +377,20 @@ Keep V460.1–V460.5 explicitly incomplete until required evidence is available;
 
 
 
+
+### D-VAL-02 — Reconcile the safe-edit text model and line-ending semantics
+
+**Disposition:** Deferred outside issue #460 by explicit owner decision on 2026-09-27 after independent QA GO for CY110 D1–D4. Coordination owns triage and creation of a separate PGMCP issue; no follow-up issue has been created here.
+
+**Suggested issue title:** Unify safe-edit text representations, edit planning, and line-ending invariants.
+
+**Observed trigger:** CY110 preserved original CRLF/LF/CR terminators while retaining universal-newline matching. The reader now exposes both normalized text and source-preserving text; targeted edits reconstruct physical content from logical patches. The CY110 no-op correction was necessary because a logically identical replacement could otherwise alter mixed line endings. Current integration coverage also explicitly expects identical persisted bytes with `content_changed=True` when an explicit CRLF replacement is compared with a normalized LF original. This is evidence of a semantic choice that needs review, not a new proven violation of the approved CY110 contract.
+
+**Follow-up scope:** In Research, inventory all four safe-edit operations and direct consumers; decide the exact meanings of logical text, physical content, `content_changed`, identical edits, explicit line endings, and replacement spans in mixed-terminator files. Record compatibility and migration strategy per affected boundary before Design. In Design, compare a single immutable source-span edit plan with alternatives; retain one original read, matching cardinality, validation/write-byte identity, the original-byte race guard, and exact whole-file rewrite unless Research explicitly approves a change. In implementation, remove redundant or divergent construction routes where justified and verify operation-wide invariants across LF, CRLF, CR and mixed sources, search windows, regex backreferences/zero-width matches, no-op and explicit rewrite. Tests must prove observable behavior, not merely mirror helper branches.
+
+**Issue-460 consequence:** CY110's independently reviewed correction and current public contracts remain in force. This deferral neither weakens the Validation obligations V460.1–V460.5 nor authorizes a contract change or another issue-460 fix cycle. Validation should report any newly observed concrete failure separately; it must not relabel a failing obligation as deferred design work.
+
+**Coordination hand-off:** Create a separate issue from this notice and link it back to [the CY110 evidence](planning-rollout.md#cy110-completion-evidence-d1d4-2026-09-27), [the approved line-ending amendment](design-mutation-validation.md#cy110-line-ending-preservation-amendment-2026-09-27), and the [deferred-work register](deferred-work.md#deferred-work-notice-safe-edit-text-model-and-line-ending-semantics). Deduplicate against existing safe-edit work before assigning scope.
 
 ## Related Documents
 

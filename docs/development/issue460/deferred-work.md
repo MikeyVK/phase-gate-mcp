@@ -3,8 +3,8 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
-**Version:** 1.15  
-**Last Updated:** 2026-09-07  
+**Version:** 1.16  
+**Last Updated:** 2026-09-27  
 **Originating Issue:** 460
 
 ## Purpose
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.16 | 2026-09-27 | Record owner-deferred safe-edit text-model and line-ending semantics review as D-VAL-02 for a separate coordination-owned issue |
 | 1.15 | 2026-09-07 | Supersede verify_only deferral after explicit human scope expansion; route removal and full validation-policy alignment into the narrow Research amendment |
 | 1.14 | 2026-09-07 | Defer verify_only removal to a separate issue; exclude further mode-specific Design from issue 460 except for evidenced conflicts introduced by its new functionality |
 | 1.13 | 2026-09-07 | Record the human-approved 50-template Design escalation threshold for F-18, without runtime caps or enum truncation; require the follow-up to address discovery and compact invocation schemas together |
@@ -457,3 +458,14 @@ Deferred repair does not erase observed native/test failures. Validation must di
 ### Additional selection evidence — 2026-09-26
 
 After installing the project's required Ruff 0.15.6 in the actual MCP test runner, `run_checks(scope="configured", checks=["python_format","python_lint"])` let Ruff discover archived documentation examples and returned format unavailable with Windows access denied (os error 5); lint reported 191 findings and an access warning. Full DTO receipt: `pgmcp://cache/runs/bfb9ce644ab842f39d000ce974851cf4`. Explicit bounded directory targets completed and produced a different 61-finding lint set, so these scopes are not interchangeable. The all-adapter follow-up must examine configured discovery, exclusions and inaccessible paths in addition to branch argv limits. This observation does not approve a generic contract change or waive issue-460 check failures.
+## Deferred Work Notice: Safe-Edit Text Model and Line-Ending Semantics
+
+**Decision:** explicitly deferred outside issue #460 by the human owner on 2026-09-27 after independent QA GO for CY110 D1–D4.
+**Future owner:** coordination, to triage and create a separate PGMCP issue; no follow-up issue has yet been created.
+**Suggested issue title:** Unify safe-edit text representations, edit planning, and line-ending invariants.
+
+The authoritative follow-up finding is **D-VAL-02** in [Validation — Deferred Work](validation.md#d-val-02--reconcile-the-safe-edit-text-model-and-line-ending-semantics). The CY110 correction preserves original bytes for logically unchanged targeted edits and passed independent QA; it does not settle the wider meaning of `content_changed` or how a replacement span in a mixed-terminator file should retain existing terminators. One current regression case intentionally reports `content_changed=True` while the persisted bytes equal the original after an explicit CRLF replacement. This is a contract and consistency question, not proof that the approved CY110 behavior fails.
+
+The separate issue must begin with Research and an explicit compatibility decision for affected public and internal boundaries, then compare a unified source-span edit plan with alternatives in Design. It should examine all four operations and direct consumers, define observable no-op, newline and `content_changed` semantics, and prove cross-operation invariants rather than add isolated edge-case branches. Preserve validation/write-byte identity, original-byte race protection, and exact whole-file rewrite unless a later approved strategy changes them. Do not silently extend issue #460 or treat this notice as authorization to change the public tool contract.
+
+Coordination should link its new issue to D-VAL-02, the [CY110 completion evidence](planning-rollout.md#cy110-completion-evidence-d1d4-2026-09-27), and the [line-ending Design amendment](design-mutation-validation.md#cy110-line-ending-preservation-amendment-2026-09-27). Validation remains responsible for the current issue's V460.1–V460.5 evidence; any newly observed concrete failure must be reported separately.
