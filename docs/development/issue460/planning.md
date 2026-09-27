@@ -2,9 +2,9 @@
 <!-- template=planning version=130ac5ea created=2026-09-13T09:32Z updated=2026-09-13 -->
 # Issue 460 Refactor Planning
 
-**Status:** DRAFT — validation fix-cycle amendment submitted for independent Planning review  
-**Version:** 0.5  
-**Last Updated:** 2026-09-26  
+**Status:** DRAFT — CY111 DOCFLOW-E05 correction submitted for independent Planning review  
+**Version:** 0.6  
+**Last Updated:** 2026-09-27  
 **Baseline:** ea48558cf8034e9ab695fff675db7732c2ded660  
 **Workflow:** refactor / planning
 
@@ -14,7 +14,7 @@ Translate frozen [Research](research.md), its boundary-specific Approved Strateg
 
 ## Scope
 
-Planning owns sequence, dependencies, exact paths, preserved behavior, cleanup and stop/go evidence. It does not redesign contracts or implement the 110 refactor cycles. The requested QA correction includes the bounded readback tooling prerequisite recorded below; the active phase remains Planning. External workspace migration, publishing, new startup-health/recovery features and permanent compatibility bridges are excluded. Producer-delegated review returns findings only; independent `pgmcp-qa` owns the Planning verdict.
+Planning owns sequence, dependencies, exact paths, preserved behavior, cleanup and stop/go evidence. It does not redesign contracts or implement the 111 refactor cycles. The requested QA correction includes the bounded readback tooling prerequisite recorded below; the active phase remains Planning. External workspace migration, publishing, new startup-health/recovery features and permanent compatibility bridges are excluded. Producer-delegated review returns findings only; independent `pgmcp-qa` owns the Planning verdict.
 
 ## Prerequisites
 
@@ -24,12 +24,12 @@ Planning owns sequence, dependencies, exact paths, preserved behavior, cleanup a
 
 ## Summary
 
-110 bounded cycles, in a valid serial order. CY001–CY105 are the original completed implementation; CY106–CY110 are the owner-authorized, validation-derived correction amendment. The exact index assigns **126 consumers, 151 tests/helpers, 79 legacy suite sources and 57 additional existing dependencies**, plus **279 exact proposed new source paths**. C/T/A/S identifiers are source IDs; CY identifiers are implementation cycles. The [R001–R008 supplement](planning-path-ownership.md#readback-prerequisite-supplement) assigns eight additional dependencies introduced or exposed by the readback prerequisite without renumbering the frozen census or creating new cycles.
+111 bounded cycles, in a valid serial order. CY001–CY105 are the original completed implementation; CY106–CY110 are the owner-authorized, validation-derived correction amendment; CY111 is the owner-authorized F-VAL-05 host-guidance correction. The exact index assigns **126 consumers, 151 tests/helpers, 79 legacy suite sources and 57 additional existing dependencies**, plus **279 exact proposed new source paths**. C/T/A/S identifiers are source IDs; CY identifiers are implementation cycles. The [R001–R008 supplement](planning-path-ownership.md#readback-prerequisite-supplement) assigns eight additional dependencies introduced or exposed by the readback prerequisite without renumbering the frozen census or creating new cycles.
 
 - [Execution foundations](planning-execution.md): [CY001](planning-execution.md#cy001)–[CY030](planning-execution.md#cy030).
 - [Artifacts and mutation](planning-artifacts-mutation.md): [CY031](planning-artifacts-mutation.md#cy031)–[CY061](planning-artifacts-mutation.md#cy061).
 - [Distribution, activation and retirement](planning-rollout.md): [CY062](planning-rollout.md#cy062)–[CY105](planning-rollout.md#cy105).
-- [Validation-derived corrections](planning-rollout.md#validation-fix-cycle-amendment--2026-09-26): [CY106](planning-rollout.md#cy106)–[CY110](planning-rollout.md#cy110).
+- [Validation-derived corrections](planning-rollout.md#validation-fix-cycle-amendment--2026-09-26): [CY106](planning-rollout.md#cy106)–[CY110](planning-rollout.md#cy110), followed by [CY111](planning-rollout.md#cy111) for DOCFLOW-E05.
 - [Exact path ownership and creation/revisit ledger](planning-path-ownership.md).
 
 Every artifact family has its own acceptance cycle. Native check, test and fix conformance are separate from orchestration and public composition. The public switch applies an already-rehearsed diff; legacy deletion follows working target startup. Adjacent deletion groups are bounded by actual import dependencies, not a remaining-work bucket.
@@ -152,6 +152,7 @@ The table shows semantic dependencies. Cards additionally enumerate immediate sh
 | [CY108](planning-rollout.md#cy108) | Original child-process lifetime evidence | CY107 |
 | [CY109](planning-rollout.md#cy109) | Ruff test-source import debt | CY108 |
 | [CY110](planning-rollout.md#cy110) | Ruff production-source lint debt | CY109 |
+| [CY111](planning-rollout.md#cy111) | Correct active scaffold guidance | CY110; Validation F-VAL-05 |
 
 ## One active server and controlled cutover
 

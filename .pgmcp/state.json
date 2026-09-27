@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "planning",
   "current_cycle": 110,
   "last_cycle": 110,
   "cycle_history": [
@@ -672,7 +672,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "CY110 discovered that safe_edit_file normalizes existing CRLF/mixed endings; the approved design explicitly excluded EOL preservation. User now explicitly authorizes extending this same cycle to preserve line-ending convention and restore phase_state_engine.py. Reopen the affected Research/Design/Planning boundary before implementation.",
+  "skip_reason": "Validation NOGO F-VAL-05 requires one bounded host-guidance correction cycle. Return from Validation to Planning to record its exact source/copy write set and evidence before implementation; no Research/Design strategy change or gate waiver.",
   "issue_title": "Audit scaffolding schema-template rendering contracts",
   "parent_branch": "main",
   "created_at": "2026-08-22T19:45:36.738143+00:00",
@@ -924,6 +924,14 @@
       "human_approval_message": "Owner: 'Goed voor nu overgang naar validation, maar zorg ervoor dat het oplossen van dit edge case werk netjes wordt gemarkeerd als deferred work, zodat we dit in een eigen issue op kunnen lossen.' Independent QA GO for CY110 D1-D4 on ed6c4b0.",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-27T12:17:35.011795+00:00",
+      "human_approval_message": "Issue owner on 2026-09-27: 'f-val-05 lijkt me duidelijk die moet je oppakken.'",
+      "forced": true,
+      "skip_reason": "Validation NOGO F-VAL-05 requires one bounded host-guidance correction cycle. Return from Validation to Planning to record its exact source/copy write set and evidence before implementation; no Research/Design strategy change or gate waiver."
     }
   ],
   "reconstructed": false,

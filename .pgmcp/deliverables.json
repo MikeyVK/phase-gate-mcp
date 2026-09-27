@@ -19,7 +19,7 @@
       "created_at": "2026-08-22T19:45:36.727213+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 110,
+          "total": 111,
           "cycles": [
             {
               "cycle_number": 1,
@@ -1678,6 +1678,21 @@
                 }
               ],
               "exit_criteria": "Stop on public contract change, out-of-set write, whole-file newline churn, weakened race guard, failed affected tests, or unresolved Research/Design contradiction. CY110.D1\u2013D4 and exact scoped evidence required; independent QA decides progression."
+            },
+            {
+              "cycle_number": 111,
+              "name": "Correct active scaffold guidance against the V3 public contract",
+              "deliverables": [
+                {
+                  "id": "CY111.D1",
+                  "description": "Correct only the stale scaffolding guidance in three authoritative host sources and propagate source-first to the two mapped active copies. The five exact paths are docs/agents/vscode/copilot/AGENTS.md, docs/agents/codex/AGENTS.md, docs/agents/antigravity/AGENTS.md, AGENTS.md, and .agents/AGENTS.md. Replace rejected name examples, unregistered artifact IDs, the copied type inventory and retired registry path with live-schema discovery, exact file_name basename-with-extension and context-schema guidance. Preserve all unrelated role/phase/host content; no production/test/tool contract changes. Predecessor CY110; authority DI-07 DOCFLOW-E03/E05; exact scope and rollback in docs/development/issue460/planning-rollout.md#cy111."
+                },
+                {
+                  "id": "CY111.D2",
+                  "description": "Validate the five revised files against live ScaffoldArtifactInput and scaffold_schema admission; focused Markdown checks pass, no stale invocation/registry guidance remains, two direct source/copy pairs are byte-identical, and semantic DOCFLOW-E05 review confirms usable instructions. No artificial RED or full suite for this documentation-only cycle; Validation retains suite/branch gates. Independent QA decides progression. Evidence and stop conditions in docs/development/issue460/planning-rollout.md#cy111."
+                }
+              ],
+              "exit_criteria": "Stop on an unlisted edit, failed focused Markdown check, broken direct-copy parity, or any still-invalid scaffold instruction. No aliases, static ID inventory, adapter change, F-VAL-06 census rewrite, or broad test-Mypy cleanup. Independent QA decides progression."
             }
           ]
         },
