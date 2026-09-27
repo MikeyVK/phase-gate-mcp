@@ -109,7 +109,7 @@ from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.check_operation import CheckOperation
 from mcp_server.services.edit_construction import (
     EditProfileSelection,
-    construct_edit,
+    construct_edit_proposal,
     select_profile,
 )
 from mcp_server.services.edit_operation import EditOperation
@@ -631,7 +631,7 @@ class ServerBootstrapper:
                 reader=OriginalFileReader(),
                 writer=CheckedFileWriter(),
                 select=choose_edit_profile,
-                construct=construct_edit,
+                construct=construct_edit_proposal,
                 checks=check_service,
             )
             test_run_manager = TestRunManager(

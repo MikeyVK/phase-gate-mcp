@@ -19,16 +19,16 @@ from mcp_server.execution.protocol import AdapterResponseContract
 from mcp_server.schemas.mutation_outputs import EditOperationOutput
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.edit_construction import (
-    EditOperation as EditCommand,
+    AppendOperation,
+    EditProfileSelection,
+    PatternReplaceOperation,
+    ReplaceOperation,
+    RewriteOperation,
+    construct_edit_proposal,
+    select_profile,
 )
 from mcp_server.services.edit_construction import (
-    EditProfileSelection,
-    ReplaceOperation,
-    PatternReplaceOperation,
-    AppendOperation,
-    RewriteOperation,
-    construct_edit,
-    select_profile,
+    EditOperation as EditCommand,
 )
 from mcp_server.services.edit_operation import EditOperation
 from mcp_server.utils.atomic_file_writer import CheckedFileWriter, OriginalFileReader
@@ -75,7 +75,7 @@ def operation(
         reader=OriginalFileReader(),
         writer=CheckedFileWriter(),
         select=select,
-        construct=construct_edit,
+        construct=construct_edit_proposal,
         checks=checks,
     ), runtime
 
@@ -432,6 +432,12 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
             True,
         ),
         (
+            b"a\r\nb\nc\r\n",
+            ReplaceOperation(target_content="b\nc", replacement="B\nC"),
+            b"a\r\nB\r\nC\r\n",
+            True,
+        ),
+        (
             b"alpha\r\nbeta\nlast\r",
             ReplaceOperation(target_content="beta", replacement="BETA"),
             b"alpha\r\nBETA\nlast\r",
@@ -442,6 +448,36 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
             PatternReplaceOperation(pattern="absent", replacement="X"),
             b"alpha\r\nbeta\r\n",
             False,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            ReplaceOperation(target_content="beta", replacement="BETA\r\nGAMMA"),
+            b"alpha\r\nBETA\r\nGAMMA\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern="\n", replacement="\r\n", regex=False),
+            b"alpha\r\nbeta\r\n",
+            True,
+        ),
+        (
+            b"same\r\nsame\nsame\r\n",
+            ReplaceOperation(target_content="same", replacement="X", search_window=(2, 2)),
+            b"same\r\nX\nsame\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern=r"(b)(eta)", replacement=r"\2-\1"),
+            b"alpha\r\neta-b\r\n",
+            True,
+        ),
+        (
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern=r"(?=b)", replacement="X"),
+            b"alpha\r\nXbeta\r\n",
+            True,
         ),
         (
             b"alpha\nbeta\n",

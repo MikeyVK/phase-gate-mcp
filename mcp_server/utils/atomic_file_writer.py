@@ -68,6 +68,7 @@ class OriginalFileReader(IOriginalFileReader):
         original_bytes = _read_original_bytes(target)
 
         try:
+            original_source_text = original_bytes.decode("utf-8")
             with io.TextIOWrapper(
                 io.BytesIO(original_bytes),
                 encoding="utf-8",
@@ -83,6 +84,7 @@ class OriginalFileReader(IOriginalFileReader):
         return OriginalFileSnapshot(
             original_bytes=original_bytes,
             original_text=original_text,
+            original_source_text=original_source_text,
         )
 
 

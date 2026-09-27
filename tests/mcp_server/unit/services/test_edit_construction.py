@@ -61,6 +61,8 @@ def test_operations_preserve_exact_matching_newlines_and_unchanged_text() -> Non
             PatternReplaceOperation(pattern=r"a\b", replacement=r"c\d", regex=False),
             r"c\d c\d",
         ),
+        ("ab", PatternReplaceOperation(pattern="", replacement="X", regex=False), "XaXbX"),
+        ("ab", PatternReplaceOperation(pattern=r"(?=b)", replacement="X"), "aXb"),
         ("body", PatternReplaceOperation(pattern="missing", replacement="x"), "body"),
         ("body", PatternReplaceOperation(pattern="missing", replacement="x", regex=False), "body"),
     )
@@ -77,6 +79,10 @@ def test_operations_preserve_exact_matching_newlines_and_unchanged_text() -> Non
         ),
         (AppendOperation(content="x", anchor="alphaa"), "missing_anchor"),
         (PatternReplaceOperation(pattern="[", replacement="x"), "invalid_pattern"),
+        (
+            PatternReplaceOperation(pattern="absent", replacement=r"\g<missing>"),
+            "invalid_replacement",
+        ),
         (
             PatternReplaceOperation(pattern="alpha", replacement=r"\g<missing>"),
             "invalid_replacement",
@@ -98,7 +104,8 @@ def test_construction_failures_retain_typed_bounded_source_facts(
             enumerate(original.splitlines()[:10], 1)
         )
     else:
-        assert details.suggestions == details.context == ()
+        assert details.suggestions == ()
+        assert details.context == ()
 
 
 def header(template_id: str) -> str:

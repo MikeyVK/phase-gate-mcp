@@ -49,10 +49,11 @@ class FileCreationCollisionError(FileExistsError):
 
 @dataclass(frozen=True, slots=True)
 class OriginalFileSnapshot:
-    """One native-read original file value and its universal-newline text view."""
+    """One native-read original with logical and source-preserving text views."""
 
     original_bytes: bytes
     original_text: str
+    original_source_text: str
 
 
 class OriginalTargetMissingError(FileNotFoundError):

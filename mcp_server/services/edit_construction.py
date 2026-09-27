@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from difflib import get_close_matches
 from functools import singledispatch
 from typing import Annotated, Literal, Self
@@ -16,6 +17,7 @@ from mcp_server.core.interfaces.artifact_header_reader import (
     HeaderReadStatus,
     IArtifactHeaderReader,
 )
+from mcp_server.core.interfaces.file_writer import OriginalFileSnapshot
 from mcp_server.execution.models import NonBlankText
 
 
@@ -97,50 +99,83 @@ def _missing(original: str, target: str, reason: EditFailureReason) -> EditConst
     )
 
 
+@dataclass(frozen=True, slots=True)
+class _EditPatch:
+    start: int
+    end: int
+    replacement: str
+
+
+def _apply_patches(original: str, patches: tuple[_EditPatch, ...]) -> str:
+    parts: list[str] = []
+    cursor = 0
+    for patch in patches:
+        if patch.start < cursor or patch.end < patch.start or patch.end > len(original):
+            raise ValueError("invalid_edit_patch")
+        parts.extend((original[cursor : patch.start], patch.replacement))
+        cursor = patch.end
+    parts.append(original[cursor:])
+    return "".join(parts)
+
+
 @singledispatch
-def _construct(_operation: object, _original: str) -> str:
+def _patches(_operation: object, _original: str) -> tuple[_EditPatch, ...]:
     raise TypeError("unsupported_edit_operation")
 
 
-@_construct.register
-def _replace(operation: ReplaceOperation, original: str) -> str:
+@_patches.register
+def _replace(operation: ReplaceOperation, original: str) -> tuple[_EditPatch, ...]:
     if operation.search_window is None:
-        if operation.target_content not in original:
-            raise _missing(original, operation.target_content, "missing_match")
-        return original.replace(operation.target_content, operation.replacement, 1)
-    start, end = operation.search_window
-    lines = original.splitlines(keepends=True)
-    chunk = "".join(lines[start - 1 : end])
-    if operation.target_content not in chunk:
+        index = original.find(operation.target_content)
+    else:
+        start, end = operation.search_window
+        lines = original.splitlines(keepends=True)
+        chunk = "".join(lines[start - 1 : end])
+        local_index = chunk.find(operation.target_content)
+        selected_start = slice(start - 1, end).indices(len(lines))[0]
+        index = len("".join(lines[:selected_start])) + local_index if local_index >= 0 else -1
+    if index < 0:
         raise _missing(original, operation.target_content, "missing_match")
-    lines[start - 1 : end] = [chunk.replace(operation.target_content, operation.replacement, 1)]
-    return "".join(lines)
+    return (_EditPatch(index, index + len(operation.target_content), operation.replacement),)
 
 
-@_construct.register
-def _append(operation: AppendOperation, original: str) -> str:
+@_patches.register
+def _append(operation: AppendOperation, original: str) -> tuple[_EditPatch, ...]:
     text = operation.content
     if not text.endswith("\n"):
         text += "\n"
     if operation.anchor is None:
         prefix = "" if original.endswith("\n") or not original else "\n"
-        return original + prefix + text
-    if operation.anchor not in original:
+        return (_EditPatch(len(original), len(original), prefix + text),)
+    index = original.find(operation.anchor)
+    if index < 0:
         raise _missing(original, operation.anchor, "missing_anchor")
     if operation.position == "before":
-        return original.replace(operation.anchor, text + operation.anchor, 1)
-    return original.replace(operation.anchor, operation.anchor + "\n" + text.rstrip("\n"), 1)
+        return (_EditPatch(index, index, text),)
+    end = index + len(operation.anchor)
+    return (_EditPatch(end, end, "\n" + text.rstrip("\n")),)
 
 
-@_construct.register
-def _rewrite(operation: RewriteOperation, _original: str) -> str:
-    return operation.content
+@_patches.register
+def _rewrite(operation: RewriteOperation, original: str) -> tuple[_EditPatch, ...]:
+    return (_EditPatch(0, len(original), operation.content),)
 
 
-@_construct.register
-def _pattern_replace(operation: PatternReplaceOperation, original: str) -> str:
+@_patches.register
+def _pattern_replace(operation: PatternReplaceOperation, original: str) -> tuple[_EditPatch, ...]:
+    patches: list[_EditPatch] = []
     if not operation.regex:
-        return original.replace(operation.pattern, operation.replacement)
+        if not operation.pattern:
+            return tuple(
+                _EditPatch(index, index, operation.replacement)
+                for index in range(len(original) + 1)
+            )
+        index = 0
+        while (found := original.find(operation.pattern, index)) >= 0:
+            end = found + len(operation.pattern)
+            patches.append(_EditPatch(found, end, operation.replacement))
+            index = end
+        return tuple(patches)
     try:
         compiled = re.compile(operation.pattern)
     except re.error as exc:
@@ -152,8 +187,15 @@ def _pattern_replace(operation: PatternReplaceOperation, original: str) -> str:
                 context=(),
             )
         ) from exc
+
+    def capture(match: re.Match[str]) -> str:
+        replacement = match.expand(operation.replacement)
+        patches.append(_EditPatch(match.start(), match.end(), replacement))
+        return replacement
+
     try:
-        return compiled.sub(operation.replacement, original)
+        canonical = compiled.sub(operation.replacement, original)
+        compiled.sub(capture, original)
     except (re.error, IndexError) as exc:
         raise EditConstructionError(
             EditDetails(
@@ -163,11 +205,94 @@ def _pattern_replace(operation: PatternReplaceOperation, original: str) -> str:
                 context=(),
             )
         ) from exc
+    result = tuple(patches)
+    if _apply_patches(original, result) != canonical:
+        raise ValueError("regex_patch_mismatch")
+    return result
 
 
 def construct_edit(original: str, operation: EditOperation) -> str:
     """Return one proposed text value without checking, reading or writing files."""
-    return _construct(operation, original)
+    return _apply_patches(original, _patches(operation, original))
+
+
+@dataclass(frozen=True, slots=True)
+class EditProposal:
+    """Logical edit result and exact text supplied to validation and persistence."""
+
+    logical_text: str
+    physical_text: str
+
+
+def _newline_view(source: str) -> tuple[str, tuple[int, ...]]:
+    """Return universal-newline text and source offsets for each logical boundary."""
+    logical: list[str] = []
+    offsets = [0]
+    index = 0
+    while index < len(source):
+        if source[index] == "\r":
+            index += 2 if source[index : index + 2] == "\r\n" else 1
+            logical.append("\n")
+        else:
+            logical.append(source[index])
+            index += 1
+        offsets.append(index)
+    return "".join(logical), tuple(offsets)
+
+
+def _preferred_terminator(source: str) -> str:
+    terminators = re.findall(r"\r\n|\r|\n", source)
+    if not terminators:
+        return "\n"
+    counts: dict[str, int] = {}
+    for terminator in terminators:
+        counts[terminator] = counts.get(terminator, 0) + 1
+    return max(counts, key=lambda terminator: counts[terminator])
+
+
+def _source_preserving_text(original: OriginalFileSnapshot, patches: tuple[_EditPatch, ...]) -> str:
+    source = original.original_source_text
+    logical_source, source_offsets = _newline_view(source)
+    if logical_source != original.original_text:
+        raise ValueError("original_text_source_mismatch")
+    terminator = _preferred_terminator(source)
+    parts: list[str] = []
+    cursor = 0
+    for patch in patches:
+        if patch.start < cursor or patch.end > len(logical_source):
+            raise ValueError("invalid_edit_patch")
+        parts.append(source[source_offsets[cursor] : source_offsets[patch.start]])
+        parts.append(re.sub(r"(?<!\r)\n", lambda _match: terminator, patch.replacement))
+        cursor = patch.end
+    parts.append(source[source_offsets[cursor] :])
+    return "".join(parts)
+
+
+@singledispatch
+def _physical_text(
+    _operation: object, original: OriginalFileSnapshot, patches: tuple[_EditPatch, ...]
+) -> str:
+    return _source_preserving_text(original, patches)
+
+
+@_physical_text.register
+def _rewrite_physical_text(
+    operation: RewriteOperation,
+    _original: OriginalFileSnapshot,
+    _patches: tuple[_EditPatch, ...],
+) -> str:
+    return operation.content
+
+
+def construct_edit_proposal(
+    original: OriginalFileSnapshot, operation: EditOperation
+) -> EditProposal:
+    """Construct logical and physical text from the same exact operation spans."""
+    patches = _patches(operation, original.original_text)
+    return EditProposal(
+        logical_text=_apply_patches(original.original_text, patches),
+        physical_text=_physical_text(operation, original, patches),
+    )
 
 
 class EditProfileSelection(_EditModel):
