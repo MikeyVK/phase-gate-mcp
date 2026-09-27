@@ -9,7 +9,7 @@ from typing import Protocol, Self
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 
 
 class HeaderReadStatus(StrEnum):

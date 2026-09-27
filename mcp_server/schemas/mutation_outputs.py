@@ -36,7 +36,7 @@ from mcp_server.execution.models import (
     RequestValidationIssue,
     TerminationProblem,
 )
-from mcp_server.services.artifact_identity import CompactFingerprint
+from mcp_server.schemas.template_identity import CompactFingerprint
 from mcp_server.services.edit_construction import (
     EditDetails,
     EditProfileSelection,

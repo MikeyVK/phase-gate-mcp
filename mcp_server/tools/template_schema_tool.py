@@ -37,7 +37,7 @@ from mcp_server.core.tool_execution import (
     TemplateContextSchemaIdentity,
     ToolExecution,
 )
-from mcp_server.services.artifact_identity import ArtifactIdentity, CompactFingerprint
+from mcp_server.schemas.template_identity import ArtifactIdentity, CompactFingerprint
 from mcp_server.services.template_catalog import TemplateCatalog
 
 SchemaData = Annotated[

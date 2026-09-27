@@ -9,8 +9,8 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from mcp_server.config.schemas.template_suite import TemplateId
 from mcp_server.core.exceptions import MCPError
+from mcp_server.schemas.template_identity import CompactFingerprint
 from mcp_server.services.artifact_identity import (
-    CompactFingerprint,
     FingerprintRecord,
     GenerationPackage,
     GenerationSource,

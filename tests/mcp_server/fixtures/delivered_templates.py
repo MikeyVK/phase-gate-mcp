@@ -14,7 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.template_catalog import (
     TemplateCatalog,
     TemplateCatalogLoader,

@@ -118,7 +118,7 @@ from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces.template_catalog import freeze_json
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_contract_loader import TemplateContractLoader
 from mcp_server.services.template_graph import TemplateGraphResolver

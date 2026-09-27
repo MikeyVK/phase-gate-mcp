@@ -7,30 +7,19 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import re
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Annotated, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
-from mcp_server.config.schemas.template_suite import (
-    TemplateId,
-    TemplateManifest,
+from mcp_server.config.schemas.template_suite import TemplateManifest
+from mcp_server.core.exceptions import MCPError
+from mcp_server.schemas.template_identity import (
+    ArtifactIdentity,
+    EdgeKind,
     TemplatePackageVersion,
 )
-from mcp_server.core.exceptions import MCPError
-from mcp_server.services.template_graph import EdgeKind
-
-CompactFingerprint = Annotated[
-    str,
-    StringConstraints(
-        strict=True,
-        min_length=16,
-        max_length=16,
-        pattern=re.compile(r"^[A-Za-z0-9_-]{16}$(?![\s\S])"),
-    ),
-]
 
 
 class GenerationSource(BaseModel):
@@ -82,17 +71,6 @@ class GenerationEdge(BaseModel):
     def relative_endpoint(cls, value: str) -> str:
         """Use logical file endpoints, never host paths."""
         return _relative_path(value)
-
-
-class ArtifactIdentity(BaseModel):
-    """The four canonical generation facts consumed by artifact provenance."""
-
-    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
-
-    id: TemplateId
-    pv: TemplatePackageVersion
-    pf: CompactFingerprint
-    sf: CompactFingerprint
 
 
 def _relative_path(value: str) -> str:

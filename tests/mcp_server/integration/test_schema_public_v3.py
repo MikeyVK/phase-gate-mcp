@@ -36,8 +36,8 @@ from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.server import MCPServer
-from mcp_server.services.artifact_identity import ArtifactIdentity
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.project_tools import GetProjectPlanInput
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaOutput, ScaffoldSchemaTool

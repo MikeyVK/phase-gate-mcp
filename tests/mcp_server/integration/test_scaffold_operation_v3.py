@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, thaw_json
 from mcp_server.schemas.mutation_outputs import ScaffoldOperationOutput
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.scaffold_operation import ScaffoldOperation
 from mcp_server.utils.atomic_file_writer import CreateOnlyFileWriter

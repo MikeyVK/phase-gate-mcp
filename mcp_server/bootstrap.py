@@ -98,13 +98,10 @@ from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideRes
 from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.resources.standards import StandardsResource
 from mcp_server.resources.status import StatusResource
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.server import MCPServer
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
-from mcp_server.services.artifact_identity import (
-    ArtifactIdentity,
-    GenerationEdge,
-    derive_artifact_identities,
-)
+from mcp_server.services.artifact_identity import GenerationEdge, derive_artifact_identities
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.check_operation import CheckOperation
 from mcp_server.services.edit_construction import (

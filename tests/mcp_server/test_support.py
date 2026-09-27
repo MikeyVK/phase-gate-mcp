@@ -41,7 +41,7 @@ from mcp_server.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_contract_loader import TemplateContractLoader
 from mcp_server.services.template_graph import TemplateGraphResolver

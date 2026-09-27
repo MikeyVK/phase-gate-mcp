@@ -53,7 +53,7 @@ from mcp_server.schemas.mutation_outputs import (
     TargetDetails,
     TerminationDetails,
 )
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.template_catalog import TemplateCatalog
 from mcp_server.utils.path_resolver import ArtifactTargetError

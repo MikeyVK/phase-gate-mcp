@@ -35,8 +35,8 @@ from mcp_server.presenters.text_presenter import TextPresenter, validate_present
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.mutation_outputs import ScaffoldOperationOutput
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.server import MCPServer
-from mcp_server.services.artifact_identity import ArtifactIdentity
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool

@@ -15,8 +15,8 @@ from mcp_server.core.interfaces.artifact_header_reader import (
     HeaderReadStatus,
     IArtifactHeaderReader,
 )
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
-from mcp_server.services.artifact_identity import ArtifactIdentity
 from mcp_server.services.template_graph import TemplateGraphResolver
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots, write_package_tree
 

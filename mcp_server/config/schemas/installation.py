@@ -13,8 +13,7 @@ from pydantic import (
     model_validator,
 )
 
-from mcp_server.config.schemas.template_suite import TemplateId
-from mcp_server.services.artifact_identity import CompactFingerprint
+from mcp_server.schemas.template_identity import CompactFingerprint, TemplateId
 
 
 class TemplateCheckpoint(BaseModel):

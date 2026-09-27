@@ -36,7 +36,7 @@ from mcp_server.config.schemas.contracts_config import (
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.scaffold_operation import ScaffoldOperation
 from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool

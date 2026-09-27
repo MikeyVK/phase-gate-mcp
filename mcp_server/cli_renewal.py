@@ -20,7 +20,7 @@ from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.presenters.renewal_presenter import RenewalPresenter
-from mcp_server.services.artifact_identity import ArtifactIdentity
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.installation_state import InstallationStateRepository
 from mcp_server.services.template_activation import (
     ActivationFiles,
