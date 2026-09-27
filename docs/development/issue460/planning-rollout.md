@@ -2169,7 +2169,7 @@ Independent QA subsequently issued a CY110 NOGO on commit `89657a433ec2122bedd0e
 
 ## Validation correction cycles — 2026-09-27
 
-The owner requested closure of the two remaining concrete Validation findings after receiving the targeted architecture fix approach. Research's approved clean break and DI-02/DI-06 identity semantics remain binding. The audit of everyday tool behavior is bounded to the six #460-affected public routes in D-VAL-04 and is not an implementation dependency of these cycles. CY112 and CY113 are serial, reversible corrections; the full configured parallel suite and branch gates return to Validation. No new public input, output, metadata or adapter contract is authorized.
+The owner requested closure of the two remaining concrete Validation findings after receiving the targeted architecture fix approach. Research's approved clean break and DI-02/DI-06 identity semantics remain binding. The audit of everyday tool behavior is bounded to the directly #460-affected public routes in D-VAL-04 and is not an implementation dependency of these cycles. CY112 and CY113 are serial, reversible corrections; the full configured parallel suite and branch gates return to Validation. No new public input, output, metadata or adapter contract is authorized.
 
 ## CY112
 
