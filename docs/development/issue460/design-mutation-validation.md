@@ -616,6 +616,21 @@ are consolidated in §§4.6/4.10/7.1. The DI-02 reader and Shared §§5.5–5.6/
 the designed carrier/serialization/presentation seams. Their implementation and real
 resource/presentation conformance remain required, not additional workshop choices.
 
+### CY110 line-ending preservation amendment (2026-09-27)
+
+This amendment supersedes only the universal-newline persistence and no-preservation statements in §§4.7 and 4.9. The public tool operations, matching cardinality, validation policy, original-byte race guard, UTF-8 encoding and explicit whole-file rewrite semantics remain unchanged.
+
+| Boundary | Target responsibility | Contract |
+|---|---|---|
+| Original-file reader and immutable snapshot | Read the original once and expose exact bytes, the current universal-newline logical text and the decoded source text retaining original terminators. | All views come from the same bytes. Invalid UTF-8 remains an original-read failure. No second read is introduced for reconstruction. |
+| Pure edit construction | Produce logical proposed text with existing matching behavior, then derive the persisted proposal for targeted edits from unchanged source spans and replacement spans. | Unchanged spans retain their original CRLF, LF or CR terminators. New bare LF line breaks use the prevailing original terminator (first encountered wins a tie; LF for a file without terminators); explicit CRLF or CR in replacement content remains explicit. An unchanged logical proposal yields unchanged original bytes. Full rewrite retains the exact caller content. |
+| Edit manager | Validate and write the same physical proposal; report content_changed against the existing logical original/proposed comparison. | Profile selection still inspects the original logical text. Enforce/report and failure handling are unchanged. |
+| Checked writer | Guard against changes to the exact original bytes and stage the supplied physical proposal verbatim as UTF-8. | No generic writer or scaffold-create contract changes. |
+
+A small immutable proposal value may carry logical and physical text inside the edit service; it is not a public DTO or cache resource. The preferred structure keeps line-ending reconstruction in the pure edit-construction seam, with the manager orchestrating selection, checks and checked replacement. Reject moving newline policy into the writer (it lacks operation intent) or into the public tool (it lacks the original snapshot). No migration bridge is needed because the request schema and output schema stay fixed.
+
+Behavioral regression coverage uses the real reader, manager and checked writer for CRLF replace/append/pattern_replace, mixed-terminator preservation, the no-match identity case and exact rewrite behavior. An integration test must assert the checked content equals persisted bytes; pure construction tests may cover the replacement mapping edge cases. Existing race-guard and policy tests remain authoritative. Planning owns the bounded write-set and execution order.
+
 ### 4.7 Safe-Edit Operations, No-Change Results and Failure Boundaries
 
 **Status:** human-approved workshop, 2026-09-07. This section adds only safe-edit
@@ -631,7 +646,7 @@ policy, temporary storage or presentation infrastructure.
 | `rewrite` | Use caller text as the complete replacement of an existing file | Not applicable; identical text is valid proposed content |
 | `pattern_replace` | Replace all matches using the existing regex/literal setting | Return unchanged proposed content, not an edit failure |
 
-Keep existing matching cardinality and newline behavior. No require-match switch,
+Keep existing matching cardinality. The CY110 line-ending amendment below supersedes the earlier newline behavior. No require-match switch,
 configurable replacement count, fuzzy replacement, or new dry-run operation is introduced.
 Similar-text suggestions remain diagnostic only and never authorize an approximate edit.
 
@@ -868,7 +883,7 @@ asks whether today's target still contains the exact original bytes; content_cha
 retains §4.7's original/proposed decoded-text comparison after successful writing.
 A line-ending-only external change can therefore invalidate the original basis even
 when text normalization would hide it. Do not silently change content_changed to a
-byte/encoding/timestamp comparison or add an encoding-preservation feature here.
+byte/encoding/timestamp comparison or change the UTF-8 encoding contract. The CY110 amendment below adds preservation of original line terminators for targeted edits.
 
 #### Manager-owned operation, narrow filesystem operation
 
