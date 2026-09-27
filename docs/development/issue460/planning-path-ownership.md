@@ -780,3 +780,34 @@ The new-source register records CY059's inward projection operation and the narr
 | `docs/development/issue460/rollout-rehearsal.md` | [CY071](planning-rollout.md#cy071) | CY071 |
 | `tests/mcp_server/integration/test_v3_cutover.py` | [CY072](planning-rollout.md#cy072) | CY072 |
 
+
+## Validation correction path supplement — CY112/CY113, 2026-09-27
+
+This supplement adds exact revisit ownership after the frozen C/T/A/S census and the pre-CY112 proposed-new register. It does not renumber old source IDs or rewrite their first-owner history. The original proposed-new register's 288-path Validation reconciliation is a pre-supplement snapshot. The only additional maintained source proposed by these corrections is `mcp_server/schemas/template_identity.py`, created and owned by CY112; the cumulative proposal count becomes 289 when it is created. No other new source path is authorized.
+
+| Exact path | Correction owner | Permitted slice |
+|---|---|---|
+| `mcp_server/schemas/template_identity.py` (new) | CY112 | Pure canonical template identity values and edge-kind type. |
+| `mcp_server/config/schemas/template_suite.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/config/schemas/installation.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/core/interfaces/artifact_header_reader.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/services/artifact_identity.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/services/template_graph.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/services/artifact_header_reader.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/services/template_components.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/services/scaffold_operation.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/schemas/mutation_outputs.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/tools/template_schema_tool.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/bootstrap.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `mcp_server/cli_renewal.py` | CY112 | Import/type-owner migration only; preserve existing behavior. |
+| `tests/mcp_server/fixtures/delivered_templates.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/fixtures/installed_distribution.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/test_support.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/integration/test_schema_public_v3.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/integration/test_scaffold_public_v3.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/integration/test_scaffold_operation_v3.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/unit/config/test_contracts_loader.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/unit/services/test_artifact_header_reader.py` | CY112 | Import migration or existing value/schema proof only. |
+| `tests/mcp_server/integration/execution/test_process_stopping.py` | CY113 | Late-child PID handshake synchronization and identical helper race only if evidenced. |
+
+Planning, Validation and deferred-work documents plus `.pgmcp/state.json` and `.pgmcp/deliverables.json` remain workflow evidence/state artifacts, not newly proposed production/test source paths. CY112 and CY113 stop on any unlisted source edit.
