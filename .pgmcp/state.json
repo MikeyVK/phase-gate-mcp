@@ -3,9 +3,9 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 111,
-  "last_cycle": 110,
+  "last_cycle": 111,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -944,6 +944,14 @@
       "to_phase": "implementation",
       "timestamp": "2026-09-27T12:22:13.475595+00:00",
       "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-09-27T14:42:46.169106+00:00",
+      "human_approval_message": "The issue owner previously instructed transition to Validation; independent QA has now given CY111 GO, and the owner has clarified that the existing production-only Mypy policy remains binding for issue 460.",
       "forced": false,
       "skip_reason": null
     }
