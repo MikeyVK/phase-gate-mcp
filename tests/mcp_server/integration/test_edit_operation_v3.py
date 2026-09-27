@@ -444,6 +444,24 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
             True,
         ),
         (
+            b"a\r\nb\nc\r\n",
+            ReplaceOperation(target_content="b\n", replacement="b\n"),
+            b"a\r\nb\nc\r\n",
+            False,
+        ),
+        (
+            b"a\r\nb\nc\r\n",
+            PatternReplaceOperation(pattern="b\n", replacement="b\n", regex=False),
+            b"a\r\nb\nc\r\n",
+            False,
+        ),
+        (
+            b"a\r\nb\nc\r\n",
+            PatternReplaceOperation(pattern=r"b\n", replacement="b\n"),
+            b"a\r\nb\nc\r\n",
+            False,
+        ),
+        (
             b"alpha\r\nbeta\r\n",
             PatternReplaceOperation(pattern="absent", replacement="X"),
             b"alpha\r\nbeta\r\n",
