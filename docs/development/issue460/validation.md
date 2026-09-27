@@ -3,7 +3,7 @@
 # Issue 460 Refactor Validation
 
 **Status:** Fresh full-suite revalidation completed; independent QA returned NOGO on unresolved findings
-**Version:** 1.6
+**Version:** 1.7
 **Last Updated:** 2026-09-27
 
 
@@ -79,7 +79,13 @@ The owner prioritizes direct tool behavior and inspectable output over treating 
 | `run_tests(scope="targets", targets=["tests/mcp_server/integration/test_scaffold_public_v3.py"], tests=["python_tests"], args={"python_tests":["-n","0","-q","--tb=short"]}, timeout_seconds=120)` | Short response said passed. Full resource shows Pytest 9.0.2 collected 10 tests: 10 passed, 11 warnings, exit 0 in 3.13s; caller args were honored, capture untruncated. | `pgmcp://cache/runs/b4a62945b6a8445f858343d82dc939cf` |
 | `run_checks(scope="targets", targets=["docs/development/issue460/validation.md"], checks=["markdown_links"], timeout_seconds=120)` | Short response said incomplete/unavailable. Full resource identifies `dependency_unavailable`: the Lychee executable was not found; native link checking did not run. The adapter's dependency contribution declares Lychee 0.24.2. This is an unprovisioned daily-use capability, not a link failure or an established adapter defect. | `pgmcp://cache/runs/56684badc45940a9a040b20feb1b0f8d` |
 
-The compact response omits the Pytest count/warnings and the Lychee failure reason, while the structured cache includes them. This is consistent with the required compact-response/resource split, but an agent must read each resource before describing a result to the user. A healthy server and the successful focused routes do not certify `apply_fixes`, safe-edit mutation, template activation or every shipped adapter through live use; those boundaries retain their existing tests and deferred D-VAL-01 audit. Lychee provisioning remains an operational prerequisite if this workspace is expected to use `markdown_links`; do not label its unavailable outcome a pass.
+The compact response omits the Pytest count/warnings and the original Lychee failure reason, while the structured cache includes them. This is consistent with the required compact-response/resource split, but an agent must read each resource before describing a result to the user. A healthy server and the successful focused routes do not certify `apply_fixes`, safe-edit mutation, template activation or every shipped adapter through live use; those boundaries retain their existing tests and deferred D-VAL-01 audit. The original Lychee call was unavailable, not a link failure. A later pinned local provisioning and successful focused call supersede only that availability observation; the documentation-wide baseline is deferred under D-VAL-03.
+
+### Lychee availability and bounded link-review probe — 2026-09-27
+
+The owner assigned Lychee a distinct optional link-review role in this workspace and deferred a full scan of active documentation. The declared native prerequisite is Lychee 0.24.2. A pinned `lychee-bin==0.24.2` installation made `lychee.exe` discoverable on the current Windows host; the earlier missing-executable result above remains historical evidence. No check binding or default mutation profile was changed.
+
+A subsequent live `run_checks(scope="targets", targets=["docs/development/issue460/validation.md"], checks=["markdown_links"], timeout_seconds=120)` passed using the configured `--offline --cache=false --include-fragments` arguments and native Lychee 0.24.2 (`pgmcp://cache/runs/24b4fd0f7dfe41ac80a05bc87b4d745b`). The full resource reports 76 extracted links, 37 successful local checks, 39 excluded links, zero errors, exit 0 and untruncated capture. Excluded links include `pgmcp:` resource URIs and external HTTPS references; this offline result does not certify them. The focused pass proves executable availability and one document's selected local link behavior, not workspace-wide documentation quality. A second live call selected both this report and `deferred-work.md` through `profile="markdown_link_review"` and failed on nine local file links in `deferred-work.md` (`pgmcp://cache/runs/bdd03cb6353245bbbfcf8ee06e367e52`). Its full native report records 125 extracted links, 75 local successes, 41 exclusions and nine errors, with exact missing file URLs and source lines; no error was attributed to this validation report. This is a concrete first slice of the unremediated documentation baseline, not an adapter availability failure. D-VAL-03 defines the deferred broad scan and remediation boundary; runtime provisioning on other hosts still requires their own dependency installation.
 
 ### Expanded test-Mypy diagnosis and disposition boundary
 
@@ -468,6 +474,20 @@ Keep V460.1–V460.5 explicitly incomplete until required evidence is available;
 **Issue-460 consequence:** CY110's independently reviewed correction and current public contracts remain in force. This deferral neither weakens the Validation obligations V460.1–V460.5 nor authorizes a contract change or another issue-460 fix cycle. Validation should report any newly observed concrete failure separately; it must not relabel a failing obligation as deferred design work.
 
 **Coordination hand-off:** Create a separate issue from this notice and link it back to [the CY110 evidence](planning-rollout.md#cy110-completion-evidence-d1d4-2026-09-27), [the approved line-ending amendment](design-mutation-validation.md#cy110-line-ending-preservation-amendment-2026-09-27), and the [deferred-work register](deferred-work.md#deferred-work-notice-safe-edit-text-model-and-line-ending-semantics). Deduplicate against existing safe-edit work before assigning scope.
+
+### D-VAL-03 — Establish and remediate the active-documentation link baseline
+
+**Disposition:** Deferred outside issue #460 by explicit owner decision on 2026-09-27. Coordination owns triage and creation of a separate issue; no follow-up issue has been created here.
+
+**Suggested issue title:** Establish a Lychee baseline for all active workspace documentation.
+
+**Current boundary:** Lychee 0.24.2 has a distinct, explicitly selected `markdown_link_review` profile. Its configured offline, cache-free, fragment-aware check passed on this validation report after local provisioning. The existing Markdown preflight remains the default scaffold/safe-edit policy and continues to report local missing-file links as warnings. Neither result is a scan of all active documentation. A bounded two-document review already found nine missing local file targets in `deferred-work.md`, recorded with exact URLs and lines in the cached Lychee result above; these are real negative documentation evidence for D-VAL-03, not grounds to describe that selection as green. The pinned dependency must also be provisioned in every execution environment where this optional profile is expected to run.
+
+**Follow-up scope:** Inventory authoritative active documentation and explicitly separate archived, generated and other out-of-scope paths. Run the native Lychee profile over that inventory in bounded selections, retaining complete cached result resources and distinguishing checked local links from excluded external or `pgmcp:` references. Triage and repair broken local paths and fragments; record justified exclusions and any tool or Windows selection limits rather than treating unavailable runs as passes. Verify the final active-documentation selection and decide, with the owner, whether and where this profile should become a required workflow or CI gate. Preserve the separate light Markdown preflight unless a new approved policy changes it. Coordinate large-selection adapter limitations with D-VAL-01 without assuming its resolution or broadening generic contracts.
+
+**Issue-460 consequence:** The single successful live document probe proves availability and bounded behavior only. No broad link baseline, cleanup of existing documentation links, or gate promotion belongs to #460; the deferred work does not change the required V460.1–V460.5 assessment or imply documentation-wide green status.
+
+**Coordination hand-off:** Create the separate issue from this notice and link to the live probe above, the [approved optional-link Design](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking), and the [deferred-work register](deferred-work.md#deferred-work-notice-active-documentation-lychee-baseline).
 
 ## Related Documents
 

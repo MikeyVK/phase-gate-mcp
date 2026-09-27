@@ -3,7 +3,7 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
-**Version:** 1.16  
+**Version:** 1.17  
 **Last Updated:** 2026-09-27  
 **Originating Issue:** 460
 
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.17 | 2026-09-27 | Record the owner-deferred active-documentation Lychee baseline as D-VAL-03 while retaining the optional live link-review capability |
 | 1.16 | 2026-09-27 | Record owner-deferred safe-edit text-model and line-ending semantics review as D-VAL-02 for a separate coordination-owned issue |
 | 1.15 | 2026-09-07 | Supersede verify_only deferral after explicit human scope expansion; route removal and full validation-policy alignment into the narrow Research amendment |
 | 1.14 | 2026-09-07 | Defer verify_only removal to a separate issue; exclude further mode-specific Design from issue 460 except for evidenced conflicts introduced by its new functionality |
@@ -469,3 +470,13 @@ The authoritative follow-up finding is **D-VAL-02** in [Validation — Deferred 
 The separate issue must begin with Research and an explicit compatibility decision for affected public and internal boundaries, then compare a unified source-span edit plan with alternatives in Design. It should examine all four operations and direct consumers, define observable no-op, newline and `content_changed` semantics, and prove cross-operation invariants rather than add isolated edge-case branches. Preserve validation/write-byte identity, original-byte race protection, and exact whole-file rewrite unless a later approved strategy changes them. Do not silently extend issue #460 or treat this notice as authorization to change the public tool contract.
 
 Coordination should link its new issue to D-VAL-02, the [CY110 completion evidence](planning-rollout.md#cy110-completion-evidence-d1d4-2026-09-27), and the [line-ending Design amendment](design-mutation-validation.md#cy110-line-ending-preservation-amendment-2026-09-27). Validation remains responsible for the current issue's V460.1–V460.5 evidence; any newly observed concrete failure must be reported separately.
+
+## Deferred Work Notice: Active Documentation Lychee Baseline
+
+**Decision:** explicitly deferred outside issue #460 by the human owner on 2026-09-27.
+**Future owner:** coordination, to create and triage a separate PGMCP issue; no follow-up issue has yet been created.
+**Suggested issue title:** Establish a Lychee baseline for all active workspace documentation.
+
+The authoritative finding is **D-VAL-03** in [Validation — Deferred Work](validation.md#d-val-03--establish-and-remediate-the-active-documentation-link-baseline). Lychee 0.24.2 now runs through the explicit `markdown_link_review` profile on this host; the focused validation-report probe passed with 37 local successes, 39 excluded links and zero errors (`pgmcp://cache/runs/24b4fd0f7dfe41ac80a05bc87b4d745b`). A bounded two-document profile run then found nine missing local file targets in this deferred-work register, with exact target URLs and source lines (`pgmcp://cache/runs/bdd03cb6353245bbbfcf8ee06e367e52`). It failed as expected for those concrete links and is not a baseline for all active documentation. Its offline setting does not verify external URLs, and each host that uses the optional profile must provision the declared native prerequisite.
+
+The future issue must define the active-documentation inventory, run bounded native checks, classify and repair local-path and fragment failures, document justified exclusions, and prove the final selected inventory. It must decide separately whether a workflow or CI gate should require this profile. Coordinate any large-selection limitations with D-VAL-01; do not change the generic adapter contracts or silently replace the lightweight Markdown preflight. Coordination should link the new issue to D-VAL-03 and the approved [Markdown/Lychee Design boundary](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking).
