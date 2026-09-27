@@ -1667,9 +1667,17 @@
                 {
                   "id": "CY110.D2",
                   "description": "Native Ruff lint/format on these exact files passes; affected proxy, phase, and cycle tests pass, including transport-byte assertions where present. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy110."
+                },
+                {
+                  "id": "CY110.D3",
+                  "description": "Within the same CY110, preserve existing CRLF/LF/CR terminators in unchanged spans for targeted safe_edit_file operations. Owner-approved 2026-09-27 Research/Design amendment. Exact write-set: mcp_server/core/interfaces/file_writer.py, mcp_server/utils/atomic_file_writer.py, mcp_server/services/edit_construction.py, mcp_server/services/edit_operation.py, mcp_server/bootstrap.py, tests/mcp_server/integration/test_edit_operation_v3.py; add tests/mcp_server/unit/services/test_edit_construction.py only for a durable pure mapping edge. Preserve public tool inputs/outputs, exact rewrite, UTF-8, race guard, validation policy, and logical content_changed. Details and rollback: docs/development/issue460/planning-rollout.md#cy110."
+                },
+                {
+                  "id": "CY110.D4",
+                  "description": "Establish RED for the current CRLF defect, then GREEN for CRLF replace/append/pattern replacement, mixed-source untouched terminators, no-match identity, exact rewrite, and check-input/write-byte agreement. Run focused tests and native exact-file Ruff format/lint/Mypy/Pyright. Verify phase_state_engine.py retained original CRLF and 3 added/5 removed semantic lines. Four-worker full suite and branch gates remain Validation work. Independent QA decides progression. Details: docs/development/issue460/planning-rollout.md#cy110."
                 }
               ],
-              "exit_criteria": "Stop on behavior-changing lint fixes, an unlisted write, or failed affected tests. Independent QA decides progression."
+              "exit_criteria": "Stop on public contract change, out-of-set write, whole-file newline churn, weakened race guard, failed affected tests, or unresolved Research/Design contradiction. CY110.D1\u2013D4 and exact scoped evidence required; independent QA decides progression."
             }
           ]
         },

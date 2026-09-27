@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": 110,
   "last_cycle": 110,
   "cycle_history": [
@@ -898,6 +898,14 @@
       "to_phase": "design",
       "timestamp": "2026-09-27T06:21:37.084112+00:00",
       "human_approval_message": "User-approved CY110 line-ending preservation strategy, 2026-09-27; bounded research amendment committed as bc8d1ab.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-09-27T06:23:08.903461+00:00",
+      "human_approval_message": "User explicitly authorized CY110 line-ending preservation; Research and Design amendments committed.",
       "forced": false,
       "skip_reason": null
     }
