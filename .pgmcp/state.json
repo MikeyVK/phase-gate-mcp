@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "documentation",
   "current_cycle": 113,
   "last_cycle": 113,
   "cycle_history": [
@@ -988,6 +988,14 @@
       "to_phase": "validation",
       "timestamp": "2026-09-27T19:17:38.304418+00:00",
       "human_approval_message": "Owner requested completion of Validation; independent QA issued GO for final Implementation cycle CY113 on 2026-09-27.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-09-27T19:47:18.460981+00:00",
+      "human_approval_message": "2026-09-27 owner approval: 'Expliciete uitzondering voor #460' for missing native branch-gate evidence caused by WinError 206 / ENAMETOOLONG. The gate remains unavailable (not PASS); full eight-worker suite and bounded active checks passed. Independent QA issued GO for Validation \u2192 Documentation solely under this recorded exception. D-VAL-01 retains adapter repair and exact branch-coverage follow-up.",
       "forced": false,
       "skip_reason": null
     }
