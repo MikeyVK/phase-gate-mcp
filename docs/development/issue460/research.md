@@ -549,6 +549,15 @@ This matrix classifies the primary nature and issue-460 disposition of every fin
 18. An existing workspace without a component checkpoint never treats actual as adopted by assumption: automatic bootstrap requires reliable equality evidence, while unavailable or untrusted evidence preserves actual bytes, leaves candidate non-authoritative, and requires an explicit owner checkpoint decision before renewal selection or activation.
 19. PGMCP generic server code contains no language, file-extension, test-framework, fixer-command, or parser dispatch for executable tooling: one resolved adapter catalog provides shared packaging and process infrastructure, while `check`, `test`, and `fix` retain separate versioned contracts and authorization boundaries.
 
+### CY110 line-ending strategy amendment (approved 2026-09-27)
+
+| Boundary | Options and impact | Approved Strategy |
+|---|---|---|
+| Existing-file targeted edits (replace, append, pattern_replace) | Universal-newline normalization is simple but silently rewrites every CRLF/mixed terminator and obscures the semantic diff. Preserving original terminators adds local construction complexity but avoids unrelated byte changes for callers and reviewers. | Preserve each untouched original line terminator; new or replaced logical newlines follow the file's established convention. Do not change the public operation contract or use a compatibility bridge. |
+| Explicit whole-file rewrite | Implicitly translating the submitted content would change the caller's byte-level intent and existing tests. | Keep the caller-supplied UTF-8 text exact, including its submitted line endings. |
+
+The owner explicitly approved this refinement for CY110 on 2026-09-27, together with restoration of the original CRLF convention in mcp_server/managers/phase_state_engine.py. Expected results: a targeted edit on CRLF or mixed-terminator input changes only requested content, retained spans keep their original terminators, validation observes the bytes intended for persistence, and the existing no-clobber guard remains effective. Existing tests cover exact rewrite and the guard but do not cover preservation under targeted edits; this is a bounded coverage gap. The affected seam is the original-file snapshot, logical edit construction, validation input, and checked writer; scope excludes Git-wide line-ending policy and unrelated adapters.
+
 ## Approved Strategy and Decision Status
 
 The table below is the canonical strategy and status register. Supporting rationale and option analysis live in [Research Findings](research-findings.md). A row marked pending is not binding input for Design.

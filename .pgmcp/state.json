@@ -3,9 +3,9 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "implementation",
+  "current_phase": "research",
   "current_cycle": 110,
-  "last_cycle": 109,
+  "last_cycle": 110,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -672,7 +672,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "CY108 durable original-process-handle RED evidence found three confirmed-stop outcomes returning while original children remain unsignaled; the existing CY108 stop condition explicitly requires a scoped runtime Planning amendment before production edits.",
+  "skip_reason": "CY110 discovered that safe_edit_file normalizes existing CRLF/mixed endings; the approved design explicitly excluded EOL preservation. User now explicitly authorizes extending this same cycle to preserve line-ending convention and restore phase_state_engine.py. Reopen the affected Research/Design/Planning boundary before implementation.",
   "issue_title": "Audit scaffolding schema-template rendering contracts",
   "parent_branch": "main",
   "created_at": "2026-08-22T19:45:36.738143+00:00",
@@ -884,8 +884,16 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-09-27T06:20:25.091338+00:00",
+      "human_approval_message": "User, 2026-09-27: 'Mee eens, met name het herstellen van phase state engine en het behouden van regeleinde conventie door safe edit, dit wil ik expliciet in deze cycle opgelost hebben.'",
+      "forced": true,
+      "skip_reason": "CY110 discovered that safe_edit_file normalizes existing CRLF/mixed endings; the approved design explicitly excluded EOL preservation. User now explicitly authorizes extending this same cycle to preserve line-ending convention and restore phase_state_engine.py. Reopen the affected Research/Design/Planning boundary before implementation."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
