@@ -53,8 +53,9 @@ pip install -e .
 # Initialize local workspace configuration and templates (for new projects)
 pgmcp --init
 
-# Upgrade an existing workspace configuration to match server v2.0.0
-# (For a detailed step-by-step upgrade guide, see docs/setup/workspace-upgrade.md)
+# Renew the managed template suite in an existing workspace; owner-managed
+# configuration is preserved. Review checkpoint_required before taking action.
+# See docs/setup/workspace-upgrade.md for the owner-led migration procedure.
 pgmcp --upgrade
 ```
 

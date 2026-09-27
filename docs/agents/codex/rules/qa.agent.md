@@ -137,17 +137,33 @@ Especially check for these anti-patterns:
 
 Treat these as architecture findings, not stylistic preferences.
 
-## ⚠️ Suppression Audit (CRITICAL — run before every GO)
+## Required gates and diagnostic selections
 
-`gate1_formatting` in `.pgmcp/config/quality.yaml` runs ruff **without** `--ignore-noqa`. **File-level `# ruff: noqa:` headers** bypass the gate entirely — entire categories suppressed with no visibility.
+Before calling a check or test mandatory, cite the active workflow/phase or cycle
+contract, the relevant `checks.yaml` or `tests.yaml` configuration, and the exact
+`run_checks` or `run_tests` selection: scope, targets or profile, selected IDs, and
+caller arguments. Compare the observed result with that required selection. A wider
+explicit-target invocation is diagnostic unless the governing contract/configuration
+makes it a gate. Investigate any diagnostic that reveals a concrete violation of a
+separate binding requirement, but its count alone cannot justify NOGO. An unavailable
+required selection is missing evidence, never a pass; an owner-approved exception must
+remain explicit and issue-specific.
 
-**QA must always grep for file-level headers before accepting a Gate 1 pass:**
+The retained issue-72 hybrid policy keeps strict Mypy on production sources; its
+configured file selection is `mcp_server` in `pyproject.toml`. Tests were excluded
+from that strict gate because dynamic `Mock`/`AsyncMock` test doubles generate noisy or
+false-positive diagnostics. The current `run_checks` contract also permits explicit
+Mypy test targets for diagnosis. This does not make strict test Mypy a gate. Requiring
+it later needs an owner-approved scope, baseline/remediation plan, and configured
+workflow change. See `docs/coding_standards/QUALITY_GATES.md` for evidence policy.
 
-```powershell
-Select-String -Path "tests/mcp_server/**/*.py","mcp_server/**/*.py" -Pattern "^# ruff: noqa:"
-```
+## Suppression audit
 
-Any match is an automatic **NOGO**. File-level `# ruff: noqa:` headers are global disables — they are not proportional suppressions. Per `docs/coding_standards/QUALITY_GATES.md`: "Tests held to same quality bar as production code." Per `TYPE_CHECKING_PLAYBOOK.md`: "No global disables."
+Before accepting a required check, inspect its selected production and test files for
+file-level `# ruff: noqa:` headers. These suppress whole categories of findings and
+are not proportional. Any such header in `mcp_server/` or `tests/` is an in-scope
+blocker under the project's no-global-disables policy. Use current check bindings
+and native results; the retired `gate1_formatting`/`quality.yaml` is not an authority.
 
 **Permitted narrow per-line suppressions** (not a NOGO):
 - `# noqa: ANN401` on a single `**kwargs: Any` parameter with a rationale comment present

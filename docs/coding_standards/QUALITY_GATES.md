@@ -26,7 +26,22 @@ Use the narrowest selection that supports the claim being made:
 - `apply_fixes` requires explicit workspace-relative file targets and selected fix IDs.
 
 Inspect current tool schemas for admitted IDs and defaults. Native arguments keep their
-adapter-defined meanings. A fix is a mutation, not evidence that the resulting files
+adapter-defined meanings. Before calling a selection a required gate, identify the active
+workflow or phase contract, the relevant workspace configuration, and the exact tool call:
+scope, targets or profile, selected check or test IDs, and any caller arguments. A wider
+explicit-target call is diagnostic unless that authority requires it. Its findings still
+need investigation when they reveal a concrete violation of another binding contract;
+the diagnostic count alone is not a gate failure. An unavailable required selection is
+missing evidence, not a pass.
+
+The current strict Mypy gate is configured for production sources: `pyproject.toml`
+sets `files = ["mcp_server"]`. The issue-72 hybrid policy deliberately excluded tests
+from strict Mypy because dynamic `Mock` and `AsyncMock` usage produced noisy or false
+positives. `run_checks` can still request native Mypy on explicit test targets for
+diagnosis; that capability does not make test Mypy mandatory. Making it a required
+gate needs an owner-approved scope, baseline and remediation plan, followed by an
+explicit workflow/configuration change. Do not use global disables to suppress
+individual findings. A fix is a mutation, not evidence that the resulting files
 satisfy checks; review its results and affected files, then choose a suitable recheck.
 
 ## Interpreting outcomes
