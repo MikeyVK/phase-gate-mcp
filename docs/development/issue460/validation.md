@@ -2,8 +2,8 @@
 
 # Issue 460 Refactor Validation
 
-**Status:** Revalidation completed with failures and evidence gaps; independent review requested
-**Version:** 1.4
+**Status:** Fresh full-suite revalidation completed; concrete findings and evidence limits remain; independent review requested
+**Version:** 1.5
 **Last Updated:** 2026-09-27
 
 
@@ -13,16 +13,16 @@ Record observed validation evidence and blocking gaps without declaring independ
 
 ## Scope In
 
-Authoritative plan/strategy review, accepted deferral reconciliation, bounded structural inspection, complete configured test selection executed in four nonoverlapping partitions, branch checks and diagnostic directory checks. The current revalidation below supersedes earlier execution status; earlier sections retain historical provenance.
+Authoritative plan/strategy review, accepted deferral reconciliation, structural and host-carrier audits, one complete configured eight-worker suite, branch checks and diagnostic configured/targeted checks. The 2026-09-27 current validation pass supersedes earlier execution outcomes; earlier sections retain historical provenance.
 
 ## Scope Out
 
-Production/test repairs, deferred adapter redesign, external-workspace migration, release, merge and phase progression. Test-environment dependencies were corrected during the follow-up investigation below; configured test defaults, exclusions and the local 300-second client deadline remain in force.
+Production/test repairs, deferred adapter redesign, external-workspace migration, release, merge and phase progression. Test-environment dependencies were corrected during the historical follow-up investigation below; configured test defaults, exclusions and the local 300-second client deadline remain in force.
 
 ## Prerequisites
 
-- Research Approved Strategy, Design package contracts, Planning and the stored 105-cycle plan remain binding.
-- Implementation evidence is indexed by the cycle cards; CY105 records focused tests and a pre-existing failed Mypy gate. Those historical claims are not a fresh full-suite result.
+- Research Approved Strategy, Design package contracts, Planning and the completed 110-cycle plan remain binding.
+- Implementation evidence is indexed by CY001–CY110 cycle cards; the current full-suite and gate outcomes are recorded below, with older cycle and validation results retained as provenance.
 
 
 
@@ -45,6 +45,46 @@ FAIL
 Refactor issue #460, branch refactor/460-audit-scaffolding-schema-template-contracts. V460.1–V460.5 remain the binding completion obligations. The phase is validation; no production repair or strategy change is authorized by this report.
 
 
+
+## Current validation pass — 2026-09-27
+
+This section supersedes the earlier execution outcomes below. The previous investigations and proposed CY106–CY110 repairs remain provenance, not current failures. The post-CY110 implementation was the subject of this pass; no production or test code was changed in Validation.
+
+### Required native execution
+
+| Selection | Observed native result | Cached operation |
+|---|---|---|
+| `run_tests(scope="configured", tests=["python_tests"], timeout_seconds=300)` | Pytest 9.0.2 created 8/8 workers, selected 2,621 items, **2,619 passed, 1 skipped, 1 XPASS**, 229 warnings, exit 0 in 263.17s. No adapter deadline, output truncation or termination problem. | `pgmcp://cache/runs/8d7546fe155e4650b5ce21919ac39e85` |
+| `run_checks(scope="branch", checks=["python_format","python_lint","python_types","python_pyright"], timeout_seconds=300)` | **Incomplete:** Ruff format/lint and Mypy could not launch with WinError 206 (command line too long); Pyright could not launch Node with ENAMETOOLONG. All four native results are unavailable, not passed. | `pgmcp://cache/runs/717c617a2df74907a61db48009b18c88` |
+
+The full-suite XPASS is `test_server_renders_exclusion_note_in_response` in `tests/mcp_server/unit/managers/test_enforcement_runner_unit.py`. After Pytest's successful exit, a restart-tool unit test also emitted a `Task exception was never retrieved` / `SystemExit(42)` message. These are observable caveats, not additional failed test cases. The suite includes 159 passing shipped-adapter integration cases, 65 public V3 check/test/fix/scaffold/edit cases, three cache-fidelity cases, installed-distribution, startup, cut-over, activation and renewal coverage. The full cache is the authoritative item-level record.
+
+Supplemental calls distinguish usable coverage from the unavailable branch gate:
+
+- `run_checks(scope="configured", checks=["python_types"])`: Mypy 1.19.1 passed all 184 configured production source files (`pgmcp://cache/runs/87919580eb9542778204282046ab5125`).
+- `run_checks(scope="configured", checks=["python_format","python_lint","python_pyright"])`: Pyright 1.1.408 passed 184 production files with zero errors or warnings. Ruff format reported 469 already formatted files but ended unavailable on Windows access denied (os error 5). Ruff lint reported 130 T201 diagnostics confined to four archived demo files under `docs/development/archive/issue52` and `issue72`, alongside the access warning (`pgmcp://cache/runs/1d775fba69a64840959d21daf86b5730`).
+- Targeted `mcp_server, tests/mcp_server` Ruff format/lint passed: 459 already formatted files and all lint checks passed (`pgmcp://cache/runs/5e9978e6e57f42eeb702f3ae146baa9a`). Targeted `scripts` Ruff format/lint passed: one formatted file and all lint checks passed (`pgmcp://cache/runs/e7b96f2e21904d3da0966117cc578a2c`). These selections are narrower than the required branch gate.
+- Targeted `mcp_server, tests/mcp_server` Pyright passed 461 files. Mypy reported 1,183 errors in 101 of those 461 files; all reported diagnostic lines were under `tests/`, with zero production diagnostic lines (`pgmcp://cache/runs/b03b0513f17b45b891310c25d4a0eec4`). Baseline attribution for this expanded test-type selection is not established. It does not negate the passing configured production Mypy gate, and it is not silently covered by D-VAL-01.
+
+### V460.1–V460.5 evidence and open boundaries
+
+| Obligation | Current assessment |
+|---|---|
+| V460.1 exact structural closure | The ownership ledger has contiguous unique C001–C126, T001–T151, A001–A079 and S001–S057 rows with no cross-register duplicate. Current files: C 74 present/52 absent, T 26/125, A 0/79, S 52/5. The five absent S paths have retirement dispositions; C084 and remaining retired package initializers are docstring-only. Bounded active-runtime search found no retired scaffolding/validation/quality imports or old template/config paths. All 121 new template-suite files are enumerated in the proposed-new register. The register actually has 288 unique existing proposed paths, whereas its prose says 279 originals plus one CY059 addition; reconcile the eight-path provenance discrepancy (F-VAL-06). Retained-assertion semantics and the dependency-direction review below still need independent judgment. |
+| V460.2 native, consumer and public behavior | The single passing full suite includes native adapter integration, public V3 check/test/fix/scaffold/edit routes and cache-fidelity tests; no new failure was observed. Prior cycle evidence and the full item log support this obligation within the tested boundaries. Deferred native option/selection fidelity across nine adapters remains D-VAL-01, not an assertion of complete native semantic conformance. |
+| V460.3 installed package, migration, recovery and rediscovery | The full suite passed the complete installed-distribution test, six target-startup tests, two isolated V3 cut-over tests, ten template-activation tests and nine renewal CLI tests. After the final implementation changes, the active server was restarted; a new process (PID 31568) returned `get_work_context`, health status and live `scaffold_schema(validation_report)` (`pgmcp://cache/runs/51ea607dd0db400d9d3ddc5e8899790f`, `a36d9196598f425fa42fbab85f08b102`, `4685761f8120453c90766c70f9b68bf1`). This proves current client rediscovery and loaded schema availability. The CY072 real cut-over/first migration and historical client demonstration remain separately indexed in Planning/rehearsal; isolated tests and this later reload do not retroactively prove every historical cut-over step. |
+| V460.4 suite and branch gates | Full configured suite passed with native parallel workers and the agreed 300-second deadline. Branch-wide checks remain unavailable under D-VAL-01; supplemental configured/target checks above are not branch-equivalent. The expanded test-Mypy diagnostics require explicit baseline/quality disposition. Do not claim a green branch gate. |
+| V460.5 carriers and instruction parity | All 19 workflow-phase carriers are present. A dedicated four-worker selection passed 2/2 real catalog/schema/render/persist tests (`pgmcp://cache/runs/0b0d508f7b45497b9345836818a49341`); bounded review found no missing carrier or direct phase-meaning contradiction. All eight documented authoritative source/copy pairs are byte-identical on this branch. The sentinel-based tests do not alone certify every natural-language meaning. More importantly, the active host guidance contradicts the live scaffold contract (F-VAL-05), so this obligation cannot be closed merely from parity. |
+
+The eight current byte-identical source/copy mappings are `docs/agents/vscode/copilot/AGENTS.md` → `AGENTS.md`; `docs/agents/codex/AGENTS.md` → `.agents/AGENTS.md`; `docs/agents/codex/reboot.md` → `.agents/reboot.md`; `docs/agents/codex/rules/research.agent.md` → `.agents/rules/research.agent.md`; `docs/agents/codex/workflows/create-issue.md` → `.agents/workflows/create-issue.md`; `docs/agents/codex/rules/qa.agent.md` → `.agents/rules/qa.agent.md`; `docs/agents/vscode/copilot/.github/agents/qa.agent.md` → `.github/agents/qa.agent.md`; and `docs/agents/vscode/copilot/.github/agents/co.agent.md` → `.github/agents/co.agent.md`. The current equality comparison is authoritative for this branch; historical pre-cut-over hashes are not the current comparison basis.
+
+**F-VAL-05 — Active scaffold guidance contradicts the public contract.** At lines 197–205 of `AGENTS.md`, its authoritative source and the Codex/Antigravity copies, six examples pass rejected `name` instead of required `file_name`; the first three additionally use unregistered `artifact_type` values `dto`, `worker` and `tool`. The adjacent “first-class types” list also names several IDs absent from the live `scaffold_schema` enum. The same instructions correctly show `file_name` at line 77, making the conflict internal as well as contractual. `ScaffoldArtifactInput` is strict and requires an exact basename with extension. Correct the authoritative sources and their mapped copies together, then review the other published examples against live schema. This is a current issue-460 DOCFLOW-E05 documentation defect, not deferred adapter work.
+
+**F-VAL-06 — Proposed-path count lacks accurate provenance.** The proposed-new table in `planning-path-ownership.md` lists 288 unique paths and all exist, but its surrounding text still asserts 279 originals plus one addition; the historical V460.1 paragraph in this report says 279. Reconcile the table's amendment history and update the count/provenance rather than treating the discrepancy as a missing implementation path.
+
+**Structural review risk, not a confirmed violation.** `mcp_server/core/interfaces/artifact_header_reader.py` and `mcp_server/config/schemas/installation.py` import identity/fingerprint types from `mcp_server/services/artifact_identity.py`, which itself imports the service template graph. This outward dependency deserves explicit review against Design's fixed dependency direction and the architecture principles. The passing suite does not decide that architectural question.
+
+D-VAL-01 retains the adapter invocation/selection and native-semantics audit outside #460; D-VAL-02 retains the safe-edit text-model/line-ending design review outside #460. Neither deferral resolves F-VAL-05, F-VAL-06, the unreviewed architectural boundary, or unavailable branch-gate evidence. Independent QA must assess these exact observations before any phase progression.
 
 ## Follow-up: environment correction and failure diagnosis — 2026-09-26
 
