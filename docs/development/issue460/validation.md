@@ -2,8 +2,8 @@
 
 # Issue 460 Refactor Validation
 
-**Status:** Validation FAIL; later independent QA suite run found one test failure and unresolved branch-gate and architecture evidence
-**Version:** 1.9
+**Status:** Validation FAIL as producer evidence status: the post-CY113 full suite is green, while the required branch gate remains unavailable on Windows; independent Validation review is pending
+**Version:** 2.0
 **Last Updated:** 2026-09-27
 
 
@@ -13,7 +13,7 @@ Record observed validation evidence and blocking gaps without declaring independ
 
 ## Scope In
 
-Authoritative plan/strategy review, accepted deferral reconciliation, structural and host-carrier audits, one complete configured eight-worker suite, branch checks and diagnostic configured/targeted checks. The 2026-09-27 current validation pass supersedes earlier execution outcomes; earlier sections retain historical provenance.
+Authoritative plan/strategy review, accepted deferral reconciliation, structural and host-carrier audits, one complete configured eight-worker suite, branch checks and diagnostic configured/targeted checks. The post-CY113 revalidation below supersedes earlier execution outcomes; earlier sections retain historical provenance.
 
 ## Scope Out
 
@@ -21,8 +21,8 @@ Production/test repairs, deferred adapter redesign, external-workspace migration
 
 ## Prerequisites
 
-- Research Approved Strategy, Design package contracts, Planning and the completed 110-cycle plan remain binding.
-- Implementation evidence is indexed by CY001–CY110 cycle cards; the current full-suite and gate outcomes are recorded below, with older cycle and validation results retained as provenance.
+- Research Approved Strategy, Design package contracts, Planning and the completed 113-cycle plan remain binding.
+- Implementation evidence is indexed by CY001–CY113 cycle cards; the post-CY113 suite and gate outcomes are recorded below, with older results retained as provenance.
 
 
 
@@ -46,9 +46,34 @@ Refactor issue #460, branch refactor/460-audit-scaffolding-schema-template-contr
 
 
 
-## Current validation pass — 2026-09-27
+## Post-CY112/CY113 revalidation — 2026-09-27
 
-This section supersedes the earlier execution outcomes below. The previous investigations and proposed CY106–CY110 repairs remain provenance, not current failures. The native suite and branch-check evidence was captured after CY110. CY111 subsequently corrected five agent-documentation files only; no production or test code changed, so those native observations remain fresh for the changed-code surface. CY111's documentation evidence and the owner policy disposition are recorded below.
+This is the current producer assessment. CY112 and CY113 received independent Implementation GO before the branch returned to Validation; their evidence and exact write sets are in [planning-rollout.md](planning-rollout.md#cy112). The 136 pre-existing untracked installation/backup files were excluded from those commit-bound reviews by the owner. No new production or test repair is proposed by this section.
+
+### Native suite and quality selections
+
+| Invocation | Native result | Complete operation |
+|---|---|---|
+| `run_tests(scope="configured", timeout_seconds=300)` | Pytest 9.0.2 created **8/8 workers**, selected 2,621 items, and exited 0: **2,619 passed, 1 skipped, 1 XPASS**, 229 warnings in 235.83s. Capture was not truncated; there was no adapter deadline or termination problem. The previously failing late-child PID case passed. | `pgmcp://cache/runs/d3a193aa349b47d5a04859ee8e975a20` |
+| `run_checks(scope="branch", timeout_seconds=300)` | **Incomplete, not passed:** Ruff format/lint and Mypy were unavailable before launch with WinError 206; Pyright was unavailable before launch with Node ENAMETOOLONG. The branch selector reported 266 removed paths, but the DTO does not expose a complete runnable current-target inventory or per-check coverage. | `pgmcp://cache/runs/7b809cda0dfe42ce8f4488f6da9f1648` |
+| `run_checks(scope="configured", timeout_seconds=300)` | Mypy 1.19.1 passed **185 configured production files**; Pyright 1.1.408 passed **185** with zero diagnostics. Ruff-format saw **470 already formatted files** but returned unavailable on Windows access denied (os error 5). Ruff-lint failed on **130 T201 print diagnostics** in three archived demo files under `docs/development/archive/issue52` and `issue72`, with the same access warning. Those three paths are absent from the #460 branch diff; this selection is not the required branch result. | `pgmcp://cache/runs/db6c771c5c2f49cb94a20394015fd829` |
+| Bounded active-source targets | Ruff format/lint passed for `mcp_server` plus `tests/mcp_server` (459 formatted files); Pyright passed 462 files with zero diagnostics. Ruff format/lint and Pyright also passed on `scripts` (one file) and `tests/conftest.py` (one file). These checks cover the principal active Python trees and the changed root test fixture; they are **supplemental**, not proven branch-selection equivalence. | `pgmcp://cache/runs/dbeb19544d84442fa2a0e66439abdc62`, `pgmcp://cache/runs/d3bfc52b39e44039abc28b8537fb1493`, `pgmcp://cache/runs/18ebd98a18ac4458807a6010a05eb979` |
+
+The one XPASS and the post-suite `SystemExit(42)` task-exception log match the earlier full-suite caveats; Pytest still exited 0. The changed CY113 process selection independently passed three producer and three QA runs of 27 tests with four workers, with exact-file Ruff/Mypy/Pyright green. A green suite is evidence for the selected behavior, not proof that the unlaunched branch check ran.
+
+### Structure, public behavior and active client
+
+- **V460.1:** The frozen C/T/A/S census and old 288-path proposed-new reconciliation remain as previously reviewed. CY112 added exactly one planned maintained source, `mcp_server/schemas/template_identity.py`, so the cumulative proposed-new count is **289**; the [ownership supplement](planning-path-ownership.md) records its owner without rewriting the older 279-versus-288 provenance. Independent CY112 QA verified one canonical validator, identical `ArtifactIdentity`/`TemplateCheckpoint`/`TemplateManifest` schema hashes, and a fresh import of the core/config consumers that loads neither the identity service, template graph nor Jinja. The former architecture-risk paragraph below is historical, resolved by CY112.
+- **V460.2:** The full suite includes the native-adapter, public V3, cache and mutation-contract cases already mapped below. A live `scaffold_schema(generic_doc)` call returned the required `title`, `purpose`, `summary` context schema. The owner-approved temporary-directory `scaffold_artifact` probe wrote `temp/issue460-scaffold-probe-20260927.md`: compact text and the full DTO agreed on output path, template ID, version, fingerprint, `written=True` and passed Markdown validation; the actual file contains those header facts and the authored fields. A second call omitting `summary` returned `context_invalid`, attached the context schema, recorded the exact required-property error in its cached DTO, and wrote no file. Resources: `pgmcp://cache/runs/252ed54fec2f41f0b739b0c2f497739a`, `pgmcp://cache/runs/6c65a60559aa4271a926726ad5616598`, `pgmcp://cache/runs/e7dde47f99f546ef97fe011d4a505732`. D-VAL-04 remains a bounded deferred route audit, not a claim that all affected routes have been live-probed. A focused Lychee 0.24.2 check of this updated report passed: 80 extracted links, 41 local successes, 39 configured exclusions and zero errors (`pgmcp://cache/runs/54768b25e3fd4219aff82f03fa6afe2b`). This does not replace D-VAL-03's broad active-documentation baseline.
+- **V460.3:** The fresh full suite includes installed-distribution, startup, cut-over and renewal coverage. After the CY112 code edit, `restart_server` completed; a new server process (PID 21048) returned Validation work context, `health_check=healthy` (version 2.0.0 on win32) and the live `validation_report` context schema. Resources: `pgmcp://cache/runs/c170bc1872eb41feaf5483343411a7a8`, `pgmcp://cache/runs/8978f5b0a65d4256bc24e8de25e78828`, `pgmcp://cache/runs/9bd31d9eeaa845b8aee4252d98385e04`. The restart expired prior in-memory run caches, so each earlier URI is retained as an evidence index rather than a promise that another chat can still fetch it. Historical cut-over/client reconnection provenance remains in the earlier rehearsal and QA record; the latest client reload confirms current rediscovery, not a replay of that historical event.
+- **V460.4:** The required complete suite is now green. The exact branch gate remains **unavailable** because its native command lines exceed Windows limits; D-VAL-01 owns that adapter repair. The configured Ruff archive findings and access failure remain visible, while the active-tree selections and configured production typing results provide bounded evidence. There is no assertion of exact branch-gate equivalence or a green branch check. The owner previously stated that missing green-check proof alone is not proof of a code defect; independent Validation QA must judge whether this explicit evidence limitation can be accepted for #460.
+- **V460.5:** CY112/113 changed no workflow carrier or mapped instruction source/copy pair. The earlier independent review of nineteen carriers and eight byte-identical pairs remains applicable; CY111's active scaffold guidance correction remains in place. No new semantic claim is inferred from sentinel counts.
+
+**Producer status: FAIL pending independent Validation review.** The new suite and architecture findings are resolved, but the phase instruction requires an honest failure status while the mandatory branch invocation cannot run. This is an evidence limitation, not an observed regression in the active code. D-VAL-01 through D-VAL-04 retain their expressly bounded follow-up scopes; the owner has not authorized a broad live mutation audit of `safe_edit_file` or `apply_fixes`. Documentation phase still owns DOC-VAL-01's explicit configured-gate-versus-diagnostic guidance if Validation advances. Independent QA alone may determine GO/NOGO and any accepted disposition of the unavailable branch gate.
+
+## Earlier validation pass before CY112/CY113 — 2026-09-27
+
+At the time of this earlier pass, this section superseded older execution outcomes below it. The previous investigations and proposed CY106–CY110 repairs remain historical provenance, not current findings. The native suite and branch-check evidence was captured after CY110. CY111 subsequently corrected five agent-documentation files only; no production or test code changed, so those native observations remain fresh for the changed-code surface. CY111's documentation evidence and the owner policy disposition are recorded below.
 
 ### Required native execution
 
