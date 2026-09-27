@@ -270,8 +270,13 @@ def _source_preserving_text(original: OriginalFileSnapshot, patches: tuple[_Edit
 
 @singledispatch
 def _physical_text(
-    _operation: object, original: OriginalFileSnapshot, patches: tuple[_EditPatch, ...]
+    _operation: object,
+    original: OriginalFileSnapshot,
+    patches: tuple[_EditPatch, ...],
+    logical_text: str,
 ) -> str:
+    if logical_text == original.original_text:
+        return original.original_source_text
     return _source_preserving_text(original, patches)
 
 
@@ -280,6 +285,7 @@ def _rewrite_physical_text(
     operation: RewriteOperation,
     _original: OriginalFileSnapshot,
     _patches: tuple[_EditPatch, ...],
+    _logical_text: str,
 ) -> str:
     return operation.content
 
@@ -289,9 +295,10 @@ def construct_edit_proposal(
 ) -> EditProposal:
     """Construct logical and physical text from the same exact operation spans."""
     patches = _patches(operation, original.original_text)
+    logical_text = _apply_patches(original.original_text, patches)
     return EditProposal(
-        logical_text=_apply_patches(original.original_text, patches),
-        physical_text=_physical_text(operation, original, patches),
+        logical_text=logical_text,
+        physical_text=_physical_text(operation, original, patches, logical_text),
     )
 
 
