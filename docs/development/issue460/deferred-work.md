@@ -3,7 +3,7 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
-**Version:** 1.17  
+**Version:** 1.18  
 **Last Updated:** 2026-09-27  
 **Originating Issue:** 460
 
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.18 | 2026-09-27 | Record the owner-requested full public-tool behavior audit and its first concrete Git branch-listing seed as D-VAL-04 |
 | 1.17 | 2026-09-27 | Record the owner-deferred active-documentation Lychee baseline as D-VAL-03 while retaining the optional live link-review capability |
 | 1.16 | 2026-09-27 | Record owner-deferred safe-edit text-model and line-ending semantics review as D-VAL-02 for a separate coordination-owned issue |
 | 1.15 | 2026-09-07 | Supersede verify_only deferral after explicit human scope expansion; route removal and full validation-policy alignment into the narrow Research amendment |
@@ -480,3 +481,13 @@ Coordination should link its new issue to D-VAL-02, the [CY110 completion eviden
 The authoritative finding is **D-VAL-03** in [Validation — Deferred Work](validation.md#d-val-03--establish-and-remediate-the-active-documentation-link-baseline). Lychee 0.24.2 now runs through the explicit `markdown_link_review` profile on this host; the focused validation-report probe passed with 37 local successes, 39 excluded links and zero errors (`pgmcp://cache/runs/24b4fd0f7dfe41ac80a05bc87b4d745b`). A bounded two-document profile run then found nine missing local file targets in this deferred-work register, with exact target URLs and source lines (`pgmcp://cache/runs/bdd03cb6353245bbbfcf8ee06e367e52`). It failed as expected for those concrete links and is not a baseline for all active documentation. Its offline setting does not verify external URLs, and each host that uses the optional profile must provision the declared native prerequisite.
 
 The future issue must define the active-documentation inventory, run bounded native checks, classify and repair local-path and fragment failures, document justified exclusions, and prove the final selected inventory. It must decide separately whether a workflow or CI gate should require this profile. Coordinate any large-selection limitations with D-VAL-01; do not change the generic adapter contracts or silently replace the lightweight Markdown preflight. Coordination should link the new issue to D-VAL-03 and the approved [Markdown/Lychee Design boundary](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking).
+
+## Deferred Work Notice: Full Public-Tool Behavior Audit
+
+**Decision:** owner-requested follow-up investigation outside issue #460 on 2026-09-27.
+**Future owner:** coordination, to create an audit issue and route confirmed repairs to bounded tool-family issues; no follow-up issue has yet been created.
+**Suggested issue title:** Audit daily-use behavior and resource evidence across the public PGMCP tool catalog.
+
+The authoritative scope and first observations are **D-VAL-04** in [Validation — Deferred Work](validation.md#d-val-04--audit-everyday-behavior-across-the-full-public-tool-catalog). The current catalog contains 49 public tools. The #460 refactor changed shared registration/admission/presentation/cache behavior and replaced six V3 scaffold/edit/quality routes, so a few passing non-mutating calls are only a sample. The first concrete seed is `git_list_branches`: native worktree `+` markers appear as fabricated `+` branch records and, in verbose mode, shift the real branch name into `commit_hash` (`pgmcp://cache/runs/44be0998d88b4d919726c96e592a0dc9`, `pgmcp://cache/runs/a909aa78a1cf421d95f602479450888d`). Whether this predates #460 must be established before attributing it to the refactor. The lightweight Markdown preflight's angle-wrapped-link warnings overlap the existing D-VAL-01 adapter-semantic audit, and the broad Lychee baseline remains D-VAL-03.
+
+The audit should map all 49 tools to supported inputs, compact response, complete resource DTO, actionability of negative/error results and actual side effects. Use live read-only routes where safe and isolated disposable workspaces or controlled remotes/doubles for mutating Git, workflow and GitHub routes; do not exercise them against the active issue branch or real GitHub state merely to fill a matrix. Reuse genuine integration evidence and file separate, scoped repair issues only for demonstrated behavior gaps. This follow-up does not relax the current #460 Validation obligations or grant a blanket GO.
