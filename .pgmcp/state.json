@@ -3,8 +3,8 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "planning",
-  "current_cycle": 110,
+  "current_phase": "implementation",
+  "current_cycle": 111,
   "last_cycle": 110,
   "cycle_history": [
     {
@@ -660,6 +660,12 @@
       "name": "Resolve production-source Ruff lint debt",
       "forced": false,
       "entered": "2026-09-26T20:45:30.469503+00:00"
+    },
+    {
+      "cycle_number": 111,
+      "name": "Correct active scaffold guidance against the V3 public contract",
+      "forced": false,
+      "entered": "2026-09-27T12:22:30.957467+00:00"
     }
   ],
   "required_phases": [
@@ -932,6 +938,14 @@
       "human_approval_message": "Issue owner on 2026-09-27: 'f-val-05 lijkt me duidelijk die moet je oppakken.'",
       "forced": true,
       "skip_reason": "Validation NOGO F-VAL-05 requires one bounded host-guidance correction cycle. Return from Validation to Planning to record its exact source/copy write set and evidence before implementation; no Research/Design strategy change or gate waiver."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-27T12:22:13.475595+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

@@ -192,18 +192,9 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 
 **NEVER use `safe_edit_file` to create code or documentation from scratch. Always use `scaffold_artifact`.**
 
-| Example Artifact Type | Use Case | Example |
-|---------------|----------|---------|
-| `dto` | Data Transfer Objects | `scaffold_artifact(artifact_type="dto", name="UserDTO", context={...})` |
-| `worker` | Background processors | `scaffold_artifact(artifact_type="worker", name="ProcessWorker", context={...})` |
-| `tool` | MCP tools | `scaffold_artifact(artifact_type="tool", name="MyTool", context={...})` |
-| `research` | Research documents | `scaffold_artifact(artifact_type="research", name="my-research", context={...})` |
-| `design` | Design documents | `scaffold_artifact(artifact_type="design", name="my-design", context={...})` |
-| `reference` | Reference docs | `scaffold_artifact(artifact_type="reference", name="my-reference", context={...})` |
+The live `scaffold_artifact` and `scaffold_schema` input schemas enumerate admitted `artifact_type` values. Select a registered ID there; do not infer an alias from an old example or a filesystem path. Pass `file_name` as the exact output basename, including its extension, and provide `context` matching the selected schema.
 
-These are representative examples, not the complete registry. Current first-class types also include `adapter`, `resource`, `interface`, `service`, `schema`, `generic`, `unit_test`, `integration_test`, `architecture`, `planning`, `validation_report`, `generic_doc`, `commit`, `pr`, and `issue`.
-
-**Registry:** `.pgmcp/templates/config/` defines the authoritative complete set of artifact types and their templates.
+The configured source suite for this workspace is `.pgmcp/template_suite/`. It supplies template packages, while the live tool schema defines which IDs an agent may invoke.
 
 **Schema discovery:** Before calling `scaffold_artifact` with an artifact type whose context fields are not already in your working context, call `scaffold_schema(artifact_type=...)` first. It returns the full JSON Schema for the `context` parameter — required and optional fields — enabling first-time-right scaffolding without a failed call. If you call `scaffold_artifact` with wrong or missing context fields, the error response contains the same schema; use it to correct the call immediately.
 
