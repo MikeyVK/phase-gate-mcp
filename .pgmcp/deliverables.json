@@ -1666,7 +1666,7 @@
                 },
                 {
                   "id": "CY110.D2",
-                  "description": "Native Ruff lint/format on these exact files passes; affected proxy, phase, and cycle tests pass, including transport-byte assertions where present. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy110."
+                  "description": "Native Ruff lint/format on the four exact lint paths passes; affected proxy, phase and cycle tests pass. Record independent path-by-path source equivalence analysis for all five changed proxy stdout/stderr writes, covering stream destination, text, newline, flush and source transformations; existing tests do not assert every transport byte path. Named proof set and V1\u2013V6: docs/development/issue460/planning-rollout.md#cy110."
                 },
                 {
                   "id": "CY110.D3",

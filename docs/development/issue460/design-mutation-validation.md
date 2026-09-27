@@ -865,14 +865,15 @@ feature, cross-process locking protocol or stronger external-writer guarantee.
 
 #### One invocation-local original value
 
-The file-read boundary supplies an immutable original value with two required fields:
+The file-read boundary supplies one immutable original value with three required fields under the CY110 amendment:
 
 | Field | Type | Consumer and invariant |
 |---|---|---|
 | original_bytes | bytes | Exact content basis for the final change guard; no hash, timestamp or size substitution |
-| original_text | str | UTF-8-decoded text for metadata selection, edit construction and checks; derived from those same bytes, preserving the current text-reading/newline semantics |
+| original_text | str | UTF-8-decoded universal-newline logical text for metadata selection and edit matching; derived from the exact original bytes |
+| original_source_text | str | UTF-8-decoded text retaining original CRLF/LF/CR terminators for physical proposal construction; derived from the same original bytes |
 
-Both fields come from one read, not two independently sampled filesystem views. The
+All three fields come from one read, not independently sampled filesystem views. The
 second read at replacement time is a guard only; it never replaces this original value.
 Keep this value internal and invocation-local, not in the public DTO, resource cache,
 manifest, persistent registry or a caller-supplied concurrency token. The header reader's
