@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 112,
-  "last_cycle": 111,
+  "current_cycle": 113,
+  "last_cycle": 112,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -672,6 +672,12 @@
       "name": "Put shared template identity values below the service boundary",
       "forced": false,
       "entered": "2026-09-27T18:42:47.433099+00:00"
+    },
+    {
+      "cycle_number": 113,
+      "name": "Make late-child process test wait for a complete PID",
+      "forced": false,
+      "entered": "2026-09-27T19:09:38.643488+00:00"
     }
   ],
   "required_phases": [

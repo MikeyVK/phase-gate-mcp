@@ -384,11 +384,16 @@ async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
         (lifecycle_case.root / "spawn-late.request").touch()
         deadline = time.monotonic() + 2
         late_pid = lifecycle_case.root / "late.pid"
-        while not late_pid.exists():
+        while True:
             if time.monotonic() >= deadline:
                 raise AssertionError("late child did not start in the stop window")
-            time.sleep(0.005)
-        late_handles.append(_open_process(int(late_pid.read_text())))
+            try:
+                published_pid = int(late_pid.read_text())
+            except (FileNotFoundError, ValueError):
+                time.sleep(0.005)
+                continue
+            break
+        late_handles.append(_open_process(published_pid))
         (lifecycle_case.root / "late.armed").touch()
 
     def terminate_with_spawn(job: WindowsJob) -> None:
