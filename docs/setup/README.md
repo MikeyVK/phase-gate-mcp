@@ -49,15 +49,23 @@ source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -e .
+```
 
-# Initialize local workspace configuration and templates (for new projects)
+For a new server root, initialize its workspace configuration and templates:
+
+```powershell
 pgmcp --init
+```
 
-# Renew the managed template suite in an existing workspace; owner-managed
-# configuration is preserved. Review checkpoint_required before taking action.
-# See docs/setup/workspace-upgrade.md for the owner-led migration procedure.
+For an existing workspace, renew the managed template suite:
+
+```powershell
 pgmcp --upgrade
 ```
+
+Renewal preserves owner-managed configuration. If it reports
+`checkpoint_required`, review the local suite and follow the owner-led procedure in
+the [Workspace Upgrade Guide](workspace-upgrade.md) before choosing an action.
 
 ---
 
