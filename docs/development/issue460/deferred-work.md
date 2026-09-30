@@ -3,8 +3,8 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
-**Version:** 1.18  
-**Last Updated:** 2026-09-27  
+**Version:** 1.19  
+**Last Updated:** 2026-09-30  
 **Originating Issue:** 460
 
 ## Purpose
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.19 | 2026-09-30 | Record D-VAL-05 as a separate first-call concrete-template quality follow-up based on rendered gallery evidence |
 | 1.18 | 2026-09-27 | Constrain D-VAL-04 to issue-460-affected public routes; retain the Git branch-listing observation as a separate general backlog candidate |
 | 1.17 | 2026-09-27 | Record the owner-deferred active-documentation Lychee baseline as D-VAL-03 while retaining the optional live link-review capability |
 | 1.16 | 2026-09-27 | Record owner-deferred safe-edit text-model and line-ending semantics review as D-VAL-02 for a separate coordination-owned issue |
@@ -493,3 +494,12 @@ The authoritative scope is **D-VAL-04** in [Validation — Deferred Work](valida
 Read-only samples already exist for `scaffold_schema`, `run_checks` and `run_tests`; they do not certify every accepted scope or failure. The owner approved a temporary-directory probe for `scaffold_artifact`; acceptable isolated effect-verification routes for `safe_edit_file` and `apply_fixes` remain owner choices before live mutation. `create_issue` uses controlled GitHub doubles unless the owner separately authorizes a real external issue. Compare each affected route's admitted input, compact response, complete cached DTO, actionable errors and actual effect with the approved contract. Reuse genuine public integration evidence and file separate repairs only for demonstrated gaps. Coordinate adapter-specific findings with D-VAL-01 and the broad Lychee baseline with D-VAL-03.
 
 The observed `git_list_branches` worktree-marker parsing defect (`pgmcp://cache/runs/44be0998d88b4d919726c96e592a0dc9`, `pgmcp://cache/runs/a909aa78a1cf421d95f602479450888d`) is a separate general backlog candidate. The changed git adapter does not by itself prove that #460 changed this tool's parser. It is excluded from D-VAL-04 unless a concrete regression trace establishes otherwise. This follow-up does not relax #460 Validation or grant a blanket GO.
+
+
+## Deferred Work Notice: First-Call Template Quality
+
+**Decision:** The owner directed a separate follow-up on 2026-09-30 after reviewing rendered scaffolds; coordination should create an issue and link it to [D-VAL-05](validation.md#d-val-05--improve-first-call-quality-of-concrete-scaffold-templates). No issue has been created here.
+
+The approved scaffold contract proves schema admission, rendering, persistence and selected native syntax preflight. A later 13-artifact gallery showed a distinct quality gap: four generated Python examples passed syntax validation, but all four failed Ruff formatting and two had import-layout lint findings; one generated Pydantic config line exceeded the 100-character lint limit. Mypy and Pyright passed those four. Generic Markdown output had excessive blank lines and mechanical section labels, though a focused link check passed. The complete quality operation is `pgmcp://cache/runs/f0dc68e839394da3b7144f2572e9a9bc`. These examples are ignored local `.pgmcp/temp/` material, not #460 branch content.
+
+The follow-up should survey all shipped concrete template packages with representative schema-valid contexts, attribute failures to templates versus caller-authored content, and decide whether Ruff-clean and editorially polished first output becomes a documented guarantee. Improve template whitespace, import emission, long generated expressions and Markdown presentation as justified by evidence. Preserve the generic scaffold contract and keep syntax preflight distinct from repository gates. The example Pytest assertions were caller-authored tautologies, and TypeScript syntax remained unavailable without its native module; neither observation alone proves a template defect. No issue-460 implementation reopening or retrospective green quality claim follows from this notice.
