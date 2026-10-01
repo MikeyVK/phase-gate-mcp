@@ -444,12 +444,27 @@ def _execute(
         targets: tuple[str, ...] = (input_path,)
     else:
         targets = payload
+    filename_input: bytes | None = None
+    occupied_channel = operation == "selection" and settings.get("files_from") is not None
+    if operation == "selection" and targets and not occupied_channel:
+        try:
+            filename_input = _selection_stdin(targets)
+        except (ValueError, UnicodeError) as exc:
+            return _unavailable("unsupported_input", str(exc), version)
+        command.extend(["--files-from", "-"])
     command.extend(args)
-    command.extend(_escape_selection_targets(targets))
+    if filename_input is None:
+        command.extend(_escape_selection_targets(targets))
     try:
-        completed = subprocess.run(command, capture_output=True, check=False)
+        completed = subprocess.run(command, input=filename_input, capture_output=True, check=False)
     except OSError as exc:
-        return _unavailable("execution_error", f"Lychee execution failed: {exc}", version)
+        limit = (
+            " The effective files-from channel is occupied; positional targets retain "
+            "the native argv launch-size limit."
+            if occupied_channel and targets
+            else ""
+        )
+        return _unavailable("execution_error", f"Lychee execution failed: {exc}.{limit}", version)
     stdout = completed.stdout.decode("utf-8", errors="replace")
     stderr = completed.stderr.decode("utf-8", errors="replace")
     evidence = _native_evidence(stdout, stderr, settings.get("format") == "json")
@@ -488,6 +503,17 @@ def _escape_selection_targets(targets: tuple[str, ...]) -> tuple[str, ...]:
         target = "".join(replacements.get(char, char) for char in target)
         escaped.append(target)
     return tuple(escaped)
+
+
+def _selection_stdin(targets: tuple[str, ...]) -> bytes:
+    """Encode a complete literal list using pinned Lychee's native line grammar."""
+    if any("\r" in target or "\n" in target for target in targets):
+        raise ValueError("Lychee filename stdin cannot represent embedded CR or LF.")
+    escaped = _escape_selection_targets(targets)
+    try:
+        return "".join(target + "\n" for target in escaped).encode("utf-8")
+    except UnicodeError as exc:
+        raise ValueError("Lychee filename stdin requires representable UTF-8.") from exc
 
 
 def main() -> int:

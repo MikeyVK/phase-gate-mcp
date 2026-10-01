@@ -3,7 +3,7 @@
 # Native adapter robustness — implementation planning
 
 **Status:** PLANNING — revised after owner clarification and QA findings; independent re-review requested
-**Version:** 1.1
+**Version:** 1.2
 **Last Updated:** 2026-10-01
 
 ## Purpose
@@ -12,7 +12,7 @@ Sequence the approved correction for issues 469, 474 and 475 into bounded execut
 
 ## Scope In
 
-The Design 1.2 boundary: nine bundled packages/ten roles/thirteen capabilities; direct correction of the existing unreleased adapter contract, PGMCP invocation lifecycle, native completion/version/failure behavior, full native selection transport and proportional cache/report behavior.
+The Design 1.3 boundary: nine bundled packages/ten roles/thirteen capabilities; direct correction of the existing unreleased adapter contract, PGMCP invocation lifecycle, native completion/version/failure behavior, full native selection transport and proportional cache/report behavior.
 
 ## Scope Out
 
@@ -20,8 +20,8 @@ Production/test implementation during Planning; legacy, compatibility/transition
 
 ## Prerequisites
 
-- Research 1.4 Approved Strategy: the owner's development-only B1 refinement supersedes the earlier proposed v2 migration; B2–B6 and replacement B4 remain.
-- Design 1.2 carries the required JSON context and CQS interface without new version admission. Existing contract_version 1 and schema paths remain the identity of the one unreleased contract.
+- Research 1.5 Approved Strategy: the owner's development-only B1 refinement supersedes the earlier proposed v2 migration; B2–B6 and replacement B4 remain.
+- Design 1.3 carries the required JSON context and CQS interface without new version admission. Existing contract_version 1 and schema paths remain the identity of the one unreleased contract.
 - Planning 1.0 received independent QA NOGO on e5794187 for edit-preflight sequencing and Python branch-gate selection. This revision addresses both and requires renewed independent QA; earlier Design GO does not approve the refinement by inheritance.
 - Active initialized issue469 bug branch remains in Planning. Native prerequisites are existing package declarations; no installation or global workflow-policy change is planned.
 
@@ -323,7 +323,8 @@ Real-native large/literal/exclusion/discovery and Lychee content-snapshot regres
 
 #### Obligations
 
-- RF1/RF2/RF6; Research B2. Pyright nonempty selection uses native filename stdin; empty selection retains native configuration discovery.
+- RF1/RF2/RF6; Research 1.5 B2 owner amendment and Design 1.3. Pyright representable nonempty selection uses native filename stdin; reject the complete explicit selection if a filename would be split or trimmed, including ordinary spaces or CR/LF. No argv fallback, escaping or path substitution. Empty selection retains native configuration discovery, including native discovery of space-containing filenames.
+- Preserve Pyright native scalar option values in argv. Refuse effective caller additions/replacements of the owned file channel for nonempty selections. Prove that dangling option values cannot consume the stdin marker and silently switch to discovery.
 - Lychee uses stdin filenames only when that effective native channel is free. If user/config files-from already owns it, preserve the admitted argv route and document its launch-size limitation; do not overwrite user intent.
 - Escape literal paths using pinned native grammar; preserve content-snapshot base/remap, no dropped blank/comment-like entries or newline ambiguity. Adapters never allocate or clean the PGMCP root.
 
@@ -339,7 +340,7 @@ Real-native large/literal/exclusion/discovery and Lychee content-snapshot regres
 
 **Method:** Use existing Lychee files-from/content/base/remap fixtures plus a small effective-channel-conflict and unrepresentable-token control. Keep tests offline/local.
 
-**Expected Result:** No empty stdin replacing discovery, no stolen native channel or silently filtered paths. Supported encodings preserve literals; unsupported cases and the remaining conflicting-channel launch-size limit are explicit.
+**Expected Result:** No empty stdin replacing discovery, no stolen native channel or silently filtered paths. Pyright's owner-approved explicit-space/trim limitation is unsupported_input with no analysis; supported encodings preserve literals. Lychee's occupied-channel launch-size limit remains explicit.
 
 #### Exit Criteria
 
@@ -452,6 +453,10 @@ Retain separate 469/474/475 acceptance/disposition and link @co alignment of iss
 
 **Validates:** null
 
+## Implementation B2 amendment
+
+On 2026-10-01 the owner directed that paths unsupported by Pyright's pinned stdin convention must not be used, after the native space-splitting limit was explicitly raised. Research 1.5 records the strategy decision and Design 1.3 defines the bounded filename-channel contract. C_STDIN must replace earlier explicit-space-success assumptions with native supported-input and explicit-refusal evidence. The existing D4_STDIN/D4_LIMITS descriptions and five-cycle payload still apply; no cycle or new deliverable is added. Review this amendment independently with Implementation evidence; the earlier Planning GO applies to revision 1.1.
+
 ## QA and Owner Disposition
 
 | Input | Current disposition |
@@ -500,3 +505,4 @@ Renewed independent review of the owner's strategy refinement and the two correc
 ### Review Request
 
 Review requested.
+

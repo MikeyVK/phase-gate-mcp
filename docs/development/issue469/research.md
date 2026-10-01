@@ -3,7 +3,7 @@
 # Issue 469 — Native Adapter Robustness and Related Scope Research
 
 **Status:** RESEARCH FINDINGS — B1/B4 amendments human-approved; independent QA pending
-**Version:** 1.4
+**Version:** 1.5
 **Last Updated:** 2026-10-01
 
 ## Purpose
@@ -142,6 +142,22 @@ The human approved this route on 2026-10-01. Execution/effect evidence is record
 ## Approved Strategy
 
 S1 combined delivery and separate issue acceptance identities remain approved. PGMCP owns execution conditions and resource authority; adapters are thin native request/result translators. B2 respects that ownership, and B3/B5/B6 remain approved. The owner explicitly accepted the following final replacement B4 with "Ja" on 2026-10-01, in direct response to the complete release-boundary proposal. No further Research policy decision is pending.
+
+### Owner-approved B2 native-input limit during Implementation
+
+Implementation preparation exposed a concrete limit in the [pinned Pyright 1.1.408 source](https://raw.githubusercontent.com/microsoft/pyright/1.1.408/packages/pyright-internal/src/pyright.ts): its filename stdin mode replaces CR/LF with spaces, splits on ordinary spaces, trims each item and discards empty items. It has no filename quoting or escape grammar. This contradicts the earlier assumption that ordinary space-containing explicit paths can be preserved through that channel.
+
+The decision was explicitly reopened on 2026-10-01. The owner replied: "De adapter vertaald zelf de json input naar stdin, als spatiepaden niet toegestaan zijn, dan moeten die niet gebruikt worden. Wat is de conventie die pyright wel toestaat voor doorgifte van meer paden". The producer explained the one-path-per-line convention and recorded the owner's direction to refuse inputs that the pinned native convention cannot represent.
+
+| B2 option | Cost and compatibility impact | Disposition |
+|---|---|---|
+| Native stdin for representable selections; explicit unsupported_input for unrepresentable filenames | Keeps one complete analysis without argv-size dependence for supported selections. Space-containing explicit Pyright paths become an honest limitation; no splitting, trimming, omission or path substitution | Selected by the owner's direction |
+| Retain argv for space-containing paths | Preserves these bounded inputs but retains their Windows launch limit and adds a transport fallback | Not selected |
+| Change native version/API or reopen the transport design | Requires new native support/equivalence evidence and broader design work | Deferred |
+
+This amendment is specific to Pyright's explicit filename channel. Empty selection retains native configured discovery, which can discover filenames containing spaces. Legitimate option values remain in argv without filename-list normalization. Caller inputs that replace or add to the adapter-owned filename channel are explicitly refused for nonempty selections; they cannot disable stdin and silently select the configured project instead. Other tools retain their own native grammars and useful space/literal controls. Public result structures and existing unsupported_input vocabulary remain.
+
+The original Research 1.4 / Design 1.2 / Planning 1.1 independent review remains evidence for those revisions. This recorded amendment and its implementation require independent review with the Implementation hand-over; no producer GO/NOGO is inferred.
 
 ### Final approved replacement B4
 
@@ -361,6 +377,7 @@ Independent Research review. Native mechanisms, resource/interface details, per-
 ### Review Request
 
 Review requested. Open or resume the independent interactive pgmcp-qa task for Research review; do not infer GO from this producer hand-over.
+
 
 
 

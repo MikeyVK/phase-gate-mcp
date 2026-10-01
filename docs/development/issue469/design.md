@@ -3,7 +3,7 @@
 # Native adapter robustness: full selection and truthful completion
 
 **Status:** DESIGN — proposed correction; independent QA review pending
-**Version:** 1.2
+**Version:** 1.3
 **Last Updated:** 2026-10-01
 
 ## Purpose
@@ -21,7 +21,7 @@ OS isolation, a general write-permission API, security manifests, generic native
 ## Prerequisites
 
 - Research B1–B6 and the final replacement B4 are binding. The owner explicitly accepted replacement B4 and authorized Design on 2026-10-01.
-- Research 1.4 records the owner's unreleased-development refinement: correct the existing adapter contract in place, retaining internal contract_version 1 and current schema identities. No new v2 family, transition, legacy/compatibility code or external-consumer migration. Preserve public MCP parameters, response structures and outcome vocabulary. Verification is proportional; Planning owns server-health and report-mode edit/restart checkpoints.
+- Research 1.5 records the owner's unreleased-development refinement: correct the existing adapter contract in place, retaining internal contract_version 1 and current schema identities. No new v2 family, transition, legacy/compatibility code or external-consumer migration. Preserve public MCP parameters, response structures and outcome vocabulary. Verification is proportional; Planning owns server-health and report-mode edit/restart checkpoints.
 
 ## Problem Statement
 
@@ -186,14 +186,14 @@ Keep content-input scratch ownership separate: its snapshot must outlive the cor
 |---|---|---|
 | Ruff / check and fix | Native `@file` containing the complete guarded native argument sequence in the owned directory | One lint/format run; existing read-only check overrides and exact fix selection remain. Caller response files stay refused. Certify both lint and format at 0.15.6 |
 | Mypy / check | Native `@file` containing admitted options and all targets | One combined analysis; retain configured discovery for empty targets and deliberate supported native expansion; caller response files stay refused |
-| Pyright / check | Native `-` filename list on the native child's stdin for nonempty explicit targets | One analysis; empty targets retain configured discovery without injecting an empty stdin selector. Adapter controls stdin; caller replacement `-` remains refused |
+| Pyright / check | Native `-` filename list on the native child's stdin for representable nonempty explicit targets | One analysis. Research B2 now explicitly refuses filenames that the pinned stdin grammar would split or trim, including ordinary spaces. Empty targets retain configured discovery. Caller file-channel replacement/addition is refused for nonempty selections; option values remain native argv |
 | Pytest / test | Native `@file` passed to the existing fresh `--native` child | Keep target/option ordering, pytest.main metadata plugin, collection, xdist and coverage semantics. Preserve previously admitted caller response-file semantics only through the effective native guard |
 | Lychee / selection check | Native `--files-from -` with complete escaped literal target list on native stdin when that channel is free | Preserve native link resolution and JSON/text modes. With an effective user/config `files_from`, preserve the existing direct positional route rather than overriding or merging its file contents. That competing mode retains the argv limit; a launch failure must identify this limit, without fallback |
 | Lychee / content check | Existing one snapshot path and logical base/remap | No large target list; stdin selector would substitute snapshot intent |
 | Python syntax, TypeScript syntax, Markdown preflight / content | Existing snapshot transport | No target-list argv defect; retain capability-specific audit and negative-result evidence |
 | Commitlint / content | Existing stdin message transport | No target-list argv defect; preserve native config and metadata guard |
 
-Use native argument-file grammar, not shell quoting. For line-oriented formats, reject unrepresentable tokens (including CR/LF or native blank/comment ambiguity) as unsupported_input rather than splitting, stripping or dropping them. Ordinary empty/whitespace option values need explicit native equivalence evidence. Preserve spaces, Unicode, literal metacharacters and ordering. Absolute admitted filesystem paths prevent leading option/comment markers from becoming control syntax; Lychee retains its existing literal glob escaping. Unknown transport behavior is not grounds for normalization.
+Use native argument-file grammar, not shell quoting. For line-oriented formats, reject unrepresentable tokens (including CR/LF or native blank/comment ambiguity) as unsupported_input rather than splitting, stripping or dropping them. Ordinary empty/whitespace option values need explicit native equivalence evidence. Preserve representable spaces, Unicode, literal metacharacters and ordering. Pyright 1.1.408 is the documented B2 exception: its stdin filenames cannot contain ordinary spaces or CR/LF, or characters that native trimming would remove at either end. Reject the whole explicit selection as unsupported_input before analysis if any filename is unrepresentable; do not quote, escape, split, normalize or fall back to argv. Absolute admitted filesystem paths prevent leading option/comment markers from becoming control syntax; Lychee retains its existing literal glob escaping. Unknown transport behavior is not grounds for normalization.
 
 Every admitted invocation contains execution_context. Ruff/Mypy/Pytest use its directory for argument files even for bounded selections, avoiding an arbitrary switching threshold. Repository direct-call fixtures provide the same complete request and own the supplied directory's lifetime; no external migration commitment is introduced. Missing/invalid context is invalid_request; there is no direct argv fallback, environment lookup or private temporary allocation. Native stdin remains separate from the adapter's JSON request stdin. Very large argv-only option payloads for stdin-based tools and Lychee's competing files_from mode retain an explicit native launch limit.
 
@@ -211,6 +211,12 @@ Every admitted invocation contains execution_context. Ruff/Mypy/Pytest use its d
 | Metadata/watch/other operation substitutes | Refuse as unsupported_input when they replace the requested bounded check/test/fix |
 
 Assess effective configuration/environment where the current guard already does so; do not build a second general native parser. Adapt existing tests that equate all side writes with contract violations. No adapter may select a security policy or a supposedly safe cache destination.
+
+### Pyright filename-channel limit and ownership
+
+Research 1.5 records the owner's reopened B2 decision. One filename per line is supported; quoting/escaping is not. The adapter owns the complete nonempty explicit file list and native stdin marker. Legitimate scalar option values remain unchanged in argv. Caller positional/file-option inputs cannot take over or add to the owned filename channel. A narrow package-local ownership projection and marker placement must prevent a dangling option from consuming the marker and silently switching to discovery; unknown invalid options retain native diagnostics.
+
+Empty selection retains native configured discovery, which may find space-containing filenames. Explicit unrepresentable filenames are unsupported_input before analysis. Regression evidence must establish both limits and the native supported route; earlier explicit Pyright space-success assumptions are superseded.
 
 ### Supported versions and completion
 
@@ -573,5 +579,6 @@ Native cache/test temporary configuration remains separate from adapter-prepared
 ### Review Request
 
 Review requested.
+
 
 
