@@ -2,10 +2,28 @@
 
 # Issue 460 Refactor Validation
 
-**Status:** Validation PARTIAL with an owner-approved issue-460 branch-gate evidence exception; the post-CY113 full suite is green, the branch gate remains unavailable, and independent re-review is pending
-**Version:** 2.0
-**Last Updated:** 2026-09-27
+**Status:** Validation REOPENED after independent QA NOGO on PR #463; focused repair cycles proposed, no GO for merge
+**Version:** 2.1
+**Last Updated:** 2026-10-01
 
+
+## QA re-entry and disposition — 2026-10-01
+
+PR #463 was closed without merge after independent QA reported NOGO. The #460 project was reinitialized on the existing branch and returned to Validation. This addendum records producer triage of that review; it does not turn the QA verdict into GO or authorize implementation in the Validation phase. The earlier 2,619-test evidence and owner-approved unavailable branch-gate exception remain historical evidence and limitations, not proof that the findings below are fixed.
+
+| QA finding | Disposition | Contract and evidence |
+|---|---|---|
+| 1. Ruff `apply_fixes` can write outside selected targets through `--cache-dir` | Proposed focused fix cycle CY114 | Research states that native arguments do not grant additional filesystem authority. The Ruff fix adapter admits `--cache-dir`; establish an effect boundary across arguments, configuration, environment, and default cache behavior before selecting the narrow adapter-local correction. |
+| 2. Checks can report `passed` after a metadata/early-exit option | Proposed focused fix cycle CY115 | Reproduced with `run_checks(scope="targets", targets=["mcp_server/tools/scaffold_tool.py"], checks=["python_types", "python_lint"], args={python_types:["--help"], python_lint:["--help"]})`: both results and the aggregate were `passed`, while complete cache evidence contains Mypy and Ruff help text instead of target diagnostics (`pgmcp://cache/runs/a7bf3cd5498640069bdba82274bf5fc0`). Audit the shipped check adapters for the same early-exit class and preserve native configuration use. |
+| 3. Clean documented editable install lacks assembled assets; failed `--init` can leave a partial root | Proposed focused fix cycle CY116, with supported-install choice pending | The distribution Design and build procedure describe assembled wheel assets; the setup guide additionally advertises `pip install -e .`. The installed-distribution fixture preassembles assets and cannot prove that clean editable route. Decide whether the guide should specify the built-wheel route only or clean editable installation becomes a supported product route. Whichever route is selected, verify a clean install and make failed initialization recoverable without a stranded root. A choice to add editable support needs an explicit Design/strategy review before implementation. |
+| 4. Codex source/active instruction divergence | Proposed focused documentation fix cycle CY117 | Restore source-first byte parity for the `@imp` rule and skill, retaining the pre-commit evidence-strength instruction in both, and check all distributed host source/copy pairs. |
+| 5. Admission-time adapter fingerprint can differ from bytes on disk after a live edit | Open design/Validation decision; D-VAL-06 is a candidate, not an approved deferral | The current execution-adapter Design explicitly labels the admitted package snapshot and requires restart after package edits; it excludes monitoring, per-call rehashing and shadow copies. QA's requested binding to executed bytes would change that approved boundary. Record the provenance limitation and require a separate owner strategy decision and research before a runtime change. Do not describe the current fingerprint as proof of per-call byte identity. |
+| 6. Template admission checks undeclared reads but not declared unused fields | Proposed focused fix cycle CY118 | Research F-07 requires both directions of the exposed field/render-use invariant at startup. Add a failing synthetic package case for a declared but unconsumed required field; then enforce admission coherence and survey shipped packages for real instances. QA did not establish that a current shipped package has this defect. |
+| 7. Distributed bootstrap guide names old upgrade assets | Proposed focused documentation fix cycle CY117 | Correct `docs/setup/agentic-bootstrap.md` against the V3 `template_suite` and installation-checkpoint contract. Align the install commands with the CY116 supported-route decision, then verify packaged documentation. |
+
+The owner subsequently requested full reconstruction of the branch state artifacts from Git. The final pre-PR state and deliverables from commit `325195af` were restored, followed by a PGMCP Ready-to-Validation transition recording the QA reopening (`pgmcp://cache/runs/c1889d33e6104b4a940a7692a173b96a`). The resulting state preserves all 112 prior cycle-history entries and all 39 prior phase transitions, adds one reopening transition, remains in Validation, and retains `last_cycle=113`. The deliverables file is byte-identical to the pre-PR Git blob (`4d43ae28de7a8ae5b1975d9bd4de58c965e976b5`). New QA cycles have not been appended while their disposition and independent plan review remain open.
+
+The proposed cycle numbers identify bounded repair units for Planning and independent review; no cycle has started in Validation. The minimum useful order is CY114/CY115/CY118 for contract violations, CY116 once the supported-install choice is explicit, and CY117 after the installation wording is settled. Each cycle should retain its own targeted negative and positive evidence; after changes, rerun the configured native suite and required branch checks without converting unavailable evidence to PASS. Independent QA must review the revised plan and subsequent Validation evidence.
 
 ## Purpose
 

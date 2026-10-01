@@ -1,0 +1,1021 @@
+{
+  "schema_version": "1.0.0",
+  "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
+  "issue_number": 460,
+  "workflow_name": "refactor",
+  "current_phase": "validation",
+  "current_cycle": 113,
+  "last_cycle": 113,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Template package value contracts",
+      "forced": false,
+      "entered": "2026-09-13T14:59:50.668271+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Contained JSON Schema preparation",
+      "forced": false,
+      "entered": "2026-09-13T15:14:25.450824+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "Parser-supported template dependency graph",
+      "forced": false,
+      "entered": "2026-09-13T15:48:50.952501+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "Immutable template catalog and renderer selection",
+      "forced": false,
+      "entered": "2026-09-13T15:58:05.418003+00:00"
+    },
+    {
+      "cycle_number": 6,
+      "name": "Generation fingerprints and package labels",
+      "forced": false,
+      "entered": "2026-09-13T17:01:29.904726+00:00"
+    },
+    {
+      "cycle_number": 7,
+      "name": "First-line provenance writer and reader",
+      "forced": false,
+      "entered": "2026-09-13T17:18:31.970980+00:00"
+    },
+    {
+      "cycle_number": 8,
+      "name": "Prepared tool input contract",
+      "forced": false,
+      "entered": "2026-09-13T17:44:47.443406+00:00"
+    },
+    {
+      "cycle_number": 9,
+      "name": "Operation and attachment transport",
+      "forced": false,
+      "entered": "2026-09-13T18:12:10.609759+00:00"
+    },
+    {
+      "cycle_number": 10,
+      "name": "Required-null cache fidelity",
+      "forced": false,
+      "entered": "2026-09-13T18:40:35.127890+00:00"
+    },
+    {
+      "cycle_number": 11,
+      "name": "Generic bounded presentation",
+      "forced": false,
+      "entered": "2026-09-13T18:52:13.849081+00:00"
+    },
+    {
+      "cycle_number": 12,
+      "name": "Adapter package admission and trust",
+      "forced": false,
+      "entered": "2026-09-13T19:13:22.259951+00:00"
+    },
+    {
+      "cycle_number": 13,
+      "name": "Adapter process protocol",
+      "forced": false,
+      "entered": "2026-09-13T19:40:24.230966+00:00"
+    },
+    {
+      "cycle_number": 14,
+      "name": "Bounded process stopping",
+      "forced": false,
+      "entered": "2026-09-13T20:01:45.660580+00:00"
+    },
+    {
+      "cycle_number": 15,
+      "name": "Proposed-content input and scratch lifecycle",
+      "forced": false,
+      "entered": "2026-09-13T20:29:18.670951+00:00"
+    },
+    {
+      "cycle_number": 16,
+      "name": "Check bindings and output profiles",
+      "forced": false,
+      "entered": "2026-09-13T20:51:39.731563+00:00"
+    },
+    {
+      "cycle_number": 17,
+      "name": "Explicit check selection and branch scopes",
+      "forced": false,
+      "entered": "2026-09-13T21:02:20.542571+00:00"
+    },
+    {
+      "cycle_number": 18,
+      "name": "Python syntax check adapter",
+      "forced": false,
+      "entered": "2026-09-13T21:36:55.928106+00:00"
+    },
+    {
+      "cycle_number": 19,
+      "name": "Markdown preflight adapter",
+      "forced": false,
+      "entered": "2026-09-13T21:45:58.947596+00:00"
+    },
+    {
+      "cycle_number": 20,
+      "name": "Ruff checks and native configuration",
+      "forced": false,
+      "entered": "2026-09-13T21:57:57.510649+00:00"
+    },
+    {
+      "cycle_number": 21,
+      "name": "Mypy check and native configuration",
+      "forced": false,
+      "entered": "2026-09-13T22:26:30.338926+00:00"
+    },
+    {
+      "cycle_number": 22,
+      "name": "Pyright check and native configuration",
+      "forced": false,
+      "entered": "2026-09-13T22:55:35.916899+00:00"
+    },
+    {
+      "cycle_number": 23,
+      "name": "TypeScript syntax adapter",
+      "forced": false,
+      "entered": "2026-09-13T23:24:21.543998+00:00"
+    },
+    {
+      "cycle_number": 24,
+      "name": "Commit message adapter",
+      "forced": false,
+      "entered": "2026-09-13T23:45:02.934882+00:00"
+    },
+    {
+      "cycle_number": 25,
+      "name": "Lychee content and selection adapter",
+      "forced": false,
+      "entered": "2026-09-14T04:49:34.887450+00:00"
+    },
+    {
+      "cycle_number": 26,
+      "name": "Internal check orchestration",
+      "forced": false,
+      "entered": "2026-09-14T05:19:59.026795+00:00"
+    },
+    {
+      "cycle_number": 27,
+      "name": "Pytest adapter and native settings",
+      "forced": false,
+      "entered": "2026-09-14T05:39:22.975800+00:00"
+    },
+    {
+      "cycle_number": 28,
+      "name": "Internal test orchestration",
+      "forced": false,
+      "entered": "2026-09-14T06:08:13.186904+00:00"
+    },
+    {
+      "cycle_number": 29,
+      "name": "Ruff native fix conformance",
+      "forced": false,
+      "entered": "2026-09-14T06:31:45.770583+00:00"
+    },
+    {
+      "cycle_number": 30,
+      "name": "Internal fix orchestration",
+      "forced": false,
+      "entered": "2026-09-14T06:48:43.045743+00:00"
+    },
+    {
+      "cycle_number": 31,
+      "name": "Shared Python generation sources",
+      "forced": false,
+      "entered": "2026-09-14T07:08:23.134548+00:00"
+    },
+    {
+      "cycle_number": 32,
+      "name": "Pydantic DTO artifact",
+      "forced": false,
+      "entered": "2026-09-14T07:39:48.957504+00:00"
+    },
+    {
+      "cycle_number": 33,
+      "name": "Pydantic configuration artifact",
+      "forced": false,
+      "entered": "2026-09-14T07:54:54.309135+00:00"
+    },
+    {
+      "cycle_number": 34,
+      "name": "Plain Python class artifact",
+      "forced": false,
+      "entered": "2026-09-14T08:08:48.400193+00:00"
+    },
+    {
+      "cycle_number": 35,
+      "name": "Python Protocol artifact",
+      "forced": false,
+      "entered": "2026-09-14T08:24:00.743343+00:00"
+    },
+    {
+      "cycle_number": 36,
+      "name": "Portable adapter artifact",
+      "forced": false,
+      "entered": "2026-09-14T08:41:48.998796+00:00"
+    },
+    {
+      "cycle_number": 37,
+      "name": "Portable worker artifact",
+      "forced": false,
+      "entered": "2026-09-14T08:53:44.229614+00:00"
+    },
+    {
+      "cycle_number": 38,
+      "name": "Public unit-test artifact",
+      "forced": false,
+      "entered": "2026-09-14T09:12:13.570303+00:00"
+    },
+    {
+      "cycle_number": 39,
+      "name": "Public integration-test artifact",
+      "forced": false,
+      "entered": "2026-09-14T09:34:17.416177+00:00"
+    },
+    {
+      "cycle_number": 40,
+      "name": "TypeScript DTO artifact",
+      "forced": false,
+      "entered": "2026-09-14T09:52:44.347640+00:00"
+    },
+    {
+      "cycle_number": 41,
+      "name": "Shared document records and rendering",
+      "forced": false,
+      "entered": "2026-09-14T10:09:36.210859+00:00"
+    },
+    {
+      "cycle_number": 42,
+      "name": "Research artifact",
+      "forced": false,
+      "entered": "2026-09-14T10:51:20.048976+00:00"
+    },
+    {
+      "cycle_number": 43,
+      "name": "Design artifact",
+      "forced": false,
+      "entered": "2026-09-14T11:06:31.407405+00:00"
+    },
+    {
+      "cycle_number": 44,
+      "name": "Planning artifact and operational projection",
+      "forced": false,
+      "entered": "2026-09-14T11:16:42.656347+00:00"
+    },
+    {
+      "cycle_number": 45,
+      "name": "Validation report artifact",
+      "forced": false,
+      "entered": "2026-09-14T11:28:27.307566+00:00"
+    },
+    {
+      "cycle_number": 46,
+      "name": "Architecture document artifact",
+      "forced": false,
+      "entered": "2026-09-14T11:38:33.539973+00:00"
+    },
+    {
+      "cycle_number": 47,
+      "name": "Reference document artifact",
+      "forced": false,
+      "entered": "2026-09-14T11:46:46.101578+00:00"
+    },
+    {
+      "cycle_number": 48,
+      "name": "Generic document artifact",
+      "forced": false,
+      "entered": "2026-09-14T12:09:41.341865+00:00"
+    },
+    {
+      "cycle_number": 49,
+      "name": "Issue body artifact",
+      "forced": false,
+      "entered": "2026-09-14T12:18:12.267257+00:00"
+    },
+    {
+      "cycle_number": 50,
+      "name": "PR body artifact",
+      "forced": false,
+      "entered": "2026-09-14T12:27:13.834671+00:00"
+    },
+    {
+      "cycle_number": 51,
+      "name": "Commit artifact",
+      "forced": false,
+      "entered": "2026-09-14T12:35:50.123432+00:00"
+    },
+    {
+      "cycle_number": 52,
+      "name": "Artifact location policy",
+      "forced": false,
+      "entered": "2026-09-14T12:46:27.597328+00:00"
+    },
+    {
+      "cycle_number": 53,
+      "name": "Internal scaffold persistence",
+      "forced": false,
+      "entered": "2026-09-14T13:13:57.106660+00:00"
+    },
+    {
+      "cycle_number": 54,
+      "name": "Safe-edit construction and profile selection",
+      "forced": false,
+      "entered": "2026-09-14T13:51:38.179509+00:00"
+    },
+    {
+      "cycle_number": 55,
+      "name": "Safe-edit guarded replacement",
+      "forced": false,
+      "entered": "2026-09-14T14:13:34.039994+00:00"
+    },
+    {
+      "cycle_number": 56,
+      "name": "Schema discovery public composition",
+      "forced": false,
+      "entered": "2026-09-14T14:36:30.038267+00:00"
+    },
+    {
+      "cycle_number": 57,
+      "name": "Scaffold public composition",
+      "forced": false,
+      "entered": "2026-09-14T15:34:43.622233+00:00"
+    },
+    {
+      "cycle_number": 58,
+      "name": "Safe-edit public composition",
+      "forced": false,
+      "entered": "2026-09-14T15:56:23.992147+00:00"
+    },
+    {
+      "cycle_number": 59,
+      "name": "Check public composition",
+      "forced": false,
+      "entered": "2026-09-14T16:05:06.765513+00:00"
+    },
+    {
+      "cycle_number": 60,
+      "name": "Test public composition",
+      "forced": false,
+      "entered": "2026-09-14T16:56:32.364921+00:00"
+    },
+    {
+      "cycle_number": 61,
+      "name": "Fix public composition",
+      "forced": false,
+      "entered": "2026-09-14T17:02:33.747575+00:00"
+    },
+    {
+      "cycle_number": 62,
+      "name": "Built and separately installed distribution",
+      "forced": false,
+      "entered": "2026-09-14T17:07:26.008543+00:00"
+    },
+    {
+      "cycle_number": 63,
+      "name": "Operational components and selection",
+      "forced": false,
+      "entered": "2026-09-14T17:20:04.501003+00:00"
+    },
+    {
+      "cycle_number": 64,
+      "name": "Installation checkpoint and first-v3 bootstrap",
+      "forced": false,
+      "entered": "2026-09-14T17:38:43.915267+00:00"
+    },
+    {
+      "cycle_number": 65,
+      "name": "Candidate staging and proposal admission",
+      "forced": false,
+      "entered": "2026-09-14T18:05:58.891316+00:00"
+    },
+    {
+      "cycle_number": 66,
+      "name": "F-10 activation and deterministic recovery",
+      "forced": false,
+      "entered": "2026-09-14T18:39:56.882132+00:00"
+    },
+    {
+      "cycle_number": 67,
+      "name": "Prepared renewal CLI composition",
+      "forced": false,
+      "entered": "2026-09-14T19:31:55.720531+00:00"
+    },
+    {
+      "cycle_number": 68,
+      "name": "Workflow carriers and phase semantics",
+      "forced": false,
+      "entered": "2026-09-17T05:47:05.991186+00:00"
+    },
+    {
+      "cycle_number": 69,
+      "name": "Host instruction source parity",
+      "forced": false,
+      "entered": "2026-09-17T08:04:33.095701+00:00"
+    },
+    {
+      "cycle_number": 70,
+      "name": "Prepared placement and rollout configuration",
+      "forced": false,
+      "entered": "2026-09-17T15:00:59.160984+00:00"
+    },
+    {
+      "cycle_number": 71,
+      "name": "Target startup composition and launch rehearsal",
+      "forced": false,
+      "entered": "2026-09-17T16:31:04.615919+00:00"
+    },
+    {
+      "cycle_number": 72,
+      "name": "Public V3 cutover",
+      "forced": false,
+      "entered": "2026-09-23T18:14:42.341793+00:00"
+    },
+    {
+      "cycle_number": 73,
+      "name": "Close legacy scaffold harness imports",
+      "forced": false,
+      "entered": "2026-09-23T20:15:46.476249+00:00"
+    },
+    {
+      "cycle_number": 74,
+      "name": "Retire obsolete scaffold tool and manager route",
+      "forced": false,
+      "entered": "2026-09-23T22:06:39.905889+00:00"
+    },
+    {
+      "cycle_number": 75,
+      "name": "Retire obsolete template scaffolder route",
+      "forced": false,
+      "entered": "2026-09-24T05:56:42.618780+00:00"
+    },
+    {
+      "cycle_number": 76,
+      "name": "Retire obsolete workspace-upgrade route",
+      "forced": false,
+      "entered": "2026-09-24T06:42:13.109463+00:00"
+    },
+    {
+      "cycle_number": 77,
+      "name": "Retire legacy registry and hash authority",
+      "forced": false,
+      "entered": "2026-09-24T06:52:24.967990+00:00"
+    },
+    {
+      "cycle_number": 78,
+      "name": "Retire legacy metadata and lifecycle contracts",
+      "forced": false,
+      "entered": "2026-09-24T08:47:55.499116+00:00"
+    },
+    {
+      "cycle_number": 79,
+      "name": "Retire legacy introspection and schema inference",
+      "forced": false,
+      "entered": "2026-09-24T08:58:51.661278+00:00"
+    },
+    {
+      "cycle_number": 80,
+      "name": "Retire parallel component scaffolders",
+      "forced": false,
+      "entered": "2026-09-24T09:12:41.705549+00:00"
+    },
+    {
+      "cycle_number": 81,
+      "name": "Retire legacy validator and validate_template stack",
+      "forced": false,
+      "entered": "2026-09-24T09:18:03.731500+00:00"
+    },
+    {
+      "cycle_number": 82,
+      "name": "Retire project_structure and hidden naming",
+      "forced": false,
+      "entered": "2026-09-24T09:48:01.010729+00:00"
+    },
+    {
+      "cycle_number": 83,
+      "name": "Retire generic Pytest runner",
+      "forced": false,
+      "entered": "2026-09-24T10:07:13.555322+00:00"
+    },
+    {
+      "cycle_number": 84,
+      "name": "Close QAManager-dependent parser test imports",
+      "forced": false,
+      "entered": "2026-09-24T10:28:33.154618+00:00"
+    },
+    {
+      "cycle_number": 85,
+      "name": "Close QAManager-dependent fix and state test imports",
+      "forced": false,
+      "entered": "2026-09-24T10:38:24.909074+00:00"
+    },
+    {
+      "cycle_number": 86,
+      "name": "Retire quality orchestration and old check/fix tools",
+      "forced": false,
+      "entered": "2026-09-24T10:46:35.730650+00:00"
+    },
+    {
+      "cycle_number": 87,
+      "name": "Retire generic native-parser DSL",
+      "forced": false,
+      "entered": "2026-09-24T11:23:21.058130+00:00"
+    },
+    {
+      "cycle_number": 88,
+      "name": "Retire auto replay state",
+      "forced": false,
+      "entered": "2026-09-24T11:32:03.174397+00:00"
+    },
+    {
+      "cycle_number": 89,
+      "name": "Scaffold and schema reference migration",
+      "forced": false,
+      "entered": "2026-09-24T11:46:39.383616+00:00"
+    },
+    {
+      "cycle_number": 90,
+      "name": "Execution and evidence references",
+      "forced": false,
+      "entered": "2026-09-24T12:01:11.967680+00:00"
+    },
+    {
+      "cycle_number": 91,
+      "name": "Deployment and setup references",
+      "forced": false,
+      "entered": "2026-09-24T12:16:35.461974+00:00"
+    },
+    {
+      "cycle_number": 92,
+      "name": "Architecture diagrams",
+      "forced": false,
+      "entered": "2026-09-24T12:27:27.622268+00:00"
+    },
+    {
+      "cycle_number": 93,
+      "name": "Architecture manuals and reference navigation",
+      "forced": false,
+      "entered": "2026-09-24T12:34:23.199713+00:00"
+    },
+    {
+      "cycle_number": 94,
+      "name": "Retire legacy Pydantic/class sources",
+      "forced": false,
+      "entered": "2026-09-24T12:40:15.441596+00:00"
+    },
+    {
+      "cycle_number": 95,
+      "name": "Retire legacy specialized code/test sources",
+      "forced": false,
+      "entered": "2026-09-24T12:44:19.338141+00:00"
+    },
+    {
+      "cycle_number": 96,
+      "name": "Retire legacy phase-document roots",
+      "forced": false,
+      "entered": "2026-09-24T12:49:18.671144+00:00"
+    },
+    {
+      "cycle_number": 97,
+      "name": "Retire legacy explanatory-document roots",
+      "forced": false,
+      "entered": "2026-09-24T14:47:21.901739+00:00"
+    },
+    {
+      "cycle_number": 98,
+      "name": "Retire legacy tracking roots",
+      "forced": false,
+      "entered": "2026-09-24T14:50:54.381292+00:00"
+    },
+    {
+      "cycle_number": 99,
+      "name": "Retire portable Python/test macro sources",
+      "forced": false,
+      "entered": "2026-09-24T14:54:37.556599+00:00"
+    },
+    {
+      "cycle_number": 100,
+      "name": "Retire document macro sources",
+      "forced": false,
+      "entered": "2026-09-24T15:02:25.675127+00:00"
+    },
+    {
+      "cycle_number": 101,
+      "name": "Remove rejected Resource/Service/Tool artifact sources",
+      "forced": false,
+      "entered": "2026-09-24T15:05:56.521147+00:00"
+    },
+    {
+      "cycle_number": 102,
+      "name": "Remove source-project specialization patterns",
+      "forced": false,
+      "entered": "2026-09-24T15:11:19.869423+00:00"
+    },
+    {
+      "cycle_number": 103,
+      "name": "Remove unreachable YAML and test seeds and agent hints",
+      "forced": false,
+      "entered": "2026-09-24T15:14:56.292119+00:00"
+    },
+    {
+      "cycle_number": 104,
+      "name": "Retire exhausted tier bases",
+      "forced": false,
+      "entered": "2026-09-24T15:23:03.392934+00:00"
+    },
+    {
+      "cycle_number": 105,
+      "name": "Retire exhausted legacy test harness",
+      "forced": false,
+      "entered": "2026-09-24T15:26:31.225360+00:00"
+    },
+    {
+      "cycle_number": 106,
+      "name": "Restore startup audit and satisfy production typing",
+      "forced": false,
+      "entered": "2026-09-26T18:54:14.215597+00:00"
+    },
+    {
+      "cycle_number": 107,
+      "name": "Make server tests safe for parallel workers",
+      "forced": false,
+      "entered": "2026-09-26T19:27:57.728282+00:00"
+    },
+    {
+      "cycle_number": 108,
+      "name": "Discriminate actual child-process lifetime",
+      "forced": false,
+      "entered": "2026-09-26T20:01:42.275967+00:00"
+    },
+    {
+      "cycle_number": 109,
+      "name": "Resolve test-source Ruff import debt",
+      "forced": false,
+      "entered": "2026-09-26T20:38:21.487226+00:00"
+    },
+    {
+      "cycle_number": 110,
+      "name": "Resolve production-source Ruff lint debt",
+      "forced": false,
+      "entered": "2026-09-26T20:45:30.469503+00:00"
+    },
+    {
+      "cycle_number": 111,
+      "name": "Correct active scaffold guidance against the V3 public contract",
+      "forced": false,
+      "entered": "2026-09-27T12:22:30.957467+00:00"
+    },
+    {
+      "cycle_number": 112,
+      "name": "Put shared template identity values below the service boundary",
+      "forced": false,
+      "entered": "2026-09-27T18:42:47.433099+00:00"
+    },
+    {
+      "cycle_number": 113,
+      "name": "Make late-child process test wait for a complete PID",
+      "forced": false,
+      "entered": "2026-09-27T19:09:38.643488+00:00"
+    }
+  ],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": "PR #463 was closed without merge after independent QA NOGO. Restore the complete pre-PR #460 workflow and cycle history from commit 325195af, then record the reopened Ready-to-Validation transition for QA finding triage. Previous Research, Design, Planning, Implementation, and Documentation artifacts remain historical evidence; no current merge GO is implied.",
+  "issue_title": "Audit scaffolding schema-template rendering contracts",
+  "parent_branch": "main",
+  "created_at": "2026-08-22T19:45:36.738143+00:00",
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-08-26T19:58:10.806247+00:00",
+      "human_approval_message": "User approved Design after independent QA reported substantive PASS; version history and commit blockers were corrected.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-08-29T15:49:50.227648+00:00",
+      "human_approval_message": "Ja dat moet gebeuren, maar betekend dit dat research wordt geraakt? Want als dat het geval is moeten we secuur te werk gaan. Ik leuk dan erg op de gedachte om de research agent die eerder actief was deze wijziging op basis van een duidelijke overdracht van jou uit te laten voeren.",
+      "forced": true,
+      "skip_reason": "Design evidence exposed that F-11/S-16 conflates complete-suite management identity with selected template-package provenance. The human explicitly approved correcting Research through a dedicated researcher, so the binding strategy must be reopened rather than changed during Design by stealth."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-08-29T16:30:22.253959+00:00",
+      "human_approval_message": "Go voor hervatten van design, lees bijgevoegde qa review.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-08-30T13:09:46.953421+00:00",
+      "human_approval_message": "QA is akkoord, we gaan door!",
+      "forced": true,
+      "skip_reason": "Administrative correction: Research was explicitly reopened and independently re-approved while workflow state remained Design; return to Research only to commit the approved Research amendment under the correct phase before normal progression back to Design."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-08-30T13:10:12.309664+00:00",
+      "human_approval_message": "QA is akkoord, we gaan door!",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-09-04T20:04:42.342176+00:00",
+      "human_approval_message": "Mee eens, ik wil nu dat jij expliciet naar de rol van research agent overschakelt, naar de research phase terug gaat en deze expliciete scopeverbreding vast legt. Daarna vraag je mij om externe qa, voordat we verder gaan met design.",
+      "forced": true,
+      "skip_reason": "Reopen Research because Design uncovered a mandatory PGMCP 3.0 scope expansion: one language-agnostic adapter extension suite with distinct check, test, and fix contracts, replacing Python-specific and semantically inconsistent execution paths before Design may continue."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-04T21:33:59.808405+00:00",
+      "human_approval_message": "Formal Design GO confirmed on 2026-09-04 with binding manageability conditions: Research frozen; dedicated DI-05 Design document; independently provable cycles; conformance before legacy removal; separate check/test/fix proof; separate F-10 activation and F-20 fix-application cycles; internal proof before public V3 cutover; bounded rollback-ready cycles; concrete ownership for all 126 consumers and 151 tests/helpers.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-09-05T19:11:59.107877+00:00",
+      "human_approval_message": "User answered 'Ja' to the explicit request to perform a narrowly bounded Research amendment removing auto, excluding PGMCP result reuse, defining native optimization/fresh intent, updating directly affected consumer/test dispositions, and stopping for external QA while all other Research remains frozen.",
+      "forced": true,
+      "skip_reason": "Return from Design for explicitly authorized narrow amendment: frozen catalog currently mandates auto-scope preservation. No new product roles or consumer families; Design remains paused pending independent QA."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-05T19:37:49.949757+00:00",
+      "human_approval_message": "Go voor hervatten van design.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-09-07T18:16:39.778745+00:00",
+      "human_approval_message": "User explicitly authorized the narrow scope expansion on 2026-09-07: 'Nee we breiden de scope licht uit om dit gelijk te trekken. Dit vooruit schuiven introduceert ongewenste compact op een grens die op de nominatie staat om te verdwijnen. Dit is precies de juiste reden om het wel mee te nemen!'",
+      "forced": true,
+      "skip_reason": "Reopen only the human-requested safe-edit contract alignment: replace mode with scaffold-aligned validation policy and retire verify_only rather than build a temporary preservation boundary. Preserve all other approved issue460 scope."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-07T18:51:36.899880+00:00",
+      "human_approval_message": "User reports independent QA GO on the corrected safe-edit Research amendment: 'Go van qa, we gaan verder'.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-09-10T21:03:41.741194+00:00",
+      "human_approval_message": "Akkoord! \u2014 approval to process the package manifest/.version/policy.yaml split and generation-only fingerprint boundary through Research and Design.",
+      "forced": true,
+      "skip_reason": "Reopen only the explicitly human-approved generation identity and file-ownership amendment; preserve other frozen strategy and require independent QA before Design resumes."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-11T07:18:47.133744+00:00",
+      "human_approval_message": "Oke go van qa we gaan verder met design",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-09-11T08:46:33.473518+00:00",
+      "human_approval_message": "We gaan voorbeeldvalidatie helemaal niet invoeren, ik zie het al helemaal gebeuren, dit is te complex en risk reward is niet in balans!",
+      "forced": true,
+      "skip_reason": "Bounded human-directed withdrawal of generated DTO/config example validation; preserve example authoring/rendering and other validation contracts. Independent QA required before Design resumption."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-11T09:33:25.701192+00:00",
+      "human_approval_message": "QA geeft clean go voor hervatten van design",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-09-13T06:54:36.453170+00:00",
+      "human_approval_message": "De gebruiker meldt expliciet onafhankelijke QA GO voor Planning op de Design-consolidatie van commit ea48558c en verzoekt de voorgeschreven overgang naar Planning voor issue 460.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-13T14:31:30.972707+00:00",
+      "human_approval_message": "User stated on 2026-09-13: Planning is klaar, we gaan verder met de implementatie. User requested autonomous execution with efficient token use without compromising quality.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-09-24T16:34:28.590810+00:00",
+      "human_approval_message": "validator voer de phase overgang uit naar validation, haal de werk context op en vertel me wat er in deze fase van je verwacht word",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-26T18:41:08.918142+00:00",
+      "human_approval_message": "Issue owner approved on 2026-09-26: 'leg deze cycles vast laat qa agent toetsen, corrigeer indien noodzakelijk en ga daarna over tot implementatie volgens de regels in agents.md en gebruikmakend van de workflow en tooling van pgmcp!'",
+      "forced": true,
+      "skip_reason": "Validation exposed bounded issue-460 fixes; reopen Planning to append exact CY106-CY110 write sets and evidence criteria before implementation, without changing approved Research or Design strategy."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-26T18:53:59.113475+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-26T19:10:56.471722+00:00",
+      "human_approval_message": "Issue owner explicitly authorized: 'leg deze cycles vast laat qa agent toetsen, corrigeer indien noodzakelijk en ga daarna over tot implementatie volgens de regels in agents.md en gebruikmakend van de workflow en tooling van pgmcp!' This includes correcting QA findings through the required workflow.",
+      "forced": true,
+      "skip_reason": "Independent CY106 implementation QA found persistent global logging handlers on repeated bootstrap; current five-production-file CY106 write-set excludes the logging owner and regression test, so reopen Planning for the bounded two-path amendment before repair."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-26T19:15:59.768100+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-26T19:48:19.824198+00:00",
+      "human_approval_message": "The issue owner instructed: 'leg deze cycles vast laat qa agent toetsen, corrigeer indien noodzakelijk en ga daarna over tot implementatie volgens de regels in agents.md en gebruikmakend van de workflow en tooling van pgmcp!'",
+      "forced": true,
+      "skip_reason": "CY107 exact-target Mypy review exposed 418 pre-existing test typing errors; QA requires a bounded Planning exception with a pre-CY107 baseline comparison before accepting D2."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-26T19:49:47.482627+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-26T20:11:53.125333+00:00",
+      "human_approval_message": "The issue owner instructed: 'leg deze cycles vast laat qa agent toetsen, corrigeer indien noodzakelijk en ga daarna over tot implementatie volgens de regels in agents.md en gebruikmakend van de workflow en tooling van pgmcp!'",
+      "forced": true,
+      "skip_reason": "CY108 durable original-process-handle RED evidence found three confirmed-stop outcomes returning while original children remain unsignaled; the existing CY108 stop condition explicitly requires a scoped runtime Planning amendment before production edits."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-26T20:15:50.461279+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-09-27T06:20:25.091338+00:00",
+      "human_approval_message": "User, 2026-09-27: 'Mee eens, met name het herstellen van phase state engine en het behouden van regeleinde conventie door safe edit, dit wil ik expliciet in deze cycle opgelost hebben.'",
+      "forced": true,
+      "skip_reason": "CY110 discovered that safe_edit_file normalizes existing CRLF/mixed endings; the approved design explicitly excluded EOL preservation. User now explicitly authorizes extending this same cycle to preserve line-ending convention and restore phase_state_engine.py. Reopen the affected Research/Design/Planning boundary before implementation."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-27T06:21:37.084112+00:00",
+      "human_approval_message": "User-approved CY110 line-ending preservation strategy, 2026-09-27; bounded research amendment committed as bc8d1ab.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-09-27T06:23:08.903461+00:00",
+      "human_approval_message": "User explicitly authorized CY110 line-ending preservation; Research and Design amendments committed.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-27T06:31:15.007915+00:00",
+      "human_approval_message": "User explicitly authorized CY110 implementation including phase_state_engine CRLF and safe-edit EOL preservation; bounded planning review findings corrected in 008efc63 and rechecked with no remaining finding.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-09-27T07:31:53.292766+00:00",
+      "human_approval_message": "Owner: 'Goed voor nu overgang naar validation, maar zorg ervoor dat het oplossen van dit edge case werk netjes wordt gemarkeerd als deferred work, zodat we dit in een eigen issue op kunnen lossen.' Independent QA GO for CY110 D1-D4 on ed6c4b0.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-27T12:17:35.011795+00:00",
+      "human_approval_message": "Issue owner on 2026-09-27: 'f-val-05 lijkt me duidelijk die moet je oppakken.'",
+      "forced": true,
+      "skip_reason": "Validation NOGO F-VAL-05 requires one bounded host-guidance correction cycle. Return from Validation to Planning to record its exact source/copy write set and evidence before implementation; no Research/Design strategy change or gate waiver."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-27T12:22:13.475595+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-09-27T14:42:46.169106+00:00",
+      "human_approval_message": "The issue owner previously instructed transition to Validation; independent QA has now given CY111 GO, and the owner has clarified that the existing production-only Mypy policy remains binding for issue 460.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-09-27T18:27:09.656351+00:00",
+      "human_approval_message": "User on 2026-09-27: 'zorg dat de validation wordt afgerond, ik wil punt 3 netjes gefixt hebben ... voordat je aanpast gericht aan hoe je dit gaat fixen.' The targeted fix approach was explained to the user before this transition.",
+      "forced": true,
+      "skip_reason": "Validation found an architectural dependency-direction defect in identity DTO ownership and an intermittent PID-file synchronization defect in the required full parallel suite; bounded correction cycles and independent QA review are needed before Validation can close."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-09-27T18:42:20.483660+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-09-27T19:17:38.304418+00:00",
+      "human_approval_message": "Owner requested completion of Validation; independent QA issued GO for final Implementation cycle CY113 on 2026-09-27.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-09-27T19:47:18.460981+00:00",
+      "human_approval_message": "2026-09-27 owner approval: 'Expliciete uitzondering voor #460' for missing native branch-gate evidence caused by WinError 206 / ENAMETOOLONG. The gate remains unavailable (not PASS); full eight-worker suite and bounded active checks passed. Independent QA issued GO for Validation \u2192 Documentation solely under this recorded exception. D-VAL-01 retains adapter repair and exact branch-coverage follow-up.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-09-30T20:50:51.940020+00:00",
+      "human_approval_message": "Owner approval on 2026-09-30: 'We kunnen door naar ready phase, daar wil ik even pauzeren.' Documentation QA finding was corrected in commit c82c59fd673f5ff26d46597808919258cbfdbf72; do not interpret this transition as a branch-gate PASS or merge approval.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "validation",
+      "timestamp": "2026-10-01T06:19:59.930777+00:00",
+      "human_approval_message": "Owner on 2026-10-01: 'De PR moet ingetrokken worden, het project opnieuw geinitialiseerd en de phase naar validation worden gezet om bijgesloten bevindingen van QA te vertalen naar \u00f3f deferred work \u00f3f een of meer gerichte fix cycles.' Owner then requested full reconstruction of the branch state artifacts from Git, including phase transitions after reopening.",
+      "forced": true,
+      "skip_reason": "PR #463 was closed without merge after independent QA NOGO. Restore the complete pre-PR #460 workflow and cycle history from commit 325195af, then record the reopened Ready-to-Validation transition for QA finding triage. Previous Research, Design, Planning, Implementation, and Documentation artifacts remain historical evidence; no current merge GO is implied."
+    }
+  ],
+  "reconstructed": false,
+  "current_sub_phase": null
+}

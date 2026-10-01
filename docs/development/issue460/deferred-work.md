@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-24 -->
 # Issue 460 Deferred Work
 
-**Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
-**Version:** 1.19  
-**Last Updated:** 2026-09-30  
+**Status:** APPROVED existing deferrals; runtime adapter byte-provenance decision open  
+**Version:** 1.20  
+**Last Updated:** 2026-10-01  
 **Originating Issue:** 460
 
 ## Purpose
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.20 | 2026-10-01 | Record open D-VAL-06 candidate after independent PR #463 QA NOGO; retain approved restart-only Design boundary pending substantive discussion |
 | 1.19 | 2026-09-30 | Record D-VAL-05 as a separate first-call concrete-template quality follow-up based on rendered gallery evidence |
 | 1.18 | 2026-09-27 | Constrain D-VAL-04 to issue-460-affected public routes; retain the Git branch-listing observation as a separate general backlog candidate |
 | 1.17 | 2026-09-27 | Record the owner-deferred active-documentation Lychee baseline as D-VAL-03 while retaining the optional live link-review capability |
@@ -503,3 +504,11 @@ The observed `git_list_branches` worktree-marker parsing defect (`pgmcp://cache/
 The approved scaffold contract proves schema admission, rendering, persistence and selected native syntax preflight. A later 13-artifact gallery showed a distinct quality gap: four generated Python examples passed syntax validation, but all four failed Ruff formatting and two had import-layout lint findings; one generated Pydantic config line exceeded the 100-character lint limit. Mypy and Pyright passed those four. Generic Markdown output had excessive blank lines and mechanical section labels, though a focused link check passed. The complete quality operation is `pgmcp://cache/runs/f0dc68e839394da3b7144f2572e9a9bc`. These examples are ignored local `.pgmcp/temp/` material, not #460 branch content.
 
 The follow-up should survey all shipped concrete template packages with representative schema-valid contexts, attribute failures to templates versus caller-authored content, and decide whether Ruff-clean and editorially polished first output becomes a documented guarantee. Improve template whitespace, import emission, long generated expressions and Markdown presentation as justified by evidence. Preserve the generic scaffold contract and keep syntax preflight distinct from repository gates. The example Pytest assertions were caller-authored tautologies, and TypeScript syntax remained unavailable without its native module; neither observation alone proves a template defect. No issue-460 implementation reopening or retrospective green quality claim follows from this notice.
+
+## Open QA Decision Candidate: Runtime Adapter Byte-Provenance
+
+**Status:** Proposed in the 2026-10-01 QA re-entry; not yet approved as a new execution contract or as a closed #460 exception. See [Validation disposition](validation.md#qa-re-entry-and-disposition--2026-10-01), QA finding 5.
+
+The catalog fingerprints adapter packages at admission but retains a script path for subsequent execution. A package edited while the server remains live can therefore execute bytes newer than the admitted fingerprint. The approved [execution-adapter Design](design-execution-adapters.md) explicitly defines that fingerprint as an admitted snapshot label, instructs restart after package edits, and excludes monitoring, per-call rehashing and shadow copies. That Design does not promise per-call executable-byte identity, so a runtime guard or copied snapshot cannot be added silently as a #460 fix.
+
+Coordination should first decide whether the accepted restart protocol remains sufficient or whether consumers need stronger per-run provenance. A future issue, if selected, should identify actual mutation paths and consumers, compare restart enforcement, pre-launch rejection, and immutable execution snapshot approaches, document cost and failure semantics, and obtain a boundary-specific Approved Strategy before implementation. Until then, reports must not present the admission fingerprint as proof of the bytes executed after a live package edit.
