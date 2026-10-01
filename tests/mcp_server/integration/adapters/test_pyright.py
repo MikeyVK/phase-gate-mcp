@@ -339,7 +339,18 @@ def test_native_unavailability(
                 assert stream.decode() in evidence_text(response)
 
 
-@pytest.mark.parametrize("args", [("--createstub", "sample"), ("-",), ("\x00",)])
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("--createstub", "sample"),
+        ("-",),
+        ("\x00",),
+        ("--watch",),
+        ("-w",),
+        ("-pw",),
+        ("--verifytypes", "sample"),
+    ],
+)
 def test_refuses_write_and_stdin_routes(
     pyright_package: PyrightPackage,
     args: tuple[str, ...],
@@ -351,6 +362,40 @@ def test_refuses_write_and_stdin_routes(
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
     assert sorted(path.name for path in package.workspace.iterdir()) == ["sample.py"]
     assert target.read_text() == "value: int = 1\n"
+
+
+@pytest.mark.parametrize("args", [("--help",), ("-h",), ("-wh",), ("-ph",), ("--version",)])
+def test_metadata_cannot_pass_source_analysis(
+    native_pyright: NativePyright,
+    pyright_package: PyrightPackage,
+    args: tuple[str, ...],
+) -> None:
+    package = pyright_package
+    target = package.workspace / "sample.py"
+    before = "value: int = 'incorrect'\n"
+    target.write_text(before, encoding="utf-8")
+    direct = native(native_pyright, package.workspace, (target,), args)
+    assert direct.returncode == 0
+    assert direct.stdout.strip()
+    code, response = invoke(package, (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert target.read_text(encoding="utf-8") == before
+
+
+def test_declared_version_is_checked_before_operation(
+    pyright_package: PyrightPackage,
+) -> None:
+    package = pyright_package
+    declaration = package.root / "package.json"
+    metadata = json.loads(declaration.read_text(encoding="utf-8"))
+    metadata["dependencies"]["pyright"] = "0.0.0"
+    declaration.write_text(json.dumps(metadata), encoding="utf-8")
+    code, response = invoke(package, args=("--help",))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "pyright", "version": "1.1.408"}]
+    message = str(decision(response)["message"])
+    assert "actual=1.1.408" in message and "expected=0.0.0" in message
+    assert "evidence" not in response
 
 
 def test_dependency_resolution_uses_workspace_ancestors(

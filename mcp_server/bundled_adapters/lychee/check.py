@@ -368,6 +368,26 @@ def _run(request: object) -> tuple[dict[str, object], int]:
     return response, exit_code
 
 
+def _declared_version() -> str:
+    """Read the package's exact main-tool prerequisite before native interpretation."""
+    declaration = json.loads(
+        Path(__file__).with_name("dependencies.json").read_text(encoding="utf-8")
+    )
+    if not isinstance(declaration, dict) or not isinstance(declaration.get("native_tools"), list):
+        raise ValueError("Lychee prerequisites must declare native_tools.")
+    tools = [
+        item
+        for item in declaration["native_tools"]
+        if isinstance(item, dict) and item.get("tool_id") == "lychee"
+    ]
+    if len(tools) != 1:
+        raise ValueError("Lychee prerequisites must declare one main-tool version.")
+    version = tools[0].get("version")
+    if not isinstance(version, str) or re.fullmatch(r"\d+\.\d+\.\d+", version) is None:
+        raise ValueError("Lychee prerequisites must declare one exact supported version.")
+    return version
+
+
 def _execute(
     operation: str, payload: tuple[str, ...], args: tuple[str, ...]
 ) -> tuple[dict[str, object], int]:
@@ -384,6 +404,20 @@ def _execute(
     version = version_text.removeprefix("lychee ").strip() or None
     if version_result.returncode != 0 or version is None:
         return _unavailable("dependency_unavailable", "Lychee did not report a usable version.")
+    try:
+        expected_version = _declared_version()
+    except (OSError, UnicodeError, ValueError) as exc:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Lychee prerequisite declaration is unavailable: {exc}",
+            version,
+        )
+    if version != expected_version:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Lychee version mismatch: actual={version}, expected={expected_version}",
+            version,
+        )
     options = _option_parts(args)
     try:
         settings = _effective_settings(options)

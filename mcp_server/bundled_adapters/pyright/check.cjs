@@ -125,8 +125,29 @@ function run(request) {
       "Pyright is unavailable from the workspace: " + error.message);
   }
 
+  let expectedVersion;
+  try {
+    const declaration = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8"));
+    expectedVersion = declaration.dependencies?.pyright;
+    if (typeof expectedVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(expectedVersion)) {
+      throw new Error("The Pyright dependency must declare one exact supported version.");
+    }
+  } catch (error) {
+    return unavailable("dependency_unavailable",
+      "Pyright prerequisite declaration is unavailable: " + error.message, version);
+  }
+  if (version !== expectedVersion) {
+    return unavailable("dependency_unavailable",
+      "Pyright version mismatch: actual=" + (version ?? "unreadable") +
+        ", expected=" + expectedVersion, version);
+  }
+
+  const alternateOperations = new Set([
+    "--help", "-h", "--version", "--watch", "-w", "--verifytypes", "--createstub",
+  ]);
   for (const arg of request.args) {
-    if (arg.includes("\0") || arg === "-" || arg.split("=")[0] === "--createstub") {
+    if (arg.includes("\0") || arg === "-" || alternateOperations.has(arg.split("=")[0]) ||
+        (/^-[^\d-]{2,}$/.test(arg) && /[hw]/.test(arg.slice(1)))) {
       return unavailable("unsupported_input",
         "Pyright argument conflicts with the check contract: " + JSON.stringify(arg), version);
     }

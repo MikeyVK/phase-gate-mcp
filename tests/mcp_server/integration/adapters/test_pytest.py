@@ -12,6 +12,7 @@ import tomllib
 from ctypes import wintypes
 from dataclasses import dataclass
 from pathlib import Path
+from shutil import copytree
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -38,6 +39,7 @@ class NativeCase:
     workspace: Path
     source: Path
     repo_root: Path
+    adapter_root: Path | None = None
 
 
 @pytest.fixture
@@ -61,7 +63,7 @@ def native_case(tmp_path: Path, pytestconfig: pytest.Config) -> NativeCase:
 def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
     loader = ConfigLoader(case.repo_root / ".pgmcp/config", case.repo_root / ".pgmcp/templates")
     catalog = AdapterCatalogLoader(
-        case.repo_root / "mcp_server/bundled_adapters",
+        case.adapter_root or case.repo_root / "mcp_server/bundled_adapters",
         case.workspace / "no workspace adapters",
         AdapterTrustConfig(trusted_adapter_ids=()),
         read_manifest=loader.load_adapter_manifest,
@@ -281,6 +283,35 @@ def test_wire_rejection_dependency_and_metadata_only_requests(
     code, response = invoke(case, request)
     assert code == 3 and isinstance(response.root, NativeTestResult)
     assert response.root.decision.reason == "unsupported_input"
+
+
+@pytest.mark.parametrize("declaration", ["pytest==0.0.0\n", "# missing main-tool pin\n"])
+def test_unsupported_or_missing_pin_stops_before_collection(
+    native_case: NativeCase, declaration: str
+) -> None:
+    package_root = native_case.workspace.parent / "copied adapters"
+    package = package_root / "pytest"
+    copytree(native_case.repo_root / "mcp_server/bundled_adapters/pytest", package)
+    (package / "requirements.txt").write_text(declaration, encoding="utf-8")
+    marker = native_case.workspace / "collected.marker"
+    native_case.source.write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('collected')\n",
+        encoding="utf-8",
+    )
+    case = NativeCase(
+        native_case.workspace, native_case.source, native_case.repo_root, package_root
+    )
+    code, response = invoke(case, {"operation": "tests", "targets": [str(case.source)], "args": []})
+    assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert response.root.decision.reason == "dependency_unavailable"
+    actual = response.root.external_tools[0].version
+    assert actual is not None
+    if "0.0.0" in declaration:
+        assert f"observed={actual}" in response.root.decision.message
+        assert "expected=0.0.0" in response.root.decision.message
+    else:
+        assert "exact main-tool pin" in response.root.decision.message
+    assert not marker.exists()
 
 
 def is_running(pid: int) -> bool:

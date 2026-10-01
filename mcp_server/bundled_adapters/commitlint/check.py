@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from shutil import which
 from typing import TYPE_CHECKING
 
@@ -21,6 +22,7 @@ _BARE_UNC_ROOT = re.compile(r"^\\\\[^\\/]+[\\/][^\\/]+$")
 # The installed parser owns tokenization. These native CLI types/aliases only guard
 # input substitution and early-return modes; they never load --options files.
 _NATIVE_GUARD = r"""
+const fs = require("node:fs");
 const {createRequire} = require("node:module");
 const path = require("node:path");
 const {pathToFileURL} = require("node:url");
@@ -31,7 +33,20 @@ const {pathToFileURL} = require("node:url");
     const packagePath = workspaceRequire.resolve("@commitlint/cli/package.json");
     const cliRequire = createRequire(packagePath);
     const pkg = cliRequire(packagePath);
-    version = pkg.version;
+    version = typeof pkg.version === "string" && pkg.version.trim() ? pkg.version : null;
+    const declaration = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+    const expectedVersion = declaration.dependencies?.["@commitlint/cli"];
+    if (typeof expectedVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(expectedVersion)) {
+      throw new Error("The Commitlint dependency must declare one exact supported version.");
+    }
+    if (version !== expectedVersion) {
+      process.stdout.write(JSON.stringify({
+        version, reason: "dependency_unavailable",
+        message: "Commitlint version mismatch: actual=" + (version ?? "unreadable") +
+          ", expected=" + expectedVersion,
+      }));
+      return;
+    }
     const yargsRequire = createRequire(cliRequire.resolve("yargs"));
     const {default: parse} = await import(pathToFileURL(yargsRequire.resolve("yargs-parser")));
     const result = parse.detailed(JSON.parse(process.argv[1]), {
@@ -239,7 +254,13 @@ def _run(
     environment = {**os.environ, "JITI_FS_CACHE": "0"}
     try:
         guard = subprocess.run(
-            [node, "-e", _NATIVE_GUARD, json.dumps(args)],
+            [
+                node,
+                "-e",
+                _NATIVE_GUARD,
+                json.dumps(args),
+                str(Path(__file__).with_name("package.json")),
+            ],
             capture_output=True,
             check=False,
             env=environment,

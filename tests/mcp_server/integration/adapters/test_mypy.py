@@ -106,7 +106,7 @@ def invoke(
         timeout=40,
     )
     assert not completed.stderr, completed.stderr.decode("utf-8", errors="replace")
-    response = TypeAdapter(JsonValue).validate_json(completed.stdout)
+    response: JsonValue = TypeAdapter(JsonValue).validate_json(completed.stdout)
     assert isinstance(response, dict)
     package.schema.validate(response)
     return completed.returncode, response
@@ -320,7 +320,7 @@ def test_source_replacement_and_write_options_are_refused(
     before = b"value: int = 1\n"
     target.write_bytes(before)
     (package.workspace / "replacement.py").write_text("value = 2\n", encoding="utf-8")
-    targets = (target,)
+    targets: tuple[Path, ...] = (target,)
     if args[0] == "--command":
         (package.workspace / "pyproject.toml").write_text("[tool.mypy]\n", encoding="utf-8")
         targets = ()
@@ -413,3 +413,33 @@ def test_request_rejection_preserves_protocol_details(mypy_package: MypyPackage)
             "reason": "invalid_request",
             "details": [{"location": location, "code": reason}],
         }
+
+
+@pytest.mark.parametrize("args", [("--help",), ("-h",), ("--version",), ("-V",)])
+def test_native_metadata_exit_cannot_be_passed_type_analysis(
+    mypy_package: MypyPackage,
+    args: tuple[str, ...],
+) -> None:
+    package = mypy_package
+    target = package.workspace / "negative.py"
+    before = b'value: int = "bad"\n'
+    target.write_bytes(before)
+    direct = native(package.workspace, "types", (target,), args)
+    assert direct.returncode == 0 and direct.stdout
+    code, response = invoke(package, "types", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert direct.stdout.decode().replace("\r\n", "\n") in evidence_text(response).replace(
+        "\r\n", "\n"
+    )
+    assert target.read_bytes() == before
+
+
+def test_declared_version_mismatch_stops_before_native_parser(
+    mypy_package: MypyPackage,
+) -> None:
+    package = mypy_package
+    (package.root / "requirements.txt").write_text("mypy==0.0.0\n", encoding="utf-8")
+    code, response = invoke(package, "types", args=("--help",))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "mypy", "version": "1.19.1"}]
+    assert "0.0.0" in str(decision(response)["message"])

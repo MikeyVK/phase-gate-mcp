@@ -297,6 +297,30 @@ def test_missing_native_and_malformed_wire(
         assert code == 2 and response["reason"] == "invalid_request"
 
 
+def test_declared_version_precedes_native_configuration(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+) -> None:
+    package = package_for(lychee_runtime, tmp_path, pytestconfig.rootpath)
+    assert package.launch.args
+    declaration = Path(package.launch.args[0]).with_name("dependencies.json")
+    metadata = json.loads(declaration.read_text(encoding="utf-8"))
+    metadata["native_tools"][0]["version"] = "0.0.0"
+    declaration.write_text(json.dumps(metadata), encoding="utf-8")
+    code, response = invoke(
+        package,
+        {"operation": "links", "targets": [], "args": ["--config", "missing.toml"]},
+    )
+    assert code == 3
+    result = response["decision"]
+    assert isinstance(result, dict) and result["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "lychee", "version": "0.24.2"}]
+    message = str(result["message"])
+    assert "actual=0.24.2" in message and "expected=0.0.0" in message
+    assert "evidence" not in response
+
+
 def test_source_and_write_options_are_refused(
     lychee_runtime: LycheeRuntime,
     tmp_path: Path,

@@ -12,6 +12,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from io import StringIO
+from pathlib import Path
 
 _REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
@@ -83,6 +84,23 @@ def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
     return [str(target) for target in targets], [str(arg) for arg in args]
 
 
+def _native_version_error(version: str) -> str | None:
+    """Read the package declaration before relying on the installed Mypy parser."""
+    try:
+        declaration = (
+            Path(__file__).with_name("requirements.txt").read_text(encoding="utf-8").strip()
+        )
+    except (OSError, UnicodeError) as exc:
+        return f"Mypy prerequisite declaration is unreadable (actual {version}): {exc}"
+    requirement = re.fullmatch(r"mypy==([^\s;]+)", declaration)
+    if requirement is None:
+        return f"Mypy prerequisite declaration is invalid: {declaration!r} (actual {version})."
+    expected = requirement.group(1)
+    if version != expected:
+        return f"Mypy version is unsupported: actual {version}, expected {declaration}."
+    return None
+
+
 def _external(version: str | None) -> list[dict[str, str | None]]:
     return [{"tool_id": "mypy", "version": version}]
 
@@ -144,7 +162,12 @@ def _native_guard(args: list[str]) -> _GuardResult | str | None:
         parser.parse_args(args, dummy)
     except SystemExit as exc:
         if exc.code == 0:
-            return None
+            return _GuardResult(
+                "unsupported_input",
+                "Native metadata requests do not perform type analysis.",
+                stdout.getvalue(),
+                stderr.getvalue(),
+            )
         return _GuardResult(
             "unsupported_input",
             _message(stdout.getvalue().encode(), stderr.getvalue().encode())
@@ -293,6 +316,9 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             "Mypy distribution is unavailable to the adapter interpreter.",
             None,
         )
+    version_error = _native_version_error(version)
+    if version_error is not None:
+        return _unavailable("dependency_unavailable", version_error, version)
     guard = _native_guard(args)
     if isinstance(guard, _GuardResult):
         return _unavailable(

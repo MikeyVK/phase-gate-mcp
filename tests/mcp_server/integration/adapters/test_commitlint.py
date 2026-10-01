@@ -371,6 +371,32 @@ def test_missing_native_and_reader_dependencies_are_honest(
     assert isinstance(decision, dict) and decision["reason"] == "dependency_unavailable"
 
 
+def test_declared_version_precedes_parser_and_configuration(
+    commitlint_package: CommitlintPackage,
+) -> None:
+    package = commitlint_package
+    declaration = package.root / "package.json"
+    metadata = json.loads(declaration.read_text(encoding="utf-8"))
+    metadata["dependencies"]["@commitlint/cli"] = "0.0.0"
+    declaration.write_text(json.dumps(metadata), encoding="utf-8")
+    marker = package.runtime.workspace / "config-executed"
+    config = package.runtime.workspace / "commitlint.config.cjs"
+    config.write_text(
+        'require("fs").writeFileSync(' + json.dumps(str(marker)) + ', "executed");'
+        "module.exports = {rules: {}};",
+        encoding="utf-8",
+    )
+    code, response = invoke(package, "feat: Valid subject", ("--help",))
+    assert code == 3
+    result = response["decision"]
+    assert isinstance(result, dict) and result["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "commitlint", "version": "21.2.2"}]
+    message = str(result["message"])
+    assert "actual=21.2.2" in message and "expected=0.0.0" in message
+    assert not marker.exists()
+    assert "evidence" not in response
+
+
 def test_malformed_wire_is_separate(commitlint_package: CommitlintPackage) -> None:
     raw = json.dumps(
         {

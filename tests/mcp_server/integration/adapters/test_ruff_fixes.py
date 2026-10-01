@@ -252,3 +252,19 @@ def test_inherited_output_destination_cannot_redirect_fix_evidence(
     code, response = invoke(package, "lint", (target,))
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
     assert target.read_bytes() == b"import os\n" and not output.exists()
+
+
+def test_declared_version_mismatch_stops_before_source_mutation(
+    ruff_package: RuffPackage,
+    pytestconfig: pytest.Config,
+) -> None:
+    package = fix_package(ruff_package, pytestconfig.rootpath)
+    target = package.workspace / "unformatted.py"
+    before = b"value=1\n"
+    target.write_bytes(before)
+    (package.root / "requirements.txt").write_text("ruff==0.0.0\n", encoding="utf-8")
+    code, response = invoke(package, "format", (target,))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert "0.0.0" in str(decision(response)["message"])
+    assert target.read_bytes() == before

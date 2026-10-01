@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 _REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
@@ -19,6 +20,12 @@ _CONFLICTING_FLAGS = (
     "--output-file",
     "-o",
     "--add-noqa",
+    "--help",
+    "--version",
+    "--show-files",
+    "--show-settings",
+    "--watch",
+    "--diff",
     "-",
 )
 
@@ -91,6 +98,23 @@ def _validate_request(value: object) -> tuple[str, list[str], list[str]] | dict[
     return operation, [str(target) for target in targets], list(args)
 
 
+def native_version_error(version: str) -> str | None:
+    """Compare the observed native version with this package's exact requirement."""
+    try:
+        declaration = (
+            Path(__file__).with_name("requirements.txt").read_text(encoding="utf-8").strip()
+        )
+    except (OSError, UnicodeError) as exc:
+        return f"Ruff prerequisite declaration is unreadable (actual {version}): {exc}"
+    requirement = re.fullmatch(r"ruff==([^\s;]+)", declaration)
+    if requirement is None:
+        return f"Ruff prerequisite declaration is invalid: {declaration!r} (actual {version})."
+    expected = requirement.group(1)
+    if version != expected:
+        return f"Ruff version is unsupported: actual {version}, expected {declaration}."
+    return None
+
+
 def _external_tools(version: str | None) -> list[dict[str, str | None]]:
     return [{"tool_id": "ruff", "version": version}]
 
@@ -156,9 +180,9 @@ def _message(stdout: bytes, stderr: bytes, operation: str) -> str | None:
     combined = stdout_text + "\n" + stderr_text
     structured = stdout_text.lstrip().startswith(("{", "[", "<", "--- "))
     message_source = stderr_text if structured else combined
-    meaningful = [line.strip() for line in message_source.splitlines() if line.strip()]
-    if meaningful:
-        return meaningful[0]
+    _, message = native_failure(message_source)
+    if message is not None:
+        return message
     if combined.strip():
         if operation == "format":
             return "Ruff format requires formatting changes."
@@ -183,18 +207,33 @@ def _unavailable(
     return response, 3
 
 
-def _classify_native_failure(output: str) -> str:
-    lowered = output.casefold()
-    if any(
-        marker in lowered
-        for marker in (
-            "toml parse error",
-            "failed to parse",
-            "configuration",
-            "config file",
-        )
-    ):
-        return "invalid_configuration"
+def native_failure(output: str) -> tuple[str, str | None]:
+    """Interpret Ruff's substantive error and causal lines independently of debug chatter."""
+    lines = [
+        line.strip()
+        for line in output.splitlines()
+        if line.strip()
+        and re.search(r"\[(?:DEBUG|TRACE|INFO)\]", line) is None
+        and line.strip() not in {"stdout:", "stderr:"}
+    ]
+    access = next(
+        (
+            line
+            for line in lines
+            if any(
+                marker in line.casefold()
+                for marker in ("os error", "permission denied", "access denied", "is a directory")
+            )
+        ),
+        None,
+    )
+    if access is not None:
+        return "execution_error", access
+    lowered = "\n".join(lines).casefold()
+    message = next(
+        (line for line in lines if line.casefold().startswith(("ruff failed", "error:"))),
+        lines[0] if lines else None,
+    )
     if any(
         marker in lowered
         for marker in (
@@ -205,8 +244,20 @@ def _classify_native_failure(output: str) -> str:
             "no such option",
         )
     ):
-        return "unsupported_input"
-    return "execution_error"
+        return "unsupported_input", message
+    if any(
+        marker in lowered
+        for marker in (
+            "toml parse error",
+            "failed to parse configuration",
+            "invalid configuration",
+            "failed to load configuration",
+            "unknown field",
+            "invalid type",
+        )
+    ):
+        return "invalid_configuration", message
+    return "execution_error", message
 
 
 def _conflicting_argument(arg: str) -> bool:
@@ -218,7 +269,7 @@ def _conflicting_argument(arg: str) -> bool:
         return True
     if arg.startswith("--stdin-filename=") or arg.startswith("--output-file="):
         return True
-    if arg.startswith("-") and not arg.startswith("--") and "o" in arg[1:]:
+    if arg.startswith("-") and not arg.startswith("--") and any(char in arg[1:] for char in "ohV"):
         return True
     return arg.startswith("--add-noqa=")
 
@@ -236,6 +287,10 @@ def _run(request: object) -> tuple[dict[str, object], int]:
             "Ruff distribution is unavailable to the adapter interpreter.",
             None,
         )
+
+    version_error = native_version_error(version)
+    if version_error is not None:
+        return _unavailable("dependency_unavailable", version_error, version)
 
     for arg in args:
         if _conflicting_argument(arg):
@@ -302,10 +357,10 @@ def _run(request: object) -> tuple[dict[str, object], int]:
     output = ""
     if evidence is not None and isinstance(evidence["data"], str):
         output = evidence["data"]
-    reason = _classify_native_failure(output)
+    reason, failure_message = native_failure(output)
     return _unavailable(
         reason,
-        message or f"Ruff returned native exit status {completed.returncode}.",
+        failure_message or f"Ruff returned native exit status {completed.returncode}.",
         version,
         evidence,
     )

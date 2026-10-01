@@ -8,6 +8,12 @@ import os
 import re
 import subprocess
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mcp_server.bundled_adapters.ruff.check import native_failure, native_version_error
+else:
+    from check import native_failure, native_version_error
 
 _KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
@@ -181,6 +187,9 @@ def _run(value: object) -> tuple[dict[str, object], int]:
         return _unavailable(
             "dependency_unavailable", "Ruff is unavailable to the adapter interpreter."
         )
+    version_error = native_version_error(version)
+    if version_error is not None:
+        return _unavailable("dependency_unavailable", version_error, version)
     controls = ["format"] if operation == "format" else ["check", "--fix"]
     try:
         native = subprocess.run(
@@ -211,26 +220,10 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             message="Ruff reported a negative native fixing result (exit 1).",
             evidence=evidence,
         )
-    lowered = evidence.casefold()
-    if any(
-        token in lowered
-        for token in (
-            "toml parse error",
-            "configuration file",
-            "config file",
-            "failed to load configuration",
-        )
-    ):
-        reason = "invalid_configuration"
-    elif any(
-        token in lowered for token in ("unexpected argument", "invalid value", "unknown option")
-    ):
-        reason = "unsupported_input"
-    else:
-        reason = "execution_error"
+    reason, message = native_failure(evidence)
     return _unavailable(
         reason,
-        f"Ruff could not complete the requested fix (native exit {native.returncode}).",
+        message or f"Ruff could not complete the requested fix (native exit {native.returncode}).",
         version,
         evidence,
     )

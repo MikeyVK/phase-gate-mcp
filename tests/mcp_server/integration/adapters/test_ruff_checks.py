@@ -113,7 +113,7 @@ def invoke(
         timeout=20,
     )
     assert not completed.stderr, completed.stderr.decode("utf-8", errors="replace")
-    response = TypeAdapter(JsonValue).validate_json(completed.stdout)
+    response: JsonValue = TypeAdapter(JsonValue).validate_json(completed.stdout)
     assert isinstance(response, dict)
     package.schema.validate(response)
     return completed.returncode, response
@@ -502,3 +502,66 @@ def test_response_file_tokens_do_not_hide_writes_in_pinned_native(
     code, response = invoke(package, "lint", args=args)
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
     assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("operation", "args"),
+    [
+        ("lint", ("--help",)),
+        ("lint", ("-h",)),
+        ("lint", ("-vh",)),
+        ("lint", ("--show-files",)),
+        ("lint", ("--show-settings",)),
+        ("lint", ("--diff",)),
+        ("format", ("--help",)),
+        ("format", ("-h",)),
+    ],
+)
+def test_metadata_and_alternate_modes_cannot_be_passed_analysis(
+    ruff_package: RuffPackage,
+    operation: str,
+    args: tuple[str, ...],
+) -> None:
+    package = ruff_package
+    target = package.workspace / "negative.py"
+    before = b"unknown_name\n"
+    target.write_bytes(before)
+    direct = native(package.workspace, operation, (target,), args)
+    assert direct.returncode == 0
+    code, response = invoke(package, operation, (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize("verbose", [False, True])
+def test_native_access_failure_preserves_cause_under_verbosity(
+    ruff_package: RuffPackage,
+    verbose: bool,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "missing.py"
+    args = ("--verbose",) if verbose else ()
+    direct = native(package.workspace, "format", (target,), args)
+    assert direct.returncode == 2 and b"os error" in direct.stderr
+    code, response = invoke(package, "format", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "execution_error"
+    native_error = next(line for line in direct.stderr.decode().splitlines() if "os error" in line)
+    assert decision(response)["message"] == native_error
+    assert native_error in evidence_text(response)
+    if verbose:
+        assert "[DEBUG] Using configuration file" in evidence_text(response)
+
+
+@pytest.mark.parametrize("declaration", ["ruff==0.0.0", "ruff>=0.15.6"])
+def test_unsupported_or_malformed_declared_version_is_not_assumed_supported(
+    ruff_package: RuffPackage,
+    declaration: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "clean.py"
+    target.write_text("value = 1\n", encoding="utf-8")
+    (package.root / "requirements.txt").write_text(declaration + "\n", encoding="utf-8")
+    code, response = invoke(package, "lint", (target,))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert declaration in str(decision(response)["message"])

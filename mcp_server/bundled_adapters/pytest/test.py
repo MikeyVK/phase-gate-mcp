@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -159,6 +160,30 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             evidence=version_evidence,
         )
     version = match[1]
+    declaration = Path(__file__).with_name("requirements.txt")
+    try:
+        pins = re.findall(
+            r"(?m)^pytest==([^\s;#]+)\s*(?:#.*)?$", declaration.read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeError) as exc:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Pytest dependency declaration could not be read: {declaration}: {exc}",
+            version,
+        )
+    if len(pins) != 1:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Pytest dependency declaration requires one exact main-tool pin: {declaration}",
+            version,
+        )
+    expected_version = pins[0]
+    if version != expected_version:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Pytest version is unsupported: observed={version}, expected={expected_version}.",
+            version,
+        )
     try:
         result = subprocess.run(
             [sys.executable, __file__, "--native", *targets, *args],
