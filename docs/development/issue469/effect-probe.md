@@ -3,7 +3,7 @@
 # Issue 469 / 474 — Isolated Native Write-Effect Evidence
 
 **Status:** OBSERVED — Research evidence; independent QA pending
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** 2026-10-01
 
 
@@ -20,6 +20,10 @@ Ruff check/fix format and lint, Mypy check types; cache routing through CLI, loc
 Production repair, future regression-test design, public apply_fixes-route certification, actual host-external destinations, ACL/configuration changes, arbitrary executable-code confinement and the R-06 OS-sandbox boundary.
 
 
+
+## Policy interpretation after Research reopening
+
+The owner reopened B4 after this probe: PGMCP owns execution conditions and any write policy, and concrete restrictions must be feasible and proportionate to personal local use. The terms unauthorized and misrouted below refer to the original simulated B4 policy at the time of observation; they are not a current decision that every operator-configured native cache outside selected sources must be prohibited. The observed bytes, inventories, native outcomes and archived probe remain unchanged. See [current Research](research.md#approved-strategy) for the pending replacement policy and release-risk decision.
 
 ## Summary
 
