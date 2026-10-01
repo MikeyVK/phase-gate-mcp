@@ -2,13 +2,13 @@
 
 # Issue 469 — Native Adapter Robustness and Related Scope Research
 
-**Status:** RESEARCH REOPENED — ownership and release principles approved; concrete write-policy decision pending
-**Version:** 1.1
+**Status:** RESEARCH FINDINGS — replacement strategy human-approved; independent QA pending
+**Version:** 1.2
 **Last Updated:** 2026-10-01
 
 ## Purpose
 
-Establish observed defects, causal evidence and affected consumers for the approved combined issue-469/474/475 delivery. Record the owner's corrected responsibility boundary and proportional release principles; reopen the concrete operational-write strategy before dependent Design choices.
+Establish observed defects, causal evidence and affected consumers for the approved combined issue-469/474/475 delivery. Record the owner's corrected responsibility boundary and approved proportional release strategy as binding input for Design.
 
 ## Scope In
 
@@ -20,13 +20,13 @@ Production implementation and permanent regression-test design; the approved iso
 
 ## Prerequisites
 
-- Active bug/469-native-adapter-robustness branch, now in Design after the owner's explicit phase-entry request. This owner-directed Research amendment reopens strategy without a backward/forced phase transition; dependent Design selection is paused.
+- Active bug/469-native-adapter-robustness branch, now in Design after the owner's explicit phase-entry request. The owner-directed Research strategy amendment is now resolved without a backward/forced phase transition; no independent QA verdict is inferred.
 - Read current phase instructions, Documentation Standard and Architecture Principles.
-- S1, the original approval and the subsequent explicit ownership/release correction are recorded below. B1 ownership is amended, B4's concrete policy is reopened; B2 is constrained by the revised resource-ownership boundary. B3/B5/B6 and the isolated probe authorization remain unchanged. Independent QA remains separate.
+- S1, the original approval and the subsequent explicit ownership/release correction are recorded below. B1 ownership is amended and replacement B4 is approved; B2 is constrained by the revised resource-ownership boundary. B3/B5/B6 and the isolated probe authorization remain unchanged. Independent QA remains separate.
 
 ## Problem Statement
 
-Large explicit selections exceed native Windows command-line limits even though the adapter request arrives through stdin. Ruff discovery encounters inaccessible paths and verbose output misclassifies the access failure. Several check adapters also claim passed for metadata-only invocations. The approved isolated effect probe demonstrates cache routing through CLI, configuration and environment in Ruff check/fix and Mypy check outside the simulated B4-authorized destination. The writes are observed facts; whether such operator-configured operational writes should be prohibited in this release is now an explicit reopened policy question. Selected-source admission alone does not confine arbitrary process effects.
+Large explicit selections exceed native Windows command-line limits even though the adapter request arrives through stdin. Ruff discovery encounters inaccessible paths and verbose output misclassifies the access failure. Several check adapters also claim passed for metadata-only invocations. The approved isolated effect probe demonstrates cache routing through CLI, configuration and environment in Ruff check/fix and Mypy check outside the simulated B4-authorized destination. The writes are observed facts. Replacement B4 accepts normal native caches and temporary toolfiles at user-configured native locations, including outside the source selection; that destination alone is not a defect under the selected release policy. Selected-source admission alone does not confine arbitrary process effects.
 
 ## Goals
 
@@ -40,18 +40,18 @@ Large explicit selections exceed native Windows command-line limits even though 
 
 Issue 469 owns D-VAL-01 from issue 460. Issues 474 and 475 retain D-VAL-06 and D-VAL-07 identity. The source notices explicitly required separate issues. The human approved their shared delivery branch on 2026-10-01 while preserving those separate issue identities and acceptance criteria. Their issue bodies are follow-up boundaries, not approved designs.
 
-Startup found only untracked .pgmcp/state.json and .pgmcp/deliverables.json. The project plan has Research active and later phases pending, with no planning deliverables. There is no issue-469 Research artifact or QA verdict to supersede. Issue-460 Validation records independent QA NOGO and owner dispositions; it is historical evidence here, not a verdict on 469. Historical cache receipts a7bf3cd5498640069bdba82274bf5fc0, c3115667351b48dab1e6e22c44e731aa and bfb9ce644ab842f39d000ce974851cf4 were unavailable on this server, so the decisive read-only observations were reproduced.
+At initial startup, only .pgmcp/state.json and .pgmcp/deliverables.json were untracked. The project plan then had Research active and later phases pending, with no planning deliverables; no issue-469 Research artifact or QA verdict existed to supersede. The owner later directed Design entry; the current Research amendment resolves the subsequently reopened strategy. Issue-460 Validation records independent QA NOGO and owner dispositions; it is historical evidence here, not a verdict on 469. Historical cache receipts a7bf3cd5498640069bdba82274bf5fc0, c3115667351b48dab1e6e22c44e731aa and bfb9ce644ab842f39d000ce974851cf4 were unavailable on this server, so the decisive read-only observations were reproduced.
 
 ## Findings
 
-### Defects and causal boundaries
+### Findings and causal boundaries
 
 | ID / owner | Observed versus expected | Cause and counterevidence |
 |---|---|---|
 | F469-01 / 469 | 1,171 existing file targets make Ruff format/lint and Mypy unavailable with WinError 206 and Pyright unavailable with ENAMETOOLONG; one selected Python file completes all four checks | Selection arrives through JSON stdin, then each adapter appends all absolute paths to one child argv. Native extension filtering happens too late to reduce launch size. This is a native-child launch limit, not proof of a long individual filename, timeout or generic JSON transport failure |
 | F469-02 / 469 | Configured Ruff format reports access denied; --verbose changes reason from execution_error to invalid_configuration and selects a benign configuration debug line as message | Ruff's classifier scans all output for broad configuration markers; its message selector takes the first meaningful text line. The native evidence still contains the same os error 5; changing verbosity did not repair access or make configuration invalid |
 | F475-01 / 475 | Mypy, Ruff lint and Pyright report passed for --help on an explicit file; Ruff format does the same, and lint --show-files returns passed with only a pathname | Metadata/early-exit admission is missing and native exit 0 is accepted as completion. Mypy's parser SystemExit(0) guard explicitly returns None, permitting the second native help invocation. Generic protocol validation checks declared status/exit agreement, not whether the native tool analysed sources |
-| F474-01 / 474 | Approved isolated probes show cache writes in a simulated unauthorized location for CLI, native config and environment in Ruff check/fix and Mypy check; allowed/default-cache and disabled-cache controls distinguish effects | Native option-source routing reaches a process without destination-authority validation. Ruff fix token/file admission constrains sources, not caches; Mypy's write guard does not constrain native cache destinations. Fifteen redirected cases wrote files; five existing report-output guards refused with no writes. See [effect-probe.md](effect-probe.md) |
+| F474-01 / 474 | Approved isolated probes show cache routing via CLI, native config and environment in Ruff check/fix and Mypy check, with allowed/default-cache and disabled-cache controls | Native option sources determine cache locations; selected-source admission does not confine process effects. Fifteen redirected cases wrote files; five existing report-output guards refused with no writes. The original strict-policy classification is superseded: ordinary configured cache destinations are accepted by replacement B4. Report controls must be evaluated against role/output correctness rather than treated as general security enforcement. See [effect-probe.md](effect-probe.md) |
 
 [ScopeResolver and CheckSelector](../../../mcp_server/execution/check_selection.py) own configured=[] versus workspace=[root], explicit paths, branch deletions and collapse of covering directories. [CheckService](../../../mcp_server/execution/check_service.py) aggregates adapter decisions. [Process runtime](../../../mcp_server/execution/process_runtime.py) owns transport, timeout and process-tree lifetime. None of those responsibilities justifies tool-specific parsing or silently replacing a large explicit selection with workspace/configured discovery.
 
@@ -78,7 +78,7 @@ Pins/declarations live in each package's requirements.txt/package.json/dependenc
 
 ### Native-strategy feasibility evidence
 
-Mypy 1.19.1 documents @file inputs, while the shipped adapter refuses caller-provided @arguments. Adapter-owned input construction could be evaluated without reopening caller admission. Pyright 1.1.408 documents file-list stdin, while the current adapter refuses caller '-' and launches native stdin as ignore. These are feasible research options, not selected mechanisms or equivalence proof. Ruff needs its own evaluation; no response-file support or universal batching is assumed. Independent batching can change Mypy cross-module checks, Pytest fixture/session/xdist behavior, configured discovery, diagnostics and failure ordering.
+Mypy 1.19.1 documents @file inputs, while the shipped adapter refuses caller-provided @arguments. Native argument-file encoding could be evaluated under PGMCP-owned temporary-resource authority without reopening caller admission. Pyright 1.1.408 documents file-list stdin, while the current adapter refuses caller '-' and launches native stdin as ignore. These are feasible research options, not selected mechanisms or equivalence proof. Ruff needs its own evaluation; no response-file support or universal batching is assumed. Independent batching can change Mypy cross-module checks, Pytest fixture/session/xdist behavior, configured discovery, diagnostics and failure ordering.
 
 Microsoft documents a 32,767-character CreateProcessW command-line bound including NUL. The fresh probe is decisive live size evidence; no newly measured exact Windows command-line length is claimed.
 
@@ -100,7 +100,7 @@ Microsoft documents a 32,767-character CreateProcessW command-line bound includi
 
 | Option | Cost, risk and impact |
 |---|---|
-| S1 — deliver 469, 474 and 475 on this branch; keep each issue's acceptance identity (**human-approved**) | One coherent audit of the same native admission/invocation/evidence code; avoids a length fix introducing unmanaged temp writes or retaining false completion. More research/design/regression work and a larger review surface. 474 has isolated effect reproduction and approved ownership/release principles, while its concrete write policy has been reopened; separate issue identities and evidence cannot disappear |
+| S1 — deliver 469, 474 and 475 on this branch; keep each issue's acceptance identity (**human-approved**) | One coherent audit of the same native admission/invocation/evidence code; avoids a length fix introducing unmanaged temp writes or retaining false completion. More research/design/regression work and a larger review surface. 474 has isolated effect reproduction and an approved replacement write policy, ownership boundary and accepted-risk statement; separate issue identities and evidence cannot disappear |
 | S2 — deliver 469 and 475 together; leave 474 separate | Removes the closest completion/robustness overlap while limiting policy breadth. Any 469 length strategy requiring new writes must wait for compatible 474 authority or remain write-free; potentially duplicates adapter work |
 | S3 — keep all delivery separate | Smallest per-issue review, preserves original scheduling. Duplicated guards/tests and conflict risk across the same adapter files; unresolved effect/completion dependencies must still be coordinated |
 
@@ -113,11 +113,11 @@ No issue is closed or its GitHub scope rewritten here. @co retains external coor
 | B1 generic public/wire contracts and role ownership — amended by owner | Adapters are thin native input/output translators and uphold the requested role. PGMCP owns execution conditions, allocated-resource lifecycle and any chosen filesystem authority. Preserve public contracts where coherent; do not let contract preservation force security policy into adapters. Any needed wire/consumer change requires a separate explicit strategy decision | Centralizing native parsers in PGMCP violates tool ownership; duplicating execution/write policy in every adapter violates responsibility and increases maintenance. A general policy framework is not presumed necessary |
 | B2 selection and large invocation | Preserve requested selection and native config/exclusions; require length-safe adapter-local behavior or honest actionable unsupported/unavailable outcomes, never a silently narrower or broader scope. Fix source selection remains explicit files. An actionable launch-limit failure remains a limitation and does not satisfy the supported-large-selection success criterion | Automatic workspace fallback reduces implementation effort but changes coverage/authority. Naive batching risks cross-source/session semantics. Concrete mechanism and equivalence proof remain Design work |
 | B3 check completion (475) | Deliberately stop admitting metadata-only or check-replacing bypasses as successful quality checks, using existing truthful non-success vocabulary. Preserve genuine native analysis, diagnostic failure, normal native config and existing explicit diagnostic policies | Keeping false PASS preserves a defective result. Adding a parallel metadata API is unneeded scope. Ruff --exit-zero diagnostics and Pytest collect-only/no-tests are deliberately tested native semantics; changing them would require a separate explicit policy decision |
-| B4 filesystem effects (474) — concrete policy reopened | Separate role-contract correctness, operational-write policy and actual OS enforcement. PGMCP owns any chosen authority; adapters translate it where native integration requires that knowledge. The owner requires a feasible and desirable boundary proportionate to personal local use, simple controls for credible obvious defects, and honest residual-risk communication. Mandatory named cache roots, adapter-owned security policy and universal pre-write destination rejection from the original B4 are not current selected requirements | Compare trusted local execution, targeted cooperative controls and OS/deployment confinement below. Exact permitted destinations, enforceable guarantee and accepted residual risks remain undecided; no option is automatically selected |
+| B4 filesystem effects (474) — replacement human-approved | Select trusted personal local execution. PGMCP owns scope, execution conditions and its allocated-resource lifecycle; adapters translate role/input/output contracts. Accept normal native caches and temporary toolfiles at native user-configured locations, including outside source selection. Reports must preserve the requested result contract. Maintain role/source-selection correctness; no general OS filesystem/network/credential isolation is added. Executed code can retain host-account access. Add targeted controls only for demonstrated unwanted routes whose risk, effectiveness and cost justify them | Fixed-cache-root restrictions and universal pre-write destination refusal are rejected as release defaults. Adapter-owned execution/security policy is rejected. L1 is selected, targeted L2 controls remain conditional on concrete findings, and L3 remains outside this release under R-06 |
 | B5 supported native versions | Preserve package-local prerequisite authority and actual-version evidence. Require on-use adapter failure for unsupported versions where semantics depend on the tested version; evaluate supported versions individually, with no startup health probe or blanket stdlib pin | Report-any-version accepts unverified parser/exit behavior. Broad ranges require extra conformance evidence; every supported upgrade needs package/tests updates. Exact policy per tool belongs in Design within the approved support boundary |
 | B6 diagnosis and active documentation | Correct access/usage/config classification and substantive messages regardless of verbosity while retaining bounded native evidence; document the adopted observable restrictions | Scanning any occurrence of configuration perpetuates misclassification. Reducing logs or changing diagnostics into successful outcomes hides evidence |
 
-Original decision: the human owner accepted S1, B1–B6 and the isolated effect-probe route on 2026-10-01 with: "Ja ik accepteer je voorstel". Original B4 permitted only named workspace caches, owned temporary roots and explicitly approved workspace reports, and required rejection of other native destinations. Subsequent decision: the owner agreed to reopen the insufficiently researched ownership boundary and required explicit investigation of whether restrictions are possible and desirable for this personal-use release. The amended B1 and proportionality principles bind the current discussion; the original concrete B4 restriction is superseded as a selected requirement pending the replacement decision. This is not independent QA approval or a chosen implementation mechanism.
+Original decision: the human owner accepted S1, B1–B6 and the isolated effect-probe route on 2026-10-01 with: "Ja ik accepteer je voorstel". Original B4 permitted only named workspace caches, owned temporary roots and explicitly approved workspace reports, and required rejection of other native destinations. Subsequent decision: the owner agreed to reopen the insufficiently researched ownership boundary and required explicit investigation of whether restrictions are possible and desirable for this personal-use release. Final decision: the owner answered "Ja" to the explicit six-part release-boundary proposal replacing B4. The approved replacement below supersedes the original fixed-root/rejection requirement. B1 ownership and proportionality now bind Design together with replacement B4. This records a human strategy decision, not independent QA approval or a selected implementation mechanism.
 
 ### Approved isolated effect-probe authority
 
@@ -127,7 +127,7 @@ The human approved this route on 2026-10-01. Execution/effect evidence is record
 
 ## Questions
 
-- S1/probe authorization and ownership/proportionality principles are resolved. Replacement B4, trusted-execution assumptions, acceptable operational writes, enforceable guarantees and any narrow contract-migration strategy remain Research decisions. Concrete native mechanisms and supported-version details remain Design-owned. The original xdist timeout is still an observed infrastructure uncertainty.
+- No Research policy decision remains open. S1, ownership, replacement B4, trusted local execution and accepted host-access risk are approved. Native mechanisms, interface details and supported-version details are Design-owned. If Design requires a public/wire compatibility change beyond the preservation strategy, reopen that specific decision explicitly. The original xdist timeout remains an observed infrastructure uncertainty.
 
 ## References
 
@@ -141,11 +141,26 @@ The human approved this route on 2026-10-01. Execution/effect evidence is record
 
 ## Approved Strategy
 
-S1 combined delivery and separate issue acceptance identities remain approved. The owner explicitly corrected responsibility ownership: PGMCP owns the execution environment and any filesystem authority; adapters are thin native request/result translators. The release targets the owner's local use, with no current ambition for commercial security guarantees. Security work must be feasible, proportionate and honest about accepted risk. B3/B5/B6 remain approved; B2 must respect this corrected ownership boundary. Exact B4 operational-write restrictions and any resulting contract migration are **pending**, not inferred from the earlier blanket acceptance. Dependent Design selection must wait for the replacement boundary decision.
+S1 combined delivery and separate issue acceptance identities remain approved. PGMCP owns execution conditions and resource authority; adapters are thin native request/result translators. B2 respects that ownership, and B3/B5/B6 remain approved. The owner explicitly accepted the following final replacement B4 with "Ja" on 2026-10-01, in direct response to the complete release-boundary proposal. No further Research policy decision is pending.
 
-### Reopened Research: release audience, feasibility and desirable restrictions
+### Final approved replacement B4
 
-The owner agreed that the previous ownership analysis was insufficient and added: "We zijn geen bank app aan het bouwen op dit moment maar een tool die IK gebruik." The owner permits security trade-offs when costs, guarantees and residual risks are explicit. This authorizes the Research correction; it does not automatically choose unrestricted writes, environment sanitization or a sandbox.
+| Boundary | Approved release decision |
+|---|---|
+| Audience and trust | Personal local use with operator-admitted adapters/toolchains and deliberately executed workspace code. Admission is not a claim that all dependencies, repositories or generated inputs are harmless |
+| Execution ownership and isolation | PGMCP owns process execution, requested selection, temporary resources and lifecycle. No OS sandbox or general filesystem/network/credential isolation is added in this release |
+| Operational writes | Normal native caches and temporary toolfiles may use native user-configured destinations, including outside selected sources. Destination alone is not a reason to refuse. Report output must remain compatible with the requested result contract |
+| Contract correctness | PGMCP validates requested scope and operation. Adapters preserve the operation in translation: checks cannot be switched into native fixes, fixes cannot gain extra source selection, metadata cannot count as successful analysis. This is cooperative contract correctness, not arbitrary-code confinement |
+| Accepted residual risk | Executed tools/tests/plugins/configuration code can retain access available under the host account, including filesystem, environment and network. Contract controls are not a general defense against malicious or defective executable code; document this material limit explicitly |
+| Further controls | Evaluate demonstrated unwanted routes individually. Add a targeted control only when concrete risk, achievable effectiveness and compatibility/maintenance cost justify it; a finding does not automatically create general security-architecture scope |
+
+This changes issue 474's original fixed-destination/pre-write-rejection expectation explicitly. The issue remains an active deliverable: establish the policy and ownership, assess existing controls against it, correct demonstrated contract defects, and document achievable guarantees and accepted limits. Do not claim the issue completed from the policy decision alone.
+
+Preserve existing public/wire contracts as the starting compatibility strategy. No new public permission API, security manifest or generic native parser is authorized by this decision. If concrete Design evidence requires a public/wire change, reopen only that affected compatibility boundary before selecting it.
+
+### Ownership and release-boundary analysis — decision resolved
+
+The owner agreed that the previous ownership analysis was insufficient and added: "We zijn geen bank app aan het bouwen op dit moment maar een tool die IK gebruik." The owner permits security trade-offs when costs, guarantees and residual risks are explicit. This established the proportionality requirement. The later explicit "Ja" selects the bounded release policy above; it does not authorize unrestricted fix-source selection, arbitrary report-contract replacement or a new sandbox.
 
 | Responsibility | Owner | Boundary |
 |---|---|---|
@@ -155,7 +170,7 @@ The owner agreed that the previous ownership analysis was insufficient and added
 | Native rules, config discovery and tool behavior | Native tool/configuration | Preserve ordinary settings; tool options are not proof of OS authority |
 | Host filesystem, network and credential permissions | Host/deployment, with PGMCP integration only if selected | A cwd, environment filter or destination guard is not an OS access boundary |
 
-The owner targets personal local operation. A proposed release assumption is that the operator admits adapters and toolchains and intentionally executes workspace tests/plugins/configuration. This must be explicitly confirmed in the replacement B4 decision; local use alone does not establish that every repository, dependency or generated argument is trusted. Credible accidental or adversarial inputs still require proportional review. Unsupported hostile-code execution must not be marketed as confined.
+The owner approved personal local operation with operator-admitted adapters/toolchains and intentionally executed workspace tests/plugins/configuration. Local use does not establish that every repository, dependency or generated argument is harmless. Credible accidental or adversarial inputs still receive proportional review. Unsupported hostile-code execution is not claimed to be confined.
 
 #### What the current implementation establishes
 
@@ -165,28 +180,28 @@ The owner targets personal local operation. A proposed release assumption is tha
 | [Process runtime](../../../mcp_server/execution/process_runtime.py) | Direct argv launch, workspace cwd, managed Windows process lifetime and bounded response handling | No explicit restricted env at this launch, access-token restriction or filesystem/network sandbox is established by the inspected route. No secret values were inspected |
 | [Content preparation](../../../mcp_server/execution/content_input.py) | PGMCP allocates and removes invocation-owned scratch files | Owned cleanup does not deny other host paths to executing tools |
 | [Selection resolution](../../../mcp_server/execution/check_selection.py) and [fix admission](../../../mcp_server/execution/fix_service.py) | Component-aware resolved scope and selected-source admission, including re-resolution before fixes | These checks govern routed requests; they do not confine arbitrary native/test/plugin code |
-| [Isolated effects](effect-probe.md) | CLI/config/environment redirect native caches outside the probe's initially approved cache location; controls distinguish actual effects | All destinations were simulated within an approved temporary root. This is not a demonstrated host escape or credential exploit; release desirability of these operational writes is reopened |
+| [Isolated effects](effect-probe.md) | CLI/config/environment redirect native caches outside the probe's initially approved cache location; controls distinguish actual effects | All destinations were simulated within an approved temporary root. This is not a demonstrated host escape or credential exploit; normal user-configured cache writes are accepted by replacement B4 |
 | [General filesystem adapter](../../../mcp_server/adapters/filesystem.py) | Existing resolve_path uses resolved-string prefix comparison | A sibling prefix can satisfy that comparison. No live exploit or current public consumer path was proved here; investigate exposure before routing a separate correctness fix, without broadening this branch by assertion |
 
 Microsoft documents Job Objects as process/resource management and says process security limits require separate treatment. AppContainer provides a possible OS boundary for file/network access, but compatibility and deployment feasibility for PGMCP have not been demonstrated. Child environment inheritance is documented platform behavior; no claim is made about which credentials are present. Sources: [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects), [AppContainer isolation](https://learn.microsoft.com/en-us/windows/win32/secauthz/appcontainer-isolation), [Environment variables](https://learn.microsoft.com/en-us/windows/win32/procthread/environment-variables).
 
 #### Can versus want: proportional strategy alternatives
 
-| Alternative, not yet selected | Can: feasibility and actual guarantee | Want: cost, compatibility and residual risk |
+| Alternative / disposition | Can: feasibility and actual guarantee | Want: cost, compatibility and residual risk |
 |---|---|---|
-| L1 trusted local execution with honest role/launch contracts | Existing launch and native behavior provide a concrete baseline. Fix false completion, encoding and mode translation; preserve PGMCP-owned resources. No general native write/read/network restriction is claimed | Lowest additional policy complexity and broad native compatibility. Tools/tests/plugins retain access available under the host account and inherited environment; ordinary configured cache/report writes may be accepted explicitly |
-| L2 targeted cooperative operational controls owned by PGMCP | Known unwanted routes can be checked or translated before relevant native operations; selected child environment/resource controls can reduce specific risks. Scope and feasibility must be proved per control. No general arbitrary-code confinement follows | Adds bounded contract/integration work and potentially rejected native settings. Native defaults/config/plugins can invalidate a blanket guarantee; do not reimplement every native parser, silently sanitize settings or claim prevention of all writes |
-| L3 OS/deployment-enforced isolation | Windows has OS isolation mechanisms; a supported deployment can potentially enforce specific rights. Current PGMCP/tool compatibility, descendant behavior and enforcement evidence are absent | Greater integration/support cost for toolchains, imports, caches, test plugins and required network access. No current owner requirement makes this mandatory. R-06 implementation remains separate; requiring this level would reopen that scope explicitly |
+| L1 trusted local execution with honest role/launch contracts — selected | Existing launch and native behavior provide a concrete baseline. Fix false completion, encoding and mode translation; preserve PGMCP-owned resources. No general native write/read/network restriction is claimed | Lowest additional policy complexity and broad native compatibility. Tools/tests/plugins retain access available under the host account and inherited environment; ordinary configured cache/report writes may be accepted explicitly |
+| L2 targeted cooperative operational controls owned by PGMCP — conditional on demonstrated unwanted routes | Known unwanted routes can be checked or translated before relevant native operations; selected child environment/resource controls can reduce specific risks. Scope and feasibility must be proved per control. No general arbitrary-code confinement follows | Adds bounded contract/integration work and potentially rejected native settings. Native defaults/config/plugins can invalidate a blanket guarantee; do not reimplement every native parser, silently sanitize settings or claim prevention of all writes |
+| L3 OS/deployment-enforced isolation — not selected for this release | Windows has OS isolation mechanisms; a supported deployment can potentially enforce specific rights. Current PGMCP/tool compatibility, descendant behavior and enforcement evidence are absent | Greater integration/support cost for toolchains, imports, caches, test plugins and required network access. No current owner requirement makes this mandatory. R-06 implementation remains separate; requiring this level would reopen that scope explicitly |
 
-L1 is a candidate release baseline; narrow L2 controls are candidates only for evidenced, credible paths with favorable cost/benefit. L3 is a feasibility alternative, not an automatic requirement or selected implementation. This recommendation is not an Approved Strategy decision.
+The owner selected L1 with narrow L2 controls conditional on demonstrated credible unwanted routes and favorable cost/benefit. L3 remains outside this release. The existing evidence is sufficient for this release strategy; further general sandbox research is not required for Research closure. Concrete control selection and native equivalence belong in Design.
 
-#### Decision and evidence still required
+#### Design consequences and remaining verification
 
-For replacement B4, decide whether ordinary operator-configured native operational writes outside selected source files are accepted; which specific destinations or role-conflicting routes must be rejected; whether restrictions are cooperative contract controls or OS-enforced rights; and which environment, read, network and plugin/test-code risks are knowingly accepted. Assess each proposed restriction against its observable threat, PGMCP owner, achievable guarantee, compatibility cost and evidence. Keep concrete mechanisms, interfaces and code changes in Design.
+Research decisions are resolved. Design must assess proposed corrections against their observable contract defect, logical owner, actual guarantee, compatibility cost and proof obligations. Preserve ordinary configured operational writes; reject or correct native routes that violate the selected operation/source/result contract. Exact mechanics, resource interfaces and regression design belong in Design. No blanket destination-rejection or sandbox acceptance suite is required by replacement B4.
 
 The release must distinguish promised prevention, specific tested rejection, ordinary native side effects and unconfined host access. Check intent is not a claim that arbitrary test/plugin/config code cannot mutate sources. Document material accepted limits in the active execution/tool guidance when documentation owns the change; no warning-per-call, security framework or commercial assurance scope is introduced by this amendment.
 
-Issue 474 and the historical D-VAL-06 notice currently prefer adapter-local corrections and pre-write rejection. That conflicts with treating adapters as independent write-policy owners or accepting previously prohibited operational destinations. Their text is follow-up input, not a replacement strategy. Record the selected owner disposition and route GitHub coordination to @co before claiming the issue's acceptance fulfilled or closing it.
+Issue 474 and the historical D-VAL-06 notice currently prefer adapter-local corrections and pre-write rejection. The owner explicitly superseded those policy assumptions with replacement B4 while retaining issue 474's identity. Their text is follow-up input, not the current strategy. GitHub alignment belongs to @co; this coordination item is not an unresolved Research decision. Link this disposition before claiming implementation acceptance or closing the issue.
 
 ## Expected Results
 
@@ -196,7 +211,7 @@ Issue 474 and the historical D-VAL-06 notice currently prefer adapter-local corr
 | E469-2 | Access, config, usage and launch errors are actionable and retain the same correct class under verbosity/output changes |
 | E469-3 | Literal paths, spaces/metacharacters, configured discovery, native exclusions and inaccessible paths are verified individually; unknown coverage is explicit |
 | E475-1 | Metadata/early-return paths cannot become passed check evidence; genuine clean analysis, real diagnostics and ordinary native settings retain correct outcomes |
-| E474-1 — reopened | State the owner-selected source/operational effects, PGMCP policy ownership, achievable enforcement level and accepted limits. Prove the specific allowed/refused behavior that the replacement B4 actually promises; do not retain universal destination rejection or OS confinement as an unselected acceptance assumption |
+| E474-1 | Establish PGMCP execution/resource ownership and thin adapter translation. Preserve ordinary native caches/temporary toolfiles at user-configured locations; maintain source/operation/result contract correctness. Assess existing guards and correct demonstrated contract defects. Prove the particular preserved/refused behavior claimed, and document accepted host-access limits without universal destination-rejection or OS-confinement assertions |
 | E469-4 | Actual versus supported native versions and unsupported-version outcomes are visible per package; no host/version generalization from a different tool |
 | E-CROSS | Existing role/wire/public contracts, ordered fix stop behavior, partial mutations, caches and independent QA authority remain truthful |
 
@@ -275,17 +290,17 @@ The probe runner completed its observation assertions; this is not a repaired-ad
 - [Ruff fix entrypoint](<../../../mcp_server/bundled_adapters/ruff/fix.py>)
 - [D-VAL-06 origin](<../issue460/deferred-work.md#d-val-06--adapter-write-effects-boundary>)
 
-**Observed Result:** admitted cache destinations produce observed operational writes outside the original B4-approved destination; their release-policy classification is reopened. Existing report-output refusal controls remain effective.
+**Observed Result:** admitted cache destinations produce observed operational writes outside the original simulated B4-approved destination. Normal configured cache writes are accepted by replacement B4. Existing report-output refusal controls remain effective; their preservation/change is evaluated against role/output correctness in Design.
 
 ### Research artifact verification
 
-Scaffolding and subsequent safe edits passed the configured Markdown document preflight. The original version-1.0 offline link review recorded 36 successful links, 18 excluded external/cache links and zero errors: `pgmcp://cache/runs/2d50d34da1db4f09bcb857058071752e`. This is historical evidence. The ownership/release amendment was re-verified through markdown_link_review: 45 successful links, 21 excluded external/cache links and zero errors, receipt `pgmcp://cache/runs/65d2aa8137e741a397553c89efca49b5`. Recording these counts does not alter the checked link inventory. External/cache exclusions are not external validation. The final Research deliverables are research.md and effect-probe.md. Production, permanent tests and configuration are unchanged. The ignored diagnostic probe was scaffolded/refined under the approved temporary root; its source is archived in effect-probe.md. Original approval and the current reopened boundary are recorded; commit/push status is reported in the hand-over. The owner subsequently directed entry to Design. This amendment takes no phase transition and claims no independent QA verdict.
+Scaffolding and subsequent safe edits passed the configured Markdown document preflight. The original version-1.0 offline link review recorded 36 successful links, 18 excluded external/cache links and zero errors: `pgmcp://cache/runs/2d50d34da1db4f09bcb857058071752e`. This is historical evidence. The ownership/release amendment was re-verified through markdown_link_review: 45 successful links, 21 excluded external/cache links and zero errors, receipt `pgmcp://cache/runs/65d2aa8137e741a397553c89efca49b5`. The final version-1.2 approval reconciliation also passed markdown_link_review with 45 successful links, 21 excluded external/cache links and zero errors, receipt `pgmcp://cache/runs/e35d157f1a344e6aad5f8b6e11a89bfa`. Recording these counts does not alter the checked link inventory. External/cache exclusions are not external validation. The final Research deliverables are research.md and effect-probe.md. Production, permanent tests and configuration are unchanged. The ignored diagnostic probe was scaffolded/refined under the approved temporary root; its source is archived in effect-probe.md. Original approval, explicit reopening and final replacement approval are recorded; commit/push status is reported in the hand-over. The owner subsequently directed entry to Design. This amendment takes no phase transition and claims no independent QA verdict.
 
 ## Risks
 
 ### Scope combination can conceal independent acceptance gaps
 
-Track E469, E474 and E475 separately. Resolve replacement B4 and the issue-body conflict; do not close 474 from observations or a changed risk label alone.
+Track E469, E474 and E475 separately. Replacement B4 is approved. Route the issue-body alignment to @co and verify the implementation against the approved policy; do not close 474 from observations or policy approval alone.
 
 ### Length workaround changes selection or native whole-program/session behavior
 
@@ -320,14 +335,15 @@ Investigated 469 native invocation, selection/discovery, error classification an
 
 ### Evidence
 
-Fresh large-selection failures, bounded genuine-analysis control, false-PASS reproductions and verbose classification comparison are indexed above. The isolated probe recorded 30 cache cases plus five no-write refusal controls. Document preflight and focused link verification are reported with their exact scope; the original 158-pass/one-timeout native-suite run is retained alongside its successful focused rerun. Human approval covers S1 and the current ownership/proportionality principles; the original B4 concrete restriction is reopened. No replacement B4 decision, QA progression or fix design is inferred.
+Fresh large-selection failures, bounded genuine-analysis control, false-PASS reproductions and verbose classification comparison are indexed above. The isolated probe recorded 30 cache cases plus five no-write refusal controls. Document preflight and focused link verification are reported with their exact scope; the original 158-pass/one-timeout native-suite run is retained alongside its successful focused rerun. Human approval covers S1, amended ownership and final replacement B4 including permitted operational writes and accepted host-access risk. No Research policy question remains open. No QA verdict or selected fix design is inferred.
 
 ### Open Work
 
-Replacement B4 decision with explicit trusted-execution assumptions, achievable guarantee and accepted risks; any resulting narrow compatibility decision; independent Research review. Dependent Design selection is paused. Native mechanisms, per-tool supported-version detail and implementation regression boundaries remain Design-owned. Investigate the original outer-parallel xdist timing if it recurs; no causal attribution or test-budget change is selected here. GitHub coordination/issue closure remains with @co; 474/475 retain identity and are not closed by this Research.
+Independent Research review. Native mechanisms, resource/interface details, per-tool supported-version detail and implementation regression boundaries remain Design-owned; the B4 policy pause is resolved. Reopen a specific compatibility decision only if later Design evidence requires a public/wire change beyond the preservation strategy. Investigate the original outer-parallel xdist timing if it recurs; no causal attribution or test-budget change is selected here. GitHub coordination/issue closure remains with @co; 474/475 retain identity and are not closed by this Research.
 
 ### Review Request
 
 Review requested. Open or resume the independent interactive pgmcp-qa task for Research review; do not infer GO from this producer hand-over.
+
 
 

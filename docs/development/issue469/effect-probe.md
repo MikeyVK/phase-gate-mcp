@@ -3,7 +3,7 @@
 # Issue 469 / 474 — Isolated Native Write-Effect Evidence
 
 **Status:** OBSERVED — Research evidence; independent QA pending
-**Version:** 1.1
+**Version:** 1.2
 **Last Updated:** 2026-10-01
 
 
@@ -23,7 +23,7 @@ Production repair, future regression-test design, public apply_fixes-route certi
 
 ## Policy interpretation after Research reopening
 
-The owner reopened B4 after this probe: PGMCP owns execution conditions and any write policy, and concrete restrictions must be feasible and proportionate to personal local use. The terms unauthorized and misrouted below refer to the original simulated B4 policy at the time of observation; they are not a current decision that every operator-configured native cache outside selected sources must be prohibited. The observed bytes, inventories, native outcomes and archived probe remain unchanged. See [current Research](research.md#approved-strategy) for the pending replacement policy and release-risk decision.
+After this probe, the owner reopened and explicitly approved replacement B4: PGMCP owns execution conditions and resources; adapters translate native contracts. Personal trusted local execution accepts normal native caches and temporary toolfiles at user-configured locations, including outside selected sources. Report output must preserve the requested result contract. Host-account access remains an explicitly accepted limit; no general OS confinement is promised. The terms unauthorized and misrouted below refer only to the original simulated B4 policy at observation time. The observed bytes, inventories, native outcomes and archived probe remain unchanged. See [current Research](research.md#approved-strategy) for the final human-approved policy.
 
 ## Summary
 
