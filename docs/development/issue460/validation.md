@@ -3,7 +3,7 @@
 # Issue 460 Refactor Validation
 
 **Status:** Owner-directed Validation closure and transition to Documentation recorded; documentation corrections complete, independent Documentation review requested
-**Version:** 2.6
+**Version:** 2.7
 **Last Updated:** 2026-10-01
 
 
@@ -38,6 +38,8 @@ QA findings 4 and 7 are addressed: the Codex implementation skill source now ret
 **Verification:** SHA-256 byte comparison found 25/25 Codex and VS Code rule/skill/workflow source/copy pairs equal, plus all three Antigravity rule pairs and the active VS Code `AGENTS.md` pair (29 compared pairs). Host-specific Antigravity workflows and alternative-host `AGENTS.md` sources are not installed copies of the active Codex workflows or VS Code root instructions. The focused `markdown_link_review` for `docs/setup/agentic-bootstrap.md` passed three local links with zero errors (`pgmcp://cache/runs/21af1ecf57354c67bd8bea6233272e68`). An initial `markdown_body` selection was rejected as unsupported for selection input; it provided no validation evidence (`pgmcp://cache/runs/9879d89c6f5b4bf581d8549ef9974297`). Source/copy parity and the applicable native link profile are the relevant checks for these edits.
 
 **Reviewed unchanged:** the setup README, workspace-upgrade guide, release-assets procedure, release manifest, Research/Design, and the restored 113-cycle plan remain the authority for their existing boundaries. No package release or development initialization repair is implied. Existing native-suite evidence is reused for this documentation-only follow-up; the unavailable branch-gate exception remains visible.
+
+**Final Documentation QA follow-up:** The setup README's transition from editable installation to `--init` now explicitly requires complete assembled package assets, explains that a clean editable checkout does not assemble them, and links the manual release build procedure. This supersedes the reviewed-unchanged README disposition above. The exact-file `markdown_link_review` passed all 13 local links with zero errors (`pgmcp://cache/runs/ea963b4b0b0042e4a716cfd2f0229ebd`). No installation code or implementation cycle changed. Independent review of this final correction is requested.
 
 **Open work:** D-VAL-06, D-VAL-07, and D-VAL-08 require coordination-owned follow-up issues; D-VAL-01 through D-VAL-05 remain as recorded. Independent Documentation review is requested before Ready. No new implementation cycle has been added.
 

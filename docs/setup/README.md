@@ -51,7 +51,8 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
-For a new server root, initialize its workspace configuration and templates:
+For a new server root, `pgmcp --init` requires complete assembled package assets. A clean editable checkout installed with `pip install -e .` does not assemble those assets automatically. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; follow the [Release Assets Procedure](../reference/release-assets-procedure.md). Use initialization after provisioning a package with those assets:
+
 
 ```powershell
 pgmcp --init
