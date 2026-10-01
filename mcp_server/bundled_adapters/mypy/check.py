@@ -213,27 +213,18 @@ def _native_guard(args: list[str]) -> _GuardResult | str | None:
 
     special = argparse.Namespace()
     parser.parse_args(args, native_namespace.SplitNamespace(options, special, "special-opts:"))
-    if special.command:
-        return _GuardResult(
-            "unsupported_input", "Mypy --command replaces the selected source input."
-        )
-    for field in (
-        "shadow_file",
-        "junit_xml",
-        "timing_stats",
-        "line_checking_stats",
-        "install_types",
-    ):
-        if getattr(options, field):
+    for field in ("command", "modules", "packages"):
+        if getattr(special, field):
             return _GuardResult(
-                "unsupported_input",
-                f"Mypy option {field} writes or replaces input outside the check contract.",
+                "unsupported_input", f"Mypy {field} replaces the selected source input."
             )
-    if options.report_dirs or any(
-        value for field, value in vars(special).items() if field.endswith("_report")
-    ):
+    if options.shadow_file:
         return _GuardResult(
-            "unsupported_input", "Mypy report output is outside the check contract."
+            "unsupported_input", "Mypy shadow_file replaces the selected source input."
+        )
+    if options.install_types:
+        return _GuardResult(
+            "unsupported_input", "Mypy install_types installs dependencies outside type analysis."
         )
     return options.config_file if isinstance(options.config_file, str) else None
 
@@ -257,10 +248,15 @@ def _native_error(text: str) -> str | None:
 
 def _message(stdout: bytes, stderr: bytes) -> str | None:
     combined = (stdout + b"\n" + stderr).decode("utf-8", errors="replace")
+    lines = [line.strip() for line in combined.splitlines() if line.strip()]
+    if "Traceback (most recent call last):" in lines:
+        cause = lines[-1]
+        if cause == "ImportError":
+            error_lines = stderr.decode("utf-8", errors="replace").splitlines()
+            return next((line.strip() for line in error_lines if line.strip()), cause)
+        return cause
     error = _native_error(combined)
-    if error is not None:
-        return error
-    return next((line.strip() for line in combined.splitlines() if line.strip()), None)
+    return error if error is not None else next(iter(lines), None)
 
 
 def _configuration_diagnostic(text: str, config_file: str) -> bool:
@@ -291,9 +287,17 @@ def _configuration_diagnostic(text: str, config_file: str) -> bool:
 
 
 def _classify_exit(code: int, text: str, config_file: str | None) -> str:
+    for line in text.splitlines():
+        line = line.strip()
+        if line == "Traceback (most recent call last):":
+            return "execution_error"
+        if line.startswith("error: INTERNAL ERROR --") or line.partition(": error: ")[2].startswith(
+            "INTERNAL ERROR --"
+        ):
+            return "execution_error"
+    if code == 1:
+        return "failed"
     lowered = text.casefold()
-    if any(marker in lowered for marker in ("internal error", "traceback (most recent call last)")):
-        return "execution_error"
     if "cannot find config file" in lowered or (
         config_file is not None and _configuration_diagnostic(text, config_file)
     ):
@@ -376,7 +380,9 @@ def _run(value: object) -> tuple[dict[str, object], int]:
         if evidence is not None:
             response["evidence"] = evidence
         return response, 0
-    if completed.returncode == 1:
+    text = str(evidence.get("data", "")) if evidence is not None else ""
+    reason = _classify_exit(completed.returncode, text, guard)
+    if reason == "failed":
         if message is None:
             return _unavailable(
                 "invalid_result",
@@ -384,16 +390,6 @@ def _run(value: object) -> tuple[dict[str, object], int]:
                 version,
                 evidence,
             )
-        return {
-            "decision": {"status": "failed", "message": message},
-            "external_tools": external,
-            "evidence": evidence or {"format": "text", "data": message},
-            "coverage": None,
-            "required_targets": [],
-        }, 1
-    text = str(evidence.get("data", "")) if evidence is not None else ""
-    reason = _classify_exit(completed.returncode, text, guard)
-    if reason == "failed" and message is not None:
         return {
             "decision": {"status": "failed", "message": message},
             "external_tools": external,

@@ -9,7 +9,7 @@ import sys
 import venv
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import copytree
+from shutil import copytree, rmtree
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -632,3 +632,42 @@ def test_unrepresentable_argument_file_tokens_are_explicitly_refused(
     target.write_text("value = 1\n", encoding="utf-8")
     code, response = invoke(package, "lint", (target,), ("--exclude", token))
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
+
+
+@pytest.mark.parametrize(
+    ("operation", "setting"),
+    [("lint", "cli"), ("format", "config"), ("lint", "environment")],
+)
+def test_operator_cache_preserves_native_check_diagnostics_and_sources(
+    ruff_package: RuffPackage,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+    setting: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "selected.py"
+    before = b"import os\nvalue=1\n"
+    target.write_bytes(before)
+    destination = package.workspace.parent / "operator cache"
+    args: tuple[str, ...] = ()
+    if setting == "cli":
+        args = ("--cache-dir", str(destination))
+    elif setting == "config":
+        config = package.workspace / "pyproject.toml"
+        config.write_text(
+            config.read_text(encoding="utf-8").replace(
+                "[tool.ruff]\n", "[tool.ruff]\ncache-dir = " + json.dumps(str(destination)) + "\n"
+            ),
+            encoding="utf-8",
+        )
+    else:
+        monkeypatch.setenv("RUFF_CACHE_DIR", str(destination))
+    direct = native(package.workspace, operation, (target,), args)
+    assert direct.returncode == 1 and destination.is_dir()
+    rmtree(destination)
+    code, response = invoke(package, operation, (target,), args)
+    assert code == 1 and decision(response)["status"] == "failed"
+    assert_native_evidence(response, direct)
+    assert any(path.is_file() for path in destination.rglob("*"))
+    assert not (package.workspace / ".ruff_cache").exists()
+    assert target.read_bytes() == before

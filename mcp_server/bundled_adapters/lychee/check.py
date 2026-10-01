@@ -86,9 +86,7 @@ _SHORT_OPTIONS = {
 }
 _BOUNDARY_FIELDS = frozenset(
     {
-        "cache",
         "output",
-        "cookie_jar",
         "preprocess",
         "dump",
         "dump_inputs",
@@ -297,14 +295,13 @@ def _guard(options: _Options, settings: dict[str, object], content: bool) -> str
         settings.get(field) is not None
         for field in (
             "output",
-            "cookie_jar",
             "preprocess",
             "generate",
         )
     ):
         return "The effective native configuration writes output or bypasses link checking."
-    if any(settings.get(field) is True for field in ("cache", "dump", "dump_inputs")):
-        return "Native caching or dump mode is outside the check contract."
+    if any(settings.get(field) is True for field in ("dump", "dump_inputs")):
+        return "Native dump mode is outside the check contract."
     method = settings.get("method", "get")
     if not isinstance(method, str) or method.casefold() not in {"get", "head"}:
         return "Only native GET/HEAD requests belong to this check."

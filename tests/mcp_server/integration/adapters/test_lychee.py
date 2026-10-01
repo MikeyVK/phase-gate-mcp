@@ -8,8 +8,10 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from shutil import copytree, which
+from threading import Thread
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -335,8 +337,6 @@ def test_source_and_write_options_are_refused(
     for args in (
         ("--output", str(output)),
         ("-vo" + str(output),),
-        ("--cache=true",),
-        ("--cookie-jar", str(output)),
         ("--preprocess", "echo replaced"),
         ("--dump",),
         ("--generate", "man"),
@@ -494,6 +494,180 @@ def test_caller_option_terminator_preserves_owned_filename_selector(
     evidence = response["evidence"]
     assert isinstance(evidence, dict) and evidence["format"] == "json"
     assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+
+
+@pytest.mark.parametrize("option_source", ["cli", "config"])
+def test_native_cache_effect_is_admitted_outside_selected_source(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    option_source: str,
+) -> None:
+    runtime = lychee_runtime
+    selected = runtime.workspace / "docs" / "source.md"
+    selected.parent.mkdir()
+    before = b"# Source\n\n[Self](#source)\n"
+    selected.write_bytes(before)
+    cache = runtime.workspace / ".lycheecache"
+    if option_source == "cli":
+        args = ["--offline", "--include-fragments", "--cache=true"]
+    else:
+        (runtime.workspace / "lychee.toml").write_text("cache = true\n", encoding="utf-8")
+        args = ["--offline", "--include-fragments"]
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    disabled_code, _ = invoke(
+        package,
+        {
+            "operation": "links",
+            "targets": [str(selected)],
+            "args": ["--offline", "--include-fragments", "--cache=false"],
+        },
+    )
+    assert disabled_code == 0 and not cache.exists()
+    direct = subprocess.run(
+        [str(runtime.executable), *args, "--format", "json", str(selected)],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 0 and cache.is_file(), (direct.stdout, direct.stderr)
+    cache.unlink()
+    code, response = invoke(
+        package, {"operation": "links", "targets": [str(selected)], "args": args}
+    )
+    assert code == 0 and cache.is_file()
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    data = evidence["data"]
+    assert isinstance(data, dict) and data["errors"] == 0 and data["total"] == 1
+    assert selected.read_bytes() == before
+
+
+@pytest.mark.parametrize("option_source", ["cli", "config"])
+def test_native_cookie_state_is_loaded_and_saved_outside_selected_source(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    option_source: str,
+) -> None:
+    runtime = lychee_runtime
+    selected = runtime.workspace / "docs" / "source.md"
+    selected.parent.mkdir()
+    before = b"# Source\n\n[Self](#source)\n"
+    selected.write_bytes(before)
+    jar = tmp_path / "native state" / "cookies.json"
+    jar.parent.mkdir()
+    cookies = [
+        {
+            "raw_cookie": ("persistent=retained; Path=/; Expires=Thu, 01 Jan 2099 00:00:00 GMT"),
+            "path": ["/", True],
+            "domain": {"HostOnly": "127.0.0.1"},
+            "expires": {"AtUtc": "2099-01-01T00:00:00Z"},
+        },
+        {
+            "raw_cookie": "session=discarded; Path=/",
+            "path": ["/", True],
+            "domain": {"HostOnly": "127.0.0.1"},
+            "expires": "SessionEnd",
+        },
+    ]
+    seed = json.dumps(cookies).encode()
+    jar.write_bytes(seed)
+    args = [*DEFAULT_ARGS, "--format", "json"]
+    if option_source == "cli":
+        args.extend(["--cookie-jar", str(jar)])
+    else:
+        (runtime.workspace / "lychee.toml").write_text(
+            "cookie_jar = " + json.dumps(str(jar)) + "\n", encoding="utf-8"
+        )
+    direct = subprocess.run(
+        [str(runtime.executable), *args, str(selected)],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 0, (direct.stdout, direct.stderr)
+    native_cookies = json.loads(jar.read_bytes())
+    assert len(native_cookies) == 1
+    assert native_cookies[0]["raw_cookie"].startswith("persistent=retained")
+    jar.write_bytes(seed)
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    code, response = invoke(
+        package, {"operation": "links", "targets": [str(selected)], "args": args}
+    )
+    assert code == 0
+    assert json.loads(jar.read_bytes()) == native_cookies
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+    assert selected.read_bytes() == before
+
+
+def test_native_cache_stores_and_reuses_loopback_response(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+) -> None:
+    runtime = lychee_runtime
+    requests: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            requests.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def do_HEAD(self) -> None:
+            self.do_GET()
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/cached"
+        selected = runtime.workspace / "docs" / "source.md"
+        selected.parent.mkdir()
+        before = f"# Source\n\n[Local]({url})\n".encode()
+        selected.write_bytes(before)
+        args = ["--cache=true", "--max-retries", "0", "--format", "json"]
+        cache = runtime.workspace / ".lycheecache"
+        direct = subprocess.run(
+            [str(runtime.executable), *args, str(selected)],
+            cwd=runtime.workspace,
+            capture_output=True,
+            timeout=30,
+        )
+        assert direct.returncode == 0, (direct.stdout, direct.stderr)
+        assert url + ",200" in cache.read_text(encoding="utf-8")
+        assert requests == ["/cached"]
+        cache.unlink()
+        requests.clear()
+        package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+        code, response = invoke(
+            package, {"operation": "links", "targets": [str(selected)], "args": args}
+        )
+        assert code == 0 and requests == ["/cached"]
+        assert url + ",200" in cache.read_text(encoding="utf-8")
+        evidence = response["evidence"]
+        assert isinstance(evidence, dict) and evidence["format"] == "json"
+        assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+        cached_code, cached_response = invoke(
+            package, {"operation": "links", "targets": [str(selected)], "args": args}
+        )
+        assert cached_code == 0 and requests == ["/cached"]
+        cached_evidence = cached_response["evidence"]
+        assert isinstance(cached_evidence, dict)
+        data = cached_evidence["data"]
+        assert isinstance(data, dict) and data["total"] == 1 and data["cached"] == 1
+        assert selected.read_bytes() == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
 
 
 def oversized_sources(runtime: LycheeRuntime) -> list[str]:

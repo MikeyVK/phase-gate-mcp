@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from shutil import rmtree
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -292,3 +293,50 @@ def test_argument_file_fix_preserves_oversized_selection_and_late_change(
     assert late.read_bytes() != before
     assert all(target.read_bytes() == b"value = 1\n" for target in targets[:-1])
     assert decoy.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("operation", "setting"),
+    [("format", "cli"), ("lint", "config"), ("format", "environment")],
+)
+def test_operator_cache_preserves_intentional_native_fix_effects(
+    ruff_package: RuffPackage,
+    pytestconfig: pytest.Config,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+    setting: str,
+) -> None:
+    package = fix_package(ruff_package, pytestconfig.rootpath)
+    target = package.workspace / "selected.py"
+    decoy = package.workspace / "unselected.py"
+    before = b"import os\nvalue=1\n"
+    target.write_bytes(before)
+    decoy.write_bytes(before)
+    destination = package.workspace.parent / "operator cache"
+    args: tuple[str, ...] = ()
+    if setting == "cli":
+        args = ("--cache-dir", str(destination))
+    elif setting == "config":
+        config = package.workspace / "pyproject.toml"
+        config.write_text(
+            config.read_text(encoding="utf-8").replace(
+                "[tool.ruff]\n", "[tool.ruff]\ncache-dir = " + json.dumps(str(destination)) + "\n"
+            ),
+            encoding="utf-8",
+        )
+    else:
+        monkeypatch.setenv("RUFF_CACHE_DIR", str(destination))
+    direct = native_fix(package.workspace, operation, target, args)
+    assert direct.returncode == 0 and destination.is_dir()
+    expected = target.read_bytes()
+    assert expected != before
+    target.write_bytes(before)
+    rmtree(destination)
+    code, response = invoke(package, operation, (target,), args)
+    assert code == 0 and decision(response)["status"] == "passed"
+    for stream in (direct.stdout, direct.stderr):
+        if stream:
+            assert stream.decode("utf-8") in evidence_text(response)
+    assert any(path.is_file() for path in destination.rglob("*"))
+    assert not (package.workspace / ".ruff_cache").exists()
+    assert target.read_bytes() == expected and decoy.read_bytes() == before
