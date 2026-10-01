@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": 113,
   "last_cycle": 113,
   "cycle_history": [
@@ -1020,6 +1020,14 @@
       "to_phase": "documentation",
       "timestamp": "2026-10-01T07:42:02.765675+00:00",
       "human_approval_message": "Owner instruction on 2026-10-01: 'Mooi, door naar de documentatie fase'. The owner explicitly deferred QA findings 1, 2, and 6 as D-VAL-06/07/08, accepted the development installation interim and startup-only adapter fingerprint behavior, and assigned instruction source/copy parity plus bootstrap wording repairs to Documentation. This owner-directed progression does not assert a new independent QA GO or convert the previously unavailable branch gate into PASS.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-10-01T08:01:02.673778+00:00",
+      "human_approval_message": "Owner GO on 2026-10-01: 'Go voor ready fase, zorg dat je de nieuwe pr aanmaakt en echt alle deferred werk opneemt, zodat co daar netjes nieuwe issues van kan maken'. Final setup README correction is committed as e18824ae and its focused native link check passed. Record all deferred work in the new PR; preserve the explicit unavailable branch-gate exception and accepted current-state decisions.",
       "forced": false,
       "skip_reason": null
     }

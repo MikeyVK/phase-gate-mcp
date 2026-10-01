@@ -3,13 +3,41 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED existing deferrals; runtime adapter byte-provenance candidate closed without deferral  
-**Version:** 1.23  
+**Version:** 1.24  
 **Last Updated:** 2026-10-01  
 **Originating Issue:** 460
 
 ## Purpose
 
 Preserve all work explicitly deferred from issue 460 in one durable, non-authoritative follow-up notice. This document keeps deferred evidence and ownership visible without enlarging the primary Research artifact or authorizing implementation.
+
+## Ready Coordination Index — 2026-10-01
+
+This is the complete follow-up index for the reopened #460 PR. The fifteen entries below are explicit deferred workstreams; coordination should create or deduplicate issues using the linked notices, their approved boundaries, and recorded evidence. They are research/triage inputs, not approved implementation plans. D-VAL-06 and D-VAL-07 were explicitly assigned separate follow-up issues. No follow-up issue has been created by this implementation session.
+
+| ID | Workstream / issue-authoring entry point | Ownership / boundary |
+|---|---|---|
+| R-01 | [S1mpleTrader-local template specialization](#s1mpletrader-local-template-specialization) | S1mpleTrader repository-local issue; preserve and reassess the six patterns plus adapter/service conventions outside the portable suite |
+| R-02 | [Complete YAML artifact package subset](#complete-yaml-artifact-package-subset) | Recommended first PGMCP follow-up; design a complete supported family instead of restoring unreachable seeds |
+| R-03 | [Purpose-aware runtime discovery](#purpose-aware-runtime-artifact-discovery) | Separate feature research; retain the 50-template design threshold and exact catalog membership |
+| R-04 | [Portable Python coverage](#portable-python-template-suite-coverage) | Research modules, dataclasses, enums, exceptions first; evaluate later candidates from real consumers |
+| R-05 | [Command/query artifact family](#commandquery-service-artifact-family) | Dedicated consumer-led research; no generic Service alias or hidden subtype routing |
+| R-06 | [Server/subprocess security isolation](#deferred-work-notice-server-and-subprocess-security-isolation) | Establish threat model and supported-platform boundaries before selecting controls |
+| R-07 | [Startup health and recovery](#deferred-work-notice-agent-facing-startup-health-and-recovery) | Separate diagnostic/recovery design; no assumed startup dependency probes or health-driven filtering |
+| D-VAL-01 | [Native adapter robustness](#deferred-work-notice-native-adapter-robustness-for-large-selections) | All nine shipped packages/implemented roles; argv limits, discovery, exclusions, native semantics and actionable failures |
+| D-VAL-02 | [Safe-edit text/EOL semantics](#deferred-work-notice-safe-edit-text-model-and-line-ending-semantics) | Reconcile source representations, change reporting and operation-wide invariants through a new strategy decision |
+| D-VAL-03 | [Active documentation link baseline](#deferred-work-notice-active-documentation-lychee-baseline) | Broad active-documentation inventory and repair; bounded live successes are not a workspace baseline |
+| D-VAL-04 | [Affected public-route behavior](#deferred-work-notice-issue-460-affected-public-route-behavior) | Exactly six replaced routes plus two changed seams; owner chooses each live mutation route |
+| D-VAL-05 | [First-call template quality](#deferred-work-notice-first-call-template-quality) | Rendered layout, lint/format and editorial quality; distinguish caller-authored bodies from generated defects |
+| D-VAL-06 | [Adapter write effects](#d-val-06--adapter-write-effects-boundary) | Separate issue for permitted operational writes versus unauthorized destinations through args/config/environment |
+| D-VAL-07 | [False-PASS semantics](#d-val-07--check-completion-and-false-pass-semantics) | Separate issue for help/version/early-exit handling and genuine check completion |
+| D-VAL-08 | [Reverse template consumption](#d-val-08--generic-schematemplate-consumption-analysis) | Research static feasibility, uncertain cases, actual package defects and diagnostics-versus-blocking policy |
+
+**Ready index verification:** The focused native link review found 55 successful links, two excluded external URLs, and nine missing historical local source targets in the body of this register (`pgmcp://cache/runs/2e19fa12a6c746729c058c2f72480c84`). No new index link appears in the error map. The nine negative outcomes remain visible under D-VAL-03; this register is not described as link-clean.
+
+**Separate general backlog candidate:** the worktree-marker parsing observation in `git_list_branches` is outside the #460-affected route audit because its parser was not changed by this refactor. Coordination should independently triage the evidence linked in D-VAL-04; do not attribute it to #460 without a regression trace.
+
+**Not deferred:** component-level suite renewal and safe-edit `verify_only` retirement returned to #460 and were implemented. Runtime adapter byte-provenance was accepted as current behavior, without a follow-up issue. Clean development installation and its partial-root failure are accepted interim behavior; assembling and verifying a complete wheel belongs to a future release, not a newly promised #460 repair. No separate release issue is created by this index.
 
 ## Status and Authority
 
@@ -419,6 +447,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.24 | 2026-10-01 | Add complete Ready coordination index of fifteen deferred workstreams, separate general backlog observation, and explicit non-deferred boundaries |
 | 1.23 | 2026-10-01 | Record owner-deferred generic reverse schema/template consumption research as D-VAL-08; retain explicit uncertainty and no reverse PASS claim |
 | 1.22 | 2026-10-01 | Record owner-deferred separate adapter write-effects and false-PASS follow-ups as D-VAL-06 and D-VAL-07 |
 | 1.21 | 2026-10-01 | Close runtime adapter byte-provenance QA candidate as accepted current behavior, not deferred work, by explicit owner decision |
