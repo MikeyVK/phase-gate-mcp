@@ -16,7 +16,125 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-01T11:34:37.997403+00:00"
+      "created_at": "2026-10-01T11:34:37.997403+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 5,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "Coordinated v2 input and PGMCP resource ownership",
+              "deliverables": [
+                {
+                  "id": "D1_PROTOCOL",
+                  "description": "Complete strict v2 schemas, request encoders, manifest admission and consumer migration across every check/test/fix request alternative, nine packages and ten roles, with unchanged public MCP parameter sets and response shapes."
+                },
+                {
+                  "id": "D1_OWNERSHIP",
+                  "description": "Injected CQS directory description/create/remove and runtime lifecycle with cleanup ownership only after exclusive successful creation; no PGMCP context environment channel."
+                },
+                {
+                  "id": "D1_REGRESSION",
+                  "description": "Durable schema/DTO/entry-point parity and runtime ownership/process regressions, plus fresh-server v2 catalog and public operation smoke evidence."
+                }
+              ],
+              "exit_criteria": "D1_PROTOCOL, D1_OWNERSHIP and D1_REGRESSION are evidenced by intended RED, passing focused v2 contract/service/runtime/adapter-role tests and changed-file gates; a controlled restart proves the live server admits and invokes v2. No v1 bridge, optional context or environment side channel remains."
+            },
+            {
+              "cycle_number": 2,
+              "name": "Truthful native completion, versions and failure reasons",
+              "deliverables": [
+                {
+                  "id": "D2_COMPLETION",
+                  "description": "New Research-proven metadata guards and regressions for Mypy, Ruff lint/format and Pyright, with separately assessed aliases/alternate operations and preserved intentional completion policies."
+                },
+                {
+                  "id": "D2_VERSIONS",
+                  "description": "Package-local observed-versus-declared native prerequisite checks and dependency_unavailable results before version-dependent behavior or mutations."
+                },
+                {
+                  "id": "D2_FAILURES",
+                  "description": "Substantive access/configuration/usage/execution and missing-negative-evidence classifications, independent of verbose chatter, with retained native facts and bounded useful diagnostics."
+                }
+              ],
+              "exit_criteria": "D2_COMPLETION, D2_VERSIONS and D2_FAILURES have intended RED and passing focused affected adapter/presentation tests plus changed-file gates; the new Ruff and Pyright guards are explicit and intentional native outcomes remain unchanged."
+            },
+            {
+              "cycle_number": 3,
+              "name": "Single-run native argument files for Ruff, Mypy and Pytest",
+              "deliverables": [
+                {
+                  "id": "D3_ARGFILES",
+                  "description": "Native @file transport for Ruff lint/format/fix, Mypy and Pytest using the supplied context, preserving full ordered native arguments and one invocation."
+                },
+                {
+                  "id": "D3_EQUIVALENCE",
+                  "description": "Durable real-native large-selection and literal/option/discovery/exclusion regressions, including cross-file Mypy semantics, Pytest session preservation and Ruff fix effects."
+                }
+              ],
+              "exit_criteria": "D3_ARGFILES and D3_EQUIVALENCE have intended launch-limit RED and passing affected Ruff/Mypy/Pytest real-native transport and preservation regressions plus changed-file gates; one run and complete selection are evidenced rather than inferred from an aggregate PASS."
+            },
+            {
+              "cycle_number": 4,
+              "name": "Native stdin selection for Pyright and Lychee",
+              "deliverables": [
+                {
+                  "id": "D4_STDIN",
+                  "description": "Complete Pyright and available-channel Lychee native stdin filename transport with correct configured-discovery and input-channel ownership behavior."
+                },
+                {
+                  "id": "D4_LIMITS",
+                  "description": "Real-native large/literal/exclusion/discovery and Lychee content-snapshot regressions, plus explicit conflicting-channel and unrepresentable-input limitations."
+                }
+              ],
+              "exit_criteria": "D4_STDIN and D4_LIMITS have intended RED and passing focused Pyright/Lychee native transport, discovery, input-channel and snapshot tests plus changed-file gates; no claim of universal large-selection support is made for Lychee's occupied-channel fallback."
+            },
+            {
+              "cycle_number": 5,
+              "name": "Proportional native cache and supplemental-output policy",
+              "deliverables": [
+                {
+                  "id": "D5_EFFECTS",
+                  "description": "Ordinary native cache/cookie/temporary-output and compatible Mypy supplemental-report behavior admitted under B4, with contract-changing routes still refused."
+                },
+                {
+                  "id": "D5_REGRESSION",
+                  "description": "Real-native CLI/config/environment effect and result-capture coverage where supported, source-byte preservation or intentional Ruff fix effects, and durable refusal regressions without a general sandbox suite."
+                }
+              ],
+              "exit_criteria": "D5_EFFECTS and D5_REGRESSION have intended policy RED and passing focused affected native effect/refusal tests plus changed-file gates; the claimed permitted/refused behavior matches B4 with no sandbox or universal destination guarantee."
+            }
+          ]
+        },
+        "validation": {
+          "deliverables": [
+            {
+              "id": "V_NATIVE",
+              "description": "One full configured native python_tests run in Validation through run_tests(scope='configured', tests=['python_tests']) with existing configured arguments/prerequisites and factual outcome; do not force an alternate serial or reduced suite to manufacture success."
+            },
+            {
+              "id": "V_GATES",
+              "description": "One branch-wide review pass in Validation: run_checks(scope='branch', checks=['python_format','python_lint','python_pyright']) for admitted Python targets, and run_checks(scope='configured', checks=['python_types']) for the existing strict production-only Mypy baseline. Apply existing admitted CJS/JSON/Markdown obligations to changed files; record unsupported grammar/gate coverage honestly."
+            },
+            {
+              "id": "V_ACCEPTANCE",
+              "description": "Validation report maps E469-1..4, E474-1, E475-1 and E-CROSS separately to durable tests and fresh receipts, including all nine packages/ten roles/thirteen capabilities applicability and explicit limitations; independent QA review requested."
+            }
+          ]
+        },
+        "documentation": {
+          "deliverables": [
+            {
+              "id": "DOC_GUIDANCE",
+              "description": "Update active protocol/execution/tool guidance for required v2 context, direct-caller/custom-adapter migration, actual metadata version, lifecycle ownership, native caches/reports, supported versions and per-tool transport limits; retire active v1 usage without rewriting historical findings."
+            },
+            {
+              "id": "DOC_DISPOSITION",
+              "description": "Retain separate 469/474/475 acceptance/disposition and link @co alignment of issue 474's superseded wording before acceptance/closure. Document accepted host-account access, scoped guarantees and remaining Lychee input-channel limitation honestly."
+            }
+          ]
+        }
+      }
     }
   }
 }

@@ -3,7 +3,7 @@
   "branch": "bug/469-native-adapter-robustness",
   "issue_number": 469,
   "workflow_name": "bug",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -27,6 +27,14 @@
       "to_phase": "design",
       "timestamp": "2026-10-01T12:58:17.391897+00:00",
       "human_approval_message": "Go voor design, laten we het hebben over de manier waarop we de gevonden issues op kunnen gaan lossen, ik wil de oplossingen begrijpen en er invloed op uit kunnen oefenen.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-10-01T15:52:49.040047+00:00",
+      "human_approval_message": "Pushen mag altijd, als onderdeel van de pgmcp workflow! Door naar planning",
       "forced": false,
       "skip_reason": null
     }
