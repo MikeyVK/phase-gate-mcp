@@ -133,6 +133,7 @@ def project_mutation_check(
             reason = observation.failure.reason
             message = observation.failure.message
             termination = observation.termination_problem
+            evidence = observation.preceding_response
         elif isinstance(observation, InvocationCancelled):
             reason = "interrupted"
             message = "Check execution was interrupted."
@@ -149,6 +150,8 @@ def project_mutation_check(
                 decision.message if isinstance(decision, (CheckFailed, CheckUnavailable)) else None
             )
             evidence = response.evidence
+    if observation is not None:
+        message = observation.message_with_cleanup(message)
     return MutationCheck(
         check_id=row.check_id,
         status=status,

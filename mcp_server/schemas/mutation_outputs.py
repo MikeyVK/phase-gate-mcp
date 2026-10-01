@@ -35,6 +35,7 @@ from mcp_server.execution.models import (
     ProcessCapture,
     RequestValidationIssue,
     TerminationProblem,
+    preserves_completed_response,
 )
 from mcp_server.schemas.template_identity import CompactFingerprint
 from mcp_server.services.edit_construction import (
@@ -225,7 +226,7 @@ class MutationCheck(_MutationModel):
             if (self.request_rejection is not None) != (self.reason == "invalid_request"):
                 raise ValueError("request_rejection_reason_mismatch")
             if self.reason == "invalid_request":
-                if self.message is not None or self.termination_problem is not None:
+                if self.termination_problem is not None:
                     raise ValueError("invalid_request_facts_invalid")
                 if self.invocation is None:
                     raise ValueError("attempt_identity_and_capture_required")
@@ -279,7 +280,13 @@ class MutationCheck(_MutationModel):
         ):
             raise ValueError("unavailable_reason_invalid")
         if isinstance(self.reason, AdapterCallFailureReason):
-            if self.evidence is not None or self.invocation.external_tools is not None:
+            if self.invocation.external_tools is not None or (
+                self.evidence is not None
+                and (
+                    self.reason is not AdapterCallFailureReason.PROCESS_FAILED
+                    or not preserves_completed_response(self.evidence, self.invocation.capture)
+                )
+            ):
                 raise ValueError("invocation_failure_native_facts_forbidden")
         else:
             if self.invocation.external_tools is None:

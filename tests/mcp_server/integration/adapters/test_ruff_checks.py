@@ -296,15 +296,15 @@ def test_native_inability_keeps_diagnostics_and_is_not_protocol_rejection(
     target = package.workspace / "clean.py"
     target.write_text("value = 1\n", encoding="utf-8")
     if bad_config:
-        (package.workspace / "pyproject.toml").write_text(
-            '[tool.ruff]\nline-length = "not an integer"\n', encoding="utf-8"
-        )
+        config = package.workspace / "configuration (os error 2)"
+        config.write_text('line-length = "not an integer"\n', encoding="utf-8")
+        args = ("--config", str(config))
     result = native(package.workspace, "lint", (target,), args)
     assert result.returncode == 2 and result.stderr
     code, response = invoke(package, "lint", (target,), args)
     assert code == 3
     assert decision(response)["status"] == "unavailable"
-    assert decision(response)["reason"] == reason
+    assert decision(response)["reason"] == reason, result.stderr.decode("utf-8")
     assert_native_evidence(response, result)
 
 
@@ -539,14 +539,14 @@ def test_native_access_failure_preserves_cause_under_verbosity(
     verbose: bool,
 ) -> None:
     package = ruff_package
-    target = package.workspace / "missing.py"
+    target = package.workspace / "[DEBUG]missing.py"
     args = ("--verbose",) if verbose else ()
     direct = native(package.workspace, "format", (target,), args)
     assert direct.returncode == 2 and b"os error" in direct.stderr
     code, response = invoke(package, "format", (target,), args)
     assert code == 3 and decision(response)["reason"] == "execution_error"
     native_error = next(line for line in direct.stderr.decode().splitlines() if "os error" in line)
-    assert decision(response)["message"] == native_error
+    assert decision(response)["message"] == native_error, direct.stderr.decode("utf-8")
     assert native_error in evidence_text(response)
     if verbose:
         assert "[DEBUG] Using configuration file" in evidence_text(response)
@@ -670,4 +670,33 @@ def test_operator_cache_preserves_native_check_diagnostics_and_sources(
     assert_native_evidence(response, direct)
     assert any(path.is_file() for path in destination.rglob("*"))
     assert not (package.workspace / ".ruff_cache").exists()
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "ordinary-key",
+        "os error",
+        "permission denied",
+        "access denied",
+        "is a directory",
+        "(os error 2)",
+        "[DEBUG]",
+    ],
+)
+def test_quoted_configuration_key_is_native_usage_error(
+    ruff_package: RuffPackage,
+    key: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "selected.py"
+    before = b"import os\n"
+    target.write_bytes(before)
+    args = ("--config", json.dumps(key) + " = true")
+    direct = native(package.workspace, "lint", (target,), args)
+    assert direct.returncode == 2 and b"invalid value" in direct.stderr
+    code, response = invoke(package, "lint", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert_native_evidence(response, direct)
     assert target.read_bytes() == before

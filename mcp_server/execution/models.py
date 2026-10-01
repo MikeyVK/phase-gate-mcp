@@ -110,6 +110,12 @@ class InvocationResultBase(BaseModel):
     capture: ProcessCapture
     cleanup_failure: AdapterCallFailure | None = None
 
+    def message_with_cleanup(self, message: str | None) -> str | None:
+        """Retain the primary message and any additional resource failure cause."""
+        if self.cleanup_failure is None:
+            return message
+        return "\n".join(part for part in (message, self.cleanup_failure.message) if part)
+
 
 def _capture_describes_no_started_process(capture: ProcessCapture) -> bool:
     return (
@@ -150,9 +156,15 @@ class InvocationFailed(InvocationResultBase):
     outcome: Literal["failed"]
     failure: AdapterCallFailure
     termination_problem: TerminationProblem | None
+    preceding_response: JsonEvidence | None = None
 
     @model_validator(mode="after")
     def validate_failure(self) -> InvocationFailed:
+        if self.preceding_response is not None and (
+            self.failure.reason is not AdapterCallFailureReason.PROCESS_FAILED
+            or not preserves_completed_response(self.preceding_response, self.capture)
+        ):
+            raise ValueError("preceding_response_requires_completed_process_capture")
         if self.failure.reason is AdapterCallFailureReason.LAUNCH_FAILED:
             if self.termination_problem is TerminationProblem.UNCONFIRMED:
                 raise ValueError("launch_failed_cannot_be_termination_unconfirmed")
@@ -210,6 +222,23 @@ class JsonEvidence(_CheckModel):
 
 
 NativeEvidence = Annotated[TextEvidence | JsonEvidence, Field(discriminator="format")]
+
+
+def preserves_completed_response(
+    evidence: NativeEvidence | None, capture: ProcessCapture | None
+) -> bool:
+    """Identify a retained accepted response beside a later invocation failure."""
+    return (
+        isinstance(evidence, JsonEvidence)
+        and isinstance(evidence.data, FrozenJsonObject)
+        and capture is not None
+        and capture.exit_code
+        in (AdapterExitCode.SUCCESS, AdapterExitCode.NEGATIVE_RESULT, AdapterExitCode.UNAVAILABLE)
+        and capture.stdout.observed_bytes > 0
+        and capture.stdout.head is None
+        and capture.stdout.tail is None
+        and not capture.stdout.truncated
+    )
 
 
 class CheckPassed(_CheckModel):
@@ -420,7 +449,7 @@ class PublicTestResult(_TestModel):
             if self.reason not in {"not_started", "interrupted", "invalid_request"}:
                 raise ValueError("invalid_not_executed_reason")
             if (
-                self.message is not None
+                (self.reason == "not_started" and self.message is not None)
                 or self.evidence is not None
                 or self.external_tools is not None
             ):
@@ -436,7 +465,13 @@ class PublicTestResult(_TestModel):
                 if self.reason is not None or self.external_tools is None:
                     raise ValueError("accepted_result_requires_native_facts")
             elif isinstance(self.reason, AdapterCallFailureReason):
-                if self.evidence is not None or self.external_tools is not None:
+                if self.external_tools is not None or (
+                    self.evidence is not None
+                    and (
+                        self.reason is not AdapterCallFailureReason.PROCESS_FAILED
+                        or not preserves_completed_response(self.evidence, self.capture)
+                    )
+                ):
                     raise ValueError("invocation_failure_native_facts_forbidden")
             elif (
                 self.reason not in get_args(AdapterUnavailableReason) or self.external_tools is None
@@ -678,7 +713,7 @@ class PublicFixResult(_FixModel):
             if self.reason not in {"not_started", "interrupted", "invalid_request"}:
                 raise ValueError("invalid_not_executed_reason")
             if (
-                self.message is not None
+                (self.reason == "not_started" and self.message is not None)
                 or self.evidence is not None
                 or self.external_tools is not None
             ):
@@ -696,7 +731,13 @@ class PublicFixResult(_FixModel):
                 if self.reason is not None or self.external_tools is None:
                     raise ValueError("accepted_result_requires_native_facts")
             elif isinstance(self.reason, AdapterCallFailureReason):
-                if self.evidence is not None or self.external_tools is not None:
+                if self.external_tools is not None or (
+                    self.evidence is not None
+                    and (
+                        self.reason is not AdapterCallFailureReason.PROCESS_FAILED
+                        or not preserves_completed_response(self.evidence, self.capture)
+                    )
+                ):
                     raise ValueError("invocation_failure_native_facts_forbidden")
             elif (
                 self.reason not in get_args(AdapterUnavailableReason) or self.external_tools is None

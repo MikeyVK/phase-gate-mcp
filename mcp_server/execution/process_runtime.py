@@ -31,6 +31,7 @@ from mcp_server.execution.models import (
     InvocationCancelled,
     InvocationCompleted,
     InvocationFailed,
+    JsonEvidence,
     ProcessCapture,
     TerminationProblem,
 )
@@ -272,23 +273,29 @@ class AdapterProcessRuntime:
             except (OSError, ValueError) as exc:
                 cleanup_failure = AdapterCallFailure(
                     reason=AdapterCallFailureReason.PROCESS_FAILED,
-                    message=f"invocation_cleanup_failed: {directory.directory}: {exc}",
+                    message=(
+                        f"invocation_cleanup_failed: {directory.directory}: {exc}; "
+                        f"preceding_outcome={result.outcome}; "
+                        f"adapter_exit_code={result.capture.exit_code}"
+                    ),
                 )
-                if (
-                    isinstance(result, InvocationCancelled)
-                    or result.capture.exit_code == AdapterExitCode.INVALID_REQUEST
+                logging.getLogger(__name__).error(
+                    "invocation_cleanup_failed",
+                    extra={"directory": str(directory.directory), "cause": str(exc)},
+                )
+                if isinstance(result, InvocationCompleted) and (
+                    result.capture.exit_code != AdapterExitCode.INVALID_REQUEST
                 ):
-                    logging.getLogger(__name__).error(
-                        "invocation_cleanup_failed",
-                        extra={"directory": str(directory.directory), "cause": str(exc)},
+                    return InvocationFailed(
+                        outcome="failed",
+                        failure=cleanup_failure,
+                        capture=result.capture,
+                        termination_problem=None,
+                        preceding_response=JsonEvidence.model_validate(
+                            {"format": "json", "data": result.response.model_dump(mode="json")}
+                        ),
                     )
-                    return result.model_copy(update={"cleanup_failure": cleanup_failure})
-                return InvocationFailed(
-                    outcome="failed",
-                    failure=cleanup_failure,
-                    capture=result.capture,
-                    termination_problem=None,
-                )
+                return result.model_copy(update={"cleanup_failure": cleanup_failure})
         return result
 
     async def _invoke_owned(

@@ -237,18 +237,18 @@ def native_failure(output: str) -> tuple[str, str | None]:
         line.strip()
         for line in output.splitlines()
         if line.strip()
-        and re.search(r"\[(?:DEBUG|TRACE|INFO)\]", line) is None
+        and re.match(
+            r"^\[\d{4}-\d{2}-\d{2}\]\[\d{2}:\d{2}:\d{2}\]\[[^\]]+\]\[(?:DEBUG|TRACE|INFO)\]",
+            line,
+        )
+        is None
         and line.strip() not in {"stdout:", "stderr:"}
     ]
+    # Only the terminal native cause is evidence of access failure, not an intermediate path.
+    causes = [line for line in lines if line.startswith("Cause: ")]
+    terminal = causes[-1:] if causes else [line for line in lines if line.startswith("error:")]
     access = next(
-        (
-            line
-            for line in lines
-            if any(
-                marker in line.casefold()
-                for marker in ("os error", "permission denied", "access denied", "is a directory")
-            )
-        ),
+        (line for line in terminal if re.search(r"\(os error \d+\)$", line) is not None),
         None,
     )
     if access is not None:

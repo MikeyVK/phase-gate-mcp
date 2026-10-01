@@ -226,8 +226,9 @@ def test_native_inability_preserves_diagnostics_without_mutation(
     before = b"import os\n"
     target.write_bytes(before)
     if case == "config":
-        (package.workspace / "ruff.toml").write_text("invalid [", encoding="utf-8")
-        args: tuple[str, ...] = ()
+        config = package.workspace / "permission denied.toml"
+        config.write_text("invalid [", encoding="utf-8")
+        args: tuple[str, ...] = ("--config", str(config))
         reason = "invalid_configuration"
     else:
         args = ("--not-a-ruff-option",)
@@ -340,3 +341,35 @@ def test_operator_cache_preserves_intentional_native_fix_effects(
     assert any(path.is_file() for path in destination.rglob("*"))
     assert not (package.workspace / ".ruff_cache").exists()
     assert target.read_bytes() == expected and decoy.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "ordinary-key",
+        "os error",
+        "permission denied",
+        "access denied",
+        "is a directory",
+        "(os error 2)",
+        "[DEBUG]",
+    ],
+)
+def test_quoted_configuration_key_is_native_usage_error(
+    ruff_package: RuffPackage,
+    pytestconfig: pytest.Config,
+    key: str,
+) -> None:
+    package = fix_package(ruff_package, pytestconfig.rootpath)
+    target = package.workspace / "selected.py"
+    before = b"import os\n"
+    target.write_bytes(before)
+    args = ("--config", json.dumps(key) + " = true")
+    direct = native_fix(package.workspace, "lint", target, args)
+    assert direct.returncode == 2 and b"invalid value" in direct.stderr
+    code, response = invoke(package, "lint", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    for stream in (direct.stdout, direct.stderr):
+        if stream:
+            assert stream.decode("utf-8") in evidence_text(response)
+    assert target.read_bytes() == before
