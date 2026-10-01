@@ -23,6 +23,7 @@ from pydantic import BaseModel
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import ToolExecution
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.schemas.error_outputs import EnforcementErrorOutput, ToolErrorOutput
 
@@ -30,7 +31,7 @@ TInput = TypeVar("TInput", bound=BaseModel)
 TOutput = TypeVar("TOutput", bound=BaseModel)
 
 
-class EnforcementDecorator(ICoreTool[TInput, TOutput]):
+class EnforcementDecorator(ICoreTool[TInput, TOutput | EnforcementErrorOutput]):
     """Inner decorator that runs policies before/after execution and traps enforcement errors."""
 
     def __init__(
@@ -63,7 +64,9 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
     def enforcement_event(self) -> str:
         return getattr(self._inner_tool, "enforcement_event", self.name)
 
-    async def execute(self, params: TInput, context: NoteContext) -> TOutput:
+    async def execute(
+        self, params: TInput, context: NoteContext
+    ) -> TOutput | ToolExecution[TOutput | EnforcementErrorOutput]:
         # 1. Run "pre" execution policy checks
         try:
             self._enforcement_runner.run(
@@ -78,17 +81,21 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
                 note_context=context,
             )
         except ValidationError as exc:
-            return EnforcementErrorOutput(
-                error_message=exc.message,
-                error_code=exc.code,
-                params=exc.params or {},
-            )  # type: ignore[return-value]
+            return ToolExecution(
+                operation=EnforcementErrorOutput(
+                    error_message=exc.message,
+                    error_code=exc.code,
+                    params=exc.params or {},
+                ),
+                attachments=(),
+            )
 
         # 2. Execute target tool
         result = await self._inner_tool.execute(params, context)
 
         # Skip "post" checks if tool execution returned a validation or other error DTO
-        if isinstance(result, ToolErrorOutput):
+        operation = result.operation if isinstance(result, ToolExecution) else result
+        if isinstance(operation, ToolErrorOutput):
             return result
 
         # 3. Run "post" execution policy checks
@@ -105,10 +112,13 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
                 note_context=context,
             )
         except ValidationError as exc:
-            return EnforcementErrorOutput(
-                error_message=exc.message,
-                error_code=exc.code,
-                params=exc.params or {},
-            )  # type: ignore[return-value]
+            return ToolExecution(
+                operation=EnforcementErrorOutput(
+                    error_message=exc.message,
+                    error_code=exc.code,
+                    params=exc.params or {},
+                ),
+                attachments=(),
+            )
 
         return result

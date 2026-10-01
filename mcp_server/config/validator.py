@@ -9,17 +9,28 @@ before the MCP server starts accepting requests.
 @dependencies: [mcp_server.core.exceptions, mcp_server.schemas]
 @responsibilities:
     - Validate contracts.yaml phase references against workphases catalog
-    - Validate policy and project-structure references across config objects
+    - Validate operation policy references across config objects
 """
 
 from __future__ import annotations
 
+from jsonschema import Draft202012Validator
+
+from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
+from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
+from mcp_server.config.schemas.fixes_config import FixesConfig
+from mcp_server.config.schemas.template_suite import TemplatePolicy
+from mcp_server.config.schemas.tests_config import TestsConfig
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.execution import (
+    CheckCatalogReader,
+    FixCatalogReader,
+    TestCatalogReader,
+)
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
-    ArtifactRegistryConfig,
     OperationPoliciesConfig,
-    ProjectStructureConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -28,20 +39,83 @@ from mcp_server.schemas import (
 class ConfigValidator:
     """Validate cross-config relationships after ConfigLoader has loaded schemas."""
 
+    def validate_template_context(
+        self, schema: FrozenJsonObject, context: object
+    ) -> FrozenJsonObject:
+        """Validate the exposed snapshot and preserve caller presence and JSON types."""
+        frozen = freeze_json(context)
+        if not isinstance(frozen, FrozenJsonObject):
+            raise ValueError("template_context_object_required")
+        schema_data = {key: thaw_json(value) for key, value in schema.items()}
+        Draft202012Validator(schema_data).validate(thaw_json(frozen))
+        return frozen
+
+    def validate_template_policy(self, policy: TemplatePolicy, profiles: frozenset[str]) -> None:
+        """Require a known output profile from the composition-supplied capability authority."""
+        if policy.output_profile not in profiles:
+            raise ConfigError("template_output_profile_unknown")
+
+    def validate_checks_config(
+        self,
+        config: ChecksConfig,
+        catalog: CheckCatalogReader,
+        *,
+        template_profiles: frozenset[str],
+    ) -> None:
+        """Validate declared references and consumer input support without execution."""
+        checks = {
+            check_id: catalog.get_check(binding.adapter_id, binding.capability)
+            for check_id, binding in config.checks
+        }
+        profiles = dict(config.profiles)
+        content_profiles = template_profiles | frozenset(
+            profile_id for _, profile_id in config.profiles_by_extension
+        )
+        default_profile = config.run_checks.default_profile
+        selection_profiles = (
+            frozenset({default_profile}) if default_profile is not None else frozenset()
+        )
+        for input_kind, required_profiles in (
+            ("content", content_profiles),
+            ("selection", selection_profiles),
+        ):
+            for profile_id in sorted(required_profiles):
+                if profile_id not in profiles:
+                    raise ConfigError(f"check_profile_unknown: {profile_id}")
+                for check_id in profiles[profile_id].checks:
+                    if input_kind not in checks[check_id].capability.inputs:
+                        raise ConfigError(
+                            f"check_profile_input_unsupported: {profile_id}/{check_id}/{input_kind}"
+                        )
+
+    def validate_fixes_config(self, config: FixesConfig, catalog: FixCatalogReader) -> None:
+        """Resolve each fix capability without requiring native availability or checks."""
+        for _, binding in config.fixes:
+            catalog.get_fix(binding.adapter_id, binding.capability)
+
+    def validate_tests_config(self, config: TestsConfig, catalog: TestCatalogReader) -> None:
+        """Resolve every declared test binding without invoking native tools."""
+        for _, binding in config.tests:
+            catalog.get_test(binding.adapter_id, binding.capability)
+
+    def validate_artifact_locations(
+        self, config: ArtifactLocationsConfig, template_ids: frozenset[str]
+    ) -> None:
+        """Require each configured location key to name one loaded template package."""
+        unknown = sorted(set(dict(config.artifacts)) - template_ids)
+        if unknown:
+            raise ConfigError(f"artifact_location_template_unknown: {unknown}")
+
     def validate_startup(
         self,
         policies: OperationPoliciesConfig,
         workflow: WorkflowConfig,
-        structure: ProjectStructureConfig,
-        artifact: ArtifactRegistryConfig,
         contracts: ContractsConfig,
         workphases: WorkphasesConfig,
     ) -> None:
         """Validate startup relationships across already loaded config objects."""
         known_workflows = set(workflow.workflows)
         known_phases = set(workphases.phases)
-        known_artifact_types = set(artifact.list_type_ids())
-
         self._validate_phase_contracts(
             workflow=workflow,
             contracts=contracts,
@@ -49,10 +123,6 @@ class ConfigValidator:
             known_phases=known_phases,
         )
         self._validate_operation_policies(policies=policies, known_phases=known_phases)
-        self._validate_project_structure(
-            structure=structure,
-            known_artifact_types=known_artifact_types,
-        )
         self._validate_merge_policy_phase(
             contracts=contracts,
             known_phases=known_phases,
@@ -87,26 +157,6 @@ class ConfigValidator:
                 raise ConfigError(
                     f"Operation '{operation_id}' references unknown phases: "
                     f"{sorted(unknown_policy_phases)}"
-                )
-
-    def _validate_project_structure(
-        self,
-        structure: ProjectStructureConfig,
-        known_artifact_types: set[str],
-    ) -> None:
-        known_directories = set(structure.directories)
-
-        for directory_path, policy in structure.directories.items():
-            unknown_artifact_types = set(policy.allowed_artifact_types) - known_artifact_types
-            if unknown_artifact_types:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown artifact types: "
-                    f"{sorted(unknown_artifact_types)}"
-                )
-
-            if policy.parent is not None and policy.parent not in known_directories:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown parent: '{policy.parent}'"
                 )
 
     def _validate_merge_policy_phase(

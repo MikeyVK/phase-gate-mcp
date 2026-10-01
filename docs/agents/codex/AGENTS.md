@@ -73,16 +73,16 @@ reading; do not load unrelated documents by default.
 ### File Operations
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Edit file | `safe_edit_file(path, operation, mode)` | `run_in_terminal("Set-Content")` |
-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
+| Edit file | `safe_edit_file(path, operation, validation)` | `run_in_terminal("Set-Content")` |
+| Scaffold code/docs | `scaffold_artifact(artifact_type, file_name, context)` | Manual creation |
 | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 
 ### Quality & Testing
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
-| Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
-| Validate template | `validate_template(path, template_type)` | Manual review |
+| Run checks | `run_checks(scope, targets, profile, checks, args, timeout_seconds)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
+| Run tests | `run_tests(scope, targets, tests, args, timeout_seconds)` | `run_in_terminal("pytest")` |
+| Apply fixes | `apply_fixes(scope, targets, fixes, args, timeout_seconds)` | Manual mass edits |
 
 ### Project & Phase Management
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -116,7 +116,7 @@ reading; do not load unrelated documents by default.
 - **File operations** → use `safe_edit_file` / `scaffold_artifact`
 - **Git operations** → use `git_*` tools (see matrix above)
 - **Test execution** → use `run_tests` tool
-- **Quality gates** → use `run_quality_gates` tool
+- **Quality checks** → use `run_checks` / `apply_fixes` tool
 
 **Default rule: If unsure, ask yourself "Is there an MCP tool for this?" If yes → use it. If no → ask user permission first.**
 
@@ -138,6 +138,10 @@ Run branch- or workspace-wide verification only at the workflow phase that owns 
 Reuse fresh evidence until later changes invalidate it. Follow the active plan for commit
 boundaries and required verification.
 
+Before committing or presenting evidence, perform a pre-commit reality check: verify whether
+tests and evidence genuinely prove the deliverable against its design and planning contract,
+or merely create shallow or tautological asserts to satisfy tooling.
+
 ---
 
 ## ⚖️ Prime Directives
@@ -150,7 +154,7 @@ boundaries and required verification.
 6. **Human-in-the-Loop:** Tooling and branch locks enforce PR-merge approval; Ready does not duplicate that check. `force_phase_transition` requires approval + reason.
 7. **Quality Gates:** Use the scope and timing required by the active phase and plan. Reuse fresh passing evidence unless subsequent changes invalidate it.
 8. **Type-Checking Consistency:** Resolve typing issues using [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md). No global disables; targeted ignores only as last resort.
-9. **Resource Caching:** All MCP tools cache their structured Pydantic DTO outputs as MCP Resources (`pgmcp://cache/runs/{run_id}`). Tools return a presented text summary and the resource URI. When you need to inspect complete structured data or verbose process logs (e.g. from `run_quality_gates` or `run_tests`), you MUST read the cached resource URI (do not try to parse or scrape the text output).
+9. **Resource Caching:** All MCP tools cache their structured Pydantic DTO outputs as MCP Resources (`pgmcp://cache/runs/{run_id}`). Tools return a presented text summary and the resource URI. When you need to inspect complete structured data or verbose process logs (e.g. from `run_checks` or `run_tests`), you MUST read the cached resource URI (do not try to parse or scrape the text output).
 
 ---
 
@@ -188,18 +192,9 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 
 **NEVER use `safe_edit_file` to create code or documentation from scratch. Always use `scaffold_artifact`.**
 
-| Example Artifact Type | Use Case | Example |
-|---------------|----------|---------|
-| `dto` | Data Transfer Objects | `scaffold_artifact(artifact_type="dto", name="UserDTO", context={...})` |
-| `worker` | Background processors | `scaffold_artifact(artifact_type="worker", name="ProcessWorker", context={...})` |
-| `tool` | MCP tools | `scaffold_artifact(artifact_type="tool", name="MyTool", context={...})` |
-| `research` | Research documents | `scaffold_artifact(artifact_type="research", name="my-research", context={...})` |
-| `design` | Design documents | `scaffold_artifact(artifact_type="design", name="my-design", context={...})` |
-| `reference` | Reference docs | `scaffold_artifact(artifact_type="reference", name="my-reference", context={...})` |
+The live `scaffold_artifact` and `scaffold_schema` input schemas enumerate admitted `artifact_type` values. Select a registered ID there; do not infer an alias from an old example or a filesystem path. Pass `file_name` as the exact output basename, including its extension, and provide `context` matching the selected schema.
 
-These are representative examples, not the complete registry. Current first-class types also include `adapter`, `resource`, `interface`, `service`, `schema`, `generic`, `unit_test`, `integration_test`, `architecture`, `planning`, `validation_report`, `generic_doc`, `commit`, `pr`, and `issue`.
-
-**Registry:** `.pgmcp/templates/config/` defines the authoritative complete set of artifact types and their templates.
+The configured source suite for this workspace is `.pgmcp/template_suite/`. It supplies template packages, while the live tool schema defines which IDs an agent may invoke.
 
 **Schema discovery:** Before calling `scaffold_artifact` with an artifact type whose context fields are not already in your working context, call `scaffold_schema(artifact_type=...)` first. It returns the full JSON Schema for the `context` parameter — required and optional fields — enabling first-time-right scaffolding without a failed call. If you call `scaffold_artifact` with wrong or missing context fields, the error response contains the same schema; use it to correct the call immediately.
 

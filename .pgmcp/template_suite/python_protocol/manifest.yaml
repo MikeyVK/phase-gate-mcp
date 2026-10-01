@@ -1,0 +1,2 @@
+template_id: python_protocol
+purpose: Create an explicit Python Protocol with supplied bases and method declarations.

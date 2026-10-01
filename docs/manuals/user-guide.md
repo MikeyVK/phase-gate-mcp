@@ -89,36 +89,19 @@ To use this MCP server with Claude Desktop, add the following to your `claude_de
 
 Replace `/absolute/path/to/phase-gate-mcp` with the actual path to your repository.
 
-## 6. Available Resources
+## 6. Current tools and resources
 
-Currently, the following resources are available:
+This legacy guide does not enumerate the current runtime contract. Use the
+[tool reference](../reference/tools/README.md) for registered tools and their schemas,
+[resource reference](../reference/resources.md) for implemented and planned resource
+URIs, and [server configuration](../reference/server-configuration.md) for current
+settings and root resolution.
 
-### `pgmcp://rules/coding_standards`
-
-Returns a JSON object containing the project's coding standards, including:
-- Python version and style guide (PEP 8)
-- Testing requirements
-- Tooling (ruff, pyright, pytest)
-
-**Usage:**
-read_resource("pgmcp://rules/coding_standards")
-
-## 7. Available Tools
-
-*Note: Concrete tools are currently under development. This section describes the foundation.*
-
-The server infrastructure supports tools that return text, images, or embedded resources.
-
-### Implemented Infrastructure
-- **ICoreTool:** Base interface protocol for all tools.
-- **ToolResult:** structured result object supporting text, image, and resource content.
-- **Error Handling:** Graceful error reporting to the agent.
-
-Future updates will include tools for:
-- Git operations (branching, committing)
-- GitHub integration (issues, PRs)
-- Code scaffolding
-- Quality checks
+Tool responses may include a run-specific `pgmcp://cache/runs/{run_id}` URI containing
+the complete structured result. Large results can be read in bounded windows; use the
+`pgmcp://docs/cache-reading` resource for limits, integrity checks, and safe retry rules.
+A cache entry records the result returned by that tool call. It is not, by itself, a
+quality-gate pass or test result.
 
 ---
 

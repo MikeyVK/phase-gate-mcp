@@ -1,12 +1,6 @@
 """Pure config schema package for C_LOADER migration."""
 
-from mcp_server.config.schemas.artifact_registry_config import (
-    ArtifactDefinition,
-    ArtifactRegistryConfig,
-    ArtifactType,
-    StateMachine,
-    StateMachineTransition,
-)
+from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
     CheckSpec,
@@ -22,6 +16,7 @@ from mcp_server.config.schemas.enforcement_config import (
     EnforcementConfig,
     EnforcementRule,
 )
+from mcp_server.config.schemas.fixes_config import FixBinding, FixesConfig, FixId
 from mcp_server.config.schemas.git_config import GitConfig
 from mcp_server.config.schemas.issue_config import IssueConfig, IssueTypeEntry
 from mcp_server.config.schemas.label_config import Label, LabelConfig, LabelPattern
@@ -31,57 +26,33 @@ from mcp_server.config.schemas.operation_policies_config import (
     OperationPolicy,
 )
 from mcp_server.config.schemas.presentation_config import PresentationConfig
-from mcp_server.config.schemas.project_structure_config import (
-    DirectoryPolicy,
-    ProjectStructureConfig,
-)
-from mcp_server.config.schemas.quality_config import (
-    ArtifactLoggingConfig,
-    CapabilitiesMetadata,
-    ExecutionConfig,
-    GateScope,
-    JsonViolationsParsing,
-    QualityConfig,
-    QualityGate,
-    SuccessCriteria,
-    TextViolationsParsing,
-    ViolationDTO,
-)
-from mcp_server.config.schemas.scaffold_metadata_config import (
-    CommentPattern,
-    MetadataField,
-    ScaffoldMetadataConfig,
-)
 from mcp_server.config.schemas.scope_config import ScopeConfig
+from mcp_server.config.schemas.tests_config import TestBinding, TestId, TestsConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig, WorkflowTemplate
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 
 __all__ = [
-    "ArtifactDefinition",
-    "ArtifactLoggingConfig",
-    "ArtifactRegistryConfig",
-    "ArtifactType",
+    "TestBinding",
+    "TestId",
+    "TestsConfig",
+    "FixesConfig",
+    "FixBinding",
+    "FixId",
     "BranchLocalArtifact",
-    "CapabilitiesMetadata",
+    "ChecksConfig",
     "CheckSpec",
-    "CommentPattern",
     "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
-    "DirectoryPolicy",
     "EnforcementAction",
     "EnforcementConfig",
     "EnforcementRule",
-    "ExecutionConfig",
-    "GateScope",
     "GitConfig",
     "IssueConfig",
     "IssueTypeEntry",
-    "JsonViolationsParsing",
     "Label",
     "LabelConfig",
     "LabelPattern",
-    "MetadataField",
     "MergePolicy",
     "MilestoneConfig",
     "MilestoneEntry",
@@ -89,17 +60,8 @@ __all__ = [
     "OperationPolicy",
     "PhaseContractPhase",
     "PhaseDefinition",
-    "ProjectStructureConfig",
     "PresentationConfig",
-    "QualityConfig",
-    "QualityGate",
-    "ScaffoldMetadataConfig",
     "ScopeConfig",
-    "StateMachine",
-    "StateMachineTransition",
-    "SuccessCriteria",
-    "TextViolationsParsing",
-    "ViolationDTO",
     "WorkflowConfig",
     "WorkflowEntry",
     "WorkflowPhaseEntry",

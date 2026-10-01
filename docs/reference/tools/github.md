@@ -46,8 +46,14 @@ confirm the requested action. `list_issues`, `list_prs`, `list_labels`, and
 `list_milestones` render at most ten records, preserve adapter/DTO order, and report the
 omitted count when more records exist. Flat label sequences use the same ten-item bound.
 
-The cache remains authoritative for complete collections and intentionally omitted
-metadata. The presenter does not sort, filter, or mutate GitHub results.
+The cache is authoritative for complete collections and intentionally omitted metadata;
+the presenter does not sort, filter, or mutate results. Read the full URI printed in the
+tool response. If details are too large, use the `pgmcp://docs/cache-reading` resource
+for bounded windows and integrity checks. Retry only safe read-only queries after cache
+loss; never replay a mutation or other non-repeatable operation to reconstruct its result.
+
+A cached tool result is evidence of that operation's response, not a quality-gate pass.
+Check the returned fields and any explicit failure status before reporting an outcome.
 
 ---
 
@@ -84,14 +90,12 @@ Create a new GitHub issue. Uses a structured input contract: `issue_type`, `prio
 | `title` | `str` | **Yes** | Issue title (Unicode-safe, maximum 72 characters) |
 | `priority` | `str` | **Yes** | Priority enum — valid values injected at runtime from `LabelConfig` (e.g. `critical`, `high`, `medium`, `low`, `triage`) |
 | `scope` | `str` | **Yes** | Scope enum — valid values injected at runtime from `ScopeConfig` (e.g. `architecture`, `mcp-server`, `platform`, `tooling`, `workflow`, `documentation`) |
-| `body` | `str` | **Yes** | Pre-rendered markdown body. Generate using `scaffold_artifact(artifact_type='issue')` before calling this tool. |
+| `body` | `str` | **Yes** | Pre-rendered Markdown body. For optional template preparation, follow the current [scaffolding guide](scaffolding.md) and its resolved issue schema. |
 | `is_epic` | `bool` | No | Mark issue as an epic (default: `false`) |
 | `parent_issue` | `int` | No | Parent issue number (positive integer) for child issues |
 | `milestone` | `str` | No | Milestone **title** (string, not number) |
 | `assignees` | `list[str]` | No | List of GitHub usernames to assign |
 
-| `steps_to_reproduce` | `str` | No | Numbered steps to reproduce the issue |
-| `related_docs` | `list[str]` | No | List of related documentation paths or URLs |
 
 #### Returns
 
@@ -128,7 +132,7 @@ timestamps, and author, is stored in the resource cache.
 - **Assignee validation:** Usernames must be valid collaborators
 - **Default state:** Issues always created in `open` state
 - **Enum values:** `issue_type`, `priority`, and `scope` enums are injected at runtime from config (A4 pattern) — inspect the tool schema for current valid values
-- **Body generation:** Use `scaffold_artifact(artifact_type='issue', name="<slug>", context={...})` to generate a pre-rendered markdown body before calling this tool. The slash prompt `/create-issue` automates this two-step flow.
+- **Body preparation:** When using the issue template, discover its current context with `scaffold_schema` and follow the [scaffolding guide](scaffolding.md). Pass the resulting Markdown body to `create_issue`.
 
 
 ---
@@ -983,12 +987,14 @@ All GitHub tools fully support Unicode content including emojis, non-ASCII chara
 - Milestone titles and descriptions
 - Comments
 
-**Example:**
+**Example `create_issue` input:**
 ```json
 {
-  "title": "🚀 Feature: Add multilingual support (日本語, 한국어, العربية)",
-  "body": "Implement i18n for Japanese (日本語), Korean (한국어), and Arabic (العربية) languages.\n\n✅ Completed tasks:\n- [ ] Setup i18n framework\n- [ ] Add translation files\n- [ ] Update UI components",
-  "labels": ["type:feature", "area:i18n"]
+  "issue_type": "feature",
+  "title": "🚀 Add multilingual support (日本語, 한국어, العربية)",
+  "priority": "medium",
+  "scope": "mcp-server",
+  "body": "Implement i18n for Japanese (日本語), Korean (한국어), and Arabic (العربية)."
 }
 ```
 

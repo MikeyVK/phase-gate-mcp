@@ -45,16 +45,16 @@ class TestInitializeProjectToolParentBranch:
     """Test parent_branch functionality in InitializeProjectTool."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, legacy_suite_workspace: Path) -> Path:
         """Create temporary workspace.
 
         Args:
-            tmp_path: Pytest tmp_path fixture
+            legacy_suite_workspace: Pytest legacy_suite_workspace fixture
 
         Returns:
             Path to temporary workspace root
         """
-        return tmp_path
+        return legacy_suite_workspace
 
     @pytest.fixture
     def tool(self, workspace_root: Path) -> InitializeProjectTool:
@@ -274,6 +274,46 @@ class TestGetProjectPlanTool:
         assert result.error_message == "bad plan state"
         assert len(context.entries) == 0
 
+    @pytest.mark.asyncio
+    async def test_get_plan_returns_complete_stored_planning(self) -> None:
+        """The read-only dependency preserves D1/D2, order and exit criteria."""
+        payload = _minimal_deliverables()
+        manager = _GetProjectPlanManagerStub(
+            plan={"workflow_name": "feature", "planning_deliverables": payload}
+        )
+        result = await GetProjectPlanTool(manager=manager).execute(
+            GetProjectPlanInput(issue_number=253), NoteContext()
+        )
+
+        assert result.success
+        assert result.planning_deliverables is not None
+        assert result.planning_deliverables.model_dump(exclude_none=True) == payload
+        assert manager.issue_numbers == [253]
+
+    @pytest.mark.asyncio
+    async def test_get_plan_without_planning_remains_supported(self) -> None:
+        """An initialized project need not have planning deliverables yet."""
+        manager = _GetProjectPlanManagerStub(plan={"workflow_name": "feature"})
+        result = await GetProjectPlanTool(manager=manager).execute(
+            GetProjectPlanInput(issue_number=253), NoteContext()
+        )
+        assert result.success
+        assert result.planning_deliverables is None
+
+    @pytest.mark.asyncio
+    async def test_get_plan_rejects_invalid_stored_planning(self) -> None:
+        """A corrupt payload must not become a successful partial plan."""
+        manager = _GetProjectPlanManagerStub(
+            plan={"workflow_name": "feature", "planning_deliverables": {"unexpected": []}}
+        )
+        result = await GetProjectPlanTool(manager=manager).execute(
+            GetProjectPlanInput(issue_number=253), NoteContext()
+        )
+        assert not result.success
+        assert result.error_message is not None
+        assert "unexpected" in result.error_message
+        assert result.planning_deliverables is None
+
 
 def _minimal_deliverables(validates: dict | None = None) -> dict:
     """Return a minimal valid planning_deliverables dict with one cycle.
@@ -308,19 +348,19 @@ class TestSavePlanningDeliverablesTool:
     """
 
     @pytest.fixture()
-    def tool(self, tmp_path: Path) -> SavePlanningDeliverablesTool:
-        return SavePlanningDeliverablesTool(manager=make_project_manager(tmp_path))
+    def tool(self, legacy_suite_workspace: Path) -> SavePlanningDeliverablesTool:
+        return SavePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
 
     @pytest.fixture()
-    def initialized(self, tmp_path: Path) -> tuple[Path, int]:
+    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
         """Initialize a project so save_planning_deliverables can run."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(legacy_suite_workspace)
         pm.initialize_project(
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
         )
-        return tmp_path, 229
+        return legacy_suite_workspace, 229
 
     # ------------------------------------------------------------------
     # D4.1: basic persistence
@@ -450,10 +490,10 @@ class TestUpdatePlanningDeliverablesTool:
     """
 
     @pytest.fixture()
-    def initialized(self, tmp_path: Path) -> tuple[Path, int]:
+    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
         """Create workspace with initial planning deliverables already saved."""
         issue_number = 229
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager.initialize_project(
             issue_number=issue_number,
             issue_title="Phase deliverables enforcement",
@@ -463,7 +503,7 @@ class TestUpdatePlanningDeliverablesTool:
             issue_number=issue_number,
             planning_deliverables=_minimal_deliverables(),
         )
-        return tmp_path, issue_number
+        return legacy_suite_workspace, issue_number
 
     @pytest.mark.asyncio()
     async def test_update_planning_deliverables_tool_appends_new_cycle(
@@ -586,19 +626,19 @@ class TestUpdatePlanningDeliverablesTool:
 
     @pytest.mark.asyncio()
     async def test_update_planning_deliverables_tool_rejects_before_initial_save(
-        self, tmp_path: Path
+        self, legacy_suite_workspace: Path
     ) -> None:
         """Returns error when called before save_planning_deliverables. (D5.1)"""
         from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
 
         issue_number = 229
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager.initialize_project(
             issue_number=issue_number,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
         )
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(tmp_path))
+        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
 
         result = await tool.execute(
             UpdatePlanningDeliverablesInput(
@@ -638,16 +678,16 @@ class TestPlanningDeliverablesPhaseSchema:
     """
 
     @pytest.fixture()
-    def initialized(self, tmp_path: Path) -> tuple[Path, int]:
+    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
         """Initialize a project (no deliverables yet)."""
         issue_number = 229
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager.initialize_project(
             issue_number=issue_number,
             issue_title="Phase deliverables schema test",
             workflow_name="feature",
         )
-        return tmp_path, issue_number
+        return legacy_suite_workspace, issue_number
 
     @pytest.mark.asyncio()
     @pytest.mark.asyncio()
@@ -705,10 +745,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
     """
 
     @pytest.fixture()
-    def initialized(self, tmp_path: Path) -> tuple[Path, int]:
+    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
         """Initialize a project with cycles + design phase deliverables."""
         issue_number = 229
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager.initialize_project(
             issue_number=issue_number,
             issue_title="Phase deliverables update test",
@@ -723,7 +763,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
                 },
             },
         )
-        return tmp_path, issue_number
+        return legacy_suite_workspace, issue_number
 
     @pytest.mark.asyncio()
     async def test_update_planning_deliverables_merges_design_key(
@@ -758,7 +798,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
         assert "Des2" in design_ids  # new one appended (D8.1)
 
     @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_merges_validation_key(self, tmp_path: Path) -> None:
+    async def test_update_planning_deliverables_merges_validation_key(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """update_planning_deliverables with validation key updates deliverables.json.
 
         (D8.1/GAP-15)
@@ -766,7 +808,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
         from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
 
         issue_number = 229
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager.initialize_project(
             issue_number=issue_number,
             issue_title="Validation phase test",
@@ -783,7 +825,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
                 },
             },
         )
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(tmp_path))
+        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
 
         result = await tool.execute(
             UpdatePlanningDeliverablesInput(
@@ -801,7 +843,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        _raw = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())
+        _raw = json.loads(
+            (legacy_suite_workspace / get_default_server_root() / "deliverables.json").read_text()
+        )
         data = _raw.get("projects", _raw)[str(issue_number)]
         val_ids = [d["id"] for d in data["planning_deliverables"]["validation"]["deliverables"]]
         assert "Val1" in val_ids
@@ -809,7 +853,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
     @pytest.mark.asyncio()
     async def test_update_planning_deliverables_merges_documentation_key(
-        self, tmp_path: Path
+        self, legacy_suite_workspace: Path
     ) -> None:
         """update_planning_deliverables with documentation key updates deliverables.json.
 
@@ -818,7 +862,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
         from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
 
         issue_number = 229
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager.initialize_project(
             issue_number=issue_number,
             issue_title="Documentation phase test",
@@ -833,7 +877,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
                 },
             },
         )
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(tmp_path))
+        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
 
         result = await tool.execute(
             UpdatePlanningDeliverablesInput(
@@ -849,7 +893,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        _raw = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())
+        _raw = json.loads(
+            (legacy_suite_workspace / get_default_server_root() / "deliverables.json").read_text()
+        )
         data = _raw.get("projects", _raw)[str(issue_number)]
         doc_ids = [d["id"] for d in data["planning_deliverables"]["documentation"]["deliverables"]]
         assert "Doc1" in doc_ids
@@ -972,7 +1018,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 class TestProjectManagerWorkflowStatusResolverC4:
     """C4 coverage: ProjectManager.workflow_status_resolver parameter (Issue #231 C4)."""
 
-    def test_project_manager_accepts_workflow_status_resolver_kwarg(self, tmp_path: Path) -> None:
+    def test_project_manager_accepts_workflow_status_resolver_kwarg(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """ProjectManager constructed with workflow_status_resolver calls it on get_project_plan."""
         from unittest.mock import MagicMock  # noqa: PLC0415
 
@@ -987,7 +1035,9 @@ class TestProjectManagerWorkflowStatusResolverC4:
             phase_confidence="high",
             phase_detection_error=None,
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager = make_project_manager(
+            legacy_suite_workspace, workflow_status_resolver=mock_resolver
+        )
         manager.initialize_project(
             issue_number=231,
             issue_title="State Snapshot CQRS",
@@ -997,7 +1047,9 @@ class TestProjectManagerWorkflowStatusResolverC4:
         assert plan is not None
         mock_resolver.resolve_current.assert_called_once()
 
-    def test_get_project_plan_uses_resolver_resolve_current(self, tmp_path: Path) -> None:
+    def test_get_project_plan_uses_resolver_resolve_current(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """get_project_plan delegates phase detection to resolver.resolve_current()."""
         from unittest.mock import MagicMock  # noqa: PLC0415
 
@@ -1012,7 +1064,9 @@ class TestProjectManagerWorkflowStatusResolverC4:
             phase_confidence="high",
             phase_detection_error=None,
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager = make_project_manager(
+            legacy_suite_workspace, workflow_status_resolver=mock_resolver
+        )
         manager.initialize_project(
             issue_number=231,
             issue_title="State Snapshot CQRS",
@@ -1025,7 +1079,7 @@ class TestProjectManagerWorkflowStatusResolverC4:
         mock_resolver.resolve_current.assert_called_once()
         assert plan["current_phase"] == "implementation:red"
 
-    def test_get_project_plan_includes_phase_source(self, tmp_path: Path) -> None:
+    def test_get_project_plan_includes_phase_source(self, legacy_suite_workspace: Path) -> None:
         """get_project_plan includes phase_source from resolver in returned plan."""
         from unittest.mock import MagicMock  # noqa: PLC0415
 
@@ -1040,7 +1094,9 @@ class TestProjectManagerWorkflowStatusResolverC4:
             phase_confidence="high",
             phase_detection_error=None,
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager = make_project_manager(
+            legacy_suite_workspace, workflow_status_resolver=mock_resolver
+        )
         manager.initialize_project(
             issue_number=231,
             issue_title="State Snapshot CQRS",
@@ -1053,7 +1109,9 @@ class TestProjectManagerWorkflowStatusResolverC4:
         assert plan["phase_source"] == "state.json"
         assert plan["current_phase"] == "validation"
 
-    def test_get_project_plan_includes_phase_detection_error(self, tmp_path: Path) -> None:
+    def test_get_project_plan_includes_phase_detection_error(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """get_project_plan includes phase_detection_error from resolver."""
         from unittest.mock import MagicMock  # noqa: PLC0415
 
@@ -1068,7 +1126,9 @@ class TestProjectManagerWorkflowStatusResolverC4:
             phase_confidence="high",
             phase_detection_error="No commits found",
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager = make_project_manager(
+            legacy_suite_workspace, workflow_status_resolver=mock_resolver
+        )
         manager.initialize_project(
             issue_number=231,
             issue_title="State Snapshot CQRS",

@@ -7,46 +7,49 @@
 from __future__ import annotations
 
 import json
+import os
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
+from shutil import copy2, copytree
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
+
+from jinja2 import Environment
 
 from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
 )
 from mcp_server.config.settings import Settings as RealSettings
-from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
+from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces import GateReport
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
-from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
     PhaseConfigContext,
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.qa_manager import QAManager
-from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
-from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
 from mcp_server.schemas import (
-    ArtifactRegistryConfig,
     ContractsConfig,
     GitConfig,
-    ProjectStructureConfig,
-    QualityConfig,
-    ScaffoldMetadataConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.schemas.template_identity import ArtifactIdentity
+from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
+from mcp_server.services.template_contract_loader import TemplateContractLoader
+from mcp_server.services.template_graph import TemplateGraphResolver
+from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_suite
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
-    from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
     from mcp_server.server import MCPServer
 
@@ -67,13 +70,6 @@ def get_default_server_root() -> str:
         return str(val)
     except Exception:
         return ".pgmcp"
-
-
-def get_template_root() -> Path:
-    """Get the template root directory from settings."""
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
-
-    return Settings.from_env().server.resolved_template_root
 
 
 class _NopGateRunner:
@@ -384,143 +380,13 @@ def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine
     """Build a PolicyEngine with explicit config objects."""
     config_root = resolve_config_root(
         workspace_root,
-        required_paths=("policies.yaml", "git.yaml", "workflows.yaml", "artifacts.yaml"),
+        required_paths=("policies.yaml", "git.yaml", "workflows.yaml"),
     )
     loader = ConfigLoader(config_root)
-    artifact_registry = loader.load_artifact_registry_config()
-    project_structure = loader.load_project_structure_config(artifact_registry=artifact_registry)
     return PolicyEngine(
         config_root=config_root,
         operation_config=loader.load_operation_policies_config(),
         git_config=loader.load_git_config(),
-        project_structure_config=project_structure,
-    )
-
-
-def make_directory_policy_resolver(
-    workspace_root: Path | str | None = None,
-    project_structure_config: ProjectStructureConfig | None = None,
-) -> DirectoryPolicyResolver:
-    """Build a DirectoryPolicyResolver with explicit project structure config."""
-    config = project_structure_config
-    if config is None:
-        registry = cast(
-            ArtifactRegistryConfig,
-            _load_config(
-                workspace_root,
-                "artifacts.yaml",
-                "load_artifact_registry_config",
-            ),
-        )
-        config = cast(
-            ProjectStructureConfig,
-            _load_config(
-                workspace_root,
-                "project_structure.yaml",
-                "load_project_structure_config",
-                artifact_registry=registry,
-            ),
-        )
-    return DirectoryPolicyResolver(config)
-
-
-def make_template_scaffolder(
-    workspace_root: Path | str | None = None,
-    registry: ArtifactRegistryConfig | None = None,
-    renderer: object | None = None,
-) -> TemplateScaffolder:
-    """Build a TemplateScaffolder with explicit registry injection."""
-    resolved_registry = registry or cast(
-        ArtifactRegistryConfig,
-        _load_config(
-            workspace_root,
-            "artifacts.yaml",
-            "load_artifact_registry_config",
-        ),
-    )
-    return TemplateScaffolder(registry=resolved_registry, renderer=renderer)
-
-
-def make_metadata_parser(
-    workspace_root: Path | str | None = None,
-    config: ScaffoldMetadataConfig | None = None,
-) -> ScaffoldMetadataParser:
-    """Build a ScaffoldMetadataParser with explicit metadata config."""
-    metadata_config = config or cast(
-        ScaffoldMetadataConfig,
-        _load_config(
-            workspace_root,
-            "scaffold_metadata.yaml",
-            "load_scaffold_metadata_config",
-        ),
-    )
-    return ScaffoldMetadataParser(metadata_config)
-
-
-def make_qa_manager(
-    workspace_root: Path | str | None = None,
-    quality_config: QualityConfig | None = None,
-    quality_state_repository: IQualityStateRepository | None = None,
-    git_context_reader: IGitContextReader | None = None,
-    state_reader: IStateReader | None = None,
-) -> QAManager:
-    """Build a QAManager with explicit quality config injection."""
-    resolved_quality = quality_config or cast(
-        QualityConfig,
-        _load_config(
-            workspace_root,
-            "quality.yaml",
-            "load_quality_config",
-        ),
-    )
-    resolved_workspace = Path(workspace_root) if workspace_root is not None else None
-    resolved_quality_state_repo: IQualityStateRepository = quality_state_repository or (
-        FileQualityStateRepository(
-            backing_file=resolved_workspace / get_default_server_root() / "quality_state.json"
-        )
-        if resolved_workspace is not None
-        else MagicMock()
-    )
-    resolved_git_context_reader: IGitContextReader = git_context_reader or MagicMock()
-    if state_reader is not None:
-        resolved_state_reader: IStateReader = state_reader
-    else:
-        _default_sr = MagicMock()
-        _default_sr.load.side_effect = FileNotFoundError
-        resolved_state_reader = _default_sr
-    return QAManager(
-        workspace_root=resolved_workspace,
-        quality_config=resolved_quality,
-        quality_state_repository=resolved_quality_state_repo,
-        git_context_reader=resolved_git_context_reader,
-        state_reader=resolved_state_reader,
-    )
-
-
-def make_artifact_manager(workspace_root: Path | str) -> ArtifactManager:
-    """Build an ArtifactManager with explicit registry and project structure config."""
-    registry = cast(
-        ArtifactRegistryConfig,
-        _load_config(
-            workspace_root,
-            "artifacts.yaml",
-            "load_artifact_registry_config",
-        ),
-    )
-    project_structure = cast(
-        ProjectStructureConfig,
-        _load_config(
-            workspace_root,
-            "project_structure.yaml",
-            "load_project_structure_config",
-            artifact_registry=registry,
-        ),
-    )
-    return ArtifactManager(
-        workspace_root=workspace_root,
-        registry=registry,
-        project_structure_config=project_structure,
-        server_root=Path(workspace_root) / get_default_server_root(),
     )
 
 
@@ -538,6 +404,17 @@ def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
     )
 
 
+def copy_server_startup_inputs(source_workspace: Path, target_workspace: Path) -> Path:
+    """Copy only stable V3 inputs needed by a real startup subprocess."""
+    source_root = source_workspace / get_default_server_root()
+    target_root = target_workspace / get_default_server_root()
+    target_root.mkdir(parents=True, exist_ok=True)
+    for directory_name in ("config", "template_suite"):
+        copytree(source_root / directory_name, target_root / directory_name)
+    copy2(source_root / "installation.json", target_root / "installation.json")
+    return target_workspace
+
+
 def make_test_server(settings: Settings | None = None) -> MCPServer:
     """Create a fully bootstrapped MCPServer for tests using ServerBootstrapper."""
     from mcp_server.bootstrap import ServerBootstrapper  # noqa: PLC0415
@@ -545,7 +422,35 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
 
     resolved_settings = settings or ServerSettings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
-    return bootstrapper.bootstrap()
+    return bootstrapper.bootstrap_target()
+
+
+def make_dispatch_server(settings: Settings) -> MCPServer:
+    """Compose the current request handler for focused tool-dispatch tests."""
+    from mcp_server.config.loader import ConfigLoader  # noqa: PLC0415
+    from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
+    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
+        SchemaResourcePresenter,
+    )
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+    from mcp_server.server import MCPServer  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+
+    server_root = Path(settings.server.workspace_root) / settings.server.server_root_dir
+    presentation = ConfigLoader(
+        config_root=server_root / "config",
+        template_root=server_root / "template_suite",
+    ).load_presentation_config()
+    return MCPServer(
+        settings=settings,
+        tools=[],
+        resources=[],
+        presenter=ResponsePresenter(
+            text_presenter=TextPresenter(config=presentation),
+            resource_presenter=SchemaResourcePresenter(),
+        ),
+        publisher=ResponseCacheManager(),
+    )
 
 
 def assert_itool_result(
@@ -579,3 +484,56 @@ def assert_itool_result(
         assert text_contains in text_content
 
     return text_content
+
+
+def make_template_suite_admission(
+    config_root: Path,
+    *,
+    official_adapter_root: Path,
+    workspace_adapter_root: Path,
+) -> Callable[[Path], SuiteSnapshot]:
+    """Bind real admission readers to explicit roots without executing native tools."""
+    validator = ConfigValidator()
+    environment = Environment()
+    provenance = freeze_json(ArtifactIdentity.model_json_schema())
+    assert isinstance(provenance, FrozenJsonObject)
+
+    def create_config(config_path: Path, suite_path: Path) -> ConfigLoader:
+        contracts = TemplateContractLoader(suite_path)
+        return ConfigLoader(
+            config_path, suite_path, context_schema_reader=contracts.load_context_schema
+        )
+
+    def create_catalog(
+        suite_path: Path, config: ConfigLoader, profiles: frozenset[str]
+    ) -> TemplateCatalogLoader:
+        return TemplateCatalogLoader(
+            suite_path,
+            read_manifest=config.load_template_manifest,
+            read_version=config.load_template_version,
+            read_policy=config.load_template_policy,
+            read_schema=config.load_template_context_schema,
+            validate_policy=lambda policy: validator.validate_template_policy(policy, profiles),
+            resolve_graph=TemplateGraphResolver(suite_path, environment.parse).resolve,
+            validate_inputs=TemplateInputValidator(environment.parse, provenance).validate,
+        )
+
+    def create_adapters(config: ConfigLoader) -> AdapterCatalogLoader:
+        return AdapterCatalogLoader(
+            official_adapter_root,
+            workspace_adapter_root,
+            config.load_adapter_trust(),
+            read_manifest=config.load_adapter_manifest,
+            files=FileAdapterPackageReader(),
+            resolve_program=lambda _: None,
+            windows=os.name == "nt",
+        )
+
+    return partial(
+        admit_template_suite,
+        effective_config_root=config_root,
+        create_config=create_config,
+        create_catalog=create_catalog,
+        create_adapters=create_adapters,
+        validator=validator,
+    )

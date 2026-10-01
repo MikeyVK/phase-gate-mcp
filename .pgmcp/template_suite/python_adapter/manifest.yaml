@@ -1,0 +1,2 @@
+template_id: python_adapter
+purpose: Create a portable adapter with explicit dependencies, method bodies, and optional logging.

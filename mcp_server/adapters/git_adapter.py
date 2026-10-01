@@ -22,11 +22,14 @@ from pathlib import Path
 from typing import Any, Literal
 
 from git import GitCommandError, InvalidGitRepositoryError, Repo
+from git.diff import Diff
+from git.exc import BadName
 from git.remote import PushInfo
 
 from mcp_server.config.settings import Settings
 from mcp_server.core import logging as core_logging
 from mcp_server.core.exceptions import ExecutionError, MCPSystemError
+from mcp_server.core.interfaces.git import BranchBasisUnavailableError, BranchChanges
 
 _PUSH_ERROR_MASK: int = (
     PushInfo.ERROR | PushInfo.REJECTED | PushInfo.REMOTE_REJECTED | PushInfo.REMOTE_FAILURE
@@ -85,6 +88,67 @@ class GitAdapter:
             "untracked_files": self.repo.untracked_files,
             "modified_files": [item.a_path for item in self.repo.index.diff(None)],
         }
+
+    def get_branch_changes(self, parent: str) -> BranchChanges:
+        """Return tracked and nonignored untracked paths changed from the parent."""
+        try:
+            head = self.repo.commit("HEAD")
+            try:
+                parent_commit = self.repo.commit(parent)
+            except BadName as exc:
+                raise BranchBasisUnavailableError(
+                    "parent_unavailable",
+                    f"Unable to resolve branch parent {parent!r}.",
+                ) from exc
+            merge_bases = self.repo.merge_base(head, parent_commit)
+            if not merge_bases:
+                raise BranchBasisUnavailableError(
+                    "merge_base_unavailable",
+                    f"Unable to resolve a merge base for parent {parent!r}.",
+                )
+            merge_base = merge_bases[0]
+
+            current: set[str] = set()
+            removed: set[str] = set()
+
+            def record(diff: Diff) -> None:
+                change_type = diff.change_type
+                old_path = diff.a_path
+                new_path = diff.b_path
+                if change_type == "D":
+                    if old_path is None:
+                        raise ExecutionError("git diff deletion missing old path")
+                    removed.add(old_path)
+                elif change_type == "R":
+                    if old_path is None or new_path is None:
+                        raise ExecutionError("git diff rename missing old or new path")
+                    removed.add(old_path)
+                    current.add(new_path)
+                else:
+                    path = new_path or old_path
+                    if path is None:
+                        raise ExecutionError(f"git diff {change_type!r} missing current path")
+                    current.add(path)
+
+            for diff in (
+                merge_base.diff(head),
+                head.diff(),
+                self.repo.index.diff(None),
+            ):
+                for entry in diff:
+                    record(entry)
+
+            current.update(str(path) for path in self.repo.untracked_files)
+            return BranchChanges(
+                current_paths=tuple(sorted(current)),
+                removed_paths=tuple(sorted(removed)),
+            )
+        except ExecutionError:
+            raise
+        except (BadName, GitCommandError, ValueError) as exc:
+            raise ExecutionError(
+                f"Failed to derive branch changes from parent={parent!r}: {exc}"
+            ) from exc
 
     def create_branch(self, branch_name: str, base: str) -> None:
         """Create a new branch from specified base.

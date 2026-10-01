@@ -24,16 +24,18 @@ from tests.mcp_server.test_support import get_default_server_root, make_test_ser
 # ---------------------------------------------------------------------------
 
 
-def _patch_server_settings(mock: MagicMock, workspace_root: str | None = None) -> None:
+def _patch_server_settings(mock: MagicMock, workspace_root: Path) -> None:
     from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
 
-    resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[4])
+    repo_root = Path(__file__).resolve().parents[4]
     server_root_dir = get_default_server_root()
 
     settings = RealSettings.from_env()
     settings.server.name = "test-server"
-    settings.server.workspace_root = resolved_workspace_root
-    settings.server.config_root = None
+    settings.server.workspace_root = str(workspace_root)
+    settings.server.config_root = str(repo_root / ".pgmcp" / "config")
+    settings.server.template_root = str(repo_root / ".pgmcp" / "template_suite")
+    settings.server.bypass_version_check = True
     settings.server.server_root_dir = server_root_dir
     settings.github.token = None
     settings.github.owner = "test"
@@ -96,17 +98,15 @@ class TestValidateToolArgumentsFailurePath:
     """Test suite for _validate_tool_arguments return type and schema resource."""
 
     @pytest.fixture
-    def server(self) -> MCPServer:
+    def server(self, tmp_path: Path) -> MCPServer:
         """Minimal MCPServer instance for testing _validate_tool_arguments."""
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
-            _patch_server_settings(mock_settings_cls)
+            _patch_server_settings(mock_settings_cls, tmp_path)
             s = make_test_server()
 
             factory = ToolFactory(
                 enforcement_runner=MagicMock(),
-                workspace_root=Path(s._workspace_root)  # type: ignore[reportPrivateUsage]
-                if hasattr(s, "_workspace_root")
-                else Path("."),
+                workspace_root=tmp_path,
             )
             s.tools.append(factory.create_tool(MockSimpleTool()))
             return s

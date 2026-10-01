@@ -1,12 +1,12 @@
 # tests/mcp_server/unit/test_presenter.py
 # template=unit_test version=3d15d309 created=2026-06-12T20:48Z updated=2026-08-19T19:05Z
-"""Unit tests for presenter subcomponents: TextPresenter, ValidationResourcePresenter.
+"""Unit tests for presenter subcomponents: TextPresenter, SchemaResourcePresenter.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.presenters, unittest.mock]
 @responsibilities:
     - Test TextPresenter (ITextPresenter) markdown rendering and note grouping
-    - Test ValidationResourcePresenter (IResourcePresenter) schema resource generation
+    - Test SchemaResourcePresenter (IResourcePresenter) schema resource generation
     - Test ResponsePresenter (IPresenter) composite coordination
     - Test drift validator validate_presentation_alignment
 """
@@ -21,14 +21,16 @@ from pydantic import BaseModel
 
 # Project modules
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.operation_notes import Note
+from mcp_server.core.tool_execution import SchemaAttachment, WholeToolSchemaIdentity
 from mcp_server.presenters.response_presenter import ResponsePresenter
+from mcp_server.presenters.schema_resource_presenter import (
+    SchemaResourcePresenter,
+)
 from mcp_server.presenters.text_presenter import (
     TextPresenter,
     validate_presentation_alignment,
-)
-from mcp_server.presenters.validation_resource_presenter import (
-    ValidationResourcePresenter,
 )
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import (
@@ -58,51 +60,24 @@ class DummyNoOutputModelTool:
     output_model: ClassVar[type[BaseModel] | None] = None
 
 
-class TestValidationResourcePresenter:
-    """Test suite for ValidationResourcePresenter."""
+class TestSchemaResourcePresenter:
+    """Resources depend only on explicit immutable attachments."""
 
-    def test_present_resources_validation_error_dto(self) -> None:
-        """Verify schema extraction from ValidationErrorOutput."""
-        presenter = ValidationResourcePresenter()
+    def test_present_resources_whole_tool_schema(self) -> None:
         schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-        dto = ValidationErrorOutput(
-            error_message="Invalid input",
-            validation_errors=[],
-            input_schema=schema,
+        frozen = freeze_json(schema)
+        assert isinstance(frozen, FrozenJsonObject)
+        attachment = SchemaAttachment(
+            identity=WholeToolSchemaIdentity(kind="whole_tool"), schema=frozen
         )
-
-        resources = presenter.present_resources(tool_name="dummy_tool", data=dto)
-
+        resources = SchemaResourcePresenter().present_resources((attachment,))
         assert len(resources) == 1
         assert resources[0].uri == "schema://validation"
         assert resources[0].mime_type == "application/json"
         assert json.loads(resources[0].content) == schema
 
-    def test_present_resources_validation_error_dict(self) -> None:
-        """Verify schema extraction from dict with error_type == 'ValidationError'."""
-        presenter = ValidationResourcePresenter()
-        schema = {"type": "object", "properties": {"age": {"type": "integer"}}}
-        data = {
-            "error_type": "ValidationError",
-            "error_message": "Invalid input",
-            "validation_errors": [],
-            "input_schema": schema,
-        }
-
-        resources = presenter.present_resources(tool_name="dummy_tool", data=data)
-
-        assert len(resources) == 1
-        assert resources[0].uri == "schema://validation"
-        assert json.loads(resources[0].content) == schema
-
-    def test_present_resources_non_validation_error(self) -> None:
-        """Verify empty resource list for non-validation outputs."""
-        presenter = ValidationResourcePresenter()
-        dto = DummyOutput(success=True, result="All good")
-
-        resources = presenter.present_resources(tool_name="dummy_tool", data=dto)
-
-        assert resources == []
+    def test_present_resources_empty(self) -> None:
+        assert SchemaResourcePresenter().present_resources(()) == ()
 
 
 class TestResponsePresenter:
@@ -126,8 +101,10 @@ class TestResponsePresenter:
                 return None
 
         class MockResPres:
-            def present_resources(self, tool_name: str, data: Any) -> list[PresentationResource]:
-                return [PresentationResource(uri="schema://validation", content="{}")]
+            def present_resources(
+                self, attachments: tuple[SchemaAttachment, ...]
+            ) -> tuple[PresentationResource, ...]:
+                return (PresentationResource(uri="schema://validation", content="{}"),)
 
         presenter = ResponsePresenter(
             text_presenter=MockTextPres(),

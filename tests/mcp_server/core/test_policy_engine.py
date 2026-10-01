@@ -19,7 +19,6 @@ class TestPolicyEngineConfigDriven:
             operation="scaffold",
             path="backend/dtos/user_dto.py",
             phase="implementation",
-            context={"component_type": "dto"},
         )
         assert decision.allowed is True
         assert "scaffold" in decision.reason.lower()
@@ -71,25 +70,13 @@ class TestPolicyEngineConfigDriven:
         )
         assert decision.allowed is True
 
-    def test_component_type_validation(self) -> None:
-        """Test component type validation in directory."""
-        engine = make_policy_engine()
-        decision = engine.decide(
-            operation="scaffold",
-            path="backend/dtos/service.py",
-            phase="implementation",
-            context={"component_type": "service"},  # Service not allowed in dtos/
-        )
-        assert decision.allowed is False
-        assert "service" in decision.reason.lower()
-
     def test_allowed_extension_validation(self) -> None:
         """Test file extension validation."""
         engine = make_policy_engine()
         decision = engine.decide(
             operation="create_file", path="docs/design.txt", phase="design", context={}
         )
-        # .txt should be allowed for docs directory
+        # The extension is admitted by the operation policy.
         assert decision.allowed is True
 
     def test_audit_trail_logging(self) -> None:
@@ -99,24 +86,12 @@ class TestPolicyEngineConfigDriven:
             operation="scaffold",
             path="backend/dtos/user_dto.py",
             phase="implementation",
-            context={"component_type": "dto"},
+            context={},
         )
         trail = engine.get_audit_trail()
         assert len(trail) == 1
         assert trail[0]["operation"] == "scaffold"
         assert trail[0]["allowed"] is True
-
-    def test_policy_decision_contains_directory_policy(self) -> None:
-        """Test PolicyDecision includes resolved directory policy."""
-        engine = make_policy_engine()
-        decision = engine.decide(
-            operation="scaffold",
-            path="backend/dtos/user_dto.py",
-            phase="implementation",
-            context={"component_type": "dto"},
-        )
-        assert decision.directory_policy is not None
-        assert decision.directory_policy.path == "backend/dtos"
 
     def test_error_handling_denies_by_default(self) -> None:
         """Test errors result in denied decision (fail-safe)."""

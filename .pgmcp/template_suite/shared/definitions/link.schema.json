@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Explicit document link",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "label",
+    "target"
+  ],
+  "properties": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caller-owned display label."
+    },
+    "target": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explicit URI, path or fragment; rendering never resolves this target."
+    }
+  }
+}

@@ -1,0 +1,2 @@
+template_id: python_worker
+purpose: Create a portable worker with one explicit operation and optional dependencies and logging.

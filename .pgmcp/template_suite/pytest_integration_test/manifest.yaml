@@ -1,0 +1,2 @@
+template_id: pytest_integration_test
+purpose: Create caller-owned Pytest integration cases with explicit component fixtures and imports.

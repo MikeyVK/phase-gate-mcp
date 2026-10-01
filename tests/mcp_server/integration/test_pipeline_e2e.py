@@ -15,6 +15,8 @@ E2E pipeline integration tests verifying decorator wrapping, caching and present
 # Standard library
 import re
 import shutil
+from collections.abc import Generator
+from pathlib import Path
 from unittest.mock import MagicMock
 
 # Third-party
@@ -22,6 +24,7 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel
 
+from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import (
     ValidationError as CoreValidationError,
 )
@@ -30,12 +33,13 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.text_presenter import TextPresenter
-from mcp_server.presenters.validation_resource_presenter import (
-    ValidationResourcePresenter,
+from mcp_server.presenters.schema_resource_presenter import (
+    SchemaResourcePresenter,
 )
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import EnforcementErrorOutput
+from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from tests.mcp_server.test_support import assert_itool_result, make_test_server
 
@@ -78,7 +82,7 @@ class DummyCoreTool(ICoreTool[DummyInput, DummyOutput]):
 
 
 @pytest.fixture
-def temp_workspace(tmp_path):
+def temp_workspace(tmp_path: Path) -> Generator[Path, None, None]:
     """Create temporary workspace for integration testing."""
     workspace = tmp_path / "test_workspace"
     workspace.mkdir(parents=True, exist_ok=True)
@@ -87,11 +91,28 @@ def temp_workspace(tmp_path):
         shutil.rmtree(workspace)
 
 
+@pytest.fixture
+def isolated_server(temp_workspace: Path) -> MCPServer:
+    """Compose the real server with a private writable root per test."""
+    repo_root = Path(__file__).resolve().parents[3]
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(temp_workspace),
+            config_root=str(repo_root / ".pgmcp" / "config"),
+            template_root=str(repo_root / ".pgmcp" / "template_suite"),
+            bypass_version_check=True,
+        )
+    )
+    return make_test_server(settings=settings)
+
+
 class TestPipelineE2E:
     """Integration test suite for pipeline_e2e."""
 
     @pytest.mark.asyncio
-    async def test_pipeline_e2e_flow(self, temp_workspace):
+    async def test_pipeline_e2e_flow(
+        self, temp_workspace: Path, isolated_server: MCPServer
+    ) -> None:
         """Test the end-to-end flow of the new pipeline structure."""
         cache_manager = ResponseCacheManager()
         enforcement_runner = MagicMock(spec=EnforcementRunner)
@@ -101,7 +122,7 @@ class TestPipelineE2E:
         decorated_tool = factory.create_tool(DummyCoreTool())
 
         # Set up test server
-        server = make_test_server()
+        server = isolated_server
         server.response_cache_manager = cache_manager
         config_data = {
             "global": {
@@ -123,7 +144,7 @@ class TestPipelineE2E:
         text_presenter = TextPresenter(config_data=config_data)
         server.presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         server.tools = [decorated_tool]
 
@@ -151,7 +172,9 @@ class TestPipelineE2E:
         assert cached_dto.result == "Value: 42"
 
     @pytest.mark.asyncio
-    async def test_pipeline_cache_fallback(self, temp_workspace):
+    async def test_pipeline_cache_fallback(
+        self, temp_workspace: Path, isolated_server: MCPServer
+    ) -> None:
         """Verify that the pipeline functions correctly and falls back to run_id=None
         if the cache manager returns None on put (simulating cache write failure).
         """
@@ -163,7 +186,7 @@ class TestPipelineE2E:
         factory = ToolFactory(enforcement_runner=enforcement_runner, workspace_root=temp_workspace)
         decorated_tool = factory.create_tool(DummyCoreTool())
 
-        server = make_test_server()
+        server = isolated_server
         server.response_cache_manager = cache_manager
         config_data = {
             "global": {
@@ -185,7 +208,7 @@ class TestPipelineE2E:
         text_presenter = TextPresenter(config_data=config_data)
         server.presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         server.tools = [decorated_tool]
 
@@ -206,7 +229,9 @@ class TestPipelineE2E:
         cache_manager.put.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_pipeline_enforcement_blocker(self, temp_workspace):
+    async def test_pipeline_enforcement_blocker(
+        self, temp_workspace: Path, isolated_server: MCPServer
+    ) -> None:
         """Verify that when the enforcement runner raises a ValidationError,
         the pipeline maps it to EnforcementErrorOutput DTO and returns it formatted.
         """
@@ -221,7 +246,7 @@ class TestPipelineE2E:
         factory = ToolFactory(enforcement_runner=enforcement_runner, workspace_root=temp_workspace)
         decorated_tool = factory.create_tool(DummyCoreTool())
 
-        server = make_test_server()
+        server = isolated_server
         server.response_cache_manager = cache_manager
         config_data = {
             "global": {
@@ -235,7 +260,7 @@ class TestPipelineE2E:
         text_presenter = TextPresenter(config_data=config_data)
         server.presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         server.tools = [decorated_tool]
 

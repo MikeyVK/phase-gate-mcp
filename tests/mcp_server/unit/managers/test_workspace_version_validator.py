@@ -43,12 +43,3 @@ def test_validate_bypass_version_check_skips_validation(tmp_path: Path) -> None:
     """Verify bypass_version_check flag skips version validation."""
     validator = WorkspaceVersionValidator()
     validator.validate(server_root=tmp_path, expected_version="1.0.0", bypass_version_check=True)
-
-
-def test_read_version_returns_string_or_none(tmp_path: Path) -> None:
-    """Verify read_version queries .version string or returns None."""
-    validator = WorkspaceVersionValidator()
-    assert validator.read_version(tmp_path) is None
-
-    (tmp_path / ".version").write_text("2.0.0", encoding="utf-8")
-    assert validator.read_version(tmp_path) == "2.0.0"

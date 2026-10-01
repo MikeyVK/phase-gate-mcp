@@ -1,0 +1,15 @@
+{% extends "shared/templates/bases/tier2_python.jinja2" %}
+{% import "shared/templates/patterns/python/pydantic.jinja2" as model %}
+{% block module_documentation %}{{ imports.documentation(content.module_description | default(content.description)) }}{% endblock %}
+{% block module_imports %}
+{% set names = [{"name": "BaseModel"}, {"name": "ConfigDict"}] %}
+{% if content.fields | default([]) %}{% set names = names + [{"name": "Field"}] %}{% endif %}
+{{ imports.groups(content.imports | default({}), {"third_party": [{"kind": "from", "module": "pydantic", "names": names}]}) }}
+{% endblock %}
+{% block code %}
+class {{ content.class_name }}(BaseModel):
+    {{ imports.documentation(content.description) }}
+
+    {{ model.model_config(true, content.examples | default([])) }}
+{{ model.fields(content.fields | default([])) | indent(4, true) }}
+{% endblock %}

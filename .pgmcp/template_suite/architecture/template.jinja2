@@ -1,0 +1,57 @@
+{% extends "shared/templates/bases/tier2_markdown_document.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+
+{% block document_body %}
+{% if content.constraints is defined %}
+{{ sections.heading('Constraints') }}
+
+{{ sections.bullets(content.constraints) }}
+{% endif %}
+
+{{ sections.heading('Concepts') }}
+{% for concept in content.concepts %}
+
+{{ sections.heading(loop.index ~ '. ' ~ concept.name, 3) }}
+
+{{ concept.description }}
+{% if concept.diagram is defined %}
+
+{{ sections.heading('Diagram', 4) }}
+
+{{ sections.code_fence(concept.diagram, 'mermaid') }}
+{% endif %}
+{% if concept.subsections is defined %}
+
+**Subsections:**
+{% for subsection in concept.subsections %}
+
+{{ sections.heading(subsection.name, 4) }}
+
+{{ subsection.description }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% if content.decisions is defined %}
+
+{{ sections.heading('Decisions') }}
+{% for item in content.decisions %}
+
+{{ sections.heading(item.decision, 3) }}
+
+{{ item.rationale }}
+{% if item.alternatives is defined %}
+
+**Alternatives:**
+
+{{ sections.bullets(item.alternatives) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if content.sources is defined %}
+
+{{ sections.heading('Sources') }}
+
+{{ links.inline_list(content.sources) }}
+{% endif %}
+{% endblock %}

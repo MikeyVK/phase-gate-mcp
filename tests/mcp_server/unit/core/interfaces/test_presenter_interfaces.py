@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter, ITextPresenter
 from mcp_server.core.operation_notes import NoteEntry
+from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.presentation_output import PresentationResource, PresentedOutput
 
@@ -49,10 +50,9 @@ class MockResourcePresenter:
 
     def present_resources(
         self,
-        tool_name: str,
-        data: BaseModel | dict[str, Any],
-    ) -> list[PresentationResource]:
-        return [PresentationResource(uri="schema://validation", content="{}")]
+        attachments: tuple[SchemaAttachment, ...],
+    ) -> tuple[PresentationResource, ...]:
+        return (PresentationResource(uri="schema://validation", content="{}"),)
 
 
 class MockPresenter:
@@ -65,6 +65,8 @@ class MockPresenter:
         notes: list[NoteEntry] | None = None,
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
+        *,
+        attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
         return PresentedOutput(text="ok", resources=[])
 

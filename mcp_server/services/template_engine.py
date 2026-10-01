@@ -1,85 +1,33 @@
-# backend/services/template_engine.py
-"""Template Engine - Jinja2 rendering for scaffolding.
-
-Provides Jinja2-based template rendering for Issue #72 5-tier architecture.
-Extracted from mcp_server/scaffolding/renderer.py for reusability (Issue #108).
+"""Render selected templates through an injected Jinja environment.
 
 @layer: Backend (Services)
-@dependencies: [jinja2, pathlib, re]
+@dependencies: [jinja2, re]
 @responsibilities:
-    - Render Jinja2 templates with context variables
-    - Support 5-tier template inheritance (FileSystemLoader)
-    - Provide custom filters (pascalcase, snakecase, kebabcase, validate_identifier)
-    - Raise clear errors for missing templates or invalid configuration
+    - Render the selected template with caller context and server provenance
+    - Provide generic name filters for authored Jinja sources
 """
 
 import re
-from pathlib import Path
+from collections.abc import Mapping
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, Template
+from pydantic import JsonValue
 
 
 class TemplateEngine:
-    """Jinja2 template rendering engine.
+    """Render catalog-selected Jinja templates from one admitted source snapshot."""
 
-    Handles template rendering for scaffolding with support for Issue #72
-    5-tier template architecture ({% extends %} inheritance).
-    """
-
-    def __init__(
-        self,
-        template_root: Path | str | None = None,
-        *,
-        template_dir: Path | str | None = None,
-    ) -> None:
-        """Initialize the template engine.
-
-        Args:
-            template_root: Path to templates root directory (Path or str)
-            template_dir: Alias for template_root (backwards compatibility)
-
-        Raises:
-            ValueError: If template_root does not exist or both/neither parameters provided
-        """
-        # Support both parameter names for backwards compatibility
-        if template_root is not None and template_dir is not None:
-            raise ValueError("Cannot specify both template_root and template_dir")
-        if template_root is None and template_dir is None:
-            raise ValueError("Must specify either template_root or template_dir")
-
-        root = template_root if template_root is not None else template_dir
-        self.template_root = Path(root)  # type: ignore[arg-type]
-
-        if not self.template_root.exists():
-            raise ValueError(f"Template root does not exist: {self.template_root}")
-
-        self._env: Environment | None = None
+    def __init__(self, *, environment: Environment) -> None:
+        self._env = environment
+        self._env.filters["pascalcase"] = self._filter_pascalcase
+        self._env.filters["snakecase"] = self._filter_snakecase
+        self._env.filters["kebabcase"] = self._filter_kebabcase
+        self._env.filters["validate_identifier"] = self._filter_validate_identifier
 
     @property
     def env(self) -> Environment:
-        """Get or create the Jinja2 environment.
-
-        Lazy initialization to avoid overhead if not used.
-        Registers custom filters on first access.
-
-        Returns:
-            Configured Jinja2 Environment
-        """
-        if self._env is None:
-            self._env = Environment(
-                loader=FileSystemLoader(str(self.template_root)),
-                trim_blocks=True,
-                lstrip_blocks=True,
-                keep_trailing_newline=True,
-            )
-
-            # Register custom filters
-            self._env.filters["pascalcase"] = self._filter_pascalcase
-            self._env.filters["snakecase"] = self._filter_snakecase
-            self._env.filters["kebabcase"] = self._filter_kebabcase
-            self._env.filters["validate_identifier"] = self._filter_validate_identifier
-
+        """Return the injected environment without reading a filesystem root."""
         return self._env
 
     def get_template(self, template_name: str) -> Template:
@@ -110,32 +58,14 @@ class TemplateEngine:
             TemplateNotFound: If template does not exist
             Exception: If template rendering fails (missing variables, etc.)
 
-        Example:
-            >>> engine = TemplateEngine(template_root="mcp_server/scaffolding/templates")
-            >>> output = engine.render("concrete/dto.py.jinja2", name="UserDTO", ...)
+        The injected environment determines the available templates.
         """
         template = self.get_template(template_name)
         return str(template.render(**kwargs))
 
-    def list_templates(self) -> list[str]:
-        """List all available templates.
-
-        Returns:
-            List of template names (relative paths to .jinja2 files)
-
-        Example:
-            >>> engine = TemplateEngine(template_root="mcp_server/scaffolding/templates")
-            >>> templates = engine.list_templates()
-            >>> print(templates)
-            ['concrete/dto.py.jinja2', 'tier0_base_artifact.jinja2', ...]
-        """
-        templates: list[str] = []
-        if self.template_root.exists():
-            for path in self.template_root.rglob("*.jinja2"):
-                # Use forward slashes for cross-platform compatibility
-                rel_path = path.relative_to(self.template_root).as_posix()
-                templates.append(rel_path)
-        return templates
+    def render_context(self, template_name: str, context: Mapping[str, JsonValue]) -> str:
+        """Render an explicit content/provenance envelope without transforming its values."""
+        return str(self.get_template(template_name).render(context))
 
     # Custom Jinja2 filters
 

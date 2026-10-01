@@ -1,0 +1,19 @@
+{% extends "shared/templates/bases/tier2_python.jinja2" %}
+{% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}
+{% import "shared/templates/patterns/python/logging.jinja2" as module_logging %}
+{% block module_documentation %}{{ imports.documentation(content.module_description | default(content.description)) }}{% endblock %}
+{% block module_imports %}
+{{ imports.groups(content.imports | default({}), {"stdlib": [{"kind": "import", "module": "logging"}]} if content.logging is defined else {}) }}
+{% endblock %}
+{% block code %}
+{% if content.logging is defined %}
+{{ module_logging.logger(content.logging) }}
+
+{% endif %}
+class {{ content.class_name }}:
+    {{ imports.documentation(content.description) }}
+{% if content.constructor is defined %}
+{{ signatures.constructor(content.constructor) | indent(4, true) }}
+{% endif %}
+{{ signatures.method(content.operation, content.operation.body) | indent(4, true) }}
+{% endblock %}

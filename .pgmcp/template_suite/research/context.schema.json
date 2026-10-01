@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Research document content",
+  "description": "Valid initial authored Research content; completion is determined by active work-context phase instructions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "problem_statement", "goals"],
+  "properties": {
+    "title": {"$ref": "#/$defs/Text"},
+    "status": {"$ref": "#/$defs/Text"},
+    "version": {"$ref": "#/$defs/Text"},
+    "last_updated": {"type": "string", "format": "date", "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"},
+    "purpose": {"$ref": "#/$defs/Prose"},
+    "scope_in": {"$ref": "#/$defs/Prose"},
+    "scope_out": {"$ref": "#/$defs/Prose"},
+    "prerequisites": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+    "related_docs": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}},
+    "problem_statement": {"$ref": "#/$defs/Text"},
+    "goals": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+    "background": {"$ref": "#/$defs/Prose"},
+    "findings": {"$ref": "#/$defs/Prose"},
+    "questions": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
+    "references": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}},
+    "approved_strategy": {"$ref": "#/$defs/Prose"},
+    "expected_results": {"$ref": "#/$defs/Prose"},
+    "evidence": {"type": "array", "items": {"$ref": "../shared/definitions/evidence.schema.json"}},
+    "consumers": {"type": "array", "items": {"$ref": "#/$defs/Consumer"}},
+    "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
+    "assumptions": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
+  },
+  "$defs": {
+    "Text": {"type": "string", "minLength": 1},
+    "Prose": {"type": "string"},
+    "Consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "responsibility", "impact"],
+      "properties": {
+        "name": {"$ref": "#/$defs/Text"},
+        "responsibility": {"$ref": "#/$defs/Prose"},
+        "impact": {"$ref": "#/$defs/Prose"}
+      }
+    }
+  }
+}

@@ -13,11 +13,12 @@ Build-Time Packaging Automation
 
 # Standard library
 import logging
-from pathlib import Path
 import shutil
 import subprocess
 import sys
-from typing import Any, Dict
+from contextlib import suppress
+from pathlib import Path
+from typing import Any
 
 # Third-party
 import yaml
@@ -32,26 +33,24 @@ def clean_assets(assets_dir: Path) -> None:
             if item.is_dir():
                 shutil.rmtree(item, ignore_errors=True)
             else:
-                try:
+                with suppress(Exception):
                     item.unlink()
-                except Exception:
-                    pass
     else:
         assets_dir.mkdir(parents=True, exist_ok=True)
 
 
-def read_manifest(manifest_path: Path) -> Dict[str, Any]:
+def read_manifest(manifest_path: Path) -> dict[str, Any]:
     """Reads the release manifest."""
     if not manifest_path.exists():
         raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+    with manifest_path.open(encoding="utf-8") as file_handle:
+        data = yaml.safe_load(file_handle)
     if not isinstance(data, dict):
         raise ValueError("Manifest content must be a dictionary")
     return data
 
 
-def copy_assets(project_root: Path, assets_dir: Path, manifest: Dict[str, Any]) -> None:
+def copy_assets(project_root: Path, assets_dir: Path, manifest: dict[str, Any]) -> None:
     """Copies assets from manifest to assets directory."""
     for mapping in manifest.get("assets", []):
         src_rel = mapping.get("source")

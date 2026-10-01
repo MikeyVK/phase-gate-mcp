@@ -49,14 +49,24 @@ source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -e .
+```
 
-# Initialize local workspace configuration and templates (for new projects)
+For a new server root, `pgmcp --init` requires complete assembled package assets. A clean editable checkout installed with `pip install -e .` does not assemble those assets automatically. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; follow the [Release Assets Procedure](../reference/release-assets-procedure.md). Use initialization after provisioning a package with those assets:
+
+
+```powershell
 pgmcp --init
+```
 
-# Upgrade an existing workspace configuration to match server v2.0.0
-# (For a detailed step-by-step upgrade guide, see docs/setup/workspace-upgrade.md)
+For an existing workspace, renew the managed template suite:
+
+```powershell
 pgmcp --upgrade
 ```
+
+Renewal preserves owner-managed configuration. If it reports
+`checkpoint_required`, review the local suite and follow the owner-led procedure in
+the [Workspace Upgrade Guide](workspace-upgrade.md) before choosing an action.
 
 ---
 

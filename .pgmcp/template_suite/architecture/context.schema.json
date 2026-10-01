@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Architecture document content",
+  "description": "Valid initial authored Architecture content; active work-context phase instructions determine completion. Diagrams are authored content, not syntax-certified by this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "concepts"
+  ],
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "status": {
+      "$ref": "#/$defs/Text"
+    },
+    "version": {
+      "$ref": "#/$defs/Text"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
+    },
+    "purpose": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "concepts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Concept"
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/decision.schema.json"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "Concept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "$ref": "#/$defs/Prose"
+        },
+        "diagram": {
+          "$ref": "#/$defs/Prose"
+        },
+        "subsections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ConceptSection"
+          }
+        }
+      }
+    },
+    "ConceptSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "$ref": "#/$defs/Prose"
+        }
+      }
+    }
+  }
+}

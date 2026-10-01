@@ -1,0 +1,871 @@
+version: "1.1"
+generated_on: "2026-08-24"
+issue: 460
+phase: research
+authority: "Durable baseline for the issue-460 template-suite audit; exact contexts and observable outcomes are authoritative."
+method:
+  schema_source: "Live scaffold_schema response for every public artifact type."
+  minimal_probe: "Exactly the live required context fields, populated with deterministic values."
+  coverage_probe: "Every live public context property populated with a deterministic non-null value or one representative collection item."
+  excluded_diagnostics: "Machine-local output paths and cache resource URIs are intentionally omitted."
+summary:
+  artifact_types: 22
+  probes: 44
+  successful: 34
+  failed: 10
+  supplemental_f02_cases: 8
+  supplemental_f02_attempted: 7
+  supplemental_f02_successful: 6
+  supplemental_f02_failed: 1
+  supplemental_f02_unavailable: 1
+artifacts:
+  adapter:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "target_interface": "string|null"
+      "methods": "array<string>|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: undefined
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","target_interface":"ExampleProtocol","methods":["run"]}
+        schema_result: "accepted"
+        render_result: "failed"
+        output_validation: undefined
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "UndefinedError: 'str object' has no attribute 'name'"
+  architecture:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated","concepts"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "concepts": "array<string>"
+      "purpose": "string|null"
+      "scope_in": "string|null"
+      "scope_out": "string|null"
+      "prerequisites": "array<string>|null"
+      "related_docs": "array<string>|null"
+      "constraints": "array<string>|null"
+      "decisions": "array<string>|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","concepts":["Core concept"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","concepts":["Core concept"],"purpose":"Exercise every declared property.","scope_in":"Template suite","scope_out":"Unrelated runtime behavior","prerequisites":["Read the contract"],"related_docs":["docs/reference/example.md"],"constraints":["Portable"],"decisions":["Decision record"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  commit:
+    schema_result: "success"
+    additional_properties: false
+    required: ["type","message"]
+    strict_validation: "implicit"
+    properties:
+      "type": "string"
+      "message": "string"
+      "scope": "string|null"
+      "body": "string|null"
+      "breaking_change": "boolean|null"
+      "breaking_description": "string|null"
+      "footer": "string|null"
+      "refs": "array<string>|null"
+    probes:
+      minimal:
+        context: {"type":"refactor","message":"stabilize template contracts"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"type":"refactor","message":"stabilize template contracts","scope":"scaffolding","body":"Coverage body","breaking_change":true,"breaking_description":"Breaking details","footer":"Refs #460","refs":["460"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  design:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated","problem_statement","requirements_functional","requirements_nonfunctional","decision","rationale","options","key_decisions"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "problem_statement": "string"
+      "requirements_functional": "array<string>"
+      "requirements_nonfunctional": "array<string>"
+      "decision": "string"
+      "rationale": "string"
+      "purpose": "string|null"
+      "scope_in": "string|null"
+      "scope_out": "string|null"
+      "prerequisites": "array<string>|null"
+      "related_docs": "array<string>|null"
+      "constraints": "array<string>|null"
+      "options": "array<any>"
+      "key_decisions": "array<any>"
+      "open_questions": "array<string>|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","problem_statement":"Template contracts diverge from renderers.","requirements_functional":["Render declared content"],"requirements_nonfunctional":["Remain portable"],"decision":"Use the approved boundary.","rationale":"The boundary preserves one authority.","options":[{"name":"Option A","description":"Coverage option","pros":["Pro"],"cons":["Con"]}],"key_decisions":[{"decision":"Keep one authority","rationale":"Avoid drift"}]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","problem_statement":"Template contracts diverge from renderers.","requirements_functional":["Render declared content"],"requirements_nonfunctional":["Remain portable"],"decision":"Use the approved boundary.","rationale":"The boundary preserves one authority.","purpose":"Exercise every declared property.","scope_in":"Template suite","scope_out":"Unrelated runtime behavior","prerequisites":["Read the contract"],"related_docs":["docs/reference/example.md"],"constraints":["Portable"],"options":[{"name":"Option A","description":"Coverage option","pros":["Pro"],"cons":["Con"]}],"key_decisions":[{"decision":"Keep one authority","rationale":"Avoid drift"}],"open_questions":["Which mechanism?"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  dto:
+    schema_result: "success"
+    additional_properties: false
+    required: ["dto_name"]
+    strict_validation: true
+    properties:
+      "dto_name": "string"
+      "fields": "array<string>|null"
+      "description": "string|null"
+    probes:
+      minimal:
+        context: {"dto_name":"ProbeDTO"}
+        schema_result: "accepted"
+        render_result: "not_completed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: null
+        error_message: "Generated dto artifact failed validation"
+      coverage:
+        context: {"dto_name":"ProbeDTO","fields":["identifier: str"],"description":"Coverage description"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  generic:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "layer": "string|null"
+      "methods": "array<string>|null"
+      "responsibilities": "array<string>|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","layer":"domain","methods":["run"],"responsibilities":["Render portable behavior"]}
+        schema_result: "accepted"
+        render_result: "failed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "UndefinedError: 'str object' has no attribute 'name'"
+  generic_doc:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated","purpose","summary"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "purpose": "string"
+      "summary": "string"
+      "scope_in": "string|null"
+      "scope_out": "string|null"
+      "prerequisites": "array<string>|null"
+      "related_docs": "array<string>|null"
+      "key_changes": "array<string>|null"
+      "migration_steps": "array<string>|null"
+      "validation_checklist": "array<string>|null"
+      "faq": "array<string>|null"
+      "custom_sections": "array<string>|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","purpose":"Exercise every declared property.","summary":"Coverage summary."}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","purpose":"Exercise every declared property.","summary":"Coverage summary.","scope_in":"Template suite","scope_out":"Unrelated runtime behavior","prerequisites":["Read the contract"],"related_docs":["docs/reference/example.md"],"key_changes":["Contract corrected"],"migration_steps":["Rediscover schema"],"validation_checklist":["Validate behavior"],"faq":["How? Use scaffold_schema."],"custom_sections":["Coverage section"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  integration_test:
+    schema_result: "success"
+    additional_properties: false
+    required: ["test_scenario","test_class_name"]
+    strict_validation: true
+    properties:
+      "test_scenario": "string"
+      "test_class_name": "string"
+      "test_description": "string|null"
+      "managers_needed": "array<string>|null"
+      "workspace_fixture": "boolean|null"
+      "test_methods": "array<string>|null"
+    probes:
+      minimal:
+        context: {"test_scenario":"scaffolding pipeline","test_class_name":"TestProbeScaffolding"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"test_scenario":"scaffolding pipeline","test_class_name":"TestProbeScaffolding","test_description":"Coverage test","managers_needed":["artifact_manager"],"workspace_fixture":true,"test_methods":["test_behavior"]}
+        schema_result: "accepted"
+        render_result: "failed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "UndefinedError: 'str object' has no attribute 'name'"
+  interface:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "methods": "array<string>|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","methods":["run"]}
+        schema_result: "accepted"
+        render_result: "failed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "UndefinedError: 'str object' has no attribute 'name'"
+  issue:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","problem"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "problem": "string"
+      "summary": "string|null"
+      "expected": "string|null"
+      "actual": "string|null"
+      "context": "string|null"
+      "steps_to_reproduce": "string|null"
+      "related_docs": "array<string>|null"
+      "labels": "array<string>|null"
+      "milestone": "string|null"
+      "assignees": "array<string>|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","problem":"The generated artifact contract is inconsistent."}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","problem":"The generated artifact contract is inconsistent.","summary":"Coverage summary.","expected":"Valid portable output.","actual":"Current behavior diverges.","context":"Issue 460 research probe.","steps_to_reproduce":"1. Invoke scaffolding with coverage context.","related_docs":["docs/reference/example.md"],"labels":["refactor"],"milestone":"Issue 460","assignees":["maintainer"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  planning:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated","summary","cycles"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "summary": "string"
+      "cycles": "array<any>"
+      "purpose": "string|null"
+      "scope_in": "string|null"
+      "scope_out": "string|null"
+      "prerequisites": "array<string>|null"
+      "dependencies": "array<string>|null"
+      "risks": "array<any>|null"
+      "milestones": "array<string>|null"
+      "related_docs": "array<string>|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","summary":"Coverage summary.","cycles":[{"cycle":"C1","goal":"Stabilize","tests":["contract"],"criteria":["passes"],"dependencies":[]}]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","summary":"Coverage summary.","cycles":[{"cycle":"C1","goal":"Stabilize","tests":["contract"],"criteria":["passes"],"dependencies":[]}],"purpose":"Exercise every declared property.","scope_in":"Template suite","scope_out":"Unrelated runtime behavior","prerequisites":["Read the contract"],"dependencies":["pydantic"],"risks":[{"risk":"Contract drift","impact":"high","mitigation":"single authority"}],"milestones":["Research complete"],"related_docs":["docs/reference/example.md"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  pr:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","changes"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "changes": "string"
+      "summary": "string|null"
+      "testing": "string|null"
+      "checklist_items": "array<string>|null"
+      "related_docs": "array<string>|null"
+      "closes_issues": "array<string>|null"
+      "breaking_changes": "string|null"
+      "deferred_work": "string|null"
+      "tracking_state": "string|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","changes":"Stabilize the complete suite."}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","changes":"Stabilize the complete suite.","summary":"Coverage summary.","testing":"Run contract and output validation.","checklist_items":["Verify behavior"],"related_docs":["docs/reference/example.md"],"closes_issues":["460"],"breaking_changes":"Context schemas change.","deferred_work":"None.","tracking_state":"research"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  reference:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated","source_file","test_file","api_reference"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "source_file": "string"
+      "test_file": "string"
+      "api_reference": "array<any>"
+      "usage_examples": "string|null"
+      "test_count": "integer|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","source_file":"mcp_server/example.py","test_file":"tests/test_example.py","api_reference":[{"name":"ExampleAPI","type":"class","description":"Coverage API","methods":[{"name":"run","signature":"run() -> None","description":"Run"}]}]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","source_file":"mcp_server/example.py","test_file":"tests/test_example.py","api_reference":[{"name":"ExampleAPI","type":"class","description":"Coverage API","methods":[{"name":"run","signature":"run() -> None","description":"Run"}]}],"usage_examples":"print('coverage')","test_count":1}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  research:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated","problem_statement","goals"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "problem_statement": "string"
+      "goals": "array<string>"
+      "purpose": "string|null"
+      "scope_in": "string|null"
+      "scope_out": "string|null"
+      "prerequisites": "array<string>|null"
+      "background": "string|null"
+      "findings": "string|null"
+      "questions_list": "array<string>|null"
+      "references": "array<string>|null"
+      "related_docs": "array<string>|null"
+      "approved_strategy": "string|null"
+      "expected_results": "string|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","problem_statement":"Template contracts diverge from renderers.","goals":["Stabilize the suite"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","problem_statement":"Template contracts diverge from renderers.","goals":["Stabilize the suite"],"purpose":"Exercise every declared property.","scope_in":"Template suite","scope_out":"Unrelated runtime behavior","prerequisites":["Read the contract"],"background":"Existing template suite.","findings":"Coverage findings.","questions_list":["What is preserved?"],"references":["docs/reference/example.md"],"related_docs":["docs/reference/example.md"],"approved_strategy":"Use the approved clean break.","expected_results":"Stable suite."}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  resource:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "resource_type": "string|null"
+      "methods": "array<string>|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","resource_type":"generic","methods":["run"]}
+        schema_result: "accepted"
+        render_result: "failed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "UndefinedError: 'str object' has no attribute 'name'"
+  schema:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "layer": "string|null"
+      "fields": "array<string>|null"
+      "frozen": "boolean|null"
+      "examples": "array<string>|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","layer":"domain","fields":["identifier: str"],"frozen":true,"examples":["example"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "failed"
+        tool_success: false
+        error_type: null
+        error_message: "Generated schema artifact failed validation"
+  service:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "layer": "string|null"
+      "responsibilities": "array<string>|null"
+      "parameters": "array<string>|null"
+      "return_type": "string|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","layer":"domain","responsibilities":["Render portable behavior"],"parameters":["parameters item"],"return_type":"str"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "failed"
+        tool_success: false
+        error_type: null
+        error_message: "Generated service artifact failed validation"
+  tool:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "description": "string|null"
+      "layer": "string|null"
+      "responsibilities": "array<string>|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","description":"Coverage description","layer":"domain","responsibilities":["Render portable behavior"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  typescript_dto:
+    schema_result: "success"
+    additional_properties: false
+    required: ["fields"]
+    strict_validation: true
+    properties:
+      "fields": "array<string>"
+      "implements": "string|null"
+    probes:
+      minimal:
+        context: {"fields":["identifier: str"]}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"fields":["identifier: str"],"implements":"ExampleProtocol"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  unit_test:
+    schema_result: "success"
+    additional_properties: false
+    required: ["module_under_test","test_class_name"]
+    strict_validation: true
+    properties:
+      "module_under_test": "string"
+      "test_class_name": "string"
+      "test_description": "string|null"
+      "test_focus": "string|null"
+      "additional_responsibility": "string|null"
+      "imported_classes": "array<string>|null"
+      "has_mocks": "boolean|null"
+      "has_async_tests": "boolean|null"
+      "has_pydantic": "boolean|null"
+      "test_methods": "array<string>|null"
+    probes:
+      minimal:
+        context: {"module_under_test":"mcp_server.example","test_class_name":"TestProbeScaffolding"}
+        schema_result: "accepted"
+        render_result: "not_completed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "TypeError: 'NoneType' object is not iterable"
+      coverage:
+        context: {"module_under_test":"mcp_server.example","test_class_name":"TestProbeScaffolding","test_description":"Coverage test","test_focus":"observable behavior","additional_responsibility":"edge cases","imported_classes":["ExampleClass"],"has_mocks":true,"has_async_tests":true,"has_pydantic":true,"test_methods":["test_behavior"]}
+        schema_result: "accepted"
+        render_result: "failed"
+        output_validation: "not_reached"
+        tool_success: false
+        error_type: "ExecutionError"
+        error_message: "UndefinedError: 'str object' has no attribute 'name'"
+  validation_report:
+    schema_result: "success"
+    additional_properties: false
+    required: ["title","status","version","last_updated"]
+    strict_validation: "implicit"
+    properties:
+      "title": "string"
+      "status": "string"
+      "version": "string"
+      "last_updated": "string"
+      "issue_number": "integer|null"
+      "cycle": "string|null"
+      "validation_status": "string|null"
+      "scope": "string|null"
+    probes:
+      minimal:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"title":"Issue 460 Probe Artifact","status":"DRAFT","version":"1.0","last_updated":"2026-08-23","issue_number":460,"cycle":"research","validation_status":"PASS","scope":"scaffolding"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+  worker:
+    schema_result: "success"
+    additional_properties: false
+    required: ["name","layer"]
+    strict_validation: true
+    properties:
+      "name": "string"
+      "layer": "string"
+      "module_description": "string|null"
+      "worker_scope": "string|null"
+      "responsibilities": "array<string>|null"
+      "capabilities": "array<string>|null"
+      "use_async": "boolean|null"
+    probes:
+      minimal:
+        context: {"name":"ProbeComponent","layer":"domain"}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+      coverage:
+        context: {"name":"ProbeComponent","layer":"domain","module_description":"Portable worker module.","worker_scope":"platform","responsibilities":["Render portable behavior"],"capabilities":["logging"],"use_async":true}
+        schema_result: "accepted"
+        render_result: "success"
+        output_validation: "not_separately_exposed"
+        tool_success: true
+        error_type: null
+        error_message: null
+
+
+semantic_observation_contract:
+  scope: "Every successful baseline probe is indexed below. Unmentioned dimensions use these explicit defaults; overrides record inspected behavior."
+  defaults:
+    caller_field_consumed: "not_determined"
+    expected_section_or_value: "not_determined"
+    links_use_definition_closure: "not_applicable"
+    issue_prefix: "not_applicable"
+    checklist_text_and_state: "not_applicable"
+    source_parse: "not_applicable"
+    absolute_path_leak: true
+    null_visible: "not_determined"
+    collection_rendering: "not_applicable"
+    output_profile_evidence: "not_exposed"
+  enums:
+    caller_field_consumed: ["yes", "partial", "no", "not_determined"]
+    expected_section_or_value: ["present", "partial", "missing", "malformed", "not_determined"]
+    links_use_definition_closure: ["closed", "unresolved", "not_applicable", "not_determined"]
+    issue_prefix: ["correct", "double_prefixed", "not_applicable", "not_determined"]
+    checklist_text_and_state: ["preserved", "changed", "missing", "not_applicable", "not_determined"]
+    source_parse: ["passed", "failed", "not_applicable", "not_exposed"]
+    null_visible: ["yes", "no", "not_determined"]
+    collection_rendering: ["structural", "character_by_character", "not_applicable", "not_determined"]
+    output_profile_evidence: ["passed", "failed", "unavailable", "not_exposed"]
+
+semantic_observations:
+  "adapter.minimal": {context_ref: "artifacts.adapter.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "architecture.minimal": {context_ref: "artifacts.architecture.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", collection_rendering: "structural"}
+  "architecture.coverage": {context_ref: "artifacts.architecture.probes.coverage.context", caller_field_consumed: "partial", expected_section_or_value: "partial", null_visible: "yes", collection_rendering: "structural", note: "The supplied constraint was absent from the rendered artifact."}
+  "commit.minimal": {context_ref: "artifacts.commit.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "no"}
+  "commit.coverage": {context_ref: "artifacts.commit.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "no", collection_rendering: "structural"}
+  "design.minimal": {context_ref: "artifacts.design.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", collection_rendering: "structural"}
+  "design.coverage": {context_ref: "artifacts.design.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", collection_rendering: "structural"}
+  "dto.coverage": {context_ref: "artifacts.dto.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "no", collection_rendering: "structural", source_parse: "not_exposed"}
+  "generic.minimal": {context_ref: "artifacts.generic.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "generic_doc.minimal": {context_ref: "artifacts.generic_doc.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes"}
+  "generic_doc.coverage": {context_ref: "artifacts.generic_doc.probes.coverage.context", caller_field_consumed: "partial", expected_section_or_value: "partial", checklist_text_and_state: "preserved", null_visible: "yes", collection_rendering: "structural", note: "FAQ and custom-section values were accepted but rendered as blank content."}
+  "integration_test.minimal": {context_ref: "artifacts.integration_test.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "interface.minimal": {context_ref: "artifacts.interface.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "issue.minimal": {context_ref: "artifacts.issue.probes.minimal.context", caller_field_consumed: "partial", expected_section_or_value: "partial", null_visible: "yes", note: "The caller-supplied title was accepted but absent from the issue body."}
+  "issue.coverage": {context_ref: "artifacts.issue.probes.coverage.context", caller_field_consumed: "partial", expected_section_or_value: "partial", links_use_definition_closure: "unresolved", null_visible: "yes", collection_rendering: "structural", note: "The caller-supplied title was accepted but absent from the issue body."}
+  "planning.minimal": {context_ref: "artifacts.planning.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", collection_rendering: "structural"}
+  "planning.coverage": {context_ref: "artifacts.planning.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "present", links_use_definition_closure: "not_determined", null_visible: "yes", collection_rendering: "structural"}
+  "pr.minimal": {context_ref: "artifacts.pr.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes"}
+  "pr.coverage": {context_ref: "artifacts.pr.probes.coverage.context", caller_field_consumed: "partial", expected_section_or_value: "partial", links_use_definition_closure: "unresolved", issue_prefix: "double_prefixed", checklist_text_and_state: "preserved", null_visible: "yes", collection_rendering: "structural", note: "tracking_state was absent; issue value 460 became #460 while pre-prefixed values can become ##N."}
+  "reference.minimal": {context_ref: "artifacts.reference.probes.minimal.context", caller_field_consumed: "partial", expected_section_or_value: "partial", links_use_definition_closure: "unresolved", null_visible: "yes", collection_rendering: "structural", note: "Source and test link uses had no closing definitions."}
+  "reference.coverage": {context_ref: "artifacts.reference.probes.coverage.context", caller_field_consumed: "partial", expected_section_or_value: "malformed", links_use_definition_closure: "unresolved", null_visible: "yes", collection_rendering: "character_by_character", note: "usage_examples rendered one block per character; source and test definitions remained unresolved."}
+  "research.minimal": {context_ref: "artifacts.research.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", collection_rendering: "structural"}
+  "research.coverage": {context_ref: "artifacts.research.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "present", links_use_definition_closure: "not_determined", null_visible: "yes", collection_rendering: "structural"}
+  "resource.minimal": {context_ref: "artifacts.resource.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "schema.minimal": {context_ref: "artifacts.schema.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "service.minimal": {context_ref: "artifacts.service.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "tool.minimal": {context_ref: "artifacts.tool.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "yes", source_parse: "not_exposed"}
+  "tool.coverage": {context_ref: "artifacts.tool.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "present", null_visible: "no", collection_rendering: "structural", source_parse: "not_exposed"}
+  "typescript_dto.minimal": {context_ref: "artifacts.typescript_dto.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "malformed", null_visible: "no", collection_rendering: "structural", source_parse: "not_exposed", note: "The emitted JSDoc contained a malformed-looking line; no TypeScript parser result was exposed."}
+  "typescript_dto.coverage": {context_ref: "artifacts.typescript_dto.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "malformed", null_visible: "no", collection_rendering: "structural", source_parse: "not_exposed", note: "The emitted JSDoc contained a malformed-looking line; no TypeScript parser result was exposed."}
+  "validation_report.minimal": {context_ref: "artifacts.validation_report.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "partial", null_visible: "yes", note: "Omitted optional values rendered visibly as None and adjacent sections were concatenated."}
+  "validation_report.coverage": {context_ref: "artifacts.validation_report.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "partial", issue_prefix: "correct", null_visible: "yes", note: "Populated values rendered, but inherited optional metadata still exposed None and adjacent sections were concatenated."}
+  "worker.minimal": {context_ref: "artifacts.worker.probes.minimal.context", caller_field_consumed: "yes", expected_section_or_value: "partial", null_visible: "yes", source_parse: "not_exposed", note: "The output introduced backend-specific imports and behavior not supplied by the caller."}
+  "worker.coverage": {context_ref: "artifacts.worker.probes.coverage.context", caller_field_consumed: "yes", expected_section_or_value: "partial", null_visible: "yes", collection_rendering: "structural", source_parse: "not_exposed", note: "The output introduced backend-specific imports and behavior not supplied by the caller."}
+
+f02_representative_cases:
+  purpose: "Distinguish schema acceptance, render semantics, and output evidence for representative optional-value forms."
+  evidence_date: "2026-08-24"
+  output_paths_and_cache_uris: "Intentionally omitted as machine-local diagnostics."
+  cases:
+    omitted:
+      artifact_type: "validation_report"
+      field: "scope"
+      context: {"title":"F02 Omitted","status":"DRAFT","version":"1.0","last_updated":"2026-08-24"}
+      schema_result: "accepted"
+      render_result: "success"
+      caller_field_consumed: "not_applicable"
+      expected_section_or_value: "malformed"
+      observed_value: "None"
+      null_visible: "yes"
+      absolute_path_leak: true
+      output_profile_evidence: "not_exposed"
+    explicit_null:
+      artifact_type: "validation_report"
+      field: "scope"
+      context: {"title":"F02 Explicit Null","status":"DRAFT","version":"1.0","last_updated":"2026-08-24","scope":null}
+      schema_result: "accepted"
+      render_result: "success"
+      caller_field_consumed: "yes"
+      expected_section_or_value: "malformed"
+      observed_value: "None"
+      null_visible: "yes"
+      absolute_path_leak: true
+      output_profile_evidence: "not_exposed"
+    empty_string:
+      artifact_type: "validation_report"
+      field: "scope"
+      context: {"title":"F02 Empty String","status":"DRAFT","version":"1.0","last_updated":"2026-08-24","scope":""}
+      schema_result: "accepted"
+      render_result: "success"
+      caller_field_consumed: "yes"
+      expected_section_or_value: "present"
+      observed_value: "Empty Scope body"
+      null_visible: "no"
+      absolute_path_leak: true
+      output_profile_evidence: "not_exposed"
+    empty_collection:
+      artifact_type: "unit_test"
+      fields: ["imported_classes", "test_methods"]
+      context: {"module_under_test":"mcp_server.schemas.contexts.dto","test_class_name":"TestF02EmptyCollection","imported_classes":[],"test_methods":[],"has_mocks":false,"has_async_tests":false,"has_pydantic":false}
+      schema_result: "accepted"
+      render_result: "failed"
+      caller_field_consumed: "not_determined"
+      expected_section_or_value: "not_determined"
+      collection_rendering: "not_determined"
+      source_parse: "failed"
+      persisted: false
+      output_profile_evidence: "failed"
+      note: "The tool reported that the generated unit_test artifact failed validation; it exposed no validated file or parser detail."
+    false:
+      artifact_type: "worker"
+      field: "use_async"
+      context: {"name":"F02False","layer":"strategy","use_async":false}
+      schema_result: "accepted"
+      render_result: "success"
+      caller_field_consumed: "yes"
+      expected_section_or_value: "present"
+      observed_value: "No async method or await expression emitted"
+      null_visible: "yes"
+      source_parse: "not_exposed"
+      absolute_path_leak: true
+      output_profile_evidence: "not_exposed"
+    zero:
+      artifact_type: "reference"
+      field: "test_count"
+      context: {"title":"F02 Zero","status":"DRAFT","version":"1.0","last_updated":"2026-08-24","source_file":"src/example.py","test_file":"tests/test_example.py","api_reference":[{"name":"Example","description":"Example API"}],"test_count":0}
+      schema_result: "accepted"
+      render_result: "success"
+      caller_field_consumed: "no"
+      expected_section_or_value: "missing"
+      observed_value: "Test count omitted by a truthiness guard"
+      links_use_definition_closure: "unresolved"
+      null_visible: "yes"
+      absolute_path_leak: true
+      output_profile_evidence: "not_exposed"
+    declared_default:
+      artifact_type: null
+      field: null
+      context: null
+      schema_result: "unavailable"
+      render_result: "not_attempted"
+      output_profile_evidence: "unavailable"
+      note: "A registry-wide scan found no default key in any current public artifact context schema, so no declared schema default can be probed without inventing a contract."
+    populated_typed_value:
+      artifact_type: "validation_report"
+      field: "scope"
+      context: {"title":"F02 Populated Typed","status":"DRAFT","version":"1.0","last_updated":"2026-08-24","scope":"Scaffolding contract validation"}
+      schema_result: "accepted"
+      render_result: "success"
+      caller_field_consumed: "yes"
+      expected_section_or_value: "present"
+      observed_value: "Scaffolding contract validation"
+      null_visible: "yes"
+      absolute_path_leak: true
+      output_profile_evidence: "not_exposed"

@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/adapters/test_git_adapter_skip_paths.py
 """Tests for GitAdapter commit() skip_paths postcondition.
 
@@ -22,6 +20,7 @@ from pathlib import Path
 from git import Repo as GitRepo
 
 from mcp_server.adapters.git_adapter import GitAdapter
+from tests.mcp_server.test_support import get_default_server_root
 
 
 class TestGitAdapterSkipPathsIntegration:

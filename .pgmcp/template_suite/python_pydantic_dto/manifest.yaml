@@ -1,0 +1,2 @@
+template_id: python_pydantic_dto
+purpose: Create an immutable Pydantic data transfer object from explicit fields and examples.

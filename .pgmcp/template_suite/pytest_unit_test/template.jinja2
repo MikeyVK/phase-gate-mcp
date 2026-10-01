@@ -1,0 +1,10 @@
+{% extends "shared/templates/bases/tier2_python.jinja2" %}
+{% import "shared/templates/patterns/testing/pytest.jinja2" as testing %}
+{% block code %}
+{{ testing.module_markers(content.markers | default([])) }}
+{% for fixture in content.fixtures | default([]) %}
+{{ testing.fixture(fixture) }}
+
+{% endfor %}
+{{ testing.cases(content.cases, content.class_name | default(none)) }}
+{% endblock %}

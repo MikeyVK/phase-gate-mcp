@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mcp_server.core.exceptions import PlanningVersionMismatchError
+from mcp_server.core.exceptions import PlanningVersionMismatchError, StateCorruptedError
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
@@ -32,37 +32,37 @@ class TestProjectManagerWorkflows:
     """Test ProjectManager with workflows.yaml integration."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, legacy_suite_workspace: Path) -> Path:
         """Create temporary workspace.
 
         Args:
-            tmp_path: Pytest tmp_path fixture
+            legacy_suite_workspace: Pytest legacy_suite_workspace fixture
 
         Returns:
             Path to temporary workspace root
         """
-        return tmp_path
+        return legacy_suite_workspace
 
     @pytest.fixture
     def manager(self, workspace_root: Path) -> ProjectManager:
         """Create ProjectManager instance."""
         return make_project_manager(workspace_root)
 
-    def test_workflows_loaded_from_yaml(self) -> None:
+    def test_workflows_loaded_from_yaml(self, legacy_suite_workspace: Path) -> None:
         """Test that workflows are loaded from workflows.yaml."""
-        workflow_config = load_workflow_config()
+        workflow_config = load_workflow_config(legacy_suite_workspace)
         assert "feature" in workflow_config.workflows
         assert "bug" in workflow_config.workflows
         assert "hotfix" in workflow_config.workflows
         assert "refactor" in workflow_config.workflows
         assert "docs" in workflow_config.workflows
 
-    def test_feature_workflow_has_6_phases(self) -> None:
+    def test_feature_workflow_has_6_phases(self, legacy_suite_workspace: Path) -> None:
         """Test feature workflow phase count from contracts.yaml (C6+: SSOT).
 
         Feature workflow has 7 phases including 'ready' terminal phase.
         """
-        phases = load_contracts_config().get_phases("feature")
+        phases = load_contracts_config(legacy_suite_workspace).get_phases("feature")
         assert len(phases) == 7
         expected = [
             "research",
@@ -74,18 +74,23 @@ class TestProjectManagerWorkflows:
             "ready",
         ]
         assert phases == expected
-        wf = load_workflow_config().get_workflow("feature")
+        wf = load_workflow_config(legacy_suite_workspace).get_workflow("feature")
         assert wf.default_execution_mode == "interactive"
 
-    def test_hotfix_workflow_has_3_phases_autonomous(self) -> None:
+    def test_hotfix_workflow_has_3_phases_autonomous(self, legacy_suite_workspace: Path) -> None:
         """Test hotfix workflow from contracts.yaml (C6+: SSOT).
 
         Hotfix workflow has 4 phases including 'ready' terminal phase.
         """
-        phases = load_contracts_config().get_phases("hotfix")
+        phases = load_contracts_config(legacy_suite_workspace).get_phases("hotfix")
         assert len(phases) == 4
         assert phases == ["implementation", "validation", "documentation", "ready"]
-        assert load_workflow_config().get_workflow("hotfix").default_execution_mode == "autonomous"
+        assert (
+            load_workflow_config(legacy_suite_workspace)
+            .get_workflow("hotfix")
+            .default_execution_mode
+            == "autonomous"
+        )
 
     def test_initialize_project_with_feature_workflow(
         self, manager: ProjectManager, workspace_root: Path
@@ -277,10 +282,10 @@ class TestProjectManagerPhaseDetection:
     """
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, legacy_suite_workspace: Path) -> Path:
         """Create temporary workspace with .pgmcp directory."""
-        phase_gate_dir = tmp_path / get_default_server_root()
-        phase_gate_dir.mkdir()
+        phase_gate_dir = legacy_suite_workspace / get_default_server_root()
+        phase_gate_dir.mkdir(exist_ok=True)
 
         # Create workphases.yaml
         workphases_path = phase_gate_dir / "workphases.yaml"
@@ -303,14 +308,16 @@ phases:
 """
         )
 
-        return tmp_path
+        return legacy_suite_workspace
 
     @pytest.fixture
     def manager(self, workspace_root: Path) -> ProjectManager:
         """Create ProjectManager instance."""
         return make_project_manager(workspace_root)
 
-    def test_get_project_plan_includes_current_phase_from_state_json(self, tmp_path: Path) -> None:
+    def test_get_project_plan_includes_current_phase_from_state_json(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """After #298: current_phase comes from state.json via resolver when state present.
 
         Issue #139: Phase detection is now state.json-authoritative (not commit-scope).
@@ -324,7 +331,7 @@ phases:
             phase_confidence="high",
             phase_detection_error=None,
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
         manager.initialize_project(
             issue_number=139,
             issue_title="Add current_phase to get_project_plan",
@@ -338,14 +345,16 @@ phases:
         assert plan["phase_source"] == "state.json"
         assert "phase_detection_error" in plan
 
-    def test_get_project_plan_has_no_phase_fields_when_state_absent(self, tmp_path: Path) -> None:
+    def test_get_project_plan_has_no_phase_fields_when_state_absent(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """After #298: when resolver raises StateNotFoundError, plan has no phase fields.
 
         Issue #140: No state.json → plan returned without phase metadata.
         """
         resolver = MagicMock()
         resolver.resolve_current.side_effect = StateNotFoundError("no-state-branch")
-        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
 
         manager.initialize_project(
             issue_number=140,
@@ -364,9 +373,9 @@ class TestPlanningDeliverablesSchema:
     """Test planning_deliverables schema storage (Issue #146 Cycle 1)."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, legacy_suite_workspace: Path) -> Path:
         """Create temporary workspace."""
-        return tmp_path
+        return legacy_suite_workspace
 
     @pytest.fixture
     def manager(self, workspace_root: Path) -> ProjectManager:
@@ -743,7 +752,7 @@ class TestProjectManagerResolverAdoption:
     into ProjectManager and used in get_project_plan().
     """
 
-    def test_get_project_plan_uses_resolver_phase(self, tmp_path: Path) -> None:
+    def test_get_project_plan_uses_resolver_phase(self, legacy_suite_workspace: Path) -> None:
         """get_project_plan uses WorkflowStatusResolver.resolve_current() when injected."""
         resolver = MagicMock()
         resolver.resolve_current.return_value = WorkflowStatusDTO(
@@ -754,7 +763,7 @@ class TestProjectManagerResolverAdoption:
             phase_confidence="high",
             phase_detection_error=None,
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
         manager.initialize_project(99, "Test resolver adoption", "feature")
 
         plan = manager.get_project_plan(99)
@@ -764,7 +773,9 @@ class TestProjectManagerResolverAdoption:
         assert plan["phase_source"] == "state.json"
         resolver.resolve_current.assert_called_once()
 
-    def test_get_project_plan_formats_phase_colon_sub_phase(self, tmp_path: Path) -> None:
+    def test_get_project_plan_formats_phase_colon_sub_phase(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """get_project_plan formats 'phase:sub_phase' when resolver returns sub_phase."""
         resolver = MagicMock()
         resolver.resolve_current.return_value = WorkflowStatusDTO(
@@ -775,7 +786,7 @@ class TestProjectManagerResolverAdoption:
             phase_confidence="high",
             phase_detection_error=None,
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
         manager.initialize_project(100, "Test sub-phase format", "feature")
 
         plan = manager.get_project_plan(100)
@@ -783,7 +794,9 @@ class TestProjectManagerResolverAdoption:
         assert plan is not None
         assert plan["current_phase"] == "implementation:red"
 
-    def test_get_project_plan_passes_resolver_error_to_plan(self, tmp_path: Path) -> None:
+    def test_get_project_plan_passes_resolver_error_to_plan(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """get_project_plan propagates phase_detection_error from resolver."""
         resolver = MagicMock()
         resolver.resolve_current.return_value = WorkflowStatusDTO(
@@ -794,7 +807,7 @@ class TestProjectManagerResolverAdoption:
             phase_confidence="high",
             phase_detection_error="Phase detection failed: no state file",
         )
-        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
         manager.initialize_project(101, "Test error propagation", "feature")
 
         plan = manager.get_project_plan(101)
@@ -812,13 +825,13 @@ class TestGetProjectPlanGracefulDegradation:
     """C6 (issue #298): get_project_plan() skips phase-enrichment on resolver errors."""
 
     def _make_manager_with_resolver(
-        self, tmp_path: Path, resolver_side_effect: Exception
+        self, legacy_suite_workspace: Path, resolver_side_effect: Exception
     ) -> ProjectManager:
         """Return a ProjectManager whose resolver raises the given exception."""
         mock_resolver = MagicMock()
         mock_resolver.resolve_current.side_effect = resolver_side_effect
 
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
         manager._workflow_status_resolver = mock_resolver  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001 — inject test double: no public setter
 
         # Seed the project plan
@@ -830,11 +843,11 @@ class TestGetProjectPlanGracefulDegradation:
         return manager
 
     def test_get_project_plan_returns_plan_without_phase_fields_when_state_absent(
-        self, tmp_path: Path
+        self, legacy_suite_workspace: Path
     ) -> None:
         """StateNotFoundError from resolver must not propagate; plan returned without phase keys."""
         manager = self._make_manager_with_resolver(
-            tmp_path,
+            legacy_suite_workspace,
             resolver_side_effect=StateNotFoundError("feature/298-test"),
         )
         plan = manager.get_project_plan(298)
@@ -844,11 +857,11 @@ class TestGetProjectPlanGracefulDegradation:
         assert "phase_source" not in plan
 
     def test_get_project_plan_returns_plan_without_phase_fields_on_mismatch(
-        self, tmp_path: Path
+        self, legacy_suite_workspace: Path
     ) -> None:
         """StateBranchMismatchError from resolver must not propagate; plan without phase keys."""
         manager = self._make_manager_with_resolver(
-            tmp_path,
+            legacy_suite_workspace,
             resolver_side_effect=StateBranchMismatchError("branch mismatch"),
         )
         plan = manager.get_project_plan(298)
@@ -862,32 +875,65 @@ class TestGetProjectPlanGracefulDegradation:
 class TestProjectManagerVersioning:
     """Tests for deliverables.json envelope versioning and validation."""
 
-    def test_project_manager_read_projects_validates_envelope(self, tmp_path: Path) -> None:
-        """Verify that _read_projects validates the envelope and backs up on mismatch."""
-
-        manager = make_project_manager(tmp_path)
-
-        # Write valid projects but version mismatch (expected: 1.0.0, actual: 0.9.0)
-        deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
+    @pytest.mark.parametrize(
+        ("source", "error_type"),
+        [
+            ('{"schema_version": "0.9.0", "projects": {}}', PlanningVersionMismatchError),
+            ("{invalid-json", StateCorruptedError),
+        ],
+    )
+    def test_query_preserves_invalid_planning_and_existing_backup(
+        self, legacy_suite_workspace: Path, source: str, error_type: type[Exception]
+    ) -> None:
+        """Reading invalid planning must retain both source and prior recovery bytes."""
+        manager = make_project_manager(legacy_suite_workspace)
+        deliverables_file = manager.deliverables_file
         deliverables_file.parent.mkdir(parents=True, exist_ok=True)
-        deliverables_file.write_text(
-            json.dumps({"schema_version": "0.9.0", "projects": {}}),
-            encoding="utf-8",
-        )
+        deliverables_file.write_text(source, encoding="utf-8")
+        backup_file = deliverables_file.with_suffix(".json.bak")
+        backup_file.write_bytes(b"prior recovery point")
 
-        # Calling get_project_plan should raise PlanningVersionMismatchError
-        # because validation mismatch bubbles
-        with pytest.raises(PlanningVersionMismatchError):
+        with pytest.raises(error_type):
             manager.get_project_plan(42)
 
-        # The mismatched file must have been backed up to deliverables.json.bak
-        backup_file = deliverables_file.with_suffix(deliverables_file.suffix + ".bak")
-        assert not deliverables_file.exists()
-        assert backup_file.exists()
+        assert deliverables_file.read_bytes() == source.encode("utf-8")
+        assert backup_file.read_bytes() == b"prior recovery point"
 
-    def test_project_manager_write_deliverables_saves_envelope(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("command", ["initialize", "save", "update"])
+    @pytest.mark.parametrize(
+        ("source", "error_type"),
+        [
+            ('{"schema_version": "0.9.0", "projects": {}}', PlanningVersionMismatchError),
+            ("{invalid-json", StateCorruptedError),
+        ],
+    )
+    def test_commands_preserve_invalid_planning_backup_behavior(
+        self, legacy_suite_workspace: Path, command: str, source: str, error_type: type[Exception]
+    ) -> None:
+        """All existing write entry points still back up an invalid envelope."""
+        manager = make_project_manager(legacy_suite_workspace)
+        deliverables_file = manager.deliverables_file
+        deliverables_file.parent.mkdir(parents=True, exist_ok=True)
+        deliverables_file.write_text(source, encoding="utf-8")
+        backup_file = deliverables_file.with_suffix(".json.bak")
+        backup_file.write_bytes(b"prior recovery point")
+
+        with pytest.raises(error_type):
+            if command == "initialize":
+                manager.initialize_project(42, "Readback recovery", "feature")
+            elif command == "save":
+                manager.save_planning_deliverables(42, {})
+            else:
+                manager.update_planning_deliverables(42, {})
+
+        assert not deliverables_file.exists()
+        assert backup_file.read_bytes() == source.encode("utf-8")
+
+    def test_project_manager_write_deliverables_saves_envelope(
+        self, legacy_suite_workspace: Path
+    ) -> None:
         """Verify that ProjectManager saves deliverables nested in a version envelope."""
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
 
         manager.initialize_project(
             issue_number=42,
@@ -895,7 +941,7 @@ class TestProjectManagerVersioning:
             workflow_name="feature",
         )
 
-        deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
+        deliverables_file = legacy_suite_workspace / get_default_server_root() / "deliverables.json"
         assert deliverables_file.exists()
 
         content = deliverables_file.read_text(encoding="utf-8")
@@ -906,11 +952,11 @@ class TestProjectManagerVersioning:
         assert "42" in data["projects"]
 
     def test_project_manager_write_paths_delegate_to_write_deliverables(
-        self, tmp_path: Path
+        self, legacy_suite_workspace: Path
     ) -> None:
         """Verify that write paths delegate to private _write_deliverables."""
 
-        manager = make_project_manager(tmp_path)
+        manager = make_project_manager(legacy_suite_workspace)
 
         # pyright: ignore[reportPrivateUsage]  # inject test double on private method
         with patch.object(

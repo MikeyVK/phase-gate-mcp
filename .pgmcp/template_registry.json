@@ -435,6 +435,19 @@
         "template_id": "tier2_base_python",
         "version": "1.2.0"
       }
+    },
+    "c2e61372": {
+      "artifact_type": "integration_test",
+      "created": "2026-09-13T12:26:00.367134+00:00",
+      "hash_algorithm": "SHA256",
+      "concrete": {
+        "template_id": "test_integration.py",
+        "version": "1.0"
+      },
+      "tier0": {
+        "template_id": "tier2_base_python",
+        "version": "1.2.0"
+      }
     }
   },
   "current_versions": {
@@ -450,7 +463,7 @@
     "schema": "74378193",
     "tool": "27130d2b",
     "unit_test": "8825c0bb",
-    "integration_test": "85ea75d4",
+    "integration_test": "c2e61372",
     "pr": "93bb9b4e",
     "issue": "8dd42510",
     "commit": "2860db55",
@@ -462,5 +475,5 @@
     "typescript_dto": "25d3e19c"
   },
   "templates": {},
-  "last_updated": "2026-07-20T21:18:24.837547+00:00"
+  "last_updated": "2026-09-13T12:26:00.367150+00:00"
 }

@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mcp_server.validation.base import ValidationIssue
+from mcp_server.schemas.deliverables import CyclePlanningModel
 
 
 class BaseToolOutput(BaseModel):
@@ -22,19 +22,6 @@ class BaseToolOutput(BaseModel):
 
     error_message: str | None = None
     post_tool_instruction: str | None = None
-
-
-class AutoFixOutput(BaseToolOutput):
-    """Output for AutoFixTool."""
-
-    modified_files: list[str] = Field(
-        default_factory=list, description="List of files modified by the tool"
-    )
-    modified_files_count: int = Field(default=0, description="Count of modified files")
-    gates_executed: list[str] = Field(
-        default_factory=list, description="List of quality gates executed"
-    )
-    gates_executed_count: int = Field(default=0, description="Count of executed gates")
 
 
 class HealthStatus(StrEnum):
@@ -135,6 +122,7 @@ class ProjectPlanOutput(BaseToolOutput):
     issue_number: int
     workflow_name: str
     phases: list[PhaseDTO] = Field(default_factory=list)
+    planning_deliverables: CyclePlanningModel | None = None
 
 
 class PlannedCycleSummary(BaseModel):
@@ -477,91 +465,12 @@ class ScaffoldSchemaOutput(BaseToolOutput):
     schema_data: dict[str, Any]
 
 
-class GateFindingDTO(BaseModel):
-    """Structured finding produced by a single quality gate."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    gate: str
-    message: str
-    file: str | None = None
-    line: int | None = None
-    column: int | None = None
-    code: str | None = None
-    severity: str | None = None
-    fixable: bool = False
-    details: str | None = None
-
-
-class GateResultDTO(BaseModel):
-    """Single gate run result."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    name: str
-    passed: bool
-    status: str
-    score: str | None = None
-    details: str = ""
-    findings: list[GateFindingDTO] = Field(default_factory=list)
-
-
-class RunQualityGatesOutput(BaseToolOutput):
-    """Output for RunQualityGatesTool."""
-
-    overall_pass: bool
-    scope: str
-    file_count: int
-    gates: list[GateResultDTO] = Field(default_factory=list)
-
-
-class TestFailureDTO(BaseModel):
-    """DTO for a single test failure."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    test_id: str
-    location: str
-    short_reason: str
-    traceback: str = ""
-    is_collection_error: bool = False
-
-
-class RunTestsOutput(BaseToolOutput):
-    """Output for RunTestsTool."""
-
-    exit_code: int
-    passed_count: int
-    failed_count: int
-    skipped_count: int
-    errors_count: int
-    duration_seconds: float | None = None
-    failures: list[TestFailureDTO] = Field(default_factory=list)
-    coverage_pct: float | None = None
-    lf_cache_was_empty: bool = False
-    stderr: str = ""
-
-
 class SafeEditOutput(BaseToolOutput):
     """Output for SafeEditTool."""
 
     path: str
     passed: bool
-    issues: tuple[ValidationIssue, ...] = ()
     mode: str
     written: bool
     diff: str | None = None
     has_diff: bool = False
-
-
-class TemplateValidationErrorDTO(BaseModel):
-    """Single template validation error."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-    severity: str
-    message: str
-
-
-class TemplateValidationOutput(BaseToolOutput):
-    """Output for TemplateValidationTool."""
-
-    passed: bool
-    errors_count: int
-    errors: list[TemplateValidationErrorDTO] = Field(default_factory=list)

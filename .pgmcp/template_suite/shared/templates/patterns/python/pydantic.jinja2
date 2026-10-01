@@ -1,0 +1,10 @@
+{% import "shared/templates/patterns/python/imports.jinja2" as values %}
+{% macro model_config(frozen, examples) -%}
+model_config = ConfigDict(extra="forbid", frozen={{ values.literal(frozen) }}{% if examples %}, json_schema_extra={"examples": {{ values.literal(examples) }}}{% endif %})
+{%- endmacro %}
+
+{% macro fields(records) -%}
+{% for field in records -%}
+{{ field.name }}: {{ field.type }} = Field({% if field.default is defined %}default={{ values.literal(field.default) }}, {% elif field.default_factory is defined %}default_factory={{ field.default_factory }}, {% endif %}description={{ values.literal(field.description) }}{% for name in ['ge', 'gt', 'le', 'lt', 'min_length', 'max_length', 'pattern'] %}{% if field[name] is defined %}, {{ name }}={{ values.literal(field[name]) }}{% endif %}{% endfor %})
+{% endfor -%}
+{%- endmacro %}

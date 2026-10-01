@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 
 class StructuredFormatter(logging.Formatter):
@@ -28,6 +28,14 @@ class StructuredFormatter(logging.Formatter):
         return json.dumps(log_data)
 
 
+class _OwnedStreamHandler(logging.StreamHandler[TextIO]):
+    """Mark the console handler installed by this logging facility."""
+
+
+class _OwnedFileHandler(logging.FileHandler):
+    """Mark the audit handler installed by this logging facility."""
+
+
 def setup_logging(log_level: str = "INFO", audit_log: str | None = None) -> None:
     """Configure logging.
 
@@ -38,8 +46,15 @@ def setup_logging(log_level: str = "INFO", audit_log: str | None = None) -> None
     logger = logging.getLogger("mcp_server")
     logger.setLevel(log_level)
 
+    # Reconfiguration replaces only handlers installed by this facility. Keep
+    # handlers supplied by the host or test harness attached to the logger.
+    for existing_handler in tuple(logger.handlers):
+        if isinstance(existing_handler, (_OwnedStreamHandler, _OwnedFileHandler)):
+            logger.removeHandler(existing_handler)
+            existing_handler.close()
+
     # Console handler
-    handler = logging.StreamHandler(sys.stderr)
+    handler = _OwnedStreamHandler(sys.stderr)
     handler.setFormatter(StructuredFormatter())
     logger.addHandler(handler)
 
@@ -50,7 +65,7 @@ def setup_logging(log_level: str = "INFO", audit_log: str | None = None) -> None
             # Ensure the parent directory exists (common failure on fresh checkouts)
             log_path.parent.mkdir(parents=True, exist_ok=True)
 
-            file_handler = logging.FileHandler(str(log_path))
+            file_handler = _OwnedFileHandler(str(log_path))
             file_handler.setFormatter(StructuredFormatter())
             logger.addHandler(file_handler)
         except OSError as exc:

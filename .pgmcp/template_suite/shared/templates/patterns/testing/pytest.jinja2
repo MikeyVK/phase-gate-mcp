@@ -1,0 +1,28 @@
+{% import "shared/templates/patterns/python/imports.jinja2" as values %}
+{% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}
+{% macro module_markers(markers) -%}
+{% if markers %}pytestmark = [{{ markers | join(', ') }}]{% endif %}
+{%- endmacro %}
+
+{% macro fixture(record) -%}
+@{{ record.decorator }}{% if record.scope is defined or record.autouse is defined %}({% if record.scope is defined %}scope={{ values.literal(record.scope) }}{% if record.autouse is defined %}, {% endif %}{% endif %}{% if record.autouse is defined %}autouse={{ values.literal(record.autouse) }}{% endif %}){% endif %}
+{{ signatures.method(record, record.body, false) }}
+{%- endmacro %}
+
+{% macro case(record, instance=false) -%}
+{% for marker in record.markers | default([]) %}@{{ marker }}
+{% endfor %}{% if record.async %}async {% endif %}def {{ record.name }}({{ signatures.parameters(record.parameters, instance) }}) -> None:
+    {{ values.documentation(record.description) }}
+{{ record.body | indent(4, true) }}
+{%- endmacro %}
+
+{% macro cases(records, class_name=none) -%}
+{% if class_name %}class {{ class_name }}:
+{% for record in records %}
+{{ case(record, true) | indent(4, true) }}
+
+{% endfor %}{% else %}{% for record in records %}
+{{ case(record) }}
+
+{% endfor %}{% endif %}
+{%- endmacro %}

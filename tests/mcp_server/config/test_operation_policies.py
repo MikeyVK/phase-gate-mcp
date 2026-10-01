@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/config/test_operation_policies.py
 """Unit tests for OperationPoliciesConfig model.
 
@@ -17,6 +15,7 @@ import pytest
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import OperationPoliciesConfig, OperationPolicy
 from mcp_server.core.exceptions import ConfigError
+from tests.mcp_server.test_support import get_default_server_root
 
 
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:

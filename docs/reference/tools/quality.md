@@ -1,238 +1,104 @@
-<!-- docs/reference/tools/quality.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-08-22 -->
-# Quality and Validation Tools
+<!-- template=reference version=6.0 updated=2026-09-24 -->
+# Checks, Tests, and Fixes
 
-**Status:** DEFINITIVE  
-**Version:** 5.1  
-**Last Updated:** 2026-08-22
+The V3 execution surface has three distinct operations: `run_checks`, `run_tests`, and
+`apply_fixes`. Their roles and configurations are separate. The tools report operational
+facts and native outcomes; a successful operation is not itself proof that every check or
+test passed.
 
-**Source:** [quality_tools.py](../../../mcp_server/tools/quality_tools.py),
-[test_tools.py](../../../mcp_server/tools/test_tools.py), and
-[template_validation_tool.py](../../../mcp_server/tools/template_validation_tool.py)
+Input schemas are prepared from live configuration. Inspect the tool's exposed schema
+for currently admitted profile, check, test, and fix IDs rather than copying a catalog
+here. Native executable options retain their native meanings.
 
----
+## `run_checks`
 
-## Purpose
+Source: [`check_tools.py`](../../../mcp_server/tools/check_tools.py) and
+[`CheckSelectionRequest`](../../../mcp_server/execution/check_selection.py).
 
-Contract-first reference for running configured quality gates, pytest, fixers, and
-artifact-template validation. These tools return bounded decision-oriented text while
-preserving complete structured results and verbose diagnostics in the MCP Resource
-cache.
+The request requires `scope`: `configured`, `workspace`, `targets`, or `branch`.
+Supply non-empty workspace-relative `targets` only when the scope is `targets`.
+Optionally select either a configured `profile` or explicit non-empty `checks`; these
+are mutually exclusive. `args` maps selected check IDs to native argument lists and
+replaces that binding's configured defaults for the call. `timeout_seconds` overrides
+the configured timeout when supplied. Omit unused optional fields rather than passing
+null.
 
-## Tool Set
+Example using a currently configured profile and target:
+`{"scope":"targets","targets":["mcp_server/tools/check_tools.py"],"profile":"python_review"}`
 
-| Tool | Purpose | Output DTO |
-|---|---|---|
-| `run_quality_gates` | Run config-driven quality gates over an explicit scope | `RunQualityGatesOutput` |
-| `run_tests` | Run pytest and report structured counts/failures | `RunTestsOutput` |
-| `auto_fix` | Execute configured fixer commands | `AutoFixOutput` |
-| `validate_template` | Validate one file against an artifact template | `TemplateValidationOutput` |
+The output includes requested scope and targets, selected profile, branch-removed targets
+when relevant, ordered check results, `run_status`, `success`, and an optional
+operation `error_code` with typed details. Each result records the selected check,
+status, native evidence, adapter identity, and bounded process capture as applicable.
+`run_status` describes check outcomes; it is distinct from operation success and must
+be reviewed alongside result rows.
 
-Every response is limited by the global 8,000 UTF-8-byte presentation ceiling and
-contains the cache URI when publication succeeds.
+## `run_tests`
 
-## run_quality_gates
+Source: [`run_tests_tool.py`](../../../mcp_server/tools/run_tests_tool.py) and
+[`TestSelectionRequest`](../../../mcp_server/execution/test_service.py).
 
-### Input
+The request requires `scope`: `configured`, `workspace`, or `targets`. Supply
+non-empty workspace-relative `targets` only for the targets scope. Optional `tests`
+selects configured test IDs; omitting it uses the applicable configured selection.
+`args` maps selected test IDs to native argument lists, and `timeout_seconds` may
+override configured timing. The public request rejects extra fields and duplicate
+selections.
 
-| Field | Type | Required | Rule |
-|---|---|---|---|
-| `scope` | `auto` \| `branch` \| `project` \| `files` | No | Defaults to `auto` |
-| `files` | `list[string]` \| `null` | Conditional | Required and non-empty only for `scope="files"`; omit otherwise |
-| `verbose` | `bool` | No | Captures failing-gate stdout/stderr in cached `details`; defaults to `false` |
+Example: `{"scope":"configured"}`
 
-### Scope Semantics
+The output reports requested scope/targets, selected test IDs, an ordered result row
+for each selected test, `success`, and an optional operation `error_code` with typed
+details. Rows preserve passed, failed, unavailable, and not-executed states with native
+evidence and invocation facts where applicable. Read both the operation envelope and
+individual test rows; selection/protocol failures and test failure are different facts.
 
-| Scope | Target resolution |
-|---|---|
-| `auto` | Changed files plus persisted failed files; falls back to project scope when no baseline exists |
-| `branch` | Files changed between the branch parent and `HEAD` |
-| `project` | Files matching configured `project_scope.include_globs` |
-| `files` | Explicit paths; directories expand to supported files |
+## `apply_fixes`
 
-Only effective `auto` runs mutate the quality baseline lifecycle. An all-pass run advances
-the baseline and clears failed files; a failed run persists the failing subset. Other
-scopes do not mutate those lifecycle fields.
+Source: [`fix_tools.py`](../../../mcp_server/tools/fix_tools.py) and
+[`FixSelectionRequest`](../../../mcp_server/execution/fix_service.py).
 
-### Presented Output
+Fixing is explicitly target-scoped. The request requires `scope: "targets"`, non-empty
+workspace-relative file `targets`, and non-empty configured `fixes`. Optional
+`args` maps selected fix IDs to native argument lists, replacing configured defaults
+for those bindings; optional `timeout_seconds` overrides the configured timeout.
 
-The text always reports execution completion, effective scope, file count, and
-`overall_pass`. It renders at most ten gate records with name, status, passed flag, and
-score. Beneath each gate it renders at most ten ordered findings with location, code,
-message, severity, and fixability. Missing optional values use the global `-`
-placeholder. Generic omission lines report additional gates or findings.
+Example: `{"scope":"targets","targets":["mcp_server/tools/check_tools.py"],"fixes":["python_format"]}`
 
-The wording is outcome-neutral: callers must evaluate `overall_pass`, gate records, and
-findings rather than infer success from the heading. The final response remains subject
-to the universal 8,000 UTF-8-byte ceiling.
+Fixes run in the order selected. The operation stops when a selected fix does not pass or
+cannot continue; result rows identify later steps as not executed. Earlier native changes
+may already have happened, so the operation does not promise atomic rollback. Inspect
+affected files and native evidence before deciding whether to recheck or recover. The
+tool does not automatically run checks after fixes.
 
-The cached `RunQualityGatesOutput` contains:
+The output includes requested targets, selected fix IDs, ordered factual results,
+`success`, and an optional operation `error_code` with typed details. Per-result status
+and available adapter identity, capture, and evidence distinguish a completed negative
+fix result from an operation-level failure.
 
-- `overall_pass: bool`;
-- `scope: string`;
-- `file_count: int`;
-- `gates: list[GateResultDTO]`;
-- the common `success`, `error_message`, and `post_tool_instruction` envelope.
+## Configuration and policy
 
-Each `GateResultDTO` contains `name`, `passed`, `status`, `score`, `details`,
-and `findings: list[GateFindingDTO]`. Existing fields remain compatible and
-`findings` defaults to an independent empty list.
+Workspace declarations own check profiles and bindings, test bindings and activation,
+and fix bindings. Adapter packages own capability contracts, native invocation behavior,
+and external-tool identity. Runtime settings for native tools remain the owner's
+responsibility. Configuration selects admitted work; it does not install dependencies or
+redefine native option semantics.
 
-### Structured Finding Contract
+Workflow contracts determine when evidence is required. Use the narrowest appropriate
+selection, keep tests distinct from checks, and treat fixes as authorized mutations on
+explicit files. After a fix, review observed file changes and select a recheck based on
+the outcome. No automatic fix/check choreography is implied.
 
-`GateFindingDTO` is frozen, serializable, and rejects extra fields:
+## Results and resources
 
-| Field | Type | Meaning |
-|---|---|---|
-| `gate` | `string` | Required self-identifying gate name |
-| `message` | `string` | Required actionable diagnostic or operational failure |
-| `file` | `string` \| `null` | Optional affected path |
-| `line` | `int` \| `null` | Optional normalized source line when supplied by the checker |
-| `column` | `int` \| `null` | Optional source column |
-| `code` | `string` \| `null` | Optional checker rule or diagnostic code |
-| `severity` | `string` \| `null` | Optional normalized severity |
-| `fixable` | `bool` | Whether the source marked the finding automatically fixable; defaults to `false` |
-| `details` | `string` \| `null` | Optional cache-only diagnostic evidence |
+The normal text response is a bounded projection. The complete structured operation DTO
+is available at its cache URI, with native output represented only to the extent the
+operation's bounded evidence and capture models retain it. Read the cache when you need
+omitted rows or fields. Do not parse Markdown back into structured evidence, and do not
+treat the presence of a cache URI as a passing verdict.
 
-`QAManager` and `ViolationParser` remain normalization authorities.
-`RunQualityGatesTool` only maps their structured records into the public DTO:
-`col -> column`, `rule -> code`, and the enclosing gate name into `gate`. It does
-not parse messages or raw process output, infer fields, sort, or deduplicate. Missing
-required `message` data fails explicitly instead of receiving fabricated text.
+## Related references
 
-Gate order and finding order match the manager result. The configured
-`max_items=10` applies independently to the gate collection and to each nested finding
-collection. Inline omission never mutates the DTO: every finding, finding `details`,
-and gate `details` remains in the cached resource. With `verbose=true`, gate
-`details` can additionally contain raw checker stdout/stderr; neither gate nor finding
-`details` is rendered inline.
-
-### Examples
-
-```json
-{"scope": "files", "files": ["mcp_server/presenters/text_presenter.py"]}
-```
-
-```json
-{"scope": "branch", "verbose": false}
-```
-
-## run_tests
-
-### Input
-
-| Field | Type | Required | Default | Rule |
-|---|---|---|---|---|
-| `path` | `string` \| `null` | Conditional | `null` | One or more space-separated pytest paths; mutually exclusive with `scope` |
-| `scope` | `"full"` \| `null` | Conditional | `null` | Selects the entire workspace suite; mutually exclusive with `path` |
-| `markers` | `string` \| `null` | No | `null` | Pytest `-m` expression |
-| `last_failed_only` | `bool` | No | `false` | Use pytest's last-failed selection |
-| `timeout` | `int` | No | `300` | Hard timeout in seconds |
-| `coverage` | `bool` | No | `false` | Enable branch coverage and enforce the configured threshold |
-| `collect_only` | `bool` | No | `false` | Collect tests without executing them |
-| `verbose` | `bool` | No | `false` | Allowed only for path-based execution targeting specific files |
-
-Exactly one of `path` or `scope="full"` is required. `verbose=true` is rejected for
-directories and full-suite execution.
-
-### Presented Output
-
-The text reports exit code, passed/failed/skipped/error counts, numeric duration, and
-coverage when available. It renders at most five structured failures with test ID,
-location, concise reason, and collection-error flag. Tracebacks and stderr are never
-inlined by the collection template.
-
-The cached `RunTestsOutput` contains:
-
-- `exit_code: int`;
-- `passed_count`, `failed_count`, `skipped_count`, and `errors_count`;
-- `duration_seconds: float | null`;
-- `coverage_pct: float | null`;
-- `failures: list[TestFailureDTO]`, including cache-only `traceback`;
-- `lf_cache_was_empty: bool`;
-- `stderr: string`;
-- the common output envelope.
-
-There is no `summary_line` field. Counts and duration are structured data, and the
-presenter owns their wording.
-
-### Examples
-
-```json
-{"path": "tests/mcp_server/unit/presenters/test_text_budget_limiter.py"}
-```
-
-```json
-{"scope": "full", "timeout": 900}
-```
-
-```json
-{"path": "tests/mcp_server/unit/presenters/test_text_presenter_composition.py", "verbose": true}
-```
-
-## auto_fix
-
-### Input
-
-`auto_fix` uses the same `scope` and conditional `files` contract as
-`run_quality_gates`; it has no `verbose` parameter.
-
-### Presented and Cached Output
-
-The text reports executed-gate and modified-file counts and lists up to 20 gate names and
-modified paths. The cached `AutoFixOutput` contains `gates_executed`,
-`gates_executed_count`, `modified_files`, and `modified_files_count`. There is no
-preformatted duplicate modified-files field.
-
-```json
-{"scope": "auto"}
-```
-
-## validate_template
-
-### Input
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `path` | `string` | Yes | Absolute path to the file |
-| `template_type` | `worker` \| `tool` \| `dto` \| `adapter` \| `base` | Yes | Supported code-template family to validate against |
-
-### Presented and Cached Output
-
-The text reports `passed` and `errors_count`, followed by at most ten errors with severity
-and message. The complete `errors: list[TemplateValidationErrorDTO]` remains in the cached
-`TemplateValidationOutput`.
-
-`validate_template` does not validate documentation templates. Documentation structure
-and links require documentation-specific checks.
-
-## Agent Call Guidance
-
-- Use the narrowest scope that proves the current change; phase contracts own when
-  branch- or workspace-wide checks run.
-- Do not pass `files` unless `scope="files"`.
-- Do not use `path` and `scope` together for `run_tests`.
-- Use the presented response for routine counts, bounded failures, gate summaries, and
-  actionable findings.
-- Read the cached resource for complete collections, tracebacks, stderr, raw checker
-  output, or other cache-only fields.
-- Do not parse presented Markdown into structured evidence.
-- Do not treat quality gates as a replacement for tests.
-- When `last_failed_only=true`, inspect `lf_cache_was_empty` in the cache if selection
-  behavior matters.
-
-## Related Documentation
-
-- [MCP tools navigation](README.md)
 - [Presentation architecture](../presentation_architecture.md)
-- [Quality gate standards](../../coding_standards/QUALITY_GATES.md)
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---|---|---|---|
-| 5.1 | 2026-08-22 | Agent | Document structured quality-gate findings, nested bounds, ordering, and cache authority |
-| 5.0 | 2026-08-22 | Agent | Align bounded quality/test presentation, structured DTO fields, and deferred finding boundary |
-| 4.0 | 2026-06-15 | Agent | Document scoped quality and test execution contracts |
+- [Quality and evidence standards](../../coding_standards/QUALITY_GATES.md)
+- [MCP tools navigation](README.md)

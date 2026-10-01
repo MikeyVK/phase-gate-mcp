@@ -238,7 +238,7 @@ class ForceCycleTransitionInput(BaseModel):
 
     @field_validator("human_approval_message", mode="before")
     @classmethod
-    def reject_boolean_approval(cls, v: Any) -> Any:
+    def reject_boolean_approval(cls, v: object) -> object:
         if isinstance(v, bool):
             raise ValueError("human_approval_message cannot be a boolean")
         return v

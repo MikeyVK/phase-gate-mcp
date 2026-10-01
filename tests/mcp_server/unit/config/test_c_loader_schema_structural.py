@@ -18,10 +18,8 @@ from typing import Any
 import pytest
 import yaml
 
-import mcp_server.config.schemas.scaffold_metadata_config as scaffold_schema
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
-    ArtifactRegistryConfig,
     ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
@@ -30,9 +28,6 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
-    ProjectStructureConfig,
-    QualityConfig,
-    ScaffoldMetadataConfig,
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
@@ -44,7 +39,7 @@ from tests.mcp_server.test_support import get_default_server_root
 
 @pytest.fixture
 def config_root(tmp_path: Path) -> Path:
-    """Create a minimal config root covering all 15 migrated schemas."""
+    """Create a minimal config root covering all 11 retained schemas."""
 
     config_dir = tmp_path / get_default_server_root() / "config"
 
@@ -115,28 +110,6 @@ def config_root(tmp_path: Path) -> Path:
         },
     )
     write_yaml(
-        "artifacts.yaml",
-        {
-            "version": "1.0.0",
-            "artifact_types": [
-                {
-                    "type": "code",
-                    "type_id": "dto",
-                    "name": "DTO",
-                    "description": "Data transfer object",
-                    "file_extension": ".py",
-                    "required_fields": ["name"],
-                    "optional_fields": [],
-                    "state_machine": {
-                        "states": ["CREATED"],
-                        "initial_state": "CREATED",
-                        "valid_transitions": [],
-                    },
-                }
-            ],
-        },
-    )
-    write_yaml(
         "contributors.yaml",
         {
             "version": "1.0.0",
@@ -173,71 +146,6 @@ def config_root(tmp_path: Path) -> Path:
                     "allowed_prefixes": [],
                 }
             },
-        },
-    )
-    write_yaml(
-        "project_structure.yaml",
-        {
-            "version": "1.0.0",
-            "directories": {
-                "src": {
-                    "parent": None,
-                    "description": "Source directory",
-                    "allowed_artifact_types": ["dto"],
-                    "allowed_extensions": [".py"],
-                    "require_scaffold_for": [],
-                }
-            },
-        },
-    )
-    write_yaml(
-        "quality.yaml",
-        {
-            "version": "1.0.0",
-            "artifact_logging": {
-                "enabled": True,
-                "output_dir": "temp/qa_logs",
-                "max_files": 200,
-            },
-            "active_gates": [],
-            "gates": {
-                "ruff": {
-                    "name": "Ruff",
-                    "description": "Lint",
-                    "execution": {
-                        "command": ["ruff", "check"],
-                        "timeout_seconds": 60,
-                        "working_dir": None,
-                    },
-                    "success": {"exit_codes_ok": [0]},
-                    "capabilities": {
-                        "file_types": [".py"],
-                        "supports_autofix": False,
-                    },
-                }
-            },
-        },
-    )
-    write_yaml(
-        "scaffold_metadata.yaml",
-        {
-            "version": "1.0.0",
-            "comment_patterns": [
-                {
-                    "syntax": "hash",
-                    "prefix": r"#\\s*",
-                    "filepath_line_regex": r"^#\\s*(.+\\.py)$",
-                    "metadata_line_regex": r"^#\\s*template=.+$",
-                    "extensions": [".py"],
-                }
-            ],
-            "metadata_fields": [
-                {
-                    "name": "template",
-                    "format_regex": r"^[a-z0-9_-]+$",
-                    "required": True,
-                }
-            ],
         },
     )
     write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": []})
@@ -299,40 +207,34 @@ def test_loader_raises_on_missing_git_yaml(tmp_path: Path) -> None:
         loader.load_git_config()
 
 
-def test_loader_exposes_all_fifteen_schema_methods() -> None:
-    """C_LOADER.2 requires explicit load_* coverage for all 15 schemas."""
+def test_loader_exposes_all_eleven_schema_methods() -> None:
+    """C_LOADER.2 requires explicit load_* coverage for all 11 retained schemas."""
     for method_name in (
         "load_git_config",
         "load_label_config",
         "load_scope_config",
         "load_workflow_config",
         "load_workphases_config",
-        "load_artifact_registry_config",
         "load_contributor_config",
         "load_issue_config",
         "load_milestone_config",
         "load_operation_policies_config",
-        "load_project_structure_config",
-        "load_quality_config",
-        "load_scaffold_metadata_config",
         "load_enforcement_config",
         "load_contracts_config",
     ):
         assert hasattr(ConfigLoader, method_name), f"Missing ConfigLoader.{method_name}()"
 
 
-def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -> None:
-    """ConfigLoader must construct all 15 migrated schema types."""
+def test_loader_loads_all_eleven_migrated_schema_instances(config_root: Path) -> None:
+    """ConfigLoader must construct all 11 retained schema types."""
     loader = ConfigLoader(config_root=config_root)
     workflow_config = loader.load_workflow_config()
-    artifact_registry = loader.load_artifact_registry_config()
 
     assert isinstance(loader.load_git_config(), GitConfig)
     assert isinstance(loader.load_label_config(), LabelConfig)
     assert isinstance(loader.load_scope_config(), ScopeConfig)
     assert isinstance(workflow_config, WorkflowConfig)
     assert isinstance(loader.load_workphases_config(), WorkphasesConfig)
-    assert isinstance(artifact_registry, ArtifactRegistryConfig)
     assert isinstance(loader.load_contributor_config(), ContributorConfig)
     assert isinstance(loader.load_issue_config(), IssueConfig)
     assert isinstance(loader.load_milestone_config(), MilestoneConfig)
@@ -340,12 +242,6 @@ def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -
         loader.load_operation_policies_config(),
         OperationPoliciesConfig,
     )
-    assert isinstance(
-        loader.load_project_structure_config(artifact_registry=artifact_registry),
-        ProjectStructureConfig,
-    )
-    assert isinstance(loader.load_quality_config(), QualityConfig)
-    assert isinstance(loader.load_scaffold_metadata_config(), ScaffoldMetadataConfig)
     assert isinstance(loader.load_enforcement_config(), EnforcementConfig)
     assert isinstance(loader.load_contracts_config(), ContractsConfig)
 
@@ -357,14 +253,10 @@ def _assert_no_self_loading_methods() -> None:
         ScopeConfig,
         WorkflowConfig,
         WorkphasesConfig,
-        ArtifactRegistryConfig,
         ContributorConfig,
         IssueConfig,
         MilestoneConfig,
         OperationPoliciesConfig,
-        ProjectStructureConfig,
-        QualityConfig,
-        ScaffoldMetadataConfig,
         EnforcementConfig,
         ContractsConfig,
     ):
@@ -386,7 +278,7 @@ def _assert_no_self_loading_methods() -> None:
 
 
 def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
-    schema_dir = Path(inspect.getfile(scaffold_schema)).parent
+    schema_dir = Path(inspect.getfile(GitConfig)).parent
     for schema_file in schema_dir.rglob("*.py"):
         source = schema_file.read_text(encoding="utf-8")
         assert f"{get_default_server_root()}/config/" not in source, (
@@ -394,7 +286,7 @@ def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
         )
 
 
-def test_all_fifteen_schema_classes_have_no_self_loading_methods() -> None:
+def test_all_eleven_schema_classes_have_no_self_loading_methods() -> None:
     """Pure schema classes must not contain self-loading or singleton state."""
     _assert_no_self_loading_methods()
 
@@ -408,7 +300,6 @@ def test_config_package_contains_no_legacy_wrapper_modules() -> None:
     """The legacy config compatibility wrapper files must be deleted flag-day."""
     config_dir = Path(__file__).resolve().parents[4] / "mcp_server" / "config"
     legacy_wrappers = {
-        "artifact_registry_config.py",
         "compat_roots.py",
         "contributor_config.py",
         "git_config.py",
@@ -416,9 +307,6 @@ def test_config_package_contains_no_legacy_wrapper_modules() -> None:
         "label_config.py",
         "milestone_config.py",
         "operation_policies.py",
-        "project_structure.py",
-        "quality_config.py",
-        "scaffold_metadata_config.py",
         "scope_config.py",
         "workflows.py",
         "workphases_config.py",
@@ -438,16 +326,12 @@ def test_no_hardcoded_config_paths_in_schema_package() -> None:
 
 def test_no_cross_config_dependency_fields_on_schema_roots() -> None:
     """Root config schemas must not carry cross-config dependency state."""
-    assert "artifact_registry" not in ProjectStructureConfig.model_fields
     assert "workflow_config" not in OperationPoliciesConfig.model_fields
 
 
 def test_no_schema_orchestration_methods_on_schema_roots() -> None:
     """Cross-config orchestration belongs in ConfigLoader, not schema value objects."""
-    for schema_cls, forbidden_methods in (
-        (ProjectStructureConfig, ("validate_artifact_types", "validate_parent_references")),
-        (OperationPoliciesConfig, ("validate_phases",)),
-    ):
+    for schema_cls, forbidden_methods in ((OperationPoliciesConfig, ("validate_phases",)),):
         for method_name in forbidden_methods:
             assert method_name not in schema_cls.__dict__, (
                 f"{schema_cls.__name__}.{method_name}() must live in loader/validator layer"
@@ -465,7 +349,7 @@ def test_extracted_schema_classes_no_longer_defined_in_manager_modules() -> None
 
 def test_schema_package_contains_no_local_config_error_class() -> None:
     """Pure schema modules must reuse core.exceptions.ConfigError."""
-    assert "class ConfigError" not in inspect.getsource(scaffold_schema)
+    assert "class ConfigError" not in inspect.getsource(GitConfig)
 
 
 def test_no_tool_calls_from_file() -> None:

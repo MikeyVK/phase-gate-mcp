@@ -1,0 +1,2 @@
+template_id: pr
+purpose: Create caller-authored pull request bodies with explicit deferred-work declarations.

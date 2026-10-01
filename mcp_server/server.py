@@ -6,7 +6,7 @@ import sys
 import time
 import uuid
 from io import TextIOWrapper
-from typing import Any
+from typing import Any, cast
 
 import anyio
 from mcp.server import Server
@@ -19,7 +19,7 @@ from mcp.types import (
     TextContent,
     Tool,
 )
-from pydantic import AnyUrl
+from pydantic import AnyUrl, BaseModel
 
 # Config
 from mcp_server.config.settings import Settings
@@ -27,11 +27,14 @@ from mcp_server.config.settings import Settings
 # Resources
 # Resources
 # Scaffolding infrastructure (Issue #72)
+from mcp_server.core.decorators import InputValidationDecorator, ToolErrorHandlerDecorator
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.presentation_output import PresentedOutput
 
@@ -101,7 +104,7 @@ class MCPServer:
             for t in self.tools:
                 output_schema = None
                 if hasattr(t, "output_model") and getattr(t, "output_model", None) is not None:
-                    output_schema = t.output_model.model_json_schema()
+                    output_schema = operation_output_model(t.output_model).model_json_schema()
                 tools_list.append(
                     Tool(
                         name=t.name,
@@ -112,7 +115,7 @@ class MCPServer:
                 )
             return tools_list
 
-        @self.server.call_tool()  # type: ignore[untyped-decorator]
+        @self.server.call_tool(validate_input=False)  # type: ignore[untyped-decorator]
         async def handle_call_tool(
             name: str, arguments: dict[str, Any] | None
         ) -> CallToolResult | list[TextContent | ImageContent | EmbeddedResource]:
@@ -136,8 +139,9 @@ class MCPServer:
                     try:
                         note_context = NoteContext()
 
-                        # 1. Execute target tool (guaranteed to return a BaseModel DTO)
-                        result_dto = await tool.execute(arguments or {}, note_context)
+                        # 1. Execute the normalized pipeline; cache only the operation.
+                        execution = await tool.execute(arguments or {}, note_context)
+                        result_dto = execution.operation
 
                         # 2. Publish result to cache (resilient; returns None on failure)
                         cache_pub = None
@@ -151,6 +155,7 @@ class MCPServer:
                                 data=result_dto,
                                 notes=note_context.entries,
                                 cache_pub=cache_pub,
+                                attachments=execution.attachments,
                             )
                         else:
                             presented = PresentedOutput(text=str(result_dto), resources=[])
@@ -249,7 +254,7 @@ class DegradedMCPServer(MCPServer):
 
     def __init__(self, settings: Settings, reason: str) -> None:
         """Initialize the degraded server with only the health check tool."""
-        from mcp_server.schemas.tool_outputs import HealthStatus  # noqa: PLC0415
+        from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus  # noqa: PLC0415
         from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
 
         health_tool = HealthCheckTool(
@@ -259,7 +264,14 @@ class DegradedMCPServer(MCPServer):
 
         super().__init__(
             settings=settings,
-            tools=[health_tool],
+            # The decorator validates HealthCheckInput before invoking this typed tool.
+            tools=[
+                ToolErrorHandlerDecorator(
+                    InputValidationDecorator[HealthCheckOutput](
+                        cast(ICoreTool[BaseModel, HealthCheckOutput], health_tool)
+                    )
+                )
+            ],
             resources=[],
             presenter=None,
             publisher=None,

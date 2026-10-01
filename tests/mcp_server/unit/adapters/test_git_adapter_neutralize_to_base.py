@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/adapters/test_git_adapter_neutralize_to_base.py
 """Real-git unit tests for GitAdapter.neutralize_to_base().
 
@@ -29,6 +27,7 @@ from git import Repo as GitRepo
 
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.exceptions import ExecutionError
+from tests.mcp_server.test_support import get_default_server_root
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -1,0 +1,18 @@
+adapter_id: lychee
+version: 1.0.0
+files:
+  - check.py
+  - dependencies.json
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      links:
+        inputs:
+          - content
+          - selection
+        requires_file: true

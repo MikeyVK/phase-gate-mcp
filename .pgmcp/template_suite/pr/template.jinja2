@@ -1,0 +1,50 @@
+{% extends "shared/templates/bases/tier2_markdown_tracking.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+
+{% block tracking_body %}
+{% if content.summary is defined %}
+{{ sections.prose('Summary', content.summary) }}
+
+{% endif %}
+{{ sections.prose('Changes', content.changes) }}
+{% if content.testing is defined %}
+
+{{ sections.prose('Testing', content.testing) }}
+{% endif %}
+{% if content.checklist is defined %}
+
+{{ sections.heading('Checklist') }}
+
+{{ sections.checklist(content.checklist) }}
+{% endif %}
+{% if content.breaking_changes is defined %}
+
+{{ sections.prose('Breaking Changes', content.breaking_changes) }}
+{% endif %}
+
+{{ sections.heading('Deferred Work') }}
+{% if content.deferred_work %}
+{% for item in content.deferred_work %}
+
+{{ sections.heading(item.description, 3) }}
+
+{{ item.rationale }}
+{% if item.references is defined %}
+
+**References:**
+
+{{ links.inline_list(item.references) }}
+{% endif %}
+{% endfor %}
+{% else %}
+
+No deferred work identified.
+{% endif %}
+{% if content.closes is defined %}
+
+{{ sections.heading('Closes') }}
+
+{{ sections.issue_refs(content.closes) }}
+{% endif %}
+{% endblock %}

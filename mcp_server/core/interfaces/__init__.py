@@ -47,18 +47,12 @@ from mcp_server.core.interfaces.ipresenter import (
 from mcp_server.core.interfaces.ipresenter import (
     ITextPresenter as ITextPresenter,
 )
-from mcp_server.core.interfaces.ipytest_runner import (
-    IPytestRunner as IPytestRunner,
-)
 from mcp_server.core.interfaces.itool import ITool as ITool
 from mcp_server.core.interfaces.itool_response_cache import (
     IToolResponsePublisher as IToolResponsePublisher,
 )
 from mcp_server.core.interfaces.itool_response_cache import (
     IToolResponseReader as IToolResponseReader,
-)
-from mcp_server.core.interfaces.quality import (
-    IQualityStateRepository as IQualityStateRepository,
 )
 from mcp_server.core.interfaces.state import (
     IStateReader as IStateReader,

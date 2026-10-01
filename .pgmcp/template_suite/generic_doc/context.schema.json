@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Generic document content",
+  "description": "Authored general documentation with finite custom sections, migration steps and checklists; completion remains governed by active phase instructions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "purpose",
+    "summary"
+  ],
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "status": {
+      "$ref": "#/$defs/Text"
+    },
+    "version": {
+      "$ref": "#/$defs/Text"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
+    },
+    "purpose": {
+      "$ref": "#/$defs/Text"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/Text"
+    },
+    "key_changes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "migration_steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "validation_checklist": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/checklist-item.schema.json"
+      }
+    },
+    "faq": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FAQ"
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/section.schema.json"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "FAQ": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question",
+        "answer"
+      ],
+      "properties": {
+        "question": {
+          "$ref": "#/$defs/Text"
+        },
+        "answer": {
+          "$ref": "#/$defs/Prose"
+        }
+      }
+    }
+  }
+}

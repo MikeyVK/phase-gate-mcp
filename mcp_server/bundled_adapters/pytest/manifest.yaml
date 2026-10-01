@@ -1,0 +1,14 @@
+adapter_id: pytest
+version: 1.0.0
+files:
+  - test.py
+  - requirements.txt
+roles:
+  test:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: test.py
+    capabilities:
+      tests: {}

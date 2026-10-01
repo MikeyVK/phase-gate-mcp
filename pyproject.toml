@@ -9,10 +9,11 @@ requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.5.0",
     "pyyaml>=6.0.1",
-    "mcp>=1.0.0",
+    "mcp>=1.0.0,<2",
     "gitpython>=3.1.0",
     "PyGithub>=2.0.0",
     "jinja2>=3.1.2",
+    "jsonschema>=4.20.0",
 ]
 
 [project.scripts]
@@ -38,12 +39,24 @@ where = ["."]
 include = ["mcp_server*"]
 
 [tool.setuptools.package-data]
-mcp_server = ["assets/**/*"]
+mcp_server = [
+    "assets/**/*",
+    "assets/**/.*",
+    "assets/**/.github/**/*",
+    "bundled_adapters/**/*",
+    "bundled_adapters/**/.*",
+    "execution/contracts/*.json",
+    "resources/cache_reading.md",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests/mcp_server"]
-norecursedirs = [".git", ".vscode", "__pycache__", "docs", "results", "source_data", "frontends", "locales"]
+# An explicit list replaces Pytest defaults; retain them and exclude workspace scratch/output.
+norecursedirs = [
+    "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}",
+    "__pycache__", "docs", "results", "source_data", "frontends", "locales", "temp", "tmp",
+]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -53,9 +66,7 @@ addopts = [
     "--tb=short",
     "-n", "auto",
 ]
-# Coverage decoupled from default pytest runs per TODO 6 (Issue #131)
-# Coverage is enforced separately via Gate 6 (branch coverage >= 90%)
-# To run with coverage: pytest --cov=mcp_server --cov-branch --cov-fail-under=90
+# Coverage is opt-in; native source, branch and threshold defaults apply with --cov.
 markers = [
     "slow: Fully hermetic tests that spawns real subprocesses or git operations on tmp_path. Enabled by default; skip via -m 'not slow' for fast dev-runs.",
     "manual: Manual tests requiring full environment setup and explicit enablement (RUN_MANUAL_TESTS=1)",
@@ -65,6 +76,7 @@ asyncio_mode = "strict"
 
 [tool.mypy]
 python_version = "3.11"
+files = ["mcp_server"]
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -85,10 +97,10 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["tests/mcp_server/validation_fixtures"]
 
 [tool.ruff.lint]
-# IDE baseline configuration - balanced strictness for developer productivity
-# CI/CD overrides in .pgmcp/config/quality.yaml for 10/10 enforcement
+# Native Ruff settings shared by editor and adapter consumers.
 select = [
     "E",   # pycodestyle errors - includes E501 (line-too-long)
     "W",   # pycodestyle warnings - includes W291/W292/W293 (whitespace)
@@ -108,22 +120,16 @@ select = [
     "ARG", # flake8-unused-arguments
     "PLC", # pylint-convention - includes PLC0415 (import-outside-top-level) for Gate 2
 ]
-ignore = [
-    "ANN401", # IDE only - allow Any for **kwargs patterns
-    "ARG002", # IDE only - allow unused method args for interface compliance
-]
+ignore = []
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
-    "ANN",  # No type annotations required in tests
-    "ARG",  # Unused arguments OK in fixtures
-    "N806", # Variable names can be uppercase (MockManager pattern)
-    # E501 removed - tests MUST comply with 100-char limit per QUALITY_GATES.md
-    "SIM117", # Nested with OK in tests
-    "SIM105", # try-except-pass OK in tests
-]
+"tests/**/*.py" = ["ANN", "ARG"]
 
-[tool.pyright]
-# Pydantic v2 integration - prevents FieldInfo type inference issues
-reportFunctionMemberAccess = false
+
+[tool.coverage.run]
+source = ["mcp_server"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
 

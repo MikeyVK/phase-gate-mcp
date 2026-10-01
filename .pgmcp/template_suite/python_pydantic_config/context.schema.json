@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pydantic configuration content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description",
+    "frozen"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/ModelField"
+      }
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "frozen": {
+      "type": "boolean"
+    }
+  }
+}

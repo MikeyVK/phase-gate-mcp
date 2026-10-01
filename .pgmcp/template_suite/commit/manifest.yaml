@@ -1,0 +1,2 @@
+template_id: commit
+purpose: Create caller-authored conventional commit messages with explicit breaking intent and references.

@@ -56,10 +56,3 @@ class WorkspaceVersionValidator:
                 "Please run 'pgmcp --upgrade' to upgrade your workspace.",
                 file_path=version_file.as_posix(),
             )
-
-    def read_version(self, server_root: Path) -> str | None:
-        """Read version string from workspace if file exists, else return None."""
-        version_file = server_root / ".version"
-        if version_file.exists():
-            return version_file.read_text(encoding="utf-8").strip()
-        return None

@@ -3,63 +3,25 @@
 """Approved structured DTO clean-break contract tests.
 
 @layer: Tests (Unit)
-@dependencies: [pydantic, validation.base, tool_outputs]
+@dependencies: [pydantic, tool_outputs]
 @responsibilities:
-    - Verify canonical frozen validation-record serialization
     - Verify structured workflow state and numeric pytest duration
     - Verify obsolete presentation fields have no compatibility aliases
 """
 
 import pytest
-from pydantic import ValidationError
 
 from mcp_server.schemas.tool_outputs import (
-    AutoFixOutput,
     GetWorkContextOutput,
     LabelOperationOutput,
     PhaseTransitionOutput,
-    RunTestsOutput,
-    SafeEditOutput,
     ScaffoldArtifactOutput,
     WorkflowStateStatus,
 )
-from mcp_server.validation.base import ValidationIssue
 
 
 class TestStructuredToolOutputMigration:
     """Clean-break DTO contracts."""
-
-    def test_validation_issue_is_frozen_serializable_and_reused_by_safe_edit(
-        self,
-    ) -> None:
-        issue = ValidationIssue(
-            message="Invalid syntax",
-            severity="error",
-            line=4,
-            column=7,
-            code="E001",
-        )
-
-        output = SafeEditOutput(
-            path="example.py",
-            passed=False,
-            issues=(issue,),
-            mode="strict",
-            written=False,
-        )
-
-        assert output.issues[0] is issue
-        assert output.model_dump(mode="json")["issues"] == [
-            {
-                "message": "Invalid syntax",
-                "line": 4,
-                "column": 7,
-                "code": "E001",
-                "severity": "error",
-            }
-        ]
-        with pytest.raises(ValidationError):
-            issue.message = "changed"  # type: ignore[misc]
 
     @pytest.mark.parametrize(
         "status",
@@ -84,23 +46,9 @@ class TestStructuredToolOutputMigration:
         assert output.workflow_state_status is status
         assert output.valid_phases == ("research", "design")
 
-    def test_run_tests_uses_numeric_optional_duration(self) -> None:
-        output = RunTestsOutput(
-            exit_code=0,
-            passed_count=3,
-            failed_count=0,
-            skipped_count=0,
-            errors_count=0,
-            duration_seconds=0.42,
-        )
-
-        assert output.duration_seconds == 0.42
-        assert "summary_line" not in type(output).model_fields
-
     @pytest.mark.parametrize(
         ("model", "removed_fields"),
         [
-            (AutoFixOutput, {"formatted_modified_files"}),
             (GetWorkContextOutput, {"invalid_phase_warning"}),
             (LabelOperationOutput, {"formatted_labels"}),
             (

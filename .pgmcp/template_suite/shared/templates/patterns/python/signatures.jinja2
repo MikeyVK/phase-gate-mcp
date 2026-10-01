@@ -1,0 +1,17 @@
+{% import "shared/templates/patterns/python/imports.jinja2" as values %}
+{% macro parameters(items, instance) -%}
+{%- if instance %}self{% if items %}, {% endif %}{% endif -%}
+{%- for item in items -%}{{ item.name }}: {{ item.type }}{% if item.default is defined %} = {{ values.literal(item.default) }}{% endif %}{% if not loop.last %}, {% endif %}
+{%- endfor -%}
+{%- endmacro %}
+
+{% macro method(signature, body, instance=true) -%}
+{% if signature.async %}async {% endif %}def {{ signature.name }}({{ parameters(signature.parameters, instance) }}) -> {{ signature.return_type }}:
+    {{ values.documentation(signature.description) }}
+{{ body | indent(4, true) }}
+{%- endmacro %}
+
+{% macro constructor(record) -%}
+def __init__({{ parameters(record.parameters, true) }}) -> None:
+{{ record.body | indent(4, true) }}
+{%- endmacro %}

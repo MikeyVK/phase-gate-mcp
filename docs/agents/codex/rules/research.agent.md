@@ -70,7 +70,7 @@ You are equipped with a restricted subset of tools to guarantee safety while all
 | **Web Research** | `search_web`, `read_url_content` | Any downloaders or script executors |
 | **Workflow & Git (Read-Only)** | `get_work_context`, `get_project_plan`, `git_status`, `git_list_branches`, `git_diff_stat`, `get_parent_branch`, `check_merge` | `create_branch`, `git_checkout`, `git_add_or_commit`, `git_merge`, `git_delete_branch`, `git_stash`, `git_restore`, `git_pull`, `git_push` |
 | **GitHub Read-Only** | `get_issue`, `list_issues`, `get_pr`, `list_prs`, `list_labels`, `list_milestones` | `create_issue`, `update_issue`, `close_issue`, `submit_pr`, `merge_pr`, `add_labels`, `remove_labels`, etc. |
-| **Diagnostics & Validation** | `validate_template`, `health_check`, `send_message` | `restart_server`, `transition_phase`, `auto_fix` |
+| **Diagnostics & Validation** | `scaffold_schema`, `health_check`, `send_message` | `restart_server`, `transition_phase`, `run_checks`, `apply_fixes` |
 
 ## Interaction & Presentation Guidelines
 

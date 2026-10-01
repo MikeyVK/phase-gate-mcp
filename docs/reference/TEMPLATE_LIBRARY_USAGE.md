@@ -1,217 +1,38 @@
-<!-- docs/reference/TEMPLATE_LIBRARY_USAGE.md -->
-<!-- template=reference version=349a0002 created=2026-02-07T00:00Z updated=2026-07-16 -->
-# Template Library Usage Guide
+# Template Library Usage
 
-**Status:** DEFINITIVE
-**Version:** 3.0
-**Last Updated:** 2026-07-16
+**Status:** DEFINITIVE  
+**Last Updated:** 2026-09-24
 
-**Source:** [mcp_server/tools/scaffold_artifact.py](file:///C:/temp/pgmcp/mcp_server/tools/scaffold_artifact.py)
-**Tests:** [tests/mcp_server/unit/config/test_modular_loader.py](file:///C:/temp/pgmcp/tests/mcp_server/unit/config/test_modular_loader.py) | [tests/mcp_server/unit/managers/test_artifact_manager.py](file:///C:/temp/pgmcp/tests/mcp_server/unit/managers/test_artifact_manager.py)
+Use the active template suite to discover a suitable artifact package, inspect its caller schema, create a valid starting point, and refine the result for its intended use. The runtime catalog and resolved package schema own exact IDs, purposes, fields, and package identity; this guide intentionally contains no copied inventory.
 
----
+## Discover and scaffold
 
-## Purpose
+Use the current tool schema to see the admitted package IDs. Call `scaffold_schema` for a selected ID to confirm the package purpose and inspect its complete resolved JSON Schema. This schema describes the caller's `context`; it does not prescribe an artifact's full content.
 
-Practical guide for using the scaffolding pipeline: how to scaffold an artifact, how to inspect context requirements before scaffolding, and how to register a new artifact type.
+Build the caller context from the resolved schema, then call `scaffold_artifact` with the selected `artifact_type`, exact output `file_name`, and context. Use `target_path` only when the file needs a specific workspace-relative directory. The server validates the caller context and uses the selected package's resolved render graph and output profile.
 
-## Scope
+A successful scaffold gives you a valid basis. Read the result and refine the file with your editor or `safe_edit_file` to meet the task's actual requirements. First-call validity is not a substitute for review or completion. For safe-edit validation, choose `enforce` when a failed required check must block the write, or `report` when the findings should be returned while continuing. Independent safety and operational checks still apply.
 
-**In Scope:**
-- Using `scaffold_artifact` and `scaffold_schema` tools
-- Understanding the V3 dynamic template validation pipeline
-- How artifact types map to declarative YAML schemas and Jinja2 templates
-- How to add a new artifact type (no Python edits required)
-- Context schema conventions
+The public [scaffolding tool reference](tools/scaffolding.md) documents the current operation and schema behavior. The [editing reference](tools/editing.md) explains refinement and validation policy.
 
-**Out of Scope:**
-- Full TEMPLATE_METADATA format → See docs/reference/template_metadata_format.md
-- Architecture rationale → See docs/development/schema-template-maintenance.md
-- Artifact type inventory → See docs/reference/TEMPLATE_LIBRARY_QUICK_REFERENCE.md
----
+## Extend or maintain a package
 
-## The Dynamic Validation Pipeline (Caller View)
+Use the runtime catalog to find the package purpose and `scaffold_schema` to read its resolved input contract; do not copy package IDs or field tables into another guide. A concrete package owns its manifest identity and purpose, caller schema, release version, policy, and root template. The resolved template graph may use shared bases, patterns, and definitions. Follow [Scaffold Schema and Template Maintenance](../development/schema-template-maintenance.md) for maintenance decisions.
 
-When you call `scaffold_artifact(artifact_type, name, context)`, your call passes through three layers:
+First adapt an admitted package's schema and template graph when they can express the required behavior. A requirement for a generic engine capability, such as a new schema dialect, graph rule, rendering feature, or output-profile behavior, needs a generic implementation change. Package-specific facts belong to the package and must not become hardcoded server branches.
 
-1. **Layer 1 — Declarative Schema**: Your `context` dict is validated against a dynamic Pydantic model constructed at runtime from the `context_schema` configured under `.pgmcp/templates/config/<artifact_type>.yaml`. Required fields are enforced; unknown fields are rejected.
-2. **Layer 2 — RenderContext enrichment**: The system dynamically enriches the model with lifecycle fields (`output_path`, `template_id`, `scaffold_created`, `version_hash`).
-3. **Layer 3 — Jinja2 template** (`.pgmcp/templates/concrete/`): The enriched context is rendered into the output artifact.
+The server resolves the complete suite from its configured `template_suite/` root at startup. In a workspace-managed installation this is commonly `.pgmcp/template_suite/`. Suite changes are visible after the server restarts and resolves the suite again. Official package content is maintained and delivered with PGMCP; a workspace owner controls the installed workspace state and its explicit upgrade/recovery choices. See [Discovery and Admin Tools](tools/discovery.md) for restart guidance.
 
-**Practical implication:** Always use `scaffold_schema` to discover required and optional context fields before calling `scaffold_artifact`.
+## Package identity and artifact provenance
 
----
+Newly scaffolded artifacts record the selected package identity, its authored package version, the resolved package fingerprint, and the source suite fingerprint. These are generation-source facts. They do not promise that historical source files are available and do not authorize renewal or overwrite. Non-artifact schema results carry package identity only where the public result contract defines it.
 
-## API Reference
+See [Template Package Identity and Artifact Provenance](template_metadata_format.md) for the compact record and the distinction between package and suite identity.
 
-### scaffold_schema (use before scaffold_artifact)
+## Related guidance
 
-Return the JSON Schema for the `context` parameter of an artifact type. Use this before every first call to discover which fields are required and optional.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `artifact_type` | `str` | Yes | Artifact type ID (e.g. `"design"`, `"worker"`, `"dto"`, `"typescript_dto"`) |
-
-**Returns:** A JSON Schema object describing the `context` parameter for the type.
-
-**Error:** Returns an error if the type has no registered configuration file.
-
-**Example:**
-```
-scaffold_schema(artifact_type="design")
-→ { "properties": { "title": {...}, "summary": {...}, ... }, "required": ["title"], ... }
-```
-
----
-
-### scaffold_artifact
-
-Generate any registered artifact type from a context dict.
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `artifact_type` | `str` | Yes | Artifact type ID from registry (e.g., `dto`, `typescript_dto`) |
-| `name` | `str` | Yes | PascalCase for code artifacts, kebab-case for document artifacts |
-| `context` | `dict` | No | Template rendering context — validated against the type's dynamic schema |
-| `output_path` | `str` | No | Explicit output path; auto-resolved from `project_structure.yaml` when omitted |
-
----
-
-## Recommended Workflow
-
-```
-1. scaffold_schema(artifact_type="worker")       → inspect required + optional fields
-2. build context dict from the schema
-3. scaffold_artifact(artifact_type="worker", name="OrderProcessor", context={...})
-```
-
-This eliminates trial-and-error context validation failures.
-
----
-
-## Usage Examples
-
-### Scaffold a DTO
-
-```json
-{
-  "artifact_type": "dto",
-  "name": "OrderDTO",
-  "context": {
-    "dto_name": "OrderDTO",
-    "fields": ["id: int", "user_id: int", "total: Decimal"]
-  }
-}
-```
-
-### Scaffold a TypeScript DTO
-
-```json
-{
-  "artifact_type": "typescript_dto",
-  "name": "OrderDTO",
-  "context": {
-    "fields": ["id: number", "readonly userId: number", "total: number"],
-    "implements": "IOrder"
-  }
-}
-```
-
-### Scaffold a Worker
-
-```json
-{
-  "artifact_type": "worker",
-  "name": "EmailNotificationWorker",
-  "context": {
-    "name": "EmailNotificationWorker",
-    "description": "Send email notifications asynchronously"
-  }
-}
-```
-
-### Scaffold a Design Document
-
-```json
-{
-  "artifact_type": "design",
-  "name": "payment-gateway-design",
-  "context": {
-    "title": "Payment Gateway Integration Design",
-    "summary": "Design for integrating Stripe and PayPal payment providers",
-    "cycles": []
-  }
-}
-```
-
-### Scaffold a Generic Document (generic_doc)
-
-```json
-{
-  "artifact_type": "generic_doc",
-  "name": "migration-guide",
-  "context": {
-    "title": "Migration Guide: Commit Scope Update"
-  }
-}
-```
-
----
-
-## How to Add a New Artifact Type
-
-Adding a new artifact type is fully declarative. **No Python source code changes are required.**
-
-| Step | File | Action |
-|---|---|---|
-| 1 | `.pgmcp/templates/config/<new_type>.yaml` | Create modular configuration file defining metadata, template path, file extension, strict validation policies, and the `context_schema` (defining required/optional fields). |
-| 2 | `.pgmcp/templates/concrete/<new_type>.<ext>.jinja2` | Create Jinja2 template extending the appropriate language base (e.g. `tier2_base_python.jinja2`, `tier2_base_typescript.jinja2`). |
-
-### Context schema conventions
-
-- Only truly required fields are marked `required: true` (minimalism: callers need the minimum input to get a working scaffold).
-- Code artifact types: `name` or `dto_name` as only mandatory field unless template requires more.
-- Document artifact types: `title` as only mandatory field unless template requires more.
-- All other fields are optional with sensible defaults.
-
----
-
-## Naming Conventions
-
-| Artifact category | Name format | Example |
-|---|---|---|
-| Code (dto, worker, tool, service, typescript_dto, ...) | PascalCase | `OrderDTO`, `ProcessOrderWorker` |
-| Document (design, architecture, research, ...) | kebab-case | `oauth-design`, `worker-pattern-architecture` |
-
-## Strict Version Pairing
-Templates and their configurations are strictly paired using Semantic Versioning. Every Jinja2 template MUST include a header like `{#- Version: X.Y.Z -#}` that exactly matches the `template_version` specified in its corresponding YAML configuration. A mismatch in the major version will cause a strict configuration error at startup.
-
----
-
-## Related Documentation
-- **[docs/development/schema-template-maintenance.md][related-1]** — Scaffolding Architecture Guide
-- **[docs/reference/TEMPLATE_LIBRARY_QUICK_REFERENCE.md][related-2]**
-- **[docs/reference/template_metadata_format.md][related-3]**
-- **[docs/reference/tools/scaffolding.md][related-4]**
-
-<!-- Link definitions -->
-[related-1]: ../development/schema-template-maintenance.md
-[related-2]: TEMPLATE_LIBRARY_QUICK_REFERENCE.md
-[related-3]: template_metadata_format.md
-[related-4]: tools/scaffolding.md
-[source]: ../../mcp_server/tools/scaffold_artifact.py
-[tests]: ../../tests/mcp_server/unit/config/test_modular_loader.py
-
-
-## Version History
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 3.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ paths in link references |
-| 3.0 | 2026-07-16 | Agent | Updated for modular YAML configuration loading, dynamic validation model, and added TypeScript DTO examples. Removed Python context class dependencies. |
-| 2.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
-| 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |
-| 1.0 | 2026-02-07 | Agent | Initial draft |
+- [Scaffolding Tools](tools/scaffolding.md) — current public scaffold and schema behavior.
+- [Editing Tools](tools/editing.md) — safe refinement and validation policy.
+- [Discovery and Admin Tools](tools/discovery.md) — restart behavior.
+- [Scaffold Schema and Template Maintenance](../development/schema-template-maintenance.md) — package extension and maintenance.
+- [Template Package Identity and Artifact Provenance](template_metadata_format.md) — persisted artifact provenance.

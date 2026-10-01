@@ -1,0 +1,638 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pgmcp.local/schema/check-v1",
+  "title": "check/v1",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/response"
+    }
+  ],
+  "$defs": {
+    "request": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operation",
+            "targets",
+            "args"
+          ],
+          "properties": {
+            "operation": {
+              "$ref": "#/$defs/capability_id"
+            },
+            "targets": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "$ref": "#/$defs/absolute_path"
+              }
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operation",
+            "target_path",
+            "content",
+            "args"
+          ],
+          "properties": {
+            "operation": {
+              "$ref": "#/$defs/capability_id"
+            },
+            "target_path": {
+              "$ref": "#/$defs/absolute_file_path"
+            },
+            "content": {
+              "type": "string"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operation",
+            "target_path",
+            "input_path",
+            "args"
+          ],
+          "properties": {
+            "operation": {
+              "$ref": "#/$defs/capability_id"
+            },
+            "target_path": {
+              "$ref": "#/$defs/absolute_file_path"
+            },
+            "input_path": {
+              "$ref": "#/$defs/absolute_file_path"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "response": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/scaffold_response"
+        },
+        {
+          "$ref": "#/$defs/selection_response"
+        },
+        {
+          "$ref": "#/$defs/invalid_request"
+        }
+      ]
+    },
+    "external_tool_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool_id",
+        "version"
+      ],
+      "properties": {
+        "tool_id": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "native_evidence": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format",
+            "data"
+          ],
+          "properties": {
+            "format": {
+              "const": "text"
+            },
+            "data": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format",
+            "data"
+          ],
+          "properties": {
+            "format": {
+              "const": "json"
+            },
+            "data": {}
+          }
+        }
+      ]
+    },
+    "request_validation_issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "location",
+        "code"
+      ],
+      "properties": {
+        "location": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer",
+                "minimum": 0
+              }
+            ]
+          }
+        },
+        "code": {
+          "enum": [
+            "missing_field",
+            "wrong_type",
+            "invalid_value",
+            "unknown_field"
+          ]
+        }
+      }
+    },
+    "invalid_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "details"
+      ],
+      "properties": {
+        "reason": {
+          "const": "invalid_request"
+        },
+        "details": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/request_validation_issue"
+          }
+        }
+      }
+    },
+    "passed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "const": "passed"
+        }
+      }
+    },
+    "failed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "message"
+      ],
+      "properties": {
+        "status": {
+          "const": "failed"
+        },
+        "message": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "message"
+      ],
+      "properties": {
+        "status": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "enum": [
+            "dependency_unavailable",
+            "unsupported_input",
+            "invalid_configuration",
+            "execution_error",
+            "invalid_result"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "absolute_path": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "pattern": "\u0000"
+          }
+        },
+        {
+          "pattern": "^(?:/|[A-Za-z]:[\\\\/]|\\\\\\\\[^\\\\/]+[\\\\/][^\\\\/]+)[\\s\\S]*$(?![\\s\\S])"
+        }
+      ]
+    },
+    "absolute_file_path": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/absolute_path"
+        },
+        {
+          "not": {
+            "pattern": "(?:[\\\\/]|(?:^|[\\\\/])\\.{1,2})$|^\\\\\\\\[^\\\\/]+[\\\\/][^\\\\/]+$(?![\\s\\S])"
+          }
+        }
+      ]
+    },
+    "capability_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$(?![\\s\\S])"
+    },
+    "scaffold_response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/passed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "evidence"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/failed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/unavailable"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            }
+          }
+        }
+      ]
+    },
+    "workspace_relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "\\S"
+        },
+        {
+          "not": {
+            "pattern": "\u0000"
+          }
+        },
+        {
+          "not": {
+            "pattern": "^(?:[\\\\/]|[A-Za-z]:)"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)"
+          }
+        }
+      ]
+    },
+    "checked_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targets",
+        "expanded"
+      ],
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workspace_relative_path"
+          }
+        },
+        "expanded": {
+          "type": "boolean"
+        }
+      }
+    },
+    "not_executed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "message"
+      ],
+      "properties": {
+        "status": {
+          "const": "not_executed"
+        },
+        "reason": {
+          "enum": [
+            "scope_restricted",
+            "not_applicable"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "selection_response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/passed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/checked_coverage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required_targets": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "evidence",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/failed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/checked_coverage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required_targets": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/unavailable"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/checked_coverage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required_targets": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/not_executed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "type": "null"
+            },
+            "required_targets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "decision": {
+                    "properties": {
+                      "reason": {
+                        "const": "scope_restricted"
+                      }
+                    }
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "required_targets": {
+                    "minItems": 1
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "required_targets": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

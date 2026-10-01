@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pytest unit-test content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "description",
+    "cases"
+  ],
+  "properties": {
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/TestCase"
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/Fixture"
+      }
+    },
+    "markers": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+      }
+    },
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/PytestClassName"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "class_name"
+        ]
+      },
+      "then": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceTestCase"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

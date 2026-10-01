@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plain Python class content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "bases": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/TypeText"
+      }
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/Signature"
+          },
+          {
+            "properties": {
+              "name": {
+                "$comment": "Ordinary class signatures exclude native dunder methods; Unicode15.1 NFKC-equivalent underscores are included.",
+                "not": {
+                  "pattern": "^[_︳︴﹍﹎﹏＿]{2}.*[_︳︴﹍﹎﹏＿]{2}$(?![\\s\\S])"
+                }
+              },
+              "parameters": {
+                "items": {
+                  "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

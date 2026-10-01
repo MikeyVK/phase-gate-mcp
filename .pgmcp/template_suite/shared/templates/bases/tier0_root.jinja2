@@ -1,0 +1,6 @@
+{# Native bases own framing; one fragment formats the typed provenance record. #}
+{%- macro provenance_fields(record) -%}
+pgmcp:v1 id={{ record.id }} pv={{ record.pv }} pf={{ record.pf }} sf={{ record.sf }}
+{%- endmacro -%}
+{% block comment_start required %}{% endblock %} {{ provenance_fields(provenance) }}{% block comment_end %}{% endblock %}
+{% block content required %}{% endblock -%}

@@ -17,7 +17,7 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel
 
-from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
+from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
@@ -29,10 +29,10 @@ from mcp_server.tools.cycle_tools import (
 )
 from tests.mcp_server.test_support import (
     get_default_server_root,
+    make_dispatch_server,
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
-    make_test_server,
 )
 
 TRANSITION_ADVISORY_NOTE = (
@@ -77,10 +77,7 @@ def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
 
     bootstrapper = ServerBootstrapper(settings)
     configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
-    template_registry = TemplateRegistry(
-        registry_path=resolved_server_root / "template_registry.json"
-    )
-    managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+    managers = bootstrapper._build_manager_graph(configs)  # type: ignore[reportPrivateUsage]
     return managers, workspace_root
 
 
@@ -256,7 +253,7 @@ class TestCycleTools:
             managers, workspace_root = _get_test_bootstrap_context(
                 mock_settings_cls.from_env.return_value
             )
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -320,7 +317,7 @@ class TestCycleTools:
             managers, workspace_root = _get_test_bootstrap_context(
                 mock_settings_cls.from_env.return_value
             )
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -435,7 +432,7 @@ class TestCycleTools:
             managers, workspace_root = _get_test_bootstrap_context(
                 mock_settings_cls.from_env.return_value
             )
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -502,7 +499,7 @@ class TestCycleTools:
             managers, workspace_root = _get_test_bootstrap_context(
                 mock_settings_cls.from_env.return_value
             )
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(

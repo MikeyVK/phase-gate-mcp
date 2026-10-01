@@ -14,7 +14,7 @@ from __future__ import annotations
 # Third-party
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 HexUUID = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{32}$")]
 
@@ -27,3 +27,4 @@ class CachePublication(BaseModel):
     run_id: HexUUID | None = None
     success: bool = True
     error_code: str | None = None
+    size_chars: int | None = Field(default=None, ge=0)

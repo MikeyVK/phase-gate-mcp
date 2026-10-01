@@ -30,7 +30,7 @@ from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.schemas.tool_outputs import WorkflowStateStatus
+from mcp_server.schemas.tool_outputs import GetWorkContextOutput, WorkflowStateStatus
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import GetWorkContextInput, GetWorkContextTool
 from tests.mcp_server.test_support import (
@@ -1306,3 +1306,22 @@ class TestGetWorkContextC7ContractsInjection:
         await tool.execute(GetWorkContextInput(), NoteContext())
 
         writer.set_context_loaded.assert_called_once_with("feature/42-test", value=True)
+
+    @pytest.mark.asyncio
+    async def test_c68_docflow_e01_v3_instructions_without_obsolete_syntax(self) -> None:
+        """DOCFLOW-E01: the public discovery tool emits live V3 instructions."""
+        root = Path(__file__).parents[4]
+        contracts_path = root / get_default_server_root() / "config" / "contracts.yaml"
+        contracts = ConfigLoader(contracts_path.parent).load_contracts_config()
+        tool = self._make_c7_tool(contracts_config=contracts, workflow="feature", phase="research")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.sub_role_hint == "researcher"
+        assert result.phase_instructions is not None
+        assert "context=" not in result.phase_instructions
+        assert "scaffold_schema" in result.phase_instructions
+        assert "scaffold_artifact" in result.phase_instructions
+        assert "safe_edit_file" in result.phase_instructions
+        assert "Review requested" in (result.handover_template or "")

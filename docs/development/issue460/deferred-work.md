@@ -1,0 +1,572 @@
+<!-- docs/development/issue460/deferred-work.md -->
+<!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-24 -->
+# Issue 460 Deferred Work
+
+**Status:** APPROVED existing deferrals; runtime adapter byte-provenance candidate closed without deferral  
+**Version:** 1.24  
+**Last Updated:** 2026-10-01  
+**Originating Issue:** 460
+
+## Purpose
+
+Preserve all work explicitly deferred from issue 460 in one durable, non-authoritative follow-up notice. This document keeps deferred evidence and ownership visible without enlarging the primary Research artifact or authorizing implementation.
+
+## Ready Coordination Index — 2026-10-01
+
+This is the complete follow-up index for the reopened #460 PR. The fifteen entries below are explicit deferred workstreams; coordination should create or deduplicate issues using the linked notices, their approved boundaries, and recorded evidence. They are research/triage inputs, not approved implementation plans. D-VAL-06 and D-VAL-07 were explicitly assigned separate follow-up issues. No follow-up issue has been created by this implementation session.
+
+| ID | Workstream / issue-authoring entry point | Ownership / boundary |
+|---|---|---|
+| R-01 | [S1mpleTrader-local template specialization](#s1mpletrader-local-template-specialization) | S1mpleTrader repository-local issue; preserve and reassess the six patterns plus adapter/service conventions outside the portable suite |
+| R-02 | [Complete YAML artifact package subset](#complete-yaml-artifact-package-subset) | Recommended first PGMCP follow-up; design a complete supported family instead of restoring unreachable seeds |
+| R-03 | [Purpose-aware runtime discovery](#purpose-aware-runtime-artifact-discovery) | Separate feature research; retain the 50-template design threshold and exact catalog membership |
+| R-04 | [Portable Python coverage](#portable-python-template-suite-coverage) | Research modules, dataclasses, enums, exceptions first; evaluate later candidates from real consumers |
+| R-05 | [Command/query artifact family](#commandquery-service-artifact-family) | Dedicated consumer-led research; no generic Service alias or hidden subtype routing |
+| R-06 | [Server/subprocess security isolation](#deferred-work-notice-server-and-subprocess-security-isolation) | Establish threat model and supported-platform boundaries before selecting controls |
+| R-07 | [Startup health and recovery](#deferred-work-notice-agent-facing-startup-health-and-recovery) | Separate diagnostic/recovery design; no assumed startup dependency probes or health-driven filtering |
+| D-VAL-01 | [Native adapter robustness](#deferred-work-notice-native-adapter-robustness-for-large-selections) | All nine shipped packages/implemented roles; argv limits, discovery, exclusions, native semantics and actionable failures |
+| D-VAL-02 | [Safe-edit text/EOL semantics](#deferred-work-notice-safe-edit-text-model-and-line-ending-semantics) | Reconcile source representations, change reporting and operation-wide invariants through a new strategy decision |
+| D-VAL-03 | [Active documentation link baseline](#deferred-work-notice-active-documentation-lychee-baseline) | Broad active-documentation inventory and repair; bounded live successes are not a workspace baseline |
+| D-VAL-04 | [Affected public-route behavior](#deferred-work-notice-issue-460-affected-public-route-behavior) | Exactly six replaced routes plus two changed seams; owner chooses each live mutation route |
+| D-VAL-05 | [First-call template quality](#deferred-work-notice-first-call-template-quality) | Rendered layout, lint/format and editorial quality; distinguish caller-authored bodies from generated defects |
+| D-VAL-06 | [Adapter write effects](#d-val-06--adapter-write-effects-boundary) | Separate issue for permitted operational writes versus unauthorized destinations through args/config/environment |
+| D-VAL-07 | [False-PASS semantics](#d-val-07--check-completion-and-false-pass-semantics) | Separate issue for help/version/early-exit handling and genuine check completion |
+| D-VAL-08 | [Reverse template consumption](#d-val-08--generic-schematemplate-consumption-analysis) | Research static feasibility, uncertain cases, actual package defects and diagnostics-versus-blocking policy |
+
+**Ready index verification:** The focused native link review found 55 successful links, two excluded external URLs, and nine missing historical local source targets in the body of this register (`pgmcp://cache/runs/2e19fa12a6c746729c058c2f72480c84`). No new index link appears in the error map. The nine negative outcomes remain visible under D-VAL-03; this register is not described as link-clean.
+
+**Separate general backlog candidate:** the worktree-marker parsing observation in `git_list_branches` is outside the #460-affected route audit because its parser was not changed by this refactor. Coordination should independently triage the evidence linked in D-VAL-04; do not attribute it to #460 without a regression trace.
+
+**Not deferred:** component-level suite renewal and safe-edit `verify_only` retirement returned to #460 and were implemented. Runtime adapter byte-provenance was accepted as current behavior, without a follow-up issue. Clean development installation and its partial-root failure are accepted interim behavior; assembling and verifying a complete wheel belongs to a future release, not a newly promised #460 repair. No separate release issue is created by this index.
+
+## Status and Authority
+
+The five original deferrals below remain closed issue-460 Research decisions. Their inventories and any ordering recommendations are inputs to future Research, not future Design or implementation authorization. `APPROVED` confirms their exclusion and ownership; it does not authorize the deferred work or reject its possible future value. The 2026-08-31 component-level renewal deferral was explicitly superseded by the human-directed F-10/S-10 amendment on 2026-09-03 and is no longer deferred work.
+
+The 2026-09-04 F-20 language-agnostic adapter extension suite is also explicitly retained inside issue 460. Check, test, and fix extensibility cannot be deferred without producing incompatible language-specific product paths. This does not authorize unlimited future roles: a new tool or language within the three approved contracts is extension work; a genuinely new product role still requires its own evidenced consumer and contract decision.
+
+The Generic Python class responsibility is approved in [Research](research.md) as a bounded body-free plain-class skeleton. That artifact-local boundary does not decide method-content policy for specialized Python templates.
+
+| Deferred boundary | Issue-460 consequence | Future owner |
+|---|---|---|
+| S1mpleTrader-local specialization | Remove consumer-specific behavior from the portable PGMCP suite; perform no cross-repository edits | A later S1mpleTrader repository-local issue |
+| Complete YAML artifact subset | Remove two incomplete unreachable seeds now; do not restore them piecemeal | A future PGMCP issue |
+| Portable Python artifact coverage | Add no new Python artifact types in issue 460 | A future PGMCP issue with fresh consumer validation |
+| Purpose-aware runtime artifact discovery | Add no new MCP tool or overloaded introspection mode in issue 460; use the approved 50-template design threshold below to trigger the separate follow-up | A future PGMCP feature issue |
+| Command/query service artifact family | Remove broad Service and hidden subtype routing; add no replacement in issue 460 | A future PGMCP issue after concrete consumer validation |
+| Agent-facing startup health and recovery | Retain configuration-based input contracts and on-use dependency failures; add no startup adapter probes, health-check changes, health-first policy, or health-driven tool blockade | A separate future PGMCP issue; Design-stage exclusion dated 2026-09-05, retained-scope correction 2026-09-07 |
+| Removal of safe-edit `verify_only` | **No longer deferred** — human scope expansion brings retirement into issue 460 together with validation-policy alignment | DI-04; narrow Research amendment dated 2026-09-07, independent QA requested |
+
+## Deferred Work Notice: Safe-Edit Verify-Only Removal
+
+**Status: SUPERSEDED.** The initial deferral on 2026-09-07 was withdrawn later in the
+same workshop by explicit human scope expansion. The owner rejected retaining a
+temporary policy boundary only for functionality already nominated for removal.
+
+The [narrow Research amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
+now owns validation=enforce/report alignment, retirement of mode/verify_only and rejection
+of aliases or replacement dry-run APIs. DI-04 owns this work in issue 460. Independent
+QA is requested on the delta. No separate removal issue is required by this notice.
+
+The mode already exists in [SafeEditInput and execution](../../../mcp_server/tools/safe_edit_tool.py):
+it validates proposed content without writing the target. The
+[unit test](../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py) checks that no
+writer call occurs, and the [public reference](../../reference/tools/editing.md) exposes
+the mode. Repository inspection found implementation, tests and documentation, but no
+concrete non-test invocation in the inspected source/configuration/instruction roots.
+This is not telemetry and does not establish that external agents never use it.
+
+The earlier preserve/no-further-design instructions are historical and no longer bind
+the changed policy boundary. Removal is explicit loss of proposed-edit preview, not
+an inference that the mode was unused. All unrelated deferrals and frozen scope remain.
+
+## Deferred Work Notice: Server and Subprocess Security Isolation
+
+**Decision:** explicitly deferred by the human owner during Design on 2026-09-06.  
+**Future owner:** a separate PGMCP security issue, not yet created.  
+**Suggested issue title:** Define and enforce security isolation for the PGMCP server and tool subprocesses.
+
+### Limited Current Evidence
+
+The user wants a security boundary for the complete server and its tools. This brief
+source inspection is not a security audit or an assessment of actual host/container
+permissions. No credentials or environment values were inspected and no escape attempt
+was performed. Virtual environments, cwd selection and temporary directories are not
+OS security boundaries; admitted code is not necessarily technically confined.
+
+| Source | Observed behavior | Consequence / uncertainty |
+|---|---|---|
+| [ServerProxy](../../../mcp_server/core/proxy.py), `_spawn_server_in_context` | Ordinary subprocess.Popen; startup copies the environment | The inspected launcher establishes no OS filesystem/network sandbox; an external deployment could still impose one |
+| [QAManager](../../../mcp_server/managers/qa_manager.py), gate subprocess invocation | subprocess.run with timeout, output capture and cwd, no restricted environment argument at this call | Lifecycle controls are not access restrictions; host permissions and inherited environment require review |
+| [PytestRunner](../../../mcp_server/managers/pytest_runner.py), `_execute` | Copies os.environ and adjusts virtual-environment/PATH settings | Dependency isolation is not security isolation; actual credential exposure was not investigated |
+| [FilesystemAdapter](../../../mcp_server/adapters/filesystem.py), `resolve_path` | Resolves paths, then compares string startswith against the root | Only protects calls routed through this adapter; lexical prefixes do not prove path-component containment, including sibling names sharing a prefix. Prioritize focused correctness evidence; no public exploit path was exercised |
+
+Absolute paths identify locations, not permissions. Relative paths cannot prevent a
+process from constructing other paths. Actual access depends on host permissions and
+enforced policies, not the representation sent to an adapter.
+
+### Future Issue Scope and Evidence
+
+- Define the threat model for server, admitted adapters, external tools, workspace/test
+  code and executable plugins/configuration; distinguish trusted-but-buggy integrations
+  from untrusted execution without promising support for the latter.
+- Inventory required filesystem, child-process, environment/credential and network
+  access, including Git/GitHub, installed toolchains and authorized workspace mutations.
+- Evaluate whole-server isolation separately from per-role subprocess restrictions:
+  a workspace writable by the server does not make a check process read-only.
+- Select supported-platform enforcement/deployment and native-path mappings, with
+  explicit portability, cost and unavailable-enforcement behavior. No sandbox or
+  container technology is selected by this notice.
+- Review component-aware containment, symlink/junction behavior and environment
+  inheritance. Route immediate correctness defects separately if warranted.
+- Prove both allowed workflows and denied reads/writes/network access, including
+  descendants and check-versus-fix authority. Document limits; no silent weakening.
+
+### Issue-460 Boundary and Interim Promise
+
+No sandbox implementation, security manifest DSL, container packaging, credential
+broker, platform matrix or security monitoring is added to issue 460. Frozen Research
+and the approved consumer catalog remain unchanged. This future work does not block
+continuing Design under the human-approved deferral.
+
+Issue 460 retains application-level package trust/admission, path validation, bounded
+mutation, role responsibilities and controlled temporary-file ownership. Read-only
+checks are an integration contract, not a claim of OS-enforced confinement. No safe
+execution of untrusted adapters is promised. Public workspace-relative presentation
+remains separate from internal paths and enforcement. Exact adapter input fields
+remain Design work; this notice does not approve an absolute-host-path-only protocol.
+Residual validation-file maintenance stays manual; no temp monitoring or sweeping.
+
+## Deferred Work Notice: Agent-Facing Startup Health and Recovery
+
+**Decision:** explicitly deferred by the human owner during Design on 2026-09-05.  
+**Future owner:** a separate PGMCP issue, not yet created.  
+**Suggested issue title:** Agent-facing startup health, diagnostics, and recovery guidance.
+
+The preferred future presentation route for startup availability problems is
+`health_check`, not diagnostic prose embedded in tool input schemas. This direction
+does not authorize health implementation inside issue 460. The work has its own
+consumer, policy, presentation, and failure-recovery boundaries and must not enlarge
+the already expanded adapter refactor. The future issue is **not a prerequisite for
+issue-460 completion or public V3 cutover**.
+
+**Retained-scope correction (2026-09-07):** the human owner removed startup adapter
+dependency preflight and availability-based schema filtering. The health deferral
+remains; it must not implicitly retain that superseded execution obligation. A future
+issue must establish its own diagnostic evidence sources rather than assume that
+issue 460 produces adapter-readiness facts or an availability report.
+
+### Retained in Issue 460
+
+- A coherent startup-bound contract view based on validated declarations and references,
+  without invoking adapters or native tools to check dependency availability.
+- Complete input contracts for check/test/fix consumers, exposing valid configured
+  selections, with matching invocation validation and consistent lazy exposure.
+- Full profile obligations: no silent removal of missing checks or weaker fallback.
+- Explicit consumer-specific defaults and no-configured-choice behavior. These
+  remain Design work in issue 460, not an excuse for a general health-based blockade.
+- Existing scaffold `report` semantics and ordinary per-call invalid-input or
+  runtime `unavailable` outcomes, including absent dependencies on first use or later
+  dependency loss; inability to start the adapter remains a generic invocation failure.
+- Existing operation-result presentation, structured evidence, and cache/attachment
+  responsibilities under issues 456/459. Deferring startup diagnostics does not
+  suppress relevant operation failures.
+
+Input schemas describe inputs, constraints, defaults, and valid configured choices only.
+They do not explain omitted dependencies or carry startup diagnoses. Moving that
+diagnosis into dynamic tool descriptions is not an alternative within issue 460.
+
+### Excluded from Issue 460
+
+- Changes to `health_check` logic, output contracts, or presentation to report
+  startup availability, health aggregation, or a new degraded status.
+- New health-driven tool filtering/blockades, a health-only mode, or an obligation
+  to call `health_check` before other calls are admitted.
+- Health-first instructions in `AGENTS.md` or changed `restart_server` guidance.
+- New agent-facing startup reports, diagnostic log/resource exposure, or recovery
+  recommendations. No startup diagnostic store or speculative health DTO is required.
+
+Existing health/admin behavior and the existing emergency server fallback are
+preserved; this exclusion introduces no new policy for them. Frozen Research and
+the approved 126/151 consumer/test catalog remain unchanged.
+
+### Follow-Up Research and Evidence
+
+The future issue must establish its evidence sources, the exact healthy/degraded/unhealthy meanings,
+agent-visible summary and detail route, recovery guidance, and whether any tool
+blocking is justified. It must assess startup instructions and restart verification
+together, and prove behavior with lazy discovery and direct tool calls. Diagnostic
+availability when normal configuration, presentation, or cache initialization fails
+needs its own evidence; do not promise a report URI before it exists.
+
+Read the existing [health tool](../../../mcp_server/tools/health_tools.py),
+[server fallback](../../../mcp_server/server.py),
+[admin tools](../../../mcp_server/tools/admin_tools.py), and
+[agent protocol](../../../AGENTS.md) as current behavior, not as permission to modify
+them. The issue-460 [adapter Design](design-execution-adapters.md#77-configuration-based-exposure-and-on-use-availability)
+owns the retained configuration/on-use-availability boundary. This notice is follow-up
+input, not approval of a future health schema or implementation plan.
+
+---
+
+## S1mpleTrader-Local Template Specialization
+
+Portable PGMCP code templates must remove unconditional logging, translator, Backend-layer, and other S1mpleTrader-specific boilerplate. Those details are not valueless: they are precisely what can make a workspace-owned suite substantially more productive than the portable baseline.
+
+The later S1mpleTrader repository-local migration issue must therefore treat the six preserved patterns and the adapter/service boilerplate as one deliberate specialization set. It must assess and, where still valid, recompose project logging, LogEnricher, Translator, lifecycle, dependency, error, and typed-ID conventions on top of the new PGMCP extension contract. In particular, removing unconditional logging/translation behavior from the package adapter is not a decision to discard it from S1mpleTrader. The distinction is ownership: generic behavior in PGMCP, project conventions in S1mpleTrader.
+
+Issue 460 records this preservation obligation but does not design or implement the S1mpleTrader-local successor suite.
+
+## Complete YAML Artifact Package Subset
+
+The unreachable `tier1_base_config.jinja2` and `tier2_base_yaml.jinja2` files are incomplete seeds, not supported behavior. They have no public artifact registration, concrete renderer, complete schema, output-profile contract, or behavioral consumer. Issue 460 removes them from the official suite instead of carrying an unreachable partial tier.
+
+A future PGMCP Research phase should evaluate a complete YAML configuration artifact subset instead of restoring the two files verbatim. The following are inherited constraints and Design hypotheses to evaluate, not selected Design or Planning:
+
+- a public YAML/config artifact registration and complete portable context contract;
+- tier-one config, tier-two YAML, and concrete renderer responsibilities;
+- bounded acyclic structured entries and sections rather than an unrestricted recursive YAML DSL;
+- strict-by-default YAML output-profile validation;
+- startup discovery, complete graph identity, and `scaffold_schema` exposure without artifact-specific Python registration;
+- minimal and property-complete rendering whose parsed YAML data proves semantic behavior without full-text snapshots;
+- a temporary complete active-root fixture that proves a new artifact can be added through suite files alone;
+- packaging, documentation, and extension-boundary evidence.
+
+The current files remain recoverable through Git history and this durable specification; keeping dead package files is not required to preserve the idea.
+
+**Issue-460 Git recovery trace (Research F-14/F-14A/F-14B, deferred YAML disposition):** Both files were incomplete, unregistered seeds removed in CY103. Recover their final source from pre-removal commit `4ba22137757400d975d7ab8178c508f58999fb67`; removal commit: `d6602c5e92b8bbe235d9f453747a0ec8e6b62a4d`.
+
+| Exact historical source path | Pre-removal Windows working-tree SHA-256 (CRLF bytes) |
+|---|---|
+| `.pgmcp/templates/tier1_base_config.jinja2` | `B624150DB5499F7C37CC8F60E82AB1D9AB45685B5F3FE89F9306EB0DB8C8BC21` |
+| `.pgmcp/templates/tier2_base_yaml.jinja2` | `5CD78E1F28C5985FBBB007CC8C54FB47AB7D0D99353D0155F5A04906811CF87F` |
+
+**Deferred Strategy (human-approved 2026-08-23):** remove both incomplete files in issue 460. Hand the complete YAML artifact package subset to coordination as the explicitly recommended first follow-up PGMCP issue on its own branch.
+
+---
+
+## Purpose-Aware Runtime Artifact Discovery
+
+Current scaffold tool schemas enumerate the artifact IDs resolved from the active registry, while `scaffold_schema` exposes one selected artifact's context contract. Neither surface currently lists each available ID together with its purpose before selection. This is a real usability gap, but issue 460 does not need a new runtime discovery capability to correct schema-template rendering contracts.
+
+Issue-460 Research classified F-18 as a feature request and compared three future directions:
+
+| Future option | Benefit | Cost, risk, and consumer impact |
+|---|---|---|
+| New harness-agnostic discovery tool | Clear list-first workflow and a focused ID-to-purpose response | Adds a public MCP capability, input/output DTOs, cache/presentation behavior, tests, documentation, and another tool for clients to discover |
+| Extend an existing introspection surface | Reuses an existing capability and avoids a new tool name | Overloads an artifact-specific contract query with catalog behavior and changes its input/output semantics |
+| Improve existing/static discovery without runtime expansion | Lowest runtime and migration cost | Retains dependence on instructions or documentation and does not fully eliminate catalog drift risk |
+
+F-16 remains in issue 460 because it preserves an existing suite-owned purpose description through selected-artifact introspection. It does not by itself create pre-selection catalog discovery.
+
+**Deferred Strategy (human-approved 2026-08-24):** introduce no new discovery tool or overloaded introspection mode in issue 460. A future feature issue must revalidate the consumer need and compare all three options; the previously proposed single MCP tool is retained only as a non-binding hypothesis.
+
+### Design Escalation Threshold — 50 Template IDs
+
+**Human-approved Design guardrail (2026-09-07):** use 50 distinct loaded concrete
+template IDs as the pragmatic threshold for enum-only discovery. This is a product
+design decision, not a measured model limit, protocol limit, or maximum suite size.
+Shared support files and repetitions of the same catalog in several tool schemas do
+not count as additional templates.
+
+| Situation | Design consequence |
+|---|---|
+| Up to and including 50 loaded template IDs | Retain complete catalog-derived enums as the simple ID-discovery route; this is not a blanket client-compatibility guarantee |
+| Concrete need for more than 50 loaded template IDs | Take up the separate F-18 discovery issue before treating the large-catalog agent experience as complete |
+| Earlier evidence of schema-size, exposure or selection problems | Bring the follow-up forward; ID length, repeated schema content and host/model behavior also matter |
+
+No runtime cap, counter-driven warning, configuration field, startup rejection, enum
+truncation or automatic switch of schema/tool behavior is introduced. Template 51 and
+later must never disappear from a still-enum-based contract. A 300-template workspace
+does not become invalid because of this guardrail. Dependency absence does not reduce
+the catalog count or its exposed choices. Issue 460 retains its existing boundary;
+the threshold is not an unconditional new V3-cutover gate or authorization to implement
+discovery in this issue.
+
+The inspected [MCP tool specification](https://modelcontextprotocol.io/specification/2026-07-28/server/tools)
+and [JSON Schema enum definition](https://json-schema.org/draft/2020-12/json-schema-validation#section-6.1.2)
+give no fixed enum-count maximum; the inspected MCP tool definition also gives no
+fixed schema-byte ceiling. This does not establish a universal client/provider limit
+or prove usable model selection at any particular count. Lazy tool exposure does not
+shrink the enum when the containing tool schema is eventually exposed.
+
+The preferred follow-up direction must address discovery and invocation together:
+bounded search/browsing results with manifest-owned purpose descriptions, compact
+template-ID inputs without a full-catalog enum, and exact server-side membership
+validation against the same loaded catalog. Merely adding a discovery tool beside
+unchanged full enums would retain their size cost. Exact tool names, query/pagination
+contracts, transitions, supported-client evidence and presentation remain decisions
+for the separate issue; no new catalog or duplicate template registration is implied.
+
+---
+
+## Portable Python Template-Suite Coverage
+
+### Source Context
+
+Issue 460 found that eleven current public artifact IDs resolve exclusively to Python templates: `adapter`, `dto`, `generic`, `integration_test`, `interface`, `resource`, `schema`, `service`, `tool`, `unit_test`, and `worker`. The approved F-17 strategy will give language- or technology-specific contracts explicit identities. The approved Generic responsibility remains a bounded body-free plain-class skeleton and may not absorb the deferred artifact responsibilities.
+
+Registration demonstrates that a responsibility is represented; it does not imply that the current schema and renderer are already coherent. The [issue-460 Research](research.md) and [template-suite catalog](template-suite-catalog.md) remain authoritative for the active semantic audit and individual dispositions.
+
+### Current Registered Python Coverage
+
+| Responsibility family | Current artifact types | Coverage represented by the registration |
+|---|---|---|
+| Plain class | `generic` | One deliberately selected, bounded Python class skeleton |
+| Runtime-validated data | `dto`, `schema` | Pydantic DTO and configuration/schema models |
+| Behavioral contract | `interface` | A Python `typing.Protocol` contract |
+| Named component roles | `adapter`, `service`, `worker` | Package-selected architectural component responsibilities |
+| MCP integration | `tool`, `resource` | Python implementations of MCP concepts |
+| Tests | `unit_test`, `integration_test` | Pytest-oriented test modules |
+
+The suite is therefore comparatively strong in Pydantic, MCP, pytest, and named class-oriented architecture roles. It offers few first-class choices for ordinary Python constructs outside those areas.
+
+### Evidence-Backed Candidate Gaps
+
+The gaps are not merely hypothetical language features. Current PGMCP production or test code already contains:
+
+- top-level procedural functions in [cli.py](../../../mcp_server/cli.py), [error_handling.py](../../../mcp_server/core/error_handling.py), and [version_hash.py](../../../mcp_server/scaffolding/version_hash.py);
+- standard-library dataclasses in [bootstrap.py](../../../mcp_server/bootstrap.py) and [scaffold_result.py](../../../mcp_server/scaffolders/scaffold_result.py);
+- `Enum`, `StrEnum`, and `IntEnum` types in [tool_outputs.py](../../../mcp_server/schemas/tool_outputs.py), [artifact_registry_config.py](../../../mcp_server/config/schemas/artifact_registry_config.py), and [pytest_runner.py](../../../mcp_server/managers/pytest_runner.py);
+- exception hierarchies in [exceptions.py](../../../mcp_server/core/exceptions.py);
+- abstract base classes in [base_scaffolder.py](../../../mcp_server/scaffolders/base_scaffolder.py) and [resources/base.py](../../../mcp_server/resources/base.py);
+- `TypedDict` shapes in [phase_detection.py](../../../mcp_server/core/phase_detection.py);
+- package initializers throughout the source tree;
+- reusable pytest fixtures and helpers under [tests/mcp_server/fixtures](../../../tests/mcp_server/fixtures).
+
+Their presence does not automatically justify a public artifact type. It does demonstrate that the retained plain-class template cannot represent the workspace's ordinary Python vocabulary without becoming an unbounded catch-all.
+
+| Candidate responsibility | Distinct semantic value | Preliminary disposition |
+|---|---|---|
+| Procedural Python module | A file-level identity with a module docstring, structured imports, and zero or more structured top-level sync/async function signatures; functions are module members rather than separate persistence targets | Strong first-wave candidate; research whether one bounded module contract is preferable to a separate single-function artifact |
+| Standard-library dataclass | A value/state carrier with dataclass-specific choices such as frozen and slots, without importing Pydantic validation or serialization semantics | Strong first-wave candidate; keep its purpose distinct from DTO and config schema |
+| Enum | A closed named value set with explicit member names, values, documentation, and a deliberate `Enum`, `StrEnum`, or `IntEnum` form | Strong first-wave candidate; Python-version support and value constraints need an explicit profile |
+| Exception | A documented exception type or coherent hierarchy with explicit bases and intentionally minimal initial state | Strong first-wave candidate; do not make arbitrary error payload conventions portable by default |
+| Abstract base class | Runtime inheritance and abstract-method enforcement, which differ materially from structural `Protocol` typing | Conditional candidate; require a consumer that needs runtime inheritance rather than expanding the interface artifact |
+| Static structural data contract | `TypedDict`, `NamedTuple`, `TypeAlias`, or `NewType` express shapes or identities without Pydantic runtime behavior | Conditional candidate; first determine whether these form one coherent responsibility or several small contracts |
+| Package initializer | A package docstring and deliberate public re-exports in `__init__.py` | Conditional candidate; output-path and directory ownership may place this partly in workspace skeleton templating |
+| Reusable test-support module | Shared fixtures and test helpers outside one unit or integration test file | Conditional candidate; hypothesis: if retained, use an explicit structured test contract rather than reviving the removed orphan fixture macro |
+| Other Python protocols | Decorators, context managers, iterators, generators, descriptors, mixins, and similar forms can have distinct mechanics | Inventory-only; normal editing or the bounded class/module artifacts are preferable until repeated consumer evidence demonstrates a stable separate contract |
+
+This list is deliberately open to additional evidence. It is neither a complete taxonomy of Python nor a promise that every row becomes a public artifact.
+
+### Preliminary Follow-Up Priorities
+
+A future PGMCP issue should research portable Python language-artifact coverage as a suite-extension problem, not restore a universal source generator.
+
+#### First Evaluation Wave
+
+1. Procedural Python module.
+2. Standard-library dataclass.
+3. Enum.
+4. Exception.
+
+These candidates are common, semantically distinct, portable, and already represented in current repository code.
+
+#### Evidence-Gated Second Wave
+
+- Abstract base class.
+- Static structural data contracts.
+- Package initializer.
+- Reusable test-support module.
+- Additional constructs discovered through supported consumer workspaces.
+
+The future Research phase may split, merge, reprioritize, or reject candidates when concrete consumer evidence warrants it. The wave ordering is a starting hypothesis, not an implementation plan.
+
+### Constraints Inherited from Issue 460
+
+For every artifact responsibility selected by future Research, the following inherited constraints and hypotheses require validation; they are not a preselected Design:
+
+- one discoverable, language-qualified ID must have one concise purpose and one finite context contract;
+- every rendered symbol name must be explicit artifact context, while the exact file name and target remain separate operation controls; no value is derived across that boundary;
+- artifact descriptions and valid Python docstrings apply at the relevant module, class, member, or field boundaries;
+- declarations and signatures are structured; each specialized artifact's future Research must decide independently whether any caller-supplied implementation content belongs to its finite contract;
+- an empty skeleton is supported only where the empty form has legitimate scaffolding value;
+- minimal and property-complete render cases prove the public contract;
+- an applicable Python output-validation capability provides objective evidence where available;
+- one registered renderer and one complete suite-graph/package identity own the artifact;
+- optional capabilities that materially widen the contract require consumer evidence;
+- first-time-right means syntactically valid and structurally coherent scaffolding that is expected to be edited, not an application-complete implementation.
+
+Inherited issue-460 constraint: the follow-up should reject a generic Python AST, conditional mega-schema, hidden renderer routing, or fallback substitution unless new evidence explicitly reopens that boundary.
+
+### Ownership Boundary
+
+Architecture patterns such as repository, factory, builder, command, query, handler, controller, event consumer, or strategy are conceivable Python templates. Framework artifacts such as ORM models, API routers, CLI commands, task-queue jobs, and migrations are also conceivable. They are not automatically portable language artifacts.
+
+Those responsibilities remain workspace or framework specializations unless multiple supported consumers demonstrate a stable package-suite purpose. A construct being implementable in Python is insufficient evidence that the portable PGMCP package must own its template.
+
+### Deferred Strategy
+
+**Human-approved 2026-08-24:** implement no new Python artifact types in issue 460. Preserve this non-exhaustive inventory as durable input for a future PGMCP Research phase, initially evaluating procedural modules, standard-library dataclasses, enums, and exceptions.
+
+The approved Generic plain-class artifact may not absorb these deferred responsibilities. Its body-free contract is artifact-local and creates no blanket prohibition for specialized Python templates considered by future Research.
+
+## Command/Query Service Artifact Family
+
+Issue 460 confirms that the current universal `service` artifact is not a stable package contract. It renders one S1mpleTrader-derived asynchronous command implementation, while hidden engine routing names command, query, and orchestrator variants that are not publicly representable and mostly do not exist.
+
+The current Service config, command renderer, legacy scaffolder, and hidden subtype routing are removed in issue 460. No compatibility alias or replacement artifact is retained.
+
+Command and Query may justify explicit future templates because they can represent distinct side-effect and return-value contracts. That possibility is deferred to a dedicated issue rather than designed inside the already broad issue-460 refactor.
+
+Future Research must establish:
+
+- concrete repeated consumers inside supported workspaces;
+- whether Command and Query are separate artifact responsibilities rather than variants behind one type;
+- their side-effect, input, output, error, dependency, sync/async, and naming boundaries;
+- language/framework qualification and relationship to Generic, Tool, DTO, and test artifacts;
+- whether an Orchestrator responsibility has independent evidence or is merely an application-specific class role;
+- which S1mpleTrader-specific logging, translation, result/error, and DI conventions belong only in that workspace.
+
+No exact IDs, schemas, inheritance structure, or renderer topology are approved here.
+
+## Component-Level Template-Suite Renewal — Returned to Issue 460
+
+The 2026-08-31 decision to defer automatic component-level adoption is superseded by the human-directed F-10/S-10 amendment dated 2026-09-03. This boundary is active issue-460 Research and belongs to DI-06, not to a future issue.
+
+The approved amendment does not create file-level merging or a package manager. It compares one current adopted checkpoint, actual, and candidate for whole components only: shared/ is one component and each manifest ID is one component. Non-conflicting candidate components may be selected; local-only and conflicting actual components are preserved. The result is built as one complete off-root suite, validated completely, and only then activated recoverably as the sole runtime root.
+
+Explicit reconciliation may advance the current upstream checkpoint to candidate component states without overwriting locally merged actual content. For existing workspaces without a checkpoint, automatic bootstrap requires trustworthy equality evidence; otherwise actual remains byte-for-byte unchanged, candidate remains non-authoritative, and renewal returns `checkpoint_required` until the owner supplies a trusted prior suite or explicitly acknowledges the validated candidate as comparison basis. External workspaces never infer or activate a baseline automatically. The checkpoint has no history or per-file versions, and no missing-baseline path creates a retention or lookup obligation. The amendment adds no SemVer inference, compatibility matrix, automatic file merge, or provenance registry. Artifact metadata and the existing resolved-package/source-suite fingerprints remain unchanged.
+
+The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-and-decision-status), with evidence and exact comparison rules in [Research Findings](research-findings.md#f-10--renewal-can-split-paired-assets) and Design ownership in [DI-06](design-intake-map.md#di-06--distribution-renewal-and-deployment-migration).
+
+## Related Documentation
+
+- [Issue 460 Research](research.md)
+- [Issue 460 Research Findings](research-findings.md)
+- [Issue 460 Template-Suite Catalog](template-suite-catalog.md)
+- [Issue 460 Design Intake Map](design-intake-map.md)
+- [Issue 460 Distribution Design](design-distribution.md)
+- [Documentation Standard](../../coding_standards/DOCUMENTATION_STANDARD.md)
+- [Architecture Principles](../../coding_standards/ARCHITECTURE_PRINCIPLES.md)
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---|---|---|
+| 1.24 | 2026-10-01 | Add complete Ready coordination index of fifteen deferred workstreams, separate general backlog observation, and explicit non-deferred boundaries |
+| 1.23 | 2026-10-01 | Record owner-deferred generic reverse schema/template consumption research as D-VAL-08; retain explicit uncertainty and no reverse PASS claim |
+| 1.22 | 2026-10-01 | Record owner-deferred separate adapter write-effects and false-PASS follow-ups as D-VAL-06 and D-VAL-07 |
+| 1.21 | 2026-10-01 | Close runtime adapter byte-provenance QA candidate as accepted current behavior, not deferred work, by explicit owner decision |
+| 1.20 | 2026-10-01 | Record open QA candidate after independent PR #463 QA NOGO; retain approved restart-only Design boundary pending substantive discussion |
+| 1.19 | 2026-09-30 | Record D-VAL-05 as a separate first-call concrete-template quality follow-up based on rendered gallery evidence |
+| 1.18 | 2026-09-27 | Constrain D-VAL-04 to issue-460-affected public routes; retain the Git branch-listing observation as a separate general backlog candidate |
+| 1.17 | 2026-09-27 | Record the owner-deferred active-documentation Lychee baseline as D-VAL-03 while retaining the optional live link-review capability |
+| 1.16 | 2026-09-27 | Record owner-deferred safe-edit text-model and line-ending semantics review as D-VAL-02 for a separate coordination-owned issue |
+| 1.15 | 2026-09-07 | Supersede verify_only deferral after explicit human scope expansion; route removal and full validation-policy alignment into the narrow Research amendment |
+| 1.14 | 2026-09-07 | Defer verify_only removal to a separate issue; exclude further mode-specific Design from issue 460 except for evidenced conflicts introduced by its new functionality |
+| 1.13 | 2026-09-07 | Record the human-approved 50-template Design escalation threshold for F-18, without runtime caps or enum truncation; require the follow-up to address discovery and compact invocation schemas together |
+| 1.12 | 2026-09-07 | Align retained Design scope with no startup adapter probes and configuration-based choices; preserve health deferral without assuming future readiness evidence from issue 460 |
+| 1.11 | 2026-09-06 | Record bounded source evidence and deferred server/subprocess isolation; distinguish application contracts from OS enforcement without expanding issue 460 |
+| 1.10 | 2026-09-05 | Record the explicit Design-stage startup-health deferral; retain complete availability-aware check/test/fix inputs and ordinary operation outcomes without making future diagnostics a V3 prerequisite |
+| 1.9 | 2026-09-04 | State explicitly that the F-20 check/test/fix adapter extension suite remains in issue 460 and is not a deferred language-feature, while future new product roles still require separate evidence and approval |
+| 1.8 | 2026-09-03 | Align deferred portable-Python guidance with the corrected F-03/F-07 boundary: explicit rendered symbols, independent exact file/target operation controls, and no cross-boundary naming derivation |
+| 1.7 | 2026-09-03 | Record the human-approved checkpoint-less bootstrap remediation while retaining component renewal inside issue 460 and outside deferred work |
+| 1.6 | 2026-09-03 | Remove component-level suite adoption from deferred work and route the superseding F-10/S-10 three-way component renewal amendment back into issue 460 and DI-06 |
+| 1.5 | 2026-08-31 | Align deferred component adoption with DI-06: selective reconciliation persists no acknowledgement or component state, and only exact complete candidate promotion updates installed-suite evidence |
+| 1.4 | 2026-08-31 | Defer automatic component-level template-suite adoption without rejecting future extension; retain package-aware reporting and agent reconciliation while issue 460 mutates only complete suites |
+| 1.3 | 2026-08-26 | Mark the five deferrals as closed approved Research exclusions and link their Design coverage authority without granting implementation authorization |
+| 1.2 | 2026-08-24 | Defer any explicit command/query service artifact family after approving removal of the current broad Service and hidden subtype routing |
+| 1.1 | 2026-08-24 | Add deferred F-18 runtime discovery, reconcile the approved Generic boundary, and remove any implied suite-wide method-body rule |
+| 1.0 | 2026-08-24 | Consolidate all issue-460 deferred work and preserve the Generic Python approval boundary |
+
+## Deferred Work Notice: Native Adapter Robustness for Large Selections
+
+**Decision:** explicitly deferred outside issue #460 by the human owner during Validation on 2026-09-24.
+**Future owner:** coordination, to create and triage a separate PGMCP issue; no issue has yet been created.
+**Suggested issue title:** Audit and harden shipped adapters for large selections and native invocation limits.
+
+The authoritative finding and follow-up acceptance boundaries are recorded as **D-VAL-01** in [Validation — Deferred Work](validation.md#deferred-work), with F-VAL-01 native launch evidence and command-length measurements. Audit all nine shipped adapter packages and every implemented check/test/fix role for analogous selection-to-native execution limits, recording applicability individually. Preserve the generic role contracts as the starting constraint; tool-specific execution strategies belong inside adapters. No universal batching strategy or contract expansion is approved.
+
+This defers robustness follow-up, not the F-20 adapter extension suite itself. Missing validation evidence remains visible; this notice does not turn unavailable checks into passing evidence or authorize issue-460 repair cycles. Coordination should link its new issue back to the validation notice.
+
+## Validation deferral refinement — native adapter semantics, 2026-09-26
+
+The owner explicitly concluded that adapter-specific improvements belong in separately scoped deferred issues while validation of #460 resumes. Coordination should split or extend the adapter follow-up notice as appropriate to cover both D-VAL-01 invocation robustness and native semantic conformance for every shipped adapter/role. Preserve generic contracts as the starting boundary; no generic redesign is authorized by this deferral.
+
+Confirmed Ruff cases to seed that work: verbose output changes an access failure from execution_error to invalid_configuration and selects a debug line as the message (F-VAL-04); --help and --show-files are accepted by the check role and yield passed without lint execution. Review role-compatible option admission, evidence interpretation, effective native version versus provisioned/tested version, and actual selection semantics. Ruff fix has analogous classification risk by source inspection; no mutating reproduction was performed. Silent negative results are an existing deliberately tested contract limitation, not automatically an accidental defect. Native-version conformance and all other adapters require individual evidence rather than a blanket failure claim.
+
+Deferred repair does not erase observed native/test failures. Validation must distinguish results attributable to these accepted adapter limitations from unrelated failures in core behavior, distribution, schemas, templates or tests. New issue creation and final split remain coordination-owned.
+
+### Additional selection evidence — 2026-09-26
+
+After installing the project's required Ruff 0.15.6 in the actual MCP test runner, `run_checks(scope="configured", checks=["python_format","python_lint"])` let Ruff discover archived documentation examples and returned format unavailable with Windows access denied (os error 5); lint reported 191 findings and an access warning. Full DTO receipt: `pgmcp://cache/runs/bfb9ce644ab842f39d000ce974851cf4`. Explicit bounded directory targets completed and produced a different 61-finding lint set, so these scopes are not interchangeable. The all-adapter follow-up must examine configured discovery, exclusions and inaccessible paths in addition to branch argv limits. This observation does not approve a generic contract change or waive issue-460 check failures.
+## Deferred Work Notice: Safe-Edit Text Model and Line-Ending Semantics
+
+**Decision:** explicitly deferred outside issue #460 by the human owner on 2026-09-27 after independent QA GO for CY110 D1–D4.
+**Future owner:** coordination, to triage and create a separate PGMCP issue; no follow-up issue has yet been created.
+**Suggested issue title:** Unify safe-edit text representations, edit planning, and line-ending invariants.
+
+The authoritative follow-up finding is **D-VAL-02** in [Validation — Deferred Work](validation.md#d-val-02--reconcile-the-safe-edit-text-model-and-line-ending-semantics). The CY110 correction preserves original bytes for logically unchanged targeted edits and passed independent QA; it does not settle the wider meaning of `content_changed` or how a replacement span in a mixed-terminator file should retain existing terminators. One current regression case intentionally reports `content_changed=True` while the persisted bytes equal the original after an explicit CRLF replacement. This is a contract and consistency question, not proof that the approved CY110 behavior fails.
+
+The separate issue must begin with Research and an explicit compatibility decision for affected public and internal boundaries, then compare a unified source-span edit plan with alternatives in Design. It should examine all four operations and direct consumers, define observable no-op, newline and `content_changed` semantics, and prove cross-operation invariants rather than add isolated edge-case branches. Preserve validation/write-byte identity, original-byte race protection, and exact whole-file rewrite unless a later approved strategy changes them. Do not silently extend issue #460 or treat this notice as authorization to change the public tool contract.
+
+Coordination should link its new issue to D-VAL-02, the [CY110 completion evidence](planning-rollout.md#cy110-completion-evidence-d1d4-2026-09-27), and the [line-ending Design amendment](design-mutation-validation.md#cy110-line-ending-preservation-amendment-2026-09-27). Validation remains responsible for the current issue's V460.1–V460.5 evidence; any newly observed concrete failure must be reported separately.
+
+## Deferred Work Notice: Active Documentation Lychee Baseline
+
+**Decision:** explicitly deferred outside issue #460 by the human owner on 2026-09-27.
+**Future owner:** coordination, to create and triage a separate PGMCP issue; no follow-up issue has yet been created.
+**Suggested issue title:** Establish a Lychee baseline for all active workspace documentation.
+
+The authoritative finding is **D-VAL-03** in [Validation — Deferred Work](validation.md#d-val-03--establish-and-remediate-the-active-documentation-link-baseline). Lychee 0.24.2 now runs through the explicit `markdown_link_review` profile on this host; the focused validation-report probe passed with 37 local successes, 39 excluded links and zero errors (`pgmcp://cache/runs/24b4fd0f7dfe41ac80a05bc87b4d745b`). A bounded two-document profile run then found nine missing local file targets in this deferred-work register, with exact target URLs and source lines (`pgmcp://cache/runs/bdd03cb6353245bbbfcf8ee06e367e52`). It failed as expected for those concrete links and is not a baseline for all active documentation. Its offline setting does not verify external URLs, and each host that uses the optional profile must provision the declared native prerequisite.
+
+The future issue must define the active-documentation inventory, run bounded native checks, classify and repair local-path and fragment failures, document justified exclusions, and prove the final selected inventory. It must decide separately whether a workflow or CI gate should require this profile. Coordinate any large-selection limitations with D-VAL-01; do not change the generic adapter contracts or silently replace the lightweight Markdown preflight. Coordination should link the new issue to D-VAL-03 and the approved [Markdown/Lychee Design boundary](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking).
+
+## Deferred Work Notice: Issue-460-Affected Public-Route Behavior
+
+**Decision:** owner-requested, bounded follow-up investigation outside issue #460 on 2026-09-27.
+**Future owner:** coordination, to create an audit issue and route confirmed repairs to bounded tool-family issues; no follow-up issue has yet been created.
+**Suggested issue title:** Audit daily-use behavior of the public routes affected by issue #460.
+
+The authoritative scope is **D-VAL-04** in [Validation — Deferred Work](validation.md#d-val-04--audit-daily-use-behavior-of-issue-460-affected-public-routes). It covers the six replaced routes `scaffold_schema`, `scaffold_artifact`, `safe_edit_file`, `run_checks`, `run_tests`, and `apply_fixes`, plus `get_project_plan` at its changed transport/readback seam (CY009) and `create_issue` at its changed authored-body seam (CY050). Shared registration, input-admission, presentation and cache behavior is in scope only where those directly affected routes exercise it. It does not extend to all 49 public tools merely because the wrapper is shared. Other routes enter only after a specific #460 behavior change is traced and recorded.
+
+Read-only samples already exist for `scaffold_schema`, `run_checks` and `run_tests`; they do not certify every accepted scope or failure. The owner approved a temporary-directory probe for `scaffold_artifact`; acceptable isolated effect-verification routes for `safe_edit_file` and `apply_fixes` remain owner choices before live mutation. `create_issue` uses controlled GitHub doubles unless the owner separately authorizes a real external issue. Compare each affected route's admitted input, compact response, complete cached DTO, actionable errors and actual effect with the approved contract. Reuse genuine public integration evidence and file separate repairs only for demonstrated gaps. Coordinate adapter-specific findings with D-VAL-01 and the broad Lychee baseline with D-VAL-03.
+
+The observed `git_list_branches` worktree-marker parsing defect (`pgmcp://cache/runs/44be0998d88b4d919726c96e592a0dc9`, `pgmcp://cache/runs/a909aa78a1cf421d95f602479450888d`) is a separate general backlog candidate. The changed git adapter does not by itself prove that #460 changed this tool's parser. It is excluded from D-VAL-04 unless a concrete regression trace establishes otherwise. This follow-up does not relax #460 Validation or grant a blanket GO.
+
+
+## Deferred Work Notice: First-Call Template Quality
+
+**Decision:** The owner directed a separate follow-up on 2026-09-30 after reviewing rendered scaffolds; coordination should create an issue and link it to [D-VAL-05](validation.md#d-val-05--improve-first-call-quality-of-concrete-scaffold-templates). No issue has been created here.
+
+The approved scaffold contract proves schema admission, rendering, persistence and selected native syntax preflight. A later 13-artifact gallery showed a distinct quality gap: four generated Python examples passed syntax validation, but all four failed Ruff formatting and two had import-layout lint findings; one generated Pydantic config line exceeded the 100-character lint limit. Mypy and Pyright passed those four. Generic Markdown output had excessive blank lines and mechanical section labels, though a focused link check passed. The complete quality operation is `pgmcp://cache/runs/f0dc68e839394da3b7144f2572e9a9bc`. These examples are ignored local `.pgmcp/temp/` material, not #460 branch content.
+
+The follow-up should survey all shipped concrete template packages with representative schema-valid contexts, attribute failures to templates versus caller-authored content, and decide whether Ruff-clean and editorially polished first output becomes a documented guarantee. Improve template whitespace, import emission, long generated expressions and Markdown presentation as justified by evidence. Preserve the generic scaffold contract and keep syntax preflight distinct from repository gates. The example Pytest assertions were caller-authored tautologies, and TypeScript syntax remained unavailable without its native module; neither observation alone proves a template defect. No issue-460 implementation reopening or retrospective green quality claim follows from this notice.
+
+## Closed QA Candidate: Runtime Adapter Byte-Provenance (Not Deferred)
+
+**Decision:** The owner accepted the existing startup-only fingerprint behavior on 2026-10-01. This is neither a #460 fix cycle nor a request for a follow-up issue. See [Validation disposition](validation.md#qa-re-entry-and-disposition--2026-10-01), QA finding 5.
+
+The catalog fingerprints adapter packages at admission but retains a script path for subsequent execution. A package edited while the server remains live can therefore execute bytes newer than the admitted fingerprint. The approved [execution-adapter Design](design-execution-adapters.md) defines that fingerprint as an admitted snapshot label, instructs restart after package edits, and excludes monitoring, per-call rehashing and shadow copies. The owner explicitly accepts that even an unauthorized change during a running server may remain undetected. Results must not present the admission fingerprint as proof of per-run executable-byte identity. No new monitoring, rehashing, or snapshot mechanism is authorized by QA finding 5; a future request for stronger guarantees would require its own strategy decision.
+
+## D-VAL-06 — Adapter Write-Effects Boundary
+
+**Decision:** The owner explicitly deferred this finding outside #460 on 2026-10-01 as a separate follow-up issue. Coordination owns issue creation and deduplication against D-VAL-01; no new issue has been created here.
+
+**Evidence and scope:** PR #463 QA finding 1 identifies the Ruff fix adapter's admitted `--cache-dir` argument as a way to select a filesystem write location beyond the explicit source-file selection. Research states that native arguments do not grant additional filesystem authority. Static inspection supports the admitted argument path; no live out-of-selection mutation probe was run. Do not equate this finding with proof that all adapters have the same defect.
+
+The follow-up should define source mutations versus permitted native operational writes, inspect arguments, native configuration, environment, and defaults for write destinations in affected adapter roles, and select adapter-local corrections. Preserve the generic check/test/fix contracts as the starting boundary. Obtain an owner-approved isolated mutation route before live side-effect probes. Retain exact compact and cached failure evidence and prove both authorized behavior and rejection of unauthorized destinations. This notice does not declare the current behavior repaired or the observed contract concern erased.
+
+## D-VAL-07 — Check Completion and False-PASS Semantics
+
+**Decision:** The owner explicitly deferred this finding outside #460 on 2026-10-01 as a separate follow-up issue, distinct from D-VAL-06. Coordination owns issue creation and deduplication with the native semantic-conformance work in D-VAL-01.
+
+**Evidence:** A live `run_checks` call targeting `mcp_server/tools/scaffold_tool.py` with `python_types` and `python_lint` and `--help` for both returned aggregate and per-check `passed`. The complete cache contains Mypy and Ruff help output instead of source-analysis evidence: `pgmcp://cache/runs/a7bf3cd5498640069bdba82274bf5fc0`.
+
+The follow-up should inspect each shipped check adapter for metadata and early-exit options that bypass its intended check, classify applicability individually, reject inappropriate requests without weakening native configuration behavior, and verify that ordinary valid checks and real diagnostic failures retain correct outcomes. Exit code zero alone must not turn an acknowledged non-check invocation into quality evidence. Preserve generic contracts unless research demonstrates a specific need for an owner-approved amendment. This accepted deferral is not a claim that the reproduced invocation checked its target.
+
+## D-VAL-08 — Generic Schema/Template Consumption Analysis
+
+**Decision:** The owner deferred this work outside #460 on 2026-10-01 after discussing QA finding 6. Coordination should create a separate research-led issue; no implementation mechanism or enforcement policy is approved by this notice.
+
+**Established evidence:** Research F-07 states that exposed caller fields have consumers and rendered caller values are declared. `TemplateInputValidator` validates static Jinja reads against prepared schema paths across the reachable graph. It does not compare all schema declarations with observed reads. No currently shipped package has been shown to discard an exposed field; neither a reverse automatic check nor complete semantic consumption evidence may be claimed as passing.
+
+**Research scope:** Define consumption as direct output or influence on structure, conditions, iteration, or a justified downstream consumer. Distinguish a syntactic reference from a value that can affect output. Evaluate a language-aware Jinja AST analysis over the existing graph and schema semantics, including references, aliases, macro arguments, conditional branches, arrays, composed schemas, and dynamic keys. Do not flatten those constructs into an inaccurate property-name list or treat a parent-object read as proof for every child.
+
+A candidate mechanism could identify definitely declared reads, declarations with no observed consumer, and unresolved use. Dynamic access, arbitrary filters/functions, or whole-object forwarding must remain explicit uncertainty unless justified analysis resolves them. Determine whether uncertain or unused cases produce authoring diagnostics, package checks, or startup rejection only after measuring false positives and real defects. Representative render probes may supplement static analysis but cannot prove all possible inputs or all branch behavior.
+
+**Generic boundary:** Use schema paths, template-language rules, and the existing dependency graph; no hardcoded template IDs or field-name exceptions. Any explicit consumption metadata must be justified against duplication and drift. Preserve current undeclared-read rejection and artifact-specific contract evidence. Compare a bounded static check, a diagnostics-only authoring tool, and test-supported package conformance before selecting an Approved Strategy. Record actual shipped-field findings separately from analysis limitations. This deferral accepts an evidence/enforcement gap for #460 without erasing F-07 or claiming a complete reverse guarantee.

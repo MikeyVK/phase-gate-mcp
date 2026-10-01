@@ -1,0 +1,11 @@
+fixes:
+  python_format:
+    adapter_id: ruff
+    capability: format
+    timeout_seconds: 60
+    default_args: []
+  python_lint:
+    adapter_id: ruff
+    capability: lint
+    timeout_seconds: 60
+    default_args: []

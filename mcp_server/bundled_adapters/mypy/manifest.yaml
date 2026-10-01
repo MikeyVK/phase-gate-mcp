@@ -1,0 +1,16 @@
+adapter_id: mypy
+version: "1.0.0"
+files:
+  - check.py
+  - requirements.txt
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      types:
+        inputs:
+          - selection

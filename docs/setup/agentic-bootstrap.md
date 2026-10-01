@@ -3,8 +3,8 @@
 # Agentic Bootstrap Guide for New Projects
 
 **Status:** APPROVED  
-**Version:** 1.0  
-**Last Updated:** 2026-07-08
+**Version:** 1.2  
+**Last Updated:** 2026-10-01
 
 ---
 
@@ -56,21 +56,31 @@ python -m venv .venv
 .\.venv\Scripts\python -m pip install phase-gate-mcp
 ```
 
-### 3. Initialize or Upgrade the Server Root
-Run the bootstrapping CLI command to generate or upgrade configuration files and templates:
-```powershell
-# For fresh workspaces:
-.\.venv\Scripts\pgmcp --init
+### 3. Initialize or Renew the Server Root
 
-# For existing workspaces upgrading to server v2.0.0 or resolving version mismatch ConfigError:
+This guide assumes an installed package with complete assembled assets. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; see the [release assets procedure](../reference/release-assets-procedure.md). The development checkout need not already contain a release-ready wheel. The project release remains 2.0.0; the new template renewal behavior does not imply a new package release.
+
+For a previously absent server root:
+
+```powershell
+.\.venv\Scripts\pgmcp --init
+```
+
+Initialization copies the packaged assets into the configured server root, normally `.pgmcp/`, and establishes the managed template state. Its materials include:
+
+- `config/` — workflow, enforcement, and execution configuration.
+- `template_suite/` — concrete template packages and shared schema/Jinja support.
+- `agents/` — distributable host instructions and configurations.
+- `docs/` — packaged user, operator, and reference documentation.
+- `installation.json` — installed package information and the managed template checkpoint.
+
+An existing server root requires the owner-led renewal procedure:
+
+```powershell
 .\.venv\Scripts\pgmcp --upgrade
 ```
-This generates or updates the `.pgmcp/` directory structure containing:
-* `config/` (Contracts, enforcement, quality guidelines)
-* `templates/` (Jinja2 templates for issues, PRs, etc.)
-* `agents/` (Prepackaged IDE configurations and rule files)
-* `docs/` (Workflow documentation templates)
-* `.version` (Plain-text version file containing package version string used for validation)
+
+Renewal stages and validates a candidate for the managed template suite, compares it with the active suite and recorded checkpoint, and reports activation or required owner action. It does not refresh owner-managed configuration or workspace adapters. A missing trustworthy baseline can produce `checkpoint_required` and exit code 2; follow the explicit acceptance or backed-up replacement procedure in the [workspace upgrade guide](workspace-upgrade.md). Restart a running server after the active suite changes. Treat `installation.json` as the installation/checkpoint record, rather than using a root `.version` file as renewal authority.
 
 ### 4. Deploy IDE-Specific Configurations & Rules
 Based on the active IDE, copy and set up the workspace rules and configurations:
@@ -167,12 +177,13 @@ This ensures that the workflow configurations are tracked in Git, making them in
 ---
 
 ## Related Documentation
-- [docs/setup/README.md](file:///c:/temp/pgmcp/docs/setup/README.md)
+- [Setup guide](README.md)
 ---
 
 ## Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2 | 2026-10-01 | Implementation documenter | Describe current template_suite/checkpoint renewal, owner-led baseline handling and restart; retain complete-package assumption |
 | 1.1 | 2026-07-20 | Agent | Document .version file creation during CLI init |
 | 1.0 | 2026-07-08 | Agent | Initial draft |

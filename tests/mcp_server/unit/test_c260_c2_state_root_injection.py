@@ -8,7 +8,6 @@ TDD: These tests FAIL before the GREEN implementation.
 
 from __future__ import annotations
 
-import inspect
 import json
 import shutil
 from pathlib import Path
@@ -18,14 +17,12 @@ import pytest
 
 from mcp_server.config.loader import normalize_config_root
 from mcp_server.core.interfaces import IStateReader
-from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import (
     EnforcementConfig,
     EnforcementRunner,
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.tools.admin_tools import (
     RestartServerTool,
 )
@@ -328,65 +325,6 @@ class TestAdminToolsRestartMarker:
         assert result == server_root / ".restart_marker"
 
 
-# ---------------------------------------------------------------------------
-# F6 / artifact_manager — ephemeral temp uses workspace_root
-# ---------------------------------------------------------------------------
-
-
-class TestArtifactManagerEphemeralTemp:
-    """ArtifactManager ephemeral temp dir must be workspace_root-relative."""
-
-    def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
-        """Path(f"{get_default_server_root()}/temp") must be replaced
-        with self.server_root / 'temp'."""
-        state_root = tmp_path / get_default_server_root()
-        state_root.mkdir()
-        (state_root / "template_registry.json").touch()
-
-        manager = ArtifactManager(
-            workspace_root=tmp_path,
-            server_root=state_root,
-            registry=MagicMock(),
-        )
-
-        # The internal server_root should be the injected one
-        assert manager.server_root == state_root
-
-    def test_template_registry_path_not_cwd_relative(self, tmp_path: Path) -> None:
-        """template_registry path must be based on server_root, not CWD."""
-        state_root = tmp_path / get_default_server_root()
-        state_root.mkdir()
-        registry_path = state_root / "template_registry.json"
-
-        manager = ArtifactManager(
-            workspace_root=tmp_path,
-            server_root=state_root,
-            registry=MagicMock(),
-            template_registry=TemplateRegistry(registry_path=registry_path),
-        )
-        assert str(tmp_path) in str(manager.template_registry.registry_path)
-
-
-# ---------------------------------------------------------------------------
-# template_registry — default arg not .pgmcp-based
-# ---------------------------------------------------------------------------
-
-
-class TestTemplateRegistryDefaultArg:
-    """TemplateRegistry default registry_path must not hardcode .pgmcp."""
-
-    def test_default_registry_path_is_not_cwd_dot_phase_gate(self) -> None:
-        """TemplateRegistry() without args: no hardcoded default path."""
-        sig = inspect.signature(TemplateRegistry.__init__)
-        default = sig.parameters["registry_path"].default
-
-        # Default should be None (not a .pgmcp Path)
-        expected_path = f"{get_default_server_root()}/template_registry.json"
-        assert default is None or str(default) != expected_path, (
-            f"Registry path should not be {expected_path}, got: {default}"
-        )
-
-
 # ===========================================================================
 # C2 RED — TDD Cycle 2: no-fallback enforcement
 
@@ -555,24 +493,3 @@ class TestNormalizeConfigRootNoPhaseGateFallback:
         except (FileNotFoundError, ValueError):
             # Raising is preferred — no .pgmcp path was produced
             pass
-
-
-# ---------------------------------------------------------------------------
-# TemplateRegistry — constructing with None must not silently use .pgmcp
-# ---------------------------------------------------------------------------
-
-
-class TestTemplateRegistryNoPhaseGateFallback:
-    """TemplateRegistry with registry_path=None must raise, not silently use .pgmcp."""
-
-    def test_none_registry_path_raises_or_no_phase_gate(self) -> None:
-        """TemplateRegistry() without args: registry_path must not resolve to .pgmcp.
-
-        RED: current __init__ body sets
-            self.registry_path = Path(f"{get_default_server_root()}/template_registry.json")
-        when registry_path is None. The instance attribute silently contains
-        get_default_server_root().
-        """
-        with pytest.raises((ValueError, TypeError)):
-            # Must raise when no explicit registry_path is provided
-            TemplateRegistry()

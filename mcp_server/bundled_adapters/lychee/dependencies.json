@@ -1,0 +1,9 @@
+{
+  "native_tools": [
+    {
+      "tool_id": "lychee",
+      "version": "0.24.2",
+      "executable": "lychee"
+    }
+  ]
+}

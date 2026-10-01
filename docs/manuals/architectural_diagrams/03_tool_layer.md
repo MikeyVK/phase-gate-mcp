@@ -1,136 +1,49 @@
-<!-- docs/mcp_server/architectural_diagrams/03_tool_layer.md -->
-<!-- template=architecture version=8b924f78 created=2026-03-13T19:05Z updated=2026-03-13 -->
+<!-- docs/manuals/architectural_diagrams/03_tool_layer.md -->
+<!-- template=architecture -->
 # Tool Layer
 
-**Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-03-13
+**Status:** Current architecture overview
 
----
+## Purpose and scope
 
-## Purpose
+This page describes the MCP tool boundary and how the active runtime composes it. It does not enumerate every tool, schema, or policy row; those contracts belong to the tools, their schemas, and configuration owners.
 
-Show the tool layer: all 50 MCP tools grouped by file, their base class hierarchy, naming
-conventions, and existing inconsistencies.
+## 1. Core tool and runtime composition
 
-## Scope
-
-**In Scope:** `tools/` directory, ICoreTool hierarchy, MCP tool names, file name conventions
-
-**Out of Scope:** Tool implementation detail, manager-internal logic
-
----
-
-## 1. Base Class Hierarchy
-
-Every tool implements the generic `ICoreTool` interface protocol defined in `core/interfaces/icore_tool.py`.
-Transition tools inherit from shared sub-bases like `_BaseTransitionTool` (for phase transitions) and `_BaseIToolTransition` (for cycle transitions) which implement `ICoreTool`.
-At runtime, the `ToolFactory` wraps tools with decorator layers (`EnforcementDecorator`, `InputValidationDecorator`, `ToolErrorHandlerDecorator`) to handle enforcement and validations, keeping tools completely decoupled.
+Each core tool implements the generic `ICoreTool[Input, Output]` contract. The target composition root constructs the supported set and its settings-dependent active subset in `ToolAssembly`. The assembly validates unique names, derives output contracts, and requires every active tool to be among the supported tools.
 
 ```mermaid
 graph TD
-    ICT["ICoreTool<br/>(core/interfaces/icore_tool.py)"]
-    BBT["_BaseTransitionTool<br/>(phase_tools.py)"]
-    BBCT["_BaseIToolTransition<br/>(cycle_tools.py)"]
-    TP["TransitionPhaseTool"]
-    FP["ForcePhaseTransitionTool"]
-    TC["TransitionCycleTool"]
-    FC["ForceCycleTransitionTool"]
-    TF["ToolFactory<br/>(wraps tools with decorators)"]
+    ICore["ICoreTool[Input, Output]"]
+    Assembly["bootstrap.py<br/>ToolAssembly"]
+    Active["active core tools"]
+    Factory["core ToolFactory<br/>enforcement + input validation + error handling"]
+    Server["MCPServer<br/>tool registration and protocol handlers"]
+    Resources["MCP resources"]
 
-    ICT --> BBT
-    ICT --> BBCT
-    BBT --> TP
-    BBT --> FP
-    BBCT --> TC
-    BBCT --> FC
-    TF -.->|"wraps tools at startup"| ICT
-
-    style BBT fill:#ffe,color:#000
+    ICore --> Assembly
+    Assembly --> Active
+    Active --> Factory
+    Factory --> Server
+    Resources --> Server
 ```
 
-The yellow `_BaseTransitionTool` is defined in `phase_tools.py` but imported by `cycle_tools.py` —
-a visibility mismatch (see Known Issues).
+The assembly is explicit in `ServerBootstrapper.bootstrap_target()`. The core `ToolFactory` wraps each active core tool with enforcement, input validation, and error handling before `MCPServer` registers it. Resources are composed separately from tools.
 
----
+## 2. Functional tool boundaries
 
-## 2. Tool Groups by File
+The current target contains several functional groups rather than one quality-gate runner:
 
-All 50 tools grouped by source file. Files marked (⚠) have naming convention violations.
+- Workflow, project, Git, GitHub, health, and administration tools implement their respective user-facing operations.
+- `run_checks` selects configured checks; `run_tests` runs configured test bindings; `apply_fixes` applies configured fixes through the execution boundary.
+- Scaffold and safe-edit tools use the resolved template catalog and mutation operations.
+- Discovery tools expose work context; they do not define a second inventory or schema authority.
 
-```mermaid
-graph LR
-    subgraph Git
-        GT["git_tools.py<br/>11 tools"]
-        GA["git_analysis_tools.py<br/>2 tools"]
-        GF["git_fetch_tool.py ⚠<br/>1 tool"]
-        GP["git_pull_tool.py ⚠<br/>1 tool"]
-    end
-    subgraph Workflow
-        PT["phase_tools.py<br/>2 tools"]
-        CT["cycle_tools.py<br/>2 tools"]
-        PJ["project_tools.py<br/>4 tools"]
-    end
-    subgraph GitHub
-        IT["issue_tools.py<br/>5 tools"]
-        LT["label_tools.py<br/>5 tools"]
-        MT["milestone_tools.py<br/>3 tools"]
-        PR["pr_tools.py<br/>4 tools"]
-    end
-    subgraph Quality
-        QT["quality_tools.py<br/>2 tools"]
-        TT["test_tools.py<br/>1 tool"]
-        TV["template_validation_tool.py ⚠<br/>1 tool"]
-    end
-    subgraph Workspace
-        SE["safe_edit_tool.py ⚠<br/>1 tool"]
-        SA["scaffold_artifact.py ⚠<br/>1 tool"]
-        SS["scaffold_schema_tool.py ⚠<br/>1 tool"]
-        DT["discovery_tools.py<br/>1 tool"]
-        HT["health_tools.py<br/>1 tool"]
-        AT["admin_tools.py<br/>1 tool"]
-    end
-```
+The tool classes define public names and request/response models. Workspace configuration selects named operations and policy; native adapter settings and executable behavior remain adapter-owned.
 
-Most files follow the `*_tools.py` (plural) convention. The four ⚠ files deviate.
+## 3. Related diagrams and references
 
----
-
-## Constraints & Decisions
-
-| Decision | Rationale | Alternatives Rejected |
-|----------|-----------|----------------------|
-| EnforcementRunner as pre/post hook at server level | Tools need not know about enforcement; clean separation of concerns | Enforcement logic inside each tool (duplication) |
-| All tools via ICoreTool | Uniform interface and decorator-based composition root wrappers | Standalone functions (harder to wrap dynamically) |
-
----
-
-## Known Architectural Issues
-
-| ID | Component | Issue | Severity |
-|----|-----------|-------|----------|
-| KPI-11 | `_BaseTransitionTool` | Underscore prefix signals module-private, but imported by `cycle_tools.py` from `phase_tools.py` | Medium |
-| KPI-11 | `git_fetch_tool.py` | Singular filename vs. `*_tools.py` plural convention for all other files | Low |
-| KPI-11 | `git_pull_tool.py` | Same singular/plural deviation | Low |
-| KPI-11 | `template_validation_tool.py` | Singular filename deviation | Low |
-| KPI-12 | MCP names | `transition_phase` / `force_phase_transition` — word order is crossed vs. `transition_cycle` / `force_cycle_transition` | Medium |
-
----
-
-## Related Documentation
-
-- **[docs/mcp_server/architectural_diagrams/02_workflow_state_subsystem.md][related-1]**
-- **[docs/mcp_server/architectural_diagrams/04_enforcement_layer.md][related-2]**
-- **[docs/mcp_server/architectural_diagrams/08_naming_landscape.md][related-3]**
-
-[related-1]: docs/mcp_server/architectural_diagrams/02_workflow_state_subsystem.md
-[related-2]: docs/mcp_server/architectural_diagrams/04_enforcement_layer.md
-[related-3]: docs/mcp_server/architectural_diagrams/08_naming_landscape.md
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-03-13 | Agent | Initial draft |
+- [Workflow state subsystem](02_workflow_state_subsystem.md)
+- [Enforcement layer](04_enforcement_layer.md)
+- [Naming landscape](08_naming_landscape.md)
+- [Tool reference index](../../reference/tools/README.md)

@@ -18,10 +18,8 @@ import pytest
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
-    ArtifactRegistryConfig,
     ContractsConfig,
     OperationPoliciesConfig,
-    ProjectStructureConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -65,43 +63,6 @@ class TestConfigValidator:
                     "description": "Feature workflow",
                 }
             },
-        )
-
-    @pytest.fixture
-    def project_structure(self) -> ProjectStructureConfig:
-        return ProjectStructureConfig(
-            directories={
-                "src": {
-                    "path": "src",
-                    "parent": None,
-                    "description": "Source",
-                    "allowed_artifact_types": ["dto"],
-                    "allowed_extensions": [".py"],
-                    "require_scaffold_for": [],
-                }
-            }
-        )
-
-    @pytest.fixture
-    def artifact_registry(self) -> ArtifactRegistryConfig:
-        return ArtifactRegistryConfig(
-            version="1.0.0",
-            artifact_types=[
-                {
-                    "type": "code",
-                    "type_id": "dto",
-                    "name": "DTO",
-                    "description": "Data transfer object",
-                    "file_extension": ".py",
-                    "required_fields": ["name"],
-                    "optional_fields": [],
-                    "state_machine": {
-                        "states": ["CREATED"],
-                        "initial_state": "CREATED",
-                        "valid_transitions": [],
-                    },
-                }
-            ],
         )
 
     @pytest.fixture
@@ -149,16 +110,12 @@ class TestConfigValidator:
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
         phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         validator.validate_startup(
             policies=operation_policies,
             workflow=workflow_config,
-            structure=project_structure,
-            artifact=artifact_registry,
             contracts=phase_contracts,
             workphases=workphases_config,
         )
@@ -168,8 +125,6 @@ class TestConfigValidator:
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         contracts = ContractsConfig.model_validate(
@@ -195,8 +150,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
                 contracts=contracts,
                 workphases=workphases_config,
             )
@@ -206,8 +159,6 @@ class TestConfigValidator:
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         contracts = ContractsConfig.model_validate(
@@ -233,8 +184,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
                 contracts=contracts,
                 workphases=workphases_config,
             )
@@ -243,8 +192,6 @@ class TestConfigValidator:
         self,
         validator: ConfigValidator,
         operation_policies: OperationPoliciesConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
     ) -> None:
         workflow_config = WorkflowConfig(
             version="1.0.0",
@@ -286,8 +233,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
                 contracts=contracts,
                 workphases=workphases_config,
             )
@@ -296,8 +241,6 @@ class TestConfigValidator:
         self,
         validator: ConfigValidator,
         workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
         phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
@@ -319,64 +262,6 @@ class TestConfigValidator:
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
-                contracts=phase_contracts,
-                workphases=workphases_config,
-            )
-
-    def test_validate_startup_raises_on_unknown_project_structure_artifact(
-        self,
-        validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
-        workflow_config: WorkflowConfig,
-        artifact_registry: ArtifactRegistryConfig,
-        phase_contracts: ContractsConfig,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        project_structure = ProjectStructureConfig(
-            directories={
-                "src": {
-                    "path": "src",
-                    "parent": None,
-                    "description": "Source",
-                    "allowed_artifact_types": ["worker"],
-                    "allowed_extensions": [".py"],
-                    "require_scaffold_for": [],
-                }
-            }
-        )
-
-        with pytest.raises(ConfigError, match="unknown artifact types"):
-            validator.validate_startup(
-                policies=operation_policies,
-                workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
-                contracts=phase_contracts,
-                workphases=workphases_config,
-            )
-
-    def test_validate_startup_raises_on_unknown_project_structure_parent(
-        self,
-        validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
-        workflow_config: WorkflowConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
-        phase_contracts: ContractsConfig,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        project_structure.directories["tests"] = project_structure.directories["src"].model_copy(
-            update={"path": "tests", "parent": "missing"}
-        )
-
-        with pytest.raises(ConfigError, match="unknown parent"):
-            validator.validate_startup(
-                policies=operation_policies,
-                workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
                 contracts=phase_contracts,
                 workphases=workphases_config,
             )

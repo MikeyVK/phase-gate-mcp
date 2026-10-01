@@ -1,27 +1,19 @@
 # c:\temp\pgmcp\tests\mcp_server\unit\tools\test_autofix_tool.py
 # template=unit_test version=3d15d309 created=2026-06-13T19:23Z updated=
-"""Unit tests for mcp_server.tools.quality_tools.
+"""Response-cache eviction and resource read behavior.
 
 @layer: Tests (Unit)
-@dependencies: [pytest, mcp_server.tools.quality_tools, unittest.mock]
-@responsibilities:
-    - Test TestAutoFixTool functionality
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from mcp_server.config.schemas.quality_config import QualityGate
-from mcp_server.core.operation_notes import NoteContext
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.state.response_cache import ResponseCacheManager
-from mcp_server.tools.quality_tools import AutoFixInput, AutoFixOutput, AutoFixTool
 
 
-class TestAutoFixTool:
-    """Test suite for quality_tools, response cache, and resources."""
+class TestResponseCacheAndResource:
+    """Keep cache eviction and resource reads independently observable."""
 
     def test_response_cache_manager_fifo_eviction(self) -> None:
         """Verify that ResponseCacheManager caches DTOs and applies FIFO eviction."""
@@ -73,8 +65,8 @@ class TestAutoFixTool:
         cache = ResponseCacheManager(max_size=5)
         resource = CachedResponseResource(cache=cache)
 
-        # Put DTO with None field
-        dto = DummyDTO(success=True, message=None)
+        # Put DTO with an absent optional null field
+        dto = DummyDTO(success=True)
         pub = cache.put("test_tool", dto)
         assert pub is not None
         assert pub.run_id is not None
@@ -86,68 +78,10 @@ class TestAutoFixTool:
         assert resource.matches(uri_bad) is False
         assert resource.matches(uri_wrong) is False
 
-        # Read -> should return compact whitespace-stripped JSON with None field excluded
+        # Read -> omit the absent optional null while preserving compact JSON
         json_data = await resource.read(uri_ok)
         assert json_data == '{"success":true}'
 
         # Read missing URI -> raises ValueError
         with pytest.raises(ValueError, match="No cached data found"):
             await resource.read("pgmcp://cache/runs/" + "f" * 32)
-
-    def test_quality_config_validation_rules(self) -> None:
-        """Verify that quality_config validation raises error for misconfigured autofix gates."""
-        # Gate with supports_autofix=True but missing fix_command should fail validation
-        with pytest.raises(ValidationError):
-            QualityGate.model_validate(
-                {
-                    "name": "Test Gate",
-                    "description": "desc",
-                    "execution": {"command": ["ruff", "format"], "timeout_seconds": 60},
-                    "success": {"exit_codes_ok": [0]},
-                    "capabilities": {"file_types": [".py"], "supports_autofix": True},
-                }
-            )
-
-        # Correct config should pass validation
-        gate = QualityGate.model_validate(
-            {
-                "name": "Test Gate",
-                "description": "desc",
-                "execution": {
-                    "command": ["ruff", "format", "--check"],
-                    "fix_command": ["ruff", "format"],
-                    "timeout_seconds": 60,
-                },
-                "success": {"exit_codes_ok": [0]},
-                "capabilities": {"file_types": [".py"], "supports_autofix": True},
-            }
-        )
-        assert gate.execution.fix_command == ["ruff", "format"]
-
-    @pytest.mark.asyncio
-    async def test_autofix_tool_execution(self) -> None:
-        """Verify that AutoFixTool executes via QAManager and returns DTO."""
-        qa_manager = MagicMock()
-        tool = AutoFixTool(qa_manager=qa_manager)
-
-        # Mock QAManager to return a valid AutoFixOutput DTO
-        expected_output = AutoFixOutput(
-            success=True,
-            modified_files=["foo.py"],
-            modified_files_count=1,
-            gates_executed=["ruff"],
-            gates_executed_count=1,
-        )
-        qa_manager.run_auto_fix.return_value = expected_output
-
-        params = AutoFixInput(scope="auto")
-        note_ctx = NoteContext()
-
-        result = await tool.execute(params, note_ctx)
-
-        # Check result
-        assert isinstance(result, AutoFixOutput)
-        assert result.success is True
-
-        # Check QAManager delegation
-        qa_manager.run_auto_fix.assert_called_once_with(scope="auto", files=None)

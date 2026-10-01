@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/managers/test_git_manager_skip_paths.py
 """
 Tests for GitManager commit_with_scope() skip_paths forwarding.
@@ -17,6 +15,7 @@ from unittest.mock import MagicMock
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
+from tests.mcp_server.test_support import get_default_server_root
 
 
 def _make_manager() -> tuple[GitManager, MagicMock]:

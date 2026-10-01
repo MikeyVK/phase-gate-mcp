@@ -45,11 +45,6 @@ from mcp_server.tools.project_tools import (
     SavePlanningDeliverablesInput,
     UpdatePlanningDeliverablesInput,
 )
-from mcp_server.tools.quality_tools import RunQualityGatesInput
-from mcp_server.tools.safe_edit_tool import SafeEditInput
-from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
-from mcp_server.tools.template_validation_tool import TemplateValidationInput
-from mcp_server.tools.test_tools import RunTestsInput
 
 
 class TestExtraForbidOnAllInputModels:
@@ -137,22 +132,6 @@ class TestExtraForbidOnAllInputModels:
                 },
             ),
             (UpdatePlanningDeliverablesInput, {"issue_number": 1, "planning_deliverables": {}}),
-            # quality
-            (RunQualityGatesInput, {}),
-            # scaffold
-            (ScaffoldArtifactInput, {"artifact_type": "migration", "name": "test"}),
-            # safe_edit
-            (
-                SafeEditInput,
-                {
-                    "path": "/tmp/f.py",
-                    "operation": {"op": "rewrite", "content": "x"},
-                },
-            ),
-            # template_validation
-            (TemplateValidationInput, {"path": "/tmp/f.py", "template_type": "tool"}),
-            # test_tools
-            (RunTestsInput, {"path": "tests/"}),
         ],
     )
     def test_extra_field_raises_validation_error(
@@ -170,45 +149,3 @@ class TestExtraForbidOnAllInputModels:
         assert (
             "extra_field" in str(exc_info.value).lower() or "extra" in str(exc_info.value).lower()
         )
-
-    def test_safe_edit_nested_extra_forbid(self) -> None:
-        """Extra field inside ReplaceOp / AppendOp operation models also raises."""
-
-        SafeEditInput(
-            path="/test.py",
-            operation={"op": "replace", "target_content": "a", "replacement": "b"},
-        )
-
-        with pytest.raises(ValidationError):
-            SafeEditInput(
-                path="/test.py",
-                operation={
-                    "op": "replace",
-                    "target_content": "a",
-                    "replacement": "b",
-                    "extra_in_nested": "fail",
-                },
-            )
-
-        with pytest.raises(ValidationError):
-            SafeEditInput(
-                path="/test.py",
-                operation={"op": "append", "content": "x", "extra_in_insert": "fail"},
-            )
-
-        with pytest.raises(ValidationError):
-            SafeEditInput(
-                path="/test.py",
-                operation={"op": "rewrite", "content": "x", "extra_in_rewrite": "fail"},
-            )
-
-        with pytest.raises(ValidationError):
-            SafeEditInput(
-                path="/test.py",
-                operation={
-                    "op": "pattern_replace",
-                    "pattern": "a",
-                    "replacement": "b",
-                    "extra_in_pattern": "fail",
-                },
-            )

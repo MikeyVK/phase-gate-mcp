@@ -1,0 +1,7 @@
+tests:
+  python_tests:
+    adapter_id: pytest
+    capability: tests
+    timeout_seconds: 300
+    default_args: []
+    active: true

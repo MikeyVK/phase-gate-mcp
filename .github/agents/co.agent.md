@@ -46,7 +46,8 @@ tools:
   - phase-gate-mcp/safe_edit_file
   - phase-gate-mcp/git_add_or_commit
   - phase-gate-mcp/git_push
-  - phase-gate-mcp/run_quality_gates
+  - phase-gate-mcp/run_checks
+  - phase-gate-mcp/scaffold_schema
   - phase-gate-mcp/git_delete_branch
   - phase-gate-mcp/git_stash
   - phase-gate-mcp/git_pull
@@ -161,7 +162,7 @@ Allowed:
 - creating and updating issues, labels, and milestones
 - epic docs, contracts, prompts, and coordination-surface edits
 - epic branch lifecycle mutations within the approved narrow allowlist
-- epic phase transitions, commits, quality gates, PR submission, and merge
+- epic phase transitions, commits, quality checks, PR submission, and merge
 - producing child-work directives for `@imp`
 
 If the active branch is a child implementation branch rather than an epic-owned coordination branch, do not use the epic lifecycle allowlist to take over that branch.

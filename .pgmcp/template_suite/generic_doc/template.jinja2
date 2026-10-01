@@ -1,0 +1,61 @@
+{% extends "shared/templates/bases/tier2_markdown_document.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+
+{% block document_body %}
+{{ sections.prose('Summary', content.summary) }}
+{% if content.key_changes is defined %}
+
+{{ sections.heading('Key Changes') }}
+
+{{ sections.bullets(content.key_changes) }}
+{% endif %}
+{% if content.migration_steps is defined %}
+
+{{ sections.heading('Migration Steps') }}
+
+{% for step in content.migration_steps %}{{ loop.index }}. {{ step | indent((loop.index | string | length) + 2) }}
+{% endfor %}
+{% endif %}
+{% if content.validation_checklist is defined %}
+
+{{ sections.heading('Validation Checklist') }}
+
+{{ sections.checklist(content.validation_checklist) }}
+{% endif %}
+{% if content.faq is defined %}
+
+{{ sections.heading('FAQ') }}
+{% for item in content.faq %}
+
+{{ sections.heading(item.question, 3) }}
+
+{{ item.answer }}
+{% endfor %}
+{% endif %}
+{% if content.sections is defined %}
+
+{{ sections.heading('Sections') }}
+{% for section in content.sections %}
+
+{{ sections.heading(section.heading, 3) }}
+{% if section.content is defined %}
+
+**Content:**
+
+{{ section.content }}
+{% endif %}
+{% if section.bullets is defined %}
+
+**Bullets:**
+
+{{ sections.bullets(section.bullets) }}
+{% endif %}
+{% if section.checklist is defined %}
+
+**Checklist:**
+
+{{ sections.checklist(section.checklist) }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endblock %}

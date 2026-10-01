@@ -1,0 +1,24 @@
+{% extends "shared/templates/bases/tier2_typescript.jinja2" %}
+{% macro documentation(text) %}/**
+{{ text | replace('\\', '\\\\') | replace('*/', '*\\/') | replace('\r', '\\r') | replace('\t', '\\t') | replace('\x00', '\\0') | indent(' * ', true) }}
+ */{% endmacro %}
+{% block module_documentation %}{{ documentation(content.module_description | default(content.description)) }}{% endblock %}
+{% block code %}
+{{ documentation(content.description) }}
+export class {{ content.class_name }}{% if content.implements | default([]) %} implements {{ content.implements | join(', ') }}{% endif %} {
+{% for field in content.fields | default([]) %}
+{% if field.description is defined %}{{ documentation(field.description) | indent(2, true) }}
+{% endif %}  public {% if field.optional %}declare {% endif %}{% if field.readonly %}readonly {% endif %}{{ field.name }}{% if field.optional %}?{% endif %}: {{ field.type }};
+{% endfor %}
+
+  constructor(data: {{ '{' }}{% if content.fields | default([]) %}
+{% for field in content.fields %}    {{ field.name }}{% if field.optional %}?{% endif %}: {{ field.type }};
+{% endfor %}  {% endif %}{{ '}' }}) {
+{% for field in content.fields | default([]) %}
+{% if field.optional %}    if ("{{ field.name }}" in data) {
+      this.{{ field.name }} = data.{{ field.name }};
+    }
+{% else %}    this.{{ field.name }} = data.{{ field.name }};
+{% endif %}{% endfor %}  }
+}
+{% endblock %}

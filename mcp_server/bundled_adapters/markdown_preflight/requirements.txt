@@ -1,0 +1,3 @@
+# Stdlib-only adapter package.
+# The adapter interpreter is provisioned by the execution runtime.
+# No third-party dependency or unsupported version range is declared.

@@ -1,0 +1,72 @@
+checks:
+  python_syntax:
+    adapter_id: python_syntax
+    capability: syntax
+    timeout_seconds: 30
+    default_args: []
+  markdown_document:
+    adapter_id: markdown_preflight
+    capability: document
+    timeout_seconds: 30
+    default_args: []
+  markdown_body:
+    adapter_id: markdown_preflight
+    capability: body
+    timeout_seconds: 30
+    default_args: []
+  typescript_syntax:
+    adapter_id: typescript_syntax
+    capability: syntax
+    timeout_seconds: 30
+    default_args: []
+  commit_message:
+    adapter_id: commitlint
+    capability: message
+    timeout_seconds: 30
+    default_args: []
+  python_format:
+    adapter_id: ruff
+    capability: format
+    timeout_seconds: 60
+    default_args: []
+  python_lint:
+    adapter_id: ruff
+    capability: lint
+    timeout_seconds: 60
+    default_args: []
+  python_types:
+    adapter_id: mypy
+    capability: types
+    timeout_seconds: 120
+    default_args: []
+  python_pyright:
+    adapter_id: pyright
+    capability: types
+    timeout_seconds: 120
+    default_args: ["--level","warning","--warnings"]
+  markdown_links:
+    adapter_id: lychee
+    capability: links
+    timeout_seconds: 60
+    default_args: ["--offline","--cache=false","--include-fragments"]
+profiles:
+  python_preflight:
+    checks: ["python_syntax"]
+  typescript_preflight:
+    checks: ["typescript_syntax"]
+  markdown_document:
+    checks: ["markdown_document"]
+  markdown_body:
+    checks: ["markdown_body"]
+  commit_preflight:
+    checks: ["commit_message"]
+  python_review:
+    checks: ["python_format","python_lint","python_types","python_pyright"]
+  markdown_link_review:
+    checks: ["markdown_links"]
+profiles_by_extension:
+  ".py": python_preflight
+  ".ts": typescript_preflight
+  ".md": markdown_body
+run_checks:
+  default_profile: python_review

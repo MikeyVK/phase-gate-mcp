@@ -42,9 +42,12 @@ global:
 
     cache_unavailable_truncation_notice: "Output truncated; complete details are unavailable because cache publication failed."
 
+  cache_read_budget_chars: 6000
+
   next_instruction_texts:
 
-    uri_reference: "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*"
+    uri_reference: "Result: pgmcp://cache/runs/{run_id}"
+    pagination_reference: "Paged result; see pgmcp://docs/cache-reading."
 
     context_reset: "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
 
@@ -54,7 +57,7 @@ global:
 
     todo_discipline: "📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
 
-    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_quality_gates(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
+    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_checks(scope='targets', targets={modified_files}) to verify that the applied fixes now pass all checks."
 
     cache_publication_failed: "*(Cache publication failed. Full details dumped inline)*"
 
@@ -150,7 +153,7 @@ global:
 
         pytest_failed_verbose_suggestion: "Some tests failed. To see detailed tracebacks and stdout/stderr, rerun with verbose=True. Suggested command: run_tests(path='{failing_files}', verbose=True)"
 
-        quality_gates_failed_verbose_suggestion: "Some quality gates failed. Rerun the tool with verbose=True to retrieve complete linter/checker tracebacks. Suggested command: run_quality_gates({scope_part}, verbose=True)"
+        checks_failed_verbose_suggestion: "Some checks failed. Rerun the tool with verbose=True to retrieve complete tracebacks. Suggested command: run_checks(scope={scope_part}, verbose=True)"
 
       recoveries:
 
@@ -184,7 +187,6 @@ global:
 
         docs_dir_not_found_add_files: "Add markdown files to document project"
 
-        quality_state_write_failed_recovery: "Quality state write failed — retry the quality gates run: {error_details}"
 
         pytest_timeout_recovery: "Tests timed out after {timeout}s. Run a smaller subset or raise the timeout."
 
@@ -213,25 +215,24 @@ global:
         scaffold_validation_failed: "Validation failed: {error_details}"
 
 tools:
-  auto_fix:
+  apply_fixes:
     category: mutation
-    max_items: 20
-    template_success: |
-      **Auto-Fix Run Completed Successfully**
-      - Gates executed: {gates_executed_count}
-      - Files modified: {modified_files_count}
-    template_failure: |
-      **Auto-Fix Run Failed**
-      - Error: {error_message}
-      - Gates executed: {gates_executed_count}
-      - Files modified: {modified_files_count}
+    max_items: 5
+    template_success: "{requested_scope}"
+    template_failure: "{requested_scope}: {error_code}"
     collections:
-      - field: gates_executed
-        heading: "Gates executed:"
-        item_template: "- {item}"
-      - field: modified_files
-        heading: "Files modified:"
-        item_template: "- {item}"
+      - field: results
+        heading: "Fixes"
+        item_template: "{fix_id}: {status}; args_source={args_source}"
+    enum_cases:
+      - field: error_code
+        cases:
+          no_configured_fixes: "No fix bindings configured."
+          selection_invalid: "Fix selection invalid."
+          scope_resolution_failed: "Fix scope could not be resolved."
+          adapter_request_rejected: "Internal fix request rejected."
+          operation_interrupted: "Fix operation interrupted."
+          termination_unconfirmed: "Fix termination unconfirmed."
   health_check:
     category: query
     template_success: |
@@ -575,87 +576,51 @@ tools:
       - "context_reset"
   scaffold_artifact:
     category: scaffold
-    max_items: 20
-    template_success: "Scaffolded artifact '{name}' of type '{artifact_type}' successfully."
-    template_failure: "Scaffolding '{name}' of type '{artifact_type}' failed: {error_message}."
-    collections:
-      - field: files_created
-        heading: "Files created:"
-        item_template: "- {item}"
-      - field: missing_fields
-        heading: "Missing fields:"
-        item_template: "- {item}"
-      - field: provided_fields
-        heading: "Provided fields:"
-        item_template: "- {item}"
+    template_success: "Scaffolded {template_id}: {output_path}; validation={validation_status}."
+    template_failure: "Scaffolding {template_id} failed: {error_code}."
   scaffold_schema:
     category: query
-    template_success: "Retrieved schema for artifact type '{artifact_type}' successfully."
-  run_quality_gates:
+    template_success: "Retrieved schema for {template_id} successfully."
+  run_checks:
     category: quality
-    max_items: 10
-    template_success: |
-      Quality gate execution completed.
-      - Scope: {scope}
-      - File count: {file_count}
-      - Overall pass: {overall_pass}
-    template_failure: |
-      Quality gate execution completed.
-      - Scope: {scope}
-      - File count: {file_count}
-      - Overall pass: {overall_pass}
+    max_items: 5
+    template_success: "{requested_scope}: {run_status}; profile={selected_profile}"
+    template_failure: "{requested_scope}: {run_status}; error={error_code}"
     collections:
-      - field: gates
-        heading: "Gate results:"
-        item_template: "- {name}: status={status}, passed={passed}, score={score}"
-        children:
-          - field: findings
-            heading: "  Findings:"
-            item_template: "  - {file}:{line}:{column} [{code}] {message} (severity={severity}, fixable={fixable})"
+      - field: results
+        heading: "Checks"
+        item_template: "{check_id}: {status}; args_source={args_source}"
+    enum_cases:
+      - field: error_code
+        cases:
+          no_configured_checks: "No checks are configured."
+          default_profile_missing: "No default check profile is configured."
+          selection_invalid: "The check selection is invalid."
+          branch_basis_unavailable: "The branch comparison basis is unavailable."
+          scope_resolution_failed: "The requested scope could not be resolved."
+          adapter_request_rejected: "An adapter rejected the check request."
+          operation_interrupted: "The operation was interrupted."
+          termination_unconfirmed: "Process termination was not confirmed."
   run_tests:
     category: testing
     max_items: 5
-    template_success: |
-      Tests completed (exit {exit_code}).
-      - Passed: {passed_count}
-      - Failed: {failed_count}
-      - Skipped: {skipped_count}
-      - Errors: {errors_count}
-      - Duration: {duration_seconds}s
-      - Coverage: {coverage_pct}%
-    template_failure: |
-      Tests completed (exit {exit_code}): {error_message}
-      - Passed: {passed_count}
-      - Failed: {failed_count}
-      - Skipped: {skipped_count}
-      - Errors: {errors_count}
-      - Duration: {duration_seconds}s
-      - Coverage: {coverage_pct}%
+    template_success: "{requested_scope}"
+    template_failure: "{requested_scope}: {error_code}"
     collections:
-      - field: failures
-        heading: "Failures:"
-        item_template: "- {test_id} ({location}): {short_reason} [collection error: {is_collection_error}]"
+      - field: results
+        heading: "Tests"
+        item_template: "{test_id}: {status}; args_source={args_source}"
+    enum_cases:
+      - field: error_code
+        cases:
+          no_configured_tests: "No test bindings configured."
+          no_active_tests: "No active test bindings."
+          selection_invalid: "Test selection invalid."
+          scope_resolution_failed: "Test scope could not be resolved."
+          adapter_request_rejected: "Internal test request rejected."
+          operation_interrupted: "Test operation interrupted."
+          termination_unconfirmed: "Test termination unconfirmed."
   safe_edit_file:
     category: mutation
-    max_items: 10
-    template_success: "File '{path}' processed in '{mode}' mode (validation passed: {passed}, written: {written}, diff available: {has_diff})."
-    template_failure: "File '{path}' was rejected in '{mode}' mode (validation passed: {passed}, written: {written}): {error_message}"
-    collections:
-      - field: issues
-        heading: "Validation issues:"
-        item_template: "- [{severity}] {message} (line {line}, column {column}, code {code})"
-  validate_template:
-    category: query
-    max_items: 10
-    template_success: |
-      Template validation completed.
-      - Passed: {passed}
-      - Errors: {errors_count}
-    template_failure: |
-      Template validation completed.
-      - Passed: {passed}
-      - Errors: {errors_count}
-    collections:
-      - field: errors
-        heading: "Validation errors:"
-        item_template: "- [{severity}] {message}"
+    template_success: "Edited {path}; written={written}; validation={validation_status}."
+    template_failure: "Edit {path} failed: {error_code}."

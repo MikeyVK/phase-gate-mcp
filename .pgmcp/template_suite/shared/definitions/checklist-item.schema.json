@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Explicit checklist item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "text",
+    "checked"
+  ],
+  "properties": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caller-owned checklist text."
+    },
+    "checked": {
+      "type": "boolean",
+      "description": "Explicit authored check state; never inferred evidence."
+    }
+  }
+}

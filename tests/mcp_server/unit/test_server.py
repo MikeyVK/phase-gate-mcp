@@ -20,7 +20,7 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel
 
-from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
+from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
@@ -34,12 +34,13 @@ from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
     TransitionPhaseTool,
 )
+from mcp_server.tools.pr_tools import SubmitPRTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
     get_default_server_root,
+    make_dispatch_server,
     make_phase_state_engine,
     make_project_manager,
-    make_test_server,
 )
 
 TRANSITION_ADVISORY_NOTE = (
@@ -50,11 +51,19 @@ TRANSITION_ADVISORY_NOTE = (
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
-    shutil.copytree(
-        repo_root / get_default_server_root(),
-        workspace_root / get_default_server_root(),
-        dirs_exist_ok=True,
-    )
+    source_root = repo_root / get_default_server_root()
+    target_root = workspace_root / get_default_server_root()
+    target_root.mkdir(parents=True, exist_ok=True)
+    for directory_name in ("config", "template_suite"):
+        shutil.copytree(
+            source_root / directory_name,
+            target_root / directory_name,
+            dirs_exist_ok=True,
+        )
+    for file_name in ("state.json", "deliverables.json"):
+        source_file = source_root / file_name
+        if source_file.exists():
+            shutil.copy2(source_file, target_root / file_name)
     deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
     if deliverables_file.exists():
         try:
@@ -91,12 +100,15 @@ def _patch_server_settings(
     settings.server.name = "test-server"
     settings.server.workspace_root = resolved_workspace_root
     settings.server.config_root = None
+    settings.server.template_root = str(
+        Path(__file__).resolve().parents[3] / ".pgmcp" / "template_suite"
+    )
     settings.server.server_root_dir = server_root_dir
     settings.github.token = token
     settings.github.owner = "test"
     settings.github.repo = "repo"
     settings.logging.level = "INFO"
-    settings.logging.audit_log = ".logs/mcp_audit.log"
+    settings.logging.audit_log = None
 
     mock.return_value = settings
     mock.from_env.return_value = settings
@@ -106,9 +118,7 @@ def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
     bootstrapper = ServerBootstrapper(settings)
     configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
     workspace_root = Path(settings.server.workspace_root)
-    server_root = workspace_root / settings.server.server_root_dir
-    template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
-    managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+    managers = bootstrapper._build_manager_graph(configs)  # type: ignore[reportPrivateUsage]
     return managers, workspace_root
 
 
@@ -202,12 +212,16 @@ def _make_transition_advisory_execute(
 class TestServerToolRegistration:
     """Tests for server tool registration."""
 
-    def test_github_tools_always_registered(self) -> None:
+    def test_github_tools_always_registered(self, tmp_path: Path) -> None:
         """GitHub tools should always be registered, even without token."""
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
-            _patch_server_settings(mock_settings_cls)
+            _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            settings = mock_settings_cls.from_env.return_value
+            settings.server.config_root = str(
+                Path(__file__).resolve().parents[3] / ".pgmcp" / "config"
+            )
 
-            server = make_test_server()
+            server = ServerBootstrapper(settings).bootstrap_target()
             tool_names = [t.name for t in server.tools]
 
             assert "create_issue" in tool_names
@@ -216,7 +230,7 @@ class TestServerToolRegistration:
             assert "close_issue" in tool_names
             assert "get_pr" not in tool_names
 
-    def test_github_tools_registered_with_token(self) -> None:
+    def test_github_tools_registered_with_token(self, tmp_path: Path) -> None:
         """GitHub tools should be registered when token is configured."""
         with (
             patch("mcp_server.config.settings.Settings") as mock_settings_cls,
@@ -224,13 +238,19 @@ class TestServerToolRegistration:
             patch("mcp_server.tools.pr_tools.GitHubManager") as mock_pr_manager,
             patch("mcp_server.tools.label_tools.GitHubManager") as mock_label_manager,
         ):
-            _patch_server_settings(mock_settings_cls, token="test-token")
+            _patch_server_settings(
+                mock_settings_cls, workspace_root=str(tmp_path), token="test-token"
+            )
+            settings = mock_settings_cls.from_env.return_value
+            settings.server.config_root = str(
+                Path(__file__).resolve().parents[3] / ".pgmcp" / "config"
+            )
 
             mock_res_manager.return_value = MagicMock()
             mock_pr_manager.return_value = MagicMock()
             mock_label_manager.return_value = MagicMock()
 
-            server = make_test_server()
+            server = ServerBootstrapper(settings).bootstrap_target()
             tool_names = [t.name for t in server.tools]
 
             assert "create_issue" in tool_names
@@ -272,7 +292,7 @@ class TestServerToolRegistration:
                 mock_settings_cls.from_env.return_value
             )
 
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [factory.create_tool(DummyTool())]
 
@@ -339,7 +359,7 @@ class TestServerToolRegistration:
                 mock_settings_cls.from_env.return_value
             )
 
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             manager = MagicMock()
             manager.git_config = managers.git_manager.git_config
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -386,7 +406,21 @@ class TestServerToolRegistration:
                 token="test-token",
             )
 
-            server = make_test_server()
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
+            server.tools = [
+                ToolFactory(managers.enforcement_runner, workspace_root).create_tool(
+                    SubmitPRTool(
+                        git_manager=managers.git_manager,
+                        github_manager=managers.github_manager,
+                        pr_status_writer=managers.pr_status_cache,
+                        merge_readiness_context=MagicMock(),
+                        branch_parent_reader=MagicMock(),
+                    )
+                )
+            ]
             handler = server.server.request_handlers[CallToolRequest]
 
             with patch(
@@ -437,7 +471,7 @@ class TestServerToolRegistration:
                 mock_settings_cls.from_env.return_value
             )
 
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -494,7 +528,7 @@ class TestServerToolRegistration:
                 mock_settings_cls.from_env.return_value
             )
 
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -570,7 +604,7 @@ class TestServerToolRegistration:
                 mock_settings_cls.from_env.return_value
             )
 
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -624,7 +658,7 @@ class TestServerToolRegistration:
                 mock_settings_cls.from_env.return_value
             )
 
-            server = make_test_server()
+            server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
@@ -687,7 +721,7 @@ class TestServerToolRegistration:
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
             injected_settings = mock_settings_cls.from_env.return_value
-            server = make_test_server(settings=injected_settings)
+            server = make_dispatch_server(injected_settings)
             mock_settings_cls.from_env.reset_mock()
 
             with (
@@ -710,10 +744,10 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
     from pydantic import BaseModel  # noqa: PLC0415
 
     from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
-    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
-    from mcp_server.presenters.validation_resource_presenter import (  # noqa: PLC0415
-        ValidationResourcePresenter,
+    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
+        SchemaResourcePresenter,
     )
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
 
     class DummyTool(ICoreTool[BaseModel, ToolResult]):
@@ -753,13 +787,13 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         text_presenter = TextPresenter(config_data=config_data)
         presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
 
         managers, workspace_root = _get_test_bootstrap_context(
             mock_settings_cls.from_env.return_value
         )
-        server = make_test_server()
+        server = make_dispatch_server(mock_settings_cls.from_env.return_value)
         server.presenter = presenter
         tool = DummyTool()
         cache_manager = ResponseCacheManager()
@@ -815,3 +849,20 @@ def test_server_constructor_clean() -> None:
             publisher=None,
         )
         assert server is not None
+
+
+@pytest.mark.asyncio
+async def test_degraded_health_tool_uses_normalized_pipeline(tmp_path: Path) -> None:
+    """The config-error fallback remains callable through the outer tool contract."""
+    from mcp_server.config.settings import ServerSettings, Settings  # noqa: PLC0415
+    from mcp_server.schemas.tool_outputs import HealthCheckOutput  # noqa: PLC0415
+    from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
+
+    server = DegradedMCPServer(
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))), "Invalid configuration"
+    )
+    assert [tool.name for tool in server.tools] == ["health_check"]
+    execution = await server.tools[0].execute({}, NoteContext())
+    assert isinstance(execution.operation, HealthCheckOutput)
+    assert execution.attachments == ()
+    assert "Invalid configuration" in str(execution.operation)

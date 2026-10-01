@@ -1,0 +1,35 @@
+adapter_id: ruff
+version: 1.0.0
+files:
+  - check.py
+  - fix.py
+  - requirements.txt
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      format:
+        inputs:
+          - selection
+      lint:
+        inputs:
+          - selection
+  fix:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: fix.py
+    capabilities:
+      format:
+        addresses:
+          - adapter_id: ruff
+            capability: format
+      lint:
+        addresses:
+          - adapter_id: ruff
+            capability: lint

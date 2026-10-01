@@ -49,8 +49,8 @@ class CreateIssueInput(BaseModel):
     config is delegated to GitHubManager.validate_issue_params(). No free-form
     labels are accepted; they are assembled internally by CreateIssueTool.
 
-    The body field accepts pre-rendered markdown. Use scaffold_artifact(artifact_type='issue')
-    to generate the body before calling this tool.
+    The body field accepts caller-authored Markdown for publication. A saved template
+    artifact includes provenance framing; that framing is not part of the publication body.
     """
 
     issue_type: str = Field(..., description="Issue type: feature, bug, hotfix, chore, docs, epic")
@@ -66,8 +66,8 @@ class CreateIssueInput(BaseModel):
     body: str = Field(
         ...,
         description=(
-            "Issue body as pre-rendered markdown. "
-            "Use scaffold_artifact(artifact_type='issue') to generate."
+            "Caller-authored Markdown body for publication, separate from the "
+            "provenance framing of any saved template artifact."
         ),
     )
     is_epic: bool = Field(default=False, description="Mark this issue as an epic")

@@ -13,7 +13,6 @@ import pytest
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitPushResult
-from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.schemas.github_models import IssueReadModel
 
 # Git Tools
@@ -44,11 +43,6 @@ from mcp_server.tools.health_tools import HealthCheckInput, HealthCheckTool
 # GitHub Tools (imported here for availability, require manager injection)
 from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
-
-# Quality Tools
-from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
-from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
-from mcp_server.tools.test_tools import RunTestsTool
 
 
 def make_mock_git_config() -> MagicMock:
@@ -92,44 +86,6 @@ def make_mock_label_config() -> MagicMock:
     return label_config
 
 
-def make_mock_qa_manager() -> MagicMock:
-    manager = MagicMock()
-    manager.resolve_scope.return_value = ["test.py"]
-    manager.run_quality_gates.return_value = {
-        "overall_pass": True,
-        "summary": {
-            "passed": 1,
-            "failed": 0,
-            "skipped": 0,
-            "total_violations": 0,
-            "auto_fixable": 0,
-        },
-        "gates": [
-            {
-                "name": "Linting",
-                "passed": True,
-                "status": "passed",
-                "score": "10/10",
-                "issues": [],
-            }
-        ],
-    }
-    manager.build_compact_result.return_value = {
-        "overall_pass": True,
-        "duration_ms": 0,
-        "gates": [
-            {
-                "id": "Linting",
-                "passed": True,
-                "skipped": False,
-                "status": "passed",
-                "violations": [],
-            }
-        ],
-    }
-    return manager
-
-
 def make_create_branch_tool(manager: MagicMock | None = None) -> CreateBranchTool:
     return CreateBranchTool(manager=manager or make_mock_git_manager())
 
@@ -164,10 +120,6 @@ def make_git_delete_branch_tool(manager: MagicMock | None = None) -> GitDeleteBr
 
 def make_git_stash_tool(manager: MagicMock | None = None) -> GitStashTool:
     return GitStashTool(manager=manager or make_mock_git_manager())
-
-
-def make_run_quality_gates_tool(manager: MagicMock | None = None) -> RunQualityGatesTool:
-    return RunQualityGatesTool(manager=manager or make_mock_qa_manager())
 
 
 def make_create_issue_tool(manager: MagicMock) -> CreateIssueTool:
@@ -219,10 +171,7 @@ def make_core_tools() -> list[object]:
         make_git_merge_tool(),
         make_git_push_tool(),
         make_git_delete_branch_tool(),
-        make_run_quality_gates_tool(),
         HealthCheckTool(),
-        RunTestsTool(runner=PytestRunner()),
-        ScaffoldSchemaTool(manager=MagicMock()),
     ]
 
 
@@ -406,24 +355,6 @@ class TestGitToolsIntegration:
         assert "stash@{0}" in result.stashes[0]
 
 
-class TestQualityToolsIntegration:
-    """Integration tests for Quality tools."""
-
-    @pytest.mark.asyncio
-    async def test_run_quality_gates_tool_flow(self) -> None:
-        """Test quality gates tool complete flow."""
-        mock_manager = make_mock_qa_manager()
-
-        tool = make_run_quality_gates_tool(mock_manager)
-        result = await tool.execute(
-            RunQualityGatesInput(scope="files", files=["test.py"]), NoteContext()
-        )
-
-        assert result.overall_pass is True
-        assert len(result.gates) > 0
-        assert result.gates[0].passed is True
-
-
 class TestDevelopmentToolsIntegration:
     """Integration tests for Development tools."""
 
@@ -515,21 +446,9 @@ class TestToolSchemas:
             assert schema is not None or not schema, f"{tool.name} missing schema"
             assert isinstance(schema, dict), f"{tool.name} schema not a dict"
 
-    def test_all_quality_tools_have_schemas(self) -> None:
-        """Verify all Quality tools have input schemas."""
-        tools = [
-            make_run_quality_gates_tool(),
-        ]
-
-        for tool in tools:
-            schema = tool.input_schema
-            assert schema is not None or not schema, f"{tool.name} missing schema"
-            assert isinstance(schema, dict), f"{tool.name} schema not a dict"
-
     def test_all_dev_tools_have_schemas(self) -> None:
         tools = [
             HealthCheckTool(),
-            RunTestsTool(runner=PytestRunner()),
         ]
         for tool in tools:
             schema = tool.input_schema

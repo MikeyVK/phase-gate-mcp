@@ -1,0 +1,29 @@
+{% extends "shared/templates/bases/tier2_markdown_tracking.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+
+{% block tracking_body %}
+{{ sections.prose('Problem', content.problem) }}
+{% if content.summary is defined %}
+
+{{ sections.prose('Summary', content.summary) }}
+{% endif %}
+{% if content.expected is defined %}
+
+{{ sections.prose('Expected Behavior', content.expected) }}
+{% endif %}
+{% if content.actual is defined %}
+
+{{ sections.prose('Actual Behavior', content.actual) }}
+{% endif %}
+{% if content.context is defined %}
+
+{{ sections.prose('Context', content.context) }}
+{% endif %}
+{% if content.reproduction_steps is defined %}
+
+{{ sections.heading('Reproduction Steps') }}
+
+{% for step in content.reproduction_steps %}{{ loop.index }}. {{ step | indent((loop.index | string | length) + 2) }}
+{% endfor %}
+{% endif %}
+{% endblock %}

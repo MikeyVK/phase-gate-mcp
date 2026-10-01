@@ -1,0 +1,10 @@
+{% extends "shared/templates/bases/tier1_tracking.jinja2" %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% block comment_start %}<!--{% endblock %}
+{% block comment_end %} -->{% endblock %}
+{% block tracking_after %}
+{% if content.related_docs is defined %}{{ sections.heading('Related Documents') }}
+
+{{ links.reference_list(content.related_docs, 'related') }}
+{% endif %}{% endblock %}

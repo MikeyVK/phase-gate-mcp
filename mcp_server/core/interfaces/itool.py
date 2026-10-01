@@ -8,17 +8,23 @@ Interface for outer untyped dictionary tool execution.
 """
 
 # Standard library
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Generic, Protocol, runtime_checkable
 
 # Third-party
 from pydantic import BaseModel
+from typing_extensions import TypeVar
+
+from mcp_server.core.interfaces.tool_input_contract import JsonObject
 
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import ToolExecution
+
+TOutput_co = TypeVar("TOutput_co", bound=BaseModel, covariant=True, default=BaseModel)
 
 
 @runtime_checkable
-class ITool(Protocol):
+class ITool(Protocol, Generic[TOutput_co]):
     """Interface for outer untyped dictionary tool execution."""
 
     @property
@@ -41,6 +47,6 @@ class ITool(Protocol):
         """Input schema of the tool."""
         ...
 
-    async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
+    async def execute(self, params: JsonObject, context: NoteContext) -> ToolExecution[TOutput_co]:
         """Execute the contract operation."""
         ...

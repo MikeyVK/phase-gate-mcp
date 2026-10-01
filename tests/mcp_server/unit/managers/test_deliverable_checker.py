@@ -1,5 +1,3 @@
-from tests.mcp_server.test_support import get_default_server_root
-
 # tests/mcp_server/unit/managers/test_deliverable_checker.py
 """
 Tests for DeliverableChecker and WorkphasesConfig schema extension.
@@ -22,6 +20,7 @@ from mcp_server.managers.deliverable_checker import (
     DeliverableChecker,
     DeliverableCheckError,
 )
+from tests.mcp_server.test_support import get_default_server_root
 
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 

@@ -1,158 +1,63 @@
-# Config Consumers
-<!-- template=architecture version=8b924f78 created=2026-03-13T19:25Z updated=2026-03-13 -->
+<!-- docs/manuals/architectural_diagrams/10_config_consumers.md -->
+# Configuration Consumers
 
-**Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-03-13
+**Status:** Current runtime overview; this is not an exhaustive consumer registry.
+**Last Updated:** 2026-09-24
 
----
+## Purpose and boundary
 
-## Purpose
+Show the configuration and template-suite dependencies for V3 discovery, validation,
+rendering, and execution. The diagram summarizes the relevant composition seam; exact
+fields and package inventory remain owned by their schemas and configuration files.
 
-Document every config class in `mcp_server/config/` and identify which managers and
-tools consume it — providing a full cross-reference for impact analysis when a config
-class changes.
+## Resolved startup dependencies
 
-## Scope
-
-**In Scope:** All 16 config files, their primary classes, and their consumers (managers + tools)
-
-**Out of Scope:** Config file format details, Pydantic field definitions, runtime load order
-
----
-
-## 1. Two Config Domains
-
-The config layer splits into two domains with different load mechanisms.
+The server resolves workspace, server-data, configuration, and template-suite roots
+from settings. An explicit configuration or suite root remains the selected root; there
+is no second mutable artifact registry or scaffold-metadata side channel.
 
 ```mermaid
-graph LR
-    subgraph Python["Python Settings (env / .env)"]
-        SS["ServerSettings<br/>settings.py"]
-        GC["GitConfig<br/>git_config.py"]
-        QC["QualityConfig<br/>quality_config.py"]
-        SMC["ScaffoldMetadataConfig<br/>scaffold_metadata_config.py"]
-        TC["template_config<br/>template_config.py"]
-    end
-
-    subgraph YAML["YAML Runtime Config (.pgmcp/config/)"]
-        WC["WorkflowConfig<br/>workflows.py"]
-        WPC["WorkphasesConfig<br/>workphases_config.py"]
-        ARC["ArtifactRegistryConfig<br/>artifact_registry_config.py"]
-        LC["LabelConfig<br/>label_config.py"]
-        IC["IssueConfig<br/>issue_config.py"]
-        MC["MilestoneConfig<br/>milestone_config.py"]
-        SC["ScopeConfig<br/>scope_config.py"]
-        CC["ContributorConfig<br/>contributor_config.py"]
-        PSC["ProjectStructureConfig<br/>project_structure.py"]
-        OPC["OperationPoliciesConfig<br/>operation_policies.py"]
-    end
+flowchart TD
+    Settings[Settings and resolved roots] --> Bootstrap[Server composition]
+    Bootstrap --> Admission[Admit complete runtime inputs]
+    Config[Effective config root] --> Loader[ConfigLoader]
+    Loader --> Admission
+    Suite[Configured template_suite root] --> Contracts[TemplateContractLoader]
+    Contracts --> Admission
+    Admission -->|checks profiles, adapter bindings and trust| Adapters[Adapter catalog]
+    Admission -->|packages, JSON Schemas, policies and shared graph| Catalog[Frozen resolved template catalog]
+    Catalog --> Discovery[scaffold_schema]
+    Catalog --> Scaffold[scaffold_artifact]
+    Catalog --> Edit[safe_edit_file]
+    Loader --> Checks[run_checks / run_tests / apply_fixes]
+    Adapters --> Checks
 ```
 
----
+`ConfigLoader` reads the modular check, test, and fix configuration and package
+contracts against the selected roots. Startup admission verifies that every referenced
+output profile and adapter capability is available, applies explicit workspace-adapter
+trust, resolves the suite graph, and publishes one coherent catalog and adapter
+capability set. A failure blocks publication; tools do not fall back to legacy
+`quality.yaml`, template-registry, or per-call configuration reads.
 
-## 2. Full Consumer Matrix
+## Consumer responsibilities
 
-### Python Settings
+| Consumer boundary | Consumes | Responsibility |
+|---|---|---|
+| `scaffold_schema` | Frozen template catalog | Discover one admitted package's identity, purpose, version, fingerprint, and JSON Schema |
+| `scaffold_artifact` | Frozen catalog, artifact identity, check service, target resolver | Validate inputs, render content with provenance, check the configured profile, and persist according to target policy |
+| `safe_edit_file` | Frozen catalog/profile selection and validation service | Construct the requested edit and apply its enforce/report validation policy |
+| `run_checks`, `run_tests`, `apply_fixes` | Modular config and adapter capabilities | Execute only configured bindings under their tool-specific scope and outcomes |
 
-| Config Class | File | Primary Consumer(s) |
-|-------------|------|---------------------|
-| `ServerSettings` / `settings` | `settings.py` | `test_tools`, `code_tools`, `discovery_tools`, `ArtifactManager` |
-| `GitConfig` | `git_config.py` | `GitManager`, `PhaseStateEngine`, `git_tools`, `issue_tools`, `pr_tools`, `cycle_tools`, `git_analysis_tools` |
-| `QualityConfig` | `quality_config.py` | `QAManager` |
-| `ScaffoldMetadataConfig` | `scaffold_metadata_config.py` | `ScaffoldMetadataParser` (scaffolding layer) |
-| `template_config` (module) | `template_config.py` | `ArtifactManager`, `issue_tools` |
+These rows are a focused dependency view, not an exhaustive list of settings, tools, or
+all consumers. GitHub, workflow, and logging configuration continue to have their
+independent owners and are outside this scaffolding/configuration seam.
 
-### YAML Runtime Config
+## Source references
 
-| Config Class | YAML File | Primary Consumer(s) |
-|-------------|-----------|---------------------|
-| `WorkflowConfig` | `.pgmcp/config/workflows.yaml` | `PhaseStateEngine`, `ProjectManager`, `project_tools`, `issue_tools` |
-| `WorkphasesConfig` | `.pgmcp/config/workphases.yaml` or similar | `PhaseStateEngine`, `PhaseContractResolver` |
-| `ArtifactRegistryConfig` | `.pgmcp/templates/config.yaml` | `ArtifactManager` |
-| `LabelConfig` | `.pgmcp/config/labels.yaml` | `label_tools`, `issue_tools` |
-| `IssueConfig` | `.pgmcp/config/issue_config.yaml` | `issue_tools` |
-| `MilestoneConfig` | `.pgmcp/config/milestone_config.yaml` | `issue_tools` |
-| `ScopeConfig` | `.pgmcp/config/scope_config.yaml` | `issue_tools` |
-| `ContributorConfig` | `.pgmcp/config/contributors.yaml` | `issue_tools` |
-| `ProjectStructureConfig` | `.pgmcp/config/project_structure.yaml` | `ProjectManager` |
-| `OperationPoliciesConfig` | `.pgmcp/config/operation_policies.yaml` | `QAManager` (indirect) |
-
----
-
-## 3. Per-Manager Config Usage
-
-Shows which config classes each manager directly imports.
-
-| Manager | Config imports |
-|---------|---------------|
-| `GitManager` | `GitConfig` |
-| `PhaseStateEngine` | `GitConfig`, `WorkflowConfig`, `WorkphasesConfig` |
-| `PhaseContractResolver` | `WorkphasesConfig` |
-| `ProjectManager` | `WorkflowConfig`, `ProjectStructureConfig` |
-| `QAManager` | `QualityConfig`, `OperationPoliciesConfig` |
-| `ArtifactManager` | `ArtifactRegistryConfig`, `ServerSettings`, `template_config` |
-| `GitHubManager` | *(GitHub token from env, no typed config class)* |
-| `EnforcementRunner` | *(reads enforcement.yaml via GitConfig path)* |
-| `DeliverableChecker` | *(receives CheckSpec list from PhaseContractResolver — no direct config import)* |
-
----
-
-## 4. Per-Tool Config Usage
-
-Tools that bypass managers and import config directly.
-
-| Tool file | Direct config imports |
-|----------|-----------------------|
-| `git_tools` | `GitConfig` |
-| `issue_tools` | `WorkflowConfig`, `LabelConfig`, `IssueConfig`, `MilestoneConfig`, `ScopeConfig`, `ContributorConfig`, `template_config` |
-| `pr_tools` | `GitConfig` |
-| `cycle_tools` | `GitConfig` |
-| `git_analysis_tools` | `GitConfig` |
-| `test_tools` | `ServerSettings` |
-| `code_tools` | `ServerSettings` |
-| `discovery_tools` | `ServerSettings` |
-| `label_tools` | `LabelConfig` |
-| `phase_tools` | *(via managers only)* |
-| `quality_tools` | *(via QAManager only)* |
-| `validation_tools` | *(via QAManager only)* |
-| `scaffold_artifact` | *(via ArtifactManager only)* |
-
----
-
-## Known Architectural Issues
-
-| ID | Severity | Description |
-|----|----------|-------------|
-| RC-6 | High | `GitConfig` is consumed by tools directly, bypassing manager abstraction — changes to git config propagate unpredictably |
-| RC-1 | Medium | No single registry maps config class → all consumers; this document is the only cross-reference |
-| CFG-1 | Low | `GitHubManager` reads the GitHub token from env rather than a typed `GitHubConfig` class, making it invisible in this matrix |
-| CFG-2 | Low | `issue_tools` imports 6 separate config classes directly — the largest direct-config consumer; candidate for consolidation into a manager |
-
----
-
-## Constraints & Decisions
-
-| Decision | Rationale | Alternatives Rejected |
-|----------|-----------|----------------------|
-| Constructor injection for all managers | Testable; config can be mocked per test | Global singleton (hard to override in tests) |
-| YAML files loaded at startup, not per-call | Avoids repeated I/O on every tool invocation | Per-call load (performance penalty on high-frequency calls) |
-| Pydantic for Python settings | Type-safe, validated on startup, env-var override support | `configparser` / raw dict (no validation) |
-
----
-
-## Related Documentation
-
-- **[01_module_decomposition.md][related-1]**
-- **[05_config_layer.md][related-2]**
-- **[09_scaffolding_subsystem.md][related-3]**
-
-[related-1]: 01_module_decomposition.md
-[related-2]: 05_config_layer.md
-[related-3]: 09_scaffolding_subsystem.md
----
-
-## Version History
-
-| 1.1 | 2026-07-08 | Agent | Reconcile `.phase-gate` with `.pgmcp/config` and fix relative links (#420) |
-| 1.0 | 2026-03-13 | Agent | Initial draft — full config consumer cross-reference |
+- [Config loader](../../../mcp_server/config/loader.py)
+- [Server bootstrap composition](../../../mcp_server/bootstrap.py)
+- [Suite-resolution design](../../development/issue460/design-suite-resolution.md)
+- [Configuration and execution design](../../development/issue460/design-execution-adapters.md)
+- [Scaffolding subsystem](09_scaffolding_subsystem.md)
+- [Config layer overview](05_config_layer.md)

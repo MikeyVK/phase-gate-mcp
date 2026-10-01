@@ -26,9 +26,7 @@ from mcp_server.config.schemas.workphases import PhaseDefinition
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
-    ArtifactRegistryConfig,
     OperationPoliciesConfig,
-    ProjectStructureConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -56,8 +54,6 @@ def _stub_validate_startup_args(
     return {
         "policies": OperationPoliciesConfig(version="1.0.0", operations={}),  # type: ignore[call-arg]
         "workflow": WorkflowConfig(version="1.0.0", workflows={}),
-        "structure": ProjectStructureConfig(version="1.0.0", directories={}),  # type: ignore[call-arg]
-        "artifact": ArtifactRegistryConfig(version="1.0.0", artifact_types=[]),
         "contracts": _contracts(pr_allowed_phase),
         "workphases": workphases or _workphases(),
     }

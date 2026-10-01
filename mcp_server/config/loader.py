@@ -2,34 +2,57 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Hashable, Iterable
 from pathlib import Path
 from typing import Any, TypeVar
 
 import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from mcp_server.config.schemas import (
-    ArtifactRegistryConfig,
+    ChecksConfig,
     ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
+    FixesConfig,
     GitConfig,
     IssueConfig,
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
     PresentationConfig,
-    ProjectStructureConfig,
-    QualityConfig,
-    ScaffoldMetadataConfig,
     ScopeConfig,
+    TestsConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.config.schemas.adapter_manifest import AdapterManifest, AdapterTrustConfig
+from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
+from mcp_server.config.schemas.template_suite import (
+    TemplateManifest,
+    TemplatePackageVersion,
+    TemplatePolicy,
+)
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
+
+
+class _AdapterYamlLoader(yaml.SafeLoader):
+    """Reject duplicate or non-string keys before immutable declaration admission."""
+
+    def construct_mapping(self, node: yaml.Node, deep: bool = False) -> dict[Hashable, object]:
+        if not isinstance(node, yaml.MappingNode):
+            raise yaml.YAMLError("adapter_mapping_required")
+        construct: Callable[[yaml.Node, bool], object] = self.construct_object
+        result: dict[Hashable, object] = {}
+        for key_node, value_node in node.value:
+            key = construct(key_node, deep)
+            if not isinstance(key, str) or key in result:
+                raise yaml.YAMLError("duplicate_or_invalid_adapter_key")
+            result[key] = construct(value_node, deep)
+        return result
 
 
 def normalize_config_root(config_root: Path | str) -> Path:
@@ -93,7 +116,14 @@ def resolve_config_root(
 class ConfigLoader:
     """Single YAML reader for migrated config schemas."""
 
-    def __init__(self, config_root: Path, template_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        config_root: Path,
+        template_root: Path | None = None,
+        *,
+        context_schema_reader: Callable[[Path], FrozenJsonObject] | None = None,
+    ) -> None:
+        self._context_schema_reader = context_schema_reader
         self.config_root = normalize_config_root(config_root)
         if template_root is not None:
             self.template_root = Path(template_root).resolve()
@@ -105,6 +135,71 @@ class ConfigLoader:
                 self.template_root = Path(settings.server.resolved_template_root)
             except Exception:  # noqa: BLE001
                 self.template_root = (self.config_root.parent / "templates").resolve()
+
+    def load_adapter_manifest(self, path: Path) -> AdapterManifest:
+        """Read one package declaration without legacy configuration-version rules."""
+        return self._load_declaration(AdapterManifest, path)
+
+    def load_adapter_trust(self) -> AdapterTrustConfig:
+        """Read the required owner policy from the explicitly selected config root."""
+        return self._load_declaration(AdapterTrustConfig, self.config_root / "adapters.yaml")
+
+    def load_checks_config(self) -> ChecksConfig:
+        """Read required checks.yaml without activating or reading legacy quality config."""
+        return self._load_declaration(
+            ChecksConfig, self.config_root / "checks.yaml", description="checks configuration"
+        )
+
+    def load_tests_config(self) -> TestsConfig:
+        """Read required test bindings without native dependency probing."""
+        return self._load_declaration(
+            TestsConfig, self.config_root / "tests.yaml", description="tests configuration"
+        )
+
+    def load_artifact_locations_config(self) -> ArtifactLocationsConfig:
+        """Read the required workspace artifact-location declaration."""
+        return self._load_declaration(
+            ArtifactLocationsConfig,
+            self.config_root / "artifacts.yaml",
+            description="artifact locations configuration",
+        )
+
+    def load_fixes_config(self) -> FixesConfig:
+        """Read required fix bindings without native dependency probing."""
+        return self._load_declaration(
+            FixesConfig, self.config_root / "fixes.yaml", description="fixes configuration"
+        )
+
+    def _load_declaration(
+        self, schema: type[SchemaT], path: Path, *, description: str = "adapter declaration"
+    ) -> SchemaT:
+        try:
+            with path.open(encoding="utf-8") as stream:
+                data = yaml.load(stream, Loader=_AdapterYamlLoader)
+            return schema.model_validate(data)
+        except (OSError, yaml.YAMLError, ValidationError) as exc:
+            raise ConfigError(f"Invalid {description}: {exc}", str(path)) from exc
+
+    def load_template_context_schema(self, schema_path: Path) -> FrozenJsonObject:
+        """Read an explicit prepared contract through the composition-supplied reader."""
+        if self._context_schema_reader is None:
+            raise ConfigError("template_context_reader_required")
+        return self._context_schema_reader(schema_path)
+
+    def load_template_manifest(self, path: Path) -> TemplateManifest:
+        """Read the closed package manifest without legacy registry/version fields."""
+        data, _ = self._load_yaml("manifest.yaml", config_path=path)
+        return TemplateManifest.model_validate(data)
+
+    def load_template_policy(self, path: Path) -> TemplatePolicy:
+        """Read package-owned evidence selection and persistence policy."""
+        data, _ = self._load_yaml("policy.yaml", config_path=path)
+        return TemplatePolicy.model_validate(data)
+
+    def load_template_version(self, path: Path) -> str:
+        """Read one canonical SemVer label, permitting one ordinary final newline."""
+        value = path.read_text(encoding="utf-8").removesuffix("\r\n").removesuffix("\n")
+        return TypeAdapter(TemplatePackageVersion).validate_python(value)
 
     def load_git_config(self, config_path: Path | None = None) -> GitConfig:
         data, resolved_path = self._load_yaml("git.yaml", config_path=config_path)
@@ -129,118 +224,6 @@ class ConfigLoader:
     def load_workphases_config(self, config_path: Path | None = None) -> WorkphasesConfig:
         data, resolved_path = self._load_yaml("workphases.yaml", config_path=config_path)
         return self._validate_schema(WorkphasesConfig, data, resolved_path)
-
-    def load_artifact_registry_config(
-        self,
-        config_path: Path | None = None,
-    ) -> ArtifactRegistryConfig:
-        legacy_dir = self.config_root / "artifacts"
-        if legacy_dir.is_dir():
-            raise ConfigError(
-                "Legacy config/artifacts/ directory is no longer supported under the "
-                "Template Packages contract. Fix: Move all artifact modular configuration "
-                "files to templates/config/ and delete this directory.",
-                file_path=str(legacy_dir),
-            )
-
-        if config_path is None:
-            resolved_path = Path(self.config_root) / "artifacts.yaml"
-        else:
-            resolved_path = Path(config_path).resolve()
-
-        if not resolved_path.exists():
-            raise ConfigError(
-                "Artifact registry not found: "
-                f"{resolved_path}. Expected: config/artifacts.yaml. "
-                "Fix: Create config/artifacts.yaml manually or restore from backup.",
-                file_path=str(resolved_path),
-            )
-
-        try:
-            with resolved_path.open(encoding="utf-8") as file_handle:
-                raw_loaded = yaml.safe_load(file_handle)
-        except yaml.YAMLError as exc:
-            raise ConfigError(
-                "Invalid YAML syntax: "
-                f"{exc}. Fix: Check YAML syntax; common issues are incorrect "
-                "indentation, missing colons, and unquoted special characters. "
-                "Use a YAML validator.",
-                file_path=str(resolved_path),
-            ) from exc
-
-        if raw_loaded is None:
-            raw_loaded = {}
-        elif not isinstance(raw_loaded, dict):
-            raise ConfigError(
-                f"Invalid YAML root in {resolved_path.name}: expected mapping",
-                file_path=str(resolved_path),
-            )
-
-        index_version = raw_loaded.get("version", "1.0.0")
-        merged_artifact_types = list(raw_loaded.get("artifact_types", []))
-
-        if config_path is not None:
-            config_dir = resolved_path.parent
-        else:
-            config_dir = (
-                Path(self.template_root) / "config" if self.template_root else resolved_path.parent
-            )
-        if not config_dir.is_dir():
-            if not merged_artifact_types:
-                raise ConfigError(
-                    "Empty artifact registry: no artifact types defined",
-                    file_path=str(resolved_path),
-                )
-        else:
-            yaml_files = sorted(
-                [
-                    f
-                    for f in config_dir.iterdir()
-                    if (
-                        f.is_file()
-                        and f.suffix in (".yaml", ".yml")
-                        and f.name not in ("artifacts.yaml", resolved_path.name)
-                    )
-                ]
-            )
-            for filepath in yaml_files:
-                try:
-                    with filepath.open(encoding="utf-8") as fh:
-                        file_data = yaml.safe_load(fh)
-                except yaml.YAMLError as exc:
-                    raise ConfigError(
-                        f"Invalid YAML syntax: {exc}.",
-                        file_path=str(filepath),
-                    ) from exc
-                if file_data is None:
-                    continue
-                if isinstance(file_data, dict) and (
-                    "version" in file_data or "artifact_types" in file_data
-                ):
-                    continue
-                if isinstance(file_data, list):
-                    merged_artifact_types.extend(file_data)
-                elif isinstance(file_data, dict):
-                    merged_artifact_types.append(file_data)
-                else:
-                    raise ConfigError(
-                        "Invalid YAML structure in modular file: "
-                        f"expected mapping or list, got {type(file_data).__name__}",
-                        file_path=str(filepath),
-                    )
-
-        if not merged_artifact_types:
-            raise ConfigError(
-                "Empty artifact registry: no artifact types defined",
-                file_path=str(resolved_path),
-            )
-
-        full_config = {
-            "version": index_version,
-            "artifact_types": merged_artifact_types,
-        }
-
-        return self._validate_schema(ArtifactRegistryConfig, full_config, resolved_path)
 
     def load_contributor_config(self, config_path: Path | None = None) -> ContributorConfig:
         data, resolved_path = self._load_yaml("contributors.yaml", config_path=config_path)
@@ -275,53 +258,6 @@ class ConfigLoader:
         }
         return self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
 
-    def load_project_structure_config(
-        self,
-        config_path: Path | None = None,
-        artifact_registry: ArtifactRegistryConfig | None = None,
-    ) -> ProjectStructureConfig:
-        data, resolved_path = self._load_yaml(
-            "project_structure.yaml",
-            config_path=config_path,
-        )
-        directories = data.get("directories")
-        if not isinstance(directories, dict):
-            raise ConfigError(
-                f"Missing 'directories' key in {resolved_path.name}",
-                file_path=str(resolved_path),
-            )
-
-        payload = {
-            **data,
-            "directories": {
-                directory_path: {"path": directory_path, **directory_data}
-                for directory_path, directory_data in directories.items()
-            },
-        }
-        config = self._validate_schema(ProjectStructureConfig, payload, resolved_path)
-        effective_artifact_registry = artifact_registry or self.load_artifact_registry_config()
-        self._validate_project_structure_artifact_types(
-            config,
-            effective_artifact_registry,
-            resolved_path,
-        )
-        self._validate_project_structure_parent_references(config, resolved_path)
-        return config
-
-    def load_quality_config(self, config_path: Path | None = None) -> QualityConfig:
-        data, resolved_path = self._load_yaml("quality.yaml", config_path=config_path)
-        return self._validate_schema(QualityConfig, data, resolved_path)
-
-    def load_scaffold_metadata_config(
-        self,
-        config_path: Path | None = None,
-    ) -> ScaffoldMetadataConfig:
-        data, resolved_path = self._load_yaml(
-            "scaffold_metadata.yaml",
-            config_path=config_path,
-        )
-        return self._validate_schema(ScaffoldMetadataConfig, data, resolved_path)
-
     def load_enforcement_config(self, config_path: Path | None = None) -> EnforcementConfig:
         data, resolved_path = self._load_yaml(
             "enforcement.yaml",
@@ -341,35 +277,6 @@ class ConfigLoader:
             config_path=config_path,
         )
         return self._validate_schema(ContractsConfig, data, resolved_path)
-
-    def _validate_project_structure_artifact_types(
-        self,
-        config: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
-        resolved_path: Path,
-    ) -> None:
-        valid_types = set(artifact_registry.list_type_ids())
-        for directory_path, policy in config.directories.items():
-            invalid_types = set(policy.allowed_artifact_types) - valid_types
-            if invalid_types:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown artifact types: "
-                    f"{sorted(invalid_types)}. Valid types from artifact registry: "
-                    f"{sorted(valid_types)}",
-                    file_path=str(resolved_path),
-                )
-
-    def _validate_project_structure_parent_references(
-        self,
-        config: ProjectStructureConfig,
-        resolved_path: Path,
-    ) -> None:
-        for directory_path, policy in config.directories.items():
-            if policy.parent is not None and policy.parent not in config.directories:
-                raise ConfigError(
-                    f"Directory '{directory_path}' references unknown parent: '{policy.parent}'",
-                    file_path=str(resolved_path),
-                )
 
     def _resolve_yaml_path(self, file_name: str | Path, config_path: Path | None = None) -> Path:
         if config_path is None:

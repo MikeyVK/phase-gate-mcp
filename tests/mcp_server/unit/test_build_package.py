@@ -77,3 +77,37 @@ class TestBuildPackage:
         with pytest.raises(FileNotFoundError) as exc_info:
             copy_assets(project_root, assets_dir, manifest)
         assert "non_existent_source" in str(exc_info.value)
+
+    def test_release_manifest_uses_v3_template_suite_source(self) -> None:
+        """The release manifest must package the v3 suite rather than legacy templates."""
+        repo_root = Path(__file__).resolve().parents[3]
+        manifest = read_manifest(repo_root / ".pgmcp" / "config" / "release_manifest.yaml")
+
+        mappings = {(item["source"], item["target"]) for item in manifest["assets"]}
+        assert (".pgmcp/template_suite", "template_suite") in mappings
+        assert all(source != ".pgmcp/templates" for source, _ in mappings)
+
+    def test_copy_assets_preserves_nested_dotfiles(self, tmp_path: Path) -> None:
+        """Manifest directory copies retain hidden suite members such as .version."""
+        project_root = tmp_path / "project"
+        source = project_root / ".pgmcp" / "template_suite" / "example"
+        source.mkdir(parents=True)
+        (source / ".version").write_text("1.0.0\n", encoding="utf-8")
+        (source / "manifest.yaml").write_text("template_id: example\n", encoding="utf-8")
+        assets_dir = tmp_path / "assets"
+        assets_dir.mkdir()
+
+        copy_assets(
+            project_root,
+            assets_dir,
+            {
+                "version": "2.0.0",
+                "assets": [
+                    {"source": ".pgmcp/template_suite", "target": "template_suite"},
+                ],
+            },
+        )
+
+        installed = assets_dir / "template_suite" / "example"
+        assert (installed / ".version").read_text(encoding="utf-8") == "1.0.0\n"
+        assert (installed / "manifest.yaml").exists()

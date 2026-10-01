@@ -44,6 +44,7 @@ from mcp_server.managers.state_repository import (
     StateAlreadyExistsError,
     StateBranchMismatchError,
 )
+from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.schemas import ContractsConfig, GitConfig
 
 logger = logging.getLogger(__name__)
@@ -87,10 +88,11 @@ class PhaseStateEngine:
         workflow_gate_runner: IWorkflowGateRunner,
         server_root: Path,
         workflow_state_mutator: IWorkflowStateMutator | None = None,
-        state_reconstructor: Any | None = None,
+        state_reconstructor: object | None = None,
         context_loaded_writer: "IContextLoadedWriter | None" = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
+        del state_reconstructor  # Retained for the public constructor contract.
         self._workspace_root = Path(workspace_root)
         self.state_path = server_root / "state.json"
         resolved_server_root = server_root or (self._workspace_root / ".pgmcp")
@@ -103,10 +105,6 @@ class PhaseStateEngine:
         self._scope_decoder = scope_decoder
         self._workflow_gate_runner = workflow_gate_runner
         if workflow_state_mutator is None:
-            from mcp_server.managers.workflow_state_mutator import (
-                WorkflowStateMutator,  # noqa: PLC0415
-            )
-
             workflow_state_mutator = WorkflowStateMutator(state_repository=state_repository)
         self._workflow_state_mutator = workflow_state_mutator
 

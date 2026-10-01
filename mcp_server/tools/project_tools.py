@@ -18,6 +18,7 @@ import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.interfaces import ICoreTool
+from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -312,7 +313,7 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
 
     @property
     def description(self) -> str:
-        return "Get project phase plan for issue number"
+        return "Get project phases and complete stored planning deliverables for an issue"
 
     @property
     def args_model(self) -> type[BaseModel] | None:
@@ -324,8 +325,8 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
             return {}
         return resolve_schema_refs(self.args_model.model_json_schema())
 
-    def __init__(self, manager: ProjectManager) -> None:
-        """Initialize tool with injected ProjectManager."""
+    def __init__(self, manager: IProjectPlanReader) -> None:
+        """Initialize tool with the read-only project plan contract."""
         self.manager = manager
 
     async def execute(
@@ -358,11 +359,18 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
                         status = "completed" if curr_phase_name else "pending"
                     phases_list.append(PhaseDTO(name=p_name, status=status, tasks=[]))
 
+                stored_planning = plan.get("planning_deliverables")
+                planning = (
+                    CyclePlanningModel.model_validate(stored_planning, strict=True)
+                    if stored_planning is not None
+                    else None
+                )
                 return ProjectPlanOutput(
                     success=True,
                     issue_number=params.issue_number,
                     workflow_name=plan.get("workflow_name", ""),
                     phases=phases_list,
+                    planning_deliverables=planning,
                 )
 
             context.produce(

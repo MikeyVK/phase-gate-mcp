@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable Python adapter content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "bases": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/python.schema.json#/$defs/TypeText"
+      }
+    },
+    "constructor": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/python.schema.json#/$defs/Constructor"
+        },
+        {
+          "properties": {
+            "parameters": {
+              "items": {
+                "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/ConcreteMethod"
+          },
+          {
+            "properties": {
+              "parameters": {
+                "items": {
+                  "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "logging": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Logging"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "constructor"
+        ]
+      },
+      "then": {
+        "properties": {
+          "methods": {
+            "items": {
+              "$ref": "../shared/definitions/python.schema.json#/$defs/NonConstructorMethod"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 <!-- docs/reference/presentation_architecture.md -->
-<!-- template=reference version=064954ea created=2026-08-19T19:43Z updated=2026-08-22 -->
+<!-- template=reference version=064954ea created=2026-08-19T19:43Z updated=2026-09-13 -->
 # Presentation Architecture and Resource Delegation
 
 **Status:** DEFINITIVE  
-**Version:** 2.1.0  
-**Last Updated:** 2026-08-22
+**Version:** 2.3.0  
+**Last Updated:** 2026-09-24
 
 **Configuration:** [presentation.yaml](../../.pgmcp/config/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
@@ -26,8 +26,12 @@ This boundary has two complementary outputs:
 2. a complete resource at `pgmcp://cache/runs/{run_id}` for exhaustive structured data
    and verbose diagnostics.
 
-Validation-input errors may additionally carry an embedded `schema://validation`
-resource. That resource is separate from the cached tool-output DTO.
+Schema attachments travel separately in the internal
+[ToolExecution](../../mcp_server/core/tool_execution.py) carrier. Cache publication stores
+only its operation DTO; text presentation receives that DTO, notes and publication facts.
+The resource presenter receives only attachments. The whole-tool input error DTO retains
+its existing `input_schema` field, while its explicit attachment supplies
+`schema://validation`. An attachment does not otherwise enter the cached operation.
 
 ## End-to-End Flow
 
@@ -36,26 +40,26 @@ sequenceDiagram
     autonumber
     participant Client as MCP client
     participant Server as MCPServer
-    participant Tool as ICoreTool
+    participant Tool as Wrapped ITool
     participant Cache as ResponseCacheManager
     participant Presenter as ResponsePresenter
     participant Text as TextPresenter
     participant Collections as CollectionTextRenderer
     participant Budget as TextBudgetLimiter
-    participant Resources as ValidationResourcePresenter
+    participant Resources as SchemaResourcePresenter
 
     Client->>Server: tools/call(name, arguments)
     Server->>Tool: execute(arguments, NoteContext)
-    Tool-->>Server: frozen Pydantic output DTO
-    Server->>Cache: publish complete DTO
+    Tool-->>Server: ToolExecution(operation, attachments)
+    Server->>Cache: publish operation only
     Cache-->>Server: CachePublication(run_id, success)
-    Server->>Presenter: present(tool, DTO, notes, cache publication)
-    Presenter->>Text: render configured text projection
+    Server->>Presenter: present(operation, attachments, notes, cache publication)
+    Presenter->>Text: render operation, notes and publication facts
     Text->>Collections: render configured ordered collections
     Collections-->>Text: bounded Markdown collections
     Text->>Budget: limit final composed text
     Budget-->>Text: at most 8,000 UTF-8 bytes
-    Presenter->>Resources: extract validation schema when applicable
+    Presenter->>Resources: serialize supplied schema attachments
     Resources-->>Presenter: zero or more embedded resources
     Presenter-->>Server: PresentedOutput(text, resources)
     Server-->>Client: CallToolResult
@@ -69,7 +73,9 @@ never remove fields or items from the cached representation.
 | Concern | Authoritative owner |
 |---|---|
 | Tool result semantics and complete data | Frozen tool-output DTO |
-| Complete run payload | MCP Resource cache |
+| Complete operation payload | MCP Resource cache |
+| Attachment identity and schema facts | Producer of `SchemaAttachment` |
+| Attachment URI, media type and schema serialization | `SchemaResourcePresenter` |
 | Per-tool wording, scalar selection, collection declarations, headings, order, and item limits | `presentation.yaml` |
 | Configuration shape | `PresentationConfig` and its nested frozen schemas |
 | Supported tool identity and output model | Runtime-derived `SupportedToolContract` catalog |
@@ -77,26 +83,19 @@ never remove fields or items from the cached representation.
 | Scalar/list/tuple formatting | `SafeNoneFormatter` |
 | Ordered collection rendering | `CollectionTextRenderer` |
 | Final text ceiling | `TextBudgetLimiter` |
-| Composition of text and embedded validation resources | `ResponsePresenter` |
+| Composition of text and embedded schema resources | `ResponsePresenter` |
 
 Business logic, managers, adapters, and domain validation services do not construct
 user-facing presentation strings.
 
 ## Runtime Tool Catalog
 
-`ServerBootstrapper` constructs one `ToolAssembly` containing:
-
-- `supported_tools`: all 50 tool implementations supported by this server build;
-- `supported_contracts`: the minimal derived pair of tool name and concrete Pydantic
-  output model for each supported tool;
-- `active_tools`: the settings-dependent subset exposed to the MCP client.
-
-With a GitHub token, all 50 tools are active. Without a token, 38 tools remain active;
-the twelve PR, label, and milestone tools are inactive. The supported catalog remains
-complete in both modes so configuration drift is detected independently of credentials.
-
-The catalog is derived from the constructed tools at runtime. It is not maintained as a
-second static tool metadata file.
+`ServerBootstrapper` constructs a `ToolAssembly` with the supported tool contracts and
+the settings-dependent active tools exposed to the MCP client. The supported contract
+catalog is derived from the constructed tool instances and their concrete output models;
+it is not a second static tool list. Read current tool names and schemas from the live
+server composition. Credential settings may change which tools are active without
+changing what the build supports.
 
 ## Declarative Presentation Configuration
 
@@ -192,63 +191,87 @@ fallbacks, and the cache reference have been composed.
 The byte ceiling is universal. Individual tools configure item limits, not their own
 text budgets.
 
+## Cache Serialization and Attachment Ownership
+
+[CachedResponseResource](../../mcp_server/resources/cache.py) serializes the operation
+using its canonical Pydantic field contract. Required nullable fields retain `null`.
+Explicitly supplied optional nulls also remain present; only unset optional null fields
+are omitted. Non-null defaults retain their existing representation. The rule follows
+the actual nested DTO and selected union variant through models, mappings and sequences.
+Ordinary JSON values, including null, false, zero and empty containers, are preserved.
+
+Complete reads and bounded Unicode-codepoint windows use the same serialized operation.
+The hash identifies that complete UTF-8 representation. Cache eviction, cache misses,
+and publisher/read interface separation are unchanged; a resource read never replays
+the producing operation.
+
+[SchemaResourcePresenter](../../mcp_server/presenters/schema_resource_presenter.py)
+dispatches on attachment identity, without inspecting operation classes or querying
+the catalog:
+
+| Attachment identity | URI | Media type |
+|---|---|---|
+| Whole-tool input schema | `schema://validation` | `application/json` |
+| Selected template context | `schema://template/<percent-encoded-template-id>/context` | `application/schema+json` |
+
+Template identity denotes the active catalog contract, not retained version history.
+The response carries the complete embedded schema. This transport capability does not
+activate a new template suite or change which attachments existing tools produce.
+MCP `isError` continues to derive from operation success.
+
 ## Cache and Client Guidance
 
 The inline projection is sufficient when it contains the information needed for the
-current action. Read the cached resource when completeness, fields intentionally omitted
-from the projection, or verbose diagnostics are required. Examples include complete Git
-output, diffs, test tracebacks, quality-gate process details, and complete validation
+current action. Read the cached resource when completeness, intentionally omitted fields,
+or available native evidence and diagnostics are required. Examples include complete Git
+output, diffs, test/check/fix result records and captured evidence, and resolved context
 schemas.
 
-Do not parse the presented Markdown to reconstruct DTO data. The resource is the
-structured contract.
+Do not parse presented Markdown to reconstruct DTO data. The resource is the structured
+operation contract, subject to the fields and bounded capture represented by that DTO.
+For large results, follow the configured cache-reading hint and packaged cache-reading
+guide; it describes safe windows and integrity checks without replaying a mutation.
 
-`scaffold_schema` is a deliberate resource-oriented exception: the text identifies the
-artifact type, while the nested JSON Schema remains in the cached DTO.
+`scaffold_schema` also supplies its selected context schema as a separate schema
+attachment. The operation DTO and attachment have separate ownership and serialization
+paths.
 
-## Structured Quality-Gate Findings
+## Configured Execution Evidence
 
-`run_quality_gates` uses the same generic nested-collection path as the other structured
-tools:
+The V3 execution tools use the same generic presentation and cache path as other tools.
+`run_checks`, `run_tests`, and `apply_fixes` return their factual operation DTOs;
+configured templates render bounded result rows while the cache retains the full serialized
+DTO. Result order follows the operation contract. Presentation limits and the final
+8,000-byte ceiling affect only inline text.
 
-| DTO level | Ordered collection |
-|---|---|
-| `RunQualityGatesOutput` | `gates: list[GateResultDTO]` |
-| `GateResultDTO` | `findings: list[GateFindingDTO]` |
-| `GateFindingDTO` | Structured diagnostic fields; no child collection |
+The operation envelope and the native outcome answer different questions. Inspect
+`success` and any `error_code` for operation or consumer failures; inspect each
+result's status, reason, evidence, adapter identity, and bounded capture for observed
+native work. A check or test can report a substantive failed result without that result
+being converted into a protocol error. An unavailable adapter, rejected internal request,
+interruption, or unconfirmed termination remains an operational fact. Do not infer
+success from a heading or from the absence of an inline diagnostic.
 
-`QAManager` and `ViolationParser` normalize checker diagnostics and operational
-failures. `RunQualityGatesTool` performs only structural adaptation into the public
-DTO: the enclosing gate supplies `gate`, manager `col` becomes `column`, and
-`rule` becomes `code`. The presenter does not parse messages or checker-specific
-text.
+`apply_fixes` applies selected fixes in request order and stops when work cannot continue
+or a selected fix does not pass. Earlier native changes may already have occurred. Its
+result rows distinguish completed work from unavailable or not-executed work; the
+operation does not promise rollback. Inspect affected files, then choose an authorized
+narrow recheck or recovery. The system does not automatically chain fixes and checks.
 
-`presentation.yaml` declares `findings` as a child collection of `gates`. Gate and
-finding order remain identical to the DTO. The tool's `max_items=10` independently
-limits the inline gate collection and every gate's inline finding collection; the final
-8,000-byte limiter still bounds the complete response.
-
-The inline item projection contains optional location and code, required message,
-severity, and fixability. Generic None formatting makes message-only operational
-failures explicit without a tool-specific rendering branch. Gate-level and finding-level
-`details` remain cache-only.
-
-The complete `RunQualityGatesOutput` is published before presentation. Consequently,
-every finding and raw diagnostic remains available through the cached MCP Resource even
-when collection omission or final byte truncation shortens the chat response. Clients
-must read that resource for exhaustive evidence and must not reconstruct findings from
-Markdown.
+The complete operation DTO is published before presentation. Use the cached resource
+when you need result fields or evidence omitted by the bounded text, and do not reconstruct
+those facts from Markdown.
 
 ## Primary Implementation and Evidence
 
 - [Structured tool-output schemas](../../mcp_server/schemas/tool_outputs.py)
-- [Quality-gate structural adapter](../../mcp_server/tools/quality_tools.py)
+- [Check, test, and fix tools](../../mcp_server/tools/check_tools.py), [run tests](../../mcp_server/tools/run_tests_tool.py), and [apply fixes](../../mcp_server/tools/fix_tools.py)
 - [Presentation configuration schema](../../mcp_server/config/schemas/presentation_config.py)
 - [Text presenter and startup alignment](../../mcp_server/presenters/text_presenter.py)
 - [Collection renderer](../../mcp_server/presenters/collection_text_renderer.py)
 - [Text budget limiter](../../mcp_server/presenters/text_budget_limiter.py)
 - [Response presenter](../../mcp_server/presenters/response_presenter.py)
-- [Validation resource presenter](../../mcp_server/presenters/validation_resource_presenter.py)
+- [Schema resource presenter](../../mcp_server/presenters/schema_resource_presenter.py)
 - [Presentation composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
 - [Presentation rollout tests](../../tests/mcp_server/unit/config/test_tool_presentation_rollout.py)
 
@@ -265,6 +288,9 @@ Markdown.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 2.3.0 | 2026-09-24 | @imp | Align execution evidence and runtime catalog guidance with the V3 check/test/fix surface |
 | 2.1.0 | 2026-08-22 | Agent | Document nested structured quality-gate findings and complete cached evidence |
+| 2.2.0 | 2026-09-13 | Agent | Document operation/attachment transport and required-null cache fidelity |
 | 2.0.0 | 2026-08-22 | Agent | Document bounded declarative projection, runtime catalog alignment, ordered collections, and final byte limiting |
 | 1.1.0 | 2026-08-19 | Agent | Document composite text and validation-resource presentation |
+

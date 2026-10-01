@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable Python worker content",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "class_name",
+    "description",
+    "operation"
+  ],
+  "properties": {
+    "class_name": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
+    },
+    "description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
+    },
+    "module_description": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Prose"
+    },
+    "imports": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Imports"
+    },
+    "constructor": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/python.schema.json#/$defs/Constructor"
+        },
+        {
+          "properties": {
+            "parameters": {
+              "items": {
+                "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "logging": {
+      "$ref": "../shared/definitions/python.schema.json#/$defs/Logging"
+    },
+    "operation": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/python.schema.json#/$defs/ConcreteMethod"
+        },
+        {
+          "properties": {
+            "parameters": {
+              "items": {
+                "$ref": "../shared/definitions/python.schema.json#/$defs/InstanceParameter"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "constructor"
+        ]
+      },
+      "then": {
+        "properties": {
+          "operation": {
+            "$ref": "../shared/definitions/python.schema.json#/$defs/NonConstructorMethod"
+          }
+        }
+      }
+    }
+  ]
+}

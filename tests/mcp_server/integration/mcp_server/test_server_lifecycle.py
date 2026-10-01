@@ -11,17 +11,19 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.config.settings import GitHubSettings, LogSettings, ServerSettings, Settings
-from tests.mcp_server.test_support import get_default_server_root, make_test_server
+from tests.mcp_server.test_support import make_test_server
 
 
-def _make_test_settings(audit_log: Path) -> Settings:
+def _make_test_settings(audit_log: Path, workspace_root: Path) -> Settings:
     """Build real settings with repo config and test-local audit log."""
-    workspace_root = Path(__file__).resolve().parents[4]
+    repo_root = Path(__file__).resolve().parents[4]
     return Settings(
         server=ServerSettings(
             name="test-server",
             workspace_root=str(workspace_root),
-            config_root=str(workspace_root / get_default_server_root() / "config"),
+            config_root=str(repo_root / ".pgmcp" / "config"),
+            template_root=str(repo_root / ".pgmcp" / "template_suite"),
+            bypass_version_check=True,
         ),
         logging=LogSettings(level="INFO", audit_log=str(audit_log)),
         github=GitHubSettings(owner="test", repo="repo", token=None),
@@ -38,7 +40,7 @@ async def test_server_startup_logged_to_audit(tmp_path: Path) -> None:
         mock_adapter.list_issues.return_value = []
         mock_adapter_class.return_value = mock_adapter
 
-        _server = make_test_server(settings=_make_test_settings(audit_log))
+        _server = make_test_server(settings=_make_test_settings(audit_log, tmp_path))
 
     assert audit_log.exists(), "Audit log should be created"
 
@@ -66,7 +68,7 @@ async def test_server_shutdown_logged_to_audit(tmp_path: Path) -> None:
         mock_adapter.list_issues.return_value = []
         mock_adapter_class.return_value = mock_adapter
 
-        server = make_test_server(settings=_make_test_settings(audit_log))
+        server = make_test_server(settings=_make_test_settings(audit_log, tmp_path))
         await server.shutdown()
 
     log_lines = audit_log.read_text().strip().split("\n")
@@ -80,3 +82,29 @@ async def test_server_shutdown_logged_to_audit(tmp_path: Path) -> None:
     ]
 
     assert len(shutdown_entries) >= 1, "Should log server shutdown"
+
+
+def test_repeated_bootstrap_replaces_audit_destination(tmp_path: Path) -> None:
+    """A later server composition must not write startup to an earlier audit file."""
+    first_log = tmp_path / "first_audit.jsonl"
+    second_log = tmp_path / "second_audit.jsonl"
+
+    with patch("mcp_server.managers.github_manager.GitHubAdapter") as mock_adapter_class:
+        mock_adapter = MagicMock()
+        mock_adapter.list_issues.return_value = []
+        mock_adapter_class.return_value = mock_adapter
+
+        make_test_server(settings=_make_test_settings(first_log, tmp_path))
+        assert first_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+
+        make_test_server(settings=_make_test_settings(second_log, tmp_path))
+        assert first_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+        assert second_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+
+        disabled_settings = _make_test_settings(tmp_path / "unused_audit.jsonl", tmp_path)
+        disabled_settings.logging.audit_log = None
+        make_test_server(settings=disabled_settings)
+
+    assert first_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+    assert second_log.read_text(encoding="utf-8").count("MCP server starting") == 1
+    assert not (tmp_path / "unused_audit.jsonl").exists()

@@ -3,8 +3,8 @@
 # Project & Phase Management Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.1  
-**Last Updated:** 2026-08-22  
+**Version:** 3.2  
+**Last Updated:** 2026-09-13  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../mcp_server/tools/phase_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_project_tools.py](../../../tests/mcp_server/unit/tools/test_project_tools.py), [tests/mcp_server/unit/tools/test_transition_phase_tool.py](../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py), [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py)  
@@ -125,7 +125,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 **Class:** `GetProjectPlanTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py)
 
-Get project phase plan for issue number.
+Get project phases and complete stored planning deliverables for an issue.
 
 #### Parameters
 
@@ -149,6 +149,16 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
   - `name`: `string`
   - `status`: `string`
   - `tasks`: `list[PhaseTaskDTO]` with `id`, `title`, and `status`
+- `planning_deliverables`: optional existing `CyclePlanningModel`, containing every stored cycle number/name, ordered deliverable ID/description/validates and exit criterion, plus design/validation/documentation deliverables. It is absent from the compact cache JSON when planning has not yet been saved. Invalid stored planning returns a failed result; it is never silently omitted from a successful partial plan.
+
+#### Reading large cached plans
+
+The response includes the run-specific `pgmcp://cache/runs/{run_id}` URI. If the
+complete result exceeds the configured cache-read budget, the presentation also points
+to `pgmcp://docs/cache-reading`. That packaged guide defines the bounded window,
+integrity, truncation, and retry protocol. It is available without a repository checkout.
+If this read-only plan query's cached result has expired, repeat `get_project_plan` and
+start again from the new run URI; never combine windows from separate runs.
 
 #### Example Usage
 
@@ -160,8 +170,8 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 #### Behavior Notes
 
-- **Read-Only:** Does not modify state
-- **Plan Access:** Reads the configured project plan and returns every phase with its current status and planned tasks.
+- **Planning Read:** Does not rewrite or back up the deliverables source during queries, including invalid-envelope failures. Current-phase enrichment retains the existing workflow-state resolver behavior.
+- **Plan Access:** Reads the configured project plan and returns phases plus the complete stored planning payload; existing phase/task presentation remains unchanged.
 - **Not Found:** Returns error if project not initialized
 
 ---
@@ -195,18 +205,13 @@ the complete `passing_gates` and `skipped_gates` sequences remain in the cached
 ```json
 {
   "branch": "feature/123-oauth",
-  "to_phase": "green"
+  "to_phase": "design"
 }
 ```
 
-**With human approval:**
-```json
-{
-  "branch": "feature/123-oauth",
-  "to_phase": "documentation",
-  "human_approval_message": "Tests passing, code reviewed, ready for docs"
-}
-```
+Use the next phase allowed by the branch's configured workflow and current state. A
+sequential transition cannot skip intervening phases; use the separately documented
+force-transition operation when its explicit approval contract applies.
 
 #### Behavior Notes
 
@@ -215,24 +220,6 @@ the complete `passing_gates` and `skipped_gates` sequences remain in the cached
 - **Branch-Local State:** Updates `.pgmcp/state.json` for the active branch only
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Not Initialized:** Returns error if project not initialized
-
-#### Example Error (Attempting to Skip)
-
-**Request:**
-```json
-{
-  "branch": "feature/123-oauth",
-  "to_phase": "merge-prep"  // Trying to skip from "red" to "merge-prep"
-}
-```
-
-**Response:**
-```json
-{
-  "success": false,
-  "error": "Invalid phase transition: cannot skip from 'red' to 'merge-prep'. Next phase is 'green'. Use force_phase_transition if intentional."
-}
-```
 
 ---
 
@@ -264,9 +251,9 @@ The bounded text contains the normal transition fields and gate evidence plus
 ```json
 {
   "branch": "feature/123-oauth",
-  "to_phase": "merge-prep",
-  "skip_reason": "Emergency hotfix: critical security vulnerability discovered",
-  "human_approval_message": "Approved by Tech Lead (John Doe) - immediate merge required"
+  "to_phase": "implementation",
+  "skip_reason": "Urgent fix requires an approved skip of intermediate phases",
+  "human_approval_message": "Approved by the project owner for this specific phase skip"
 }
 ```
 
@@ -520,43 +507,9 @@ Phase state is **synchronized** with git branch operations:
 
 ---
 
-## Common Workflows
+## Workflow examples
 
-### Starting a New Feature
-
-```
-1. create_branch(name="feature/123-oauth", base_branch="main")
-2. git_checkout(branch="feature/123-oauth")
-3. initialize_project(issue_number=123, issue_title="Add OAuth2", workflow_name="feature")
-```
-
-### TDD Cycle with Phase Transitions
-
-```
-1. transition_phase(branch="feature/123-oauth", to_phase="red")
-2. scaffold_artifact(artifact_type="dto", name="OAuthToken")
-3. git_add_or_commit(workflow_phase="implementation", sub_phase="red", cycle_number=1, message="Add failing test for OAuthToken")
-4. transition_phase(branch="feature/123-oauth", to_phase="green")
-5. safe_edit_file(...)  # Implement
-6. run_tests(path="tests/test_oauth.py")
-7. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Implement OAuthToken")
-```
-
-### Emergency Phase Skip (Hotfix)
-
-```
-1. force_phase_transition(
-     branch="bug/456-security",
-     to_phase="merge-prep",
-     skip_reason="Critical security vulnerability - zero-day exploit",
-     human_approval_message="CTO approval (Jane Smith) - immediate production deployment"
-   )
-2. git_push(set_upstream=True)
-3. submit_pr(title="HOTFIX: Security patch", body="...", head="bug/456-security")
-4. merge_pr(pr_number=78, merge_method="merge")
-```
-
----
+Use `get_work_context` and the current project, phase, and cycle tool schemas for the active branch. The workflow order and required evidence come from `.pgmcp/config/contracts.yaml` and the stored project plan; avoid copying a fixed sequence of tool calls into this reference.
 
 ## Related Documentation
 
@@ -578,3 +531,4 @@ Phase state is **synchronized** with git branch operations:
 | 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
+

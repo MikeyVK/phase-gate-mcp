@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, TypeVar, cast
 
 from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.utils.cache_serialization import serialize_cached_response
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -34,9 +35,11 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
         self._max_size = max_size
         self._cache: OrderedDict[str, BaseModel] = OrderedDict()
 
-    def put(self, tool_name: str, output: BaseModel) -> CachePublication:
+    def put(self, tool_name: str, output: BaseModel) -> CachePublication:  # noqa: ARG002
+        # Keep the publisher's keyword contract; entries are keyed by run_id.
         """Publish the output DTO to the cache and return a CachePublication."""
         try:
+            size_chars = len(serialize_cached_response(output))
             # Generate a new unique run_id
             run_id = uuid.uuid4().hex
 
@@ -47,7 +50,7 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
             # Enforce FIFO eviction
             if len(self._cache) > self._max_size:
                 self._cache.popitem(last=False)
-            return CachePublication(run_id=run_id, success=True)
+            return CachePublication(run_id=run_id, success=True, size_chars=size_chars)
         except Exception:
             return CachePublication(run_id=None, success=False, error_code="write_failed")
 

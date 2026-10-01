@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Validation report content",
+  "description": "Valid initial authored Validation Report content; active work-context phase instructions determine completion. Authored outcomes do not grant independent QA approval.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title"
+  ],
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "status": {
+      "$ref": "#/$defs/Text"
+    },
+    "version": {
+      "$ref": "#/$defs/Text"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
+    },
+    "purpose": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "issue_number": {
+      "$ref": "../shared/definitions/issue-reference.schema.json"
+    },
+    "cycle": {
+      "$ref": "#/$defs/Text"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "PARTIAL"
+      ],
+      "description": "Caller-authored outcome, not independent QA authority or workflow state."
+    },
+    "scope": {
+      "$ref": "#/$defs/Prose"
+    },
+    "obligations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ObligationEvidence"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/evidence.schema.json"
+      }
+    },
+    "demonstration": {
+      "$ref": "#/$defs/Prose"
+    },
+    "preservation": {
+      "$ref": "#/$defs/Prose"
+    },
+    "containment": {
+      "$ref": "#/$defs/Prose"
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "caveats": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/risk.schema.json"
+      }
+    },
+    "deferred_work": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DeferredItem"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "ObligationEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "obligation",
+        "evidence"
+      ],
+      "properties": {
+        "obligation": {
+          "$ref": "#/$defs/Text"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "../shared/definitions/link.schema.json"
+          }
+        },
+        "outcome": {
+          "$ref": "#/$defs/Prose"
+        }
+      }
+    },
+    "DeferredItem": {
+      "$ref": "../shared/definitions/deferred-item.schema.json"
+    }
+  }
+}
