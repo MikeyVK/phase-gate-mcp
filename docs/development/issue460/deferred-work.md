@@ -3,7 +3,7 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED existing deferrals; runtime adapter byte-provenance candidate closed without deferral  
-**Version:** 1.21  
+**Version:** 1.22  
 **Last Updated:** 2026-10-01  
 **Originating Issue:** 460
 
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.22 | 2026-10-01 | Record owner-deferred separate adapter write-effects and false-PASS follow-ups as D-VAL-06 and D-VAL-07 |
 | 1.21 | 2026-10-01 | Close runtime adapter byte-provenance QA candidate as accepted current behavior, not deferred work, by explicit owner decision |
 | 1.20 | 2026-10-01 | Record open QA candidate after independent PR #463 QA NOGO; retain approved restart-only Design boundary pending substantive discussion |
 | 1.19 | 2026-09-30 | Record D-VAL-05 as a separate first-call concrete-template quality follow-up based on rendered gallery evidence |
@@ -511,3 +512,19 @@ The follow-up should survey all shipped concrete template packages with represen
 **Decision:** The owner accepted the existing startup-only fingerprint behavior on 2026-10-01. This is neither a #460 fix cycle nor a request for a follow-up issue. See [Validation disposition](validation.md#qa-re-entry-and-disposition--2026-10-01), QA finding 5.
 
 The catalog fingerprints adapter packages at admission but retains a script path for subsequent execution. A package edited while the server remains live can therefore execute bytes newer than the admitted fingerprint. The approved [execution-adapter Design](design-execution-adapters.md) defines that fingerprint as an admitted snapshot label, instructs restart after package edits, and excludes monitoring, per-call rehashing and shadow copies. The owner explicitly accepts that even an unauthorized change during a running server may remain undetected. Results must not present the admission fingerprint as proof of per-run executable-byte identity. No new monitoring, rehashing, or snapshot mechanism is authorized by QA finding 5; a future request for stronger guarantees would require its own strategy decision.
+
+## D-VAL-06 — Adapter Write-Effects Boundary
+
+**Decision:** The owner explicitly deferred this finding outside #460 on 2026-10-01 as a separate follow-up issue. Coordination owns issue creation and deduplication against D-VAL-01; no new issue has been created here.
+
+**Evidence and scope:** PR #463 QA finding 1 identifies the Ruff fix adapter's admitted `--cache-dir` argument as a way to select a filesystem write location beyond the explicit source-file selection. Research states that native arguments do not grant additional filesystem authority. Static inspection supports the admitted argument path; no live out-of-selection mutation probe was run. Do not equate this finding with proof that all adapters have the same defect.
+
+The follow-up should define source mutations versus permitted native operational writes, inspect arguments, native configuration, environment, and defaults for write destinations in affected adapter roles, and select adapter-local corrections. Preserve the generic check/test/fix contracts as the starting boundary. Obtain an owner-approved isolated mutation route before live side-effect probes. Retain exact compact and cached failure evidence and prove both authorized behavior and rejection of unauthorized destinations. This notice does not declare the current behavior repaired or the observed contract concern erased.
+
+## D-VAL-07 — Check Completion and False-PASS Semantics
+
+**Decision:** The owner explicitly deferred this finding outside #460 on 2026-10-01 as a separate follow-up issue, distinct from D-VAL-06. Coordination owns issue creation and deduplication with the native semantic-conformance work in D-VAL-01.
+
+**Evidence:** A live `run_checks` call targeting `mcp_server/tools/scaffold_tool.py` with `python_types` and `python_lint` and `--help` for both returned aggregate and per-check `passed`. The complete cache contains Mypy and Ruff help output instead of source-analysis evidence: `pgmcp://cache/runs/a7bf3cd5498640069bdba82274bf5fc0`.
+
+The follow-up should inspect each shipped check adapter for metadata and early-exit options that bypass its intended check, classify applicability individually, reject inappropriate requests without weakening native configuration behavior, and verify that ordinary valid checks and real diagnostic failures retain correct outcomes. Exit code zero alone must not turn an acknowledged non-check invocation into quality evidence. Preserve generic contracts unless research demonstrates a specific need for an owner-approved amendment. This accepted deferral is not a claim that the reproduced invocation checked its target.
