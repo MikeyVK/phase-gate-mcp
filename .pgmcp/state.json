@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "documentation",
   "current_cycle": 113,
   "last_cycle": 113,
   "cycle_history": [
@@ -1014,6 +1014,14 @@
       "human_approval_message": "Owner on 2026-10-01: 'De PR moet ingetrokken worden, het project opnieuw geinitialiseerd en de phase naar validation worden gezet om bijgesloten bevindingen van QA te vertalen naar \u00f3f deferred work \u00f3f een of meer gerichte fix cycles.' Owner then requested full reconstruction of the branch state artifacts from Git, including phase transitions after reopening.",
       "forced": true,
       "skip_reason": "PR #463 was closed without merge after independent QA NOGO. Restore the complete pre-PR #460 workflow and cycle history from commit 325195af, then record the reopened Ready-to-Validation transition for QA finding triage. Previous Research, Design, Planning, Implementation, and Documentation artifacts remain historical evidence; no current merge GO is implied."
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-10-01T07:42:02.765675+00:00",
+      "human_approval_message": "Owner instruction on 2026-10-01: 'Mooi, door naar de documentatie fase'. The owner explicitly deferred QA findings 1, 2, and 6 as D-VAL-06/07/08, accepted the development installation interim and startup-only adapter fingerprint behavior, and assigned instruction source/copy parity plus bootstrap wording repairs to Documentation. This owner-directed progression does not assert a new independent QA GO or convert the previously unavailable branch gate into PASS.",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

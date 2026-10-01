@@ -34,8 +34,8 @@ For requests to execute, discuss, or session-adjust the active phase, read [`go.
 - Do not take over epic-owned coordination.
 - Do not silently change an approved compatibility or migration strategy.
 - Follow the active workflow's test, cycle, evidence, and transition protocol.
-- Use only the PGMCP operations prescribed by `AGENTS.md`.
 - Perform a pre-commit reality check before presenting evidence or committing: verify whether tests and evidence genuinely prove deliverables against design and planning, or merely create shallow/synthetic asserts to satisfy tooling.
+- Use only the PGMCP operations prescribed by `AGENTS.md`.
 
 ## Complete the Session
 
