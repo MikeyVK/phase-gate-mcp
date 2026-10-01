@@ -3,7 +3,7 @@
 # Native adapter robustness: full selection and truthful completion
 
 **Status:** DESIGN — proposed correction; independent QA review pending
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** 2026-10-01
 
 ## Purpose
@@ -21,7 +21,7 @@ OS isolation, a general write-permission API, security manifests, generic native
 ## Prerequisites
 
 - Research B1–B6 and the final replacement B4 are binding. The owner explicitly accepted replacement B4 and authorized Design on 2026-10-01.
-- Preserve the current public tools and check/v1, test/v1 and fix/v1 JSON contracts. A necessary public/wire break requires reopening that affected strategy boundary.
+- Research's human-approved B1 amendment authorizes coordinated check/test/fix v2 input contracts with required execution context and no v1 bridge. Preserve public MCP tool parameters, response structures and outcome vocabulary; report actual contract version 2. Any further incompatible boundary requires a new human decision.
 
 ## Problem Statement
 
@@ -35,6 +35,7 @@ Large explicit selections become Windows native command lines, so valid requests
 - RF4 / E474-1: PGMCP owns execution context and allocated temporary resources. Adapters translate native inputs/results. Ordinary native caches and compatible supplemental outputs may use user-configured destinations.
 - RF5 / E469-4: Report actual native versions and refuse unsupported versions on use before invoking version-dependent parsing or performing source mutations.
 - RF6 / E-CROSS: Preserve response validation, bounded capture, timeout/cancellation, descendant ownership, ordered fix stopping and truthful partial-mutation behavior.
+- RF7 / QA P1–P2: Carry all PGMCP-supplied adapter context in the validated JSON input. Directory description is a pure query; creation/removal are commands returning None.
 
 ## Nonfunctional Requirements
 
@@ -60,7 +61,7 @@ Keep one native execution and move scalable input off argv using each tool's sup
 
 - Removes the target-count command-line cause while preserving joint analysis.
 - Retains existing native CLI/configuration behavior and process lifecycle.
-- Requires one small generic resource seam; native formats remain adapter-local.
+- Requires a narrow resource seam and explicit v2 request context; native formats remain adapter-local.
 
 **Cons:**
 
@@ -120,11 +121,11 @@ Keep blanket destination refusals or introduce a general adapter permission poli
 
 ## Decision
 
-Use native scalable transport, one invocation directory owned by PGMCP, targeted operation/result guards, and package-local supported-version checks. Keep public/wire contracts unchanged.
+Use native scalable transport, PGMCP-owned invocation directories, explicit required execution_context in check/test/fix v2, CQS-separated directory description/create/remove, targeted operation/result guards and package-local supported-version checks. Preserve public MCP tool parameters and response structures; no v1 compatibility bridge.
 
 ## Rationale
 
-Native argument files and stdin lists remove selection size from the process command line without changing the analysis unit. The small PGMCP resource seam solves ownership rather than duplicating allocation in adapters. Targeted guards protect the requested operation and truthful result; they do not promise general write prevention.
+Native argument files and stdin lists remove selection size from the process command line without changing the analysis unit. The narrow PGMCP resource seam separates pure directory description from creation/removal. A validated JSON context makes the location explicit without adapter knowledge of PGMCP roots or a second communication channel. Targeted guards protect the requested operation and truthful result; they do not promise general write prevention.
 
 ## Key Decisions
 
@@ -137,14 +138,15 @@ Avoids joint-analysis, collection, plugin and partial-aggregation changes.
 - Universal batching
 - Silent workspace fallback
 
-### D2: Additive child execution context, unchanged JSON
+### D2: Explicit required execution context in adapter input v2
 
-An invocation-owned directory can be supplied through one reserved environment key without a wire migration or adapter permission interface.
+Required execution_context.scratch_directory in each v2 adapter request. PGMCP supplies it through JSON stdin after successful directory creation. No PGMCP-specific environment key or absent-context transport fallback.
 
 **Alternatives:**
 
-- Adapter-owned tempfile allocation
-- New request/manifest policy schema
+- PGMCP environment side channel: rejected by the owner's communication boundary and QA P1.
+- Optional v1 context/dual-version bridge: rejected by the approved coordinated migration strategy.
+- Adapter-owned temporary directory: violates ownership.
 
 ### D3: Preserve native operational state and compatible reports
 
@@ -171,7 +173,7 @@ Dependency declarations already record supported pins. Actual versions are obser
 | Boundary | Owner and correction | Existing entry point |
 |---|---|---|
 | Request selection/operation | PGMCP preserves current scope admission and fix re-resolution | [selection](../../../mcp_server/execution/check_selection.py), [fix service](../../../mcp_server/execution/fix_service.py) |
-| Process context/deadline/descendants | PGMCP adds one owned invocation directory and explicit child environment overlay | [runtime](../../../mcp_server/execution/process_runtime.py) |
+| Process context/deadline/descendants | PGMCP describes and creates one owned invocation directory, includes its context in the v2 JSON request, and manages cleanup | [runtime](../../../mcp_server/execution/process_runtime.py) |
 | Resource location/allocation/removal | A narrow injected directory provider uses the existing resolved temporary root | [bootstrap](../../../mcp_server/bootstrap.py), [content ownership precedent](../../../mcp_server/execution/content_input.py) |
 | Native encoding, guards and result interpretation | Each package owns its tool-specific translation; Ruff check/fix may share a package-local translation helper | [bundled packages](../../../mcp_server/bundled_adapters) |
 | Native caches, configuration, plugins | Preserve admitted native behavior and accepted host-account access | Research replacement B4 |
@@ -193,7 +195,7 @@ Keep content-input scratch ownership separate: its snapshot must outlive the cor
 
 Use native argument-file grammar, not shell quoting. For line-oriented formats, reject unrepresentable tokens (including CR/LF or native blank/comment ambiguity) as unsupported_input rather than splitting, stripping or dropping them. Ordinary empty/whitespace option values need explicit native equivalence evidence. Preserve spaces, Unicode, literal metacharacters and ordering. Absolute admitted filesystem paths prevent leading option/comment markers from becoming control syntax; Lychee retains its existing literal glob escaping. Unknown transport behavior is not grounds for normalization.
 
-When PGMCP supplies the directory, Ruff/Mypy/Pytest use owned argument files even for bounded selections, avoiding an arbitrary switching threshold. Direct package invocation without that environment key retains the existing bounded argv route; adapters never allocate a private fallback directory. Native stdin remains separate from the adapter's JSON request stdin. Very large non-selection option payloads and Lychee's competing files_from mode retain an explicit native launch limit.
+Every admitted v2 invocation contains execution_context. Ruff/Mypy/Pytest use its directory for argument files even for bounded selections, avoiding an arbitrary switching threshold. A direct caller must provide the same complete v2 request and own the supplied directory's lifetime. Missing/invalid context is invalid_request; there is no direct argv fallback, environment lookup or private temporary allocation. Native stdin remains separate from the adapter's JSON request stdin. Very large argv-only option payloads for stdin-based tools and Lychee's competing files_from mode retain an explicit native launch limit.
 
 ### Guard disposition for issue 474
 
@@ -216,7 +218,18 @@ Read the supported main-tool version from each existing package dependency decla
 
 Unavailable/mismatched main tools use the existing dependency_unavailable reason with actual and expected versions in the message and actual external_tools facts where obtainable. Fail before version-dependent native parsing or source mutation. Malformed dependency declarations are package prerequisite failures; an unreadable actual version is not presumed supported.
 
-Mypy guard SystemExit(0) becomes unsupported_input with its captured help/version evidence. Preserve existing guard handling of other parse/config failures. Other packages retain their effective metadata guards; response-file/config/environment routes cannot circumvent them. A valid native exit zero does not by itself prove the requested analysis if the selected native mode is metadata. Conversely, do not reclassify deliberately supported Ruff --exit-zero or Pytest collect-only/exit 5.
+#### New correction obligations for issue 475 / QA P3
+
+| Package and capability | Research-established defect | Required new guard and regression |
+|---|---|---|
+| Mypy / types | --help returns passed; parser SystemExit(0) returns None | Treat native metadata early exit as unsupported_input, retain help evidence and prove ordinary analysis still executes |
+| Ruff / lint | --help and --show-files return passed without analysis | Add explicit check-role guards; prove refusal for each route through the public package entry point |
+| Ruff / format check | --help returns passed without format analysis | Add explicit format-check metadata guard and its own regression; lint coverage cannot stand in for this capability |
+| Pyright / types | --help returns passed with metadata output | Add explicit metadata guard and public native regression preserving JSON/text genuine analysis modes |
+
+Help/version aliases that the supported native parser admits must uphold the same requested-operation contract. Assess Ruff show-settings/watch and Pyright verifytypes/watch separately as alternate operations; do not describe these unprobed routes as Research-proven false PASS. Retain existing Pytest, Lychee, Commitlint and Ruff-fix guards and their valuable evidence. Caller response-file/config/environment routes must not bypass the effective guard.
+
+A native exit zero alone does not prove analysis when the chosen mode is metadata. Conversely, preserve deliberately supported Ruff --exit-zero, Pytest collect-only and Pytest exit 5. Do not replace ordinary native verbose/stats/output modes with blanket refusals.
 
 Ruff error classification uses the native error record and causal chain, not the occurrence of 'configuration' or a debug prefix anywhere in output. An actual parse/config diagnostic is invalid_configuration; access/launch/native inability is execution_error; rejected operation/usage is unsupported_input. Skip benign debug preambles when selecting a message while retaining bounded native evidence. A permission failure naming a configuration path is still an access failure. Unknown causes stay honest execution_error rather than invented parser precision.
 
@@ -224,56 +237,135 @@ Ruff error classification uses the native error record and causal chain, not the
 
 ### Durable public-boundary coverage
 
-Adapt [Ruff checks](../../../tests/mcp_server/integration/adapters/test_ruff_checks.py), [Ruff fixes](../../../tests/mcp_server/integration/adapters/test_ruff_fixes.py), [Mypy](../../../tests/mcp_server/integration/adapters/test_mypy.py), [Pyright](../../../tests/mcp_server/integration/adapters/test_pyright.py), [Pytest](../../../tests/mcp_server/integration/adapters/test_pytest.py) and [Lychee](../../../tests/mcp_server/integration/adapters/test_lychee.py). Invoke package entry points with real pinned tools and validate the response schema. Supply an owned test directory through the execution environment for the new route; separately exercise actual PGMCP runtime ownership. Do not assert a private helper name, exact temporary basename or one chosen internal argv layout.
+Adapt [Ruff checks](../../../tests/mcp_server/integration/adapters/test_ruff_checks.py), [Ruff fixes](../../../tests/mcp_server/integration/adapters/test_ruff_fixes.py), [Mypy](../../../tests/mcp_server/integration/adapters/test_mypy.py), [Pyright](../../../tests/mcp_server/integration/adapters/test_pyright.py), [Pytest](../../../tests/mcp_server/integration/adapters/test_pytest.py) and [Lychee](../../../tests/mcp_server/integration/adapters/test_lychee.py). Invoke package entry points with real pinned tools and validate the response schema. Supply the owned directory in execution_context in the v2 JSON request; separately exercise actual PGMCP runtime ownership. No test fixture sets a PGMCP-specific environment variable to select the transport. Do not assert a private helper name, exact temporary basename or one chosen internal argv layout.
 
 Large-selection tests must exceed the Windows native command-line capacity and include diagnostic or mutation sentinels near both ends, plus a source outside selection. For whole-program analyzers use cross-file behavior that a split run changes; for Pytest retain one-session fixture/plugin behavior. Compare bounded argv and scalable transport semantics after removing only inherently variable timing/path data. File count or argv length alone does not prove correct analysis.
 
 Use minimal real fixtures for spaces, Unicode, leading punctuation, literal glob characters, native exclusions, directory/config discovery, missing/inaccessible targets and non-Python explicit inputs. Distinguish OS access errors from malformed config while varying verbosity and output modes. A genuine access-denied fixture must prove the process lacks access; do not substitute a missing file or silently skip the promised environment evidence.
 
-Keep and extend the existing negative-contract tests: caller Ruff/Mypy response files, Ruff source mutation switches, fix added sources, metadata through Pytest config/environment/response files and Commitlint config. For Mypy help/version prove refusal with evidence and preserve ordinary clean/error/usage cases. Keep explicit Ruff exit-zero, Pytest collect-only/exit 5 and missing negative-evidence cases.
+Keep and extend the existing negative-contract tests: caller Ruff/Mypy response files, Ruff source mutation switches, fix added sources, metadata through Pytest config/environment/response files and Commitlint config. Add the distinct new Mypy help, Ruff lint help/show-files, Ruff format help and Pyright help regressions from QA P3, plus admitted native metadata aliases. Prove refusal with evidence where available and preserve ordinary clean/error/usage cases. Keep explicit Ruff exit-zero, Pytest collect-only/exit 5 and missing negative-evidence cases.
 
 Split existing all-write-refusal tests into contract-changing refusal and permitted native side-output cases. Exercise CLI/config/environment precedence only where the native tool supports that source. Observe real cache/report/cookie-state effects inside deliberately allocated test destinations outside selected sources and verify source bytes and returned diagnostics. No permanent general sandbox or arbitrary-host-escape test is justified by B4.
 
-Extend [process runtime integration tests](../../../tests/mcp_server/integration/execution/test_process_runtime.py) through invoke and observable process/filesystem behavior: distinct simultaneous directories, explicit child environment overlay without parent mutation, no cross-invocation removal, allocation/write/cleanup failures, cancellation/timeout and descendant completion. Keep [content-input tests](../../../tests/mcp_server/integration/execution/test_content_input.py) proving snapshot lifetime remains separate. Inject narrow failing providers where needed; assert outcome and ownership effects rather than constructor attributes.
+Extend [process runtime integration tests](../../../tests/mcp_server/integration/execution/test_process_runtime.py) through invoke and observable process/filesystem behavior: distinct simultaneous directories, exact JSON context propagation, no cross-invocation removal, pure description without filesystem changes, exclusive creation, creation/write/cleanup failures, cancellation/timeout and descendant completion. A create collision must preserve the pre-existing directory and forbid cleanup of it. Keep [content-input tests](../../../tests/mcp_server/integration/execution/test_content_input.py) proving snapshot lifetime remains separate. Inject narrow failing providers where needed; assert outcome and ownership effects rather than constructor attributes.
 
-Other inventoried roles retain their existing public capability and actual-version tests. Add package-local prerequisite mismatch coverage only for guarded behavior; do not demand every nine-package test permutation when it has no causal relevance.
+All nine packages/ten roles migrate their entry-point request fixtures, strict validators and schemas to v2, including content-only adapters. Other inventoried roles retain their existing capability and actual-version tests. Add package-local prerequisite mismatch coverage only for guarded behavior; do not demand every nine-package test permutation when it has no causal relevance.
 
 ## Contracts
 
-### Internal PGMCP resource and launch interface
+### PGMCP directory description and lifecycle / QA P2
 
-Add the following narrow interface contracts in [core/interfaces/execution.py](../../../mcp_server/core/interfaces/execution.py), with bodies intentionally omitted:
+The new filesystem interface belongs in [core/interfaces/execution.py](../../../mcp_server/core/interfaces/execution.py). It deliberately separates a frozen description from mutating commands:
 
 ```python
 @dataclass(frozen=True)
-class OwnedInvocationDirectory:
+class InvocationDirectory:
     directory: Path
 
 class InvocationScratchDirectories(Protocol):
-    def allocate(self) -> OwnedInvocationDirectory: ...
-    def remove(self, owned: OwnedInvocationDirectory) -> None: ...
-
-class AdapterProcessBackend(Protocol):
-    async def start(
-        self,
-        launch: AdapterLaunch,
-        workspace_root: Path,
-        *,
-        environment_overrides: Mapping[str, str],
-    ) -> AdapterProcess: ...
+    def describe(self, invocation_id: UUID) -> InvocationDirectory: ...
+    def create(self, directory: InvocationDirectory) -> None: ...
+    def remove(self, directory: InvocationDirectory) -> None: ...
 ```
 
-AdapterProcessRuntime receives backend and scratch directories by constructor injection. Its public invoke arguments and response union remain unchanged. The provider returns an absolute, unique child of its injected root and removes only its own allocation. Allocation/removal are commands, not hidden query side effects. The backend copies the inherited environment and overlays supplied keys for this child; it never mutates global os.environ.
+describe is a pure calculation from an invocation ID and the injected resolved root. It creates no directory, file, reservation, registry entry or persistent state; repeated calls for the same inputs return the same description. A description is not proof of allocation. The runtime obtains a fresh invocation ID once and retains the description across creation, request serialization and removal.
 
-The composition root constructs the provider from resolve_temporary_paths(server_root).validation_root and a fresh-ID supplier. No tool/service/native-name dispatch chooses a directory. The runtime supplies exactly PGMCP_INVOCATION_TMP for the allocation; it does not rewrite TMP/TEMP/TMPDIR or native cache variables.
+create makes the described unique child exclusively and returns None. A pre-existing directory/symlink or foreign-root description is refused, not adopted. Successful creation establishes runtime cleanup ownership; a failed exclusive creation must not cause removal of a pre-existing path. The provider's creation contract has no fallible post-creation work that loses this ownership fact. Existing shared-root preparation must not make the runtime claim ownership of that root.
 
-### Adapter execution-context contract
+remove returns None and operates only on this invocation's successfully created allocation, after process completion is confirmed. No broad sweep or native-cache cleanup occurs. Filesystem failures are exceptions handled by the existing invocation-failure path.
 
-PGMCP_INVOCATION_TMP is an additive reserved execution-environment key containing the absolute directory owned by the current invocation. It conveys a location for translation artifacts, not permission to access other paths. The adapter may serialize its native argument file there but cannot select a different root, remove the allocation or clean user-configured caches. No check/v1, test/v1, fix/v1, manifest or public tool parameter is added. Existing direct entry points and inherited environment values remain usable; a newly required shared Ruff package helper must be included in its package manifest. The response file includes only the final admitted argument vector, never unguarded caller tokens.
+The composition root constructs the provider from resolve_temporary_paths(server_root).validation_root and injects it into AdapterProcessRuntime, alongside its backend. A fresh-ID supplier is injected for deterministic collision/lifecycle tests. Keep content-snapshot ownership separate; the new interface does not copy the older create-and-return pattern.
+
+[AdapterProcessBackend.start](../../../mcp_server/core/interfaces/execution.py) keeps its current launch/workspace signature. The proposed environment_overrides parameter is removed. Inherited native-tool environment/configuration behavior remains as today.
+
+### Explicit adapter input v2 / QA P1
+
+All request variants in check/v2, test/v2 and fix/v2 require this additional closed object at the request root:
+
+```json
+{
+  "execution_context": {
+    "scratch_directory": "C:\\temporary-root\\invocation-123"
+  }
+}
+```
+
+This fragment augments the existing operation/args and target/content fields; it is not a standalone request. Both the request and context remain additionalProperties=false. The v2 context definition is:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scratch_directory"],
+  "properties": {
+    "scratch_directory": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {"not": {"pattern": "\\u0000"}},
+        {"pattern": "^(?:/|[A-Za-z]:[\\\\/]|\\\\\\\\[^\\\\/]+[\\\\/][^\\\\/]+)"}
+      ]
+    }
+  }
+}
+```
+
+The executable schemas and strict DTO validators must agree on absolute path syntax and NUL rejection. Filesystem existence and write success are operational checks, not schema purity side effects. PGMCP supplies an absolute existing directory only after its create command succeeds. An adapter validates the complete v2 input before native parsing/analysis or source writes.
+
+| Input condition | Contract behavior |
+|---|---|
+| Missing execution_context or scratch_directory | Existing invalid_request/missing_field, nested field location, adapter protocol exit 2; no native analysis |
+| Null/wrong-type context or directory | Existing invalid_request/wrong_type |
+| Unknown context field | Existing invalid_request/unknown_field |
+| Empty/relative/NUL-containing path | Existing invalid_request/invalid_value |
+| Well-formed path unavailable, not a directory, or failing a required transport-file write | Adapter unavailable/execution_error with actual filesystem cause; no native analysis after failed preparation |
+| Valid usable context | Required native translation; the adapter never chooses another root or cleans the allocation |
+
+Content-only/stdin-only roles validate the required context shape but do not invent a write probe or argument file they do not need. Required file-using roles establish usability through their actual transport preparation. These checks provide contract correctness, not proof of PGMCP ownership or OS confinement against a hostile direct caller.
+
+The only knowledge the adapter needs is the supplied location and its role contract. It does not derive PGMCP roots, inspect PGMCP config or read a PGMCP context variable. Ordinary native-tool cache/temp/report variables remain tool configuration under B4. Direct callers provide the same v2 context and own its preparation/lifetime; there is no absent-context fallback.
+
+### Request production and encoding
+
+The runtime owns creation and therefore supplies the execution context before serialization. Services keep resolving their existing immutable operation inputs. A narrow pure v2 request contract in [execution/protocol.py](../../../mcp_server/execution/protocol.py) composes these inputs with the context into the selected frozen wire DTO and returns validated JSON bytes:
+
+```python
+class AdapterExecutionContext(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    scratch_directory: AbsoluteDirectoryPath
+
+class AdapterRequestContract(Protocol[TRequest]):
+    def encode(
+        self,
+        request: TRequest,
+        execution_context: AdapterExecutionContext,
+    ) -> bytes: ...
+```
+
+AbsoluteDirectoryPath is a lexical type with the v2 rules above, not a filesystem permission query. Each wire DTO adds required execution_context to the corresponding existing selection/content/test/fix fields. Internal operation intent and complete wire input are separate types; do not introduce optional context into the wire model to accommodate pre-allocation construction.
+
+AdapterProcessRuntime.invoke gains an injected/passed request_contract alongside its existing request and response_contract. The selected role encoder follows the same model-driven approach as the existing response decoder: no adapter-name/native-option dispatch. Its encode operation is pure and performs no allocation or filesystem writes. CheckService, content check invocation, TestRunManager and FixManager pass the matching request contract through their existing runtime seams. Concrete role contracts are composed at the composition root.
+
+Runtime finalization removes the allocation on an encoding/launch failure as well as normal completion, subject to the same confirmed-termination rules. Unexpected producer serialization/validation failure uses existing InvocationFailed/LAUNCH_FAILED with an explicitly input-preparation message and no child/native completion; do not add a public failure enum in this release. A direct malformed wire request remains the distinct adapter invalid_request response.
+
+### Coordinated consumer boundary and versioning
+
+| Consumer / authoritative carrier | Required coherent v2 change |
+|---|---|
+| [Wire schemas](../../../mcp_server/execution/contracts) | Define check_v2.schema.json, test_v2.schema.json and fix_v2.schema.json with required context in every request alternative and unchanged response shapes. Retire v1 as an active supported contract; no dual runtime validator |
+| [Operation/request DTOs](../../../mcp_server/execution/check_selection.py), [content request models](../../../mcp_server/execution/content_input.py), [test/fix and result models](../../../mcp_server/execution/models.py) | Complete strict/frozen v2 wire DTOs; public binding/capture metadata reports actual contract_version 2 rather than retaining Literal[1] |
+| [Check service](../../../mcp_server/execution/check_service.py), [test service](../../../mcp_server/execution/test_service.py), [fix service](../../../mcp_server/execution/fix_service.py), [runtime](../../../mcp_server/execution/process_runtime.py), [protocol](../../../mcp_server/execution/protocol.py), [bootstrap](../../../mcp_server/bootstrap.py) | Role input encoders, resource lifecycle and required context propagation without public MCP caller parameters |
+| [Manifest version admission](../../../mcp_server/config/schemas/adapter_manifest.py), [catalog](../../../mcp_server/execution/catalog.py), all [bundled packages](../../../mcp_server/bundled_adapters) | Only the selected v2 role contract is admitted after coordinated cutover. Migrate all nine package validators and ten role declarations; declared v1 is refused at catalog validation before invocation |
+| [Check presentation](../../../mcp_server/services/check_operation.py), [scaffold check presentation](../../../mcp_server/services/scaffold_operation.py) | Remove stale version-1 assumptions and publish factual v2 metadata while preserving existing result structure |
+| [Native adapter tests](../../../tests/mcp_server/integration/adapters), [process fixture](../../../tests/mcp_server/fixtures/adapter_process.py), [runtime/content tests](../../../tests/mcp_server/integration/execution), [catalog tests](../../../tests/mcp_server/unit/execution/test_catalog.py), [selection tests](../../../tests/mcp_server/unit/execution/test_check_selection.py), template activation/proposal fixtures | Migrate complete requests and schema references together; test missing/invalid context and unsupported v1. Stale v1 must not be hidden by relaxed extra-field validation |
+| Custom/workspace packages and external direct callers | Explicitly migrate input validators, declared role version and directory lifecycle. Editing only manifest metadata is insufficient; unmigrated packages are unsupported |
+| Active execution/protocol guidance | Describe v2 break, context ownership, native scratch/cache distinction and direct-call obligations; retained v1 documents can only be historical, not current usage |
+
+The python_adapter source template is a generic class template and was inspected; it contains no hardcoded role-wire contract to migrate. Do not broaden this correction into a scaffold-template rewrite based on its name.
 
 ### Observable result contract
 
-Retain existing response schemas, exit-code pairing, external tool facts, coverage/required-target semantics and bounded evidence. Operation refusal is unavailable/unsupported_input; unsupported main tool is unavailable/dependency_unavailable; malformed or missing negative-result evidence is unavailable/invalid_result. Native failures preserve their actual diagnostics; genuine analysis pass/negative result retains each role's current native outcome policy. Generic PGMCP launch/allocation/cleanup failures use existing invocation-failure envelopes and never fabricate native results.
+Keep existing role response structures, status/reason vocabulary, exit-code pairing, tool facts, coverage/required-target semantics, bounded evidence and public MCP parameter sets. Binding metadata truthfully changes to contract_version 2. Operation refusal is unavailable/unsupported_input; unsupported main tool is unavailable/dependency_unavailable; malformed or missing negative-result evidence is unavailable/invalid_result. Malformed wire context follows the existing invalid_request response. Generic PGMCP creation/encoding/launch/cleanup failures use existing invocation-failure envelopes and never fabricate native results.
 
 ## Flow
 
@@ -281,28 +373,34 @@ Retain existing response schemas, exit-code pairing, external tool facts, covera
 sequenceDiagram
     participant S as PGMCP service
     participant R as Process runtime
-    participant T as Owned directory provider
+    participant T as Directory provider
+    participant E as V2 request encoder
     participant A as Adapter translator
     participant N as Native tool
-    S->>R: Admitted request and launch
-    R->>T: Allocate invocation directory
-    R->>A: JSON stdin and child environment context
-    A->>A: Validate version and effective operation
-    A->>N: One native run via owned file or native stdin
+    S->>R: Operation input and selected role contracts
+    R->>T: Describe invocation ID (pure query)
+    T-->>R: Immutable directory description
+    R->>T: Create described directory (command)
+    R->>E: Operation input and explicit execution context
+    E-->>R: Validated complete v2 JSON bytes
+    R->>A: V2 request on JSON stdin
+    A->>A: Validate context, version and effective operation
+    A->>N: One native run via prepared file or native stdin
     N-->>A: Native status and diagnostics
-    A-->>R: Existing role response
+    A-->>R: Existing role response structure
     R->>R: Validate response and settle descendants
-    R->>T: Remove owned directory after confirmed finish
-    R-->>S: Existing outcome and bounded evidence
+    R->>T: Remove own directory after confirmed finish
+    R-->>S: Existing outcome and factual v2 metadata
 ```
 
-A refused request skips the native analysis run. Version lookup is an observation, not analysis evidence. The invocation deadline starts before allocation. Launch, native execution and process settling retain the existing monotone execution/stop budgets; creating an argument file does not start a second deadline.
+An invalid request or refused operation skips native analysis. The invocation deadline starts before description/creation. Native execution and process settling retain existing monotone execution/stop budgets; request encoding and transport preparation do not create another deadline.
 
 ## State and Failures
 
 | Condition | Required observable behavior |
 |---|---|
-| Allocation fails before child launch | Existing InvocationFailed with LAUNCH_FAILED and factual preparation message; no native completion |
+| Directory description/creation fails before launch | Existing InvocationFailed with LAUNCH_FAILED and factual preparation message; no native completion or adoption/removal of a pre-existing directory |
+| Missing/invalid v2 context | Existing invalid_request response with exact nested field/code; no fallback or native analysis |
 | Native transport cannot encode a token or conflicts with an owned input channel | Existing adapter unavailable/unsupported_input with useful explanation; no omission or fallback |
 | Native file write/read/launch fails | Adapter unavailable/execution_error with native/OS fact; owned directory still belongs to PGMCP |
 | Native metadata exits successfully | Operation refusal; help evidence may be retained, never passed analysis |
@@ -316,22 +414,28 @@ For a cleanup failure following cancellation, report the cleanup failure and pri
 
 ## Preservation
 
-| Boundary / Research strategy | Preservation carrier |
+| Boundary / Research strategy | Preservation or explicit break |
 |---|---|
-| Public tools and role JSON | No parameter, enum or response-schema migration; existing protocol validation tests |
-| Internal process backend | Atomic internal environment-overlay signature change with runtime/composition/test-backend consumers; no public compatibility bridge |
-| Package execution environment | Additive reserved key, inherited values preserved; raw bounded direct entry point remains supported |
-| Native selection B2 | Per-package single execution, full-vector/list encoding, configured discovery kept distinct; native exclusions/imports/plugins remain authoritative |
-| Completion B3 | Metadata refusal corrected; intentionally supported native outcome policies retained |
-| Ownership/trust B1/B4 | PGMCP directory lifecycle, no blanket cache destination enforcement, no sandbox claim |
+| Public MCP parameters and role results | Existing parameters, response structures, statuses/reasons and exit pairing preserved; binding metadata reports v2 truthfully |
+| Adapter wire input / approved B1 amendment | Coordinated check/test/fix v2 break with required context. All request alternatives, package role declarations and consumers migrate; v1 admission is refused, no bridge |
+| Internal runtime input | Explicit selected request_contract plus existing response contract; pure encoding follows directory creation |
+| Process backend / native environment | Current start signature and inheritance behavior remain; no PGMCP environment overlay |
+| Native selection B2 | Per-package one execution, complete argument vector/list, configured discovery kept distinct; native exclusions/imports/plugins remain authoritative |
+| Completion B3 | New Mypy/Ruff-check/Pyright guards and their explicit regressions; existing intentional outcome policies remain |
+| Ownership/trust B1/B4 | PGMCP directory lifecycle, explicit JSON location, no blanket native cache destination enforcement or sandbox claim |
+| Directory CQS / QA P2 | Frozen pure description; create/remove return None; no ownership of pre-existing paths |
 | Dependencies/classification B5/B6 | Package declarations remain SSOT; actual versions and substantive failure reasons remain visible |
-| Fix lifecycle | Existing all-input admission, ordered stop and partial mutation contract; no automatic retry or transactional rollback |
+| Fix lifecycle | All-input admission, ordered stop and partial mutation contract; no automatic retry or transactional rollback |
 
-A failure of pinned transport equivalence requires reconsidering that package's transport within this strategy; it does not authorize batching, dropping selection or changing public contracts. A required public/wire break must return to the human boundary decision.
+Failure of pinned transport equivalence requires a bounded package-design correction within this strategy, not batching or silent selection changes. Any further public incompatibility beyond the approved v2 boundary must return to the human decision.
 
 ## Transition and Cleanup
 
-No migration of stored workflow state, native caches or user configuration is required. Invocation directories are transient and distinct from content snapshots. Remove only confirmed-finished owned allocations; retain potentially live resources when process termination is uncertain. Do not sweep unrelated validation directories or native caches. Reverting the implementation restores previous argv behavior and its known limit; it does not undo native fix mutations or supplemental files. Historical probes remain evidence, not production cleanup machinery.
+The approved cutover moves the runtime, schemas, DTOs, package validators/manifests, result metadata assumptions and direct-call/contract fixtures together to v2. Unmigrated custom/workspace adapters are explicitly unsupported; no context-free argv fallback or dual-version bridge exists. No workflow-state, native-cache or user-tool-configuration migration is required.
+
+The description stage mutates nothing. Creation is exclusive; cleanup ownership starts only after successful creation. Invocation directories remain distinct from content snapshots. Remove confirmed-finished owned allocations; retain resources when termination is uncertain. Do not sweep other invocation/validation directories or native caches.
+
+Rollback requires reverting the coordinated contract consumers and package role declarations together; reverting only a manifest or serializer produces an incompatible deployment. Restoring v1 restores the previous argv limit, not source bytes or supplemental files changed by a prior native run. No automated migration/rollback framework is introduced.
 
 ## Validation
 
@@ -349,7 +453,7 @@ No migration of stored workflow state, native caches or user configuration is re
 
 ### V475-completion / RF3
 
-**Method:** Effective metadata/substitute-operation regressions and preserved intentional native success-policy cases.
+**Method:** Distinct new Mypy help, Ruff lint help/show-files, Ruff format help and Pyright help tests, plus effective metadata/substitute-operation and preserved intentional native success-policy cases.
 
 **Expected Result:** Metadata cannot become passed analysis; genuine pass/failure and supported collect-only/exit-zero/exit5 semantics remain correct.
 
@@ -367,11 +471,18 @@ No migration of stored workflow state, native caches or user configuration is re
 
 ### V-runtime / RF6
 
-**Method:** Runtime invocation/descendant/resource integration coverage and existing protocol/fix regression tests.
+**Method:** Runtime invocation/descendant/resource coverage; v2 JSON-context/schema parity across all role request variants; pure-description/exclusive-create failures; unsupported v1 and existing protocol/fix regressions.
 
-**Expected Result:** Deadline, cancellation, cleanup ownership and truthful operational failure use unchanged public/wire outcomes.
+**Expected Result:** Context is explicit and required, CQS is upheld, stale v1 is refused, metadata reports v2, and deadline/cancellation/cleanup use preserved result structures.
 
 ## Risks
+
+### Coordinated v2 migration rejects stale packages and direct calls.
+
+Migrate the inventoried producers, schemas, package validators/manifests and contract fixtures together. Refuse unsupported v1 at admission rather than silently omitting context. Keep observed public contract-version metadata truthful.
+
+**Consequence:** Operator-maintained v1 adapters/direct callers must be updated; no temporary compatibility bridge is provided under the approved strategy.
+
 
 ### Current native transport documentation is not complete pinned equivalence evidence.
 
@@ -399,14 +510,27 @@ Preserve factual capture/outcome, retain resources for unconfirmed live processe
 
 ## Planning Consequences
 
-Planning must retain distinct issue acceptance obligations and the public/wire preservation boundary. Runtime ownership and each package's transport/completion correction need evidence at their actual public boundaries. Native prerequisite fixtures must make required tools available explicitly; historical probes are not regression suites. Implementation uses the narrow changed-surface gates; branch-wide validation belongs to Validation. Documentation must align the active execution/tool guidance with replacement B4, ordinary operational writes, supported versions and explicit transport limits. GitHub alignment of issue 474's superseded fixed-destination wording belongs to coordination. This document defines no cycles, patch ordering or authorization to enter implementation.
+Planning must retain distinct issue acceptance obligations and the approved coordinated v2 boundary. Consumer migration includes all schema/request variants, nine package validators/ten role manifests, public version-metadata assumptions and direct-call/contract fixtures; input context must never be optional as an implementation convenience. Runtime ownership and each package's transport/completion correction need evidence at their actual public boundaries. Native prerequisite fixtures must make required tools available explicitly; historical probes are not regression suites. Implementation uses the narrow changed-surface gates; branch-wide validation belongs to Validation. Documentation must align the active execution/tool guidance with replacement B4, ordinary operational writes, supported versions and explicit transport limits. GitHub alignment of issue 474's superseded fixed-destination wording belongs to coordination. This document defines no cycles, patch ordering or authorization to enter implementation.
+
+## QA Verdict Disposition
+
+The independent verdict in the separately invoked QA chat **Beoordeel designplan** is NOGO for Design → Planning, with P1/P2 blockers and P3 clarification. The owner requested discussion first, then authorized these corrections and a new independent QA request. These producer dispositions do not clear the verdict.
+
+| Finding | Design correction | New review / future acceptance evidence |
+|---|---|---|
+| P1: PGMCP context outside JSON | Required execution_context in check/test/fix v2; remove PGMCP_INVOCATION_TMP and the environment-based transport fallback; record approved B1 break and the complete consumer boundary | Review explicit schema/DTO/runtime/package semantics; implementation proves producer-consumer parity, malformed context and refused v1 |
+| P2: allocate mutates and returns | Pure describe(invocation_id) → frozen description; create/remove → None; ownership only after successful exclusive create | Review CQS and failed-creation/collision/cleanup behavior; implementation proves pure query and no adoption/removal of pre-existing paths |
+| P3: Ruff/Pyright correction implicit | Distinct new Ruff lint help/show-files, Ruff format help and Pyright help guards/tests, alongside Mypy early-return correction | Review traceability to Research's actual reproduced routes; later tests prove refusal and preserved genuine native outcomes |
+
+Native cache/test temporary configuration remains separate from adapter-prepared argument files. The explicit context governs the latter only; no central redirect of all native scratch output is selected.
 
 ## Design Evidence
 
 - Directly inspected the existing runtime/backend, content-input ownership, bootstrap composition, selection/fix admission, package guards and public adapter/runtime regression seams.
 - Existing pinned Ruff regression `test_response_file_tokens_do_not_hide_writes_in_pinned_native`: **1 passed, 22 deselected** in **0.53s**, via `run_tests`, target `tests/mcp_server/integration/adapters/test_ruff_checks.py`, native args `-q -n 0 -k response_file_tokens_do_not_hide_writes_in_pinned_native`. Receipt: `pgmcp://cache/runs/395f886ff20f4e4ca4be9c76773f6304`; complete structured evidence inspected.
 - That test establishes native Ruff 0.15.6 argument-file interpretation and the existing caller-file refusal. It does **not** certify the proposed owned transport, large-selection equivalence, Ruff format/fix transport or the other packages.
-- The refined document profile passed without issues. Focused run_checks with scope=targets, this document, profile=markdown_link_review and timeout_seconds=60 passed: 28 total links, 22 successful, 6 configured offline exclusions and 0 errors. Receipt: `pgmcp://cache/runs/07fce48be466433d868e93a207497fe9`; complete structured evidence inspected. This checks the local review navigation; it does not validate those excluded external URLs.
+- Historical Design 1.0 document profile and link review passed: 22 successful links, 6 configured offline exclusions and 0 errors; receipt `pgmcp://cache/runs/07fce48be466433d868e93a207497fe9`. This retains its original scope and does not establish the corrected Design 1.1 architecture or its updated links.
+- Corrected Design 1.1 / Research 1.3 document and focused link-review evidence are recorded in the new review request. No rerun of the unchanged historical Ruff test is needed for documentation edits.
 - No production/test implementation was changed. All V469/V474/V475/V-runtime obligations above describe required future acceptance evidence.
 
 ## Sources
@@ -431,7 +555,7 @@ Planning must retain distinct issue acceptance obligations and the public/wire p
 ### Scope
 
 - Correction architecture for issues 469, 474 and 475 under the approved Research strategy.
-- Public/wire preservation, PGMCP resource ownership, per-package native transport and guard disposition, failure contracts and durable regression design.
+- Explicit approved v2 input break with public parameter/result preservation, CQS resource ownership, per-package native transport/guard disposition, failure contracts and durable regression design.
 - OS isolation, general permissions, implementation sequencing and unrelated filesystem correctness are excluded.
 
 ### Deliverables
@@ -443,15 +567,16 @@ Planning must retain distinct issue acceptance obligations and the public/wire p
 ### Evidence
 
 - Pinned Ruff argument-file regression: 1 passed, 22 deselected; exact call and limited claim are recorded in Design Evidence.
-- Document profile passed without issues; markdown_link_review passed with 22 successful links, 6 configured offline exclusions and 0 errors. Exact scope and receipt are recorded in Design Evidence.
+- Historical Ruff and Design 1.0 evidence retains its limited scope. Fresh corrected-document validation is provided with the new QA request.
 - Proposed corrections are not implementation evidence or producer authorization.
 
 ### Open Work
 
-- Independent Design review and the owner's opportunity to adjust the proposed choices.
+- Independent re-review of QA P1–P3 against the corrected v2/CQS/metadata design. The owner has approved the compatibility amendment; this is not QA approval.
 - Implementation must establish the pinned transport, permitted-effect, completion and runtime obligations; no universal transport/isolation claim is established.
 - Coordination must align issue 474's superseded fixed-destination wording before claiming acceptance/closure.
 
 ### Review Request
 
 Review requested.
+

@@ -2,8 +2,8 @@
 
 # Issue 469 — Native Adapter Robustness and Related Scope Research
 
-**Status:** RESEARCH FINDINGS — replacement strategy human-approved; independent QA pending
-**Version:** 1.2
+**Status:** RESEARCH FINDINGS — B1/B4 amendments human-approved; independent QA pending
+**Version:** 1.3
 **Last Updated:** 2026-10-01
 
 ## Purpose
@@ -110,7 +110,7 @@ No issue is closed or its GitHub scope rewritten here. @co retains external coor
 
 | Boundary | Approved strategy | Alternatives, cost and risk |
 |---|---|---|
-| B1 generic public/wire contracts and role ownership — amended by owner | Adapters are thin native input/output translators and uphold the requested role. PGMCP owns execution conditions, allocated-resource lifecycle and any chosen filesystem authority. Preserve public contracts where coherent; do not let contract preservation force security policy into adapters. Any needed wire/consumer change requires a separate explicit strategy decision | Centralizing native parsers in PGMCP violates tool ownership; duplicating execution/write policy in every adapter violates responsibility and increases maintenance. A general policy framework is not presumed necessary |
+| B1 generic public/wire contracts and role ownership — amended by owner | Adapters are thin native input/output translators. PGMCP owns execution conditions and resource lifecycle. Its execution context must travel exclusively in the explicit adapter JSON input contract. Human-approved coordinated check/test/fix v2 break adds required context; migrate bundled consumers/direct calls and refuse v1 rather than bridge it. Preserve public MCP tool parameters and result structures, while reporting actual contract version 2 | Preserving v1 through a PGMCP environment side channel violates the owner-defined communication boundary. A temporary v1/v2 bridge adds dual validation/transport paths and unsupported-context behavior; rejected for this personal-use release. A coordinated break costs consumer/schema/test migration and makes stale packages explicitly unusable |
 | B2 selection and large invocation | Preserve requested selection and native config/exclusions; require length-safe adapter-local behavior or honest actionable unsupported/unavailable outcomes, never a silently narrower or broader scope. Fix source selection remains explicit files. An actionable launch-limit failure remains a limitation and does not satisfy the supported-large-selection success criterion | Automatic workspace fallback reduces implementation effort but changes coverage/authority. Naive batching risks cross-source/session semantics. Concrete mechanism and equivalence proof remain Design work |
 | B3 check completion (475) | Deliberately stop admitting metadata-only or check-replacing bypasses as successful quality checks, using existing truthful non-success vocabulary. Preserve genuine native analysis, diagnostic failure, normal native config and existing explicit diagnostic policies | Keeping false PASS preserves a defective result. Adding a parallel metadata API is unneeded scope. Ruff --exit-zero diagnostics and Pytest collect-only/no-tests are deliberately tested native semantics; changing them would require a separate explicit policy decision |
 | B4 filesystem effects (474) — replacement human-approved | Select trusted personal local execution. PGMCP owns scope, execution conditions and its allocated-resource lifecycle; adapters translate role/input/output contracts. Accept normal native caches and temporary toolfiles at native user-configured locations, including outside source selection. Reports must preserve the requested result contract. Maintain role/source-selection correctness; no general OS filesystem/network/credential isolation is added. Executed code can retain host-account access. Add targeted controls only for demonstrated unwanted routes whose risk, effectiveness and cost justify them | Fixed-cache-root restrictions and universal pre-write destination refusal are rejected as release defaults. Adapter-owned execution/security policy is rejected. L1 is selected, targeted L2 controls remain conditional on concrete findings, and L3 remains outside this release under R-06 |
@@ -127,17 +127,17 @@ The human approved this route on 2026-10-01. Execution/effect evidence is record
 
 ## Questions
 
-- No Research policy decision remains open. S1, ownership, replacement B4, trusted local execution and accepted host-access risk are approved. Native mechanisms, interface details and supported-version details are Design-owned. If Design requires a public/wire compatibility change beyond the preservation strategy, reopen that specific decision explicitly. The original xdist timeout remains an observed infrastructure uncertainty.
+- No Research policy decision remains open. S1, ownership, replacement B4, trusted local execution and accepted host-access risk are approved. Native mechanisms, interface details and supported-version details are Design-owned. The coordinated adapter-input v2 change is human-approved in the B1 amendment; reopen any further incompatible boundary explicitly. The original xdist timeout remains an observed infrastructure uncertainty.
 
 ## References
 
-- [Issue 469](<https://github.com/MikeyVK/phase-gate-mcp/issues/469>)
-- [Issue 474](<https://github.com/MikeyVK/phase-gate-mcp/issues/474>)
-- [Issue 475](<https://github.com/MikeyVK/phase-gate-mcp/issues/475>)
-- [CreateProcessW command-line bound](<https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw>)
-- [Mypy 1.19.1 file-list documentation](<https://raw.githubusercontent.com/python/mypy/v1.19.1/docs/source/running_mypy.rst>)
-- [Pyright 1.1.408 CLI documentation](<https://github.com/microsoft/pyright/blob/1.1.408/docs/command-line.md>)
-- [Ruff configuration (current, not pin-specific proof)](<https://docs.astral.sh/ruff/configuration/>)
+- [Issue 469](https://github.com/MikeyVK/phase-gate-mcp/issues/469)
+- [Issue 474](https://github.com/MikeyVK/phase-gate-mcp/issues/474)
+- [Issue 475](https://github.com/MikeyVK/phase-gate-mcp/issues/475)
+- [CreateProcessW command-line bound](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw)
+- [Mypy 1.19.1 file-list documentation](https://raw.githubusercontent.com/python/mypy/v1.19.1/docs/source/running_mypy.rst)
+- [Pyright 1.1.408 CLI documentation](https://github.com/microsoft/pyright/blob/1.1.408/docs/command-line.md)
+- [Ruff configuration (current, not pin-specific proof)](https://docs.astral.sh/ruff/configuration/)
 
 ## Approved Strategy
 
@@ -156,7 +156,23 @@ S1 combined delivery and separate issue acceptance identities remain approved. P
 
 This changes issue 474's original fixed-destination/pre-write-rejection expectation explicitly. The issue remains an active deliverable: establish the policy and ownership, assess existing controls against it, correct demonstrated contract defects, and document achievable guarantees and accepted limits. Do not claim the issue completed from the policy decision alone.
 
-Preserve existing public/wire contracts as the starting compatibility strategy. No new public permission API, security manifest or generic native parser is authorized by this decision. If concrete Design evidence requires a public/wire change, reopen only that affected compatibility boundary before selecting it.
+Preserve public MCP tool parameters and response structures. The separately human-approved B1 amendment below replaces adapter-wire v1 preservation with a coordinated v2 input-contract break. B4 remains unchanged: no new public permission API, security manifest, generic native parser or OS sandbox is authorized. A further incompatible boundary change requires its own human decision.
+
+### Human-approved B1 compatibility amendment after Design QA
+
+The independent Design verdict is NOGO: P1 rejects PGMCP context outside JSON; P2 rejects allocation that both mutates and returns a value; P3 requires explicit new Ruff/Pyright metadata guards. The owner confirmed that input/output contracts are the communication channel between PGMCP and adapters. Environment inputs learned by an adapter belong to native-tool configuration, not a second PGMCP context channel.
+
+After discussing explicit context, coordinated v2 versus a temporary v1 bridge, CQS separation and the distinction from native scratch/cache settings, the owner authorized the corrections and a new independent review on 2026-10-01: "Mee eens, verwek het qa verdict en vraag nieuwe qa aan". This accepts the proposed coordinated v2 strategy; it does not constitute QA approval.
+
+| Affected boundary | Approved strategy and impact |
+|---|---|
+| PGMCP to adapter request | Add explicit required execution context in check/test/fix v2. No PGMCP-specific environment variable or absent-context transport fallback |
+| Adapter packages and direct invocations | Migrate all nine bundled packages/ten roles and direct-call fixtures coherently. Custom/workspace v1 packages need explicit migration; reject their unsupported contract version before invocation. No runtime v1 bridge |
+| Generic/public MCP tools | Preserve user parameters, role response structures, exit/status vocabulary and cache envelopes. Metadata reports actual contract version 2; it must not preserve Literal[1] by misreporting |
+| Resource ownership and native configuration | PGMCP retains location/allocation/lifecycle; adapters receive only the translation location. Ordinary native cache/temp/report settings retain replacement B4 |
+| Cost and acceptance | A wider but bounded schema/producer/consumer/protocol-test migration replaces dual-version/implicit-context complexity. Contract conformance and native equivalence require implementation evidence; independent Design QA remains authoritative |
+
+Input v2 is a deliberate break even though response structures remain stable. The active Design owns concrete field meanings, validation, CQS interfaces and consumer coverage. Other Approved Strategy boundaries remain binding.
 
 ### Ownership and release-boundary analysis — decision resolved
 
@@ -221,7 +237,7 @@ Issue 474 and the historical D-VAL-06 notice currently prefer adapter-local corr
 
 1171 existing files selected using host-native rg --files over mcp_server, tests/mcp_server, docs, scripts, .agents and .github before this Research artifact existed. Four checks unavailable/execution_error: Ruff format/lint and Mypy WinError 206; Pyright spawnSync ENAMETOOLONG. Native tools did not analyse this selection. Full cache reconstructed through contiguous windows with run ID, total codepoint length and UTF-8 SHA-256 verified.
 
-- [Full large-selection DTO](<pgmcp://cache/runs/57b52ef905ce4418879df4b57db0f190>)
+- [Full large-selection DTO](pgmcp://cache/runs/57b52ef905ce4418879df4b57db0f190)
 
 **Invocation:** run_checks(scope="targets", targets=<the 1171-file rg inventory>, profile="python_review", timeout_seconds=60)
 
@@ -231,7 +247,7 @@ Issue 474 and the historical D-VAL-06 notice currently prefer adapter-local corr
 
 One existing python_syntax adapter source completed Ruff format/lint, Mypy and Pyright. Mypy evidence says 1 source file; Pyright JSON filesAnalyzed=1. Versions Ruff 0.15.6, Mypy 1.19.1 and Pyright 1.1.408.
 
-- [Bounded DTO](<pgmcp://cache/runs/e3aec4a836a9476a90131c670904a285>)
+- [Bounded DTO](pgmcp://cache/runs/e3aec4a836a9476a90131c670904a285)
 
 **Invocation:** run_checks(scope="targets", targets=["mcp_server/bundled_adapters/python_syntax/check.py"], profile="python_review", timeout_seconds=60)
 
@@ -241,8 +257,8 @@ One existing python_syntax adapter source completed Ruff format/lint, Mypy and P
 
 All three help requests returned passed with native help output; Ruff format --help and Ruff lint --show-files likewise passed. --show-files evidence is only the selected pathname. All complete DTOs were window-read and hash-verified.
 
-- [Mypy/Ruff/Pyright help DTO](<pgmcp://cache/runs/b44ae8b074b942d99c7aa182b42e6827>)
-- [Ruff format help / lint show-files DTO](<pgmcp://cache/runs/c1026cb2c1014097b1b342b8f054821d>)
+- [Mypy/Ruff/Pyright help DTO](pgmcp://cache/runs/b44ae8b074b942d99c7aa182b42e6827)
+- [Ruff format help / lint show-files DTO](pgmcp://cache/runs/c1026cb2c1014097b1b342b8f054821d)
 
 **Invocation:** run_checks(scope="targets", targets=["mcp_server/tools/scaffold_tool.py"], checks=["python_types","python_lint","python_pyright"], args={"python_types":["--help"],"python_lint":["--help"],"python_pyright":["--help"]}, timeout_seconds=60); second probe targets python_syntax/check.py with python_format:["--help"], python_lint:["--show-files"]
 
@@ -252,7 +268,7 @@ All three help requests returned passed with native help output; Ruff format --h
 
 Lychee 0.24.2 rejects help before link checking with unavailable/unsupported_input. Do not infer that every check adapter has the reproduced defect.
 
-- [Lychee help rejection DTO](<pgmcp://cache/runs/8b4d0a2e543444cd8aa4121c3464e7f0>)
+- [Lychee help rejection DTO](pgmcp://cache/runs/8b4d0a2e543444cd8aa4121c3464e7f0)
 
 **Invocation:** run_checks(scope="targets", targets=["docs/reference/tools/quality.md"], checks=["markdown_links"], args={markdown_links:["--help"]}, timeout_seconds=60)
 
@@ -262,8 +278,8 @@ Lychee 0.24.2 rejects help before link checking with unavailable/unsupported_inp
 
 Configured Ruff format reports execution_error and access denied (os error 5), 470 files already formatted. Same operation with --verbose reports invalid_configuration and a Using configuration file debug line; full evidence still ends in os error 5. Full verbose DTO window-read and hash-verified.
 
-- [Ordinary configured DTO](<pgmcp://cache/runs/b93c67478d534689bea1a90aa9a1ac23>)
-- [Verbose configured DTO](<pgmcp://cache/runs/35f022fd9e954c2082363f72217206a9>)
+- [Ordinary configured DTO](pgmcp://cache/runs/b93c67478d534689bea1a90aa9a1ac23)
+- [Verbose configured DTO](pgmcp://cache/runs/35f022fd9e954c2082363f72217206a9)
 
 **Invocation:** run_checks(scope="configured", checks=["python_format"], timeout_seconds=60); repeat with args={python_format:["--verbose"]}
 
@@ -273,9 +289,9 @@ Configured Ruff format reports execution_error and access denied (os error 5), 4
 
 159 integration items across all nine adapter packages: 158 passed and one failed in 128.00s. Failure is direct native Pytest xdist subprocess timeout at the fixture's 45s limit, before that case compares the adapter. A narrow serial-outer rerun passed one selected item with 14 deselected in 13.85s. This is evidence of existing guard/config/diagnostic behavior; the original run remains failed and the timeout cause is not proven.
 
-- [Original native suite DTO](<pgmcp://cache/runs/414bd776ec63440fb26b9b884174bddb>)
-- [Focused rerun DTO](<pgmcp://cache/runs/23f80367a3714eda88fa218eb3fa7f6a>)
-- [Native test fixture](<../../../tests/mcp_server/integration/adapters/test_pytest.py>)
+- [Original native suite DTO](pgmcp://cache/runs/414bd776ec63440fb26b9b884174bddb)
+- [Focused rerun DTO](pgmcp://cache/runs/23f80367a3714eda88fa218eb3fa7f6a)
+- [Native test fixture](../../../tests/mcp_server/integration/adapters/test_pytest.py)
 
 **Invocation:** run_tests(scope="targets", targets=["tests/mcp_server/integration/adapters"], tests=["python_tests"], args={python_tests:["-q","-n","4"]}, timeout_seconds=300); focused rerun targets test_pytest.py, args=["-q","-n","0","-k","native_outcomes_and_options and xdist"], timeout_seconds=90
 
@@ -287,8 +303,8 @@ Initial static inspection found Ruff fix --cache-dir admitted without destinatio
 
 The probe runner completed its observation assertions; this is not a repaired-adapter conformance result. No actual external destination or repository source was targeted. Detailed invocations, source, per-case effects, inventory hashes and evidence limits are persisted in effect-probe.md; complete DTOs are `pgmcp://cache/runs/310efd1225fe42828f73f881e982701d` and `pgmcp://cache/runs/7ef68a12f021414bb07cfcfa99906281`.
 
-- [Ruff fix entrypoint](<../../../mcp_server/bundled_adapters/ruff/fix.py>)
-- [D-VAL-06 origin](<../issue460/deferred-work.md#d-val-06--adapter-write-effects-boundary>)
+- [Ruff fix entrypoint](../../../mcp_server/bundled_adapters/ruff/fix.py)
+- [D-VAL-06 origin](../issue460/deferred-work.md#d-val-06--adapter-write-effects-boundary)
 
 **Observed Result:** admitted cache destinations produce observed operational writes outside the original simulated B4-approved destination. Normal configured cache writes are accepted by replacement B4. Existing report-output refusal controls remain effective; their preservation/change is evaluated against role/output correctness in Design.
 
@@ -316,11 +332,11 @@ Persist exact observations/invocations here and the effect-probe source/observat
 
 ## Related Documents
 
-- [Origin notice](<../issue460/deferred-work.md>)
-- [Issue-460 native selection/fix authority](<../issue460/research.md>)
-- [Documentation Standard](<../../coding_standards/DOCUMENTATION_STANDARD.md>)
-- [Architecture Principles](<../../coding_standards/ARCHITECTURE_PRINCIPLES.md>)
-- [Active quality reference](<../../reference/tools/quality.md>)
+- [Origin notice](../issue460/deferred-work.md)
+- [Issue-460 native selection/fix authority](../issue460/research.md)
+- [Documentation Standard](../../coding_standards/DOCUMENTATION_STANDARD.md)
+- [Architecture Principles](../../coding_standards/ARCHITECTURE_PRINCIPLES.md)
+- [Active quality reference](../../reference/tools/quality.md)
 ## Bug / Research Hand-over
 
 ### Scope
@@ -335,7 +351,7 @@ Investigated 469 native invocation, selection/discovery, error classification an
 
 ### Evidence
 
-Fresh large-selection failures, bounded genuine-analysis control, false-PASS reproductions and verbose classification comparison are indexed above. The isolated probe recorded 30 cache cases plus five no-write refusal controls. Document preflight and focused link verification are reported with their exact scope; the original 158-pass/one-timeout native-suite run is retained alongside its successful focused rerun. Human approval covers S1, amended ownership and final replacement B4 including permitted operational writes and accepted host-access risk. No Research policy question remains open. No QA verdict or selected fix design is inferred.
+Fresh large-selection failures, bounded genuine-analysis control, false-PASS reproductions and verbose classification comparison are indexed above. The isolated probe recorded 30 cache cases plus five no-write refusal controls. Document preflight and focused link verification are reported with their exact scope; the original 158-pass/one-timeout native-suite run is retained alongside its successful focused rerun. Human approval covers S1, amended ownership, the coordinated adapter-input v2 strategy in B1, and final replacement B4 including permitted operational writes and accepted host-access risk. No Research policy question remains open. No QA verdict or selected fix design is inferred.
 
 ### Open Work
 
@@ -344,6 +360,7 @@ Independent Research review. Native mechanisms, resource/interface details, per-
 ### Review Request
 
 Review requested. Open or resume the independent interactive pgmcp-qa task for Research review; do not infer GO from this producer hand-over.
+
 
 
 
