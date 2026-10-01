@@ -23,22 +23,22 @@
           "cycles": [
             {
               "cycle_number": 1,
-              "name": "Coordinated v2 input and PGMCP resource ownership",
+              "name": "Direct contract correction and PGMCP resource ownership",
               "deliverables": [
                 {
                   "id": "D1_PROTOCOL",
-                  "description": "Complete strict v2 schemas, request encoders, manifest admission and consumer migration across every check/test/fix request alternative, nine packages and ten roles, with unchanged public MCP parameter sets and response shapes."
+                  "description": "Existing strict check/test/fix schemas, encoders, bundled validators and current fixtures directly corrected for required JSON context; current contract_version 1 and public MCP parameters/results retained, with no legacy or compatibility paths."
                 },
                 {
                   "id": "D1_OWNERSHIP",
-                  "description": "Injected CQS directory description/create/remove and runtime lifecycle with cleanup ownership only after exclusive successful creation; no PGMCP context environment channel."
+                  "description": "Injected CQS directory description/create/remove and runtime ownership after exclusive successful creation, with confirmed-termination cleanup and no PGMCP environment context channel."
                 },
                 {
                   "id": "D1_REGRESSION",
-                  "description": "Durable schema/DTO/entry-point parity and runtime ownership/process regressions, plus fresh-server v2 catalog and public operation smoke evidence."
+                  "description": "Updated useful current-contract/runtime tests and fresh-server health plus working edit/check/test/fix smokes; no separate migration or historical-version proof suite."
                 }
               ],
-              "exit_criteria": "D1_PROTOCOL, D1_OWNERSHIP and D1_REGRESSION are evidenced by intended RED, passing focused v2 contract/service/runtime/adapter-role tests and changed-file gates; a controlled restart proves the live server admits and invokes v2. No v1 bridge, optional context or environment side channel remains."
+              "exit_criteria": "D1_PROTOCOL, D1_OWNERSHIP and D1_REGRESSION are complete: the existing contract is directly corrected with identity 1 and required context; focused current tests pass, the final preflight edit/restart sequence completes, and fresh-server health plus normal operation smokes succeed. No compatibility, legacy or external-migration code remains."
             },
             {
               "cycle_number": 2,
@@ -57,7 +57,7 @@
                   "description": "Substantive access/configuration/usage/execution and missing-negative-evidence classifications, independent of verbose chatter, with retained native facts and bounded useful diagnostics."
                 }
               ],
-              "exit_criteria": "D2_COMPLETION, D2_VERSIONS and D2_FAILURES have intended RED and passing focused affected adapter/presentation tests plus changed-file gates; the new Ruff and Pyright guards are explicit and intentional native outcomes remain unchanged."
+              "exit_criteria": "D2_COMPLETION, D2_VERSIONS and D2_FAILURES have passing small focused native checks and useful affected tests/gates; the proven metadata routes no longer return false PASS and server/tool health remains good."
             },
             {
               "cycle_number": 3,
@@ -69,10 +69,10 @@
                 },
                 {
                   "id": "D3_EQUIVALENCE",
-                  "description": "Durable real-native large-selection and literal/option/discovery/exclusion regressions, including cross-file Mypy semantics, Pytest session preservation and Ruff fix effects."
+                  "description": "Useful real-native large/small-selection and existing literal/option/discovery/exclusion checks, retaining Mypy cross-file behavior, Pytest session behavior and Ruff fix effects."
                 }
               ],
-              "exit_criteria": "D3_ARGFILES and D3_EQUIVALENCE have intended launch-limit RED and passing affected Ruff/Mypy/Pytest real-native transport and preservation regressions plus changed-file gates; one run and complete selection are evidenced rather than inferred from an aggregate PASS."
+              "exit_criteria": "D3_ARGFILES and D3_EQUIVALENCE are complete with working full-selection @file transport, small actual-native large/small controls and passing affected existing preservation tests/file gates; server/tool health remains good."
             },
             {
               "cycle_number": 4,
@@ -87,7 +87,7 @@
                   "description": "Real-native large/literal/exclusion/discovery and Lychee content-snapshot regressions, plus explicit conflicting-channel and unrepresentable-input limitations."
                 }
               ],
-              "exit_criteria": "D4_STDIN and D4_LIMITS have intended RED and passing focused Pyright/Lychee native transport, discovery, input-channel and snapshot tests plus changed-file gates; no claim of universal large-selection support is made for Lychee's occupied-channel fallback."
+              "exit_criteria": "D4_STDIN and D4_LIMITS have passing small native selection/discovery/channel controls and useful affected tests/file gates; the occupied-channel Lychee limit is explicit and server/tool health remains good."
             },
             {
               "cycle_number": 5,
@@ -102,7 +102,7 @@
                   "description": "Real-native CLI/config/environment effect and result-capture coverage where supported, source-byte preservation or intentional Ruff fix effects, and durable refusal regressions without a general sandbox suite."
                 }
               ],
-              "exit_criteria": "D5_EFFECTS and D5_REGRESSION have intended policy RED and passing focused affected native effect/refusal tests plus changed-file gates; the claimed permitted/refused behavior matches B4 with no sandbox or universal destination guarantee."
+              "exit_criteria": "D5_EFFECTS and D5_REGRESSION have passing small allowed-effect/refusal checks and useful affected tests/file gates under B4, without confinement claims; server/tool health remains good."
             }
           ]
         },
@@ -114,11 +114,11 @@
             },
             {
               "id": "V_GATES",
-              "description": "One branch-wide review pass in Validation: run_checks(scope='branch', checks=['python_format','python_lint','python_pyright']) for admitted Python targets, and run_checks(scope='configured', checks=['python_types']) for the existing strict production-only Mypy baseline. Apply existing admitted CJS/JSON/Markdown obligations to changed files; record unsupported grammar/gate coverage honestly."
+              "description": "In Validation derive and record the complete changed Python-file list from the branch diff, then run_checks(scope='targets', targets=<that explicit .py list>, checks=['python_format','python_lint','python_pyright']); keep run_checks(scope='configured', checks=['python_types']) for the existing production Mypy baseline. Handle changed CJS/JSON/Markdown/manifests separately using their admitted syntax/schema/entry-point/link checks; no implicit adapter extension filtering."
             },
             {
               "id": "V_ACCEPTANCE",
-              "description": "Validation report maps E469-1..4, E474-1, E475-1 and E-CROSS separately to durable tests and fresh receipts, including all nine packages/ten roles/thirteen capabilities applicability and explicit limitations; independent QA review requested."
+              "description": "Concise Validation report maps the separate E469/E474/E475 and existing cross-cutting obligations to actual useful tests/smokes and fresh receipts, records server health, unavailable prerequisites and transport limits, and requests independent QA; no compatibility or exhaustive conformance proof."
             }
           ]
         },
@@ -126,7 +126,7 @@
           "deliverables": [
             {
               "id": "DOC_GUIDANCE",
-              "description": "Update active protocol/execution/tool guidance for required v2 context, direct-caller/custom-adapter migration, actual metadata version, lifecycle ownership, native caches/reports, supported versions and per-tool transport limits; retire active v1 usage without rewriting historical findings."
+              "description": "Update active protocol/execution/tool guidance for the one directly corrected unreleased contract, required context and PGMCP ownership, ordinary native caches/reports, declared native versions and concrete transport limits; retain internal identity 1, with no external migration or legacy instructions."
             },
             {
               "id": "DOC_DISPOSITION",

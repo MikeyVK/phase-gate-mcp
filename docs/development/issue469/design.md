@@ -3,12 +3,12 @@
 # Native adapter robustness: full selection and truthful completion
 
 **Status:** DESIGN — proposed correction; independent QA review pending
-**Version:** 1.1
+**Version:** 1.2
 **Last Updated:** 2026-10-01
 
 ## Purpose
 
-Define the bounded correction architecture and durable regression obligations for issues 469, 474 and 475 under the human-approved Research strategy.
+Define the bounded correction architecture and proportional correctness checks for issues 469, 474 and 475 under the human-approved Research strategy.
 
 ## Scope In
 
@@ -21,7 +21,7 @@ OS isolation, a general write-permission API, security manifests, generic native
 ## Prerequisites
 
 - Research B1–B6 and the final replacement B4 are binding. The owner explicitly accepted replacement B4 and authorized Design on 2026-10-01.
-- Research's human-approved B1 amendment authorizes coordinated check/test/fix v2 input contracts with required execution context and no v1 bridge. Preserve public MCP tool parameters, response structures and outcome vocabulary; report actual contract version 2. Any further incompatible boundary requires a new human decision.
+- Research 1.4 records the owner's unreleased-development refinement: correct the existing adapter contract in place, retaining internal contract_version 1 and current schema identities. No new v2 family, transition, legacy/compatibility code or external-consumer migration. Preserve public MCP parameters, response structures and outcome vocabulary. Verification is proportional; Planning owns server-health and report-mode edit/restart checkpoints.
 
 ## Problem Statement
 
@@ -61,7 +61,7 @@ Keep one native execution and move scalable input off argv using each tool's sup
 
 - Removes the target-count command-line cause while preserving joint analysis.
 - Retains existing native CLI/configuration behavior and process lifecycle.
-- Requires a narrow resource seam and explicit v2 request context; native formats remain adapter-local.
+- Requires a narrow resource seam and explicit required request context; native formats remain adapter-local.
 
 **Cons:**
 
@@ -121,7 +121,7 @@ Keep blanket destination refusals or introduce a general adapter permission poli
 
 ## Decision
 
-Use native scalable transport, PGMCP-owned invocation directories, explicit required execution_context in check/test/fix v2, CQS-separated directory description/create/remove, targeted operation/result guards and package-local supported-version checks. Preserve public MCP tool parameters and response structures; no v1 compatibility bridge.
+Use native scalable transport, PGMCP-owned invocation directories, explicit required execution_context in the existing check/test/fix contract, CQS-separated directory description/create/remove, targeted operation/result guards and package-local supported-version checks. Preserve public MCP tool parameters and response structures; no legacy or compatibility path.
 
 ## Rationale
 
@@ -138,14 +138,14 @@ Avoids joint-analysis, collection, plugin and partial-aggregation changes.
 - Universal batching
 - Silent workspace fallback
 
-### D2: Explicit required execution context in adapter input v2
+### D2: Explicit context in the existing unreleased adapter input
 
-Required execution_context.scratch_directory in each v2 adapter request. PGMCP supplies it through JSON stdin after successful directory creation. No PGMCP-specific environment key or absent-context transport fallback.
+Required execution_context.scratch_directory in each adapter request. PGMCP supplies it through JSON stdin after successful directory creation. No PGMCP-specific environment key or absent-context transport fallback.
 
 **Alternatives:**
 
 - PGMCP environment side channel: rejected by the owner's communication boundary and QA P1.
-- Optional v1 context/dual-version bridge: rejected by the approved coordinated migration strategy.
+- Optional context or dual-version bridge: unnecessary complexity under the direct-development correction.
 - Adapter-owned temporary directory: violates ownership.
 
 ### D3: Preserve native operational state and compatible reports
@@ -173,7 +173,7 @@ Dependency declarations already record supported pins. Actual versions are obser
 | Boundary | Owner and correction | Existing entry point |
 |---|---|---|
 | Request selection/operation | PGMCP preserves current scope admission and fix re-resolution | [selection](../../../mcp_server/execution/check_selection.py), [fix service](../../../mcp_server/execution/fix_service.py) |
-| Process context/deadline/descendants | PGMCP describes and creates one owned invocation directory, includes its context in the v2 JSON request, and manages cleanup | [runtime](../../../mcp_server/execution/process_runtime.py) |
+| Process context/deadline/descendants | PGMCP describes and creates one owned invocation directory, includes its context in the JSON request, and manages cleanup | [runtime](../../../mcp_server/execution/process_runtime.py) |
 | Resource location/allocation/removal | A narrow injected directory provider uses the existing resolved temporary root | [bootstrap](../../../mcp_server/bootstrap.py), [content ownership precedent](../../../mcp_server/execution/content_input.py) |
 | Native encoding, guards and result interpretation | Each package owns its tool-specific translation; Ruff check/fix may share a package-local translation helper | [bundled packages](../../../mcp_server/bundled_adapters) |
 | Native caches, configuration, plugins | Preserve admitted native behavior and accepted host-account access | Research replacement B4 |
@@ -195,7 +195,7 @@ Keep content-input scratch ownership separate: its snapshot must outlive the cor
 
 Use native argument-file grammar, not shell quoting. For line-oriented formats, reject unrepresentable tokens (including CR/LF or native blank/comment ambiguity) as unsupported_input rather than splitting, stripping or dropping them. Ordinary empty/whitespace option values need explicit native equivalence evidence. Preserve spaces, Unicode, literal metacharacters and ordering. Absolute admitted filesystem paths prevent leading option/comment markers from becoming control syntax; Lychee retains its existing literal glob escaping. Unknown transport behavior is not grounds for normalization.
 
-Every admitted v2 invocation contains execution_context. Ruff/Mypy/Pytest use its directory for argument files even for bounded selections, avoiding an arbitrary switching threshold. A direct caller must provide the same complete v2 request and own the supplied directory's lifetime. Missing/invalid context is invalid_request; there is no direct argv fallback, environment lookup or private temporary allocation. Native stdin remains separate from the adapter's JSON request stdin. Very large argv-only option payloads for stdin-based tools and Lychee's competing files_from mode retain an explicit native launch limit.
+Every admitted invocation contains execution_context. Ruff/Mypy/Pytest use its directory for argument files even for bounded selections, avoiding an arbitrary switching threshold. Repository direct-call fixtures provide the same complete request and own the supplied directory's lifetime; no external migration commitment is introduced. Missing/invalid context is invalid_request; there is no direct argv fallback, environment lookup or private temporary allocation. Native stdin remains separate from the adapter's JSON request stdin. Very large argv-only option payloads for stdin-based tools and Lychee's competing files_from mode retain an explicit native launch limit.
 
 ### Guard disposition for issue 474
 
@@ -235,21 +235,15 @@ Ruff error classification uses the native error record and causal chain, not the
 
 ## Test Design
 
-### Durable public-boundary coverage
+### Proportional public-boundary checks
 
-Adapt [Ruff checks](../../../tests/mcp_server/integration/adapters/test_ruff_checks.py), [Ruff fixes](../../../tests/mcp_server/integration/adapters/test_ruff_fixes.py), [Mypy](../../../tests/mcp_server/integration/adapters/test_mypy.py), [Pyright](../../../tests/mcp_server/integration/adapters/test_pyright.py), [Pytest](../../../tests/mcp_server/integration/adapters/test_pytest.py) and [Lychee](../../../tests/mcp_server/integration/adapters/test_lychee.py). Invoke package entry points with real pinned tools and validate the response schema. Supply the owned directory in execution_context in the v2 JSON request; separately exercise actual PGMCP runtime ownership. No test fixture sets a PGMCP-specific environment variable to select the transport. Do not assert a private helper name, exact temporary basename or one chosen internal argv layout.
+Reuse and adapt [Ruff checks](../../../tests/mcp_server/integration/adapters/test_ruff_checks.py), [Ruff fixes](../../../tests/mcp_server/integration/adapters/test_ruff_fixes.py), [Mypy](../../../tests/mcp_server/integration/adapters/test_mypy.py), [Pyright](../../../tests/mcp_server/integration/adapters/test_pyright.py), [Pytest](../../../tests/mcp_server/integration/adapters/test_pytest.py) and [Lychee](../../../tests/mcp_server/integration/adapters/test_lychee.py). Update existing request fixtures to supply execution_context and use the current schemas. Retain meaningful existing coverage; no compatibility, historical-version refusal or exhaustive per-package permutation suite is required.
 
-Large-selection tests must exceed the Windows native command-line capacity and include diagnostic or mutation sentinels near both ends, plus a source outside selection. For whole-program analyzers use cross-file behavior that a split run changes; for Pytest retain one-session fixture/plugin behavior. Compare bounded argv and scalable transport semantics after removing only inherently variable timing/path data. File count or argv length alone does not prove correct analysis.
+Use a small direct native check for each actual correction: complete oversized selection with a late diagnostic/change where relevant; ordinary analysis plus refused metadata for the proven false-PASS routes; allowed cache/report effects plus the retained result-changing refusals. Existing native fixtures provide literals, discovery, exclusions, configuration and intentional exit-policy controls. Add a new test only for a concrete uncovered defect or ownership invariant, not to create a RED ceremony or a general proof matrix.
 
-Use minimal real fixtures for spaces, Unicode, leading punctuation, literal glob characters, native exclusions, directory/config discovery, missing/inaccessible targets and non-Python explicit inputs. Distinguish OS access errors from malformed config while varying verbosity and output modes. A genuine access-denied fixture must prove the process lacks access; do not substitute a missing file or silently skip the promised environment evidence.
+Keep [runtime tests](../../../tests/mcp_server/integration/execution/test_process_runtime.py) and [content-input tests](../../../tests/mcp_server/integration/execution/test_content_input.py) aligned with the injected directory provider and required JSON input. Reuse useful termination/cancellation/cleanup evidence. Focus added ownership coverage on pure description, exclusive-create collision preservation and removal of successfully owned resources after confirmed termination; tests protect observable behavior rather than constructor attributes or private filenames.
 
-Keep and extend the existing negative-contract tests: caller Ruff/Mypy response files, Ruff source mutation switches, fix added sources, metadata through Pytest config/environment/response files and Commitlint config. Add the distinct new Mypy help, Ruff lint help/show-files, Ruff format help and Pyright help regressions from QA P3, plus admitted native metadata aliases. Prove refusal with evidence where available and preserve ordinary clean/error/usage cases. Keep explicit Ruff exit-zero, Pytest collect-only/exit 5 and missing negative-evidence cases.
-
-Split existing all-write-refusal tests into contract-changing refusal and permitted native side-output cases. Exercise CLI/config/environment precedence only where the native tool supports that source. Observe real cache/report/cookie-state effects inside deliberately allocated test destinations outside selected sources and verify source bytes and returned diagnostics. No permanent general sandbox or arbitrary-host-escape test is justified by B4.
-
-Extend [process runtime integration tests](../../../tests/mcp_server/integration/execution/test_process_runtime.py) through invoke and observable process/filesystem behavior: distinct simultaneous directories, exact JSON context propagation, no cross-invocation removal, pure description without filesystem changes, exclusive creation, creation/write/cleanup failures, cancellation/timeout and descendant completion. A create collision must preserve the pre-existing directory and forbid cleanup of it. Keep [content-input tests](../../../tests/mcp_server/integration/execution/test_content_input.py) proving snapshot lifetime remains separate. Inject narrow failing providers where needed; assert outcome and ownership effects rather than constructor attributes.
-
-All nine packages/ten roles migrate their entry-point request fixtures, strict validators and schemas to v2, including content-only adapters. Other inventoried roles retain their existing capability and actual-version tests. Add package-local prerequisite mismatch coverage only for guarded behavior; do not demand every nine-package test permutation when it has no causal relevance.
+Mechanical contract/fixture maintenance requires no artificial failing baseline. Focused functional checks establish that the correction works; server health and working edit/check/test operations establish that the development tooling remains usable. Full configured tests and broader gates stay in Validation, with fresh evidence reused.
 
 ## Contracts
 
@@ -278,9 +272,9 @@ The composition root constructs the provider from resolve_temporary_paths(server
 
 [AdapterProcessBackend.start](../../../mcp_server/core/interfaces/execution.py) keeps its current launch/workspace signature. The proposed environment_overrides parameter is removed. Inherited native-tool environment/configuration behavior remains as today.
 
-### Explicit adapter input v2 / QA P1
+### Required context in the existing adapter input / QA P1
 
-All request variants in check/v2, test/v2 and fix/v2 require this additional closed object at the request root:
+All request variants in the existing check/test/fix schemas require this additional closed object at the request root:
 
 ```json
 {
@@ -290,7 +284,7 @@ All request variants in check/v2, test/v2 and fix/v2 require this additional clo
 }
 ```
 
-This fragment augments the existing operation/args and target/content fields; it is not a standalone request. Both the request and context remain additionalProperties=false. The v2 context definition is:
+This fragment augments the existing operation/args and target/content fields; it is not a standalone request. Both the request and context remain additionalProperties=false. The required context definition is:
 
 ```json
 {
@@ -310,7 +304,7 @@ This fragment augments the existing operation/args and target/content fields; it
 }
 ```
 
-The executable schemas and strict DTO validators must agree on absolute path syntax and NUL rejection. Filesystem existence and write success are operational checks, not schema purity side effects. PGMCP supplies an absolute existing directory only after its create command succeeds. An adapter validates the complete v2 input before native parsing/analysis or source writes.
+The executable schemas and strict DTO validators must agree on absolute path syntax and NUL rejection. Filesystem existence and write success are operational checks, not schema purity side effects. PGMCP supplies an absolute existing directory only after its create command succeeds. An adapter validates the complete input before native parsing/analysis or source writes.
 
 | Input condition | Contract behavior |
 |---|---|
@@ -323,11 +317,11 @@ The executable schemas and strict DTO validators must agree on absolute path syn
 
 Content-only/stdin-only roles validate the required context shape but do not invent a write probe or argument file they do not need. Required file-using roles establish usability through their actual transport preparation. These checks provide contract correctness, not proof of PGMCP ownership or OS confinement against a hostile direct caller.
 
-The only knowledge the adapter needs is the supplied location and its role contract. It does not derive PGMCP roots, inspect PGMCP config or read a PGMCP context variable. Ordinary native-tool cache/temp/report variables remain tool configuration under B4. Direct callers provide the same v2 context and own its preparation/lifetime; there is no absent-context fallback.
+The only knowledge the adapter needs is the supplied location and its role contract. It does not derive PGMCP roots, inspect PGMCP config or read a PGMCP context variable. Ordinary native-tool cache/temp/report variables remain tool configuration under B4. Repository direct callers provide the same required context and own its preparation/lifetime; there is no absent-context fallback.
 
 ### Request production and encoding
 
-The runtime owns creation and therefore supplies the execution context before serialization. Services keep resolving their existing immutable operation inputs. A narrow pure v2 request contract in [execution/protocol.py](../../../mcp_server/execution/protocol.py) composes these inputs with the context into the selected frozen wire DTO and returns validated JSON bytes:
+The runtime owns creation and therefore supplies the execution context before serialization. Services keep resolving their existing immutable operation inputs. A narrow pure request contract in [execution/protocol.py](../../../mcp_server/execution/protocol.py) composes these inputs with the context into the selected frozen wire DTO and returns validated JSON bytes:
 
 ```python
 class AdapterExecutionContext(BaseModel):
@@ -342,30 +336,31 @@ class AdapterRequestContract(Protocol[TRequest]):
     ) -> bytes: ...
 ```
 
-AbsoluteDirectoryPath is a lexical type with the v2 rules above, not a filesystem permission query. Each wire DTO adds required execution_context to the corresponding existing selection/content/test/fix fields. Internal operation intent and complete wire input are separate types; do not introduce optional context into the wire model to accommodate pre-allocation construction.
+AbsoluteDirectoryPath is a lexical type with the lexical rules above, not a filesystem permission query. Each wire DTO adds required execution_context to the corresponding existing selection/content/test/fix fields. Internal operation intent and complete wire input are separate types; do not introduce optional context into the wire model to accommodate pre-allocation construction.
 
 AdapterProcessRuntime.invoke gains an injected/passed request_contract alongside its existing request and response_contract. The selected role encoder follows the same model-driven approach as the existing response decoder: no adapter-name/native-option dispatch. Its encode operation is pure and performs no allocation or filesystem writes. CheckService, content check invocation, TestRunManager and FixManager pass the matching request contract through their existing runtime seams. Concrete role contracts are composed at the composition root.
 
 Runtime finalization removes the allocation on an encoding/launch failure as well as normal completion, subject to the same confirmed-termination rules. Unexpected producer serialization/validation failure uses existing InvocationFailed/LAUNCH_FAILED with an explicitly input-preparation message and no child/native completion; do not add a public failure enum in this release. A direct malformed wire request remains the distinct adapter invalid_request response.
 
-### Coordinated consumer boundary and versioning
+### Direct development correction and current participants
 
-| Consumer / authoritative carrier | Required coherent v2 change |
+The owner explicitly superseded the earlier proposed v2 migration. These schemas and package declarations have not been released. Amend them in place; keep one current request shape and internal contract_version 1. A numeric development identity is not a compatibility promise. Do not add version negotiation, legacy validators, old-version refusal tests or external-consumer migration instructions.
+
+| Repository participant | Required direct correction |
 |---|---|
-| [Wire schemas](../../../mcp_server/execution/contracts) | Define check_v2.schema.json, test_v2.schema.json and fix_v2.schema.json with required context in every request alternative and unchanged response shapes. Retire v1 as an active supported contract; no dual runtime validator |
-| [Operation/request DTOs](../../../mcp_server/execution/check_selection.py), [content request models](../../../mcp_server/execution/content_input.py), [test/fix and result models](../../../mcp_server/execution/models.py) | Complete strict/frozen v2 wire DTOs; public binding/capture metadata reports actual contract_version 2 rather than retaining Literal[1] |
-| [Check service](../../../mcp_server/execution/check_service.py), [test service](../../../mcp_server/execution/test_service.py), [fix service](../../../mcp_server/execution/fix_service.py), [runtime](../../../mcp_server/execution/process_runtime.py), [protocol](../../../mcp_server/execution/protocol.py), [bootstrap](../../../mcp_server/bootstrap.py) | Role input encoders, resource lifecycle and required context propagation without public MCP caller parameters |
-| [Manifest version admission](../../../mcp_server/config/schemas/adapter_manifest.py), [catalog](../../../mcp_server/execution/catalog.py), all [bundled packages](../../../mcp_server/bundled_adapters) | Only the selected v2 role contract is admitted after coordinated cutover. Migrate all nine package validators and ten role declarations; declared v1 is refused at catalog validation before invocation |
-| [Check presentation](../../../mcp_server/services/check_operation.py), [scaffold check presentation](../../../mcp_server/services/scaffold_operation.py) | Remove stale version-1 assumptions and publish factual v2 metadata while preserving existing result structure |
-| [Native adapter tests](../../../tests/mcp_server/integration/adapters), [process fixture](../../../tests/mcp_server/fixtures/adapter_process.py), [runtime/content tests](../../../tests/mcp_server/integration/execution), [catalog tests](../../../tests/mcp_server/unit/execution/test_catalog.py), [selection tests](../../../tests/mcp_server/unit/execution/test_check_selection.py), template activation/proposal fixtures | Migrate complete requests and schema references together; test missing/invalid context and unsupported v1. Stale v1 must not be hidden by relaxed extra-field validation |
-| Custom/workspace packages and external direct callers | Explicitly migrate input validators, declared role version and directory lifecycle. Editing only manifest metadata is insufficient; unmigrated packages are unsupported |
-| Active execution/protocol guidance | Describe v2 break, context ownership, native scratch/cache distinction and direct-call obligations; retained v1 documents can only be historical, not current usage |
+| [Wire schemas](../../../mcp_server/execution/contracts) | Update check_v1.schema.json, test_v1.schema.json and fix_v1.schema.json in place with required context in every request alternative; retain response shapes and existing schema references |
+| [Selection models](../../../mcp_server/execution/check_selection.py), [content models](../../../mcp_server/execution/content_input.py), [test/fix models](../../../mcp_server/execution/models.py) | Separate immutable operation intent from complete strict/frozen wire DTOs with required context; retain current version identity |
+| [Check service](../../../mcp_server/execution/check_service.py), [test service](../../../mcp_server/execution/test_service.py), [fix service](../../../mcp_server/execution/fix_service.py), [runtime](../../../mcp_server/execution/process_runtime.py), [protocol](../../../mcp_server/execution/protocol.py), [bootstrap](../../../mcp_server/bootstrap.py) | Compose matching request encoders and resource ownership without adding public caller parameters |
+| [Manifest admission](../../../mcp_server/config/schemas/adapter_manifest.py), [catalog](../../../mcp_server/execution/catalog.py), all [bundled packages](../../../mcp_server/bundled_adapters) | Update all nine package validators/ten roles for the one required request shape. Existing contract_version 1 admission/declarations remain; avoid version-only churn |
+| [Check presentation](../../../mcp_server/services/check_operation.py), [scaffold presentation](../../../mcp_server/services/scaffold_operation.py) | Preserve current result envelopes and internal version metadata; change only code needed for the context/resource correction |
+| [Adapter tests](../../../tests/mcp_server/integration/adapters), [process fixture](../../../tests/mcp_server/fixtures/adapter_process.py), [execution tests](../../../tests/mcp_server/integration/execution), [unit execution tests](../../../tests/mcp_server/unit/execution) and template activation/proposal fixtures | Update existing current-request construction. Retain useful invalid-input and operation checks; no separate old-version acceptance/refusal family |
+| Active protocol guidance | Describe the one corrected development contract, required context and ownership/native-cache distinction. No external release migration policy |
 
-The python_adapter source template is a generic class template and was inspected; it contains no hardcoded role-wire contract to migrate. Do not broaden this correction into a scaffold-template rewrite based on its name.
+The python_adapter source template is a generic class template and contains no hardcoded role-wire contract. Do not rewrite it merely because its name mentions adapters.
 
 ### Observable result contract
 
-Keep existing role response structures, status/reason vocabulary, exit-code pairing, tool facts, coverage/required-target semantics, bounded evidence and public MCP parameter sets. Binding metadata truthfully changes to contract_version 2. Operation refusal is unavailable/unsupported_input; unsupported main tool is unavailable/dependency_unavailable; malformed or missing negative-result evidence is unavailable/invalid_result. Malformed wire context follows the existing invalid_request response. Generic PGMCP creation/encoding/launch/cleanup failures use existing invocation-failure envelopes and never fabricate native results.
+Keep existing role response structures, status/reason vocabulary, exit-code pairing, tool facts, coverage/required-target semantics, bounded evidence and public MCP parameter sets. Internal binding metadata remains contract_version 1 under the explicitly mutable development identity. Operation refusal is unavailable/unsupported_input; unsupported main tool is unavailable/dependency_unavailable; malformed or missing negative-result evidence is unavailable/invalid_result. Malformed wire context follows the existing invalid_request response. Generic PGMCP creation/encoding/launch/cleanup failures use existing invocation-failure envelopes and never fabricate native results.
 
 ## Flow
 
@@ -382,7 +377,7 @@ sequenceDiagram
     T-->>R: Immutable directory description
     R->>T: Create described directory (command)
     R->>E: Operation input and explicit execution context
-    E-->>R: Validated complete v2 JSON bytes
+    E-->>R: Validated complete JSON bytes
     R->>A: V2 request on JSON stdin
     A->>A: Validate context, version and effective operation
     A->>N: One native run via prepared file or native stdin
@@ -390,7 +385,7 @@ sequenceDiagram
     A-->>R: Existing role response structure
     R->>R: Validate response and settle descendants
     R->>T: Remove own directory after confirmed finish
-    R-->>S: Existing outcome and factual v2 metadata
+    R-->>S: Existing outcome and current identity metadata
 ```
 
 An invalid request or refused operation skips native analysis. The invocation deadline starts before description/creation. Native execution and process settling retain existing monotone execution/stop budgets; request encoding and transport preparation do not create another deadline.
@@ -400,7 +395,7 @@ An invalid request or refused operation skips native analysis. The invocation de
 | Condition | Required observable behavior |
 |---|---|
 | Directory description/creation fails before launch | Existing InvocationFailed with LAUNCH_FAILED and factual preparation message; no native completion or adoption/removal of a pre-existing directory |
-| Missing/invalid v2 context | Existing invalid_request response with exact nested field/code; no fallback or native analysis |
+| Missing/invalid required context | Existing invalid_request response with exact nested field/code; no fallback or native analysis |
 | Native transport cannot encode a token or conflicts with an owned input channel | Existing adapter unavailable/unsupported_input with useful explanation; no omission or fallback |
 | Native file write/read/launch fails | Adapter unavailable/execution_error with native/OS fact; owned directory still belongs to PGMCP |
 | Native metadata exits successfully | Operation refusal; help evidence may be retained, never passed analysis |
@@ -416,8 +411,8 @@ For a cleanup failure following cancellation, report the cleanup failure and pri
 
 | Boundary / Research strategy | Preservation or explicit break |
 |---|---|
-| Public MCP parameters and role results | Existing parameters, response structures, statuses/reasons and exit pairing preserved; binding metadata reports v2 truthfully |
-| Adapter wire input / approved B1 amendment | Coordinated check/test/fix v2 break with required context. All request alternatives, package role declarations and consumers migrate; v1 admission is refused, no bridge |
+| Public MCP parameters and role results | Existing parameters, response structures, statuses/reasons and exit pairing preserved; internal binding metadata retains identity 1 |
+| Adapter wire input / current B1 refinement | Correct the unreleased check/test/fix contract in place with required context. Update current repository participants; no transition, compatibility path or external migration work |
 | Internal runtime input | Explicit selected request_contract plus existing response contract; pure encoding follows directory creation |
 | Process backend / native environment | Current start signature and inheritance behavior remain; no PGMCP environment overlay |
 | Native selection B2 | Per-package one execution, complete argument vector/list, configured discovery kept distinct; native exclusions/imports/plugins remain authoritative |
@@ -427,15 +422,15 @@ For a cleanup failure following cancellation, report the cleanup failure and pri
 | Dependencies/classification B5/B6 | Package declarations remain SSOT; actual versions and substantive failure reasons remain visible |
 | Fix lifecycle | All-input admission, ordered stop and partial mutation contract; no automatic retry or transactional rollback |
 
-Failure of pinned transport equivalence requires a bounded package-design correction within this strategy, not batching or silent selection changes. Any further public incompatibility beyond the approved v2 boundary must return to the human decision.
+Failure of pinned transport equivalence requires a bounded package-design correction within this strategy, not batching or silent selection changes. A change to approved responsibilities or release scope must return to the human decision.
 
-## Transition and Cleanup
+## Development Replacement and Cleanup
 
-The approved cutover moves the runtime, schemas, DTOs, package validators/manifests, result metadata assumptions and direct-call/contract fixtures together to v2. Unmigrated custom/workspace adapters are explicitly unsupported; no context-free argv fallback or dual-version bridge exists. No workflow-state, native-cache or user-tool-configuration migration is required.
+Replace the existing request shape directly across schemas, runtime encoders, bundled validators and fixtures. Keep current contract identifiers and one supported shape. No compatibility or rollback subsystem is introduced.
 
 The description stage mutates nothing. Creation is exclusive; cleanup ownership starts only after successful creation. Invocation directories remain distinct from content snapshots. Remove confirmed-finished owned allocations; retain resources when termination is uncertain. Do not sweep other invocation/validation directories or native caches.
 
-Rollback requires reverting the coordinated contract consumers and package role declarations together; reverting only a manifest or serializer produces an incompatible deployment. Restoring v1 restores the previous argv limit, not source bytes or supplemental files changed by a prior native run. No automated migration/rollback framework is introduced.
+Planning owns the concrete edit/restart order and temporary use of validation=report. This mode still executes selected checks and retains request-rejection/preparation/interruption/termination blockers. Do not invent an adapter-free mode or weaken the editor to perform this correction.
 
 ## Validation
 
@@ -471,18 +466,17 @@ Rollback requires reverting the coordinated contract consumers and package role 
 
 ### V-runtime / RF6
 
-**Method:** Runtime invocation/descendant/resource coverage; v2 JSON-context/schema parity across all role request variants; pure-description/exclusive-create failures; unsupported v1 and existing protocol/fix regressions.
+**Method:** Reuse current runtime/descendant/resource and protocol/fix tests with required JSON context; focused pure-description/exclusive-create ownership checks and fresh-server operation smokes. No historical-version refusal matrix.
 
-**Expected Result:** Context is explicit and required, CQS is upheld, stale v1 is refused, metadata reports v2, and deadline/cancellation/cleanup use preserved result structures.
+**Expected Result:** Context is explicit and required, CQS is upheld, current participants agree on one request shape, internal identity stays 1, and deadline/cancellation/cleanup use preserved result structures.
 
 ## Risks
 
-### Coordinated v2 migration rejects stale packages and direct calls.
+### Loaded server and edited adapters can temporarily disagree during development.
 
-Migrate the inventoried producers, schemas, package validators/manifests and contract fixtures together. Refuse unsupported v1 at admission rather than silently omitting context. Keep observed public contract-version metadata truthful.
+Use the existing editor's actual report-mode semantics and a concrete edit/restart order in Planning; restore a coherent running server before functional checks or subsequent cycles. No compatibility code is added.
 
-**Consequence:** Operator-maintained v1 adapters/direct callers must be updated; no temporary compatibility bridge is provided under the approved strategy.
-
+**Consequence:** A request-rejection blocker is an operational development issue to avoid through edit ordering and restart, not a reason to design a released migration framework.
 
 ### Current native transport documentation is not complete pinned equivalence evidence.
 
@@ -510,15 +504,15 @@ Preserve factual capture/outcome, retain resources for unconfirmed live processe
 
 ## Planning Consequences
 
-Planning must retain distinct issue acceptance obligations and the approved coordinated v2 boundary. Consumer migration includes all schema/request variants, nine package validators/ten role manifests, public version-metadata assumptions and direct-call/contract fixtures; input context must never be optional as an implementation convenience. Runtime ownership and each package's transport/completion correction need evidence at their actual public boundaries. Native prerequisite fixtures must make required tools available explicitly; historical probes are not regression suites. Implementation uses the narrow changed-surface gates; branch-wide validation belongs to Validation. Documentation must align the active execution/tool guidance with replacement B4, ordinary operational writes, supported versions and explicit transport limits. GitHub alignment of issue 474's superseded fixed-destination wording belongs to coordination. This document defines no cycles, patch ordering or authorization to enter implementation.
+Retain separate 469/474/475 acceptance and Research 1.4's direct-development refinement. Update all affected request variants and bundled/current fixtures, without changing contract identity or adding compatibility/external migration work. Keep the required JSON context and CQS/resource boundary. Server health, a workable report-mode edit/restart order, useful existing tests and small defect-specific functional checks are sufficient cycle obligations; no staged RED or broad proof matrix is imposed on mechanical maintenance. Validation owns the full configured suite and broad review, with explicit file-type target selection. Documentation records the current contract and proportional B4 policy. @co aligns issue 474's superseded wording before acceptance/closure.
 
 ## QA Verdict Disposition
 
-The independent verdict in the separately invoked QA chat **Beoordeel designplan** is NOGO for Design → Planning, with P1/P2 blockers and P3 clarification. The owner requested discussion first, then authorized these corrections and a new independent QA request. These producer dispositions do not clear the verdict.
+Historical Design QA in **Beoordeel designplan** raised P1/P2 and P3; Design 1.1 received GO for Design → Planning on commit 288b77ae. Planning 1.0 then received NOGO on e5794187 for edit-preflight sequencing and Python-gate selection. The owner subsequently clarified unreleased development and authorized the current direct-contract/report-mode refinement. These revisions require a fresh independent review; prior verdicts do not approve the revised strategy by inheritance.
 
 | Finding | Design correction | New review / future acceptance evidence |
 |---|---|---|
-| P1: PGMCP context outside JSON | Required execution_context in check/test/fix v2; remove PGMCP_INVOCATION_TMP and the environment-based transport fallback; record approved B1 break and the complete consumer boundary | Review explicit schema/DTO/runtime/package semantics; implementation proves producer-consumer parity, malformed context and refused v1 |
+| P1: PGMCP context outside JSON | Required execution_context in the existing check/test/fix request; no PGMCP environment channel; current B1 direct-development decision | Review schema/DTO/runtime/package agreement and focused actual-input behavior; no old-version migration proof |
 | P2: allocate mutates and returns | Pure describe(invocation_id) → frozen description; create/remove → None; ownership only after successful exclusive create | Review CQS and failed-creation/collision/cleanup behavior; implementation proves pure query and no adoption/removal of pre-existing paths |
 | P3: Ruff/Pyright correction implicit | Distinct new Ruff lint help/show-files, Ruff format help and Pyright help guards/tests, alongside Mypy early-return correction | Review traceability to Research's actual reproduced routes; later tests prove refusal and preserved genuine native outcomes |
 
@@ -530,7 +524,7 @@ Native cache/test temporary configuration remains separate from adapter-prepared
 - Existing pinned Ruff regression `test_response_file_tokens_do_not_hide_writes_in_pinned_native`: **1 passed, 22 deselected** in **0.53s**, via `run_tests`, target `tests/mcp_server/integration/adapters/test_ruff_checks.py`, native args `-q -n 0 -k response_file_tokens_do_not_hide_writes_in_pinned_native`. Receipt: `pgmcp://cache/runs/395f886ff20f4e4ca4be9c76773f6304`; complete structured evidence inspected.
 - That test establishes native Ruff 0.15.6 argument-file interpretation and the existing caller-file refusal. It does **not** certify the proposed owned transport, large-selection equivalence, Ruff format/fix transport or the other packages.
 - Historical Design 1.0 document profile and link review passed: 22 successful links, 6 configured offline exclusions and 0 errors; receipt `pgmcp://cache/runs/07fce48be466433d868e93a207497fe9`. This retains its original scope and does not establish the corrected Design 1.1 architecture or its updated links.
-- Corrected Design 1.1 / Research 1.3 document and focused link-review evidence are recorded in the new review request. No rerun of the unchanged historical Ruff test is needed for documentation edits.
+- Historical Design 1.1 / Research 1.3 document and focused link-review evidence were recorded with the preceding review request; current Design 1.2 / Research 1.4 receive fresh document checks. No rerun of the unchanged historical Ruff test is needed for documentation edits.
 - No production/test implementation was changed. All V469/V474/V475/V-runtime obligations above describe required future acceptance evidence.
 
 ## Sources
@@ -555,7 +549,7 @@ Native cache/test temporary configuration remains separate from adapter-prepared
 ### Scope
 
 - Correction architecture for issues 469, 474 and 475 under the approved Research strategy.
-- Explicit approved v2 input break with public parameter/result preservation, CQS resource ownership, per-package native transport/guard disposition, failure contracts and durable regression design.
+- Direct correction of the unreleased adapter contract under current B1, public parameter/result preservation, CQS ownership, native translation and proportional correctness checks.
 - OS isolation, general permissions, implementation sequencing and unrelated filesystem correctness are excluded.
 
 ### Deliverables
@@ -572,11 +566,12 @@ Native cache/test temporary configuration remains separate from adapter-prepared
 
 ### Open Work
 
-- Independent re-review of QA P1–P3 against the corrected v2/CQS/metadata design. The owner has approved the compatibility amendment; this is not QA approval.
+- Fresh independent review of the development-context refinement and corrected Planning, including report-mode edit/restart sequencing and explicit Python-target gates. Owner authorization is not QA approval.
 - Implementation must establish the pinned transport, permitted-effect, completion and runtime obligations; no universal transport/isolation claim is established.
 - Coordination must align issue 474's superseded fixed-destination wording before claiming acceptance/closure.
 
 ### Review Request
 
 Review requested.
+
 

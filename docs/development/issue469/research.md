@@ -3,7 +3,7 @@
 # Issue 469 — Native Adapter Robustness and Related Scope Research
 
 **Status:** RESEARCH FINDINGS — B1/B4 amendments human-approved; independent QA pending
-**Version:** 1.3
+**Version:** 1.4
 **Last Updated:** 2026-10-01
 
 ## Purpose
@@ -110,7 +110,7 @@ No issue is closed or its GitHub scope rewritten here. @co retains external coor
 
 | Boundary | Approved strategy | Alternatives, cost and risk |
 |---|---|---|
-| B1 generic public/wire contracts and role ownership — amended by owner | Adapters are thin native input/output translators. PGMCP owns execution conditions and resource lifecycle. Its execution context must travel exclusively in the explicit adapter JSON input contract. Human-approved coordinated check/test/fix v2 break adds required context; migrate bundled consumers/direct calls and refuse v1 rather than bridge it. Preserve public MCP tool parameters and result structures, while reporting actual contract version 2 | Preserving v1 through a PGMCP environment side channel violates the owner-defined communication boundary. A temporary v1/v2 bridge adds dual validation/transport paths and unsupported-context behavior; rejected for this personal-use release. A coordinated break costs consumer/schema/test migration and makes stale packages explicitly unusable |
+| B1 generic public/wire contracts and role ownership — owner refinement | Adapters are thin native input/output translators. PGMCP owns execution conditions and resource lifecycle. Required execution context travels exclusively in adapter JSON. Correct the existing unreleased check/test/fix contract in place, retaining its internal identity 1 and existing schema paths; update repository producers, bundled validators and fixtures directly. No legacy, compatibility bridge, version negotiation or external-consumer migration work. Preserve public MCP parameters and role result structures | The owner clarified that this is ongoing development after issue 460, with no release or external compatibility obligation. A new v2 release/migration boundary and old-version rejection suite add unnecessary work. The running server must remain usable through edits and restarts; ordinary correctness checks remain proportional |
 | B2 selection and large invocation | Preserve requested selection and native config/exclusions; require length-safe adapter-local behavior or honest actionable unsupported/unavailable outcomes, never a silently narrower or broader scope. Fix source selection remains explicit files. An actionable launch-limit failure remains a limitation and does not satisfy the supported-large-selection success criterion | Automatic workspace fallback reduces implementation effort but changes coverage/authority. Naive batching risks cross-source/session semantics. Concrete mechanism and equivalence proof remain Design work |
 | B3 check completion (475) | Deliberately stop admitting metadata-only or check-replacing bypasses as successful quality checks, using existing truthful non-success vocabulary. Preserve genuine native analysis, diagnostic failure, normal native config and existing explicit diagnostic policies | Keeping false PASS preserves a defective result. Adding a parallel metadata API is unneeded scope. Ruff --exit-zero diagnostics and Pytest collect-only/no-tests are deliberately tested native semantics; changing them would require a separate explicit policy decision |
 | B4 filesystem effects (474) — replacement human-approved | Select trusted personal local execution. PGMCP owns scope, execution conditions and its allocated-resource lifecycle; adapters translate role/input/output contracts. Accept normal native caches and temporary toolfiles at native user-configured locations, including outside source selection. Reports must preserve the requested result contract. Maintain role/source-selection correctness; no general OS filesystem/network/credential isolation is added. Executed code can retain host-account access. Add targeted controls only for demonstrated unwanted routes whose risk, effectiveness and cost justify them | Fixed-cache-root restrictions and universal pre-write destination refusal are rejected as release defaults. Adapter-owned execution/security policy is rejected. L1 is selected, targeted L2 controls remain conditional on concrete findings, and L3 remains outside this release under R-06 |
@@ -127,7 +127,7 @@ The human approved this route on 2026-10-01. Execution/effect evidence is record
 
 ## Questions
 
-- No Research policy decision remains open. S1, ownership, replacement B4, trusted local execution and accepted host-access risk are approved. Native mechanisms, interface details and supported-version details are Design-owned. The coordinated adapter-input v2 change is human-approved in the B1 amendment; reopen any further incompatible boundary explicitly. The original xdist timeout remains an observed infrastructure uncertainty.
+- No Research policy decision remains open. S1, ownership, replacement B4, trusted local execution and accepted host-access risk are approved. Native mechanisms, interface details and supported-version details are Design-owned. The current B1 refinement authorizes correcting the unreleased adapter contract in place with no compatibility or external-consumer obligations; a change to other approved responsibilities still needs an explicit owner decision. The original xdist timeout remains an observed infrastructure uncertainty.
 
 ## References
 
@@ -156,23 +156,24 @@ S1 combined delivery and separate issue acceptance identities remain approved. P
 
 This changes issue 474's original fixed-destination/pre-write-rejection expectation explicitly. The issue remains an active deliverable: establish the policy and ownership, assess existing controls against it, correct demonstrated contract defects, and document achievable guarantees and accepted limits. Do not claim the issue completed from the policy decision alone.
 
-Preserve public MCP tool parameters and response structures. The separately human-approved B1 amendment below replaces adapter-wire v1 preservation with a coordinated v2 input-contract break. B4 remains unchanged: no new public permission API, security manifest, generic native parser or OS sandbox is authorized. A further incompatible boundary change requires its own human decision.
+Preserve public MCP tool parameters and response structures. The current human-approved B1 development refinement below supersedes the earlier proposed v2 migration boundary. B4 remains unchanged: no new public permission API, security manifest, generic native parser or OS sandbox is authorized.
 
-### Human-approved B1 compatibility amendment after Design QA
+### Human-approved B1 development refinement after Planning QA
 
-The independent Design verdict is NOGO: P1 rejects PGMCP context outside JSON; P2 rejects allocation that both mutates and returns a value; P3 requires explicit new Ruff/Pyright metadata guards. The owner confirmed that input/output contracts are the communication channel between PGMCP and adapters. Environment inputs learned by an adapter belong to native-tool configuration, not a second PGMCP context channel.
+The original Design QA correctly required explicit JSON execution context, CQS-separated resource operations and explicit Ruff/Pyright metadata guards. The subsequent Design 1.1 proposed a new v2 contract identity without a v1 bridge. That version/migration framing is superseded by the owner's development-context clarification below; the responsibility and correctness decisions remain.
 
-After discussing explicit context, coordinated v2 versus a temporary v1 bridge, CQS separation and the distinction from native scratch/cache settings, the owner authorized the corrections and a new independent review on 2026-10-01: "Mee eens, verwek het qa verdict en vraag nieuwe qa aan". This accepts the proposed coordinated v2 strategy; it does not constitute QA approval.
+On 2026-10-01 the owner clarified: "we zitten midden in dev en hoeven dus geen rekening te houden met compat of externe consumers." Issue 460's PGMCP v3 architecture has not been released; this issue completes its remaining rough edges. The owner requires no transition, legacy or compatibility code, and proportional verification centered on a healthy working server rather than elaborate regression proofs. After discussing direct in-place contract correction, useful focused checks and the actual limits of report mode, the owner authorized the artifact corrections and renewed independent QA: "Nee, ik bedoelde inderdaad report, ga verder en vraag daarna hernieuwde qa goedkeur aan".
 
-| Affected boundary | Approved strategy and impact |
+| Boundary | Current approved decision |
 |---|---|
-| PGMCP to adapter request | Add explicit required execution context in check/test/fix v2. No PGMCP-specific environment variable or absent-context transport fallback |
-| Adapter packages and direct invocations | Migrate all nine bundled packages/ten roles and direct-call fixtures coherently. Custom/workspace v1 packages need explicit migration; reject their unsupported contract version before invocation. No runtime v1 bridge |
-| Generic/public MCP tools | Preserve user parameters, role response structures, exit/status vocabulary and cache envelopes. Metadata reports actual contract version 2; it must not preserve Literal[1] by misreporting |
-| Resource ownership and native configuration | PGMCP retains location/allocation/lifecycle; adapters receive only the translation location. Ordinary native cache/temp/report settings retain replacement B4 |
-| Cost and acceptance | A wider but bounded schema/producer/consumer/protocol-test migration replaces dual-version/implicit-context complexity. Contract conformance and native equivalence require implementation evidence; independent Design QA remains authoritative |
+| Adapter request and identity | Add required execution_context to the existing unreleased check/test/fix contract in place. Retain internal contract_version 1 and check_v1/test_v1/fix_v1 schema identities; no new v2 contract family, negotiation, fallback or preserved old request shape. The development identity is not a released compatibility promise |
+| Repository participants | Update all affected PGMCP producers, bundled validators, current documentation and existing direct-call/test fixtures. External/custom-consumer migration, compatibility matrices, historical-version refusal tests and rollback frameworks are outside this work |
+| Responsibilities | PGMCP owns allocation, execution and cleanup; adapters translate the supplied JSON context to native input/output. No PGMCP-specific environment side channel and no adapter-owned execution policy |
+| Verification | Reuse useful existing tests and targeted functional checks for the actual correction. No mandatory artificial RED for contract/fixture maintenance, no compatibility or exhaustive conformance matrix, and no elaborate proof program per cycle. Server health and working edit/check/test tools are operational checkpoints; a concrete false-PASS or missing-selection correction still gets a small direct functional check |
+| Editing | The owner permits temporary validation=report during development. Its actual behavior is reported honestly: checks still run and ordinary failed/unavailable results may permit writing, while adapter-request rejection, preparation/interruption or unconfirmed termination remain blockers. Planning owns a workable edit/restart order; no new skip mode or weakening of the editor is authorized |
+| Other boundaries | B2–B6 and separate 469/474/475 acceptance identities remain. Preserve complete selection, native operation/results, package-local dependency authority and the accepted personal local-use trust policy |
 
-Input v2 is a deliberate break even though response structures remain stable. The active Design owns concrete field meanings, validation, CQS interfaces and consumer coverage. Other Approved Strategy boundaries remain binding.
+This explicit owner decision is the strategy input for Design 1.2 and Planning 1.1. The earlier Design GO and Planning NOGO apply only to their reviewed revisions; this refinement requires renewed independent QA rather than silently inheriting those verdicts.
 
 ### Ownership and release-boundary analysis — decision resolved
 
@@ -351,15 +352,16 @@ Investigated 469 native invocation, selection/discovery, error classification an
 
 ### Evidence
 
-Fresh large-selection failures, bounded genuine-analysis control, false-PASS reproductions and verbose classification comparison are indexed above. The isolated probe recorded 30 cache cases plus five no-write refusal controls. Document preflight and focused link verification are reported with their exact scope; the original 158-pass/one-timeout native-suite run is retained alongside its successful focused rerun. Human approval covers S1, amended ownership, the coordinated adapter-input v2 strategy in B1, and final replacement B4 including permitted operational writes and accepted host-access risk. No Research policy question remains open. No QA verdict or selected fix design is inferred.
+Fresh large-selection failures, bounded genuine-analysis control, false-PASS reproductions and verbose classification comparison are indexed above. The isolated probe recorded 30 cache cases plus five no-write refusal controls. Document preflight and focused link verification are reported with their exact scope; the original 158-pass/one-timeout native-suite run is retained alongside its successful focused rerun. Human approval covers S1, amended ownership, the direct unreleased-contract correction in B1, and final replacement B4 including permitted operational writes and accepted host-access risk. No Research policy question remains open. No QA verdict or selected fix design is inferred.
 
 ### Open Work
 
-Independent Research review. Native mechanisms, resource/interface details, per-tool supported-version detail and implementation regression boundaries remain Design-owned; the B4 policy pause is resolved. Reopen a specific compatibility decision only if later Design evidence requires a public/wire change beyond the preservation strategy. Investigate the original outer-parallel xdist timing if it recurs; no causal attribution or test-budget change is selected here. GitHub coordination/issue closure remains with @co; 474/475 retain identity and are not closed by this Research.
+Independent Research review. Native mechanisms, resource/interface details, per-tool supported-version detail and implementation regression boundaries remain Design-owned; the B4 policy pause is resolved. Apply the current development-only B1 refinement; reopen a responsibility or release-policy decision only if later evidence changes that approved boundary. Investigate the original outer-parallel xdist timing if it recurs; no causal attribution or test-budget change is selected here. GitHub coordination/issue closure remains with @co; 474/475 retain identity and are not closed by this Research.
 
 ### Review Request
 
 Review requested. Open or resume the independent interactive pgmcp-qa task for Research review; do not infer GO from this producer hand-over.
+
 
 
 
