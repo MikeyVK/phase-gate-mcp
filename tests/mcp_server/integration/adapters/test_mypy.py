@@ -443,3 +443,57 @@ def test_declared_version_mismatch_stops_before_native_parser(
     assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
     assert response["external_tools"] == [{"tool_id": "mypy", "version": "1.19.1"}]
     assert "0.0.0" in str(decision(response)["message"])
+
+
+def test_argument_file_preserves_oversized_cross_file_analysis(
+    mypy_package: MypyPackage,
+) -> None:
+    package = mypy_package
+    targets = tuple(package.workspace / f"member_{index:03d}.py" for index in range(350))
+    for target in targets:
+        target.write_text("value: int = 1\n", encoding="utf-8")
+    targets[0].write_text("def typed(value: int) -> int:\n    return value\n", encoding="utf-8")
+    targets[-1].write_text(
+        'from member_000 import typed\nwrong = typed("late error")\n', encoding="utf-8"
+    )
+    decoy = package.workspace / "unselected.py"
+    decoy.write_text('value: int = "unselected error"\n', encoding="utf-8")
+    command = subprocess.list2cmdline([str(path) for path in targets])
+    assert len(command.encode("utf-16-le")) // 2 > 32767
+    small_code, small = invoke(package, "types", (targets[0], targets[-1]))
+    assert small_code == 1 and b"arg-type" in evidence_text(small).encode()
+    code, response = invoke(package, "types", targets)
+    assert code == 1 and decision(response)["status"] == "failed"
+    evidence = evidence_text(response)
+    assert targets[-1].name in evidence and "[arg-type]" in evidence
+    assert "checked 350 source files" in evidence
+    assert decoy.name not in evidence
+
+
+@pytest.mark.parametrize("token", ["", " ", "#literal", " literal "])
+def test_pinned_mypy_argument_file_preserves_option_value(
+    mypy_package: MypyPackage,
+    token: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "literal Ω with spaces.py"
+    target.write_text('value: int = "bad"\n', encoding="utf-8")
+    args = ("--exclude", token)
+    direct = native(package.workspace, "types", (target,), args)
+    code, response = invoke(package, "types", (target,), args)
+    assert code == direct.returncode == 1
+    assert_native_evidence(response, direct)
+
+
+@pytest.mark.parametrize("separator", ["\n", "\v", "\u2028", "\ud800"])
+def test_unrepresentable_mypy_argument_file_input_is_refused(
+    mypy_package: MypyPackage,
+    separator: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "clean.py"
+    target.write_text("value: int = 1\n", encoding="utf-8")
+    code, response = invoke(
+        package, "types", (target,), ("--exclude", "line" + separator + "break")
+    )
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"

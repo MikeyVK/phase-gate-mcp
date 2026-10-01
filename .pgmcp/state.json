@@ -4,14 +4,20 @@
   "issue_number": 469,
   "workflow_name": "bug",
   "current_phase": "implementation",
-  "current_cycle": 2,
-  "last_cycle": 1,
+  "current_cycle": 3,
+  "last_cycle": 2,
   "cycle_history": [
     {
       "cycle_number": 2,
       "name": "Truthful native completion, versions and failure reasons",
       "forced": false,
       "entered": "2026-10-01T18:33:10.461118+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Single-run native argument files for Ruff, Mypy and Pytest",
+      "forced": false,
+      "entered": "2026-10-01T18:50:52.809261+00:00"
     }
   ],
   "required_phases": [

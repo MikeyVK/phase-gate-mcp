@@ -13,6 +13,7 @@ import sys
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
+from uuid import uuid4
 
 _REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
@@ -51,7 +52,7 @@ def _validate_execution_context(value: object) -> dict[str, object] | None:
     return None
 
 
-def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
+def _validate(value: object) -> tuple[list[str], list[str], str] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([_issue([], "wrong_type")])
     unknown = sorted(str(key) for key in set(value) - _REQUEST_KEYS)
@@ -81,7 +82,11 @@ def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
         issues.append(_issue(["args"], "wrong_type"))
     if issues:
         return _invalid(issues)
-    return [str(target) for target in targets], [str(arg) for arg in args]
+    return (
+        [str(target) for target in targets],
+        [str(arg) for arg in args],
+        value["execution_context"]["scratch_directory"],
+    )
 
 
 def _native_version_error(version: str) -> str | None:
@@ -307,7 +312,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
     validated = _validate(value)
     if isinstance(validated, dict):
         return validated, 2
-    targets, args = validated
+    targets, args, scratch_directory = validated
     try:
         version = importlib.metadata.version("mypy")
     except importlib.metadata.PackageNotFoundError:
@@ -319,6 +324,25 @@ def _run(value: object) -> tuple[dict[str, object], int]:
     version_error = _native_version_error(version)
     if version_error is not None:
         return _unavailable("dependency_unavailable", version_error, version)
+    arguments = [*args, *targets]
+    # argparse expands these splitlines separators even inside an individual argument.
+    if any(
+        any(separator in argument for separator in "\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029")
+        for argument in arguments
+    ):
+        return _unavailable(
+            "unsupported_input",
+            "Mypy argument-file tokens cannot contain line separators.",
+            version,
+        )
+    try:
+        payload = ("\n".join(arguments) + ("\n" if arguments else "")).encode("utf-8")
+    except UnicodeError:
+        return _unavailable(
+            "unsupported_input",
+            "Mypy argument-file tokens must be representable as UTF-8.",
+            version,
+        )
     guard = _native_guard(args)
     if isinstance(guard, _GuardResult):
         return _unavailable(
@@ -327,13 +351,18 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             version,
             _evidence(guard.stdout.encode(), guard.stderr.encode()),
         )
-    command = [sys.executable, "-m", "mypy", *args, *targets]
+    arguments_path = Path(scratch_directory) / f"mypy-arguments-{uuid4().hex}.txt"
     try:
+        with arguments_path.open("xb") as stream:
+            stream.write(payload)
         completed = subprocess.run(
-            command, stdin=subprocess.DEVNULL, capture_output=True, check=False
+            [sys.executable, "-m", "mypy", "@" + str(arguments_path)],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            check=False,
         )
     except OSError as exc:
-        return _unavailable("execution_error", f"Mypy launch failed: {exc}", version)
+        return _unavailable("execution_error", f"Mypy preparation or launch failed: {exc}", version)
     evidence = _evidence(completed.stdout, completed.stderr)
     message = _message(completed.stdout, completed.stderr)
     external = _external(version)

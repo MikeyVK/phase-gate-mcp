@@ -565,3 +565,70 @@ def test_unsupported_or_malformed_declared_version_is_not_assumed_supported(
     assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
     assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
     assert declaration in str(decision(response)["message"])
+
+
+@pytest.mark.parametrize("token", ["", " ", "#literal", " literal "])
+def test_pinned_argument_file_token_grammar(
+    ruff_package: RuffPackage,
+    token: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "negative Ω with spaces.py"
+    target.write_text("unknown_name\n", encoding="utf-8")
+    args = ("--exclude", token)
+    direct = native(package.workspace, "lint", (target,), args)
+    arguments = package.workspace.parent / "grammar-arguments.txt"
+    arguments.write_text(
+        "\n".join(["--no-fix", "--no-fix-only", *args, str(target)]) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    encoded = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "@" + str(arguments)],
+        cwd=package.workspace,
+        capture_output=True,
+        timeout=15,
+    )
+    assert encoded.returncode == direct.returncode
+    assert encoded.stdout == direct.stdout
+    assert encoded.stderr == direct.stderr
+
+
+@pytest.mark.parametrize("operation", ["format", "lint"])
+def test_argument_file_preserves_oversized_selection_and_late_diagnostic(
+    ruff_package: RuffPackage,
+    operation: str,
+) -> None:
+    package = ruff_package
+    targets = tuple(package.workspace / f"selection_member_{index:03d}.py" for index in range(350))
+    for target in targets:
+        target.write_text("value = 1\n", encoding="utf-8")
+    late = targets[-1]
+    late.write_text(
+        "value=1\n" if operation == "format" else "late_unknown_name\n", encoding="utf-8"
+    )
+    decoy = package.workspace / "unselected.py"
+    decoy.write_text("unselected_unknown_name\n", encoding="utf-8")
+    command = subprocess.list2cmdline([str(path) for path in targets])
+    assert len(command.encode("utf-16-le")) // 2 > 32767
+    small_code, small = invoke(package, operation, (late,))
+    assert small_code == 1 and decision(small)["status"] == "failed"
+    code, response = invoke(package, operation, targets)
+    assert code == 1 and decision(response)["status"] == "failed"
+    assert late.name in evidence_text(response)
+    assert "unselected_unknown_name" not in evidence_text(response)
+    assert late.read_text(encoding="utf-8") == (
+        "value=1\n" if operation == "format" else "late_unknown_name\n"
+    )
+
+
+@pytest.mark.parametrize("token", ["line\nbreak", "line\rbreak", "\ud800"])
+def test_unrepresentable_argument_file_tokens_are_explicitly_refused(
+    ruff_package: RuffPackage,
+    token: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "clean.py"
+    target.write_text("value = 1\n", encoding="utf-8")
+    code, response = invoke(package, "lint", (target,), ("--exclude", token))
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"

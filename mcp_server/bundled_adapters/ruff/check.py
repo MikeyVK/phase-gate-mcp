@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 _REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
@@ -63,7 +64,7 @@ def _validate_execution_context(value: object) -> dict[str, object] | None:
     return None
 
 
-def _validate_request(value: object) -> tuple[str, list[str], list[str]] | dict[str, object]:
+def _validate_request(value: object) -> tuple[str, list[str], list[str], str] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([_issue([], "wrong_type")])
     keys = set(value)
@@ -95,7 +96,12 @@ def _validate_request(value: object) -> tuple[str, list[str], list[str]] | dict[
     args = value["args"]
     if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
         return _invalid([_issue(["args"], "wrong_type")])
-    return operation, [str(target) for target in targets], list(args)
+    return (
+        operation,
+        [str(target) for target in targets],
+        list(args),
+        value["execution_context"]["scratch_directory"],
+    )
 
 
 def native_version_error(version: str) -> str | None:
@@ -207,6 +213,24 @@ def _unavailable(
     return response, 3
 
 
+def native_arguments_supported(arguments: list[str]) -> bool:
+    """Admit representable UTF-8 tokens without native line separators."""
+    if any("\r" in argument or "\n" in argument for argument in arguments):
+        return False
+    try:
+        "\n".join(arguments).encode("utf-8")
+    except UnicodeError:
+        return False
+    return True
+
+
+def write_native_arguments(path: Path, arguments: list[str]) -> None:
+    """Write one admitted native vector exclusively in the supplied invocation directory."""
+    payload = ("\n".join(arguments) + "\n").encode("utf-8")
+    with path.open("xb") as stream:
+        stream.write(payload)
+
+
 def native_failure(output: str) -> tuple[str, str | None]:
     """Interpret Ruff's substantive error and causal lines independently of debug chatter."""
     lines = [
@@ -278,7 +302,7 @@ def _run(request: object) -> tuple[dict[str, object], int]:
     validated = _validate_request(request)
     if isinstance(validated, dict):
         return validated, 2
-    operation, targets, args = validated
+    operation, targets, args, scratch_directory = validated
     try:
         version = importlib.metadata.version("ruff")
     except importlib.metadata.PackageNotFoundError:
@@ -307,22 +331,26 @@ def _run(request: object) -> tuple[dict[str, object], int]:
             version,
         )
 
-    command = [sys.executable, "-m", "ruff"]
-    if operation == "format":
-        command.extend(["format", "--check", "--diff"])
-    else:
-        command.extend(["check", "--no-fix", "--no-fix-only"])
-    command.extend(args)
-    command.extend(targets)
+    controls = ["--check", "--diff"] if operation == "format" else ["--no-fix", "--no-fix-only"]
+    arguments = [*controls, *args, *targets]
+    if not native_arguments_supported(arguments):
+        return _unavailable(
+            "unsupported_input",
+            "Ruff argument-file tokens must be UTF-8 without CR or LF.",
+            version,
+        )
+    arguments_path = Path(scratch_directory) / f"ruff-arguments-{uuid4().hex}.txt"
+    native_operation = "format" if operation == "format" else "check"
     try:
+        write_native_arguments(arguments_path, arguments)
         completed = subprocess.run(
-            command,
+            [sys.executable, "-m", "ruff", native_operation, "@" + str(arguments_path)],
             stdin=subprocess.DEVNULL,
             capture_output=True,
             check=False,
         )
     except OSError as exc:
-        return _unavailable("execution_error", f"Ruff launch failed: {exc}", version)
+        return _unavailable("execution_error", f"Ruff preparation or launch failed: {exc}", version)
 
     evidence = _evidence(completed.stdout, completed.stderr)
     external_tools = _external_tools(version)

@@ -268,3 +268,27 @@ def test_declared_version_mismatch_stops_before_source_mutation(
     assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
     assert "0.0.0" in str(decision(response)["message"])
     assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize("operation", ["format", "lint"])
+def test_argument_file_fix_preserves_oversized_selection_and_late_change(
+    ruff_package: RuffPackage,
+    pytestconfig: pytest.Config,
+    operation: str,
+) -> None:
+    package = fix_package(ruff_package, pytestconfig.rootpath)
+    targets = tuple(package.workspace / f"fix_member_{index:03d}_Ω.py" for index in range(350))
+    for target in targets:
+        target.write_bytes(b"value = 1\n")
+    before = b"value=1\n" if operation == "format" else b"import os\n"
+    late = targets[-1]
+    late.write_bytes(before)
+    decoy = package.workspace / "unselected.py"
+    decoy.write_bytes(before)
+    command = subprocess.list2cmdline([str(path) for path in targets])
+    assert len(command.encode("utf-16-le")) // 2 > 32767
+    code, response = invoke(package, operation, targets)
+    assert code == 0 and decision(response)["status"] == "passed"
+    assert late.read_bytes() != before
+    assert all(target.read_bytes() == b"value = 1\n" for target in targets[:-1])
+    assert decoy.read_bytes() == before
