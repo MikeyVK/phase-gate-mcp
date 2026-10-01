@@ -120,6 +120,7 @@ def invoke(
         if raw is not None
         else json.dumps(
             {
+                "execution_context": {"scratch_directory": str(package.runtime.workspace.parent)},
                 "operation": "message",
                 "target_path": str(package.runtime.workspace / "commit.txt"),
                 "content": content,
@@ -371,7 +372,19 @@ def test_missing_native_and_reader_dependencies_are_honest(
 
 
 def test_malformed_wire_is_separate(commitlint_package: CommitlintPackage) -> None:
-    code, response = invoke(commitlint_package, "", raw=b'{"operation": "message", "extra": 1}')
+    raw = json.dumps(
+        {
+            "execution_context": {
+                "scratch_directory": str(commitlint_package.runtime.workspace.parent)
+            },
+            "operation": "message",
+            "target_path": str(commitlint_package.runtime.workspace / "commit.txt"),
+            "content": "",
+            "args": [],
+            "extra": 1,
+        }
+    ).encode()
+    code, response = invoke(commitlint_package, "", raw=raw)
     assert code == 2
     assert response == {
         "reason": "invalid_request",

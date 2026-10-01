@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from mcp_server.core.interfaces.artifact_header_reader import IArtifactHeaderReader
 
-_REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args"})
+_REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 _BARE_UNC_ROOT = re.compile(r"^\\\\[^\\/]+[\\/][^\\/]+$")
 
@@ -74,6 +74,22 @@ def _invalid(location: list[str | int], code: str) -> dict[str, object]:
     return {"reason": "invalid_request", "details": [{"location": location, "code": code}]}
 
 
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid(["execution_context"], "wrong_type")
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid(["execution_context", unknown[0]], "unknown_field")
+    if "scratch_directory" not in value:
+        return _invalid(["execution_context", "scratch_directory"], "missing_field")
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid(["execution_context", "scratch_directory"], "wrong_type")
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid(["execution_context", "scratch_directory"], "invalid_value")
+    return None
+
+
 def _validate(value: object) -> tuple[str, list[str]] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([], "wrong_type")
@@ -81,6 +97,9 @@ def _validate(value: object) -> tuple[str, list[str]] | dict[str, object]:
         return _invalid([str(key)], "unknown_field")
     for key in sorted(_REQUEST_KEYS - set(value)):
         return _invalid([key], "missing_field")
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     for key in ("operation", "target_path", "content"):
         if not isinstance(value[key], str):
             return _invalid([key], "wrong_type")

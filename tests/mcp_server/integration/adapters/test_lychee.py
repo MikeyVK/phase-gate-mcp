@@ -95,7 +95,12 @@ def invoke(
         environment["PATH"] = ""
     result = subprocess.run(
         [str(package.launch.executable), *package.launch.args],
-        input=json.dumps(request).encode("utf-8"),
+        input=json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(package.runtime.workspace.parent)},
+                **request,
+            }
+        ).encode("utf-8"),
         cwd=package.runtime.workspace,
         capture_output=True,
         timeout=30,

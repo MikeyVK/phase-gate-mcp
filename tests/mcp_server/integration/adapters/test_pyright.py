@@ -108,6 +108,7 @@ def invoke(
         if raw is not None
         else json.dumps(
             {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
                 "operation": "types",
                 "targets": [str(path) for path in targets],
                 "args": list(args),
@@ -373,7 +374,7 @@ def test_dependency_resolution_uses_workspace_ancestors(
         (b"\xff", [], "invalid_value"),
         (b"[]", [], "wrong_type"),
         (
-            b'{"operation":"types","targets":["relative.py"],"args":[]}',
+            {"operation": "types", "targets": ["relative.py"], "args": []},
             ["targets", 0],
             "invalid_value",
         ),
@@ -381,11 +382,21 @@ def test_dependency_resolution_uses_workspace_ancestors(
 )
 def test_invalid_requests(
     pyright_package: PyrightPackage,
-    raw: bytes,
+    raw: bytes | dict[str, object],
     location: list[str | int],
     reason: str,
 ) -> None:
-    code, response = invoke(pyright_package, raw=raw)
+    payload = (
+        raw
+        if isinstance(raw, bytes)
+        else json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(pyright_package.workspace.parent)},
+                **raw,
+            }
+        ).encode()
+    )
+    code, response = invoke(pyright_package, raw=payload)
     assert code == 2
     assert response == {
         "reason": "invalid_request",

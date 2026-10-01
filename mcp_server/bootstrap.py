@@ -64,6 +64,7 @@ from mcp_server.execution.check_selection import CheckSelector, FileScopePaths, 
 from mcp_server.execution.check_service import CheckService
 from mcp_server.execution.content_input import ContentInputPreparer, FileContentScratch
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
 from mcp_server.execution.test_service import TestRunManager
 from mcp_server.managers.branch_parent_reader import BranchStateParentReader
@@ -569,7 +570,10 @@ class ServerBootstrapper:
             )
             validator.validate_tests_config(tests_config, adapter_catalog)
             validator.validate_fixes_config(fixes_config, adapter_catalog)
-            process_runtime = AdapterProcessRuntime(AsyncioProcessBackend())
+            process_runtime = AdapterProcessRuntime(
+                AsyncioProcessBackend(),
+                FileInvocationScratch(resolve_temporary_paths(server_root).validation_root),
+            )
             scratch = FileContentScratch(
                 resolve_temporary_paths(server_root).validation_root,
                 fresh_id=lambda: uuid4().hex,

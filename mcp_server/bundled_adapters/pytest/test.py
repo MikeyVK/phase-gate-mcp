@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import pytest
 
-_KEYS = frozenset({"operation", "targets", "args"})
+_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 
 
@@ -31,6 +31,22 @@ def _invalid(location: list[str | int], code: str) -> dict[str, object]:
     return {"reason": "invalid_request", "details": [{"location": location, "code": code}]}
 
 
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid(["execution_context"], "wrong_type")
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid(["execution_context", unknown[0]], "unknown_field")
+    if "scratch_directory" not in value:
+        return _invalid(["execution_context", "scratch_directory"], "missing_field")
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid(["execution_context", "scratch_directory"], "wrong_type")
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid(["execution_context", "scratch_directory"], "invalid_value")
+    return None
+
+
 def _validate(value: object) -> tuple[tuple[str, ...], tuple[str, ...]] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([], "wrong_type")
@@ -40,6 +56,9 @@ def _validate(value: object) -> tuple[tuple[str, ...], tuple[str, ...]] | dict[s
         return _invalid([unknown[0]], "unknown_field")
     if missing:
         return _invalid([missing[0]], "missing_field")
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid(["operation"], "wrong_type")
     if value["operation"] != "tests":

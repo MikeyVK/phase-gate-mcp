@@ -12,7 +12,11 @@ from mcp_server.config.schemas.adapter_manifest import CheckCapability
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.core.interfaces.execution import AdapterBinding, CheckCatalogReader
 from mcp_server.execution.check_selection import ArgsSource, CheckSelectionPlan, ResolvedCheckScope
-from mcp_server.execution.content_input import CleanupProblem, ContentInputPreparer
+from mcp_server.execution.content_input import (
+    CleanupProblem,
+    ContentInputPreparer,
+    ScaffoldTextRequest,
+)
 from mcp_server.execution.models import (
     AdapterExitCode,
     ContentCheckResponse,
@@ -24,8 +28,15 @@ from mcp_server.execution.models import (
     TerminationProblem,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import (
+    AdapterRequestContract,
+    AdapterResponseContract,
+    ContentFileCheckWireRequest,
+    ContentTextCheckWireRequest,
+    SelectionCheckWireRequest,
+)
 
+TRequest = TypeVar("TRequest", bound=BaseModel)
 TCheck = TypeVar("TCheck", ContentCheckResponse, SelectionCheckResponse)
 StopReason = Literal["adapter_request_rejected", "operation_interrupted", "termination_unconfirmed"]
 SelectionStatus = Literal["passed", "failed", "incomplete", "empty_selection"]
@@ -141,7 +152,8 @@ class CheckService:
     async def _invoke(
         self,
         binding: AdapterBinding[CheckCapability],
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         contract: AdapterResponseContract[TCheck],
         timeout_seconds: int,
     ) -> InvocationCompleted[TCheck] | InvocationFailed | InvocationCancelled:
@@ -149,6 +161,7 @@ class CheckService:
             launch=binding.launch,
             workspace_root=self._workspace_root,
             request=request,
+            request_contract=request_contract,
             response_contract=contract,
             timeout_seconds=timeout_seconds,
         )
@@ -167,6 +180,7 @@ class CheckService:
                 invocation = await self._invoke(
                     call.binding,
                     call.request,
+                    AdapterRequestContract(SelectionCheckWireRequest),
                     AdapterResponseContract(
                         SelectionCheckResponse,
                         InvocationCompleted[SelectionCheckResponse],
@@ -236,6 +250,11 @@ class CheckService:
                     invocation = await self._invoke(
                         binding,
                         prepared.request,
+                        AdapterRequestContract(
+                            ContentTextCheckWireRequest
+                            if isinstance(prepared.request, ScaffoldTextRequest)
+                            else ContentFileCheckWireRequest
+                        ),
                         AdapterResponseContract(
                             ContentCheckResponse,
                             InvocationCompleted[ContentCheckResponse],

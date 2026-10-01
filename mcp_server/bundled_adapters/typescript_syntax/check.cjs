@@ -6,7 +6,7 @@ const path = require("node:path");
 const { createRequire } = require("node:module");
 const { TextDecoder } = require("node:util");
 
-const REQUEST_KEYS = ["operation", "target_path", "content", "args"];
+const REQUEST_KEYS = ["operation", "target_path", "content", "args", "execution_context"];
 const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$/;
 const UNC_ROOT = /^\\\\[^\\/]+[\\/][^\\/]+$/;
 // Native project-root selection does not determine a proposed snapshot's validity.
@@ -25,6 +25,23 @@ function validate(request) {
   }
   for (const key of REQUEST_KEYS) {
     if (!Object.hasOwn(request, key)) return invalid([key], "missing_field");
+  }
+  const context = request.execution_context;
+  if (context === null || typeof context !== "object" || Array.isArray(context)) {
+    return invalid(["execution_context"], "wrong_type");
+  }
+  for (const key of Object.keys(context).sort()) {
+    if (key !== "scratch_directory") return invalid(["execution_context", key], "unknown_field");
+  }
+  if (!Object.hasOwn(context, "scratch_directory")) {
+    return invalid(["execution_context", "scratch_directory"], "missing_field");
+  }
+  const scratch = context.scratch_directory;
+  if (typeof scratch !== "string") {
+    return invalid(["execution_context", "scratch_directory"], "wrong_type");
+  }
+  if (!scratch || scratch.includes("\0") || !ABSOLUTE_PATH.test(scratch)) {
+    return invalid(["execution_context", "scratch_directory"], "invalid_value");
   }
   if (typeof request.operation !== "string") return invalid(["operation"], "wrong_type");
   if (request.operation !== "syntax") return invalid(["operation"], "invalid_value");
@@ -158,3 +175,4 @@ try {
 if (output === undefined) output = run(request);
 process.stdout.write(JSON.stringify(output[0]) + "\n");
 process.exitCode = output[1];
+

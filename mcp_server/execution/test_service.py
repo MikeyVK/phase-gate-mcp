@@ -47,7 +47,11 @@ from mcp_server.execution.models import (
     TestUnavailable,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import (
+    AdapterRequestContract,
+    AdapterResponseContract,
+    TestWireRequest,
+)
 
 
 def _sequence(value: object) -> object:
@@ -312,6 +316,7 @@ class TestRunManager:
                         targets=targets,
                         args=item.args,
                     ),
+                    request_contract=AdapterRequestContract(TestWireRequest),
                     response_contract=AdapterResponseContract(
                         TestResponse,
                         InvocationCompleted[TestResponse],

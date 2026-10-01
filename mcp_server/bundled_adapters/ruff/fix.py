@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 
-_KEYS = frozenset({"operation", "targets", "args"})
+_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 # These native value options consume one token; unrecognized bare tokens cannot add sources.
 _VALUE_OPTIONS = frozenset(
@@ -53,11 +53,28 @@ _CONFLICTS = frozenset(
 )
 
 
-def _invalid(field: str | None, code: str) -> tuple[dict[str, object], int]:
+def _invalid(field: str | list[str] | None, code: str) -> tuple[dict[str, object], int]:
+    location = field if isinstance(field, list) else [] if field is None else [field]
     return {
         "reason": "invalid_request",
-        "details": [{"location": [field] if field is not None else [], "code": code}],
+        "details": [{"location": location, "code": code}],
     }, 2
+
+
+def _validate_execution_context(value: object) -> tuple[dict[str, object], int] | None:
+    if not isinstance(value, dict):
+        return _invalid(["execution_context"], "wrong_type")
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid(["execution_context", unknown[0]], "unknown_field")
+    if "scratch_directory" not in value:
+        return _invalid(["execution_context", "scratch_directory"], "missing_field")
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid(["execution_context", "scratch_directory"], "wrong_type")
+    if not directory or "\x00" in directory or _ABSOLUTE.fullmatch(directory) is None:
+        return _invalid(["execution_context", "scratch_directory"], "invalid_value")
+    return None
 
 
 def _validate(value: object) -> tuple[str, list[str], list[str]] | tuple[dict[str, object], int]:
@@ -69,6 +86,9 @@ def _validate(value: object) -> tuple[str, list[str], list[str]] | tuple[dict[st
         return _invalid(unknown[0], "unknown_field")
     if missing:
         return _invalid(missing[0], "missing_field")
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid("operation", "wrong_type")
     if value["operation"] not in {"format", "lint"}:

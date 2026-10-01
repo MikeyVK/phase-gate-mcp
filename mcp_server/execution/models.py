@@ -108,6 +108,7 @@ class InvocationResultBase(BaseModel):
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
 
     capture: ProcessCapture
+    cleanup_failure: AdapterCallFailure | None = None
 
 
 def _capture_describes_no_started_process(capture: ProcessCapture) -> bool:

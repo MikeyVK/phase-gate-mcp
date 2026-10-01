@@ -49,7 +49,11 @@ from mcp_server.execution.models import (
     WorkspaceRelativeFilePath,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import (
+    AdapterRequestContract,
+    AdapterResponseContract,
+    FixWireRequest,
+)
 
 
 def _sequence(value: object) -> object:
@@ -311,6 +315,7 @@ class FixManager:
                     request=FixRequest(
                         operation=item.binding.capability_id, targets=targets, args=item.args
                     ),
+                    request_contract=AdapterRequestContract(FixWireRequest),
                     response_contract=AdapterResponseContract(
                         FixResponse, InvocationCompleted[FixResponse], _expected_exit
                     ),

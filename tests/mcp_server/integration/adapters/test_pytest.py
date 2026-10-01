@@ -21,8 +21,11 @@ from mcp_server.config.schemas.adapter_manifest import AdapterTrustConfig, TestC
 from mcp_server.core.interfaces.execution import AdapterBinding
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_selection import SelectionCheckRequest
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.models import InvocationCancelled, TextEvidence
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
+from mcp_server.execution.protocol import AdapterRequestContract
+from mcp_server.execution.protocol import TestWireRequest as WireTestRequest
 from tests.mcp_server.fixtures.test_role_double import (
     NativeTestResponse,
     NativeTestResult,
@@ -87,7 +90,12 @@ def invoke(
     command = [str(binding.launch.executable), *(["-S"] if isolated else []), *binding.launch.args]
     result = subprocess.run(
         command,
-        input=json.dumps(request).encode(),
+        input=json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(case.workspace.parent)},
+                **request,
+            }
+        ).encode(),
         cwd=case.workspace,
         capture_output=True,
         timeout=55,
@@ -312,12 +320,15 @@ async def test_cancellation_stops_xdist_worker_and_descendant(native_case: Nativ
         encoding="utf-8",
     )
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(case.workspace / "invocations")
+        ).invoke(
             launch=binding_for(case).launch,
             workspace_root=case.workspace,
             request=SelectionCheckRequest(
                 operation="tests", targets=(str(case.source),), args=("-n", "2")
             ),
+            request_contract=AdapterRequestContract(WireTestRequest),
             response_contract=role_response_contract(),
             timeout_seconds=20,
         )

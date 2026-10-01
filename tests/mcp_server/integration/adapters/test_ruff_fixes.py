@@ -174,7 +174,12 @@ def test_complete_target_and_wire_admission_before_native_dependency(
         code, response = invoke(package, "lint", (target, extra))
         assert code == 3 and decision(response)["reason"] == "unsupported_input"
         assert target.read_bytes() == b"import os\n"
-    request = {"operation": "lint", "targets": [str(target)], "args": []}
+    request = {
+        "execution_context": {"scratch_directory": str(package.workspace.parent)},
+        "operation": "lint",
+        "targets": [str(target)],
+        "args": [],
+    }
     for malformed in (
         {**request, "targets": []},
         {**request, "targets": None},

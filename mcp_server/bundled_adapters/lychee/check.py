@@ -11,8 +11,10 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-_REQUEST_CONTENT_KEYS = frozenset({"operation", "target_path", "input_path", "args"})
-_REQUEST_SELECTION_KEYS = frozenset({"operation", "targets", "args"})
+_REQUEST_CONTENT_KEYS = frozenset(
+    {"operation", "target_path", "input_path", "args", "execution_context"}
+)
+_REQUEST_SELECTION_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 _BARE_UNC_ROOT = re.compile(r"^\\\\[^\\/]+[\\/][^\\/]+$")
 # Token arities from the supported native CLI; all option semantics stay native.
@@ -133,6 +135,22 @@ def _validate_args(args: object) -> tuple[str, ...] | dict[str, object]:
     return tuple(args)
 
 
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid([_issue(["execution_context"], "wrong_type")])
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid([_issue(["execution_context", unknown[0]], "unknown_field")])
+    if "scratch_directory" not in value:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "missing_field")])
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid([_issue(["execution_context", "scratch_directory"], "wrong_type")])
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "invalid_value")])
+    return None
+
+
 def _validate_request(
     value: object,
 ) -> tuple[str, tuple[str, ...], tuple[str, ...]] | dict[str, object]:
@@ -146,6 +164,9 @@ def _validate_request(
         return _invalid([_issue([key], "unknown_field") for key in unknown])
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid([_issue(["operation"], "wrong_type")])
     if value["operation"] != "links":

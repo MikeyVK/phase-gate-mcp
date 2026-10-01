@@ -30,6 +30,7 @@ from mcp_server.execution.content_input import (
     ScaffoldFileRequest,
     ScaffoldTextRequest,
 )
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.models import (
     AdapterCallFailure,
     AdapterCallFailureReason,
@@ -41,6 +42,12 @@ from mcp_server.execution.models import (
     TerminationProblem,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
+from mcp_server.execution.protocol import (
+    AdapterExecutionContext,
+    AdapterRequestContract,
+    ContentFileCheckWireRequest,
+    ContentTextCheckWireRequest,
+)
 from mcp_server.utils.path_resolver import resolve_temporary_paths
 from tests.mcp_server.fixtures.adapter_process import (
     FixtureModel,
@@ -119,7 +126,19 @@ def test_closed_immutable_models_agree_with_published_request_schema(
             operation="echo", target_path=target, input_path=str(tmp_path / "absent.py"), args=()
         )
         for request in (text, file):
-            validator.validate(request.model_dump(mode="json"))
+            contract = AdapterRequestContract(
+                ContentTextCheckWireRequest
+                if isinstance(request, ScaffoldTextRequest)
+                else ContentFileCheckWireRequest
+            )
+            wire = json.loads(
+                contract.encode(
+                    request,
+                    AdapterExecutionContext(scratch_directory=str(tmp_path / "invocations")),
+                )
+            )
+            validator.validate(wire)
+            assert not validator.is_valid(request.model_dump(mode="json"))
             projected_requests.validate(request.model_dump(mode="json"))
             assert requests.validate_json(request.model_dump_json()) == request
         with pytest.raises(ValidationError, match="frozen"):
@@ -143,7 +162,14 @@ def test_closed_immutable_models_agree_with_published_request_schema(
     for payload in invalid:
         with pytest.raises(ValidationError):
             inputs.validate_json(json.dumps(payload))
-        assert not validator.is_valid({"operation": "echo", "args": [], **payload})
+        assert not validator.is_valid(
+            {
+                "operation": "echo",
+                "args": [],
+                "execution_context": {"scratch_directory": str(tmp_path / "invocations")},
+                **payload,
+            }
+        )
         assert not projected_inputs.is_valid(payload)
         assert not projected_requests.is_valid({"operation": "echo", "args": [], **payload})
     assert not (tmp_path / "not created").exists()
@@ -220,7 +246,7 @@ main().catch(error => {process.stderr.write(String(error)); process.exitCode = 4
 
 
 class ContentEcho(FixtureModel):
-    request: ScaffoldContentRequest
+    request: ContentTextCheckWireRequest | ContentFileCheckWireRequest
     received: str
 
 
@@ -268,10 +294,15 @@ async def test_real_adapter_observes_input_and_cleanup_preserves_primary_result(
     if mode == "missing":
         assert prepared.scratch is not None
         prepared.scratch.input_path.unlink()
-    outcome = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+    outcome = await AdapterProcessRuntime(
+        AsyncioProcessBackend(), FileInvocationScratch(paths.validation_root)
+    ).invoke(
         launch=selected.launch,
         workspace_root=workspace,
         request=prepared.request,
+        request_contract=AdapterRequestContract(
+            ContentFileCheckWireRequest if requires_file else ContentTextCheckWireRequest
+        ),
         response_contract=response_contract(),
         timeout_seconds=5,
     )
@@ -283,7 +314,15 @@ async def test_real_adapter_observes_input_and_cleanup_preserves_primary_result(
         assert isinstance(outcome.response.root, ProcessResponse)
         assert outcome.response.root.decision.status == mode
         echo = ContentEcho.model_validate_json(outcome.response.root.evidence.data)
-        assert echo.request == prepared.request
+        assert (
+            echo.request.model_dump(exclude={"execution_context"}) == prepared.request.model_dump()
+        )
+        assert not Path(echo.request.execution_context.scratch_directory).exists()
+        if prepared.scratch is not None:
+            assert prepared.scratch.input_path.exists()
+            assert (
+                Path(echo.request.execution_context.scratch_directory) != prepared.scratch.directory
+            )
         assert echo.received == content
     original_outcome = outcome.model_dump_json()
     warning = preparer.cleanup(prepared, outcome)
@@ -300,7 +339,7 @@ async def test_real_adapter_observes_input_and_cleanup_preserves_primary_result(
         if prepared.scratch is not None:
             assert not prepared.scratch.directory.exists()
         else:
-            assert not paths.temp_root.exists()
+            assert not any(paths.validation_root.iterdir())
 
 
 @pytest.mark.parametrize("cancelled", [False, True])

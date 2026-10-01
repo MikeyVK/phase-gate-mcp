@@ -20,6 +20,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterProcess,
     AdapterProcessBackend,
 )
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.models import (
     AdapterCallFailureReason,
     InvocationCancelled,
@@ -33,7 +34,11 @@ from mcp_server.execution.process_runtime import (
     WindowsJob,
 )
 from mcp_server.execution.protocol import STDERR_LIMIT, STDOUT_LIMIT
-from tests.mcp_server.fixtures.adapter_process import ProcessRequest, response_contract
+from tests.mcp_server.fixtures.adapter_process import (
+    ProcessRequest,
+    request_contract,
+    response_contract,
+)
 from tests.mcp_server.fixtures.suite_roots import write_package_tree
 
 pytestmark = [
@@ -179,10 +184,13 @@ async def test_response_and_parent_exit_wait_for_parallel_work(
     lifecycle_case: LifecycleCase,
 ) -> None:
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, "normal"),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=5,
         )
@@ -192,6 +200,7 @@ async def test_response_and_parent_exit_wait_for_parallel_work(
         result = await task
         assert not any(_handle_is_alive(handle) for handle in children)
     assert isinstance(result, InvocationCompleted)
+    assert not any((lifecycle_case.root / "invocations").iterdir())
     assert all((lifecycle_case.root / f"{name}.done").exists() for name in ("first", "second"))
     assert result.capture.stderr.observed_bytes == STDERR_LIMIT + 37
     assert result.capture.stderr.truncated
@@ -211,10 +220,13 @@ async def test_failure_stops_live_children_and_keeps_primary_cause(
     lifecycle_case: LifecycleCase, mode: str, reason: AdapterCallFailureReason
 ) -> None:
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, mode),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=1 if mode == "late" else 5,
         )
@@ -226,6 +238,7 @@ async def test_failure_stops_live_children_and_keeps_primary_cause(
     assert isinstance(result, InvocationFailed)
     assert result.failure.reason is reason
     assert result.termination_problem is None
+    assert not any((lifecycle_case.root / "invocations").iterdir())
     assert not any(lifecycle_case.root.glob("*.done"))
     assert (lifecycle_case.root / "target.txt").read_text() == "keep"
     assert result.capture.stdout.head is not None
@@ -239,10 +252,13 @@ async def test_cancellation_is_typed_and_confirmed_before_return(
     lifecycle_case: LifecycleCase,
 ) -> None:
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, "late"),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=20,
         )
@@ -254,6 +270,7 @@ async def test_cancellation_is_typed_and_confirmed_before_return(
         assert not any(_handle_is_alive(handle) for handle in children)
     assert isinstance(result, InvocationCancelled)
     assert result.termination_problem is None
+    assert not any((lifecycle_case.root / "invocations").iterdir())
     assert (lifecycle_case.root / "target.txt").read_text() == "keep"
 
 
@@ -307,10 +324,13 @@ async def test_unconfirmed_stop_preserves_cause_and_shared_five_second_budget(
     backend = WithheldStopBackend(AsyncioProcessBackend())
     start = time.monotonic()
     task = asyncio.create_task(
-        AdapterProcessRuntime(backend).invoke(
+        AdapterProcessRuntime(
+            backend, FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, "late"),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=20 if cancel else 1,
         )
@@ -332,6 +352,7 @@ async def test_unconfirmed_stop_preserves_cause_and_shared_five_second_budget(
                 assert result.failure.reason is AdapterCallFailureReason.TIMEOUT
                 assert InvocationFailed.model_validate_json(result.model_dump_json()) == result
             assert result.termination_problem is TerminationProblem.UNCONFIRMED
+            assert len(tuple((lifecycle_case.root / "invocations").iterdir())) == 1
             assert all(_handle_is_alive(handle) for handle in children)
         assert result.capture.exit_code == 0
         assert result.capture.stdout.head is not None
@@ -352,10 +373,13 @@ async def test_completed_transient_children_do_not_require_historical_handles(
 ) -> None:
     """Already-finished short-lived Job members do not block a valid response."""
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, "transient"),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=5,
         )
@@ -365,6 +389,7 @@ async def test_completed_transient_children_do_not_require_historical_handles(
         (lifecycle_case.root / f"{name}.armed").touch()
     result = await task
     assert isinstance(result, InvocationCompleted)
+    assert not any((lifecycle_case.root / "invocations").iterdir())
     assert all((lifecycle_case.root / f"{name}.done").exists() for name in ("first", "second"))
 
 
@@ -404,10 +429,13 @@ async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
     monkeypatch.setattr(WindowsJob, "observe_members", observe_then_spawn)
     monkeypatch.setattr(WindowsJob, "terminate", terminate_with_spawn)
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, "race"),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=1,
         )
@@ -420,6 +448,7 @@ async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
         assert isinstance(result, InvocationFailed)
         assert result.failure.reason is AdapterCallFailureReason.TIMEOUT
         assert result.termination_problem is TerminationProblem.UNCONFIRMED
+        assert len(tuple((lifecycle_case.root / "invocations").iterdir())) == 1
         assert not (lifecycle_case.root / "late.done").exists()
     finally:
         if not task.done():
@@ -443,10 +472,13 @@ async def test_setup_failure_retains_created_process_and_confirms_its_stop(
 
     monkeypatch.setattr(WindowsJob, "attach_and_resume", fail_assignment)
     try:
-        result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        result = await AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(lifecycle_case.root / "invocations")
+        ).invoke(
             launch=launch_for(lifecycle_case, "normal"),
             workspace_root=lifecycle_case.root,
             request=lifecycle_case.request,
+            request_contract=request_contract(),
             response_contract=response_contract(),
             timeout_seconds=5,
         )
@@ -454,6 +486,7 @@ async def test_setup_failure_retains_created_process_and_confirms_its_stop(
         assert result.failure.reason is AdapterCallFailureReason.PROCESS_FAILED
         assert result.capture.exit_code is not None
         assert result.termination_problem is None
+        assert not any((lifecycle_case.root / "invocations").iterdir())
         assert len(observed_pids) == len(observed_handles) == 1
         assert not _handle_is_alive(observed_handles[0])
     finally:

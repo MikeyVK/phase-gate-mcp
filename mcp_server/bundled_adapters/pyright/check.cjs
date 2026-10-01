@@ -7,11 +7,31 @@ const { spawnSync } = require("node:child_process");
 const { createRequire } = require("node:module");
 const { TextDecoder } = require("node:util");
 
-const REQUEST_KEYS = ["operation", "targets", "args"];
+const REQUEST_KEYS = ["operation", "targets", "args", "execution_context"];
 const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$/;
 
 function invalid(location, code) {
   return { reason: "invalid_request", details: [{ location, code }] };
+}
+
+function validateExecutionContext(context) {
+  if (context === null || typeof context !== "object" || Array.isArray(context)) {
+    return invalid(["execution_context"], "wrong_type");
+  }
+  for (const key of Object.keys(context).sort()) {
+    if (key !== "scratch_directory") return invalid(["execution_context", key], "unknown_field");
+  }
+  if (!Object.hasOwn(context, "scratch_directory")) {
+    return invalid(["execution_context", "scratch_directory"], "missing_field");
+  }
+  const directory = context.scratch_directory;
+  if (typeof directory !== "string") {
+    return invalid(["execution_context", "scratch_directory"], "wrong_type");
+  }
+  if (!directory || directory.includes("\0") || !ABSOLUTE_PATH.test(directory)) {
+    return invalid(["execution_context", "scratch_directory"], "invalid_value");
+  }
+  return null;
 }
 
 function validate(request) {
@@ -24,6 +44,8 @@ function validate(request) {
   for (const key of REQUEST_KEYS) {
     if (!Object.hasOwn(request, key)) return invalid([key], "missing_field");
   }
+  const contextIssue = validateExecutionContext(request.execution_context);
+  if (contextIssue !== null) return contextIssue;
   if (typeof request.operation !== "string") return invalid(["operation"], "wrong_type");
   if (request.operation !== "types") return invalid(["operation"], "invalid_value");
   if (!Array.isArray(request.targets)) return invalid(["targets"], "wrong_type");

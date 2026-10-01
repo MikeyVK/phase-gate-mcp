@@ -13,7 +13,7 @@ import sys
 from dataclasses import dataclass
 from io import StringIO
 
-_REQUEST_KEYS = frozenset({"operation", "targets", "args"})
+_REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 
 
@@ -34,6 +34,22 @@ def _valid_path(value: object) -> bool:
     )
 
 
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid([_issue(["execution_context"], "wrong_type")])
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid([_issue(["execution_context", unknown[0]], "unknown_field")])
+    if "scratch_directory" not in value:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "missing_field")])
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid([_issue(["execution_context", "scratch_directory"], "wrong_type")])
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "invalid_value")])
+    return None
+
+
 def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([_issue([], "wrong_type")])
@@ -43,6 +59,9 @@ def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
     missing = sorted(_REQUEST_KEYS - set(value))
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid([_issue(["operation"], "wrong_type")])
     if value["operation"] != "types":

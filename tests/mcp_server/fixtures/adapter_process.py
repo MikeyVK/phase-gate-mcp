@@ -14,7 +14,11 @@ from mcp_server.config.schemas.adapter_manifest import AdapterTrustConfig, Check
 from mcp_server.core.interfaces.execution import AdapterBinding
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.models import AdapterExitCode, InvocationCompleted
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import (
+    AdapterExecutionContext,
+    AdapterRequestContract,
+    AdapterResponseContract,
+)
 from tests.mcp_server.fixtures.suite_roots import write_package_tree
 
 NODE_ADAPTER = r"""
@@ -89,6 +93,17 @@ class ProcessRequest(FixtureModel):
     args: tuple[str, ...]
 
 
+class ProcessWireRequest(ProcessRequest):
+    """Complete adapter input with explicit PGMCP-owned invocation context."""
+
+    execution_context: AdapterExecutionContext
+
+
+def request_contract() -> AdapterRequestContract[ProcessRequest]:
+    """Encode fixture operation intent through the current wire request."""
+    return AdapterRequestContract(ProcessWireRequest)
+
+
 class Passed(FixtureModel):
     status: Literal["passed"]
 
@@ -135,7 +150,7 @@ class FixtureResponse(RootModel[ProcessResponse | InvalidRequest]):
 
 
 class EchoEvidence(FixtureModel):
-    request: ProcessRequest
+    request: ProcessWireRequest
     cwd: str
     argv: tuple[str, ...]
     dependency: str

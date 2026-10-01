@@ -44,7 +44,7 @@ from mcp_server.execution.models import (
     TestTerminationDetails as TerminationDetails,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import AdapterRequestContract, AdapterResponseContract
 from mcp_server.execution.test_service import (
     TestRunManager as RunManager,
 )
@@ -260,6 +260,7 @@ async def test_native_results_keep_meaning_without_aggregate_verdict(tmp_path: P
             RoleResponse.model_validate_json(json.dumps({**negative, **change}))
 
 
+TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
 
 
@@ -276,7 +277,8 @@ class InterruptedRuntime(AdapterProcessRuntime):
         *,
         launch: AdapterLaunch,
         workspace_root: Path,
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
@@ -287,6 +289,7 @@ class InterruptedRuntime(AdapterProcessRuntime):
             launch=launch,
             workspace_root=workspace_root,
             request=request,
+            request_contract=request_contract,
             response_contract=response_contract,
             timeout_seconds=timeout_seconds,
         )

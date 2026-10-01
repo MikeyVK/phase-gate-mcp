@@ -98,6 +98,7 @@ def invoke(
         if raw is not None
         else json.dumps(
             {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
                 "operation": operation,
                 "targets": [str(path) for path in targets],
                 "args": list(args),
@@ -415,8 +416,30 @@ def test_request_rejections_preserve_root_and_index_details(ruff_package: RuffPa
     for payload, location, reason in (
         (b"{", [], "invalid_value"),
         (b"[]", [], "wrong_type"),
-        (b'{"operation":[],"targets":[],"args":[]}', ["operation"], "wrong_type"),
-        (b'{"operation":"lint","targets":[42],"args":[]}', ["targets", 0], "wrong_type"),
+        (
+            json.dumps(
+                {
+                    "execution_context": {"scratch_directory": str(ruff_package.workspace.parent)},
+                    "operation": [],
+                    "targets": [],
+                    "args": [],
+                }
+            ).encode(),
+            ["operation"],
+            "wrong_type",
+        ),
+        (
+            json.dumps(
+                {
+                    "execution_context": {"scratch_directory": str(ruff_package.workspace.parent)},
+                    "operation": "lint",
+                    "targets": [42],
+                    "args": [],
+                }
+            ).encode(),
+            ["targets", 0],
+            "wrong_type",
+        ),
     ):
         code, response = invoke(ruff_package, "lint", raw=payload)
         assert code == 2

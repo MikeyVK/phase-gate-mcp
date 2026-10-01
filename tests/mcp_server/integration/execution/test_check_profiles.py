@@ -13,6 +13,7 @@ from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_service import CheckService
 from mcp_server.execution.content_input import ContentInputPreparer, FileContentScratch
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.models import ContentRoleResponse, InvocationCompleted
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
 
@@ -46,7 +47,9 @@ async def test_renamed_recomposed_profile_uses_declared_native_capabilities(
     service = CheckService(
         config,
         catalog,
-        AdapterProcessRuntime(AsyncioProcessBackend()),
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(tmp_path / "invocations")
+        ),
         ContentInputPreparer(FileContentScratch(tmp_path / "scratch", fresh_id=lambda: "one")),
         tmp_path,
     )

@@ -250,12 +250,25 @@ def test_delivered_role_contracts_keep_distinct_request_and_result_shapes(
     schema = json.loads(path.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    assert validator.is_valid({"operation": "sample", "targets": ["C:/work/source.py"], "args": []})
-    assert validator.is_valid({"operation": "sample", "targets": [], "args": []}) == (role != "fix")
-    assert validator.is_valid({"operation": "sample", "targets": ["/"], "args": []}) == (
+    context = {"execution_context": {"scratch_directory": "C:/temp/invocation"}}
+    valid_request = {"operation": "sample", "targets": ["C:/work/source.py"], "args": [], **context}
+    assert validator.is_valid(valid_request)
+    assert not validator.is_valid(
+        {key: value for key, value in valid_request.items() if key != "execution_context"}
+    )
+    assert not validator.is_valid({**valid_request, "execution_context": {}})
+    assert not validator.is_valid(
+        {**valid_request, "execution_context": {"scratch_directory": "relative"}}
+    )
+    assert validator.is_valid({"operation": "sample", "targets": [], "args": [], **context}) == (
         role != "fix"
     )
-    assert not validator.is_valid({"operation": "sample", "targets": ["relative.py"], "args": []})
+    assert validator.is_valid({"operation": "sample", "targets": ["/"], "args": [], **context}) == (
+        role != "fix"
+    )
+    assert not validator.is_valid(
+        {"operation": "sample", "targets": ["relative.py"], "args": [], **context}
+    )
     passed = {"status": "passed", **({"message": "collected"} if role == "test" else {})}
     assert validator.is_valid(
         {"decision": passed, "external_tools": [{"tool_id": "native", "version": None}]}
@@ -287,6 +300,8 @@ def test_delivered_role_contracts_keep_distinct_request_and_result_shapes(
         "target_path": "C:/work/source.py",
         "content": "",
         "args": [],
+        **context,
+        **context,
     }
     assert validator.is_valid(text_request) == (role == "check")
     if role == "check":
@@ -333,5 +348,7 @@ def test_delivered_role_contracts_keep_distinct_request_and_result_shapes(
                 "target_path": "C:/work/source.py",
                 "input_path": "C:/temp/input.py",
                 "args": [],
+                **context,
+                **context,
             }
         )
