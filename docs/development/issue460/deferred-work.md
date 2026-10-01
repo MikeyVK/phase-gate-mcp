@@ -3,7 +3,7 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED existing deferrals; runtime adapter byte-provenance candidate closed without deferral  
-**Version:** 1.22  
+**Version:** 1.23  
 **Last Updated:** 2026-10-01  
 **Originating Issue:** 460
 
@@ -419,6 +419,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.23 | 2026-10-01 | Record owner-deferred generic reverse schema/template consumption research as D-VAL-08; retain explicit uncertainty and no reverse PASS claim |
 | 1.22 | 2026-10-01 | Record owner-deferred separate adapter write-effects and false-PASS follow-ups as D-VAL-06 and D-VAL-07 |
 | 1.21 | 2026-10-01 | Close runtime adapter byte-provenance QA candidate as accepted current behavior, not deferred work, by explicit owner decision |
 | 1.20 | 2026-10-01 | Record open QA candidate after independent PR #463 QA NOGO; retain approved restart-only Design boundary pending substantive discussion |
@@ -528,3 +529,15 @@ The follow-up should define source mutations versus permitted native operational
 **Evidence:** A live `run_checks` call targeting `mcp_server/tools/scaffold_tool.py` with `python_types` and `python_lint` and `--help` for both returned aggregate and per-check `passed`. The complete cache contains Mypy and Ruff help output instead of source-analysis evidence: `pgmcp://cache/runs/a7bf3cd5498640069bdba82274bf5fc0`.
 
 The follow-up should inspect each shipped check adapter for metadata and early-exit options that bypass its intended check, classify applicability individually, reject inappropriate requests without weakening native configuration behavior, and verify that ordinary valid checks and real diagnostic failures retain correct outcomes. Exit code zero alone must not turn an acknowledged non-check invocation into quality evidence. Preserve generic contracts unless research demonstrates a specific need for an owner-approved amendment. This accepted deferral is not a claim that the reproduced invocation checked its target.
+
+## D-VAL-08 — Generic Schema/Template Consumption Analysis
+
+**Decision:** The owner deferred this work outside #460 on 2026-10-01 after discussing QA finding 6. Coordination should create a separate research-led issue; no implementation mechanism or enforcement policy is approved by this notice.
+
+**Established evidence:** Research F-07 states that exposed caller fields have consumers and rendered caller values are declared. `TemplateInputValidator` validates static Jinja reads against prepared schema paths across the reachable graph. It does not compare all schema declarations with observed reads. No currently shipped package has been shown to discard an exposed field; neither a reverse automatic check nor complete semantic consumption evidence may be claimed as passing.
+
+**Research scope:** Define consumption as direct output or influence on structure, conditions, iteration, or a justified downstream consumer. Distinguish a syntactic reference from a value that can affect output. Evaluate a language-aware Jinja AST analysis over the existing graph and schema semantics, including references, aliases, macro arguments, conditional branches, arrays, composed schemas, and dynamic keys. Do not flatten those constructs into an inaccurate property-name list or treat a parent-object read as proof for every child.
+
+A candidate mechanism could identify definitely declared reads, declarations with no observed consumer, and unresolved use. Dynamic access, arbitrary filters/functions, or whole-object forwarding must remain explicit uncertainty unless justified analysis resolves them. Determine whether uncertain or unused cases produce authoring diagnostics, package checks, or startup rejection only after measuring false positives and real defects. Representative render probes may supplement static analysis but cannot prove all possible inputs or all branch behavior.
+
+**Generic boundary:** Use schema paths, template-language rules, and the existing dependency graph; no hardcoded template IDs or field-name exceptions. Any explicit consumption metadata must be justified against duplication and drift. Preserve current undeclared-read rejection and artifact-specific contract evidence. Compare a bounded static check, a diagnostics-only authoring tool, and test-supported package conformance before selecting an Approved Strategy. Record actual shipped-field findings separately from analysis limitations. This deferral accepts an evidence/enforcement gap for #460 without erasing F-07 or claiming a complete reverse guarantee.
