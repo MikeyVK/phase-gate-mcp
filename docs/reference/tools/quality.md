@@ -1,4 +1,4 @@
-<!-- template=reference version=6.0 updated=2026-09-24 -->
+<!-- template=reference version=6.1 updated=2026-10-02 -->
 # Checks, Tests, and Fixes
 
 The V3 execution surface has three distinct operations: `run_checks`, `run_tests`, and
@@ -9,6 +9,13 @@ test passed.
 Input schemas are prepared from live configuration. Inspect the tool's exposed schema
 for currently admitted profile, check, test, and fix IDs rather than copying a catalog
 here. Native executable options retain their native meanings.
+
+PGMCP injects a mandatory `execution_context.scratch_directory` into the internal
+adapter JSON request after exclusively allocating its invocation directory. Public
+callers continue to use the tool schemas below; they do not supply this internal
+context. See the [native adapter execution contract](../execution-adapters.md) for
+resource ownership, whole-selection transports, declared prerequisites, accepted
+native cache/report effects and the concrete Pyright and Lychee input limits.
 
 ## `run_checks`
 
@@ -96,6 +103,19 @@ is available at its cache URI, with native output represented only to the extent
 operation's bounded evidence and capture models retain it. Read the cache when you need
 omitted rows or fields. Do not parse Markdown back into structured evidence, and do not
 treat the presence of a cache URI as a passing verdict.
+
+An invocation-directory cleanup failure after an accepted adapter response preserves
+that complete preceding response and its outcome as JSON evidence. A fix may already
+have changed sources; inspect the preserved native result and affected files.
+Cancellation, request rejection and preceding process failure retain their primary
+state while public check/test/fix/content results expose the additional cleanup cause.
+Unconfirmed process termination retains owned resources for recovery.
+
+For paged resources, assemble contiguous Unicode-codepoint slices and verify stable
+run/length/hash metadata and the complete UTF-8 SHA256 before parsing. Preserve durable
+observations because caches are transient. The client deadline must allow invocation,
+termination and result processing; raising only the native deadline cannot recover a
+receipt after the client has expired.
 
 ## Related references
 

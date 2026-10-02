@@ -11,6 +11,7 @@ Use these modular pages for current behavior. Exact public arguments and output 
 | Existing-file edits | [editing.md](editing.md) |
 | Artifact generation and context-schema discovery | [scaffolding.md](scaffolding.md) |
 | Configured checks, tests, and fixes | [quality.md](quality.md) |
+| Native adapter contract, resources, transports, and effects | [../execution-adapters.md](../execution-adapters.md) |
 | Work context, health, and restart | [discovery.md](discovery.md) |
 | Result presentation and resource cache | [../presentation_architecture.md](../presentation_architecture.md) |
 
