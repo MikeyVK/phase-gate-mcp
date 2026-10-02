@@ -2,14 +2,14 @@
 
 # Issue 469 — Native Adapter Validation
 
-**Status:** Blocked — independent QA NOGO; causal investigation active
-**Version:** 1.1
+**Status:** Completed — refreshed independent Validation review requested
+**Version:** 1.2
 **Last Updated:** 2026-10-02
-**Validation Status:** PARTIAL — complete passing proof exists; an independent native failure remains unexplained
+**Validation Status:** PASS — refreshed producer suite and gates; independent review pending
 
 ## Purpose and scope
 
-Validate the direct unreleased check/test/fix contract correction on branch `bug/469-native-adapter-robustness` through `8697f92194478f4c014dad56f9b1374b80b2fa51`. Production code is unchanged since `9bc12fe67479093e4a50fc4d3955db74ba02fe9b`; later commits repair direct test consumers and existing test support. Validation made no production or test patches. Every correction returned through Implementation and independent review.
+Validate the direct unreleased check/test/fix contract correction on branch `bug/469-native-adapter-robustness` through `01c7887aaa036542282239484d1ace7ad659f703`. Production code is unchanged since `9bc12fe67479093e4a50fc4d3955db74ba02fe9b`; later commits repair direct test consumers, existing test support and the finite rendered-template native comparison budget. Validation made no production or test patches. Every correction returned through Implementation and independent review.
 
 Authoritative inputs are [Research 1.5](research.md), [Design 1.3](design.md) and [Planning 1.2](planning.md). B1–B6 remain binding: internal identity 1, required JSON context, one complete native operation, truthful outcomes/versions/diagnostics, and ordinary native effects under trusted host-account execution. External migration, legacy adapter bridges, OS confinement and linked-issue closure are excluded.
 
@@ -23,14 +23,14 @@ An official MCP SDK client launched the same configured PGMCP command, arguments
 
 The SDK receive budget was 900 seconds and the public invocation deadline was 600 seconds. Only these budgets changed to permit a complete receipt beyond the primary client's 300-second ceiling. No caller native argument, worker, collection, debug or selection override was supplied. Independent QA reviewed this route; passing criteria and native prerequisites were unchanged. Native Pytest 9.0.2 ran on Python 3.13.7 with the existing configured addopts and eight workers; `args_source=configured` and `effective_args=[]`.
 
-**Observed result:** 2775 passed, 1 skipped, 1 xpassed, 229 warnings in 269.33 seconds. Native exit 0, no invocation rejection or unconfirmed termination. The complete [full-suite receipt](pgmcp://cache/runs/f8a67efb6e1c42d0bf6f385843a4cd90) was read in contiguous pages and verified against its Unicode length and UTF-8 SHA256 before parsing. Receipt integrity: 796069 Unicode characters; UTF-8 SHA256 `311d1426dd41e2ff1ed29a8117439444baa7b1a74e23b835c0763403d37d9609`. All 2777 native items were selected; 2775 PASSED item records and zero FAILED item records were observed, with no native error lines. The SDK server PID38248 and client PID40508 were verified under the same account as primary PID41964. The native summary, rather than the bounded text projection or operation-level success, establishes the result. Existing skip and XPASS outcomes retain their configured native policies.
+**Observed result:** 2775 passed, 1 skipped, 1 xpassed, 229 warnings in 286.09 seconds on commit 01c7887a. Native exit 0, no invocation rejection or unconfirmed termination. The complete [full-suite receipt](pgmcp://cache/runs/f7964e6eca254e54a6b275c86e6e8fe0) was read in contiguous pages and verified against its Unicode length and UTF-8 SHA256 before parsing. Receipt integrity: 796120 Unicode characters; UTF-8 SHA256 `a355bfdfd1fad40eff53763848aab89432b8fcf5f2f6a0b5b47766fea5713dcf`. All 2777 native items were selected; 2775 PASSED item records and zero FAILED item records were observed, with no native error lines. SDK server PID32264 and client PID41076 were verified under the same operator account 1Voudig as primary PID41964. The existing rendered-template native execution is included in this complete passing selection. The native summary, rather than operation-level success or the bounded projection, establishes the outcome. Existing skip and XPASS policies remain unchanged.
 
 ## Obligation mapping
 
 | Obligation | Useful evidence and observable result |
 |---|---|
 | V_NATIVE | The complete configured suite above finished successfully; previous partial runs and timeouts are not substituted for it. |
-| V_GATES | All 47 changed Python paths below pass format, lint and Pyright; configured production Mypy passes 186 files. Actual CJS entrypoints, role JSON schemas and bundled manifests are exercised by native adapter, catalog and installed-distribution tests. Changed Markdown gets its offline link checks. |
+| V_GATES | All 48 changed Python paths below pass format, lint and Pyright; configured production Mypy passes 186 files. Actual CJS entrypoints, role JSON schemas and bundled manifests are exercised by native adapter, catalog and installed-distribution tests. Changed Markdown gets its offline link checks. |
 | E469-1/E469-3 | [Ruff](../../../tests/mcp_server/integration/adapters/test_ruff_checks.py), [Mypy](../../../tests/mcp_server/integration/adapters/test_mypy.py), [Pyright](../../../tests/mcp_server/integration/adapters/test_pyright.py), [Pytest](../../../tests/mcp_server/integration/adapters/test_pytest.py) and [Lychee](../../../tests/mcp_server/integration/adapters/test_lychee.py) exercise oversized selections with late findings, small controls, discovery/exclusions and faithful whole-input refusal. |
 | E469-2/E469-4/E475-1 | Native adapter tests exercise truthful completion, metadata refusal, actual prerequisite versions and retained diagnostic verbosity. Ruff usage/configuration/access classification follows causal native records independent of quoted arguments and filenames. |
 | E474-1/E-CROSS | [Runtime](../../../tests/mcp_server/integration/execution/test_process_runtime.py), [process stopping](../../../tests/mcp_server/integration/execution/test_process_stopping.py), [content](../../../tests/mcp_server/integration/execution/test_content_input.py), service projections and [installed distribution](../../../tests/mcp_server/integration/test_installed_distribution_v3.py) prove required context, pure ownership descriptions, exclusive allocation, termination-sensitive cleanup and public evidence preservation. |
@@ -41,7 +41,7 @@ The focused actual-native run of all 15 adapter/execution/catalog files also pas
 
 ## Complete changed Python inventory and gates
 
-The main-to-HEAD [branch inventory](pgmcp://cache/runs/1a8cec3e9d14464dad6a05ce1c33b06d) contains 59 changed files and 47 Python files. Every abbreviated stat path was uniquely resolved against repository paths; the complete sorted Python vector is:
+The main-to-HEAD [branch inventory](pgmcp://cache/runs/c92cbf5016304315bdf3fa8e10512caa) contains 60 changed files and 48 Python files. Every abbreviated stat path was uniquely resolved against repository paths; the complete sorted Python vector is:
 
 ```text
 mcp_server/bootstrap.py
@@ -82,6 +82,7 @@ tests/mcp_server/integration/execution/test_check_profiles.py
 tests/mcp_server/integration/execution/test_content_input.py
 tests/mcp_server/integration/execution/test_process_runtime.py
 tests/mcp_server/integration/execution/test_process_stopping.py
+tests/mcp_server/integration/templates/test_pytest_integration_test.py
 tests/mcp_server/integration/test_edit_operation_v3.py
 tests/mcp_server/integration/test_installed_distribution_v3.py
 tests/mcp_server/integration/test_target_startup.py
@@ -96,12 +97,12 @@ tests/mcp_server/unit/fixtures/test_suite_roots.py
 Exact calls:
 
 ```text
-run_checks(scope='targets', targets=<all 47 paths above>,
+run_checks(scope='targets', targets=<all 48 paths above>,
            checks=['python_format','python_lint','python_pyright'])
 run_checks(scope='configured', checks=['python_types'])
 ```
 
-The [47-file gate receipt](pgmcp://cache/runs/ef3f7e12f57847e28d22f24751040fc9) records all files already formatted, lint passed and Pyright 1.1.408 with zero errors or warnings. Configured Mypy 1.19.1 passed 186 production files, [receipt](pgmcp://cache/runs/31f9dc508924469f8c68cf6783e8c177); that complete hashed evidence remains fresh because production, prerequisites and gate configuration did not change afterward. Test Mypy is not the configured production gate.
+The refreshed [48-file gate receipt](pgmcp://cache/runs/ad2ab6596bd34d6985a62c79fc419de1) records all files already formatted, lint passed and Pyright 1.1.408 with zero errors or warnings across 48 files. Refreshed configured Mypy 1.19.1 passed 186 production files, [receipt](pgmcp://cache/runs/a63056e2d2fd4ddabc188fd326d381aa). Test Mypy is not the configured production gate.
 
 Research, Design, Planning and the historical effect probe passed offline links: 131 total, 103 successful, 28 excluded, zero errors, [receipt](pgmcp://cache/runs/7d7c79dfc7e747e5951746fb053ae084). Report link verification is recorded with its final review hand-over. MCP cache URIs are intentionally excluded from native link fetching.
 
@@ -134,7 +135,7 @@ The full suite contains the actual-native late-target, causal Ruff and resource-
 
 CLI/config precedence, configured discovery, native operation order, ordered fix effects and deliberate Ruff exit-zero/Pytest collect-only/exit-5 policies remain exercised. Fixes do not promise rollback. If cleanup fails after a fix, its preserved preceding result and actual source bytes remain inspectable.
 
-The server remains healthy after completion: PGMCP 2.0.0 on win32; the SDK server was healthy before and after its run and its client session closed normally, [health receipt](pgmcp://cache/runs/70a4b05f0cfb476999bb939fd2be99a2).
+The server remains healthy after completion: PGMCP 2.0.0 on win32; the SDK server was healthy before and after its run and its client session closed normally, [health receipt](pgmcp://cache/runs/958f623dec9f4d4f842a835dd912553d).
 
 ## Caveats, scoped guarantees and deferred work
 
@@ -147,7 +148,7 @@ The server remains healthy after completion: PGMCP 2.0.0 on win32; the SDK serve
 | Evidence and versions | Caches are process-local/transient. Every inspected DTO was fully read and hash-verified; durable outcomes and exact vectors are recorded here. Package-local declared prerequisites and actual observed versions remain authoritative. |
 | Separate acceptance | E469, E474 and E475 remain distinct. @co must align issue 474's superseded strict destination wording with the approved trusted-host/native-cache/report strategy before acceptance or closure. No linked issue is implicitly closed by this report. |
 
-The original adapter/runtime findings remain closed. The additional independent native failure recorded below remains an open P2 until its cause and disposition are evidence-backed. Documentation and phase progression await independent Validation approval.
+The original adapter/runtime findings remain closed. The additional native failure and its narrowly scoped harness correction are recorded below; independent QA accepted the correction for Implementation → Validation. Its Validation disposition and phase progression await the refreshed independent review.
 
 ## Related documents
 
@@ -157,7 +158,7 @@ The original adapter/runtime findings remain closed. The additional independent 
 - [Quality and evidence standards](../../coding_standards/QUALITY_GATES.md)
 
 
-## Additional independent Validation evidence and open P2
+## Prior independent Validation NOGO and failure evidence
 
 Independent QA returned NOGO on commit `87b7ce70` after observing conflicting complete native runs with no source changes. Both runs selected all 2777 items through the official SDK with 900-second receive and 600-second invocation budgets, unchanged native arguments/prerequisites/eight workers and verified client/server account `1Voudig`.
 
@@ -170,11 +171,11 @@ Independent QA returned NOGO on commit `87b7ce70` after observing conflicting co
 | Configured Mypy, receipt `507c28c33b2844b5b89b19adfc6dbd82` | 186 production files passed |
 | Offline links, receipt `ab6df409f72c4eee92a472071da59af6` | 119 successful, 43 excluded, zero errors |
 
-The sole failure was `test_explicit_json_and_filesystem_components_execute_with_native_pytest` in `tests/mcp_server/integration/templates/test_pytest_integration_test.py`. The test is unchanged relative to main and calls the direct native Pytest comparison helper, not the adapter. No product regression, baseline defect or timeout cause is yet established. The first SDK session closed without durable retention of its full failure traceback; its factual failure, item counts and receipt integrity were retained. A later pass does not erase that failure.
+The sole failure was `test_explicit_json_and_filesystem_components_execute_with_native_pytest` in `tests/mcp_server/integration/templates/test_pytest_integration_test.py`. The test is unchanged relative to main and calls the direct native Pytest comparison helper, not the adapter. At that review, no product regression, baseline defect or timeout cause was established. The first SDK session closed without durable retention of its full failure traceback; its factual failure, item counts and receipt integrity were retained. A later pass does not erase that failure.
 
 The skip is an existing manual proxy-restart test requiring RUN_MANUAL_TESTS. The XPASS is an existing xfail(strict=False) test. Neither marking was introduced by this work. All QA DTOs were fully paged and hash-verified; these facts are attributed to the independent review, not a producer replay of its server-local caches.
 
-Open P2: investigate the conflicting native result and document an evidence-backed cause and disposition. Preserve any new traceback before the cache session closes. Validation does not patch; a required correction must return to Implementation. No Validation-to-Documentation approval has been granted.
+The review opened a P2 requiring causal investigation and an evidence-backed disposition. A new traceback was subsequently retained before cache closure and the required correction returned through Implementation, as recorded below. No Validation-to-Documentation approval is implied by later producer evidence.
 
 ## Causal reproduction and bounded test-harness maintenance
 
@@ -200,4 +201,13 @@ The audited return to Implementation, receipt `1b88beb9a1284fac8cfbb446e7cb0109`
 
 Two complete affected files passed 30 tests with 17 warnings in 39.29 seconds, receipt `4c9e109f58d0489289877bc72fde2d67`. Format, lint and Pyright passed both files, receipt `5c5150569d32403aa8558741bd4f6b0d`. An initial malformed check request combining profile and explicit checks was rejected before execution, receipt `036c08b26c7c454784fb398df37d4569`; the corrected explicit request supplies the actual gate evidence. No duplicate regression was added for this mechanical budget adjustment.
 
-Independent Implementation review and a fresh complete configured Validation run remain required. The open P2 is not declared closed by the producer.
+Independent QA accepted commit `01c7887a` for Implementation → Validation. QA repeated both full affected files: 30 passed, 17 warnings in 17.82 seconds, receipt `481da30589914df2814592d4397be925`; both-file format/lint/Pyright passed, receipt `e9fb91dbdc894b8bb7ccf6267eaa4191`. QA confirmed finite scope and preserved assertions, while explicitly reserving Validation closure for complete evidence and a new review. The refreshed complete Validation evidence below is offered for that decision; the producer does not declare independent approval.
+
+
+## Refreshed Validation disposition for independent review
+
+The complete configured run above includes the previously failing rendered-template native operation with its bounded 120-second comparison budget. All 2777 items ran under the existing native arguments, prerequisites and eight workers; no retry, selection reduction, skip or worker override was introduced. The actual result is 2775 passed, 1 skipped, 1 xpassed, 229 warnings in 286.09 seconds. The complete 48-path format/lint/Pyright gate and configured 186-source Mypy gate were rerun after the correction.
+
+The earlier producer full pass remains historical evidence: receipt `f8a67efb6e1c42d0bf6f385843a4cd90`, 2775 passed/1 skipped/1 xpassed/229 warnings in 269.33 seconds, 796069 Unicode characters, UTF-8 SHA256 `311d1426dd41e2ff1ed29a8117439444baa7b1a74e23b835c0763403d37d9609`. It did not erase the subsequent independent failure. The later full causal reproduction establishes a concrete harness-budget defect and the reviewed correction addresses that defect. The first QA traceback remains unavailable; no unobserved exact cause is manufactured. Independent QA determines whether this retained history, direct causal reproduction, reviewed correction and refreshed complete evidence satisfy the outstanding Validation disposition.
+
+The SDK server was healthy after the new run, receipt `958f623dec9f4d4f842a835dd912553d`, and the session closed normally. Its request was run_tests(scope='configured', tests=['python_tests'], timeout_seconds=600), with 900-second client receive budget and no native argument override. These budgets allow the full MCP receipt; the internal template comparison remains independently bounded at 120 seconds. Documentation work and phase progression await independent Validation review.

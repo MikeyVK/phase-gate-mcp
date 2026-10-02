@@ -3,7 +3,7 @@
   "branch": "bug/469-native-adapter-robustness",
   "issue_number": 469,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 5,
   "last_cycle": 5,
   "cycle_history": [
@@ -134,8 +134,16 @@
       "human_approval_message": "Roep zelf de externe chat 'beoordeel designplan' aan voor de onafhankelijke reviews en werk volledig zelfstandig tot en met de ready phase, geef daarna de 'Coordinatie' chat de opdracht om de \"end-issue\" skill te gebruiken en de branch naar main te mergen. Je hebt mijn expliciete toestemming om deze branch te pushen naar remote. Werk de complete workflow af volgens AGENTS.md.",
       "forced": true,
       "skip_reason": "Return from Validation to cycle 5 for a proven test-harness timeout, not a gate waiver. Complete configured MCP run e611b3cd45574ed99795a959255ac689 failed only because the existing rendered-template native Pytest subprocess exceeded its fixed 45-second helper budget under the unchanged eight-worker suite. Preserve all native assertions and configuration; provide a narrowly scoped bounded budget for this template integration operation. Independent implementation review and complete Validation will be repeated."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-02T10:17:38.723400+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
