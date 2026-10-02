@@ -3,9 +3,9 @@
   "branch": "bug/469-native-adapter-robustness",
   "issue_number": 469,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 5,
-  "last_cycle": 4,
+  "last_cycle": 5,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -70,8 +70,16 @@
       "human_approval_message": "Voer alleen de overgang naar implementatie uit.",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-02T06:39:16.472471+00:00",
+      "human_approval_message": "User authorizes completing workflow through Ready with independent reviews by Beoordeel designplan. Independent QA GO for Implementation -> Validation on 9bc12fe, completed turn 01a0fb51-01cc-7113-8e88-81d18f347a4b.",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
