@@ -216,9 +216,11 @@ def test_complete_target_and_wire_admission_before_native_dependency(
 
 
 @pytest.mark.parametrize("case", ["config", "usage"])
+@pytest.mark.parametrize("operation", ["lint", "format"])
 def test_native_inability_preserves_diagnostics_without_mutation(
     ruff_package: RuffPackage,
     pytestconfig: pytest.Config,
+    operation: str,
     case: str,
 ) -> None:
     package = fix_package(ruff_package, pytestconfig.rootpath)
@@ -226,16 +228,18 @@ def test_native_inability_preserves_diagnostics_without_mutation(
     before = b"import os\n"
     target.write_bytes(before)
     if case == "config":
-        config = package.workspace / "permission denied.toml"
+        directory = package.workspace / "unknown option unexpected argument no such option"
+        directory.mkdir()
+        config = directory / "invalid value unrecognized option permission denied.toml"
         config.write_text("invalid [", encoding="utf-8")
         args: tuple[str, ...] = ("--config", str(config))
         reason = "invalid_configuration"
     else:
         args = ("--not-a-ruff-option",)
         reason = "unsupported_input"
-    direct = native_fix(package.workspace, "lint", target, args)
+    direct = native_fix(package.workspace, operation, target, args)
     assert direct.returncode == 2
-    code, response = invoke(package, "lint", (target,), args)
+    code, response = invoke(package, operation, (target,), args)
     assert code == 3 and decision(response)["reason"] == reason
     assert direct.stderr.decode("utf-8") in evidence_text(response)
     assert target.read_bytes() == before
@@ -353,6 +357,8 @@ def test_operator_cache_preserves_intentional_native_fix_effects(
         "is a directory",
         "(os error 2)",
         "[DEBUG]",
+        "Failed to load configuration",
+        "TOML parse error",
     ],
 )
 def test_quoted_configuration_key_is_native_usage_error(

@@ -253,32 +253,30 @@ def native_failure(output: str) -> tuple[str, str | None]:
     )
     if access is not None:
         return "execution_error", access
-    lowered = "\n".join(lines).casefold()
     message = next(
         (line for line in lines if line.casefold().startswith(("ruff failed", "error:"))),
         lines[0] if lines else None,
     )
     if any(
-        marker in lowered
-        for marker in (
-            "unknown option",
-            "unrecognized option",
-            "unexpected argument",
-            "invalid value",
-            "no such option",
+        re.match(
+            r"^error: (?:unknown option|unrecognized option|unexpected argument|invalid value|"
+            r"no such option)\b",
+            line,
+            re.IGNORECASE,
         )
+        is not None
+        for line in lines
     ):
         return "unsupported_input", message
     if any(
-        marker in lowered
-        for marker in (
-            "toml parse error",
-            "failed to parse configuration",
-            "invalid configuration",
-            "failed to load configuration",
-            "unknown field",
-            "invalid type",
+        re.match(
+            r"^(?:Cause: |error: )?(?:TOML parse error|failed to parse configuration|"
+            r"invalid configuration|failed to load configuration|unknown field|invalid type)\b",
+            line,
+            re.IGNORECASE,
         )
+        is not None
+        for line in lines
     ):
         return "invalid_configuration", message
     return "execution_error", message

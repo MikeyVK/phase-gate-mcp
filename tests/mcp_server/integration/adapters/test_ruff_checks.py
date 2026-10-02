@@ -286,8 +286,10 @@ def test_quiet_native_failure_does_not_fabricate_negative_evidence(
         (False, ("--unknown-fixture-option",), "unsupported_input"),
     ],
 )
+@pytest.mark.parametrize("operation", ["lint", "format"])
 def test_native_inability_keeps_diagnostics_and_is_not_protocol_rejection(
     ruff_package: RuffPackage,
+    operation: str,
     bad_config: bool,
     args: tuple[str, ...],
     reason: str,
@@ -296,12 +298,14 @@ def test_native_inability_keeps_diagnostics_and_is_not_protocol_rejection(
     target = package.workspace / "clean.py"
     target.write_text("value = 1\n", encoding="utf-8")
     if bad_config:
-        config = package.workspace / "configuration (os error 2)"
+        directory = package.workspace / "unknown option unexpected argument no such option"
+        directory.mkdir()
+        config = directory / "invalid value unrecognized option (os error 2)"
         config.write_text('line-length = "not an integer"\n', encoding="utf-8")
         args = ("--config", str(config))
-    result = native(package.workspace, "lint", (target,), args)
+    result = native(package.workspace, operation, (target,), args)
     assert result.returncode == 2 and result.stderr
-    code, response = invoke(package, "lint", (target,), args)
+    code, response = invoke(package, operation, (target,), args)
     assert code == 3
     assert decision(response)["status"] == "unavailable"
     assert decision(response)["reason"] == reason, result.stderr.decode("utf-8")
@@ -683,6 +687,8 @@ def test_operator_cache_preserves_native_check_diagnostics_and_sources(
         "is a directory",
         "(os error 2)",
         "[DEBUG]",
+        "Failed to load configuration",
+        "TOML parse error",
     ],
 )
 def test_quoted_configuration_key_is_native_usage_error(
