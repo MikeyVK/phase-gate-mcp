@@ -3,7 +3,7 @@
   "branch": "bug/469-native-adapter-robustness",
   "issue_number": 469,
   "workflow_name": "bug",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": 5,
   "last_cycle": 5,
   "cycle_history": [
@@ -42,7 +42,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Independent QA NOGO on Validation commit39535568: return to Implementation to complete the missed D1_PROTOCOL installed-consumer fixture migration. No acceptance gate is bypassed toward Ready; Validation must be repeated after correction, including the full configured suite with adequate MCP client budget.",
+  "skip_reason": "Return after independent QA confirmed the missed held() runtime consumer in test_edit_operation_v3.py under D1_PROTOCOL. Restore explicit request_contract forwarding and bounded test synchronization. No forward gate or full Validation requirement is waived.",
   "issue_title": "bug: Harden adapters against native invocation and selection failures",
   "parent_branch": "main",
   "created_at": "2026-10-01T11:34:38.011121+00:00",
@@ -94,8 +94,16 @@
       "human_approval_message": "Owner on2026-10-02 authorized fully autonomous workflow through Ready and independent reviews. Independent QA GO for Implementation\u2192Validation on43e071a6; installed fixture correction independently verified and MCP receive-budget route accepted without changing approved native semantics.",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-02T08:39:46.634116+00:00",
+      "human_approval_message": "Roep zelf de externe chat 'beoordeel designplan' aan voor de onafhankelijke reviews en werk volledig zelfstandig tot en met de ready phase. Werk de complete workflow af volgens AGENTS.md.",
+      "forced": true,
+      "skip_reason": "Return after independent QA confirmed the missed held() runtime consumer in test_edit_operation_v3.py under D1_PROTOCOL. Restore explicit request_contract forwarding and bounded test synchronization. No forward gate or full Validation requirement is waived."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "green"
 }

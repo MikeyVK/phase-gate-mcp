@@ -15,7 +15,7 @@ from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.core.interfaces.execution import AdapterLaunch
 from mcp_server.core.interfaces.file_writer import OriginalFileSnapshot, WriteHousekeepingIssue
 from mcp_server.execution.models import InvocationCancelled, InvocationCompleted, InvocationFailed
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import AdapterRequestContract, AdapterResponseContract
 from mcp_server.schemas.mutation_outputs import EditOperationOutput
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.edit_construction import (
@@ -277,6 +277,7 @@ async def test_runtime_stop_retains_prior_checks_and_blocks_report(
     assert not result.written and result.content_changed is None
 
 
+TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
 
 
@@ -295,7 +296,8 @@ async def test_lock_wait_is_separate_from_validation_and_is_released(
         *,
         launch: AdapterLaunch,
         workspace_root: Path,
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
@@ -305,6 +307,7 @@ async def test_lock_wait_is_separate_from_validation_and_is_released(
             launch=launch,
             workspace_root=workspace_root,
             request=request,
+            request_contract=request_contract,
             response_contract=response_contract,
             timeout_seconds=timeout_seconds,
         )
@@ -316,8 +319,15 @@ async def test_lock_wait_is_separate_from_validation_and_is_released(
             operation=RewriteOperation(content="first"),
         )
     )
-    await entered.wait()
+    entered_wait = asyncio.create_task(entered.wait())
     try:
+        done, _ = await asyncio.wait(
+            (first, entered_wait), timeout=5, return_when=asyncio.FIRST_COMPLETED
+        )
+        if first in done:
+            await first
+            pytest.fail("The first edit completed before entering held validation")
+        assert entered_wait in done, "The first edit did not enter held validation"
         blocked = await service.execute(
             path=target.name, operation=RewriteOperation(content="second")
         )
@@ -327,7 +337,9 @@ async def test_lock_wait_is_separate_from_validation_and_is_released(
         assert target.read_bytes() == b"original" and blocked.checks == ()
     finally:
         release.set()
-    completed = await first
+        entered_wait.cancel()
+        await asyncio.gather(entered_wait, return_exceptions=True)
+        completed = await asyncio.wait_for(first, timeout=5)
     assert completed.written and completed.content_changed is True
     runtime.outcomes = iter(("timeout",))
     timed_out = await service.execute(path=target.name, operation=RewriteOperation(content="third"))
