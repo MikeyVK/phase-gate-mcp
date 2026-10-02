@@ -3,7 +3,7 @@
   "branch": "bug/469-native-adapter-robustness",
   "issue_number": 469,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 5,
   "last_cycle": 5,
   "cycle_history": [
@@ -118,8 +118,16 @@
       "human_approval_message": "Roep zelf de externe chat 'beoordeel designplan' aan voor de onafhankelijke reviews en werk volledig zelfstandig tot en met de ready phase. Werk de complete workflow af volgens AGENTS.md.",
       "forced": true,
       "skip_reason": "Return for bounded test maintenance after the full configured suite and independent QA expose two unchanged test dependencies on retired .pgmcp/templates. Preserve test assertions with current delivered source and isolated authored legacy footprint; no production strategy or forward gate is changed."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-02T09:07:18.371584+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
