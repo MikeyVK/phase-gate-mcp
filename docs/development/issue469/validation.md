@@ -2,10 +2,10 @@
 
 # Issue 469 — Native Adapter Validation
 
-**Status:** Completed — independent Validation review requested
+**Status:** Blocked — independent QA NOGO; causal investigation active
 **Version:** 1.1
 **Last Updated:** 2026-10-02
-**Validation Status:** PASS (producer evidence; independent disposition remains separate)
+**Validation Status:** PARTIAL — complete passing proof exists; an independent native failure remains unexplained
 
 ## Purpose and scope
 
@@ -147,7 +147,7 @@ The server remains healthy after completion: PGMCP 2.0.0 on win32; the SDK serve
 | Evidence and versions | Caches are process-local/transient. Every inspected DTO was fully read and hash-verified; durable outcomes and exact vectors are recorded here. Package-local declared prerequisites and actual observed versions remain authoritative. |
 | Separate acceptance | E469, E474 and E475 remain distinct. @co must align issue 474's superseded strict destination wording with the approved trusted-host/native-cache/report strategy before acceptance or closure. No linked issue is implicitly closed by this report. |
 
-No implementation blocker remains identified in the final evidence. Documentation guidance and independent Validation disposition remain required before progression.
+The original adapter/runtime findings remain closed. The additional independent native failure recorded below remains an open P2 until its cause and disposition are evidence-backed. Documentation and phase progression await independent Validation approval.
 
 ## Related documents
 
@@ -155,3 +155,23 @@ No implementation blocker remains identified in the final evidence. Documentatio
 - [Design](design.md)
 - [Planning](planning.md)
 - [Quality and evidence standards](../../coding_standards/QUALITY_GATES.md)
+
+
+## Additional independent Validation evidence and open P2
+
+Independent QA returned NOGO on commit `87b7ce70` after observing conflicting complete native runs with no source changes. Both runs selected all 2777 items through the official SDK with 900-second receive and 600-second invocation budgets, unchanged native arguments/prerequisites/eight workers and verified client/server account `1Voudig`.
+
+| Independent evidence | Actual outcome |
+|---|---|
+| First full run, receipt `b2f17289e1244d88ac9d93eef97c67de` | 1 failed, 2774 passed, 1 skipped, 1 xpassed, 229 warnings in 271.49 seconds |
+| Isolated existing failing test | 1 passed, 9 warnings in 28.07 seconds |
+| Second full run, receipt `ccaa458071f645db810a98bd1be4cdf6` | 2775 passed, 1 skipped, 1 xpassed, 229 warnings in 267.55 seconds |
+| All 47 Python gates, receipt `6625481907c04248ba4846563747a7cf` | Format, lint and Pyright passed |
+| Configured Mypy, receipt `507c28c33b2844b5b89b19adfc6dbd82` | 186 production files passed |
+| Offline links, receipt `ab6df409f72c4eee92a472071da59af6` | 119 successful, 43 excluded, zero errors |
+
+The sole failure was `test_explicit_json_and_filesystem_components_execute_with_native_pytest` in `tests/mcp_server/integration/templates/test_pytest_integration_test.py`. The test is unchanged relative to main and calls the direct native Pytest comparison helper, not the adapter. No product regression, baseline defect or timeout cause is yet established. The first SDK session closed without durable retention of its full failure traceback; its factual failure, item counts and receipt integrity were retained. A later pass does not erase that failure.
+
+The skip is an existing manual proxy-restart test requiring RUN_MANUAL_TESTS. The XPASS is an existing xfail(strict=False) test. Neither marking was introduced by this work. All QA DTOs were fully paged and hash-verified; these facts are attributed to the independent review, not a producer replay of its server-local caches.
+
+Open P2: investigate the conflicting native result and document an evidence-backed cause and disposition. Preserve any new traceback before the cache session closes. Validation does not patch; a required correction must return to Implementation. No Validation-to-Documentation approval has been granted.
