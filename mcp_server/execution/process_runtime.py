@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import logging
 import math
 import os
+from collections.abc import Callable
 from contextlib import suppress
 from ctypes import wintypes
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TypeVar
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ValidationError
 
@@ -19,6 +22,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterProcess,
     AdapterProcessBackend,
     AdapterProcessSetupError,
+    InvocationScratchDirectories,
 )
 from mcp_server.execution.models import (
     AdapterCallFailure,
@@ -27,17 +31,21 @@ from mcp_server.execution.models import (
     InvocationCancelled,
     InvocationCompleted,
     InvocationFailed,
+    JsonEvidence,
     ProcessCapture,
     TerminationProblem,
 )
 from mcp_server.execution.protocol import (
     READ_CHUNK_SIZE,
+    AdapterExecutionContext,
+    AdapterRequestContract,
     AdapterResponseContract,
     InvalidAdapterResponseError,
     StderrBuffer,
     StdoutBuffer,
 )
 
+TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
 TERMINATION_TIMEOUT_SECONDS = 5
 PROCESS_POLL_SECONDS = 0.01
@@ -158,6 +166,8 @@ class _Invocation:
     """Per-call ownership of pending I/O and bounded observed process facts."""
 
     process: AdapterProcess | None = None
+    finished: bool = False
+    stop_unconfirmed: bool = False
     stdout: StdoutBuffer = field(default_factory=StdoutBuffer)
     stderr: StderrBuffer = field(default_factory=StderrBuffer)
     io_tasks: list[asyncio.Task[None]] = field(default_factory=list)
@@ -190,23 +200,122 @@ class _Invocation:
 class AdapterProcessRuntime:
     """Apply one execution deadline and a separate shared bounded stop budget."""
 
-    def __init__(self, backend: AdapterProcessBackend) -> None:
+    def __init__(
+        self,
+        backend: AdapterProcessBackend,
+        scratch: InvocationScratchDirectories,
+        *,
+        invocation_id: Callable[[], UUID] = uuid4,
+    ) -> None:
         self._backend = backend
+        self._scratch = scratch
+        self._invocation_id = invocation_id
 
     async def invoke(
         self,
         *,
         launch: AdapterLaunch,
         workspace_root: Path,
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
         if not math.isfinite(timeout_seconds) or timeout_seconds <= 0:
             raise ValueError("adapter_execution_budget_must_be_positive")
-        payload = request.model_dump_json().encode("utf-8")
-        invocation = _Invocation()
         deadline = asyncio.get_running_loop().time() + timeout_seconds
+        invocation = _Invocation()
+        try:
+            directory = self._scratch.describe(self._invocation_id())
+            self._scratch.create(directory)
+        except (OSError, ValueError) as exc:
+            return InvocationFailed(
+                outcome="failed",
+                failure=AdapterCallFailure(
+                    reason=AdapterCallFailureReason.LAUNCH_FAILED,
+                    message=str(exc) or type(exc).__name__,
+                ),
+                capture=invocation.capture(),
+                termination_problem=None,
+            )
+        try:
+            try:
+                context = AdapterExecutionContext(scratch_directory=str(directory.directory))
+                payload = request_contract.encode(request, context)
+            except ValueError as exc:
+                result: InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled = (
+                    InvocationFailed(
+                        outcome="failed",
+                        failure=AdapterCallFailure(
+                            reason=AdapterCallFailureReason.LAUNCH_FAILED,
+                            message=str(exc) or type(exc).__name__,
+                        ),
+                        capture=invocation.capture(),
+                        termination_problem=None,
+                    )
+                )
+            else:
+                result = await self._invoke_owned(
+                    invocation, launch, workspace_root, payload, response_contract, deadline
+                )
+        except BaseException as exc:
+            if not invocation.stop_unconfirmed and (
+                invocation.process is None or invocation.finished
+            ):
+                try:
+                    self._scratch.remove(directory)
+                except (OSError, ValueError) as cleanup_error:
+                    exc.add_note(f"invocation_cleanup_failed: {cleanup_error}")
+            raise
+        if not invocation.stop_unconfirmed and (invocation.process is None or invocation.finished):
+            try:
+                self._scratch.remove(directory)
+            except (OSError, ValueError) as exc:
+                cleanup_failure = AdapterCallFailure(
+                    reason=AdapterCallFailureReason.PROCESS_FAILED,
+                    message=(
+                        f"invocation_cleanup_failed: {directory.directory}: {exc}; "
+                        f"preceding_outcome={result.outcome}; "
+                        f"adapter_exit_code={result.capture.exit_code}"
+                    ),
+                )
+                logging.getLogger(__name__).error(
+                    "invocation_cleanup_failed",
+                    extra={"directory": str(directory.directory), "cause": str(exc)},
+                )
+                if isinstance(result, InvocationCompleted) and (
+                    result.capture.exit_code != AdapterExitCode.INVALID_REQUEST
+                ):
+                    return InvocationFailed(
+                        outcome="failed",
+                        failure=cleanup_failure,
+                        capture=result.capture,
+                        termination_problem=None,
+                        preceding_response=JsonEvidence.model_validate(
+                            {"format": "json", "data": result.response.model_dump(mode="json")}
+                        ),
+                    )
+                return result.model_copy(update={"cleanup_failure": cleanup_failure})
+        return result
+
+    async def _invoke_owned(
+        self,
+        invocation: _Invocation,
+        launch: AdapterLaunch,
+        workspace_root: Path,
+        payload: bytes,
+        response_contract: AdapterResponseContract[TResponse],
+        deadline: float,
+    ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
+        if asyncio.get_running_loop().time() >= deadline:
+            return InvocationFailed(
+                outcome="failed",
+                failure=AdapterCallFailure(
+                    reason=AdapterCallFailureReason.TIMEOUT, message="adapter_deadline_expired"
+                ),
+                capture=invocation.capture(),
+                termination_problem=None,
+            )
         operation = asyncio.create_task(
             self._execute(invocation, launch, workspace_root, payload, response_contract)
         )
@@ -319,6 +428,7 @@ class AdapterProcessRuntime:
             ) from exc
         try:
             await process.wait_finished()
+            invocation.finished = True
         except OSError as exc:
             raise _CallFailedError(
                 AdapterCallFailure(
@@ -385,9 +495,11 @@ async def _stop(
             with suppress(OSError):
                 invocation.process.kill()
             await invocation.process.wait_finished()
+            invocation.finished = True
             await asyncio.gather(*invocation.io_tasks, return_exceptions=True)
             return None
     except (TimeoutError, OSError):
+        invocation.stop_unconfirmed = True
         return TerminationProblem.UNCONFIRMED
 
 

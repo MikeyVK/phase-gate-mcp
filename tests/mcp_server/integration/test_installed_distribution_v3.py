@@ -91,11 +91,14 @@ def test_complete_wheel_and_installed_catalogs_and_entrypoints(
     native_result = native(commitlint_runtime, message)
     assert native_result.returncode == 0, native_result.stdout + native_result.stderr
     report = distribution.workspace / "entrypoint-origins.json"
+    scratch_directory = tmp_path / "installed adapter invocation"
+    scratch_directory.mkdir()
     request = {
         "operation": "message",
         "target_path": str(commitlint_runtime.workspace / "commit.txt"),
         "content": header + message,
         "args": [],
+        "execution_context": {"scratch_directory": str(scratch_directory)},
     }
     invoked = distribution.python(
         ENTRYPOINT_PROBE,

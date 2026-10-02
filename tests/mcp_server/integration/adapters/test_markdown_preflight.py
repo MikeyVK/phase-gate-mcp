@@ -68,7 +68,16 @@ def invoke(
     executable = package.binding.launch.executable
     assert executable is not None, "The manifest-declared Python interpreter must be provisioned"
     flags = ["-I", "-S"] if isolated else []
-    request = payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
+    request = (
+        payload
+        if isinstance(payload, bytes)
+        else json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(package.root.parent.parent)},
+                **payload,
+            }
+        ).encode("utf-8")
+    )
     result = subprocess.run(
         [str(executable), *flags, *package.binding.launch.args],
         input=request,

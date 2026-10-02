@@ -12,6 +12,7 @@ import tomllib
 from ctypes import wintypes
 from dataclasses import dataclass
 from pathlib import Path
+from shutil import copytree
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -21,11 +22,15 @@ from mcp_server.config.schemas.adapter_manifest import AdapterTrustConfig, TestC
 from mcp_server.core.interfaces.execution import AdapterBinding
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_selection import SelectionCheckRequest
-from mcp_server.execution.models import InvocationCancelled, TextEvidence
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
+from mcp_server.execution.models import InvalidCheckRequest, InvocationCancelled, TextEvidence
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
+from mcp_server.execution.protocol import AdapterRequestContract
+from mcp_server.execution.protocol import TestWireRequest as WireTestRequest
 from tests.mcp_server.fixtures.test_role_double import (
     NativeTestResponse,
     NativeTestResult,
+    NativeUnavailable,
     role_response_contract,
 )
 
@@ -35,6 +40,7 @@ class NativeCase:
     workspace: Path
     source: Path
     repo_root: Path
+    adapter_root: Path | None = None
 
 
 @pytest.fixture
@@ -58,7 +64,7 @@ def native_case(tmp_path: Path, pytestconfig: pytest.Config) -> NativeCase:
 def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
     loader = ConfigLoader(case.repo_root / ".pgmcp/config", case.repo_root / ".pgmcp/templates")
     catalog = AdapterCatalogLoader(
-        case.repo_root / "mcp_server/bundled_adapters",
+        case.adapter_root or case.repo_root / "mcp_server/bundled_adapters",
         case.workspace / "no workspace adapters",
         AdapterTrustConfig(trusted_adapter_ids=()),
         read_manifest=loader.load_adapter_manifest,
@@ -70,13 +76,13 @@ def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
 
 
 def native(
-    case: NativeCase, targets: list[str], args: list[str]
+    case: NativeCase, targets: list[str], args: list[str], *, timeout_seconds: float = 45
 ) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
         [sys.executable, "-m", "pytest", *targets, *args],
         cwd=case.workspace,
         capture_output=True,
-        timeout=45,
+        timeout=timeout_seconds,
     )
 
 
@@ -87,7 +93,12 @@ def invoke(
     command = [str(binding.launch.executable), *(["-S"] if isolated else []), *binding.launch.args]
     result = subprocess.run(
         command,
-        input=json.dumps(request).encode(),
+        input=json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(case.workspace.parent)},
+                **request,
+            }
+        ).encode(),
         cwd=case.workspace,
         capture_output=True,
         timeout=55,
@@ -128,7 +139,12 @@ def invoke(
     ],
 )
 def test_native_outcomes_and_options(
-    native_case: NativeCase, case_name, native_code, wire_code, status, token
+    native_case: NativeCase,
+    case_name: str,
+    native_code: int,
+    wire_code: int,
+    status: str,
+    token: str,
 ) -> None:
     case = native_case
     args: list[str] = []
@@ -172,6 +188,7 @@ def test_native_outcomes_and_options(
     if case_name == "empty":
         assert "no tests" in result.decision.message.lower()
     if case_name == "bad-config":
+        assert isinstance(result.decision, NativeUnavailable)
         assert result.decision.reason == "invalid_configuration"
         assert not direct.stdout
         assert result.evidence.data == direct.stderr.decode("utf-8", errors="replace")
@@ -252,7 +269,7 @@ def test_wire_rejection_dependency_and_metadata_only_requests(
     native_case: NativeCase, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     case = native_case
-    request = {"operation": "tests", "targets": [], "args": []}
+    request: dict[str, object] = {"operation": "tests", "targets": [], "args": []}
     for invalid in (
         {**request, "operation": "other"},
         {**request, "scope": "workspace"},
@@ -260,19 +277,153 @@ def test_wire_rejection_dependency_and_metadata_only_requests(
         {**request, "args": [True]},
     ):
         code, response = invoke(case, invalid)
-        assert code == 2 and response.root.reason == "invalid_request"
+        assert code == 2 and isinstance(response.root, InvalidCheckRequest)
+        assert response.root.reason == "invalid_request"
     code, response = invoke(case, request, isolated=True)
     assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.decision, NativeUnavailable)
     assert response.root.decision.reason == "dependency_unavailable"
     for args in (["--version"], ["--help"], ["-VV"], ["-qh"]):
         code, response = invoke(case, {**request, "args": args})
         assert code == 3 and isinstance(response.root, NativeTestResult)
+        assert isinstance(response.root.decision, NativeUnavailable)
         assert response.root.decision.reason == "unsupported_input"
     monkeypatch.setenv("PYTEST_ADDOPTS", "--help")
     assert native(case, [], []).returncode == 0
     code, response = invoke(case, request)
     assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.decision, NativeUnavailable)
     assert response.root.decision.reason == "unsupported_input"
+
+
+@pytest.mark.parametrize("declaration", ["pytest==0.0.0\n", "# missing main-tool pin\n"])
+def test_unsupported_or_missing_pin_stops_before_collection(
+    native_case: NativeCase, declaration: str
+) -> None:
+    package_root = native_case.workspace.parent / "copied adapters"
+    package = package_root / "pytest"
+    copytree(native_case.repo_root / "mcp_server/bundled_adapters/pytest", package)
+    (package / "requirements.txt").write_text(declaration, encoding="utf-8")
+    marker = native_case.workspace / "collected.marker"
+    native_case.source.write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('collected')\n",
+        encoding="utf-8",
+    )
+    case = NativeCase(
+        native_case.workspace, native_case.source, native_case.repo_root, package_root
+    )
+    code, response = invoke(case, {"operation": "tests", "targets": [str(case.source)], "args": []})
+    assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.decision, NativeUnavailable)
+    assert response.root.decision.reason == "dependency_unavailable"
+    actual = response.root.external_tools[0].version
+    assert actual is not None
+    if "0.0.0" in declaration:
+        assert f"observed={actual}" in response.root.decision.message
+        assert "expected=0.0.0" in response.root.decision.message
+    else:
+        assert "exact main-tool pin" in response.root.decision.message
+    assert not marker.exists()
+
+
+def test_complete_oversized_selection_keeps_one_native_session(native_case: NativeCase) -> None:
+    case = native_case
+    targets = [str(case.source)]
+    index = 0
+    while sum(len(target) + 3 for target in targets) <= 36_000:
+        source = case.source.with_name(f"test_{index:03d}_" + "selection_" * 8 + ".py")
+        source.write_text("def test_pass():\n    assert True\n", encoding="utf-8")
+        targets.append(str(source))
+        index += 1
+    late = case.source.with_name("test_late.py")
+    late.write_text("def test_late():\n    assert False, 'LATE_SELECTION'\n", encoding="utf-8")
+    targets.append(str(late))
+    marker = case.workspace / "sessions.txt"
+    (case.workspace / "conftest.py").write_text(
+        "from pathlib import Path\n\ndef pytest_sessionstart(session):\n"
+        "    with Path('sessions.txt').open('a') as stream:\n"
+        "        stream.write('session\\n')\n",
+        encoding="utf-8",
+    )
+    direct = native(case, [targets[0], targets[-1]], ["-n", "0"])
+    assert direct.returncode == 1 and b"LATE_SELECTION" in direct.stdout
+    marker.unlink()
+    code, response = invoke(case, {"operation": "tests", "targets": targets, "args": ["-n", "0"]})
+    assert code == 1 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.evidence, TextEvidence)
+    assert "LATE_SELECTION" in response.root.evidence.data
+    assert f"{len(targets) - 1} passed" in response.root.evidence.data
+    assert marker.read_text().splitlines() == ["session"]
+
+
+@pytest.mark.parametrize("expression", ["", " "])
+def test_argument_file_preserves_blank_and_space_option_values(
+    native_case: NativeCase, expression: str
+) -> None:
+    case = native_case
+    args = ["-k", expression]
+    direct = native(case, [str(case.source)], args)
+    assert direct.returncode == 0 and b"1 passed" in direct.stdout
+    code, response = invoke(
+        case, {"operation": "tests", "targets": [str(case.source)], "args": args}
+    )
+    assert code == 0 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.evidence, TextEvidence)
+    assert "1 passed" in response.root.evidence.data
+
+
+@pytest.mark.parametrize("separator", ["\n", "\u2028", "\ud800"])
+def test_unrepresentable_arguments_stop_before_collection(
+    native_case: NativeCase, separator: str
+) -> None:
+    case = native_case
+    marker = case.workspace / "collected.marker"
+    case.source.write_text(
+        f"from pathlib import Path\nPath({str(marker)!r}).write_text('collected')\n",
+        encoding="utf-8",
+    )
+    code, response = invoke(
+        case, {"operation": "tests", "targets": [str(case.source)], "args": ["-k", separator]}
+    )
+    assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.decision, NativeUnavailable)
+    assert response.root.decision.reason == "unsupported_input"
+    assert not marker.exists()
+
+
+def test_caller_argument_file_metadata_cannot_bypass_effective_guard(
+    native_case: NativeCase,
+) -> None:
+    case = native_case
+    supplied = case.workspace / "caller arguments.txt"
+    supplied.write_text("--help\n", encoding="utf-8")
+    direct = native(case, [str(case.source)], [f"@{supplied}"])
+    assert direct.returncode == 0 and b"usage:" in direct.stdout
+    code, response = invoke(
+        case, {"operation": "tests", "targets": [str(case.source)], "args": [f"@{supplied}"]}
+    )
+    assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.decision, NativeUnavailable)
+    assert response.root.decision.reason == "unsupported_input"
+
+
+def test_unusable_supplied_directory_reports_preparation_failure(native_case: NativeCase) -> None:
+    case = native_case
+    absent = case.workspace.parent / "absent invocation"
+    code, response = invoke(
+        case,
+        {
+            "operation": "tests",
+            "targets": [str(case.source)],
+            "args": [],
+            "execution_context": {"scratch_directory": str(absent)},
+        },
+    )
+    assert code == 3 and isinstance(response.root, NativeTestResult)
+    assert isinstance(response.root.decision, NativeUnavailable)
+    assert response.root.decision.reason == "execution_error"
+    assert str(absent) in response.root.decision.message
+    assert not absent.exists()
 
 
 def is_running(pid: int) -> bool:
@@ -287,7 +438,7 @@ def is_running(pid: int) -> bool:
             return False
         raise ctypes.WinError()
     try:
-        return kernel.WaitForSingleObject(handle, 0) == 258
+        return bool(kernel.WaitForSingleObject(handle, 0) == 258)
     finally:
         kernel.CloseHandle(handle)
 
@@ -312,12 +463,15 @@ async def test_cancellation_stops_xdist_worker_and_descendant(native_case: Nativ
         encoding="utf-8",
     )
     task = asyncio.create_task(
-        AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        AdapterProcessRuntime(
+            AsyncioProcessBackend(), FileInvocationScratch(case.workspace / "invocations")
+        ).invoke(
             launch=binding_for(case).launch,
             workspace_root=case.workspace,
             request=SelectionCheckRequest(
                 operation="tests", targets=(str(case.source),), args=("-n", "2")
             ),
+            request_contract=AdapterRequestContract(WireTestRequest),
             response_contract=role_response_contract(),
             timeout_seconds=20,
         )

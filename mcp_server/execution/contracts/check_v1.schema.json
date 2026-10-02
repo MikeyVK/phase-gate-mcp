@@ -19,7 +19,8 @@
           "required": [
             "operation",
             "targets",
-            "args"
+            "args",
+            "execution_context"
           ],
           "properties": {
             "operation": {
@@ -37,6 +38,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "execution_context": {
+              "$ref": "#/$defs/execution_context"
             }
           }
         },
@@ -47,7 +51,8 @@
             "operation",
             "target_path",
             "content",
-            "args"
+            "args",
+            "execution_context"
           ],
           "properties": {
             "operation": {
@@ -64,6 +69,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "execution_context": {
+              "$ref": "#/$defs/execution_context"
             }
           }
         },
@@ -74,7 +82,8 @@
             "operation",
             "target_path",
             "input_path",
-            "args"
+            "args",
+            "execution_context"
           ],
           "properties": {
             "operation": {
@@ -91,6 +100,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "execution_context": {
+              "$ref": "#/$defs/execution_context"
             }
           }
         }
@@ -633,6 +645,18 @@
           ]
         }
       ]
+    },
+    "execution_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scratch_directory"
+      ],
+      "properties": {
+        "scratch_directory": {
+          "$ref": "#/$defs/absolute_path"
+        }
+      }
     }
   }
 }

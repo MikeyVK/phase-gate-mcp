@@ -29,7 +29,7 @@ from mcp_server.execution.models import (
     StreamCapture,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import AdapterRequestContract, AdapterResponseContract
 
 
 class RoleValue(BaseModel):
@@ -103,6 +103,7 @@ class RecordedTestCall:
     timeout_seconds: float
 
 
+TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
 
 
@@ -118,7 +119,8 @@ class RecordingTestRuntime(AdapterProcessRuntime):
         *,
         launch: AdapterLaunch,
         workspace_root: Path,
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse]:

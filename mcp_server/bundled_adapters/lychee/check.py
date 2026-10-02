@@ -11,8 +11,10 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-_REQUEST_CONTENT_KEYS = frozenset({"operation", "target_path", "input_path", "args"})
-_REQUEST_SELECTION_KEYS = frozenset({"operation", "targets", "args"})
+_REQUEST_CONTENT_KEYS = frozenset(
+    {"operation", "target_path", "input_path", "args", "execution_context"}
+)
+_REQUEST_SELECTION_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 _BARE_UNC_ROOT = re.compile(r"^\\\\[^\\/]+[\\/][^\\/]+$")
 # Token arities from the supported native CLI; all option semantics stay native.
@@ -84,9 +86,7 @@ _SHORT_OPTIONS = {
 }
 _BOUNDARY_FIELDS = frozenset(
     {
-        "cache",
         "output",
-        "cookie_jar",
         "preprocess",
         "dump",
         "dump_inputs",
@@ -133,6 +133,22 @@ def _validate_args(args: object) -> tuple[str, ...] | dict[str, object]:
     return tuple(args)
 
 
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid([_issue(["execution_context"], "wrong_type")])
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid([_issue(["execution_context", unknown[0]], "unknown_field")])
+    if "scratch_directory" not in value:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "missing_field")])
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid([_issue(["execution_context", "scratch_directory"], "wrong_type")])
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "invalid_value")])
+    return None
+
+
 def _validate_request(
     value: object,
 ) -> tuple[str, tuple[str, ...], tuple[str, ...]] | dict[str, object]:
@@ -146,6 +162,9 @@ def _validate_request(
         return _invalid([_issue([key], "unknown_field") for key in unknown])
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid([_issue(["operation"], "wrong_type")])
     if value["operation"] != "links":
@@ -276,14 +295,13 @@ def _guard(options: _Options, settings: dict[str, object], content: bool) -> str
         settings.get(field) is not None
         for field in (
             "output",
-            "cookie_jar",
             "preprocess",
             "generate",
         )
     ):
         return "The effective native configuration writes output or bypasses link checking."
-    if any(settings.get(field) is True for field in ("cache", "dump", "dump_inputs")):
-        return "Native caching or dump mode is outside the check contract."
+    if any(settings.get(field) is True for field in ("dump", "dump_inputs")):
+        return "Native dump mode is outside the check contract."
     method = settings.get("method", "get")
     if not isinstance(method, str) or method.casefold() not in {"get", "head"}:
         return "Only native GET/HEAD requests belong to this check."
@@ -347,6 +365,26 @@ def _run(request: object) -> tuple[dict[str, object], int]:
     return response, exit_code
 
 
+def _declared_version() -> str:
+    """Read the package's exact main-tool prerequisite before native interpretation."""
+    declaration = json.loads(
+        Path(__file__).with_name("dependencies.json").read_text(encoding="utf-8")
+    )
+    if not isinstance(declaration, dict) or not isinstance(declaration.get("native_tools"), list):
+        raise ValueError("Lychee prerequisites must declare native_tools.")
+    tools = [
+        item
+        for item in declaration["native_tools"]
+        if isinstance(item, dict) and item.get("tool_id") == "lychee"
+    ]
+    if len(tools) != 1:
+        raise ValueError("Lychee prerequisites must declare one main-tool version.")
+    version = tools[0].get("version")
+    if not isinstance(version, str) or re.fullmatch(r"\d+\.\d+\.\d+", version) is None:
+        raise ValueError("Lychee prerequisites must declare one exact supported version.")
+    return version
+
+
 def _execute(
     operation: str, payload: tuple[str, ...], args: tuple[str, ...]
 ) -> tuple[dict[str, object], int]:
@@ -363,6 +401,20 @@ def _execute(
     version = version_text.removeprefix("lychee ").strip() or None
     if version_result.returncode != 0 or version is None:
         return _unavailable("dependency_unavailable", "Lychee did not report a usable version.")
+    try:
+        expected_version = _declared_version()
+    except (OSError, UnicodeError, ValueError) as exc:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Lychee prerequisite declaration is unavailable: {exc}",
+            version,
+        )
+    if version != expected_version:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Lychee version mismatch: actual={version}, expected={expected_version}",
+            version,
+        )
     options = _option_parts(args)
     try:
         settings = _effective_settings(options)
@@ -389,12 +441,27 @@ def _execute(
         targets: tuple[str, ...] = (input_path,)
     else:
         targets = payload
+    filename_input: bytes | None = None
+    occupied_channel = operation == "selection" and settings.get("files_from") is not None
+    if operation == "selection" and targets and not occupied_channel:
+        try:
+            filename_input = _selection_stdin(targets)
+        except (ValueError, UnicodeError) as exc:
+            return _unavailable("unsupported_input", str(exc), version)
+        command.extend(["--files-from", "-"])
     command.extend(args)
-    command.extend(_escape_selection_targets(targets))
+    if filename_input is None:
+        command.extend(_escape_selection_targets(targets))
     try:
-        completed = subprocess.run(command, capture_output=True, check=False)
+        completed = subprocess.run(command, input=filename_input, capture_output=True, check=False)
     except OSError as exc:
-        return _unavailable("execution_error", f"Lychee execution failed: {exc}", version)
+        limit = (
+            " The effective files-from channel is occupied; positional targets retain "
+            "the native argv launch-size limit."
+            if occupied_channel and targets
+            else ""
+        )
+        return _unavailable("execution_error", f"Lychee execution failed: {exc}.{limit}", version)
     stdout = completed.stdout.decode("utf-8", errors="replace")
     stderr = completed.stderr.decode("utf-8", errors="replace")
     evidence = _native_evidence(stdout, stderr, settings.get("format") == "json")
@@ -433,6 +500,17 @@ def _escape_selection_targets(targets: tuple[str, ...]) -> tuple[str, ...]:
         target = "".join(replacements.get(char, char) for char in target)
         escaped.append(target)
     return tuple(escaped)
+
+
+def _selection_stdin(targets: tuple[str, ...]) -> bytes:
+    """Encode a complete literal list using pinned Lychee's native line grammar."""
+    if any("\r" in target or "\n" in target for target in targets):
+        raise ValueError("Lychee filename stdin cannot represent embedded CR or LF.")
+    escaped = _escape_selection_targets(targets)
+    try:
+        return "".join(target + "\n" for target in escaped).encode("utf-8")
+    except UnicodeError as exc:
+        raise ValueError("Lychee filename stdin requires representable UTF-8.") from exc
 
 
 def main() -> int:

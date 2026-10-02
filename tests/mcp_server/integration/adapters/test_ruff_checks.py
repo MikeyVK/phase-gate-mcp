@@ -9,7 +9,7 @@ import sys
 import venv
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import copytree
+from shutil import copytree, rmtree
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -98,6 +98,7 @@ def invoke(
         if raw is not None
         else json.dumps(
             {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
                 "operation": operation,
                 "targets": [str(path) for path in targets],
                 "args": list(args),
@@ -112,7 +113,7 @@ def invoke(
         timeout=20,
     )
     assert not completed.stderr, completed.stderr.decode("utf-8", errors="replace")
-    response = TypeAdapter(JsonValue).validate_json(completed.stdout)
+    response: JsonValue = TypeAdapter(JsonValue).validate_json(completed.stdout)
     assert isinstance(response, dict)
     package.schema.validate(response)
     return completed.returncode, response
@@ -285,8 +286,10 @@ def test_quiet_native_failure_does_not_fabricate_negative_evidence(
         (False, ("--unknown-fixture-option",), "unsupported_input"),
     ],
 )
+@pytest.mark.parametrize("operation", ["lint", "format"])
 def test_native_inability_keeps_diagnostics_and_is_not_protocol_rejection(
     ruff_package: RuffPackage,
+    operation: str,
     bad_config: bool,
     args: tuple[str, ...],
     reason: str,
@@ -295,15 +298,17 @@ def test_native_inability_keeps_diagnostics_and_is_not_protocol_rejection(
     target = package.workspace / "clean.py"
     target.write_text("value = 1\n", encoding="utf-8")
     if bad_config:
-        (package.workspace / "pyproject.toml").write_text(
-            '[tool.ruff]\nline-length = "not an integer"\n', encoding="utf-8"
-        )
-    result = native(package.workspace, "lint", (target,), args)
+        directory = package.workspace / "unknown option unexpected argument no such option"
+        directory.mkdir()
+        config = directory / "invalid value unrecognized option (os error 2)"
+        config.write_text('line-length = "not an integer"\n', encoding="utf-8")
+        args = ("--config", str(config))
+    result = native(package.workspace, operation, (target,), args)
     assert result.returncode == 2 and result.stderr
-    code, response = invoke(package, "lint", (target,), args)
+    code, response = invoke(package, operation, (target,), args)
     assert code == 3
     assert decision(response)["status"] == "unavailable"
-    assert decision(response)["reason"] == reason
+    assert decision(response)["reason"] == reason, result.stderr.decode("utf-8")
     assert_native_evidence(response, result)
 
 
@@ -415,8 +420,30 @@ def test_request_rejections_preserve_root_and_index_details(ruff_package: RuffPa
     for payload, location, reason in (
         (b"{", [], "invalid_value"),
         (b"[]", [], "wrong_type"),
-        (b'{"operation":[],"targets":[],"args":[]}', ["operation"], "wrong_type"),
-        (b'{"operation":"lint","targets":[42],"args":[]}', ["targets", 0], "wrong_type"),
+        (
+            json.dumps(
+                {
+                    "execution_context": {"scratch_directory": str(ruff_package.workspace.parent)},
+                    "operation": [],
+                    "targets": [],
+                    "args": [],
+                }
+            ).encode(),
+            ["operation"],
+            "wrong_type",
+        ),
+        (
+            json.dumps(
+                {
+                    "execution_context": {"scratch_directory": str(ruff_package.workspace.parent)},
+                    "operation": "lint",
+                    "targets": [42],
+                    "args": [],
+                }
+            ).encode(),
+            ["targets", 0],
+            "wrong_type",
+        ),
     ):
         code, response = invoke(ruff_package, "lint", raw=payload)
         assert code == 2
@@ -478,4 +505,204 @@ def test_response_file_tokens_do_not_hide_writes_in_pinned_native(
     target.write_bytes(before)
     code, response = invoke(package, "lint", args=args)
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("operation", "args"),
+    [
+        ("lint", ("--help",)),
+        ("lint", ("-h",)),
+        ("lint", ("-vh",)),
+        ("lint", ("--show-files",)),
+        ("lint", ("--show-settings",)),
+        ("lint", ("--diff",)),
+        ("format", ("--help",)),
+        ("format", ("-h",)),
+    ],
+)
+def test_metadata_and_alternate_modes_cannot_be_passed_analysis(
+    ruff_package: RuffPackage,
+    operation: str,
+    args: tuple[str, ...],
+) -> None:
+    package = ruff_package
+    target = package.workspace / "negative.py"
+    before = b"unknown_name\n"
+    target.write_bytes(before)
+    direct = native(package.workspace, operation, (target,), args)
+    assert direct.returncode == 0
+    code, response = invoke(package, operation, (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize("verbose", [False, True])
+def test_native_access_failure_preserves_cause_under_verbosity(
+    ruff_package: RuffPackage,
+    verbose: bool,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "[DEBUG]missing.py"
+    args = ("--verbose",) if verbose else ()
+    direct = native(package.workspace, "format", (target,), args)
+    assert direct.returncode == 2 and b"os error" in direct.stderr
+    code, response = invoke(package, "format", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "execution_error"
+    native_error = next(line for line in direct.stderr.decode().splitlines() if "os error" in line)
+    assert decision(response)["message"] == native_error, direct.stderr.decode("utf-8")
+    assert native_error in evidence_text(response)
+    if verbose:
+        assert "[DEBUG] Using configuration file" in evidence_text(response)
+
+
+@pytest.mark.parametrize("declaration", ["ruff==0.0.0", "ruff>=0.15.6"])
+def test_unsupported_or_malformed_declared_version_is_not_assumed_supported(
+    ruff_package: RuffPackage,
+    declaration: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "clean.py"
+    target.write_text("value = 1\n", encoding="utf-8")
+    (package.root / "requirements.txt").write_text(declaration + "\n", encoding="utf-8")
+    code, response = invoke(package, "lint", (target,))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert declaration in str(decision(response)["message"])
+
+
+@pytest.mark.parametrize("token", ["", " ", "#literal", " literal "])
+def test_pinned_argument_file_token_grammar(
+    ruff_package: RuffPackage,
+    token: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "negative Ω with spaces.py"
+    target.write_text("unknown_name\n", encoding="utf-8")
+    args = ("--exclude", token)
+    direct = native(package.workspace, "lint", (target,), args)
+    arguments = package.workspace.parent / "grammar-arguments.txt"
+    arguments.write_text(
+        "\n".join(["--no-fix", "--no-fix-only", *args, str(target)]) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    encoded = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "@" + str(arguments)],
+        cwd=package.workspace,
+        capture_output=True,
+        timeout=15,
+    )
+    assert encoded.returncode == direct.returncode
+    assert encoded.stdout == direct.stdout
+    assert encoded.stderr == direct.stderr
+
+
+@pytest.mark.parametrize("operation", ["format", "lint"])
+def test_argument_file_preserves_oversized_selection_and_late_diagnostic(
+    ruff_package: RuffPackage,
+    operation: str,
+) -> None:
+    package = ruff_package
+    targets = tuple(package.workspace / f"selection_member_{index:03d}.py" for index in range(350))
+    for target in targets:
+        target.write_text("value = 1\n", encoding="utf-8")
+    late = targets[-1]
+    late.write_text(
+        "value=1\n" if operation == "format" else "late_unknown_name\n", encoding="utf-8"
+    )
+    decoy = package.workspace / "unselected.py"
+    decoy.write_text("unselected_unknown_name\n", encoding="utf-8")
+    command = subprocess.list2cmdline([str(path) for path in targets])
+    assert len(command.encode("utf-16-le")) // 2 > 32767
+    small_code, small = invoke(package, operation, (late,))
+    assert small_code == 1 and decision(small)["status"] == "failed"
+    code, response = invoke(package, operation, targets)
+    assert code == 1 and decision(response)["status"] == "failed"
+    assert late.name in evidence_text(response)
+    assert "unselected_unknown_name" not in evidence_text(response)
+    assert late.read_text(encoding="utf-8") == (
+        "value=1\n" if operation == "format" else "late_unknown_name\n"
+    )
+
+
+@pytest.mark.parametrize("token", ["line\nbreak", "line\rbreak", "\ud800"])
+def test_unrepresentable_argument_file_tokens_are_explicitly_refused(
+    ruff_package: RuffPackage,
+    token: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "clean.py"
+    target.write_text("value = 1\n", encoding="utf-8")
+    code, response = invoke(package, "lint", (target,), ("--exclude", token))
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+
+
+@pytest.mark.parametrize(
+    ("operation", "setting"),
+    [("lint", "cli"), ("format", "config"), ("lint", "environment")],
+)
+def test_operator_cache_preserves_native_check_diagnostics_and_sources(
+    ruff_package: RuffPackage,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+    setting: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "selected.py"
+    before = b"import os\nvalue=1\n"
+    target.write_bytes(before)
+    destination = package.workspace.parent / "operator cache"
+    args: tuple[str, ...] = ()
+    if setting == "cli":
+        args = ("--cache-dir", str(destination))
+    elif setting == "config":
+        config = package.workspace / "pyproject.toml"
+        config.write_text(
+            config.read_text(encoding="utf-8").replace(
+                "[tool.ruff]\n", "[tool.ruff]\ncache-dir = " + json.dumps(str(destination)) + "\n"
+            ),
+            encoding="utf-8",
+        )
+    else:
+        monkeypatch.setenv("RUFF_CACHE_DIR", str(destination))
+    direct = native(package.workspace, operation, (target,), args)
+    assert direct.returncode == 1 and destination.is_dir()
+    rmtree(destination)
+    code, response = invoke(package, operation, (target,), args)
+    assert code == 1 and decision(response)["status"] == "failed"
+    assert_native_evidence(response, direct)
+    assert any(path.is_file() for path in destination.rglob("*"))
+    assert not (package.workspace / ".ruff_cache").exists()
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "ordinary-key",
+        "os error",
+        "permission denied",
+        "access denied",
+        "is a directory",
+        "(os error 2)",
+        "[DEBUG]",
+        "Failed to load configuration",
+        "TOML parse error",
+    ],
+)
+def test_quoted_configuration_key_is_native_usage_error(
+    ruff_package: RuffPackage,
+    key: str,
+) -> None:
+    package = ruff_package
+    target = package.workspace / "selected.py"
+    before = b"import os\n"
+    target.write_bytes(before)
+    args = ("--config", json.dumps(key) + " = true")
+    direct = native(package.workspace, "lint", (target,), args)
+    assert direct.returncode == 2 and b"invalid value" in direct.stderr
+    code, response = invoke(package, "lint", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert_native_evidence(response, direct)
     assert target.read_bytes() == before

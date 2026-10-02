@@ -17,7 +17,8 @@
       "required": [
         "operation",
         "targets",
-        "args"
+        "args",
+        "execution_context"
       ],
       "properties": {
         "operation": {
@@ -35,6 +36,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "execution_context": {
+          "$ref": "#/$defs/execution_context"
         }
       }
     },
@@ -313,6 +317,18 @@
     "capability_id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]{0,63}$(?![\\s\\S])"
+    },
+    "execution_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scratch_directory"
+      ],
+      "properties": {
+        "scratch_directory": {
+          "$ref": "#/$defs/absolute_path"
+        }
+      }
     }
   }
 }

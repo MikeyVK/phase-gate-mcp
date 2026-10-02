@@ -7,11 +7,31 @@ const { spawnSync } = require("node:child_process");
 const { createRequire } = require("node:module");
 const { TextDecoder } = require("node:util");
 
-const REQUEST_KEYS = ["operation", "targets", "args"];
+const REQUEST_KEYS = ["operation", "targets", "args", "execution_context"];
 const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$/;
 
 function invalid(location, code) {
   return { reason: "invalid_request", details: [{ location, code }] };
+}
+
+function validateExecutionContext(context) {
+  if (context === null || typeof context !== "object" || Array.isArray(context)) {
+    return invalid(["execution_context"], "wrong_type");
+  }
+  for (const key of Object.keys(context).sort()) {
+    if (key !== "scratch_directory") return invalid(["execution_context", key], "unknown_field");
+  }
+  if (!Object.hasOwn(context, "scratch_directory")) {
+    return invalid(["execution_context", "scratch_directory"], "missing_field");
+  }
+  const directory = context.scratch_directory;
+  if (typeof directory !== "string") {
+    return invalid(["execution_context", "scratch_directory"], "wrong_type");
+  }
+  if (!directory || directory.includes("\0") || !ABSOLUTE_PATH.test(directory)) {
+    return invalid(["execution_context", "scratch_directory"], "invalid_value");
+  }
+  return null;
 }
 
 function validate(request) {
@@ -24,6 +44,8 @@ function validate(request) {
   for (const key of REQUEST_KEYS) {
     if (!Object.hasOwn(request, key)) return invalid([key], "missing_field");
   }
+  const contextIssue = validateExecutionContext(request.execution_context);
+  if (contextIssue !== null) return contextIssue;
   if (typeof request.operation !== "string") return invalid(["operation"], "wrong_type");
   if (request.operation !== "types") return invalid(["operation"], "invalid_value");
   if (!Array.isArray(request.targets)) return invalid(["targets"], "wrong_type");
@@ -84,6 +106,62 @@ function nativeMessage(stdout, stderr) {
     lines[0] || "Pyright reported a failure.";
 }
 
+function nativeOptionName(token) {
+  const attached = token.match(/^(--\S+?)=(.*)/);
+  if (attached) return attached[1];
+  const long = token.match(/^--(\S+)/);
+  return long ? "--" + long[1] : token;
+}
+
+// Project only Pyright 1.1.408's file-channel ownership, leaving native option
+// validation and caller tokens to Pyright's bundled command-line-args parser.
+function additionalFileInput(args) {
+  const scalarOptions = new Set([
+    "createstub", "level", "project", "pythonpath", "pythonplatform", "pythonversion",
+    "threads", "typeshed-path", "typeshedpath", "venv-path", "venvpath", "verifytypes",
+  ]);
+  const booleanOptions = new Set([
+    "dependencies", "help", "ignoreexternal", "lib", "outputjson", "skipunannotated",
+    "stats", "verbose", "version", "warnings", "watch",
+  ]);
+  const aliases = { p: "project", t: "typeshedpath", v: "venvpath", h: "help", w: "watch" };
+  const tokens = args.flatMap((arg) => /^-[^\d-]{2,}$/.test(arg) ?
+    arg.slice(1).split("").map((letter) => "-" + letter) : [arg]);
+  let pendingScalar = false;
+  for (const token of tokens) {
+    const attached = token.match(/^(--\S+?)=(.*)/);
+    const short = token.match(/^-([^\d-])$/);
+    const long = token.match(/^--(\S+)/);
+    if (attached || short || long) {
+      const name = short ? aliases[short[1]] : nativeOptionName(token).slice(2);
+      if (name === "files") return token;
+      if (scalarOptions.has(name)) {
+        pendingScalar = !attached;
+      } else if (booleanOptions.has(name) && !attached) {
+        pendingScalar = false;
+      } else {
+        // Unknown options and boolean equals-values already fail natively.
+        return null;
+      }
+    } else if (pendingScalar) {
+      pendingScalar = false;
+    } else {
+      return token;
+    }
+  }
+  return null;
+}
+
+function filenameInputIssue(targets) {
+  for (const target of targets) {
+    if (/[ \r\n]/.test(target) || target.trim() !== target ||
+        Buffer.from(target, "utf8").toString("utf8") !== target) {
+      return "Pyright stdin cannot represent this filename literally: " + JSON.stringify(target);
+    }
+  }
+  return null;
+}
+
 function run(request) {
   const issue = validate(request);
   if (issue !== null) return [issue, 2];
@@ -103,24 +181,58 @@ function run(request) {
       "Pyright is unavailable from the workspace: " + error.message);
   }
 
+  let expectedVersion;
+  try {
+    const declaration = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8"));
+    expectedVersion = declaration.dependencies?.pyright;
+    if (typeof expectedVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(expectedVersion)) {
+      throw new Error("The Pyright dependency must declare one exact supported version.");
+    }
+  } catch (error) {
+    return unavailable("dependency_unavailable",
+      "Pyright prerequisite declaration is unavailable: " + error.message, version);
+  }
+  if (version !== expectedVersion) {
+    return unavailable("dependency_unavailable",
+      "Pyright version mismatch: actual=" + (version ?? "unreadable") +
+        ", expected=" + expectedVersion, version);
+  }
+
+  const alternateOperations = new Set([
+    "--help", "-h", "--version", "--watch", "-w", "--verifytypes", "--createstub",
+  ]);
   for (const arg of request.args) {
-    if (arg.includes("\0") || arg === "-" || arg.split("=")[0] === "--createstub") {
+    if (arg.includes("\0") || arg === "-" || alternateOperations.has(nativeOptionName(arg)) ||
+        (/^-[^\d-]{2,}$/.test(arg) && /[hw]/.test(arg.slice(1)))) {
       return unavailable("unsupported_input",
         "Pyright argument conflicts with the check contract: " + JSON.stringify(arg), version);
     }
   }
 
+  const selected = request.targets.length > 0;
+  if (selected) {
+    const filenameIssue = filenameInputIssue(request.targets);
+    if (filenameIssue !== null) return unavailable("unsupported_input", filenameIssue, version);
+    const additionalInput = additionalFileInput(request.args);
+    if (additionalInput !== null) {
+      return unavailable("unsupported_input",
+        "Pyright caller input conflicts with the selected filename channel: " +
+          JSON.stringify(additionalInput), version);
+    }
+  }
   const nativeModes = new Set(["--outputjson", "--verbose", "--stats", "--dependencies"]);
-  const explicitMode = request.args.some((arg) => nativeModes.has(arg.split("=")[0]));
+  const explicitMode = request.args.some((arg) => nativeModes.has(nativeOptionName(arg)));
   const args = [
     entrypoint, ...(explicitMode ? [] : ["--outputjson"]),
-    ...request.args, ...request.targets,
+    // Place the owned file marker before options so a dangling scalar cannot consume it.
+    ...(selected ? ["-"] : []), ...request.args,
   ];
   let result;
   try {
     // The outer runtime owns the timeout, process tree and protocol output bound.
     result = spawnSync(process.execPath, args, {
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: [selected ? "pipe" : "ignore", "pipe", "pipe"],
+      input: selected ? Buffer.from(request.targets.join("\n"), "utf8") : undefined,
       maxBuffer: Infinity,
     });
   } catch (error) {

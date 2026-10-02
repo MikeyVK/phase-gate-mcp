@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic, Literal, Protocol, TypeVar
+from uuid import UUID
 
 from mcp_server.config.schemas.adapter_manifest import (
     CheckCapability,
@@ -112,6 +113,21 @@ class AdapterProcessSetupError(RuntimeError):
     def __init__(self, process: AdapterProcess, cause: OSError) -> None:
         super().__init__(str(cause))
         self.process = process
+
+
+@dataclass(frozen=True)
+class InvocationDirectory:
+    """A pure description; successful exclusive creation establishes ownership."""
+
+    directory: Path
+
+
+class InvocationScratchDirectories(Protocol):
+    """Describe locations separately from invocation allocation commands."""
+
+    def describe(self, invocation_id: UUID) -> InvocationDirectory: ...
+    def create(self, directory: InvocationDirectory) -> None: ...
+    def remove(self, directory: InvocationDirectory) -> None: ...
 
 
 @dataclass(frozen=True)

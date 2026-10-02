@@ -43,6 +43,11 @@ from mcp_server.execution.check_selection import (
     FileScopePaths,
     ScopeResolver,
 )
+from mcp_server.execution.protocol import (
+    AdapterExecutionContext,
+    AdapterRequestContract,
+    SelectionCheckWireRequest,
+)
 
 
 class EmptyBranch:
@@ -493,8 +498,13 @@ def test_native_selection_request_matches_published_wire_contract(
     planner = selector(tmp_path)
     for scope in ("configured", "workspace"):
         plan = planner.select(CheckSelectionRequest.model_validate({"scope": scope}))
-        payload = plan.calls[0].request.model_dump(mode="json")
-        assert set(payload) == {"operation", "targets", "args"}
+        payload = json.loads(
+            AdapterRequestContract(SelectionCheckWireRequest).encode(
+                plan.calls[0].request,
+                AdapterExecutionContext(scratch_directory=str(tmp_path / "invocations")),
+            )
+        )
+        assert set(payload) == {"operation", "targets", "args", "execution_context"}
         assert validator.is_valid(payload), list(validator.iter_errors(payload))
 
 

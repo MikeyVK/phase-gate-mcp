@@ -8,8 +8,10 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from shutil import copytree, which
+from threading import Thread
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -95,13 +97,18 @@ def invoke(
         environment["PATH"] = ""
     result = subprocess.run(
         [str(package.launch.executable), *package.launch.args],
-        input=json.dumps(request).encode("utf-8"),
+        input=json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(package.runtime.workspace.parent)},
+                **request,
+            }
+        ).encode("utf-8"),
         cwd=package.runtime.workspace,
         capture_output=True,
         timeout=30,
         env=environment,
     )
-    payload = TypeAdapter(JsonValue).validate_json(result.stdout)
+    payload: JsonValue = TypeAdapter(JsonValue).validate_json(result.stdout)
     assert isinstance(payload, dict)
     package.schema.validate(payload)
     if result.returncode != 2:
@@ -161,7 +168,7 @@ def test_native_self_toc_and_neighbor_snapshot(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == ("failed" if broken else "passed")
     assert response["external_tools"] == [{"tool_id": "lychee", "version": "0.24.2"}]
-    native_report = TypeAdapter(JsonValue).validate_json(native_result.stdout)
+    native_report: JsonValue = TypeAdapter(JsonValue).validate_json(native_result.stdout)
     native_evidence = response["evidence"]
     assert isinstance(native_evidence, dict) and native_evidence["format"] == "json"
     assert native_facts(native_evidence["data"]) == native_facts(native_report)
@@ -278,7 +285,7 @@ def test_missing_native_and_malformed_wire(
     pytestconfig: pytest.Config,
 ) -> None:
     package = package_for(lychee_runtime, tmp_path, pytestconfig.rootpath)
-    request = {"operation": "links", "targets": [], "args": list(DEFAULT_ARGS)}
+    request: dict[str, object] = {"operation": "links", "targets": [], "args": list(DEFAULT_ARGS)}
     code, response = invoke(package, request, native_available=False)
     assert code == 3
     decision = response["decision"]
@@ -290,6 +297,30 @@ def test_missing_native_and_malformed_wire(
     for invalid in ({**request, "operation": "other"}, {**request, "targets": ["relative.md"]}):
         code, response = invoke(package, invalid)
         assert code == 2 and response["reason"] == "invalid_request"
+
+
+def test_declared_version_precedes_native_configuration(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+) -> None:
+    package = package_for(lychee_runtime, tmp_path, pytestconfig.rootpath)
+    assert package.launch.args
+    declaration = Path(package.launch.args[0]).with_name("dependencies.json")
+    metadata = json.loads(declaration.read_text(encoding="utf-8"))
+    metadata["native_tools"][0]["version"] = "0.0.0"
+    declaration.write_text(json.dumps(metadata), encoding="utf-8")
+    code, response = invoke(
+        package,
+        {"operation": "links", "targets": [], "args": ["--config", "missing.toml"]},
+    )
+    assert code == 3
+    result = response["decision"]
+    assert isinstance(result, dict) and result["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "lychee", "version": "0.24.2"}]
+    message = str(result["message"])
+    assert "actual=0.24.2" in message and "expected=0.0.0" in message
+    assert "evidence" not in response
 
 
 def test_source_and_write_options_are_refused(
@@ -306,8 +337,6 @@ def test_source_and_write_options_are_refused(
     for args in (
         ("--output", str(output)),
         ("-vo" + str(output),),
-        ("--cache=true",),
-        ("--cookie-jar", str(output)),
         ("--preprocess", "echo replaced"),
         ("--dump",),
         ("--generate", "man"),
@@ -425,3 +454,337 @@ def test_native_configuration_precedence_and_safe_overrides(
         assert item["format"] == ("text" if "-f" in extra else "json")
     assert not (runtime.workspace / ".lycheecache").exists()
     assert not (runtime.workspace / "forbidden-output").exists()
+
+
+def test_pinned_native_filename_stdin_preserves_internal_spaces_and_unicode(
+    lychee_runtime: LycheeRuntime,
+) -> None:
+    runtime = lychee_runtime
+    target = runtime.workspace / "reference Ω with spaces.md"
+    target.write_text("# Reference\n\n[Self](#reference)\n", encoding="utf-8")
+    direct = subprocess.run(
+        [str(runtime.executable), *DEFAULT_ARGS, "--format", "json", "--files-from", "-"],
+        input=f"# comment\n\n{target}\n".encode(),
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 0, (direct.stdout, direct.stderr)
+    report = json.loads(direct.stdout)
+    assert report["total"] == 1 and report["errors"] == 0
+
+
+def test_caller_option_terminator_preserves_owned_filename_selector(
+    lychee_runtime: LycheeRuntime, tmp_path: Path, pytestconfig: pytest.Config
+) -> None:
+    runtime = lychee_runtime
+    target = runtime.workspace / "selected.md"
+    target.write_text("# Selected\n\n[Missing](selected-missing.md)\n", encoding="utf-8")
+    args = [*DEFAULT_ARGS, "--format", "json", "--"]
+    direct = subprocess.run(
+        [str(runtime.executable), *args, str(target)],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 2
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    code, response = invoke(package, {"operation": "links", "targets": [str(target)], "args": args})
+    assert code == 1
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+
+
+@pytest.mark.parametrize("option_source", ["cli", "config"])
+def test_native_cache_effect_is_admitted_outside_selected_source(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    option_source: str,
+) -> None:
+    runtime = lychee_runtime
+    selected = runtime.workspace / "docs" / "source.md"
+    selected.parent.mkdir()
+    before = b"# Source\n\n[Self](#source)\n"
+    selected.write_bytes(before)
+    cache = runtime.workspace / ".lycheecache"
+    if option_source == "cli":
+        args = ["--offline", "--include-fragments", "--cache=true"]
+    else:
+        (runtime.workspace / "lychee.toml").write_text("cache = true\n", encoding="utf-8")
+        args = ["--offline", "--include-fragments"]
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    disabled_code, _ = invoke(
+        package,
+        {
+            "operation": "links",
+            "targets": [str(selected)],
+            "args": ["--offline", "--include-fragments", "--cache=false"],
+        },
+    )
+    assert disabled_code == 0 and not cache.exists()
+    direct = subprocess.run(
+        [str(runtime.executable), *args, "--format", "json", str(selected)],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 0 and cache.is_file(), (direct.stdout, direct.stderr)
+    cache.unlink()
+    code, response = invoke(
+        package, {"operation": "links", "targets": [str(selected)], "args": args}
+    )
+    assert code == 0 and cache.is_file()
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    data = evidence["data"]
+    assert isinstance(data, dict) and data["errors"] == 0 and data["total"] == 1
+    assert selected.read_bytes() == before
+
+
+@pytest.mark.parametrize("option_source", ["cli", "config"])
+def test_native_cookie_state_is_loaded_and_saved_outside_selected_source(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    option_source: str,
+) -> None:
+    runtime = lychee_runtime
+    selected = runtime.workspace / "docs" / "source.md"
+    selected.parent.mkdir()
+    before = b"# Source\n\n[Self](#source)\n"
+    selected.write_bytes(before)
+    jar = tmp_path / "native state" / "cookies.json"
+    jar.parent.mkdir()
+    cookies = [
+        {
+            "raw_cookie": ("persistent=retained; Path=/; Expires=Thu, 01 Jan 2099 00:00:00 GMT"),
+            "path": ["/", True],
+            "domain": {"HostOnly": "127.0.0.1"},
+            "expires": {"AtUtc": "2099-01-01T00:00:00Z"},
+        },
+        {
+            "raw_cookie": "session=discarded; Path=/",
+            "path": ["/", True],
+            "domain": {"HostOnly": "127.0.0.1"},
+            "expires": "SessionEnd",
+        },
+    ]
+    seed = json.dumps(cookies).encode()
+    jar.write_bytes(seed)
+    args = [*DEFAULT_ARGS, "--format", "json"]
+    if option_source == "cli":
+        args.extend(["--cookie-jar", str(jar)])
+    else:
+        (runtime.workspace / "lychee.toml").write_text(
+            "cookie_jar = " + json.dumps(str(jar)) + "\n", encoding="utf-8"
+        )
+    direct = subprocess.run(
+        [str(runtime.executable), *args, str(selected)],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 0, (direct.stdout, direct.stderr)
+    native_cookies = json.loads(jar.read_bytes())
+    assert len(native_cookies) == 1
+    assert native_cookies[0]["raw_cookie"].startswith("persistent=retained")
+    jar.write_bytes(seed)
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    code, response = invoke(
+        package, {"operation": "links", "targets": [str(selected)], "args": args}
+    )
+    assert code == 0
+    assert json.loads(jar.read_bytes()) == native_cookies
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+    assert selected.read_bytes() == before
+
+
+def test_native_cache_stores_and_reuses_loopback_response(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+) -> None:
+    runtime = lychee_runtime
+    requests: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            requests.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def do_HEAD(self) -> None:
+            self.do_GET()
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/cached"
+        selected = runtime.workspace / "docs" / "source.md"
+        selected.parent.mkdir()
+        before = f"# Source\n\n[Local]({url})\n".encode()
+        selected.write_bytes(before)
+        args = ["--cache=true", "--max-retries", "0", "--format", "json"]
+        cache = runtime.workspace / ".lycheecache"
+        direct = subprocess.run(
+            [str(runtime.executable), *args, str(selected)],
+            cwd=runtime.workspace,
+            capture_output=True,
+            timeout=30,
+        )
+        assert direct.returncode == 0, (direct.stdout, direct.stderr)
+        assert url + ",200" in cache.read_text(encoding="utf-8")
+        assert requests == ["/cached"]
+        cache.unlink()
+        requests.clear()
+        package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+        code, response = invoke(
+            package, {"operation": "links", "targets": [str(selected)], "args": args}
+        )
+        assert code == 0 and requests == ["/cached"]
+        assert url + ",200" in cache.read_text(encoding="utf-8")
+        evidence = response["evidence"]
+        assert isinstance(evidence, dict) and evidence["format"] == "json"
+        assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+        cached_code, cached_response = invoke(
+            package, {"operation": "links", "targets": [str(selected)], "args": args}
+        )
+        assert cached_code == 0 and requests == ["/cached"]
+        cached_evidence = cached_response["evidence"]
+        assert isinstance(cached_evidence, dict)
+        data = cached_evidence["data"]
+        assert isinstance(data, dict) and data["total"] == 1 and data["cached"] == 1
+        assert selected.read_bytes() == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+
+
+def oversized_sources(runtime: LycheeRuntime) -> list[str]:
+    targets: list[str] = []
+    for index in range(350):
+        source = runtime.workspace / (f"input_{index:04d}_Ω_" + "selection_" * 5 + ".md")
+        source.write_text("# Source\n\n[Self](#source)\n", encoding="utf-8")
+        targets.append(str(source))
+    Path(targets[-1]).write_text("# Late\n\n[Missing](late-missing.md)\n", encoding="utf-8")
+    assert len(" ".join(targets).encode("utf-16-le")) // 2 > 32_767
+    return targets
+
+
+def test_complete_oversized_selection_keeps_late_native_link_result(
+    lychee_runtime: LycheeRuntime, tmp_path: Path, pytestconfig: pytest.Config
+) -> None:
+    runtime = lychee_runtime
+    targets = oversized_sources(runtime)
+    outside = runtime.workspace / "outside.md"
+    outside.write_text("# Outside\n\n[Decoy](outside-decoy.md)\n", encoding="utf-8")
+    direct = subprocess.run(
+        [str(runtime.executable), *DEFAULT_ARGS, "--format", "json", targets[0], targets[-1]],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 2
+    control = json.loads(direct.stdout)
+    assert control["errors"] == 1 and control["total"] == 2
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    code, response = invoke(
+        package, {"operation": "links", "targets": targets, "args": list(DEFAULT_ARGS)}
+    )
+    assert code == 1
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    data = evidence["data"]
+    assert isinstance(data, dict)
+    assert data["errors"] == 1 and data["total"] == len(targets)
+    assert "late-missing.md" in json.dumps(data)
+    assert "outside-decoy.md" not in json.dumps(data)
+
+
+@pytest.mark.parametrize("source", ["cli", "config"])
+def test_occupied_files_from_channel_preserves_native_inputs(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    source: str,
+) -> None:
+    runtime = lychee_runtime
+    selected = runtime.workspace / "selected.md"
+    selected.write_text("# Selected\n\n[Self](#selected)\n", encoding="utf-8")
+    additional = runtime.workspace / "native additional.md"
+    additional.write_text("# Additional\n\n[Missing](native-missing.md)\n", encoding="utf-8")
+    supplied = runtime.workspace / "caller filenames.txt"
+    supplied.write_text(str(additional) + "\n", encoding="utf-8")
+    args = list(DEFAULT_ARGS)
+    if source == "cli":
+        args.extend(["--files-from", str(supplied)])
+    else:
+        (runtime.workspace / "lychee.toml").write_text(
+            "files_from = " + json.dumps(str(supplied)) + "\n", encoding="utf-8"
+        )
+    direct = subprocess.run(
+        [str(runtime.executable), *args, "--format", "json", str(selected)],
+        cwd=runtime.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 2
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    code, response = invoke(
+        package, {"operation": "links", "targets": [str(selected)], "args": args}
+    )
+    assert code == 1
+    evidence = response["evidence"]
+    assert isinstance(evidence, dict) and evidence["format"] == "json"
+    assert native_facts(evidence["data"]) == native_facts(json.loads(direct.stdout))
+
+
+@pytest.mark.parametrize("suffix", ["\n", "\ud800"])
+def test_unrepresentable_stdin_filename_is_explicitly_refused(
+    lychee_runtime: LycheeRuntime,
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    suffix: str,
+) -> None:
+    package = package_for(lychee_runtime, tmp_path, pytestconfig.rootpath)
+    target = str(lychee_runtime.workspace / "source.md") + suffix
+    code, response = invoke(
+        package, {"operation": "links", "targets": [target], "args": list(DEFAULT_ARGS)}
+    )
+    assert code == 3
+    result = response["decision"]
+    assert isinstance(result, dict) and result["reason"] == "unsupported_input"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows native argv launch limit")
+def test_occupied_files_from_large_selection_reports_remaining_argv_limit(
+    lychee_runtime: LycheeRuntime, tmp_path: Path, pytestconfig: pytest.Config
+) -> None:
+    runtime = lychee_runtime
+    targets = oversized_sources(runtime)
+    supplied = runtime.workspace / "caller list.txt"
+    supplied.write_text(targets[0] + "\n", encoding="utf-8")
+    package = package_for(runtime, tmp_path, pytestconfig.rootpath)
+    code, response = invoke(
+        package,
+        {
+            "operation": "links",
+            "targets": targets,
+            "args": [*DEFAULT_ARGS, "--files-from", str(supplied)],
+        },
+    )
+    assert code == 3
+    result = response["decision"]
+    assert isinstance(result, dict) and result["reason"] == "execution_error"
+    message = str(result["message"]).casefold()
+    assert "files-from" in message and "occupied" in message and "argv" in message

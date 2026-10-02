@@ -6,18 +6,67 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+from mcp_server.execution.check_selection import AbsolutePath, SelectionCheckRequest
+from mcp_server.execution.content_input import ScaffoldFileRequest, ScaffoldTextRequest
 from mcp_server.execution.models import (
     AdapterExitCode,
+    FixRequest,
     InvocationCompleted,
     ProcessCapture,
     StreamCapture,
+    TestRequest,
 )
 
 STDOUT_LIMIT = 8 * 1024 * 1024
 STDERR_LIMIT = 256 * 1024
 READ_CHUNK_SIZE = 64 * 1024
+
+
+class AdapterExecutionContext(BaseModel):
+    """Required portable path syntax, independent of filesystem existence."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+
+    scratch_directory: AbsolutePath
+
+
+class SelectionCheckWireRequest(SelectionCheckRequest):
+    execution_context: AdapterExecutionContext
+
+
+class ContentTextCheckWireRequest(ScaffoldTextRequest):
+    execution_context: AdapterExecutionContext
+
+
+class ContentFileCheckWireRequest(ScaffoldFileRequest):
+    execution_context: AdapterExecutionContext
+
+
+class TestWireRequest(TestRequest):
+    execution_context: AdapterExecutionContext
+
+
+class FixWireRequest(FixRequest):
+    execution_context: AdapterExecutionContext
+
+
+TRequest = TypeVar("TRequest", bound=BaseModel)
+
+
+@dataclass(frozen=True)
+class AdapterRequestContract(Generic[TRequest]):
+    """Pure composition of operation intent and the runtime's execution context."""
+
+    wire_type: type[BaseModel]
+
+    def encode(self, request: TRequest, execution_context: AdapterExecutionContext) -> bytes:
+        """Validate the complete frozen wire DTO and serialize its JSON input."""
+        wire = self.wire_type.model_validate(
+            {**request.model_dump(), "execution_context": execution_context}, strict=True
+        )
+        return wire.model_dump_json().encode("utf-8")
 
 
 class InvalidAdapterResponseError(ValueError):

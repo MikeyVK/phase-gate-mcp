@@ -457,7 +457,7 @@ class TestTargetStartup:
         legacy.mkdir()
         legacy_root = legacy / ".pgmcp"
         legacy_root.mkdir()
-        shutil.copytree(REPO_ROOT / ".pgmcp/templates", legacy_root / "templates")
+        (legacy_root / "templates").mkdir()
         shutil.copytree(distribution.root / "mcp_server/assets/config", legacy_root / "config")
         (legacy_root / ".version").write_text("2.0.0\n", encoding="utf-8")
         legacy_env = _installed_environment(distribution, legacy)

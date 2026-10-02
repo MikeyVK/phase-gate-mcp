@@ -12,8 +12,10 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from io import StringIO
+from pathlib import Path
+from uuid import uuid4
 
-_REQUEST_KEYS = frozenset({"operation", "targets", "args"})
+_REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 
 
@@ -34,7 +36,23 @@ def _valid_path(value: object) -> bool:
     )
 
 
-def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid([_issue(["execution_context"], "wrong_type")])
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid([_issue(["execution_context", unknown[0]], "unknown_field")])
+    if "scratch_directory" not in value:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "missing_field")])
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid([_issue(["execution_context", "scratch_directory"], "wrong_type")])
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "invalid_value")])
+    return None
+
+
+def _validate(value: object) -> tuple[list[str], list[str], str] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([_issue([], "wrong_type")])
     unknown = sorted(str(key) for key in set(value) - _REQUEST_KEYS)
@@ -43,6 +61,9 @@ def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
     missing = sorted(_REQUEST_KEYS - set(value))
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid([_issue(["operation"], "wrong_type")])
     if value["operation"] != "types":
@@ -61,7 +82,28 @@ def _validate(value: object) -> tuple[list[str], list[str]] | dict[str, object]:
         issues.append(_issue(["args"], "wrong_type"))
     if issues:
         return _invalid(issues)
-    return [str(target) for target in targets], [str(arg) for arg in args]
+    return (
+        [str(target) for target in targets],
+        [str(arg) for arg in args],
+        value["execution_context"]["scratch_directory"],
+    )
+
+
+def _native_version_error(version: str) -> str | None:
+    """Read the package declaration before relying on the installed Mypy parser."""
+    try:
+        declaration = (
+            Path(__file__).with_name("requirements.txt").read_text(encoding="utf-8").strip()
+        )
+    except (OSError, UnicodeError) as exc:
+        return f"Mypy prerequisite declaration is unreadable (actual {version}): {exc}"
+    requirement = re.fullmatch(r"mypy==([^\s;]+)", declaration)
+    if requirement is None:
+        return f"Mypy prerequisite declaration is invalid: {declaration!r} (actual {version})."
+    expected = requirement.group(1)
+    if version != expected:
+        return f"Mypy version is unsupported: actual {version}, expected {declaration}."
+    return None
 
 
 def _external(version: str | None) -> list[dict[str, str | None]]:
@@ -125,7 +167,12 @@ def _native_guard(args: list[str]) -> _GuardResult | str | None:
         parser.parse_args(args, dummy)
     except SystemExit as exc:
         if exc.code == 0:
-            return None
+            return _GuardResult(
+                "unsupported_input",
+                "Native metadata requests do not perform type analysis.",
+                stdout.getvalue(),
+                stderr.getvalue(),
+            )
         return _GuardResult(
             "unsupported_input",
             _message(stdout.getvalue().encode(), stderr.getvalue().encode())
@@ -166,27 +213,18 @@ def _native_guard(args: list[str]) -> _GuardResult | str | None:
 
     special = argparse.Namespace()
     parser.parse_args(args, native_namespace.SplitNamespace(options, special, "special-opts:"))
-    if special.command:
-        return _GuardResult(
-            "unsupported_input", "Mypy --command replaces the selected source input."
-        )
-    for field in (
-        "shadow_file",
-        "junit_xml",
-        "timing_stats",
-        "line_checking_stats",
-        "install_types",
-    ):
-        if getattr(options, field):
+    for field in ("command", "modules", "packages"):
+        if getattr(special, field):
             return _GuardResult(
-                "unsupported_input",
-                f"Mypy option {field} writes or replaces input outside the check contract.",
+                "unsupported_input", f"Mypy {field} replaces the selected source input."
             )
-    if options.report_dirs or any(
-        value for field, value in vars(special).items() if field.endswith("_report")
-    ):
+    if options.shadow_file:
         return _GuardResult(
-            "unsupported_input", "Mypy report output is outside the check contract."
+            "unsupported_input", "Mypy shadow_file replaces the selected source input."
+        )
+    if options.install_types:
+        return _GuardResult(
+            "unsupported_input", "Mypy install_types installs dependencies outside type analysis."
         )
     return options.config_file if isinstance(options.config_file, str) else None
 
@@ -210,10 +248,15 @@ def _native_error(text: str) -> str | None:
 
 def _message(stdout: bytes, stderr: bytes) -> str | None:
     combined = (stdout + b"\n" + stderr).decode("utf-8", errors="replace")
+    lines = [line.strip() for line in combined.splitlines() if line.strip()]
+    if "Traceback (most recent call last):" in lines:
+        cause = lines[-1]
+        if cause == "ImportError":
+            error_lines = stderr.decode("utf-8", errors="replace").splitlines()
+            return next((line.strip() for line in error_lines if line.strip()), cause)
+        return cause
     error = _native_error(combined)
-    if error is not None:
-        return error
-    return next((line.strip() for line in combined.splitlines() if line.strip()), None)
+    return error if error is not None else next(iter(lines), None)
 
 
 def _configuration_diagnostic(text: str, config_file: str) -> bool:
@@ -244,9 +287,17 @@ def _configuration_diagnostic(text: str, config_file: str) -> bool:
 
 
 def _classify_exit(code: int, text: str, config_file: str | None) -> str:
+    for line in text.splitlines():
+        line = line.strip()
+        if line == "Traceback (most recent call last):":
+            return "execution_error"
+        if line.startswith("error: INTERNAL ERROR --") or line.partition(": error: ")[2].startswith(
+            "INTERNAL ERROR --"
+        ):
+            return "execution_error"
+    if code == 1:
+        return "failed"
     lowered = text.casefold()
-    if any(marker in lowered for marker in ("internal error", "traceback (most recent call last)")):
-        return "execution_error"
     if "cannot find config file" in lowered or (
         config_file is not None and _configuration_diagnostic(text, config_file)
     ):
@@ -265,7 +316,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
     validated = _validate(value)
     if isinstance(validated, dict):
         return validated, 2
-    targets, args = validated
+    targets, args, scratch_directory = validated
     try:
         version = importlib.metadata.version("mypy")
     except importlib.metadata.PackageNotFoundError:
@@ -273,6 +324,28 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             "dependency_unavailable",
             "Mypy distribution is unavailable to the adapter interpreter.",
             None,
+        )
+    version_error = _native_version_error(version)
+    if version_error is not None:
+        return _unavailable("dependency_unavailable", version_error, version)
+    arguments = [*args, *targets]
+    # argparse expands these splitlines separators even inside an individual argument.
+    if any(
+        any(separator in argument for separator in "\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029")
+        for argument in arguments
+    ):
+        return _unavailable(
+            "unsupported_input",
+            "Mypy argument-file tokens cannot contain line separators.",
+            version,
+        )
+    try:
+        payload = ("\n".join(arguments) + ("\n" if arguments else "")).encode("utf-8")
+    except UnicodeError:
+        return _unavailable(
+            "unsupported_input",
+            "Mypy argument-file tokens must be representable as UTF-8.",
+            version,
         )
     guard = _native_guard(args)
     if isinstance(guard, _GuardResult):
@@ -282,13 +355,18 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             version,
             _evidence(guard.stdout.encode(), guard.stderr.encode()),
         )
-    command = [sys.executable, "-m", "mypy", *args, *targets]
+    arguments_path = Path(scratch_directory) / f"mypy-arguments-{uuid4().hex}.txt"
     try:
+        with arguments_path.open("xb") as stream:
+            stream.write(payload)
         completed = subprocess.run(
-            command, stdin=subprocess.DEVNULL, capture_output=True, check=False
+            [sys.executable, "-m", "mypy", "@" + str(arguments_path)],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            check=False,
         )
     except OSError as exc:
-        return _unavailable("execution_error", f"Mypy launch failed: {exc}", version)
+        return _unavailable("execution_error", f"Mypy preparation or launch failed: {exc}", version)
     evidence = _evidence(completed.stdout, completed.stderr)
     message = _message(completed.stdout, completed.stderr)
     external = _external(version)
@@ -302,7 +380,9 @@ def _run(value: object) -> tuple[dict[str, object], int]:
         if evidence is not None:
             response["evidence"] = evidence
         return response, 0
-    if completed.returncode == 1:
+    text = str(evidence.get("data", "")) if evidence is not None else ""
+    reason = _classify_exit(completed.returncode, text, guard)
+    if reason == "failed":
         if message is None:
             return _unavailable(
                 "invalid_result",
@@ -310,16 +390,6 @@ def _run(value: object) -> tuple[dict[str, object], int]:
                 version,
                 evidence,
             )
-        return {
-            "decision": {"status": "failed", "message": message},
-            "external_tools": external,
-            "evidence": evidence or {"format": "text", "data": message},
-            "coverage": None,
-            "required_targets": [],
-        }, 1
-    text = str(evidence.get("data", "")) if evidence is not None else ""
-    reason = _classify_exit(completed.returncode, text, guard)
-    if reason == "failed" and message is not None:
         return {
             "decision": {"status": "failed", "message": message},
             "external_tools": external,

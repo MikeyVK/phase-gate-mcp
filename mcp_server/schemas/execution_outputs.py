@@ -27,6 +27,7 @@ from mcp_server.execution.models import (
     ScopeDetails,
     TerminationProblem,
     TextEvidence,
+    preserves_completed_response,
 )
 from mcp_server.schemas.mutation_outputs import RejectedRequestDetails, TerminationDetails
 
@@ -128,7 +129,6 @@ class SelectionCheckResult(_ExecutionOutputModel):
             if self.reason == "invalid_request":
                 if (
                     not attempted
-                    or self.message is not None
                     or self.evidence is not None
                     or self.external_tools is not None
                     or self.request_rejection is None
@@ -203,7 +203,13 @@ class SelectionCheckResult(_ExecutionOutputModel):
                 raise ValueError("unavailable_selection_message_required")
             if isinstance(self.reason, AdapterCallFailureReason):
                 if (
-                    self.evidence is not None
+                    (
+                        self.evidence is not None
+                        and (
+                            self.reason is not AdapterCallFailureReason.PROCESS_FAILED
+                            or not preserves_completed_response(self.evidence, self.capture)
+                        )
+                    )
                     or self.external_tools is not None
                     or self.coverage is not None
                 ):

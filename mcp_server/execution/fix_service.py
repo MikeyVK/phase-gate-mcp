@@ -49,7 +49,11 @@ from mcp_server.execution.models import (
     WorkspaceRelativeFilePath,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import (
+    AdapterRequestContract,
+    AdapterResponseContract,
+    FixWireRequest,
+)
 
 
 def _sequence(value: object) -> object:
@@ -196,6 +200,7 @@ def _project(
                 invocation.failure.message,
             )
             termination = invocation.termination_problem
+            evidence = invocation.preceding_response
         elif isinstance(invocation.response.root, InvalidCheckRequest):
             reason = "invalid_request"
             rejection = invocation.response.root.details
@@ -210,6 +215,8 @@ def _project(
                 response.evidence,
                 response.external_tools,
             )
+    if invocation is not None:
+        message = invocation.message_with_cleanup(message)
     return PublicFixResult(
         fix_id=selected.fix_id,
         status=status,
@@ -311,6 +318,7 @@ class FixManager:
                     request=FixRequest(
                         operation=item.binding.capability_id, targets=targets, args=item.args
                     ),
+                    request_contract=AdapterRequestContract(FixWireRequest),
                     response_contract=AdapterResponseContract(
                         FixResponse, InvocationCompleted[FixResponse], _expected_exit
                     ),

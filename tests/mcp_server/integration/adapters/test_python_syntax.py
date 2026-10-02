@@ -64,7 +64,16 @@ def invoke(
     executable = package.binding.launch.executable
     assert executable is not None, "The manifest-declared Python interpreter must be provisioned"
     flags = ["-I", "-S"] if isolated else []
-    request = payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
+    request = (
+        payload
+        if isinstance(payload, bytes)
+        else json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(package.root.parent.parent)},
+                **payload,
+            }
+        ).encode("utf-8")
+    )
     result = subprocess.run(
         [str(executable), *flags, *package.binding.launch.args],
         input=request,
@@ -216,3 +225,26 @@ def test_malformed_transport_and_nonobject_root_have_distinct_root_details(
             "reason": "invalid_request",
             "details": [{"location": [], "code": reason}],
         }
+
+
+@pytest.mark.parametrize(
+    ("context_fields", "reason"),
+    [({}, "missing_field"), ({"execution_context": None}, "wrong_type")],
+    ids=["missing", "null"],
+)
+def test_missing_or_null_execution_context_is_rejected_before_syntax_analysis(
+    tmp_path: Path,
+    syntax_package: SyntaxPackage,
+    context_fields: dict[str, object],
+    reason: str,
+) -> None:
+    target = tmp_path / "proposed.py"
+    payload = {**request(target, "def broken(:\n"), **context_fields}
+    raw = json.dumps(payload).encode("utf-8")
+    code, response = invoke(syntax_package, tmp_path, raw)
+    assert code == 2
+    assert response == {
+        "reason": "invalid_request",
+        "details": [{"location": ["execution_context"], "code": reason}],
+    }
+    assert not target.exists()

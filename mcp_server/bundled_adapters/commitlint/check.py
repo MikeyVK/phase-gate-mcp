@@ -8,19 +8,21 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from shutil import which
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mcp_server.core.interfaces.artifact_header_reader import IArtifactHeaderReader
 
-_REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args"})
+_REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 _BARE_UNC_ROOT = re.compile(r"^\\\\[^\\/]+[\\/][^\\/]+$")
 
 # The installed parser owns tokenization. These native CLI types/aliases only guard
 # input substitution and early-return modes; they never load --options files.
 _NATIVE_GUARD = r"""
+const fs = require("node:fs");
 const {createRequire} = require("node:module");
 const path = require("node:path");
 const {pathToFileURL} = require("node:url");
@@ -31,7 +33,20 @@ const {pathToFileURL} = require("node:url");
     const packagePath = workspaceRequire.resolve("@commitlint/cli/package.json");
     const cliRequire = createRequire(packagePath);
     const pkg = cliRequire(packagePath);
-    version = pkg.version;
+    version = typeof pkg.version === "string" && pkg.version.trim() ? pkg.version : null;
+    const declaration = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+    const expectedVersion = declaration.dependencies?.["@commitlint/cli"];
+    if (typeof expectedVersion !== "string" || !/^\d+\.\d+\.\d+$/.test(expectedVersion)) {
+      throw new Error("The Commitlint dependency must declare one exact supported version.");
+    }
+    if (version !== expectedVersion) {
+      process.stdout.write(JSON.stringify({
+        version, reason: "dependency_unavailable",
+        message: "Commitlint version mismatch: actual=" + (version ?? "unreadable") +
+          ", expected=" + expectedVersion,
+      }));
+      return;
+    }
     const yargsRequire = createRequire(cliRequire.resolve("yargs"));
     const {default: parse} = await import(pathToFileURL(yargsRequire.resolve("yargs-parser")));
     const result = parse.detailed(JSON.parse(process.argv[1]), {
@@ -74,6 +89,22 @@ def _invalid(location: list[str | int], code: str) -> dict[str, object]:
     return {"reason": "invalid_request", "details": [{"location": location, "code": code}]}
 
 
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid(["execution_context"], "wrong_type")
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid(["execution_context", unknown[0]], "unknown_field")
+    if "scratch_directory" not in value:
+        return _invalid(["execution_context", "scratch_directory"], "missing_field")
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid(["execution_context", "scratch_directory"], "wrong_type")
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid(["execution_context", "scratch_directory"], "invalid_value")
+    return None
+
+
 def _validate(value: object) -> tuple[str, list[str]] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([], "wrong_type")
@@ -81,6 +112,9 @@ def _validate(value: object) -> tuple[str, list[str]] | dict[str, object]:
         return _invalid([str(key)], "unknown_field")
     for key in sorted(_REQUEST_KEYS - set(value)):
         return _invalid([key], "missing_field")
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     for key in ("operation", "target_path", "content"):
         if not isinstance(value[key], str):
             return _invalid([key], "wrong_type")
@@ -220,7 +254,13 @@ def _run(
     environment = {**os.environ, "JITI_FS_CACHE": "0"}
     try:
         guard = subprocess.run(
-            [node, "-e", _NATIVE_GUARD, json.dumps(args)],
+            [
+                node,
+                "-e",
+                _NATIVE_GUARD,
+                json.dumps(args),
+                str(Path(__file__).with_name("package.json")),
+            ],
             capture_output=True,
             check=False,
             env=environment,

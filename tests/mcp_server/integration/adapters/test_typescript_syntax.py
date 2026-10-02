@@ -160,7 +160,12 @@ def invoke(
     result = subprocess.run(
         [str(package.launch.executable), *package.launch.args],
         cwd=workspace,
-        input=json.dumps(payload).encode("utf-8"),
+        input=json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
+                **payload,
+            }
+        ).encode("utf-8"),
         capture_output=True,
         check=False,
         timeout=15,

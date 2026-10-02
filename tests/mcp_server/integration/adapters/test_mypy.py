@@ -91,6 +91,7 @@ def invoke(
         if raw is not None
         else json.dumps(
             {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
                 "operation": operation,
                 "targets": [str(path) for path in targets],
                 "args": list(args),
@@ -105,7 +106,7 @@ def invoke(
         timeout=40,
     )
     assert not completed.stderr, completed.stderr.decode("utf-8", errors="replace")
-    response = TypeAdapter(JsonValue).validate_json(completed.stdout)
+    response: JsonValue = TypeAdapter(JsonValue).validate_json(completed.stdout)
     assert isinstance(response, dict)
     package.schema.validate(response)
     return completed.returncode, response
@@ -213,12 +214,19 @@ def test_configured_roots_and_explicit_tests_use_native_selection(
         ((), (), 0),
         ((target,), (), 1),
         ((package.workspace,), (), 1),
-        ((), ("--module", "tests.sample"), 1),
     ):
         direct = native(package.workspace, "types", targets, args)
         code, response = invoke(package, "types", targets, args)
         assert direct.returncode == code == expected
         assert b"no-untyped-def" not in direct.stdout + direct.stderr
+        assert_native_evidence(response, direct)
+    for roots in ('modules = ["tests.sample"]', 'packages = ["tests"]'):
+        (package.workspace / "pyproject.toml").write_text(
+            "[tool.mypy]\n" + roots + "\n", encoding="utf-8"
+        )
+        direct = native(package.workspace, "types", ())
+        code, response = invoke(package, "types")
+        assert direct.returncode == code == 1
         assert_native_evidence(response, direct)
 
 
@@ -305,12 +313,15 @@ def test_native_inability_is_distinct_from_syntax_blockers(
     [
         ("--command", "value = 1"),
         ("--shadow-file", "sample.py", "replacement.py"),
-        ("--junit-x", "forbidden.xml"),
+        ("--module", "sample"),
+        ("-m", "sample"),
+        ("--package", "sources"),
+        ("-p", "sources"),
         ("--install-types",),
         ("\x00",),
     ],
 )
-def test_source_replacement_and_write_options_are_refused(
+def test_source_replacement_and_installation_options_are_refused(
     mypy_package: MypyPackage,
     args: tuple[str, ...],
 ) -> None:
@@ -319,11 +330,12 @@ def test_source_replacement_and_write_options_are_refused(
     before = b"value: int = 1\n"
     target.write_bytes(before)
     (package.workspace / "replacement.py").write_text("value = 2\n", encoding="utf-8")
-    targets = (target,)
-    if args[0] == "--command":
+    targets: tuple[Path, ...] = (target,)
+    if args[0] in {"--command", "--module", "-m", "--package", "-p"}:
         (package.workspace / "pyproject.toml").write_text("[tool.mypy]\n", encoding="utf-8")
         targets = ()
-        assert native(package.workspace, "types", targets, args).returncode == 0
+        if args[0] == "--command":
+            assert native(package.workspace, "types", targets, args).returncode == 0
     code, response = invoke(package, "types", targets, args)
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
     assert not (package.workspace / "forbidden.xml").exists()
@@ -348,20 +360,169 @@ def test_response_file_report_is_refused_before_native_output_write(
     assert not report.exists()
 
 
-@pytest.mark.parametrize("setting", ['junit_xml = "forbidden.xml"', "install_types = true"])
-def test_native_configuration_cannot_enable_check_writes(
+def test_native_configuration_cannot_enable_dependency_installation(
     mypy_package: MypyPackage,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "sample.py"
+    before = b"value: int = 1\n"
+    target.write_bytes(before)
+    (package.workspace / "pyproject.toml").write_text(
+        "[tool.mypy]\ninstall_types = true\n", encoding="utf-8"
+    )
+    code, response = invoke(package, "types", (target,))
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "output",
+    ["junit-cli", "junit-config", "report-cli", "report-config", "timing", "line-stats"],
+)
+def test_supplemental_output_preserves_negative_diagnostics_and_source_bytes(
+    mypy_package: MypyPackage,
+    output: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "sample.py"
+    before = b'value: int = "bad"\n'
+    target.write_bytes(before)
+    decoy = package.workspace / "unselected.py"
+    decoy.write_bytes(before)
+    destination = package.workspace.parent / "supplemental output"
+    args: tuple[str, ...] = ("--no-incremental",)
+    if output == "junit-cli":
+        args += ("--junit-x", str(destination))
+    elif output == "junit-config":
+        (package.workspace / "pyproject.toml").write_text(
+            "[tool.mypy]\njunit_xml = " + json.dumps(str(destination)) + "\n",
+            encoding="utf-8",
+        )
+    elif output == "report-cli":
+        args += ("--linecount-report", str(destination))
+    elif output == "report-config":
+        (package.workspace / "pyproject.toml").write_text(
+            "[tool.mypy]\nlinecount_report = " + json.dumps(str(destination)) + "\n",
+            encoding="utf-8",
+        )
+    else:
+        flag = "--timing-stats" if output == "timing" else "--line-checking-stats"
+        args += (flag, str(destination))
+    artifact = destination / "linecount.txt" if output.startswith("report-") else destination
+    direct = native(package.workspace, "types", (target,), args)
+    assert direct.returncode == 1 and b"[assignment]" in direct.stdout
+    assert artifact.is_file()
+    artifact.unlink()
+    code, response = invoke(package, "types", (target,), args)
+    assert code == 1 and decision(response)["status"] == "failed"
+    assert_native_evidence(response, direct)
+    assert artifact.is_file()
+    assert target.read_bytes() == decoy.read_bytes() == before
+
+
+@pytest.mark.parametrize("report", ["linecount", "junit"])
+def test_native_report_write_failure_is_unavailable_with_captured_cause(
+    mypy_package: MypyPackage,
+    report: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "sample.py"
+    before = b'value: int = "bad"\n'
+    target.write_bytes(before)
+    destination = package.workspace.parent / "occupied report destination"
+    if report == "linecount":
+        destination.write_bytes(b"existing output")
+        args = ("--linecount-report", str(destination))
+        cause = "FileExistsError"
+    else:
+        destination.mkdir()
+        (destination / "existing.txt").write_bytes(b"existing output")
+        args = ("--junit-xml", str(destination))
+        cause = "PermissionError" if os.name == "nt" else "IsADirectoryError"
+    direct = native(package.workspace, "types", (target,), args)
+    assert direct.returncode != 0 and cause.encode() in direct.stderr
+    if report == "junit":
+        assert b"[assignment]" in direct.stdout
+    code, response = invoke(package, "types", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "execution_error"
+    assert_native_evidence(response, direct)
+    assert cause in evidence_text(response)
+    assert cause in str(decision(response)["message"])
+    assert target.read_bytes() == before
+    preserved = destination if report == "linecount" else destination / "existing.txt"
+    assert preserved.read_bytes() == b"existing output"
+
+
+@pytest.mark.parametrize("filename", ["internal error.py", "ordinary.py"])
+def test_diagnostic_marker_text_cannot_be_native_runtime_failure(
+    mypy_package: MypyPackage,
+    filename: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / filename
+    before = (
+        b"from typing import Literal\n"
+        b'value: Literal["internal error", "Traceback (most recent call last)", "usage:"] = 1\n'
+    )
+    target.write_bytes(before)
+    direct = native(package.workspace, "types", (target,))
+    assert direct.returncode == 1 and b"[assignment]" in direct.stdout
+    assert (
+        b"internal error" in direct.stdout and b"Traceback (most recent call last)" in direct.stdout
+    )
+    code, response = invoke(package, "types", (target,))
+    assert code == 1 and decision(response)["status"] == "failed"
+    assert_native_evidence(response, direct)
+    assert target.read_bytes() == before
+
+
+def test_optional_native_report_dependency_has_truthful_outcome(
+    mypy_package: MypyPackage,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "sample.py"
+    before = b"value: int = 1\n"
+    target.write_bytes(before)
+    destination = package.workspace.parent / "optional xml report"
+    args = ("--xml-report", str(destination))
+    direct = native(package.workspace, "types", (target,), args)
+    code, response = invoke(package, "types", (target,), args)
+    assert_native_evidence(response, direct)
+    if direct.returncode == 0:
+        assert code == 0 and (destination / "index.xml").is_file()
+    else:
+        assert b"lxml" in direct.stderr and b"ImportError" in direct.stderr
+        assert code == 3 and decision(response)["reason"] == "execution_error"
+        assert "lxml" in evidence_text(response)
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize("setting", ["cli", "config", "environment"])
+def test_native_cache_at_operator_destination_preserves_check_result(
+    mypy_package: MypyPackage,
+    monkeypatch: pytest.MonkeyPatch,
     setting: str,
 ) -> None:
     package = mypy_package
     target = package.workspace / "sample.py"
-    target.write_text("value: int = 1\n", encoding="utf-8")
-    (package.workspace / "pyproject.toml").write_text(
-        "[tool.mypy]\n" + setting + "\n", encoding="utf-8"
-    )
-    code, response = invoke(package, "types", (target,))
-    assert code == 3 and decision(response)["reason"] == "unsupported_input"
-    assert not (package.workspace / "forbidden.xml").exists()
+    before = b"value: int = 1\n"
+    target.write_bytes(before)
+    destination = package.workspace.parent / "operator cache"
+    args: tuple[str, ...] = ()
+    if setting == "cli":
+        args = ("--cache-dir", str(destination))
+    elif setting == "config":
+        (package.workspace / "pyproject.toml").write_text(
+            "[tool.mypy]\ncache_dir = " + json.dumps(str(destination)) + "\n",
+            encoding="utf-8",
+        )
+    else:
+        monkeypatch.setenv("MYPY_CACHE_DIR", str(destination))
+    code, response = invoke(package, "types", (target,), args)
+    assert code == 0 and decision(response)["status"] == "passed"
+    assert any(path.is_file() for path in destination.rglob("*"))
+    assert not (package.workspace / ".mypy_cache").exists()
+    assert target.read_bytes() == before
 
 
 def test_missing_dependency_is_observed_in_selected_interpreter(
@@ -381,8 +542,30 @@ def test_request_rejection_preserves_protocol_details(mypy_package: MypyPackage)
     for payload, location, reason in (
         (b"{", [], "invalid_value"),
         (b"[]", [], "wrong_type"),
-        (b'{"operation":[],"targets":[],"args":[]}', ["operation"], "wrong_type"),
-        (b'{"operation":"types","targets":[42],"args":[]}', ["targets", 0], "wrong_type"),
+        (
+            json.dumps(
+                {
+                    "execution_context": {"scratch_directory": str(mypy_package.workspace.parent)},
+                    "operation": [],
+                    "targets": [],
+                    "args": [],
+                }
+            ).encode(),
+            ["operation"],
+            "wrong_type",
+        ),
+        (
+            json.dumps(
+                {
+                    "execution_context": {"scratch_directory": str(mypy_package.workspace.parent)},
+                    "operation": "types",
+                    "targets": [42],
+                    "args": [],
+                }
+            ).encode(),
+            ["targets", 0],
+            "wrong_type",
+        ),
     ):
         code, response = invoke(mypy_package, "types", raw=payload)
         assert code == 2
@@ -390,3 +573,87 @@ def test_request_rejection_preserves_protocol_details(mypy_package: MypyPackage)
             "reason": "invalid_request",
             "details": [{"location": location, "code": reason}],
         }
+
+
+@pytest.mark.parametrize("args", [("--help",), ("-h",), ("--version",), ("-V",)])
+def test_native_metadata_exit_cannot_be_passed_type_analysis(
+    mypy_package: MypyPackage,
+    args: tuple[str, ...],
+) -> None:
+    package = mypy_package
+    target = package.workspace / "negative.py"
+    before = b'value: int = "bad"\n'
+    target.write_bytes(before)
+    direct = native(package.workspace, "types", (target,), args)
+    assert direct.returncode == 0 and direct.stdout
+    code, response = invoke(package, "types", (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert direct.stdout.decode().replace("\r\n", "\n") in evidence_text(response).replace(
+        "\r\n", "\n"
+    )
+    assert target.read_bytes() == before
+
+
+def test_declared_version_mismatch_stops_before_native_parser(
+    mypy_package: MypyPackage,
+) -> None:
+    package = mypy_package
+    (package.root / "requirements.txt").write_text("mypy==0.0.0\n", encoding="utf-8")
+    code, response = invoke(package, "types", args=("--help",))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "mypy", "version": "1.19.1"}]
+    assert "0.0.0" in str(decision(response)["message"])
+
+
+def test_argument_file_preserves_oversized_cross_file_analysis(
+    mypy_package: MypyPackage,
+) -> None:
+    package = mypy_package
+    targets = tuple(package.workspace / f"member_{index:03d}.py" for index in range(350))
+    for target in targets:
+        target.write_text("value: int = 1\n", encoding="utf-8")
+    targets[0].write_text("def typed(value: int) -> int:\n    return value\n", encoding="utf-8")
+    targets[-1].write_text(
+        'from member_000 import typed\nwrong = typed("late error")\n', encoding="utf-8"
+    )
+    decoy = package.workspace / "unselected.py"
+    decoy.write_text('value: int = "unselected error"\n', encoding="utf-8")
+    command = subprocess.list2cmdline([str(path) for path in targets])
+    assert len(command.encode("utf-16-le")) // 2 > 32767
+    small_code, small = invoke(package, "types", (targets[0], targets[-1]))
+    assert small_code == 1 and b"arg-type" in evidence_text(small).encode()
+    code, response = invoke(package, "types", targets)
+    assert code == 1 and decision(response)["status"] == "failed"
+    evidence = evidence_text(response)
+    assert targets[-1].name in evidence and "[arg-type]" in evidence
+    assert "checked 350 source files" in evidence
+    assert decoy.name not in evidence
+
+
+@pytest.mark.parametrize("token", ["", " ", "#literal", " literal "])
+def test_pinned_mypy_argument_file_preserves_option_value(
+    mypy_package: MypyPackage,
+    token: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "literal Ω with spaces.py"
+    target.write_text('value: int = "bad"\n', encoding="utf-8")
+    args = ("--exclude", token)
+    direct = native(package.workspace, "types", (target,), args)
+    code, response = invoke(package, "types", (target,), args)
+    assert code == direct.returncode == 1
+    assert_native_evidence(response, direct)
+
+
+@pytest.mark.parametrize("separator", ["\n", "\v", "\u2028", "\ud800"])
+def test_unrepresentable_mypy_argument_file_input_is_refused(
+    mypy_package: MypyPackage,
+    separator: str,
+) -> None:
+    package = mypy_package
+    target = package.workspace / "clean.py"
+    target.write_text("value: int = 1\n", encoding="utf-8")
+    code, response = invoke(
+        package, "types", (target,), ("--exclude", "line" + separator + "break")
+    )
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"

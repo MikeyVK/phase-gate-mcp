@@ -124,7 +124,7 @@ def test_delivered_suite_preserves_workflow_plugin_contract(
     loader = ConfigLoader(legacy_suite_roots.config, legacy_suite_roots.templates)
     assert loader.load_contracts_config().get_phases("feature") == feature_phases
     assert legacy_suite_roots.config != source / "config"
-    assert legacy_suite_roots.templates != source / "templates"
+    assert legacy_suite_roots.templates != source / "template_suite"
     assert (legacy_suite_roots.config / "contracts.yaml").read_bytes() == (
         source / "config" / "contracts.yaml"
     ).read_bytes()

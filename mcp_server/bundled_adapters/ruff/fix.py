@@ -8,8 +8,26 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
+from typing import TYPE_CHECKING
+from uuid import uuid4
 
-_KEYS = frozenset({"operation", "targets", "args"})
+if TYPE_CHECKING:
+    from mcp_server.bundled_adapters.ruff.check import (
+        native_arguments_supported,
+        native_failure,
+        native_version_error,
+        write_native_arguments,
+    )
+else:
+    from check import (
+        native_arguments_supported,
+        native_failure,
+        native_version_error,
+        write_native_arguments,
+    )
+
+_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 # These native value options consume one token; unrecognized bare tokens cannot add sources.
 _VALUE_OPTIONS = frozenset(
@@ -53,14 +71,33 @@ _CONFLICTS = frozenset(
 )
 
 
-def _invalid(field: str | None, code: str) -> tuple[dict[str, object], int]:
+def _invalid(field: str | list[str] | None, code: str) -> tuple[dict[str, object], int]:
+    location = field if isinstance(field, list) else [] if field is None else [field]
     return {
         "reason": "invalid_request",
-        "details": [{"location": [field] if field is not None else [], "code": code}],
+        "details": [{"location": location, "code": code}],
     }, 2
 
 
-def _validate(value: object) -> tuple[str, list[str], list[str]] | tuple[dict[str, object], int]:
+def _validate_execution_context(value: object) -> tuple[dict[str, object], int] | None:
+    if not isinstance(value, dict):
+        return _invalid(["execution_context"], "wrong_type")
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid(["execution_context", unknown[0]], "unknown_field")
+    if "scratch_directory" not in value:
+        return _invalid(["execution_context", "scratch_directory"], "missing_field")
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid(["execution_context", "scratch_directory"], "wrong_type")
+    if not directory or "\x00" in directory or _ABSOLUTE.fullmatch(directory) is None:
+        return _invalid(["execution_context", "scratch_directory"], "invalid_value")
+    return None
+
+
+def _validate(
+    value: object,
+) -> tuple[str, list[str], list[str], str] | tuple[dict[str, object], int]:
     if not isinstance(value, dict):
         return _invalid(None, "wrong_type")
     unknown = sorted(str(key) for key in set(value) - _KEYS)
@@ -69,6 +106,9 @@ def _validate(value: object) -> tuple[str, list[str], list[str]] | tuple[dict[st
         return _invalid(unknown[0], "unknown_field")
     if missing:
         return _invalid(missing[0], "missing_field")
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid("operation", "wrong_type")
     if value["operation"] not in {"format", "lint"}:
@@ -86,7 +126,12 @@ def _validate(value: object) -> tuple[str, list[str], list[str]] | tuple[dict[st
         for path in value["targets"]
     ):
         return _invalid("targets", "invalid_value")
-    return value["operation"], value["targets"], value["args"]
+    return (
+        value["operation"],
+        value["targets"],
+        value["args"],
+        value["execution_context"]["scratch_directory"],
+    )
 
 
 def _safe_args(args: list[str]) -> bool:
@@ -146,7 +191,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
     admitted = _validate(value)
     if len(admitted) == 2:
         return admitted
-    operation, targets, args = admitted
+    operation, targets, args, scratch_directory = admitted
     # Check the complete file set before any native operation can write.
     if any(not os.path.isfile(path) or any(char in path for char in "*?[]") for path in targets):
         return _unavailable("unsupported_input", "Fix targets must be existing literal files.")
@@ -161,16 +206,28 @@ def _run(value: object) -> tuple[dict[str, object], int]:
         return _unavailable(
             "dependency_unavailable", "Ruff is unavailable to the adapter interpreter."
         )
-    controls = ["format"] if operation == "format" else ["check", "--fix"]
+    version_error = native_version_error(version)
+    if version_error is not None:
+        return _unavailable("dependency_unavailable", version_error, version)
+    arguments = [*([] if operation == "format" else ["--fix"]), *args, "--", *targets]
+    if not native_arguments_supported(arguments):
+        return _unavailable(
+            "unsupported_input",
+            "Ruff argument-file tokens must be UTF-8 without CR or LF.",
+            version,
+        )
+    arguments_path = Path(scratch_directory) / f"ruff-arguments-{uuid4().hex}.txt"
+    native_operation = "format" if operation == "format" else "check"
     try:
+        write_native_arguments(arguments_path, arguments)
         native = subprocess.run(
-            [sys.executable, "-m", "ruff", *controls, *args, "--", *targets],
+            [sys.executable, "-m", "ruff", native_operation, "@" + str(arguments_path)],
             stdin=subprocess.DEVNULL,
             capture_output=True,
             check=False,
         )
     except OSError as exc:
-        return _unavailable("execution_error", f"Ruff execution failed: {exc}", version)
+        return _unavailable("execution_error", f"Ruff preparation or launch failed: {exc}", version)
     stdout = native.stdout.decode("utf-8", errors="replace")
     stderr = native.stderr.decode("utf-8", errors="replace")
     evidence = stdout
@@ -191,26 +248,10 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             message="Ruff reported a negative native fixing result (exit 1).",
             evidence=evidence,
         )
-    lowered = evidence.casefold()
-    if any(
-        token in lowered
-        for token in (
-            "toml parse error",
-            "configuration file",
-            "config file",
-            "failed to load configuration",
-        )
-    ):
-        reason = "invalid_configuration"
-    elif any(
-        token in lowered for token in ("unexpected argument", "invalid value", "unknown option")
-    ):
-        reason = "unsupported_input"
-    else:
-        reason = "execution_error"
+    reason, message = native_failure(evidence)
     return _unavailable(
         reason,
-        f"Ruff could not complete the requested fix (native exit {native.returncode}).",
+        message or f"Ruff could not complete the requested fix (native exit {native.returncode}).",
         version,
         evidence,
     )

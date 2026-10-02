@@ -108,6 +108,7 @@ def invoke(
         if raw is not None
         else json.dumps(
             {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
                 "operation": "types",
                 "targets": [str(path) for path in targets],
                 "args": list(args),
@@ -220,7 +221,7 @@ def test_native_results_and_diagnostic_facts(
         ),
         encoding="utf-8",
     )
-    target = package.workspace / "sample with space.py"
+    target = package.workspace / "sample_Ω.py"
     before = source.encode()
     target.write_bytes(before)
     direct = native(native_pyright, package.workspace, (target,), ("--outputjson", *args))
@@ -253,7 +254,7 @@ def test_native_results_and_diagnostic_facts(
     assert manifest["dependencies"] == {"pyright": "1.1.408"}
 
 
-@pytest.mark.parametrize("mode", ["--verbose", "--stats", "--dependencies"])
+@pytest.mark.parametrize("mode", ["--verbose", "--stats", "--dependencies", "--stats \t"])
 def test_explicit_native_text_modes(
     native_pyright: NativePyright,
     pyright_package: PyrightPackage,
@@ -282,7 +283,7 @@ def test_native_discovery_and_literal_targets(
     package = pyright_package
     included = package.workspace / "mcp_server"
     included.mkdir()
-    (included / "clean.py").write_text("value: int = 1\n")
+    (included / "clean with space.py").write_text("value: int = 1\n")
     excluded = package.workspace / "tests"
     excluded.mkdir()
     target = excluded / "negative.py"
@@ -301,6 +302,119 @@ def test_native_discovery_and_literal_targets(
         code, response = invoke(package, targets)
         assert code == expected
         assert_json_evidence(response, direct)
+
+
+@pytest.mark.parametrize("suffix", [" with space.py", "\r.py", "\n.py", ".py\t", ".py\ud800"])
+def test_unrepresentable_filename_refuses_complete_selection(
+    pyright_package: PyrightPackage,
+    suffix: str,
+) -> None:
+    package = pyright_package
+    ordinary = package.workspace / "ordinary.py"
+    ordinary.write_text("value: int = 1\n", encoding="utf-8")
+    unsupported = package.workspace / ("unsupported" + suffix)
+    code, response = invoke(package, (ordinary, unsupported))
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert "evidence" not in response
+    assert ordinary.read_text(encoding="utf-8") == "value: int = 1\n"
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("extra.py",),
+        ("--files", "extra.py"),
+        ("--files",),
+        ("--files=extra.py",),
+        ("--", "extra.py"),
+    ],
+)
+def test_caller_file_channel_is_refused(
+    pyright_package: PyrightPackage,
+    args: tuple[str, ...],
+) -> None:
+    package = pyright_package
+    target = package.workspace / "sample.py"
+    target.write_text("value: int = 1\n", encoding="utf-8")
+    code, response = invoke(package, (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert "evidence" not in response
+
+
+@pytest.mark.parametrize("project_option", ["--project", "-p", "--project="])
+def test_scalar_option_path_preserves_spaces(
+    native_pyright: NativePyright,
+    pyright_package: PyrightPackage,
+    project_option: str,
+) -> None:
+    package = pyright_package
+    config_directory = package.workspace / "config with space"
+    config_directory.mkdir()
+    configuration = config_directory / "pyrightconfig.json"
+    configuration.write_text(json.dumps({"reportAssignmentType": "warning"}), encoding="utf-8")
+    target = package.workspace / "selected.py"
+    target.write_text('value: int = "bad"\n', encoding="utf-8")
+    project_args = (
+        (project_option + str(configuration),)
+        if project_option.endswith("=")
+        else (project_option, str(configuration))
+    )
+    args = (*project_args, "--level", "warning", "--warnings")
+    direct = native(native_pyright, package.workspace, (target,), ("--outputjson", *args))
+    assert direct.returncode == 1
+    code, response = invoke(package, (target,), args)
+    assert code == 1
+    assert_json_evidence(response, direct)
+
+
+def test_dangling_threads_cannot_replace_selected_input_with_discovery(
+    native_pyright: NativePyright,
+    pyright_package: PyrightPackage,
+) -> None:
+    package = pyright_package
+    selected = package.workspace / "selected.py"
+    selected.write_text("value: int = 1\n", encoding="utf-8")
+    (package.workspace / "unselected.py").write_text('value: int = "bad"\n', encoding="utf-8")
+    direct = native(native_pyright, package.workspace, (selected,))
+    assert direct.returncode == 0
+    code, response = invoke(package, (selected,), ("--threads",))
+    assert code == 0 and decision(response)["status"] == "passed"
+    assert_json_evidence(response, direct)
+
+
+def test_complete_oversized_selection_preserves_late_finding(
+    native_pyright: NativePyright,
+    pyright_package: PyrightPackage,
+) -> None:
+    package = pyright_package
+    targets = tuple(package.workspace / f"member_{index:03d}.py" for index in range(350))
+    for target in targets:
+        target.write_text("value: int = 1\n", encoding="utf-8")
+    targets[-1].write_text('value: int = "late error"\n', encoding="utf-8")
+    (package.workspace / "unselected.py").write_text("value: str = 123\n", encoding="utf-8")
+    command = subprocess.list2cmdline([str(path) for path in targets])
+    assert len(command.encode("utf-16-le")) // 2 > 32767
+    direct = subprocess.run(
+        [str(native_pyright.node), str(native_pyright.entrypoint), "--outputjson", "-"],
+        input="\n".join(str(path) for path in targets).encode("utf-8"),
+        cwd=package.workspace,
+        capture_output=True,
+        timeout=30,
+    )
+    assert direct.returncode == 1
+    small_direct = native(native_pyright, package.workspace, (targets[0], targets[-1]))
+    small_code, small = invoke(package, (targets[0], targets[-1]))
+    assert small_code == 1
+    assert_json_evidence(small, small_direct)
+    code, response = invoke(package, targets)
+    assert code == 1 and decision(response)["status"] == "failed"
+    actual = assert_json_evidence(response, direct)
+    summary = actual["summary"]
+    assert isinstance(summary, dict) and summary["filesAnalyzed"] == len(targets)
+    diagnostics = actual["generalDiagnostics"]
+    assert isinstance(diagnostics, list) and len(diagnostics) == 1
+    finding = diagnostics[0]
+    assert isinstance(finding, dict) and Path(str(finding["file"])) == targets[-1]
 
 
 @pytest.mark.parametrize(
@@ -338,7 +452,18 @@ def test_native_unavailability(
                 assert stream.decode() in evidence_text(response)
 
 
-@pytest.mark.parametrize("args", [("--createstub", "sample"), ("-",), ("\x00",)])
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("--createstub", "sample"),
+        ("-",),
+        ("\x00",),
+        ("--watch",),
+        ("-w",),
+        ("-pw",),
+        ("--verifytypes", "sample"),
+    ],
+)
 def test_refuses_write_and_stdin_routes(
     pyright_package: PyrightPackage,
     args: tuple[str, ...],
@@ -350,6 +475,42 @@ def test_refuses_write_and_stdin_routes(
     assert code == 3 and decision(response)["reason"] == "unsupported_input"
     assert sorted(path.name for path in package.workspace.iterdir()) == ["sample.py"]
     assert target.read_text() == "value: int = 1\n"
+
+
+@pytest.mark.parametrize(
+    "args", [("--help",), ("-h",), ("-wh",), ("-ph",), ("--version",), ("--help\n",)]
+)
+def test_metadata_cannot_pass_source_analysis(
+    native_pyright: NativePyright,
+    pyright_package: PyrightPackage,
+    args: tuple[str, ...],
+) -> None:
+    package = pyright_package
+    target = package.workspace / "sample.py"
+    before = "value: int = 'incorrect'\n"
+    target.write_text(before, encoding="utf-8")
+    direct = native(native_pyright, package.workspace, (target,), args)
+    assert direct.returncode == 0
+    assert direct.stdout.strip()
+    code, response = invoke(package, (target,), args)
+    assert code == 3 and decision(response)["reason"] == "unsupported_input"
+    assert target.read_text(encoding="utf-8") == before
+
+
+def test_declared_version_is_checked_before_operation(
+    pyright_package: PyrightPackage,
+) -> None:
+    package = pyright_package
+    declaration = package.root / "package.json"
+    metadata = json.loads(declaration.read_text(encoding="utf-8"))
+    metadata["dependencies"]["pyright"] = "0.0.0"
+    declaration.write_text(json.dumps(metadata), encoding="utf-8")
+    code, response = invoke(package, args=("--help",))
+    assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "pyright", "version": "1.1.408"}]
+    message = str(decision(response)["message"])
+    assert "actual=1.1.408" in message and "expected=0.0.0" in message
+    assert "evidence" not in response
 
 
 def test_dependency_resolution_uses_workspace_ancestors(
@@ -373,7 +534,7 @@ def test_dependency_resolution_uses_workspace_ancestors(
         (b"\xff", [], "invalid_value"),
         (b"[]", [], "wrong_type"),
         (
-            b'{"operation":"types","targets":["relative.py"],"args":[]}',
+            {"operation": "types", "targets": ["relative.py"], "args": []},
             ["targets", 0],
             "invalid_value",
         ),
@@ -381,11 +542,21 @@ def test_dependency_resolution_uses_workspace_ancestors(
 )
 def test_invalid_requests(
     pyright_package: PyrightPackage,
-    raw: bytes,
+    raw: bytes | dict[str, object],
     location: list[str | int],
     reason: str,
 ) -> None:
-    code, response = invoke(pyright_package, raw=raw)
+    payload = (
+        raw
+        if isinstance(raw, bytes)
+        else json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(pyright_package.workspace.parent)},
+                **raw,
+            }
+        ).encode()
+    )
+    code, response = invoke(pyright_package, raw=payload)
     assert code == 2
     assert response == {
         "reason": "invalid_request",

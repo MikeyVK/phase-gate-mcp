@@ -83,6 +83,7 @@ def project_selection_check(row: CheckExecution[SelectionCheckResponse]) -> Sele
                 observed.failure.message,
             )
             termination = observed.termination_problem
+            evidence = observed.preceding_response
         elif isinstance(observed, InvocationCancelled):
             reason, message = "interrupted", "Check execution was interrupted."
             termination = observed.termination_problem
@@ -105,6 +106,8 @@ def project_selection_check(row: CheckExecution[SelectionCheckResponse]) -> Sele
                 )
                 evidence, external = response.evidence, response.external_tools
                 coverage, required = response.coverage, response.required_targets
+    if observed is not None:
+        message = observed.message_with_cleanup(message)
     return SelectionCheckResult(
         check_id=row.check_id,
         status=status,

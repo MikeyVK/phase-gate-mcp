@@ -8,12 +8,14 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 if TYPE_CHECKING:
     import pytest
 
-_KEYS = frozenset({"operation", "targets", "args"})
+_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 
 
@@ -31,7 +33,25 @@ def _invalid(location: list[str | int], code: str) -> dict[str, object]:
     return {"reason": "invalid_request", "details": [{"location": location, "code": code}]}
 
 
-def _validate(value: object) -> tuple[tuple[str, ...], tuple[str, ...]] | dict[str, object]:
+def _validate_execution_context(value: object) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return _invalid(["execution_context"], "wrong_type")
+    unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
+    if unknown:
+        return _invalid(["execution_context", unknown[0]], "unknown_field")
+    if "scratch_directory" not in value:
+        return _invalid(["execution_context", "scratch_directory"], "missing_field")
+    directory = value["scratch_directory"]
+    if not isinstance(directory, str):
+        return _invalid(["execution_context", "scratch_directory"], "wrong_type")
+    if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
+        return _invalid(["execution_context", "scratch_directory"], "invalid_value")
+    return None
+
+
+def _validate(
+    value: object,
+) -> tuple[tuple[str, ...], tuple[str, ...], Path] | dict[str, object]:
     if not isinstance(value, dict):
         return _invalid([], "wrong_type")
     unknown = sorted(str(key) for key in set(value) - _KEYS)
@@ -40,6 +60,9 @@ def _validate(value: object) -> tuple[tuple[str, ...], tuple[str, ...]] | dict[s
         return _invalid([unknown[0]], "unknown_field")
     if missing:
         return _invalid([missing[0]], "missing_field")
+    context_issue = _validate_execution_context(value["execution_context"])
+    if context_issue is not None:
+        return context_issue
     if not isinstance(value["operation"], str):
         return _invalid(["operation"], "wrong_type")
     if value["operation"] != "tests":
@@ -54,7 +77,11 @@ def _validate(value: object) -> tuple[tuple[str, ...], tuple[str, ...]] | dict[s
                 not item or "\x00" in item or _ABSOLUTE_PATH.fullmatch(item) is None
             ):
                 return _invalid([field, index], "invalid_value")
-    return tuple(value["targets"]), tuple(value["args"])
+    return (
+        tuple(value["targets"]),
+        tuple(value["args"]),
+        Path(value["execution_context"]["scratch_directory"]),
+    )
 
 
 def _response(
@@ -110,7 +137,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
     validated = _validate(value)
     if isinstance(validated, dict):
         return validated, 2
-    targets, args = validated
+    targets, args, scratch_directory = validated
     if any("\x00" in item for item in args):
         return _unavailable("unsupported_input", "Native arguments may not contain NUL.")
     if any(item in {"-h", "--help", "-V", "--version"} for item in args):
@@ -140,9 +167,60 @@ def _run(value: object) -> tuple[dict[str, object], int]:
             evidence=version_evidence,
         )
     version = match[1]
+    declaration = Path(__file__).with_name("requirements.txt")
+    try:
+        pins = re.findall(
+            r"(?m)^pytest==([^\s;#]+)\s*(?:#.*)?$", declaration.read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeError) as exc:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Pytest dependency declaration could not be read: {declaration}: {exc}",
+            version,
+        )
+    if len(pins) != 1:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Pytest dependency declaration requires one exact main-tool pin: {declaration}",
+            version,
+        )
+    expected_version = pins[0]
+    if version != expected_version:
+        return _unavailable(
+            "dependency_unavailable",
+            f"Pytest version is unsupported: observed={version}, expected={expected_version}.",
+            version,
+        )
+    arguments = (*targets, *args)
+    if any(
+        any(char in token for char in "\r\n\v\f\x1c\x1d\x1e\x85\u2028\u2029") for token in arguments
+    ):
+        return _unavailable(
+            "unsupported_input",
+            "Pytest argument-file tokens may not contain line separators.",
+            version,
+        )
+    try:
+        encoded_arguments = "".join(token + "\n" for token in arguments).encode("utf-8")
+    except UnicodeError as exc:
+        return _unavailable(
+            "unsupported_input",
+            f"Pytest argument-file tokens are not representable in UTF-8: {exc}",
+            version,
+        )
+    argument_file = scratch_directory / f"pytest-{uuid4()}.args"
+    try:
+        with argument_file.open("xb") as stream:
+            stream.write(encoded_arguments)
+    except OSError as exc:
+        return _unavailable(
+            "execution_error",
+            f"Pytest argument-file preparation failed: {argument_file}: {exc}",
+            version,
+        )
     try:
         result = subprocess.run(
-            [sys.executable, __file__, "--native", *targets, *args],
+            [sys.executable, __file__, "--native", f"@{argument_file}"],
             capture_output=True,
             check=False,
         )

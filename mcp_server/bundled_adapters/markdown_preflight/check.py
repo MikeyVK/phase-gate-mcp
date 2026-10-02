@@ -8,7 +8,7 @@ import re
 import sys
 from pathlib import Path
 
-_REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args"})
+_REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args", "execution_context"})
 _LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 _H1_PATTERN = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
@@ -49,6 +49,21 @@ def _validate_request(value: object) -> tuple[str, str, str, tuple[str, ...]] | 
     missing = sorted(_REQUEST_KEYS - keys)
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
+    context = value["execution_context"]
+    if not isinstance(context, dict):
+        return _invalid([_issue(["execution_context"], "wrong_type")])
+    unknown_context = sorted(str(key) for key in set(context) - {"scratch_directory"})
+    if unknown_context:
+        return _invalid(
+            [_issue(["execution_context", key], "unknown_field") for key in unknown_context]
+        )
+    if "scratch_directory" not in context:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "missing_field")])
+    scratch = context["scratch_directory"]
+    if not isinstance(scratch, str):
+        return _invalid([_issue(["execution_context", "scratch_directory"], "wrong_type")])
+    if not scratch or "\x00" in scratch or _ABSOLUTE_PATH.fullmatch(scratch) is None:
+        return _invalid([_issue(["execution_context", "scratch_directory"], "invalid_value")])
     operation = value["operation"]
     if not isinstance(operation, str):
         return _invalid([_issue(["operation"], "wrong_type")])

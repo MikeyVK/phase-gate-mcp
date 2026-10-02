@@ -28,6 +28,7 @@ from mcp_server.core.interfaces.execution import (
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_selection import CheckSelectionError, CheckSelectionFailureReason
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager, FixSelectionRequest
+from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.models import (
     AdapterCallFailure,
     AdapterCallFailureReason,
@@ -45,8 +46,9 @@ from mcp_server.execution.models import (
     TerminationProblem,
 )
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
-from mcp_server.execution.protocol import AdapterResponseContract
+from mcp_server.execution.protocol import AdapterRequestContract, AdapterResponseContract
 
+TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
 
 
@@ -90,7 +92,8 @@ class RecordingRuntime(AdapterProcessRuntime):
         *,
         launch: AdapterLaunch,
         workspace_root: Path,
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
@@ -438,7 +441,9 @@ async def test_cancellation_before_call_has_no_fabricated_attempt(
 
 class NativeRuntime(AdapterProcessRuntime):
     def __init__(self, source: Path) -> None:
-        super().__init__(AsyncioProcessBackend())
+        super().__init__(
+            AsyncioProcessBackend(), FileInvocationScratch(source.parent / "invocations")
+        )
         self.source = source
         self.observed: list[bytes] = []
 
@@ -447,7 +452,8 @@ class NativeRuntime(AdapterProcessRuntime):
         *,
         launch: AdapterLaunch,
         workspace_root: Path,
-        request: BaseModel,
+        request: TRequest,
+        request_contract: AdapterRequestContract[TRequest],
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
@@ -456,6 +462,7 @@ class NativeRuntime(AdapterProcessRuntime):
             launch=launch,
             workspace_root=workspace_root,
             request=request,
+            request_contract=request_contract,
             response_contract=response_contract,
             timeout_seconds=timeout_seconds,
         )
