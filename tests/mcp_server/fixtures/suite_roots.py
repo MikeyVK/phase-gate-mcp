@@ -110,10 +110,10 @@ def suite_roots(tmp_path: Path) -> SuiteRoots:
 
 @pytest.fixture
 def legacy_suite_roots(suite_roots: SuiteRoots, pytestconfig: pytest.Config) -> SuiteRoots:
-    """Copy actual legacy sources for retained consumers, without changing the process."""
+    """Copy current delivered sources into isolated roots for existing consumers."""
     source = pytestconfig.rootpath / suite_roots.server.name
     copytree(source / "config", suite_roots.config, dirs_exist_ok=True)
-    copytree(source / "templates", suite_roots.templates, dirs_exist_ok=True)
+    copytree(source / "template_suite", suite_roots.templates, dirs_exist_ok=True)
     return suite_roots
 
 
