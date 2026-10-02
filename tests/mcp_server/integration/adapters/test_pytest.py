@@ -76,13 +76,13 @@ def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
 
 
 def native(
-    case: NativeCase, targets: list[str], args: list[str]
+    case: NativeCase, targets: list[str], args: list[str], *, timeout_seconds: float = 45
 ) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
         [sys.executable, "-m", "pytest", *targets, *args],
         cwd=case.workspace,
         capture_output=True,
-        timeout=45,
+        timeout=timeout_seconds,
     )
 
 

@@ -190,7 +190,9 @@ def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
     assert len(markers) == 1 and ast.unparse(markers[0].targets[0]) == "pytestmark"
     assert not any(isinstance(item, ast.ClassDef) for item in tree.body)
     native_case.source.write_text(output, encoding="utf-8")
-    result = native(native_case, [str(native_case.source)], [])
+    # The full eight-worker suite can exceed 45 seconds during nested Pytest startup.
+    # Keep a finite budget for this rendered-template operation without weakening assertions.
+    result = native(native_case, [str(native_case.source)], [], timeout_seconds=120)
     assert result.returncode == 0, result.stdout.decode(errors="replace")
     assert b"3 passed" in result.stdout
 

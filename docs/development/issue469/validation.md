@@ -175,3 +175,29 @@ The sole failure was `test_explicit_json_and_filesystem_components_execute_with_
 The skip is an existing manual proxy-restart test requiring RUN_MANUAL_TESTS. The XPASS is an existing xfail(strict=False) test. Neither marking was introduced by this work. All QA DTOs were fully paged and hash-verified; these facts are attributed to the independent review, not a producer replay of its server-local caches.
 
 Open P2: investigate the conflicting native result and document an evidence-backed cause and disposition. Preserve any new traceback before the cache session closes. Validation does not patch; a required correction must return to Implementation. No Validation-to-Documentation approval has been granted.
+
+## Causal reproduction and bounded test-harness maintenance
+
+A new unchanged full configured run on 8bbd9dbc reproduced the same failing test and retained its complete failure section before the SDK session closed. Receipt `e611b3cd45574ed99795a959255ac689`: 798021 Unicode characters; UTF-8 SHA256 `a3993899184ebc675b3426a2cb80763e932fe8d2875704c3be45ce66f1b26d97`; 1 failed, 2774 passed, 1 skipped, 1 xpassed, 229 warnings in 283.45 seconds. Configured arguments, all 2777 items, native prerequisites and eight workers were unchanged. Post-run health receipt `46e28948dfa648c9afac61fd9b36f8c3` was healthy and the session closed normally.
+
+The causally retained traceback is:
+
+```text
+test_pytest_integration_test.py:193
+  result = native(native_case, [str(native_case.source)], [])
+adapters/test_pytest.py:81
+  subprocess.run(..., capture_output=True, timeout=45)
+subprocess.py:556 -> communicate(timeout=timeout)
+subprocess.py:1646 -> raise TimeoutExpired(self.args, orig_timeout)
+subprocess.TimeoutExpired: [Python313/python.exe, -m, pytest,
+  .../pytest-7036/popen-gw5/test_explicit_json_and_filesys0/
+  native workspace/selected/test_native.py] timed out after 45 seconds
+```
+
+This proves exhaustion of the direct native comparison helper's finite 45-second budget during the complete concurrent suite; the test invokes no adapter. It does not retrospectively recover the first QA run's lost traceback or prove its unobserved exact cause. A representative concurrency probe of template/Pytest/Mypy/Pyright files passed 224 tests with 17 warnings in 93.56 seconds, receipt `27943c9538cd4ff0b48a9949c5525dc4`; that pass is supplementary and does not erase either full failure.
+
+The audited return to Implementation, receipt `1b88beb9a1284fac8cfbb446e7cb0109`, skipped zero gates. Mechanical test maintenance preserves the native comparison helper's default 45-second deadline and adds a keyword-only `timeout_seconds` argument. Only the existing rendered-template native execution requests 120 seconds. All native arguments, fixture contents, result/three-test assertions, plugins, outer workers and selection remain unchanged. The run remains finitely bounded; no retry, skip, serialized suite or altered success policy is introduced. Production code and Approved Strategy are unchanged.
+
+Two complete affected files passed 30 tests with 17 warnings in 39.29 seconds, receipt `4c9e109f58d0489289877bc72fde2d67`. Format, lint and Pyright passed both files, receipt `5c5150569d32403aa8558741bd4f6b0d`. An initial malformed check request combining profile and explicit checks was rejected before execution, receipt `036c08b26c7c454784fb398df37d4569`; the corrected explicit request supplies the actual gate evidence. No duplicate regression was added for this mechanical budget adjustment.
+
+Independent Implementation review and a fresh complete configured Validation run remain required. The open P2 is not declared closed by the producer.
