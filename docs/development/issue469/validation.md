@@ -375,3 +375,14 @@ Retain FAIL, correct the installed-consumer fixture via the implementation workf
 - [Planning 1.2](<planning.md>)
 
 
+
+
+## Additional Validation diagnosis — 2026-10-02
+
+The installed-distribution consumer was corrected in commit `43e071a601e231389f44ee1379f70a4dd95d579c`; its existing test passes independently. Validation still cannot progress: a second missed direct test consumer under D1_PROTOCOL was independently confirmed.
+
+`test_lock_wait_is_separate_from_validation_and_is_released` in `tests/mcp_server/integration/test_edit_operation_v3.py` replaces `runtime.invoke` with `held()`. The wrapper neither accepts nor forwards the new required `request_contract` parameter. The first task consequently fails before setting `entered`, while the test waits indefinitely for that event. The ordinary configured workers and native prerequisites were retained for the targeted reproduction with `-k lock_wait_is_separate_from_validation_and_is_released` and a 60-second deadline: `unavailable / timeout`, confirmed termination, [producer receipt](pgmcp://cache/runs/c8f106591bf94db39a8d59646f821785). Independent QA reproduced the same timeout, receipt `ba57246a801a414f8d0ccf7752c97bb9`, and requires a return to Implementation for explicit signature/forwarding and bounded synchronization.
+
+The earlier selector `lock_wait_is_separate_from_edit_execution_deadline` selected zero tests ([receipt](pgmcp://cache/runs/af7b9aaa1583433faafff3e60fa85cce)); it is an invalid diagnosis and supplies no passing regression evidence. Additional SDK diagnostic attempts with 600- and 1800-second native budgets also timed out with confirmed termination. The SDK process ran under a different local account, so these attempts do not establish equivalent Validation prerequisites or successful full-suite evidence. Increasing the execution budget does not repair the identified fixture mismatch.
+
+Validation status remains FAIL. No forward gate is waived; the full configured suite must complete after the consumer correction and renewed independent Implementation review.
