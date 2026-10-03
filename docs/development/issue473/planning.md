@@ -3,7 +3,7 @@
 # Issue 473 — First-call Template Quality Planning
 
 **Status:** PLANNING — independent review requested
-**Version:** 0.1
+**Version:** 0.2
 **Last Updated:** 2026-10-03
 
 ## Authority, outcome and scope
@@ -65,11 +65,23 @@ After an objectively satisfied intermediate cycle, use `transition_cycle(to_cycl
 | Changed production Python | `run_checks(scope="targets", targets=[actual changed production paths], profile="python_review")` | Configured format/lint/Mypy/Pyright; fix actual applicable findings using the typing playbook |
 | Changed test/fixture Python | `run_checks(scope="targets", targets=[actual changed test paths], checks=["python_format","python_lint","python_pyright"])` | Test Mypy is not a required gate under the current documented policy |
 | Pristine Python scaffold examples with baseline-clean fragments | `run_checks(scope="targets", targets=[actual raw example paths], checks=["python_format","python_lint"])` | Generated native quality; diagnose caller findings separately, no universal typing/dependency claim |
-| Python syntax evidence if needed beyond scaffold preflight | `run_checks(scope="targets", targets=[actual raw example paths], checks=["python_syntax"])` | Syntax only |
-| TypeScript raw example | `run_checks(scope="targets", targets=[actual raw TS paths], checks=["typescript_syntax"])` | Preserve configured/native scope; fixture strict checks and caller dependencies are separate evidence |
+| Python syntax for actual scaffold examples | `scaffold_artifact(artifact_type=<selected Python family>, file_name=<exact basename.py>, target_path=<case location>, context=<discovered admitted context>, validation="enforce")`; read its complete cached receipt | Package `python_preflight` content route, with `python_syntax` row status passed; syntax only |
+| TypeScript syntax for actual scaffold examples | `scaffold_artifact(artifact_type="typescript_dto", file_name=<exact basename.ts>, target_path=<case location>, context=<discovered admitted context>, validation="enforce")`; read its complete cached receipt | Package `typescript_preflight` content route, with `typescript_syntax` row status passed; strict fixture checks and caller dependencies are separate evidence |
 | Changed docs/affected links | `run_checks(scope="targets", targets=[actual changed docs and affected source consumers], profile="markdown_link_review")` | Offline fragments; no external-link reachability claim |
 | Existing tests listed per cycle | `run_tests(scope="targets", targets=[listed existing paths], tests=["python_tests"])` | Native configured options remain in force; do not replace them for convenience |
 | Isolated real fix use | `apply_fixes(scope="targets", targets=[isolated instance], fixes=["python_format","python_lint"])` | Read ordered results and actual changes; preserve pristine output and explicitly recheck |
+
+### Syntax evidence uses the existing content boundary
+
+The `python_syntax` and `typescript_syntax` bindings are content-only. Their presence in `checks.yaml` does not admit them to `run_checks`, whose selector requires a selection-capable binding. The two syntax rows above intentionally prescribe actual scaffold calls, not selection requests. Do not build a new adapter/tool contract, invoke a native syntax command in the shell, or bypass selection validation.
+
+For every applicable actual minimal/filled or syntax-relevant boundary scaffold, retain and read the full `scaffold_artifact` cached DTO. Record the exact request/context and selected output profile, the syntax row's `check_id`, status/reason/message and available native evidence/invocation facts, including native identity/version when reported. The configured Python packages select `python_preflight`; TypeScript DTO selects `typescript_preflight`. The existing content executor validates the rendered content before persistence.
+
+A passing syntax claim requires the corresponding syntax row to be passed. Check operation success, `validation_status`, `written` and individual rows separately. A file written under report policy, successful transport, missing/empty check list or unavailable native dependency does not prove syntax. Keep negative/operational outcomes and their diagnostics. Missing required syntax evidence blocks the cycle; do not substitute a different gate or silently expand the tools.
+
+For C_CODE, the already selected `test_typescript_artifact.py` supplies additional native AST/strict-compilation/behavior evidence in its provisioned fixture. The already selected Python family tests provide their existing AST/native semantic assertions where present. Run these via `run_tests` and preserve their complete receipts. Fixture results do not replace public scaffold-preflight evidence for the actual manual examples, nor certify arbitrary caller dependencies or a new TypeScript style baseline. No new tests are added for this correction.
+
+This is the targeted Planning 0.2 response to the independent P2/NOGO on commit `2f1d061`. The producer confirmed the content/selection distinction from both adapter manifests, `CheckSelector.select`'s selection admission and `CheckService.run_content`; it changes evidence routing only. Cycle numbers, IDs/descriptions, exit criteria, dependencies and approved syntax obligations remain unchanged. Independent QA determines whether the P2 is closed.
 
 The listed test sets are the default minimum impacted existing coverage. If a file does not change or a previous result remains fresh, reuse it with a source-based reason. If an additional existing consumer is invalidated, include its narrow coverage and record the reason. A shared root change affects the concrete family suite even when individual package files are untouched. Do not call this branch-wide Validation.
 
@@ -336,9 +348,11 @@ Planning-phase verification is limited to the authored document's enforce prefli
 
 ## Planning hand-over and evidence
 
-The scaffolded Planning nucleus and completed plan used enforce Markdown validation. The completed preflight passed without issues (`pgmcp://cache/runs/afa1f9fe4f5f4aa8b6d8a332df0264dd`). The configured targeted offline link review passed: 20 successful, 0 errors, 0 excluded, Lychee 0.24.2 (`pgmcp://cache/runs/f23dc0a36cb949f488d270588bd2dba5`). Complete DTOs were read; these checks do not certify implementation behavior.
+The scaffolded Planning nucleus and completed plan used enforce Markdown validation. The completed preflight passed without issues (`pgmcp://cache/runs/afa1f9fe4f5f4aa8b6d8a332df0264dd`). The configured targeted offline link review passed: 20 successful, 0 errors, 0 excluded, Lychee 0.24.2 (`pgmcp://cache/runs/f23dc0a36cb949f488d270588bd2dba5`). Complete DTOs were read; these initial Planning 0.1 checks do not certify implementation behavior. Revision 0.2 has its own narrow document verification below.
 
 The save returned four cycles and 20 total deliverables: 15 implementation deliverables, three Validation and two Documentation (`pgmcp://cache/runs/e90969dc8096479eb07ef69b6a6e67a9`). Complete `get_project_plan` readback (`pgmcp://cache/runs/4423ca4c6e2c4fa2b9066786ba898873`) exactly matched the submitted payload for cycle numbers/names, all 20 unique IDs/descriptions, exit criteria and later-phase deliverables. The authored tables/exit criteria were generated from those same data. Dependencies and manual obligations are explicitly documented because the stored schema has no dependency field.
+
+Revision 0.2 enforce preflight passed without issues (`pgmcp://cache/runs/a34f5f7d36b54da88ba6b62e532150b4`); its targeted configured offline link review passed with 24 successful links, 0 errors and 0 excluded (`pgmcp://cache/runs/28544fe2a9a84a58abe43cc9aedf5dbf`). Both complete DTOs were read. Fresh project-plan readback (`pgmcp://cache/runs/5931750f875e41e7bd23dbd327984129`) confirms unchanged stored cycles; all cycle names, deliverable IDs/descriptions and exit criteria still match this document, so no deliverables rewrite is needed. This is document/source verification, not syntax proof for future implementation outputs.
 
 Pre-commit reality check: each Design obligation has a cycle/evidence owner; shared admission/rendering and fixture responsibility are included; code/document inputs migrate with their correction; all 19 families and 38 final pairs are accounted for; no new test suite/runtime gate or generic476 work is scheduled. The plan and saved cycle payload derive from the same data. Implementation has not begun.
 
@@ -359,11 +373,11 @@ Pre-commit reality check: each Design obligation has a cycle/evidence owner; sha
 - Root cause and approved correction map to C_SHARED, C_CODE and C_DOCS; C_RECONCILE owns active-consumer and evidence closure.
 - Human-directed actual scaffolding/manual inspection and valuable existing coverage replace any extra automated content/regression suite.
 - Structured save/readback completed: four cycles and 20 total deliverables, exactly matching the submitted inventory; 20 unique IDs.
-- Completed enforce preflight passed; targeted offline link review: 20 successful, 0 errors, 0 excluded. No implementation or broad tests were run for this Planning document.
+- Revision 0.2 enforce preflight passed; targeted offline link review: 24 successful, 0 errors, 0 excluded. Stored cycle payload is unchanged and still matches. No implementation or broad tests were run for this Planning document.
 
 #### Open Work
 
-- Independent Planning review and authorized Implementation entry.
+- Targeted independent re-review of Planning 0.2's content syntax evidence routes and authorized Implementation entry.
 - Actual cycle execution must prove all planned objectives and disclose findings/limitations; broad suite and gates remain Validation work.
 
 #### Review Request
@@ -380,6 +394,10 @@ Pre-commit reality check: each Design obligation has a cycle/evidence owner; sha
 - [Type Checking Playbook](../../coding_standards/TYPE_CHECKING_PLAYBOOK.md)
 - [Execution tool reference](../../reference/tools/quality.md)
 - [Configured checks](../../../.pgmcp/config/checks.yaml)
+- [Selection admission](../../../mcp_server/execution/check_selection.py)
+- [Existing content executor](../../../mcp_server/execution/check_service.py)
+- [Python syntax capability](../../../mcp_server/bundled_adapters/python_syntax/manifest.yaml)
+- [TypeScript syntax capability](../../../mcp_server/bundled_adapters/typescript_syntax/manifest.yaml)
 - [Configured tests](../../../.pgmcp/config/tests.yaml)
 - [Configured fixes](../../../.pgmcp/config/fixes.yaml)
 - [Bug workflow contract](../../../.pgmcp/config/contracts.yaml)
@@ -393,3 +411,4 @@ Pre-commit reality check: each Design obligation has a cycle/evidence owner; sha
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | @imp planner (Codex) | Four correction cycles with matching structured deliverables, bounded existing checks, actual scaffold/manual evidence, active consumer closure and current-tool findings obligations. |
+| 0.2 | 2026-10-03 | @imp planner (Codex) | Replace unsupported syntax selections with existing scaffold content-preflight receipts and already selected family-test evidence, retaining cycle payload and syntax obligations. |
