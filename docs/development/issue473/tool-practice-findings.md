@@ -29,11 +29,11 @@ Safe workaround for authored reports: ordinary parenthesized relative destinatio
 
 Status: practical client/read-boundary friction, no unsupported product-fault claim. The complete resolved Python class schema is 106874 Unicode codepoints. An ordinary resource read was incomplete and could not be parsed as JSON. The documented `?offset=...&limit=5000` route returned contiguous windows with stable run ID, length and SHA-256; assembled content verified against e8003eec64bf4016a4d07908e26fd7c563949324e4e699c1f9b1bff98846ff53 and parsed successfully.
 
-Impact: agents must implement/observe bounded resource reading for resolved schemas and verbose native results. Exact window-reading behavior is documented by `pgmcp://docs/cache-reading`; this supported path worked. Cache lifetime is transient and fingerprints must be refreshed after a server restart. Preserve durable factual evidence before cache loss. The producer now uses verified windows; no result is inferred from the presented summary alone.
+Impact: agents must implement/observe bounded resource reading for resolved schemas and verbose native results. Exact window-reading behavior is documented by `pgmcp://docs/cache-reading`; this supported path worked. Cache lifetime is transient and fingerprints must be refreshed after a server restart. Preserve durable factual evidence before cache loss. The initial collector independently verified the assembled schema hash. Later root collections check contiguous windows, stable receipt hashes and full lengths before parsing, without independently recomputing every receipt SHA. No native result is inferred from the presented summary alone.
 
 ## Coverage limitations and remaining work
 
-Fix and derived-tool routes still require actual evidence in C_RECONCILE. Syntax success does not certify arbitrary dependencies or final style. Markdown passed status does not erase warning issues. Shared fixture/native checks do not substitute for the actual public first-output pairs. Complete workspace tests and branch gates belong to Validation.
+At the initial C_SHARED observation, fix and derived-tool routes still required evidence. The closure below now records the actual fix/check routes and bounded derived-route assessment. Syntax success does not certify arbitrary dependencies or final style. Markdown passed status does not erase warning issues. Shared fixture/native checks do not substitute for the actual public first-output pairs. Complete workspace tests and branch gates belong to Validation.
 
 ## C_SHARED fix route
 
@@ -131,3 +131,24 @@ Observed during C_DOCS: the root client refreshed the server/catalog after sourc
 ### C_DOCS final route refresh
 
 Actual final public scaffolds: 20 pairs plus six boundaries, all written with their individual document/body/message preflight rows passed. Existing template/install tests: 47 passed, 1 warning, 67.13s; actual contracts/docflow consumers: 2 passed, 22 deselected, 9 warnings, 2.36s. Earlier 69.79s/2.23s runs remain historical evidence. Exact final requests, complete DTOs, source identity and file effects are in first-output-evidence.md. Manual reading found substantive presentation defects despite passing content preflights; those preflights prove their narrow configured responsibilities, not all document structure or caller facts.
+
+## C_RECONCILE current-tool verdict and route coverage
+
+The currently upgraded tools proved useful for real implementation: they discover closed contexts, reject stale inputs before writes, run configured content preflights, preserve individual native outcomes and arguments, apply ordered real fixes and expose evidence through resources. Those routes do not replace manual output review; passing syntax/Markdown preflight did not detect the substantive decision/table/list/revision presentation defects corrected in C_DOCS. The observations below describe current correctness and usability, with no numerical or causal comparison against pre-460 behavior.
+
+| Route | Actual exercised evidence | Limits / disposition |
+| --- | --- | --- |
+| scaffold_schema | Complete resolved inputs/identities for all 19 families; final code graph freshness readback. | Large schemas require cache windows (F2); refresh is per client (F7). |
+| scaffold_artifact | All 38 final first-call pairs plus boundary/presence/rejection cases; written/status/individual rows inspected. | Syntax is not arbitrary dependency execution or semantic quality; F1 false link warnings remain. |
+| safe_edit_file | Real source/schema/template/test/doc edits; enforce/report write/status inspected. | Jinja report profile has no admission check; real refresh/bootstrap supplies admission. Shared schema initialization friction F5 remains. |
+| run_checks | Actual generated Python format/lint, production format/lint/Mypy/Pyright, test format/lint/Pyright and offline Markdown links. | Syntax adapters are content-only and cannot be selected; full branch checks belong to Validation. |
+| run_tests | Genuine context-migration failures, corrected existing family/native/CLI/installed/docflow results with configured args. | F3 verbose failures exceed response budgets; bounded traceback request recovers usable negative evidence. No unavailable response is counted as RED/pass. |
+| apply_fixes | Real source formatting and isolated generated-output lint/format probes with readback and explicit recheck. | Separate instances preserve pristine first outputs; fixes do not certify the original generated output. |
+| get_work_context / get_project_plan / cycle / commit | Actual stored deliverable readback, active branch/cycle instructions, intermediate progression and scoped commits. | Lifecycle replies are operation facts, not independent QA approval. |
+| create-issue derived route | Actual Issue body preflights/output, live context/source consumers reviewed, workflow and mirror reconciled. | No live GitHub issue was created solely as a probe. Publication source review establishes body/envelope responsibility, not end-to-end remote publication. |
+
+Current findings F1–F7 have individual reproductions, impact, uncertainty and disposition above. Coordination should prioritize the confirmed bootstrap/proxy diagnostic and recovery failure F6: corrected template admission restores this branch, while the tool defect still needs a separate owned repair. The human requirement that invalid templates retain diagnostics and a recovery path is explicit. Other candidates are Markdown link parsing, schema-source authoring, bounded-failure usability and client/restart guidance. F2/F4/F7 distinguish supported usage constraints or producer sequencing from confirmed product defects. Issue #476 remains separately scoped to generic schema/template consumption; #473 corrected its concrete packages and does not build generic coverage enforcement.
+
+The initial implementation-report scaffold request omitted required purpose/summary and used section.title instead of the discovered section.heading; the public tool rejected it with context_invalid and no write. The immediately corrected admitted request succeeded. This was a producer input error, not a tool finding, and is excluded from product-fault claims.
+
+All findings are documentation for later triage; no unrelated CLI/proxy/adapter repair was added. No unresolved known #473 correction blocker is intentionally hidden; independent QA may identify further blockers. Full configured tests, branch gates, later documentation/ready progression and merge remain outstanding at this hand-over.

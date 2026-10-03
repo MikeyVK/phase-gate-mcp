@@ -109,3 +109,35 @@ All 26 final outputs have first-line technical provenance and exactly one termin
 The contract RED commit 1e4915f9a39217b3f9e3681c3ebd45fa3b7dabe4 had 23 failures / 11 passes / 1 warning (9.56s), exposing migrated required metadata inputs against old schemas. The final planned 12-file existing subset passed 47 tests / 1 existing Pydantic warning / 67.13s, receipt pgmcp://cache/runs/e3affeeb5eaf47f19c3dbda134bf192e. Two directly invalidated workflow consumers passed / 22 deselected / 9 existing warnings / 2.36s, receipt pgmcp://cache/runs/f7f2436d310942839a512e80f39cce14. These consumers cover actual live contracts loading and the nineteen-workflow docflow variants. Changed 12 test files passed format/lint/Pyright (receipt pgmcp://cache/runs/07449acf87b0419791230c7279b7b989); later changes were Jinja-only, so those Python gates remain fresh. No tests/assertions were added. Complete native DTOs and exact calls are preserved in the final evidence appendix.
 
 All seven full-document schemas reject removed status aliases; missing metadata and empty revisions are rejected without writing. Contexts/examples and directly affected existing tests/consumers were migrated in this cycle. A duplicated fixture metadata record was removed while preserving the fixture's originally authored facts. Final links are checked separately before commit. C_RECONCILE and independent Implementation review remain; full configured tests and branch gates belong to Validation.
+
+## Final Implementation inspection index
+
+This section supersedes earlier Open Work and pending-evidence statements above; they record the chronology of the earlier cycles. All four planned cycles are complete for producer review. No independent approval is claimed. Final inventory: 19 concrete families, 38 untouched minimal/filled outputs plus separately identified boundary/failure/fix instances. Each pair's exact context, full preflight receipt, lossless output and SHA256 are available in first-output-evidence.md. Working outputs live in .pgmcp/temp/issue473/ and are disposable; the durable archive is authoritative if those files are removed.
+
+| Package | Minimal / filled output basenames | Current package fingerprint | Freshness |
+| --- | --- | --- | --- |
+| python_class | c2_verified_python_class_minimal / filled.py | L31zRqmDoswXaVMQ | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| python_protocol | c2_verified_python_protocol_minimal / filled.py | MpC6qp0nvDBiTlPI | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| python_pydantic_config | c2_verified_python_pydantic_config_minimal / filled.py | a4L8t8DsfHodDFUk | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| python_pydantic_dto | c2_verified_python_pydantic_dto_minimal / filled.py | j0XU3OMmFDRe3K-S | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| python_adapter | c2_verified_python_adapter_minimal / filled.py | 6N8mGmWdBDN9kiMt | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| python_worker | c2_verified_python_worker_minimal / filled.py | WNw6udi_l_fdddh8 | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| pytest_unit_test | c2_verified_pytest_unit_test_minimal / filled.py | 11emgLdo_Hku-aIQ | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| pytest_integration_test | c2_verified_pytest_integration_test_minimal / filled.py | uPJ3pSfUHtVF7jFS | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| typescript_dto | c2_verified_typescript_dto_minimal / filled.ts | EniV0La_ffqYvp3y | C4 complete schema readback matches both saved provenance records; graph unchanged. |
+| architecture | c3_final_architecture_minimal / filled.md | F3GiYxoJo0WTq92r | C3 final current graph; C4 changed docs only. |
+| research | c3_final_research_minimal / filled.md | lgBwxWMfTAmNNg_O | C3 final current graph; C4 changed docs only. |
+| design | c3_final_design_minimal / filled.md | YApsrGTQgBUKFez2 | C3 final current graph; C4 changed docs only. |
+| planning | c3_final_planning_minimal / filled.md | CscfYyDLqj0OeHml | C3 final current graph; C4 changed docs only. |
+| validation_report | c3_final_validation_report_minimal / filled.md | CT9NV5LmQjKHFGqX | C3 final current graph; C4 changed docs only. |
+| reference | c3_final_reference_minimal / filled.md | kaoepF5DpjMrctvM | C3 final current graph; C4 changed docs only. |
+| generic_doc | c3_final_generic_doc_minimal / filled.md | xoYbNuJbkallN_DM | C3 final current graph; C4 changed docs only. |
+| issue | c3_final_issue_minimal / filled.md | EvbPACzaNW6Nn54k | C3 final current graph; C4 changed docs only. |
+| pr | c3_final_pr_minimal / filled.md | hG0a9tLUxIzayxH4 | C3 final current graph; C4 changed docs only. |
+| commit | c3_final_commit_minimal / filled.txt | 0DJN6441j2dDAHAC | C3 final current graph; C4 changed docs only. |
+
+All nine code package fingerprints were rediscovered and complete schemas read in C4. The changed global suite identity reflects Markdown dependencies; it does not invalidate unchanged code graphs. Root read all 18 code outputs again with byte hashes and preserved original C1/C2 CRLF cases as lossless JSON. All 38 final outputs carry technical provenance and one terminal LF. The generated whitespace assessment includes direct semantic/manual reading, native Ruff evidence on the 16 clean Python pairs, and targeted Markdown list/fence/empty/presence/mixed-ending cases; it is not reduced to a Ruff-pass claim.
+
+Known consumers closed: changed class input contracts in concrete/shared existing tests, new metadata in full-document tests and current docflow contexts, CLI/delivered/installed admission-filter registration, public scaffolding example, and create-issue source/mirror. The two create-issue instruction bodies are identical after their harness front matter. Nested member descriptions, Pytest's intentionally retained module description and unrelated resource metadata are not renamed. Historical research/#460 examples remain historical. Template Library Usage, schema-template-maintenance guidance and configuration-loading reference were reviewed unchanged: their provenance statements concern technical identity and do not prohibit authored document metadata/history.
+
+C_RECONCILE is mechanical documentation/evidence closure, with no artificial RED, new content test or production change. Standards now describe required full-document facts, separate tracking envelopes, caller ownership and generated whitespace responsibilities. Full configured tests and broad gates remain Validation work. Independent @qa verifier review is requested against Implementation deliverables and preservation evidence before transition.

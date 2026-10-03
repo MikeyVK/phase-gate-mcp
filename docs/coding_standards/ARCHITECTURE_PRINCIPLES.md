@@ -335,7 +335,7 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 Assets that form a tight, logical unit should be co-located to maximize cohesion, even if they span different architectural layers. 
 
 **Binding rules:**
-- **Template Packages:** A Jinja2 template (presentation) and its artifact configuration YAML (domain/schema mapping) are intrinsically coupled. They must be bundled together in the `templates/` directory (e.g., with configs in `templates/config/`).
+- **Template Packages:** Keep each concrete template's manifest, context schema, policy, release version and root Jinja2 template together under the configured template-suite root (this workspace uses `.pgmcp/template_suite/`). Declare shared schema/template dependencies explicitly in the package graph. These assets form one distribution and admission unit; do not scatter their configuration into an unrelated directory.
 - **Legitimate Exception:** This is an explicit, legitimate exception to the strict separation implied by Principle 12 and 15. Because their distribution, versioning, and content are deeply intertwined, their physical bundling in one directory structure is justified and required to prevent drift and configuration scattering.
 
 ---

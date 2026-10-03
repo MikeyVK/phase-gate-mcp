@@ -14731,3 +14731,866 @@ Decision structure and labelled ordered-list first outputs passed their narrow n
   }
 }
 `````
+
+## C_RECONCILE lossless byte archive and code-graph freshness
+
+Readback on 2026-10-03 confirms all nine code package fingerprints match their C_CODE final output provenance. The suite-wide identity changed because Markdown dependencies changed; none of the code packages' reachable graph identities changed. Shared Python filter registration, Python imports/models and TypeScript helpers are unchanged after C_CODE. Therefore code syntax/style/native evidence remains valid without another scaffold or test run. The following lossless JSON records retain exact disk contents and hashes, including original C_SHARED padding failures and C_CODE literal/physical-CRLF boundaries. C_SHARED records are intermediate characterization only, not current document presentation proof.
+
+`````json
+{
+  "discovery": [
+    {
+      "type": "python_class",
+      "uri": "pgmcp://cache/runs/16c9ceb9c65a406db113cc37ac2d6700",
+      "package_version": "1.0.0",
+      "package_fingerprint": "L31zRqmDoswXaVMQ",
+      "success": true
+    },
+    {
+      "type": "python_protocol",
+      "uri": "pgmcp://cache/runs/cf7241f736634cf085902b4fd71a797d",
+      "package_version": "1.0.0",
+      "package_fingerprint": "MpC6qp0nvDBiTlPI",
+      "success": true
+    },
+    {
+      "type": "python_pydantic_config",
+      "uri": "pgmcp://cache/runs/375c63d763cf453fa72be8075d66d34b",
+      "package_version": "1.0.0",
+      "package_fingerprint": "a4L8t8DsfHodDFUk",
+      "success": true
+    },
+    {
+      "type": "python_pydantic_dto",
+      "uri": "pgmcp://cache/runs/e3b978fcf3e64e3cbd68715866e528e0",
+      "package_version": "1.0.0",
+      "package_fingerprint": "j0XU3OMmFDRe3K-S",
+      "success": true
+    },
+    {
+      "type": "python_adapter",
+      "uri": "pgmcp://cache/runs/248e90c17c9a4431a218bfd2062d8910",
+      "package_version": "1.0.0",
+      "package_fingerprint": "6N8mGmWdBDN9kiMt",
+      "success": true
+    },
+    {
+      "type": "python_worker",
+      "uri": "pgmcp://cache/runs/8ad1b230eed84141856a2e8da07d6647",
+      "package_version": "1.0.0",
+      "package_fingerprint": "WNw6udi_l_fdddh8",
+      "success": true
+    },
+    {
+      "type": "pytest_unit_test",
+      "uri": "pgmcp://cache/runs/5acb09cd261249449be407171f05e474",
+      "package_version": "1.0.0",
+      "package_fingerprint": "11emgLdo_Hku-aIQ",
+      "success": true
+    },
+    {
+      "type": "pytest_integration_test",
+      "uri": "pgmcp://cache/runs/083f450e02a74162a86c20e12b7ad292",
+      "package_version": "1.0.0",
+      "package_fingerprint": "uPJ3pSfUHtVF7jFS",
+      "success": true
+    },
+    {
+      "type": "typescript_dto",
+      "uri": "pgmcp://cache/runs/a15535b831104befa9de1e2d49fa922d",
+      "package_version": "1.0.0",
+      "package_fingerprint": "EniV0La_ffqYvp3y",
+      "success": true
+    }
+  ],
+  "outputs": [
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_pytest_integration_test_filled.py",
+      "content": "# pgmcp:v1 id=pytest_integration_test pv=1.0.0 pf=uPJ3pSfUHtVF7jFS sf=miQevm1LFgWRuTJ9\n\n\"Check a temporary file round trip.\"\n\n# Standard library\nfrom pathlib import Path\n\n\ndef test_file_round_trip(tmp_path: Path) -> None:\n    \"Write and read a temporary file.\"\n    source = tmp_path / \"input.txt\"\n    source.write_text(\"payload\", encoding=\"utf-8\")\n    assert source.read_text(encoding=\"utf-8\") == \"payload\"\n",
+      "bytes": 407,
+      "sha256": "21bf4522663a8184c51e761023f48e55282516c6ae30fb472ca22bd2dd51a56f"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_pytest_integration_test_minimal.py",
+      "content": "# pgmcp:v1 id=pytest_integration_test pv=1.0.0 pf=uPJ3pSfUHtVF7jFS sf=miQevm1LFgWRuTJ9\n\n\"Check a rendered integration result.\"\n\n\ndef test_total() -> None:\n    \"Add two values.\"\n    result = sum([2, 3])\n    assert result == 5\n",
+      "bytes": 225,
+      "sha256": "6ff4a444e5fce535a04bc3791c647c238f8b1de49b415be52d9445fe53194c89"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_pytest_unit_test_filled.py",
+      "content": "# pgmcp:v1 id=pytest_unit_test pv=1.0.0 pf=11emgLdo_Hku-aIQ sf=miQevm1LFgWRuTJ9\n\n\"Check serialized fixture content.\"\n\n# Standard library\nfrom pathlib import Path\n\n# Third party\nimport pytest\n\npytestmark = [pytest.mark.usefixtures(\"sample_path\")]\n\n\n@pytest.fixture(scope=\"function\", autouse=False)\ndef sample_path(tmp_path: Path) -> Path:\n    \"Write a temporary text file.\"\n    path = tmp_path / \"sample.txt\"\n    path.write_text(\"ready\", encoding=\"utf-8\")\n    return path\n\n\ndef test_sample_content(sample_path: Path) -> None:\n    \"Read the fixture file.\"\n    assert sample_path.read_text(encoding=\"utf-8\") == \"ready\"\n",
+      "bytes": 616,
+      "sha256": "bbbce5726cbf889abc197adca5b306033dd693ee5b233412da08170253be6a06"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_pytest_unit_test_minimal.py",
+      "content": "# pgmcp:v1 id=pytest_unit_test pv=1.0.0 pf=11emgLdo_Hku-aIQ sf=miQevm1LFgWRuTJ9\n\n\"Check a small arithmetic result.\"\n\n\ndef test_sum() -> None:\n    \"Add two values.\"\n    result = sum([2, 3])\n    assert result == 5\n",
+      "bytes": 212,
+      "sha256": "c621ab456ecf7ead3996a8a90f4d80f2233f87f7cd5085bfc41a3729ac22462e"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_adapter_filled.py",
+      "content": "# pgmcp:v1 id=python_adapter pv=1.0.0 pf=6N8mGmWdBDN9kiMt sf=miQevm1LFgWRuTJ9\n\n\"Market data adapter.\"\n\n# Standard library\nimport logging\n\n# Project\nfrom market_ports import PriceClient\n\nlogger = logging.getLogger(\"market.adapter\")\n\n\nclass PriceAdapter:\n    \"Adapts a price source.\"\n\n    def __init__(self, client: PriceClient) -> None:\n        self._client = client\n\n    def read_price(self, symbol: str) -> int:\n        \"Return the latest price.\"\n        return self._client.read_price(symbol)\n",
+      "bytes": 495,
+      "sha256": "baba17764ebccff4ba56a175b2c00ac3f3878a4bef2567457fe7c87e1f75109a"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_adapter_minimal.py",
+      "content": "# pgmcp:v1 id=python_adapter pv=1.0.0 pf=6N8mGmWdBDN9kiMt sf=miQevm1LFgWRuTJ9\n\n\"Adapts a price source.\"\n\n\nclass PriceAdapter:\n    \"Adapts a price source.\"\n\n    pass\n",
+      "bytes": 165,
+      "sha256": "60e7051eefd323cecddc437c96121aad2b0eb932774f0876bacb9b885d93621b"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_class_filled.py",
+      "content": "# pgmcp:v1 id=python_class pv=1.0.0 pf=L31zRqmDoswXaVMQ sf=miQevm1LFgWRuTJ9\n\n\"Module for PriceCalculator.\"\n\n# Standard library\nfrom decimal import Decimal\n\n\nclass PriceCalculator:\n    \"Calculates a notional value.\"\n\n    def notional(self, quantity: Decimal, unit_price: Decimal) -> Decimal:\n        \"Multiply quantity by unit price.\"\n        raise NotImplementedError\n",
+      "bytes": 368,
+      "sha256": "19682d70bcbcd7dc9dcabf764c79f2ad3c21b7f316f18d094c7d66d0a52ea609"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_class_minimal.py",
+      "content": "# pgmcp:v1 id=python_class pv=1.0.0 pf=L31zRqmDoswXaVMQ sf=miQevm1LFgWRuTJ9\n\n\"Calculates a notional value.\"\n\n\nclass PriceCalculator:\n    \"Calculates a notional value.\"\n\n    pass\n",
+      "bytes": 178,
+      "sha256": "6fdada655732a25f7a24b546a82ff19ca1ffe3a9a91abcfff1e6846cf1a971c0"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_protocol_filled.py",
+      "content": "# pgmcp:v1 id=python_protocol pv=1.0.0 pf=MpC6qp0nvDBiTlPI sf=miQevm1LFgWRuTJ9\n\n\"Contract for reading market prices.\"\n\n# Standard library\nfrom typing import Protocol\n\n\nclass PriceSource(Protocol):\n    \"Provides price data.\"\n\n    def read_price(self, symbol: str) -> int:\n        \"Return a price for one symbol.\"\n        ...\n\n    def close(self) -> None:\n        \"Release the source resources.\"\n        ...\n",
+      "bytes": 406,
+      "sha256": "11dcf9bf133f9c90af7a8eabdbd8bdd6cfd2a695d3902f1af2fc67852d92b33c"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_protocol_minimal.py",
+      "content": "# pgmcp:v1 id=python_protocol pv=1.0.0 pf=MpC6qp0nvDBiTlPI sf=miQevm1LFgWRuTJ9\n\n\"Provides price data.\"\n\n# Standard library\nfrom typing import Protocol\n\n\nclass PriceSource(Protocol):\n    \"Provides price data.\"\n\n    pass\n",
+      "bytes": 219,
+      "sha256": "5ce10e1ff3a87944e5c53b7529e2601fc03532e6895efd7a66cddecccc54674d"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_pydantic_config_filled.py",
+      "content": "# pgmcp:v1 id=python_pydantic_config pv=1.0.0 pf=a4L8t8DsfHodDFUk sf=miQevm1LFgWRuTJ9\n\n\"Risk controls for one strategy.\"\n\n# Third party\nfrom pydantic import BaseModel, ConfigDict, Field\n\n\nclass RiskSettings(BaseModel):\n    \"Risk settings.\"\n\n    model_config = ConfigDict(\n        extra=\"forbid\",\n        frozen=False,\n        json_schema_extra={\n            \"examples\": [\n                {\n                    \"enabled\": True,\n                    \"max_order_size\": 5,\n                    \"label\": \"primary\",\n                },\n            ],\n        },\n    )\n\n    enabled: bool = Field(\n        default=False,\n        description=\"Enable order submission.\",\n    )\n    max_order_size: int = Field(\n        default=0,\n        description=\"Maximum permitted order size.\",\n        ge=0,\n    )\n    label: str = Field(\n        default=\"\",\n        description=\"Optional operator label.\",\n        min_length=0,\n    )\n",
+      "bytes": 909,
+      "sha256": "d804d4ad4a3bb5abbe9068f6b8385f4a0b0216ab0b420229eae7ac1cde8000bf"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_pydantic_config_minimal.py",
+      "content": "# pgmcp:v1 id=python_pydantic_config pv=1.0.0 pf=a4L8t8DsfHodDFUk sf=miQevm1LFgWRuTJ9\n\n\"Risk settings.\"\n\n# Third party\nfrom pydantic import BaseModel, ConfigDict\n\n\nclass RiskSettings(BaseModel):\n    \"Risk settings.\"\n\n    model_config = ConfigDict(\n        extra=\"forbid\",\n        frozen=True,\n    )\n",
+      "bytes": 299,
+      "sha256": "5729d8273ed36f4e3c22d71f5c619cc4b1f1dfc986ae0b1a9088ddb7ce4585f7"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_pydantic_dto_filled.py",
+      "content": "# pgmcp:v1 id=python_pydantic_dto pv=1.0.0 pf=j0XU3OMmFDRe3K-S sf=miQevm1LFgWRuTJ9\n\n\"Validated market data.\"\n\n# Standard library\nimport datetime\n\n# Third party\nfrom pydantic import BaseModel, ConfigDict, Field\n\n\nclass PriceSnapshot(BaseModel):\n    \"A price snapshot.\"\n\n    model_config = ConfigDict(\n        extra=\"forbid\",\n        frozen=True,\n        json_schema_extra={\n            \"examples\": [\n                {\n                    \"symbol\": \"ABC\",\n                    \"mid\": 101.25,\n                },\n            ],\n        },\n    )\n\n    symbol: str = Field(\n        description=\"Instrument identifier.\",\n        min_length=1,\n    )\n    mid: float = Field(\n        description=\"Mid-market price.\",\n        gt=0,\n    )\n    observed_at: datetime.datetime = Field(\n        default_factory=datetime.datetime.now,\n        description=\"Observation time.\",\n    )\n",
+      "bytes": 863,
+      "sha256": "3cf8aefca35aee450fec9cdbbb5cd8b910db36a5f736c4ed1daa6fb198bb0b88"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_pydantic_dto_minimal.py",
+      "content": "# pgmcp:v1 id=python_pydantic_dto pv=1.0.0 pf=j0XU3OMmFDRe3K-S sf=miQevm1LFgWRuTJ9\n\n\"A price snapshot.\"\n\n# Third party\nfrom pydantic import BaseModel, ConfigDict\n\n\nclass PriceSnapshot(BaseModel):\n    \"A price snapshot.\"\n\n    model_config = ConfigDict(\n        extra=\"forbid\",\n        frozen=True,\n    )\n",
+      "bytes": 303,
+      "sha256": "0d52212529bb5c5d8986e329ea74cc3adf97cb430f7fe55852b38cd87b60c5bf"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_worker_filled.py",
+      "content": "# pgmcp:v1 id=python_worker pv=1.0.0 pf=WNw6udi_l_fdddh8 sf=miQevm1LFgWRuTJ9\n\n\"Module for PriceWorker.\"\n\n# Standard library\nimport logging\n\n# Project\nfrom market_ports import PriceClient\n\nlogger = logging.getLogger(\"market.worker\")\n\n\nclass PriceWorker:\n    \"Publishes a price update.\"\n\n    def __init__(self, client: PriceClient) -> None:\n        self._client = client\n\n    def process(self, symbol: str, value: int) -> None:\n        \"Publish the accepted price update.\"\n        self._client.publish(symbol, value)\n",
+      "bytes": 515,
+      "sha256": "b1c56d6dacb1b3e542ec842cb12bca9a4f42868621489abc1e328bf2b1b0a9c5"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_python_worker_minimal.py",
+      "content": "# pgmcp:v1 id=python_worker pv=1.0.0 pf=WNw6udi_l_fdddh8 sf=miQevm1LFgWRuTJ9\n\n\"Processes a price update.\"\n\n\nclass PriceWorker:\n    \"Processes a price update.\"\n\n    def process(self, value: int) -> int:\n        \"Return one accepted value.\"\n        return value\n",
+      "bytes": 260,
+      "sha256": "cad40fee56b9289e345d623caeecd4365553c339e45dc024954e49f56862b3ca"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_typescript_dto_filled.ts",
+      "content": "// pgmcp:v1 id=typescript_dto pv=1.0.0 pf=EniV0La_ffqYvp3y sf=miQevm1LFgWRuTJ9\n\n/**\n * A normalized market price.\n */\n\nimport type { Currency } from './money';\n\n/**\n * A price snapshot.\n */\nexport class PriceSnapshot implements PriceRecordContract {\n  /**\n   * Instrument identifier.\n   */\n  public readonly instrument: string;\n  public readonly currency: Currency;\n  public mid: number;\n  public declare note?: string | null;\n\n  constructor(data: {\n    instrument: string;\n    currency: Currency;\n    mid: number;\n    note?: string | null;\n  }) {\n    this.instrument = data.instrument;\n    this.currency = data.currency;\n    this.mid = data.mid;\n\n    if (\"note\" in data) {\n      this.note = data.note;\n    }\n  }\n}\n",
+      "bytes": 715,
+      "sha256": "4edfa54668286761b92057fa2b990219758cdd5a66fb8d101e200df9f2850c26"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c2_verified_typescript_dto_minimal.ts",
+      "content": "// pgmcp:v1 id=typescript_dto pv=1.0.0 pf=EniV0La_ffqYvp3y sf=miQevm1LFgWRuTJ9\n\n/**\n * A price snapshot.\n */\nexport class PriceSnapshot {\n  constructor(data: {}) {}\n}\n",
+      "bytes": 167,
+      "sha256": "d83f7a57195f77c44c8772f399299c5fb1ea46d20e3df876978898dcade9d375"
+    },
+    {
+      "path": "C:/temp/pgmcp/.pgmcp/temp/issue473/c1.python_class.padding.py",
+      "content": "# pgmcp:v1 id=python_class pv=1.0.0 pf=GRzDnCXYeq-Ux0vH sf=EtVV09H1wi7LX7HU\n\n\"\"\n\n\nclass BoundaryClass:\n    \"Class interior.\\x0d\\x0a\\x0d\\x0a  Indented.\"\n\n    def sample(self, value: str = \" \\x09\\x0aliteral interior\\x0d\\x0a \\x09\") -> str:\n        \"  Method text.\"\n        raise NotImplementedError\n",
+      "bytes": 296,
+      "sha256": "871a6deecd77596a1899e1ed4b2e53f8d0e3e20df7be442f1cf56b417db6f58f"
+    },
+    {
+      "path": "C:/temp/pgmcp/.pgmcp/temp/issue473/c1.generic_doc.padding.md",
+      "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=rhyxnjcE-yt08Bsz sf=EtVV09H1wi7LX7HU -->\n\n# Boundary preservation\n\n## Purpose\n\nPurpose retains a hard break.  \r\nNext line.\n\n## Summary\n\nA paragraph.\r\n\r\n    indented detail\r\n\r\n```text\r\nfence interior\r\n\r\nend\r\n```\n\n\n\n\n\n\n## Sections\n\n\n### Explicit empty\n\n\n**Content:**\n",
+      "bytes": 306,
+      "sha256": "48f0b1567e9dfeec2c2e481511a3d5b75e7f391742d12ec3e48c5c8df458560a"
+    },
+    {
+      "path": "C:/temp/pgmcp/.pgmcp/temp/issue473/c2_boundary_physical_unicode.py",
+      "content": "# pgmcp:v1 id=python_worker pv=1.0.0 pf=WNw6udi_l_fdddh8 sf=miQevm1LFgWRuTJ9\n\n\"Processes a price update.\"\n\n\nclass PriceWorker:\n    \"Processes a price update.\"\n\n    def process(self, value: int) -> int:\n        \"Return one accepted value.\"\n        text = \"left right\"\r\n\r\n        return value\n",
+      "bytes": 293,
+      "sha256": "d9199fef3267b61b69abaf0ccb3a9c32fd3350f7dd4f9f7360917fe49c138b2f"
+    },
+    {
+      "path": "C:/temp/pgmcp/.pgmcp/temp/issue473/c2_boundary_literals.py",
+      "content": "# pgmcp:v1 id=python_pydantic_config pv=1.0.0 pf=a4L8t8DsfHodDFUk sf=miQevm1LFgWRuTJ9\n\n\"Risk settings.\"\n\n# Third party\nfrom pydantic import BaseModel, ConfigDict, Field\n\n\nclass RiskSettings(BaseModel):\n    \"Risk settings.\"\n\n    model_config = ConfigDict(\n        extra=\"forbid\",\n        frozen=True,\n    )\n\n    label: str = Field(\n        default=\" \\x0d\\x0aleft right\\x0a \",\n        description=\"Literal label.\",\n    )\n    nothing: str | None = Field(\n        default=None,\n        description=\"None.\",\n    )\n    enabled: bool = Field(\n        default=False,\n        description=\"Disabled.\",\n    )\n    zero: int = Field(\n        default=0,\n        description=\"Zero.\",\n    )\n",
+      "bytes": 677,
+      "sha256": "916d2cfac42113b3cb427e232ed9383022842b9284b0c9b34ac0c38bec2c4cfb"
+    }
+  ]
+}
+`````
+
+## C_RECONCILE final document verification
+
+Exact final link request/complete DTO and enforce preflight receipts follow. The source/mirror bodies were read back and compared equal. Documentation-only changes did not invalidate production/template tests or source fingerprints.
+
+`````json
+{
+  "links": {
+    "request": {
+      "scope": "targets",
+      "targets": [
+        "docs/coding_standards/ARCHITECTURE_PRINCIPLES.md",
+        "docs/coding_standards/CODE_STYLE.md",
+        "docs/coding_standards/DOCUMENTATION_STANDARD.md",
+        ".agents/workflows/create-issue.md",
+        ".github/prompts/create-issue.prompt.md",
+        "docs/reference/tools/scaffolding.md",
+        "docs/development/issue473/manual-inspection.md",
+        "docs/development/issue473/first-output-evidence.md",
+        "docs/development/issue473/tool-practice-findings.md",
+        "docs/development/issue473/implementation.md"
+      ],
+      "profile": "markdown_link_review",
+      "timeout_seconds": 120
+    },
+    "uri": "pgmcp://cache/runs/1876802496a94bb896ccbe00fc880f3b",
+    "dto": {
+      "success": true,
+      "run_status": "passed",
+      "requested_scope": "targets",
+      "requested_targets": [
+        "docs/coding_standards/ARCHITECTURE_PRINCIPLES.md",
+        "docs/coding_standards/CODE_STYLE.md",
+        "docs/coding_standards/DOCUMENTATION_STANDARD.md",
+        ".agents/workflows/create-issue.md",
+        ".github/prompts/create-issue.prompt.md",
+        "docs/reference/tools/scaffolding.md",
+        "docs/development/issue473/manual-inspection.md",
+        "docs/development/issue473/first-output-evidence.md",
+        "docs/development/issue473/tool-practice-findings.md",
+        "docs/development/issue473/implementation.md"
+      ],
+      "selected_profile": "markdown_link_review",
+      "removed_targets": [],
+      "results": [
+        {
+          "check_id": "markdown_links",
+          "status": "passed",
+          "reason": null,
+          "message": null,
+          "evidence": {
+            "format": "json",
+            "data": {
+              "total": 60,
+              "unique": 44,
+              "successful": 56,
+              "unknown": 0,
+              "unsupported": 0,
+              "timeouts": 0,
+              "redirects": 0,
+              "remaps": 0,
+              "excludes": 4,
+              "errors": 0,
+              "cached": 0,
+              "success_map": {},
+              "error_map": {},
+              "timeout_map": {},
+              "suggestion_map": {},
+              "redirect_map": {},
+              "excluded_map": {
+                "C:\\temp\\pgmcp\\docs\\development\\issue473\\tool-practice-findings.md": [
+                  {
+                    "url": "pgmcp://cache/runs/fa81c9d40c684c89b73d643c73dfdaa1",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 123,
+                      "column": 452
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 100
+                    }
+                  }
+                ],
+                "C:\\temp\\pgmcp\\docs\\development\\issue473\\manual-inspection.md": [
+                  {
+                    "url": "pgmcp://cache/runs/e3affeeb5eaf47f19c3dbda134bf192e",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 109,
+                      "column": 285
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 200
+                    }
+                  },
+                  {
+                    "url": "pgmcp://cache/runs/f7f2436d310942839a512e80f39cce14",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 109,
+                      "column": 444
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 100
+                    }
+                  },
+                  {
+                    "url": "pgmcp://cache/runs/07449acf87b0419791230c7279b7b989",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 109,
+                      "column": 651
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 100
+                    }
+                  }
+                ]
+              },
+              "duration": {
+                "secs": 0,
+                "nanos": 19369500
+              },
+              "detailed_stats": false
+            }
+          },
+          "external_tools": [
+            {
+              "tool_id": "lychee",
+              "version": "0.24.2"
+            }
+          ],
+          "adapter": {
+            "adapter_id": "lychee",
+            "version": "1.0.0",
+            "fingerprint": "qA92IhPfuJA_ESpX",
+            "contract_version": 1
+          },
+          "capture": {
+            "exit_code": 0,
+            "stdout": {
+              "observed_bytes": 1449,
+              "head": null,
+              "tail": null,
+              "truncated": false
+            },
+            "stderr": {
+              "observed_bytes": 0,
+              "head": "",
+              "tail": "",
+              "truncated": false
+            }
+          },
+          "termination_problem": null,
+          "request_rejection": null,
+          "args_source": "configured",
+          "effective_args": [
+            "--offline",
+            "--cache=false",
+            "--include-fragments"
+          ],
+          "coverage": null,
+          "required_targets": []
+        }
+      ],
+      "error_code": null,
+      "error_details": null
+    }
+  },
+  "editReceipts": [
+    {
+      "uri": "pgmcp://cache/runs/403f866b466b4bb18ed7ef0ce9fbbda4",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": "docs/coding_standards/ARCHITECTURE_PRINCIPLES.md",
+        "content_changed": true,
+        "selected_source": "extension",
+        "template_id": null,
+        "extension": ".md",
+        "selection_reason": "absent"
+      }
+    },
+    {
+      "uri": "pgmcp://cache/runs/e32cbf3cfbe04840a06a5f4391852a84",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": "docs/coding_standards/CODE_STYLE.md",
+        "content_changed": true,
+        "selected_source": "extension",
+        "template_id": null,
+        "extension": ".md",
+        "selection_reason": "absent"
+      }
+    },
+    {
+      "uri": "pgmcp://cache/runs/4f52152569a34579ba2dcb07ee805933",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": "docs/coding_standards/DOCUMENTATION_STANDARD.md",
+        "content_changed": true,
+        "selected_source": "extension",
+        "template_id": null,
+        "extension": ".md",
+        "selection_reason": "absent"
+      }
+    },
+    {
+      "uri": "pgmcp://cache/runs/2df016f070264f5bb9a9ddac2e5466c6",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": ".agents/workflows/create-issue.md",
+        "content_changed": true,
+        "selected_source": "extension",
+        "template_id": null,
+        "extension": ".md",
+        "selection_reason": "absent"
+      }
+    },
+    {
+      "uri": "pgmcp://cache/runs/aa6cb72a28a84691824ebac96ed3550f",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": ".github/prompts/create-issue.prompt.md",
+        "content_changed": true,
+        "selected_source": "extension",
+        "template_id": null,
+        "extension": ".md",
+        "selection_reason": "absent"
+      }
+    },
+    {
+      "uri": "pgmcp://cache/runs/931a2330e85f4788a78716a61dccfae0",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": "docs/development/issue473/manual-inspection.md",
+        "content_changed": true,
+        "selected_source": "metadata",
+        "template_id": "generic_doc",
+        "extension": null,
+        "selection_reason": null
+      }
+    },
+    {
+      "uri": "pgmcp://cache/runs/944b4551eaff49c2ac1fdd36180584b1",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "path": "docs/development/issue473/tool-practice-findings.md",
+        "content_changed": true,
+        "selected_source": "metadata",
+        "template_id": "generic_doc",
+        "extension": null,
+        "selection_reason": null
+      }
+    }
+  ],
+  "reportScaffold": {
+    "request": {
+      "artifact_type": "generic_doc",
+      "file_name": "implementation.md",
+      "target_path": "docs/development/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Issue 473 — Implementation Evidence and Hand-over",
+        "purpose": "Index the completed correction cycles and their actual evidence for independent Implementation review.",
+        "summary": "Four planned cycles address first-call template quality across nineteen shipped concrete packages. Full configured verification remains Validation work.",
+        "document_metadata": {
+          "status": "Implementation — independent review requested",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "@imp implementer",
+              "change": "Record completed correction cycles, preservation evidence and deferred current-tool findings."
+            }
+          ]
+        },
+        "sections": [
+          {
+            "heading": "Scope",
+            "content": "The implementation provides valid starting points for further editing. Independent review is requested; Validation remains outstanding."
+          }
+        ]
+      }
+    },
+    "uri": "pgmcp://cache/runs/047de678d5bd4f43a3c9028bc679b2db"
+  }
+}
+`````

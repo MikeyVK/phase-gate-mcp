@@ -27,6 +27,19 @@ def resolve_workspace(path: Path) -> Path:
     return path.resolve()
 ```
 
+## Scaffold output responsibilities
+
+Scaffolds provide valid starting points for further editing. Templates own generated
+separators, indentation and the artifact's single terminal LF. Normalize only blank
+boundary lines of selected prose/code fragments; preserve meaningful caller interiors,
+literal values and explicitly supplied empty optional content. Generated composition
+should meet the configured formatter/linter for baseline-clean caller fragments. This
+does not certify arbitrary caller expressions, dependencies or complete behavior.
+
+Module and class documentation describe different scopes. Use the selected package's
+explicit context contract; do not fill one from the other or duplicate model field
+descriptions automatically. Discover admitted fields with `scaffold_schema` before use.
+
 ## Imports
 
 Keep imports at module scope when practical and group standard-library, third-party, and
