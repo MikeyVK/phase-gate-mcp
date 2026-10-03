@@ -3,7 +3,7 @@
   "branch": "bug/473-first-call-template-quality",
   "issue_number": 473,
   "workflow_name": "bug",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -27,6 +27,14 @@
       "to_phase": "design",
       "timestamp": "2026-10-03T15:16:06.551018+00:00",
       "human_approval_message": "Go voor design \u2014 explicit human approval on 2026-10-03; independent QA GO Research \u2192 Design for commit 36e40db4dbe9d5248b51feec2c51014ffa878897.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-10-03T16:57:55.388923+00:00",
+      "human_approval_message": "Go voor planning \u2014 explicit human approval on 2026-10-03; independent QA GO Design \u2192 Planning for Design 0.2 at b71a54bfadd701b9c485b0d23a8fef66a34ebfe7.",
       "forced": false,
       "skip_reason": null
     }
