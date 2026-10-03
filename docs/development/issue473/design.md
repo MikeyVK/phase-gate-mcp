@@ -3,7 +3,7 @@
 # Issue 473 — First-call Template Quality Design
 
 **Status:** DESIGN — independent review requested
-**Version:** 0.1
+**Version:** 0.2
 **Last Updated:** 2026-10-03
 
 ## Purpose and authority
@@ -16,7 +16,7 @@ The human explicitly rejected additional automated content/regression tests. The
 
 ## Scope and constraints
 
-In scope are the 19 shipped concrete packages, their shared layout/schema dependencies, narrowly necessary generic text composition support, affected active examples/instructions and existing test inputs/expectations, and relevant coding/documentation standards. Runtime changes are limited to enabling the approved rendering and input contracts through existing seams.
+In scope are the 19 shipped concrete packages, their shared layout/schema dependencies, narrowly necessary generic text-boundary support, affected active examples/instructions and existing test inputs/expectations, and relevant coding/documentation standards. Runtime changes are limited to enabling the approved rendering and input contracts through existing seams.
 
 Out of scope are historical document mass migration, generic AST-based schema consumption analysis, unknown external caller migration, additional runtime lint/format/presentation gates, new execution dependencies, broad tool repair, package/distribution redesign, multiclass scaffolds and implementation cycle ordering. Unrelated practical tool findings are documented for later triage.
 
@@ -40,7 +40,7 @@ The existing [architecture contract](../../coding_standards/ARCHITECTURE_PRINCIP
 
 ## Selected architecture and alternatives
 
-Correct the shared tiered templates first and add a small, pure generic filter vocabulary to the existing injected `TemplateEngine`. Concrete templates retain domain field selection. Shared bases own artifact framing; macros own repeated language structure. The catalog, schema admission, provenance, persistence and preflight pipeline retain their responsibilities.
+Correct the shared tiered templates first and add one pure generic text-boundary filter to the existing template-engine layer. Concrete templates retain domain field selection. Shared bases own artifact framing; macros own repeated language structure. The catalog, schema admission, provenance, persistence and preflight pipeline retain their responsibilities.
 
 | Alternative | Benefit | Cost or boundary conflict | Disposition |
 | --- | --- | --- | --- |
@@ -49,19 +49,27 @@ Correct the shared tiered templates first and add a small, pure generic filter v
 | Recursively trim every context string | Uniform input processing | Changes literal/data values and optional presence semantics; cannot distinguish prose from data | Rejected |
 | Repeat framing/normalization in 19 packages | Local fixes are straightforward | Reintroduces DRY violations and inconsistent contracts | Rejected |
 | Artifact-specific Python renderer dispatch | Central control | Couples generic rendering to package identities and context field names | Rejected |
-| Shared schema/bases/macros plus explicit generic filters | Clear ownership; preserves caller interiors; small reusable service surface | Requires deliberate composition at language seams and migration of known callers | Selected |
+| Shared schema/bases/macros plus one generic boundary filter | Clear ownership; preserves caller interiors; uses existing template-engine support | Requires deliberate composition at language seams and consistent environment setup | Selected |
 
 The rendering environment remains constructor-injected. Its current whitespace options are not globally changed. Production and test environments currently differ in strictness/trailing-newline settings; shared artifact framing must work through both without changing unrelated generic engine consumers.
 
 ## Generic text and composition contract
 
-The proposed filter names are `text_block`, `join_blocks` and `artifact_eof`. Their public shapes are:
+The only new Python filter is `text_block(value: str) -> str`, owned by the existing template-engine layer. It performs the boundary-only text operation below. Fragment selection, joining separators and artifact EOF remain in shared Jinja bases/macros. There is no separate `join_blocks` or `artifact_eof` Python filter, new registry/manager, environment factory, validator policy or post-render pipeline.
 
-- `text_block(value: str) -> str`
-- `join_blocks(blocks: Sequence[str], separator: str) -> str`
-- `artifact_eof(value: str) -> str`
+### Shared environment capabilities before admission and rendering
 
-These are pure text operations registered through the existing engine seam. They do not load configuration, identify artifact types, mutate context, inspect schemas or execute native programs. Exact helper decomposition is left to implementation.
+The existing `TemplateEngine` registers generic name filters in its constructor. That registration currently happens after catalog admission. Bootstrap instead gives the catalog graph/input validators a separate bare Jinja environment. `TemplateInputValidator` calls `meta.find_undeclared_variables`, which uses the compiler and can reject unknown filters. Registering `text_block` only in the later renderer is therefore insufficient.
+
+One shared registration routine in the existing `template_engine.py` module owns the callable definitions/registration for existing generic filters and `text_block`. Its interface is `register_template_filters(environment: Environment) -> None`. This is an explicit setup operation on the supplied environment, not a new object or abstraction layer. It performs no filesystem/configuration reads, template rendering, package discovery or import-time setup. Exact private helper decomposition remains an implementation choice.
+
+The existing composition root calls that routine on the admission environment before any graph/input analysis, and on the runtime environment before template compilation/rendering. The `TemplateEngine` constructor delegates its current registration to the same routine, preserving support for existing direct engine consumers. Registration uses the same names and real callable implementations on both environments; a repeated call does not create a second vocabulary or change native environment options.
+
+The two environments remain distinct: admission owns source analysis, runtime loads the admitted immutable source snapshot. Their loaders, strictness and trailing-newline options retain their existing responsibilities. No temporary render engine is created merely to configure admission. The validators continue receiving their existing parser dependency and gain no artifact knowledge, filter-specific branch, fake callable, unknown-filter suppression or bypass.
+
+The delivered-template fixture and installed-distribution admission probe use the same shared registration before their catalog validation. Synthetic consumers that only parse a graph are distinguished from consumers that also run compiler-backed input validation; every relevant analysis/render environment must expose the same custom filter definitions through the existing engine setup. The changed root must consequently remain admissible through real source-suite and installed-suite routes.
+
+This is the proposed correction to the independent P2 design finding, submitted for targeted re-review. QA's NOGO on revision 0.1/commit `1ae94137` identified missing admission availability, not a need for a new layer. On 2026-10-03 the human approved minimizing the mechanism: one bounded text function in the existing layer and composition/EOF in tiered templates. Research's behavior and clean-break choices remain unchanged.
 
 ### Text block edges
 
@@ -75,7 +83,7 @@ Normalization does not redefine presence. A supplied empty or whitespace-only op
 
 ### Fragment joins and indentation
 
-`join_blocks` applies the boundary contract to already selected rendered fragments, omits fragments with no rendered structure/content, and joins the remaining fragments with the separator explicitly chosen by the template. A heading, empty literal or deliberately generated empty comment is a real fragment even when its input prose is empty.
+Shared Jinja bases/macros normalize already selected rendered fragments with `text_block`, omit fragments with no rendered structure/content, and use existing Jinja selection/join capabilities or explicit macro composition with the template's chosen separator. A heading, empty literal or deliberately generated empty comment is a real fragment even when its input prose is empty.
 
 Separators are language-owned. Markdown independent generated blocks receive one empty line; Python methods receive the configured native spacing inside the class, and top-level declarations receive Python top-level spacing. Decorators stay attached to the declaration they decorate. TypeScript constructor assignment statements remain consecutive, with one empty line before a logically distinct optional block.
 
@@ -83,9 +91,9 @@ A text/body macro must decide whether there is anything to indent before applyin
 
 ### Artifact EOF and provenance
 
-All 19 concrete packages inherit the shared artifact root. That root captures the assembled artifact and applies `artifact_eof` once: remove only trailing blank-line residue and terminate the last meaningful line with exactly one LF. Preserve its significant nonblank-line trailing spaces and every internal line ending. Do not remove leading lines or alter provenance.
+All 19 concrete packages inherit the shared artifact root. That root captures the assembled artifact once, starting with the existing provenance line, applies the same `text_block` boundary operation and appends exactly one explicit LF as rendered content. This removes trailing blank-line residue and the retained last line's boundary terminator before appending LF; it preserves significant spaces on nonblank lines and every internal line ending. Because the assembled fragment begins with the provenance line, leading caller content is not an artifact-edge trimming target. No separate EOF algorithm/filter is introduced.
 
-The existing first physical provenance line remains intact and first. Shared framing must not render blocks twice. The filter is invoked by the root, rather than automatically post-processing every `TemplateEngine.render`/`render_context` result. Generic engine consumers that render strings such as `False|0` therefore retain their existing output contract. Arbitrary non-artifact templates do not acquire an implicit newline.
+The existing first physical provenance line remains intact and first. Shared framing must not render blocks twice or add template-source whitespace after the explicitly appended LF. EOF is determined by the root's rendered content, independent of whether an environment retains the template file's final newline. The boundary filter is invoked by the root, rather than automatically post-processing every `TemplateEngine.render`/`render_context` result. Generic engine consumers that render strings such as `False|0` therefore retain their existing output contract. Arbitrary non-artifact templates do not acquire an implicit newline.
 
 ## Full-document metadata contract
 
@@ -165,9 +173,9 @@ Use explicit constructor fragments to avoid generated empty lines between ordina
 
 ## Admission, execution and failure contracts
 
-The existing flow remains: caller requests a registered artifact ID; schema discovery exposes the prepared context schema; the existing catalog validates the context; the renderer augments it with owned provenance; injected engine/templates render; existing selected preflight runs; existing persistence and edit policy applies.
+Startup configures the admission environment with the shared real filter definitions before graph/input analysis and catalog admission, then constructs the runtime environment over the admitted snapshot with the same definitions. The existing per-call flow remains: caller requests a registered artifact ID; schema discovery exposes the prepared context schema; the existing catalog validates the context; the renderer augments it with owned provenance; injected engine/templates render; existing selected preflight runs; existing persistence and edit policy applies.
 
-The schema admission boundary resolves the new shared metadata reference through the existing contained-reference mechanism. Prepared schema/catalog descriptions remain immutable. New filters do not own package loading, ID dispatch, context migration, preflight policy or persistence.
+The schema admission boundary resolves the new shared metadata reference through the existing contained-reference mechanism. Prepared schema/catalog descriptions remain immutable. The boundary filter does not own package loading, ID dispatch, context migration, preflight policy or persistence.
 
 | Condition | Behavior and responsibility |
 | --- | --- |
@@ -179,7 +187,7 @@ The schema admission boundary resolves the new shared metadata reference through
 | Caller block with boundary blank lines | Normalize its boundary at the selected insertion role; no new padding error |
 | Native check identifies generated defect | Preserve pristine output and causally classify; correct the template within approved scope |
 | Native check identifies caller-authored finding | Preserve/report it; do not silently repair caller content |
-| New shared reference/filter cannot be admitted | Existing loader/render failure path; no alternate legacy path |
+| Unknown filter or shared reference cannot be admitted | Retain existing admission failure; no dummy filter, suppression or alternate legacy path. Shipped filters are explicitly registered before analysis. |
 | Post-change server/catalog is stale | Refresh through the supported restart boundary and record active versions/fingerprints before interpreting evidence |
 | Existing preflight or write fails | Retain existing result/error/evidence semantics; this issue adds no alternate failure family |
 | Unrelated current-tool defect/friction | Record reproducible finding and disposition; do not silently expand repairs |
@@ -213,7 +221,7 @@ Concrete consumer inventory under `tests/mcp_server/integration/templates/`:
 
 For each listed concrete package, its colocated `context.schema.json` and `template.jinja2` are the public source entry points. The shared file surface is `tier0_root`, `tier1_code`, `tier1_document`, `tier1_tracking` and their affected Python/Markdown/TypeScript/text tier-2 bases, plus existing Python import/signature/model, pytest and Markdown section macros. The new metadata definition is shared. Do not move language/domain fields into `TemplateEngine`.
 
-Catalog/unit/public-tool tests are reviewed for actual coupling to these inputs and root output. They are not declared migration targets merely because they mention templates. The delivered-template fixture retains its admitted-suite setup; use its actual filter-enabled engine seam and update any directly affected fixture contexts. Concrete affected active links are discovered from heading changes and corrected at their actual consumers, not by migrating historical artifacts wholesale.
+Catalog/unit/public-tool tests are reviewed for actual coupling to these inputs and root output. They are not declared migration targets merely because they mention templates. The delivered-template fixture and installed-distribution fixture's admission probe retain their admitted-suite setup while registering the same real filters before input analysis; update directly affected fixture contexts. Parser/render setup in shared synthetic consumers is reviewed against the shared capability contract. Concrete affected active links are discovered from heading changes and corrected at their actual consumers, not by migrating historical artifacts wholesale.
 
 The actual Create Issue tool already separates an authored body from a saved artifact/provenance. Correct the evidenced active caller instructions, not the tool's envelope semantics. Do not create a new publication tool or perform a live issue mutation merely to probe it.
 
@@ -269,14 +277,15 @@ Issue #473 owns concrete value/effect inspection and package-local ignored-input
 | Generated Python baseline | Configured native checks on clean-fragment examples and causal reading of findings | Generated structure passes; caller findings remain attributed |
 | Presentation preserves meaning | Agent reads rendered/raw Architecture/Generic Doc examples | Hierarchy, decisions, lists/fences, order and checklist state retained |
 | Known consumers adopt the clean break | Source inventory and relevant existing fixture/test execution | No active known caller relies on removed contracts; no aliases |
-| Generic boundaries remain narrow | Review engine/catalog/bootstrap and existing relevant coverage | No artifact-specific renderer policy or added runtime gate |
+| Admission/render capabilities agree | Review shared registration in bootstrap and relevant delivered/installed/synthetic fixtures; actually scaffold through admitted packages | Same real filter names/callables before analysis and rendering; no validation bypass or separate layer |
+| Generic boundaries remain narrow | Review engine/catalog/bootstrap and existing relevant coverage | One boundary primitive; composition/EOF stay in templates; no artifact-specific renderer policy or added runtime gate |
 | Current tool practice is useful | Reproducible findings log and route coverage/limitations | Current behavior documented for later triage; no speculative scoring |
 | Standards agree with behavior | Relevant standards/active instructions diff and affected link review | Single responsibility model; historical evidence preserved |
 | Strategy remains binding | Research-to-Design/Planning traceability and independent reviews | #476 separate; additional automated content tests absent |
 
 ## Risks and planning consequences
 
-The largest implementation risk is normalization applied at the wrong role, silently altering caller literal values or internal whitespace. Keep the filter vocabulary generic, apply it explicitly at selected insertion seams, and demonstrate preservation with manual boundary examples. A whole-output formatter would conceal this risk and is excluded.
+The largest implementation risk is normalization applied at the wrong role, silently altering caller literal values or internal whitespace. Keep the boundary function generic, apply it explicitly at selected insertion seams, and demonstrate preservation with manual boundary examples. A whole-output formatter would conceal this risk and is excluded.
 
 A shared base correction has a wide package blast radius. All 19 first-output pairs and targeted optional cases must be inspected; shared synthetic consumers and the two Pytest roots are material migration inputs. Update valuable existing tests where contracts changed, rather than creating a duplicate content suite.
 
@@ -314,6 +323,7 @@ Material implementation entry points:
 - [Python model macros](../../../.pgmcp/template_suite/shared/templates/patterns/python/pydantic.jinja2)
 - [Document section macros](../../../.pgmcp/template_suite/shared/templates/patterns/markdown/sections.jinja2)
 - [Delivered-template fixtures](../../../tests/mcp_server/fixtures/delivered_templates.py)
+- [Installed-distribution admission probe](../../../tests/mcp_server/fixtures/installed_distribution.py)
 - [Shared document consumers](../../../tests/mcp_server/integration/templates/test_shared_documents.py)
 - [Shared Python consumers](../../../tests/mcp_server/integration/templates/test_shared_python.py)
 - [Generic engine tests](../../../tests/mcp_server/unit/services/test_template_engine.py)
@@ -329,9 +339,11 @@ Review requested: independently assess this Design against the approved Research
 
 The initial artifact was created through `scaffold_artifact(artifact_type="design", file_name="design.md", target_path="docs/development/issue473", validation="enforce")` using the currently shipped schema, then completed through `safe_edit_file` with enforce validation. The existing scaffold does not yet implement this Design; its provenance remains unchanged.
 
-The completed document's Markdown preflight returned passed with no issues (`pgmcp://cache/runs/ef79742f028d4a4c9a484fa4db725ed1`). The targeted configured `markdown_link_review` on `docs/development/issue473/design.md` returned passed: 34 successful links, 0 errors and 0 excluded, with offline fragment checking and Lychee 0.24.2 (`pgmcp://cache/runs/975e029bb8b9446787ef1fa2f20e73ed`). Complete cached DTOs were read. These checks prove the authored document's checked structure/links, not implementation behavior or independent Design approval.
+The revised document's Markdown preflight returned passed with no issues (`pgmcp://cache/runs/7be522daabff4740ace6533899a33964`). The targeted configured `markdown_link_review` on `docs/development/issue473/design.md` returned passed: 35 successful links, 0 errors and 0 excluded, with offline fragment checking and Lychee 0.24.2 (`pgmcp://cache/runs/79f8bfc99f024ab5ba8dbe5e496d7bbe`). Complete cached DTOs were read. These checks prove the authored document's checked structure/links, not implementation behavior or independent Design approval.
 
-Pre-commit reality check: Research's per-boundary decisions remain intact; mechanism ownership is traced to actual engine/catalog/template seams; known affected inputs and existing coverage are enumerated; preservation, failure and manual evidence obligations are explicit. Only this Design artifact and the MCP-recorded branch phase transition are changed. No production, template, schema, test or standard has been edited, and no new automated content/regression tests or runtime gates have been introduced.
+Revision 0.2 narrows the proposed Python addition from three filters to one boundary primitive and makes shared registration before admission/rendering explicit, including delivered/installed fixture consumers. Its targeted review must assess whether this resolves the previous independent P2; the producer does not close that finding by assertion.
+
+Pre-commit reality check: Research's per-boundary decisions remain intact; mechanism ownership is traced to actual engine/catalog/template seams; known affected inputs and existing coverage are enumerated; preservation, failure and manual evidence obligations are explicit. The initial Design commit changed this artifact and the MCP-recorded phase transition; revision 0.2 changes only this Design artifact. No production, template, schema, test or standard has been edited, and no new automated content/regression tests or runtime gates have been introduced.
 
 ### Bug / Design Hand-over
 
@@ -348,12 +360,12 @@ Pre-commit reality check: Research's per-boundary decisions remain intact; mecha
 #### Evidence
 
 - Initial scaffold and completed-document enforce preflight accepted.
-- Targeted configured offline link review: 34 successful, 0 errors, 0 excluded; complete cached evidence inspected.
+- Targeted configured offline link review: 35 successful, 0 errors, 0 excluded; complete cached evidence inspected.
 - Producer source/strategy review completed with the limits described above.
 
 #### Open Work
 
-- Independent Design QA, followed by the authorized phase decision.
+- Targeted independent Design re-review of shared filter availability and minimized composition ownership, followed by the authorized phase decision.
 - Implementation evidence must establish the proposed mechanisms; current-tool finding requires reproducible disposition during execution.
 - Planning will specify execution boundaries, durable evidence destinations and narrow existing checks.
 
@@ -366,3 +378,4 @@ Pre-commit reality check: Research's per-boundary decisions remain intact; mecha
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | @imp designer (Codex) | Initial correction architecture, explicit metadata/description contracts, preservation boundaries, consumer inventory and manual verification obligations. |
+| 0.2 | 2026-10-03 | @imp designer (Codex) | Record human-approved minimization to one boundary filter, shared real registration before admission/rendering, template-owned joins/EOF and affected installed/delivered fixture setup for independent P2 re-review. |
