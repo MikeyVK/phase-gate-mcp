@@ -52,13 +52,17 @@ def parse_adapter(output: str) -> tuple[ast.Module, ast.ClassDef]:
 def test_minimal_adapter_has_no_inferred_dependencies_or_operations(
     delivered_adapter: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path
 ) -> None:
-    context = {"class_name": "exact_adapter", "description": "Explicit adapter."}
+    context = {
+        "class_name": "exact_adapter",
+        "class_description": "Explicit adapter.",
+        "module_description": "Explicit adapter.",
+    }
     output = delivered_adapter.renderer.render(
         "python_adapter", context, delivered_adapter.provenance
     )
     tree, cls = parse_adapter(output)
     assert cls.name == "exact_adapter" and not cls.bases
-    assert ast.get_docstring(tree) == ast.get_docstring(cls) == context["description"]
+    assert ast.get_docstring(tree) == ast.get_docstring(cls) == context["class_description"]
     assert len(tree.body) == 2 and len(cls.body) == 2
     assert isinstance(cls.body[-1], ast.Pass)
     header = ArtifactHeaderReader().read(output)
@@ -85,7 +89,7 @@ def test_explicit_injection_bodies_bases_and_imports_are_preserved(
     }
     context: dict[str, JsonValue] = {
         "class_name": "exact_adapter",
-        "description": 'Adapter "description" 😀\nnext line',
+        "class_description": 'Adapter "description" 😀\nnext line',
         "module_description": "Separate module prose",
         "imports": {
             "stdlib": [{"kind": "import", "module": "collections", "alias": "col"}],
@@ -127,7 +131,7 @@ def test_explicit_injection_bodies_bases_and_imports_are_preserved(
     tree, cls = parse_adapter(output)
     assert context == before
     assert ast.get_docstring(tree) == context["module_description"]
-    assert ast.get_docstring(cls) == context["description"]
+    assert ast.get_docstring(cls) == context["class_description"]
     assert [ast.unparse(base) for base in cls.bases] == ["Base"]
     assert [
         ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))
@@ -176,7 +180,8 @@ def test_logging_is_explicit_and_joins_caller_imports(
     for record in records:
         context: dict[str, JsonValue] = {
             "class_name": "LoggedAdapter",
-            "description": "Opt-in logger",
+            "class_description": "Opt-in logger",
+            "module_description": "Opt-in logger",
             "logging": record,
             "imports": {"stdlib": [{"kind": "import", "module": "logging"}]},
             "methods": [],
@@ -206,7 +211,11 @@ def test_logging_is_explicit_and_joins_caller_imports(
 def test_context_rejects_hidden_fields_self_and_conflicting_constructor(
     delivered_adapter: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit adapter"}
+    base: dict[str, JsonValue] = {
+        "class_name": "Example",
+        "class_description": "Explicit adapter",
+        "module_description": "Explicit adapter",
+    }
     method: dict[str, JsonValue] = {
         "name": "read",
         "description": "Read",
@@ -217,7 +226,7 @@ def test_context_rejects_hidden_fields_self_and_conflicting_constructor(
     }
     constructor: dict[str, JsonValue] = {"parameters": [], "body": "self.client = None"}
     invalid: list[dict[str, JsonValue]] = [
-        {"class_name": "Example"},
+        {"class_name": "Example", "module_description": "Explicit adapter"},
         {**base, "strategy_cache": True},
         {**base, "boundary_description": "Duplicate field"},
         {**base, "methods": None},
@@ -267,7 +276,8 @@ def test_invalid_native_body_is_rejected_by_the_syntax_check(
         "python_adapter",
         {
             "class_name": "InvalidBody",
-            "description": "Native body syntax",
+            "class_description": "Native body syntax",
+            "module_description": "Native body syntax",
             "constructor": {"parameters": [], "body": "if True"},
         },
         delivered_adapter.provenance,
@@ -277,3 +287,4 @@ def test_invalid_native_body_is_rejected_by_the_syntax_check(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not (tmp_path / "invalid.py").exists()
+

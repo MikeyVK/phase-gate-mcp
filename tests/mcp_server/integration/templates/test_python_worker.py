@@ -58,7 +58,8 @@ def test_minimal_worker_preserves_the_single_supplied_operation(
 ) -> None:
     context: dict[str, JsonValue] = {
         "class_name": "exact_worker",
-        "description": "Explicit worker",
+        "class_description": "Explicit worker",
+        "module_description": "Explicit worker",
         "operation": {
             "name": "process_value",
             "description": "Process one value",
@@ -72,7 +73,7 @@ def test_minimal_worker_preserves_the_single_supplied_operation(
     tree, cls = parse_worker(output)
     assert len(tree.body) == 2 and len(cls.body) == 2
     assert cls.name == "exact_worker" and not cls.bases
-    assert ast.get_docstring(tree) == ast.get_docstring(cls) == context["description"]
+    assert ast.get_docstring(tree) == ast.get_docstring(cls) == context["class_description"]
     operation = cls.body[1]
     expected_kind = ast.AsyncFunctionDef if asynchronous else ast.FunctionDef
     assert isinstance(operation, expected_kind)
@@ -106,7 +107,7 @@ def test_explicit_injection_imports_logging_and_nested_body_are_preserved(
     for record in records:
         context: dict[str, JsonValue] = {
             "class_name": "PortableWorker",
-            "description": 'Worker "description" 😀\nnext line',
+            "class_description": 'Worker "description" 😀\nnext line',
             "module_description": "Separate module prose",
             "imports": {
                 "stdlib": [{"kind": "import", "module": "logging"}],
@@ -146,7 +147,7 @@ def test_explicit_injection_imports_logging_and_nested_body_are_preserved(
         tree, cls = parse_worker(output)
         assert context == before
         assert ast.get_docstring(tree) == context["module_description"]
-        assert ast.get_docstring(cls) == context["description"]
+        assert ast.get_docstring(cls) == context["class_description"]
         assert not cls.bases
         statements = [
             ast.unparse(item)
@@ -208,12 +209,17 @@ def test_context_requires_one_operation_and_rejects_hidden_lifecycle_or_conflict
     }
     base: dict[str, JsonValue] = {
         "class_name": "Worker",
-        "description": "Explicit worker",
+        "class_description": "Explicit worker",
+        "module_description": "Explicit worker",
         "operation": operation,
     }
     constructor: dict[str, JsonValue] = {"parameters": [], "body": "self.client = None"}
     invalid: list[dict[str, JsonValue]] = [
-        {"class_name": "Worker", "description": "Missing operation"},
+        {
+            "class_name": "Worker",
+            "class_description": "Missing operation",
+            "module_description": "Missing operation",
+        },
         {**base, "operation": None},
         {**base, "operation": {**operation, "body": " \n\t"}},
         {**base, "operation": {**operation, "async": "false"}},
@@ -259,7 +265,8 @@ def test_invalid_native_operation_body_remains_a_syntax_failure(
         "python_worker",
         {
             "class_name": "InvalidBody",
-            "description": "Native body syntax",
+            "class_description": "Native body syntax",
+            "module_description": "Native body syntax",
             "operation": {
                 "name": "process",
                 "description": "Process",
@@ -276,3 +283,4 @@ def test_invalid_native_operation_body_remains_a_syntax_failure(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not (tmp_path / "invalid.py").exists()
+
