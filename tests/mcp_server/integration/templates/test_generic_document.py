@@ -47,6 +47,17 @@ def test_minimal_generic_document_is_renderable_and_native_markdown_valid(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Document basis",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "Purpose marker.",
         "summary": "Summary marker.",
     }
@@ -72,6 +83,17 @@ def test_generic_document_preserves_authored_order_and_record_state(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Migration basis",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "Purpose marker.",
         "summary": "Summary marker.",
         "key_changes": ["change-one", "change-two"],
@@ -105,7 +127,7 @@ def test_generic_document_preserves_authored_order_and_record_state(
     assert "1. line one\n   line two" in output and "2. final step" in output
     assert output.index("change-one") < output.index("change-two")
     assert output.index("line one") < output.index("final step")
-    assert r"### Custom one \#" in output
+    assert r"## Custom one \#" in output
     first_section = output.split("Custom one", 1)[1].split("Custom two", 1)[0]
     second_section = output.split("Custom two", 1)[1].split("\n## ", 1)[0]
     assert "custom content" in first_section and "- bullet one" in first_section
@@ -121,6 +143,17 @@ def test_generic_document_distinguishes_absent_and_explicit_empty_structures(
 ) -> None:
     base: dict[str, JsonValue] = {
         "title": "Presence basis",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "Purpose marker.",
         "summary": "Summary marker.",
     }
@@ -142,7 +175,7 @@ def test_generic_document_distinguishes_absent_and_explicit_empty_structures(
         "generic_doc", explicit, generic_document.provenance
     )
     assert explicit == before
-    assert populated.count("\n## ") - absent.count("\n## ") == len(explicit) - len(base)
+    assert populated.count("\n## ") - absent.count("\n## ") == len(explicit) - len(base) - 1
     for carrier, empty in (("content", ""), ("bullets", []), ("checklist", [])):
         nested: dict[str, JsonValue] = {
             **base,
@@ -151,16 +184,45 @@ def test_generic_document_distinguishes_absent_and_explicit_empty_structures(
         rendered = generic_document.renderer.render(
             "generic_doc", nested, generic_document.provenance
         )
-        assert "### Empty section" in rendered
+        assert "## Empty section" in rendered
         assert not any(line.startswith("- ") for line in rendered.splitlines())
 
 
 def test_generic_document_rejects_out_of_contract_records(
     generic_document: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"title": "Basis", "purpose": "Purpose", "summary": "Summary"}
+    base: dict[str, JsonValue] = {
+        "title": "Basis",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
+        "purpose": "Purpose",
+        "summary": "Summary",
+    }
     invalid: list[dict[str, JsonValue]] = [
-        {"title": "Missing purpose", "summary": "Summary"},
+        {
+            "title": "Missing purpose",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+            "summary": "Summary",
+        },
         {**base, "purpose": ""},
         {**base, "summary": None},
         {**base, "custom_sections": []},

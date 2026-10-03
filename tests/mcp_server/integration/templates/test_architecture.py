@@ -45,7 +45,21 @@ def test_minimal_architecture_is_a_valid_initial_basis_without_sources(
     markdown_package: MarkdownPackage,
     tmp_path: Path,
 ) -> None:
-    context: dict[str, JsonValue] = {"title": "Architecture basis", "concepts": []}
+    context: dict[str, JsonValue] = {
+        "title": "Architecture basis",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
+        "concepts": [],
+    }
     before = deepcopy(context)
     output = architecture.renderer.render("architecture", context, architecture.provenance)
     assert context == before
@@ -67,9 +81,17 @@ def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary architecture",
-        "status": "DRAFT — awaiting review",
-        "version": "2.0",
-        "last_updated": "2026-09-14",
+        "document_metadata": {
+            "status": "DRAFT — awaiting review",
+            "revisions": [
+                {
+                    "version": "2.0",
+                    "date": "2026-09-14",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "Caller-authored purpose.",
         "scope_in": "Included boundary",
         "scope_out": "Excluded systems",
@@ -117,13 +139,13 @@ def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
     for heading in (
         r"### 1. Ingress boundary \#",
         "### 2. Persistence boundary",
-        r"#### Inputs \#",
-        "#### Outputs",
+        r"#### 1.1. Inputs \#",
+        "#### 1.2. Outputs",
     ):
         assert heading in output
     assert r"### Keep the reader \#" in output
     assert "### Defer cleanup" in output
-    assert "### Document ownership" in output
+    assert "Document ownership" in output
     absent = deepcopy(context)
     decisions = absent["decisions"]
     assert isinstance(decisions, list) and isinstance(decisions[1], dict)
@@ -136,7 +158,7 @@ def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
     fence = chr(96) * 4
     diagram = "graph TD\nA --> B\n" + chr(96) * 3 + "\nembedded"
     assert fence + "mermaid\n" + diagram + "\n" + fence in first_concept
-    assert first_concept.index("#### Inputs") < first_concept.index("#### Outputs")
+    assert first_concept.index("#### 1.1. Inputs") < first_concept.index("#### 1.2. Outputs")
     third_concept = output.split("### 3. Owner boundary", 1)[1].split("\n## ", 1)[0]
     assert not any(line.startswith("#### ") for line in third_concept.splitlines())
     assert "[Contract](<contract.md#Boundary>)" in output
@@ -159,6 +181,17 @@ def test_architecture_explicit_empty_common_and_concept_capacities_remain_visibl
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Empty architecture",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "",
         "scope_in": "",
         "scope_out": "",
@@ -174,6 +207,17 @@ def test_architecture_explicit_empty_common_and_concept_capacities_remain_visibl
     output = architecture.renderer.render("architecture", context, architecture.provenance)
     absent_context: dict[str, JsonValue] = {
         "title": context["title"],
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "concepts": [{"name": "Empty concept", "description": ""}],
     }
     absent = architecture.renderer.render("architecture", absent_context, architecture.provenance)
@@ -190,10 +234,51 @@ def test_architecture_explicit_empty_common_and_concept_capacities_remain_visibl
 def test_architecture_rejects_closed_and_invalid_concept_records(
     architecture: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"title": "Architecture", "concepts": []}
+    base: dict[str, JsonValue] = {
+        "title": "Architecture",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
+        "concepts": [],
+    }
     invalid: list[dict[str, JsonValue]] = [
-        {"title": "Architecture"},
-        {"title": "", "concepts": []},
+        {
+            "title": "Architecture",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
+        {
+            "title": "",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+            "concepts": [],
+        },
         {**base, "constraints": [""]},
         {**base, "concepts": ["Concept"]},
         {**base, "concepts": [{"description": "Missing name"}]},

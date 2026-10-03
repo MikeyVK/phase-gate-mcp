@@ -49,6 +49,17 @@ def test_initial_planning_does_not_invent_work_or_completion(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Plan the boundary",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "summary": "Authored planning basis.",
         "work_units": [],
     }
@@ -72,10 +83,29 @@ def test_refined_plan_retains_authored_ownership_scope_and_evidence_requirements
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Bounded plan",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "summary": "Implement the approved boundary.",
-        "status": "DRAFT — awaiting review",
-        "version": "3.2",
-        "last_updated": "2026-09-14",
+        "document_metadata": {
+            "status": "DRAFT — awaiting review",
+            "revisions": [
+                {
+                    "version": "3.2",
+                    "date": "2026-09-14",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "**Caller purpose**",
         "scope_in": "Included surface",
         "scope_out": "Excluded surface",
@@ -186,6 +216,17 @@ def test_empty_planning_sections_and_work_unit_capacities_are_visible(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Empty capacities",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "summary": "Authored basis.",
         "purpose": "",
         "scope_in": "",
@@ -219,6 +260,17 @@ def test_empty_planning_sections_and_work_unit_capacities_are_visible(
     required = ("id", "name", "goal", "deliverables", "exit_criteria")
     base: dict[str, JsonValue] = {
         "title": context["title"],
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "summary": context["summary"],
         "work_units": [{key: units[0][key] for key in required}],
     }
@@ -273,6 +325,17 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
     phase_docs: list[JsonValue] = [{"id": "DOC.1", "description": "Published usage"}]
     context: dict[str, JsonValue] = {
         "title": "Operational mapping",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "summary": "Map only explicit cycles.",
         "work_units": work_units,
         "phase_deliverables": {
@@ -328,9 +391,38 @@ def test_planning_rejects_legacy_and_invalid_operational_shapes(
         "exit_criteria": "Exit",
         "deliverables": [{"id": "D1", "description": "Deliverable"}],
     }
-    base: dict[str, JsonValue] = {"title": "Plan", "summary": "Summary", "work_units": []}
+    base: dict[str, JsonValue] = {
+        "title": "Plan",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
+        "summary": "Summary",
+        "work_units": [],
+    }
     invalid: list[dict[str, JsonValue]] = [
-        {"title": "Plan", "work_units": []},
+        {
+            "title": "Plan",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+            "work_units": [],
+        },
         {**base, "summary": ""},
         {**base, "cycles": []},
         {**base, "success_criteria": []},

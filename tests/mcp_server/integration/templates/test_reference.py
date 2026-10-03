@@ -47,6 +47,17 @@ def test_minimal_reference_accepts_required_source_and_empty_api(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Reference basis",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "sources": [{"label": "Primary source", "target": "source.md#Overview"}],
         "api_reference": [],
     }
@@ -73,9 +84,17 @@ def test_reference_preserves_grouping_links_and_safe_native_code_rendering(
     example_code = "const value = reader.read(input);\n" + chr(96) * 3 + "\ninside"
     context: dict[str, JsonValue] = {
         "title": "Boundary reference",
-        "status": "DRAFT — awaiting review",
-        "version": "4.1",
-        "last_updated": "2026-09-14",
+        "document_metadata": {
+            "status": "DRAFT — awaiting review",
+            "revisions": [
+                {
+                    "version": "4.1",
+                    "date": "2026-09-14",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "Purpose marker.",
         "scope_in": "Included marker.",
         "scope_out": "Excluded marker.",
@@ -183,6 +202,17 @@ def test_reference_distinguishes_absent_and_explicit_empty_optional_values(
 ) -> None:
     base: dict[str, JsonValue] = {
         "title": "Optional reference",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "sources": [{"label": "Required source", "target": "#Source"}],
         "api_reference": [
             {
@@ -241,11 +271,36 @@ def test_reference_rejects_invalid_and_legacy_shapes(
 ) -> None:
     base: dict[str, JsonValue] = {
         "title": "Reference",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "sources": [{"label": "Source", "target": "source.md"}],
         "api_reference": [],
     }
     invalid: list[dict[str, JsonValue]] = [
-        {"title": "Reference", "api_reference": []},
+        {
+            "title": "Reference",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+            "api_reference": [],
+        },
         {**base, "sources": []},
         {**base, "sources": [{"label": "Source"}]},
         {**base, "sources": [{"target": "source.md"}]},

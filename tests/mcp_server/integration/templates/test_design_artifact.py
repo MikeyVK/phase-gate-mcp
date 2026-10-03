@@ -45,6 +45,17 @@ def test_initial_design_does_not_require_or_invent_a_decision(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Design the boundary",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "problem_statement": "Preserve the caller contract.",
         "requirements_functional": [],
         "requirements_nonfunctional": [],
@@ -78,12 +89,31 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
     options[1] = {"name": "Candidate 2", "description": "", "pros": [], "cons": []}
     context: dict[str, JsonValue] = {
         "title": "Boundary design",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "problem_statement": "Caller-defined mismatch.",
         "requirements_functional": ["Preserve accepted calls", "Return explicit outcomes"],
         "requirements_nonfunctional": ["Keep bounded runtime"],
-        "status": "DRAFT — awaiting review",
-        "version": "2.1",
-        "last_updated": "2026-09-14",
+        "document_metadata": {
+            "status": "DRAFT — awaiting review",
+            "revisions": [
+                {
+                    "version": "2.1",
+                    "date": "2026-09-14",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "**Authored purpose**",
         "scope_in": "Included seam",
         "scope_out": "Excluded behavior",
@@ -199,6 +229,17 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
 def test_design_explicit_empty_sections_remain_visible(design: DeliveredTemplate) -> None:
     context: dict[str, JsonValue] = {
         "title": "Initial design",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "problem_statement": "Known problem.",
         "requirements_functional": [],
         "requirements_nonfunctional": [],
@@ -248,12 +289,38 @@ def test_design_rejects_legacy_shapes_and_invalid_record_contracts(
 ) -> None:
     base: dict[str, JsonValue] = {
         "title": "Design",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "problem_statement": "Problem",
         "requirements_functional": [],
         "requirements_nonfunctional": [],
     }
     invalid: list[dict[str, JsonValue]] = [
-        {"title": "Design", "problem_statement": "Problem", "requirements_functional": []},
+        {
+            "title": "Design",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+            "problem_statement": "Problem",
+            "requirements_functional": [],
+        },
         {**base, "title": ""},
         {**base, "problem_statement": ""},
         {**base, "requirements_functional": [""]},
@@ -262,8 +329,34 @@ def test_design_rejects_legacy_shapes_and_invalid_record_contracts(
         {**base, "questions_list": []},
         {**base, "decision": None},
         {**base, "workflow": "feature"},
-        {**base, "status": ""},
-        {**base, "last_updated": "2026-09-14\n"},
+        {
+            **base,
+            "document_metadata": {
+                "status": "",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
+        {
+            **base,
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-09-14\n",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
         {**base, "options": ["Option"]},
         {**base, "options": [{"name": "Option", "description": "", "selected": True}]},
         {**base, "key_decisions": [{"decision": "Decision"}]},
