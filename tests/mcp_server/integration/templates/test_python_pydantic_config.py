@@ -221,4 +221,3 @@ def test_config_context_requires_frozen_and_reuses_closed_model_field_rules(
             delivered_config.renderer.render(
                 "python_pydantic_config", context, delivered_config.provenance
             )
-

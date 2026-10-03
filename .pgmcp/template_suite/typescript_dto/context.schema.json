@@ -5,13 +5,13 @@
   "additionalProperties": false,
   "required": [
     "class_name",
-    "description"
+    "class_description"
   ],
   "properties": {
     "class_name": {
       "$ref": "#/$defs/Symbol"
     },
-    "description": {
+    "class_description": {
       "$ref": "#/$defs/Text"
     },
     "module_description": {

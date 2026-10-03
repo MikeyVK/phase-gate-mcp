@@ -54,6 +54,15 @@
 {%- else -%}{{ value }}{%- endif -%}
 {%- endmacro %}
 
+{% macro indented(text, width, first=true) -%}
+{%- set padding = ' ' * width -%}
+{%- set position = namespace(physical_start=true) -%}
+{%- for part in text.splitlines(true) -%}
+{{ (padding if position.physical_start and part.rstrip('\r\n') and (first or not loop.first) else '') ~ part }}
+{%- set position.physical_start = part.endswith('\r') or part.endswith('\n') -%}
+{%- endfor -%}
+{%- endmacro %}
+
 {% macro documentation(text) -%}{{ literal(text | text_block) }}{%- endmacro %}
 
 {% macro statement(record) -%}
@@ -75,14 +84,19 @@ from {{ record.module }} import {% for name in record.names %}{{ name.name }}{% 
 {%- endfor -%}
 {%- for item in future.statements | unique(case_sensitive=true) | sort(case_sensitive=true) -%}{{ item }}{{ '\n' }}{%- endfor -%}
 {%- for group, label in [('stdlib', 'Standard library'), ('third_party', 'Third party'), ('project', 'Project')] -%}
-{%- set selected = namespace(statements=[]) -%}
+{%- set selected = namespace(straight=[], froms=[]) -%}
 {%- for record in supplied.get(group, []) + fixed.get(group, []) -%}
 {%- if not (record.kind == 'from' and record.module == '__future__') -%}
-{%- set selected.statements = selected.statements + [statement(record)] -%}
+{%- if record.kind == 'import' -%}
+{%- set selected.straight = selected.straight + [statement(record)] -%}
+{%- else -%}
+{%- set selected.froms = selected.froms + [statement(record)] -%}
+{%- endif -%}
 {%- endif -%}
 {%- endfor -%}
-{%- if selected.statements -%}{{ '\n# ' ~ label ~ '\n' }}
-{%- for item in selected.statements | unique(case_sensitive=true) | sort(case_sensitive=true) -%}{{ item }}{{ '\n' }}{%- endfor -%}
+{%- set ordered = (selected.straight | unique(case_sensitive=true) | sort(case_sensitive=true) | list) + (selected.froms | unique(case_sensitive=true) | sort(case_sensitive=true) | list) -%}
+{%- if ordered -%}{{ '\n# ' ~ label ~ '\n' }}
+{%- for item in ordered -%}{{ item }}{{ '\n' }}{%- endfor -%}
 {%- endif -%}
 {%- endfor -%}
 {%- endmacro %}

@@ -38,3 +38,24 @@ Fix and derived-tool routes still require actual evidence in C_RECONCILE. Syntax
 ## C_SHARED fix route
 
 A real production formatting finding was repaired through `apply_fixes(scope="targets", targets=["mcp_server/services/template_engine.py"], fixes=["python_format"])`. Native Ruff 0.15.6 reported one file reformatted; adapter sFWzvJZBN26YRZqa returned passed. The subsequent explicit format check reports one file already formatted. Source inspection confirms only an extra empty line before a module-level function changed. This proves a real fix/check route on source; the planned isolated first-output fix probe remains additional later evidence. Pristine scaffold evidence files were untouched.
+
+
+## C_CODE actual fix and negative-result routes
+
+Public schema/scaffold routes correctly expose and enforce the clean input break. Missing required module prose and the removed description alias return context_invalid, written=false, no native execution. Empty optional TypeScript prose remains an explicitly supplied empty documentation carrier. The raw outputs agree with factual preflight DTOs.
+
+Native checks exposed three generated format and three lint findings on intermediate examples, rather than hiding them behind syntax success. Ordered apply_fixes on separately scaffolded identical-context files fixed one I001 and formatted one pass gap with Ruff 0.15.6; complete rows/readback are in first-output-evidence.md. A recheck confirmed those two files have no remaining format/lint finding. This fulfills the planned isolated fix probe without modifying pristine evidence.
+
+## F3 — Verbose expected failures can exceed adapter response bounds
+
+Status: reproducible practical limitation; deferred triage, no false RED claim. During C_CODE existing-context migration, ordinary Pytest traceback output caused unavailable / response_too_large with 8,912,896 observed stdout bytes. The producer delegate inspected the complete failure DTO; its serialized cached object was approximately 5,076,661 codepoints and its complete native capture was not reconstructed. Therefore this unavailable response is not used as native RED evidence and unavailable log text is not claimed preserved.
+
+Prerequisites: migrated seven existing code-family inputs against the old schemas, real delivered suite fixture and configured Pytest output. Reproduce with the exact RED target subset in Planning using normal traceback output. Workaround: caller args `["-q","-n","0","--tb=no","-rN"]`; the repeated root request then returned a complete negative native result, 32 failed / 2 passed, with verified cache windows. Large repeated resolved-schema ContextError tracebacks are the observed trigger; the precise response-budget and display-policy trade-off needs later tool coordination. This is not attributed as a regression introduced by #460 without historical proof.
+
+## F4 — Immediate post-restart calls can reach the retiring process
+
+Status: observed sequencing friction; deferred lifecycle/tool coordination. restart_server reported the old PID 14492 and explicitly instructed a three-second wait. An immediate get_work_context returned context from that process, followed by run_tests with no response until tools/call timed out after 300 seconds. A later health_check reported healthy new PID 8968; an attempted scaffold on that new process was rejected with context_not_loaded. Refreshing get_work_context on the new process resolved that condition and the same read-only test selection completed.
+
+Expected safe use follows the tool's stated delay: wait at least three seconds, verify the changed healthy PID, then load work context before further calls. Later restarts used that sequence and remained operational. The observation demonstrates a producer sequencing mistake and a possible usability improvement around restart readiness; it does not prove a dead native process or failed tests. No outcome/receipt exists for the timed-out call and it contributes no test evidence. Cache entries are transient across restarts: an unread recheck cache disappeared as expected; the isolated check was rerun without replaying the fix mutation.
+
+No unrelated adapter/server repair was introduced. Full suite/branch gates and independent QA remain outstanding.

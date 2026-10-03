@@ -1,6 +1,6 @@
 {% extends "shared/templates/bases/tier1_code.jinja2" %}
 {% import "shared/templates/patterns/python/imports.jinja2" as imports %}
 {% block comment_start %}#{% endblock %}
-{% block module_documentation %}{{ imports.documentation(content.description) }}{% endblock %}
+{% block module_documentation required %}{% endblock %}
 {% block module_imports %}{{ imports.groups(content.imports | default({}), {}) }}{% endblock %}
 {% block code_separator %}{{ '\n\n\n' }}{% endblock %}

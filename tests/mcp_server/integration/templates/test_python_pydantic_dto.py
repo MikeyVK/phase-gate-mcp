@@ -256,4 +256,3 @@ def test_native_annotation_failure_is_not_claimed_as_valid_output(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not (tmp_path / "invalid.py").exists()
-

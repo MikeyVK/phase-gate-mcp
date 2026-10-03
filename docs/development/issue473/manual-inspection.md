@@ -57,3 +57,32 @@ Changed delivered/installed/shared-Python fixtures passed format/lint/Pyright (`
 Two more actual TypeScript inputs demonstrate absent versus explicit empty module context: both syntax rows passed, both one terminal LF; absent currently uses the old concrete fallback, explicit empty produces an empty module comment. This is characterized without approving fallback: C_CODE owns its removal. Thus 12 shared-stage outputs are preserved, separate from the final 38 pairs.
 
 D1_ENV, D1_LAYOUT and D1_EVIDENCE are fulfilled for their shared-boundary scope. Remaining concrete imperfections are explicitly allocated to C_CODE/C_DOCS and do not alter Approved Strategy. Independent Implementation verdict remains unrequested until all cycles complete.
+
+
+## C_CODE closure
+
+D2_DOC_INPUTS, D2_PY_LAYOUT, D2_TS_LAYOUT and D2_CODE_EVIDENCE are fulfilled for the nine code families. The final inventory is 18 untouched `c2_verified_*` minimal/filled files, with complete contexts/outputs, UTF-8 hashes, preflight rows and identities in first-output-evidence.md. Suite identity at observation: `miQevm1LFgWRuTJ9`; each reachable package fingerprint is recorded there. Earlier `c2_*` and `c2_final_*` examples remain intermediate characterization, not final proof.
+
+| Family | Manual observations across minimal/filled |
+| --- | --- |
+| Class | Explicit module/class prose, one main class, valid empty pass gap, two-blank module join, one-blank member joins, typed stub retained. |
+| Protocol | Distinct prose, native Protocol import/base, intentional ellipsis methods, same valid empty-class gap and supplied method order. |
+| Pydantic Config | Required caller frozen choice, multiline ConfigDict/Field calls, fields/examples order and False/0/empty string values retained; ge/min_length constraints attached to actual fields. |
+| Pydantic DTO | Frozen default retained, fields carry their descriptions without automatic duplicated Fields summary, default_factory/min_length/gt and example facts retained. |
+| Adapter | Empty/filled valid class, explicit logger/constructor presence, constructor-before-method order and body preserved; imports-to-logger gap corrected separately from class joins. |
+| Worker | Explicit single operation, optional injected constructor/logger, one main class, no automatic __all__, preserved operation body. |
+| Pytest Unit | Retained module description input, marker variable separated correctly from imports, supplied fixture/decorator/case order and bodies retained, valid empty optional arrays. |
+| Pytest Integration | Retained module description, meaningful temporary-file case, top-level function spacing; existing native Pytest test proves real generated filesystem/JSON collaboration. |
+| TypeScript | Absent module comment stays absent, required class comment, direct class-comment join, empty constructor, readonly/type/implements facts and optional property presence assignments retained. |
+
+All 18 outputs have first-line provenance and exactly one terminal LF. Every public content-preflight row passed: Python 3.13.7 or TypeScript 6.0.3 syntax. Configured Ruff 0.15.6 format/lint passed for all 16 pristine Python pairs and the mixed fixed/caller import reproduction: 17 already formatted and all lint checks passed, receipt `pgmcp://cache/runs/347c4a8c62c34230b4515b363cd09c9d`. This does not promise arbitrary caller expressions/imports/dependencies meet Ruff or type checking.
+
+Additional actual boundary cases prove required module_description rejection and removed root description rejection before persistence; explicitly empty Python module prose remains a documentation literal; identical supplied module/class prose is not deduplicated. TypeScript explicit empty and whitespace-only module descriptions both preserve the defined empty comment, while minimal absence does not produce it. A Worker body preserves two internal CRLFs, internal blank line and Unicode U+2028 inside a quoted value; Pydantic defaults retain significant whitespace, CRLF, Unicode, False, 0 and None without generic trimming. Safe Python escaping represents control characters in literals. The preservation-only Worker case intentionally has a caller-authored unused local; it is syntax/preservation evidence, not a clean lint example.
+
+Native review found real generated gaps before pass and imports-to-variables, then a same-group import ordering error. Those originals are preserved. Two separately scaffolded fix probes received ordered lint then format operations: one lint correction, one formatted file; inspected changes are precisely the spacing findings. An explicit recheck confirms those probes pass (format row: three already formatted in the combined probe/import run; its sole lint finding belongs to the unrepaired mixed-import reproduction, subsequently corrected in templates). Pristine evidence was not fixed.
+
+The initial meaningful contract RED is 32 failed / 2 passed, bounded native receipt `pgmcp://cache/runs/c3f79f7a494a4ee39f4418fc712f1e3e`; commit `deb5a2ccfaa3481f631c1bd2475e120d9ebd032a`. New required explicit descriptions were rejected by old schemas. Intermediate native tests caught lost Pydantic constraint arguments; namespace accumulation corrected that defect. Final ten-file subset reports 52 passed / 1 failed / 1 existing warning / 33.72s (`pgmcp://cache/runs/197fb04a662940c8bd50ba2c6ccd3f8b`); the sole failure was the existing expected obsolete from-before-import ordering. After adapting that expectation, the affected existing integration file reports 5 passed / 1 existing warning / 4.27s (`pgmcp://cache/runs/dc4b351972b4429ca5824d8341e6955d`). Reuse the fresh other 52 rows plus this exact closure; no broad suite was run.
+
+Changed eight family/shared test files passed format/lint/Pyright, with refreshed gates for the subsequently changed shared Python fixture (`pgmcp://cache/runs/c3749daff9824bd6a716676f6a870020`) and integration expectation (`pgmcp://cache/runs/54de446a941043779391899059e8b62a`). No new content tests/assertions or permanent harness were added. Existing typing/native/semantic coverage remains valuable. Scope/Approved Strategy are unchanged.
+
+Remaining work: C_DOCS and C_RECONCILE, independent Implementation review, then separately owned full Validation.

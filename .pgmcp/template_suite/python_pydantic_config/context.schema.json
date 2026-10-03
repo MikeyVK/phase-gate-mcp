@@ -5,14 +5,15 @@
   "additionalProperties": false,
   "required": [
     "class_name",
-    "description",
+    "class_description",
+    "module_description",
     "frozen"
   ],
   "properties": {
     "class_name": {
       "$ref": "../shared/definitions/python.schema.json#/$defs/Symbol"
     },
-    "description": {
+    "class_description": {
       "$ref": "../shared/definitions/python.schema.json#/$defs/Text"
     },
     "module_description": {

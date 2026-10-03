@@ -292,4 +292,3 @@ def test_native_syntax_check_reports_invalid_caller_type_without_writing(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not target.exists()
-

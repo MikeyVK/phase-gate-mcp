@@ -232,4 +232,3 @@ def test_invalid_native_parameter_order_remains_a_syntax_failure(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not (tmp_path / "invalid.py").exists()
-

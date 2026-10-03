@@ -1,24 +1,68 @@
 {% extends "shared/templates/bases/tier2_typescript.jinja2" %}
-{% macro documentation(text) %}/**
-{{ text | replace('\\', '\\\\') | replace('*/', '*\\/') | replace('\r', '\\r') | replace('\t', '\\t') | replace('\x00', '\\0') | indent(' * ', true) }}
- */{% endmacro %}
-{% block module_documentation %}{{ documentation(content.module_description | default(content.description)) }}{% endblock %}
-{% block code %}
-{{ documentation(content.description) }}
-export class {{ content.class_name }}{% if content.implements | default([]) %} implements {{ content.implements | join(', ') }}{% endif %} {
-{% for field in content.fields | default([]) %}
-{% if field.description is defined %}{{ documentation(field.description) | indent(2, true) }}
-{% endif %}  public {% if field.optional %}declare {% endif %}{% if field.readonly %}readonly {% endif %}{{ field.name }}{% if field.optional %}?{% endif %}: {{ field.type }};
-{% endfor %}
-
-  constructor(data: {{ '{' }}{% if content.fields | default([]) %}
-{% for field in content.fields %}    {{ field.name }}{% if field.optional %}?{% endif %}: {{ field.type }};
-{% endfor %}  {% endif %}{{ '}' }}) {
-{% for field in content.fields | default([]) %}
-{% if field.optional %}    if ("{{ field.name }}" in data) {
-      this.{{ field.name }} = data.{{ field.name }};
-    }
-{% else %}    this.{{ field.name }} = data.{{ field.name }};
-{% endif %}{% endfor %}  }
-}
-{% endblock %}
+{% macro documentation(text) -%}
+{%- set normalized = text | text_block -%}
+{%- if normalized -%}
+/**
+{{ normalized | replace('\\', '\\\\') | replace('*/', '*\\/') | replace('\r', '\\r') | replace('\t', '\\t') | replace('\x00', '\\0') | indent(' * ', true) }}
+ */
+{%- else -%}
+/**
+ */
+{%- endif -%}
+{%- endmacro %}
+{% block module_documentation -%}
+{%- if content.module_description is defined -%}
+{{ documentation(content.module_description) }}
+{%- endif -%}
+{%- endblock %}
+{% block code -%}
+{%- set selected = namespace(parameters=[], assignments=[], fields=[]) -%}
+{%- for field in content.fields | default([]) -%}
+{%- set optional = "?" if field.optional else "" -%}
+{%- set selected.parameters = selected.parameters + [
+    field.name ~ optional ~ ": " ~ field.type ~ ";"
+] -%}
+{%- set declaration = "public "
+    ~ ("declare " if field.optional else "")
+    ~ ("readonly " if field.readonly else "")
+    ~ field.name ~ optional ~ ": " ~ field.type ~ ";" -%}
+{%- if field.description is defined -%}
+{%- set declaration = (documentation(field.description) | text_block)
+    ~ "\n" ~ declaration -%}
+{%- endif -%}
+{%- set selected.fields = selected.fields + [declaration] -%}
+{%- if field.optional -%}
+{%- set assignment = 'if ("' ~ field.name ~ '" in data) {\n'
+    ~ "  this." ~ field.name ~ " = data." ~ field.name ~ ";\n}" -%}
+{%- else -%}
+{%- set assignment = "this." ~ field.name ~ " = data." ~ field.name ~ ";" -%}
+{%- endif -%}
+{%- set selected.assignments = selected.assignments + [
+    {"text": assignment, "optional": field.optional}
+] -%}
+{%- endfor -%}
+{%- set assignment_body = namespace(text="", previous_optional=false) -%}
+{%- for assignment in selected.assignments -%}
+{%- set separator = ("\n\n" if assignment.optional or assignment_body.previous_optional else "\n")
+    if not loop.first else "" -%}
+{%- set assignment_body.text = assignment_body.text ~ separator ~ assignment.text -%}
+{%- set assignment_body.previous_optional = assignment.optional -%}
+{%- endfor -%}
+{%- set parameter_type = "{\n"
+    ~ (selected.parameters | join("\n") | indent(2, true)) ~ "\n}"
+    if selected.parameters else "{}" -%}
+{%- set constructor = "constructor(data: " ~ parameter_type ~ ") {" -%}
+{%- if assignment_body.text -%}
+{%- set constructor = constructor ~ "\n"
+    ~ (assignment_body.text | indent(2, true)) ~ "\n}" -%}
+{%- else -%}
+{%- set constructor = constructor ~ "}" -%}
+{%- endif -%}
+{%- set members = selected.fields | join("\n") -%}
+{%- set members = members ~ "\n\n" ~ constructor if members else constructor -%}
+{{ documentation(content.class_description) | text_block }}{{ "\n" -}}
+{{ "export class " ~ content.class_name
+   ~ (" implements " ~ (content.implements | join(", "))
+      if content.implements | default([]) else "")
+   ~ " {\n" ~ (members | indent(2, true)) ~ "\n}" }}
+{%- endblock %}

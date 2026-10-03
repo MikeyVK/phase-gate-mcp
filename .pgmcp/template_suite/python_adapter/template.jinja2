@@ -1,24 +1,34 @@
 {% extends "shared/templates/bases/tier2_python.jinja2" %}
 {% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}
 {% import "shared/templates/patterns/python/logging.jinja2" as module_logging %}
-{% block module_documentation %}{{ imports.documentation(content.module_description | default(content.description)) }}{% endblock %}
+{% block module_documentation %}{{ imports.documentation(content.module_description) }}{% endblock %}
 {% block module_imports %}
 {{ imports.groups(content.imports | default({}), {"stdlib": [{"kind": "import", "module": "logging"}]} if content.logging is defined else {}) }}
 {% endblock %}
-{% block code %}
-{% if content.logging is defined %}
-{{ module_logging.logger(content.logging) }}
-
-{% endif %}
-class {{ content.class_name }}{% if content.bases | default([]) %}({{ content.bases | join(", ") }}){% endif %}:
-    {{ imports.documentation(content.description) }}
-{% if content.constructor is defined %}
-{{ signatures.constructor(content.constructor) | indent(4, true) }}
-{% endif %}
-{% for method in content.methods | default([]) %}
-{{ signatures.method(method, method.body) | indent(4, true) }}
-{% endfor %}
-{% if content.constructor is not defined and not content.methods | default([]) %}
-    pass
-{% endif %}
-{% endblock %}
+{% block code_separator %}{{ "\n\n" if content.logging is defined else "\n\n\n" }}{% endblock %}
+{% block code -%}
+{%- set selected = namespace(members=[], top_level=[]) -%}
+{%- if content.constructor is defined -%}
+{%- set selected.members = selected.members + [
+    signatures.constructor(content.constructor) | text_block
+] -%}
+{%- endif -%}
+{%- for method in content.methods | default([]) -%}
+{%- set selected.members = selected.members + [
+    signatures.method(method, method.body) | text_block
+] -%}
+{%- endfor -%}
+{%- set bases = "(" ~ (content.bases | join(", ")) ~ ")"
+    if content.bases | default([]) else "" -%}
+{%- set body = imports.documentation(content.class_description) -%}
+{%- set body = body ~ "\n\n" ~ (selected.members | join("\n\n"))
+    if selected.members else body ~ "\n\npass" -%}
+{%- set class_code = "class " ~ content.class_name ~ bases ~ ":\n"
+    ~ imports.indented(body, 4) -%}
+{%- if content.logging is defined -%}
+{%- set selected.top_level = selected.top_level + [
+    module_logging.logger(content.logging) | text_block
+] -%}
+{%- endif -%}
+{{ (selected.top_level + [class_code]) | join("\n\n\n") }}
+{%- endblock %}

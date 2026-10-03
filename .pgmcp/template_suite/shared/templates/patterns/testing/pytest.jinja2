@@ -5,24 +5,37 @@
 {%- endmacro %}
 
 {% macro fixture(record) -%}
-@{{ record.decorator }}{% if record.scope is defined or record.autouse is defined %}({% if record.scope is defined %}scope={{ values.literal(record.scope) }}{% if record.autouse is defined %}, {% endif %}{% endif %}{% if record.autouse is defined %}autouse={{ values.literal(record.autouse) }}{% endif %}){% endif %}
-{{ signatures.method(record, record.body, false) }}
+{%- set arguments = [] -%}
+{%- if record.scope is defined -%}
+{%- set arguments = arguments + ["scope=" ~ values.literal(record.scope)] -%}
+{%- endif -%}
+{%- if record.autouse is defined -%}
+{%- set arguments = arguments + ["autouse=" ~ values.literal(record.autouse)] -%}
+{%- endif -%}
+{{ "@" ~ record.decorator ~ ("(" ~ (arguments | join(", ")) ~ ")" if arguments else "") }}{{ "\n" -}}
+{{ signatures.method(record, record.body, false) | text_block }}
 {%- endmacro %}
 
 {% macro case(record, instance=false) -%}
-{% for marker in record.markers | default([]) %}@{{ marker }}
-{% endfor %}{% if record.async %}async {% endif %}def {{ record.name }}({{ signatures.parameters(record.parameters, instance) }}) -> None:
-    {{ values.documentation(record.description) }}
-{{ record.body | indent(4, true) }}
+{%- set declarations = namespace(lines=[]) -%}
+{%- for marker in record.markers | default([]) -%}
+{%- set declarations.lines = declarations.lines + ["@" ~ marker] -%}
+{%- endfor -%}
+{%- set signature = ("async " if record.async else "") ~ "def " ~ record.name ~ "(" ~ signatures.parameters(record.parameters, instance) ~ ") -> None:" -%}
+{%- set declarations.lines = declarations.lines + [signature] -%}
+{{ declarations.lines | join("\n") }}{{ "\n" -}}
+{{ values.indented(values.documentation(record.description), 4) }}{{ "\n" -}}
+{{ values.indented(record.body | text_block, 4) }}
 {%- endmacro %}
 
 {% macro cases(records, class_name=none) -%}
-{% if class_name %}class {{ class_name }}:
-{% for record in records %}
-{{ case(record, true) | indent(4, true) }}
-
-{% endfor %}{% else %}{% for record in records %}
-{{ case(record) }}
-
-{% endfor %}{% endif %}
+{%- set selected = namespace(cases=[]) -%}
+{%- for record in records -%}
+{%- set selected.cases = selected.cases + [case(record, true if class_name else false) | text_block] -%}
+{%- endfor -%}
+{%- if class_name -%}
+{{ "class " ~ class_name ~ ":\n" ~ values.indented(selected.cases | join("\n\n"), 4) }}
+{%- else -%}
+{{ selected.cases | join("\n\n\n") }}
+{%- endif -%}
 {%- endmacro %}

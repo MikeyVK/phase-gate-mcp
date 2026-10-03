@@ -1,12 +1,17 @@
 {% extends "shared/templates/bases/tier2_python.jinja2" %}
 {% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}
-{% block module_documentation %}{{ imports.documentation(content.module_description | default(content.description)) }}{% endblock %}
-{% block code %}
-class {{ content.class_name }}{% if content.bases | default([]) %}({{ content.bases | join(", ") }}){% endif %}:
-    {{ imports.documentation(content.description) }}
-{% for signature in content.methods | default([]) %}
-{{ signatures.method(signature, "raise NotImplementedError") | indent(4, true) }}
-{% else %}
-    pass
-{% endfor %}
-{% endblock %}
+{% block module_documentation %}{{ imports.documentation(content.module_description) }}{% endblock %}
+{% block code -%}
+{%- set selected = namespace(members=[]) -%}
+{%- for signature in content.methods | default([]) -%}
+{%- set selected.members = selected.members + [
+    signatures.method(signature, "raise NotImplementedError") | text_block
+] -%}
+{%- endfor -%}
+{%- set bases = "(" ~ (content.bases | join(", ")) ~ ")"
+    if content.bases | default([]) else "" -%}
+{%- set body = imports.documentation(content.class_description) -%}
+{%- set body = body ~ "\n\n" ~ (selected.members | join("\n\n"))
+    if selected.members else body ~ "\n\npass" -%}
+{{ "class " ~ content.class_name ~ bases ~ ":\n" ~ imports.indented(body, 4) }}
+{%- endblock %}

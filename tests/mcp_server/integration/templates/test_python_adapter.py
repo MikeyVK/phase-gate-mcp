@@ -287,4 +287,3 @@ def test_invalid_native_body_is_rejected_by_the_syntax_check(
     decision = response["decision"]
     assert isinstance(decision, dict) and decision["status"] == "failed"
     assert not (tmp_path / "invalid.py").exists()
-

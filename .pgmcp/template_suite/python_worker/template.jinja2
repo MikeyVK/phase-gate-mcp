@@ -1,19 +1,29 @@
 {% extends "shared/templates/bases/tier2_python.jinja2" %}
 {% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}
 {% import "shared/templates/patterns/python/logging.jinja2" as module_logging %}
-{% block module_documentation %}{{ imports.documentation(content.module_description | default(content.description)) }}{% endblock %}
+{% block module_documentation %}{{ imports.documentation(content.module_description) }}{% endblock %}
 {% block module_imports %}
 {{ imports.groups(content.imports | default({}), {"stdlib": [{"kind": "import", "module": "logging"}]} if content.logging is defined else {}) }}
 {% endblock %}
-{% block code %}
-{% if content.logging is defined %}
-{{ module_logging.logger(content.logging) }}
-
-{% endif %}
-class {{ content.class_name }}:
-    {{ imports.documentation(content.description) }}
-{% if content.constructor is defined %}
-{{ signatures.constructor(content.constructor) | indent(4, true) }}
-{% endif %}
-{{ signatures.method(content.operation, content.operation.body) | indent(4, true) }}
-{% endblock %}
+{% block code_separator %}{{ "\n\n" if content.logging is defined else "\n\n\n" }}{% endblock %}
+{% block code -%}
+{%- set selected = namespace(members=[], top_level=[]) -%}
+{%- if content.constructor is defined -%}
+{%- set selected.members = selected.members + [
+    signatures.constructor(content.constructor) | text_block
+] -%}
+{%- endif -%}
+{%- set selected.members = selected.members + [
+    signatures.method(content.operation, content.operation.body) | text_block
+] -%}
+{%- set body = imports.documentation(content.class_description) ~ "\n\n"
+    ~ (selected.members | join("\n\n")) -%}
+{%- set class_code = "class " ~ content.class_name ~ ":\n"
+    ~ imports.indented(body, 4) -%}
+{%- if content.logging is defined -%}
+{%- set selected.top_level = selected.top_level + [
+    module_logging.logger(content.logging) | text_block
+] -%}
+{%- endif -%}
+{{ (selected.top_level + [class_code]) | join("\n\n\n") }}
+{%- endblock %}
