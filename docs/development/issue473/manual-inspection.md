@@ -86,3 +86,26 @@ The initial meaningful contract RED is 32 failed / 2 passed, bounded native rece
 Changed eight family/shared test files passed format/lint/Pyright, with refreshed gates for the subsequently changed shared Python fixture (`pgmcp://cache/runs/c3749daff9824bd6a716676f6a870020`) and integration expectation (`pgmcp://cache/runs/54de446a941043779391899059e8b62a`). No new content tests/assertions or permanent harness were added. Existing typing/native/semantic coverage remains valuable. Scope/Approved Strategy are unchanged.
 
 Remaining work: C_DOCS and C_RECONCILE, independent Implementation review, then separately owned full Validation.
+
+## C_DOCS closure
+
+D3_METADATA, D3_PRESENTATION, D3_DOC_CONSUMERS and D3_DOC_EVIDENCE are fulfilled for seven full-document and three tracking families. The current 20 untouched minimal/filled files are c3_final_*; six c3_final_boundary_* files prove targeted preservation. The final source-suite identity is FAN5Vr-4vcbMMjZ2; full requests, complete cached DTOs, actual UTF-8 hashes and lossless JSON-encoded contents are retained in first-output-evidence.md. Earlier c3_verified_* and the delegated initial boundary collection remain intermediate observations, superseded where the final template graph changed.
+
+| Family | Manual observations across final minimal/filled outputs |
+| --- | --- |
+| Architecture | Required shared header/history; numbered concepts and properly nested subsection headings; constraints separate; concise decisions use tables while lists, indentation, multiline/fenced rationale and supplied alternatives use structural sections. |
+| Research | Authored metadata, findings, research questions, methods and decisions retain order; structured multiline labels do not collapse into inline prose. |
+| Design | Authored facts/header/history and design sections remain separate; list/checklist/link carriers preserve presence and interiors. |
+| Planning | Explicit phase/cycle and validation inputs remain caller-owned; raw ValidationSpec File/Text/Path values are JSON represented, including CRLF and null; validates:null remains present. |
+| Validation report | Supplied findings/check statuses and conclusions remain caller facts; framing does not manufacture an approval. |
+| Reference | Supplied API/example prose and ordering remain; no synthetic version facts. |
+| Generic Doc | Custom sections are direct headings in caller order, without mechanical Sections/Content/Bullets/Checklist wrappers; defined empty scope/sections remain visible. |
+| Issue | Markdown body contract remains separate from publication title/labels; no full-document metadata/history added. |
+| PR | Body sections and deliberately empty deferred-work carrier remain; no full-document metadata/history added. |
+| Commit | Subject/body/footer use their own message contract; no document header/history; actual commitlint 21.2.2 preflight passed. |
+
+All 26 final outputs have first-line technical provenance and exactly one terminal LF. Every configured document/body/message preflight row passed; known angle-link warning F1 remains disclosed. Native acceptance alone did not establish semantic layout: actual manual inspection found and corrected structure placed inside decision tables, ordered-list labels collapsed inline, a literal backslash lost in a revision cell, and template-added spaces on empty list markers. These material first failures remain in the working output and prior evidence appendix. Final manual read confirms code/list/1) rationale stays structured, backslash/pipe revision facts are escaped as literal values, empty markers have no template-added suffix spaces, internal CRLF/hard-break spaces/fence indentation remain, and out-of-order explicit revisions retain their supplied order with the final record supplying the current version/date.
+
+The contract RED commit 1e4915f9a39217b3f9e3681c3ebd45fa3b7dabe4 had 23 failures / 11 passes / 1 warning (9.56s), exposing migrated required metadata inputs against old schemas. The final planned 12-file existing subset passed 47 tests / 1 existing Pydantic warning / 67.13s, receipt pgmcp://cache/runs/e3affeeb5eaf47f19c3dbda134bf192e. Two directly invalidated workflow consumers passed / 22 deselected / 9 existing warnings / 2.36s, receipt pgmcp://cache/runs/f7f2436d310942839a512e80f39cce14. These consumers cover actual live contracts loading and the nineteen-workflow docflow variants. Changed 12 test files passed format/lint/Pyright (receipt pgmcp://cache/runs/07449acf87b0419791230c7279b7b989); later changes were Jinja-only, so those Python gates remain fresh. No tests/assertions were added. Complete native DTOs and exact calls are preserved in the final evidence appendix.
+
+All seven full-document schemas reject removed status aliases; missing metadata and empty revisions are rejected without writing. Contexts/examples and directly affected existing tests/consumers were migrated in this cycle. A duplicated fixture metadata record was removed while preserving the fixture's originally authored facts. Final links are checked separately before commit. C_RECONCILE and independent Implementation review remain; full configured tests and branch gates belong to Validation.

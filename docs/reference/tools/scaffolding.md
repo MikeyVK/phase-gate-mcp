@@ -34,9 +34,15 @@ Example:
   "file_name": "oauth-design.md",
   "context": {
     "title": "OAuth integration",
-    "status": "DRAFT",
-    "version": "1.0",
-    "last_updated": "2026-09-24",
+    "document_metadata": {
+      "status": "DRAFT",
+      "revisions": [{
+        "version": "1.0",
+        "date": "2026-09-24",
+        "author": "Design author",
+        "change": "Initial design."
+      }]
+    },
     "problem_statement": "Describe the problem.",
     "requirements_functional": ["Support the agreed authentication flow."],
     "requirements_nonfunctional": ["Keep credentials outside source control."],

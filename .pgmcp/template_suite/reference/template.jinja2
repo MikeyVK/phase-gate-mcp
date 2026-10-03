@@ -2,65 +2,61 @@
 {% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
 {% import "shared/templates/patterns/markdown/links.jinja2" as links %}
 
-{% block document_body %}
-{{ sections.heading('Sources') }}
+{% macro api_method(method, entry_index, method_index) -%}
+{%- set selected = namespace(parts=[
+    '#### ' ~ sections.inline_code(method.signature),
+    sections.labelled('Parameters', method.parameters),
+    sections.labelled('Returns', method.returns)
+]) -%}
+{%- if method.description is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Description', method.description)] -%}
+{%- endif -%}
+{%- if method.errors is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Errors', method.errors)] -%}
+{%- endif -%}
+{%- if method.sources is defined -%}
+{%- set selected.parts = selected.parts + [
+    '**Sources:**',
+    links.reference_list(method.sources, 'api-' ~ entry_index ~ '-method-' ~ method_index ~ '-src')
+] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endmacro %}
 
-{{ links.reference_list(content.sources, 'src') }}
-{% if content.test_evidence is defined %}
-
-{{ sections.heading('Test Evidence') }}
-
-{{ links.reference_list(content.test_evidence, 'test') }}
-{% endif %}
-
-{{ sections.heading('API Reference') }}
-{% for entry in content.api_reference %}
-{% set entry_index = loop.index %}
-
-{{ sections.heading(entry.name, 3) }}
-
-{{ entry.description }}
-{% if entry.sources is defined %}
-
-**Sources:**
-
-{{ links.reference_list(entry.sources, 'api-' ~ entry_index ~ '-src') }}
-{% endif %}
-{% if entry.methods is defined %}
-
-**Methods:**
-{% for method in entry.methods %}
-
-#### {{ sections.inline_code(method.signature) }}
-
-**Parameters:** {{ method.parameters }}
-
-**Returns:** {{ method.returns }}
-{% if method.description is defined %}
-
-**Description:** {{ method.description }}
-{% endif %}
-{% if method.errors is defined %}
-
-**Errors:** {{ method.errors }}
-{% endif %}
-{% if method.sources is defined %}
-
-**Sources:**
-
-{{ links.reference_list(method.sources, 'api-' ~ entry_index ~ '-method-' ~ loop.index ~ '-src') }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% if content.usage_examples is defined %}
-
-{{ sections.heading('Usage Examples') }}
-{% for example in content.usage_examples %}
-
-{{ sections.heading(example.description, 3) }}
-
-{{ sections.code_fence(example.code, example.language) }}
-{% endfor %}
-{% endif %}
-{% endblock %}
+{% block document_body -%}
+{%- set selected = namespace(parts=[
+    sections.heading('Sources'), links.reference_list(content.sources, 'src')
+]) -%}
+{%- if content.test_evidence is defined -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading('Test Evidence'), links.reference_list(content.test_evidence, 'test')
+] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.heading('API Reference')] -%}
+{%- for entry in content.api_reference -%}
+{%- set entry_index = loop.index -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(entry.name, 3), entry.description | text_block
+] -%}
+{%- if entry.sources is defined -%}
+{%- set selected.parts = selected.parts + [
+    '**Sources:**', links.reference_list(entry.sources, 'api-' ~ entry_index ~ '-src')
+] -%}
+{%- endif -%}
+{%- if entry.methods is defined -%}
+{%- set selected.parts = selected.parts + ['**Methods:**'] -%}
+{%- for method in entry.methods -%}
+{%- set selected.parts = selected.parts + [api_method(method, entry_index, loop.index)] -%}
+{%- endfor -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if content.usage_examples is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Usage Examples')] -%}
+{%- for example in content.usage_examples -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(example.description, 3), sections.code_fence(example.code, example.language)
+] -%}
+{%- endfor -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

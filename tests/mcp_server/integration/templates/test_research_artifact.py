@@ -77,17 +77,6 @@ def test_all_research_carriers_keep_authored_strategy_evidence_and_distinct_link
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary research",
-        "document_metadata": {
-            "status": "DRAFT — fixture input",
-            "revisions": [
-                {
-                    "version": "0.1",
-                    "date": "2026-10-03",
-                    "author": "Template fixture",
-                    "change": "Authored fixture revision.",
-                }
-            ],
-        },
         "problem_statement": "Caller-observed problem.",
         "goals": ["Observe the boundary", "Compare transition costs"],
         "document_metadata": {
@@ -208,7 +197,9 @@ def test_explicit_empty_sections_remain_visible_without_placeholders(
         "assumptions": [],
     }
     output = research.renderer.render("research", context, research.provenance)
-    base = {key: context[key] for key in ("title", "problem_statement", "goals")}
+    base = {
+        key: context[key] for key in ("title", "document_metadata", "problem_statement", "goals")
+    }
     absent = research.renderer.render("research", base, research.provenance)
     headings = [line for line in output.splitlines() if line.startswith("## ")]
     absent_headings = [line for line in absent.splitlines() if line.startswith("## ")]

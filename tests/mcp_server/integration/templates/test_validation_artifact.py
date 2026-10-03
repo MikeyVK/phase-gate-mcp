@@ -83,17 +83,6 @@ def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary validation",
-        "document_metadata": {
-            "status": "DRAFT — fixture input",
-            "revisions": [
-                {
-                    "version": "0.1",
-                    "date": "2026-10-03",
-                    "author": "Template fixture",
-                    "change": "Authored fixture revision.",
-                }
-            ],
-        },
         "issue_number": 42.0,
         "cycle": "CY045",
         "validation_status": "PARTIAL",
@@ -245,7 +234,8 @@ def test_validation_report_explicit_empty_sections_remain_visible(
         validation_report.provenance,
     )
     absent = validation_report.renderer.render(
-        "validation_report", {
+        "validation_report",
+        {
             "title": context["title"],
             "document_metadata": {
                 "status": "DRAFT — fixture input",
@@ -258,7 +248,8 @@ def test_validation_report_explicit_empty_sections_remain_visible(
                     }
                 ],
             },
-        }, validation_report.provenance
+        },
+        validation_report.provenance,
     )
     headings = [line for line in output.splitlines() if line.startswith("## ")]
     assert len(headings) == len(context) - 1

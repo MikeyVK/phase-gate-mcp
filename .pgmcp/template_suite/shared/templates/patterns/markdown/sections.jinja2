@@ -7,16 +7,62 @@
 
 {{ text | text_block }}
 {%- endmacro %}
+{%- macro labelled(title, text) -%}
+{%- set normalized = text | text_block -%}
+{%- set label = '**' ~ links.label(title) ~ ':**' -%}
+{%- set start = normalized.lstrip(' \t') -%}
+{%- set marker = start.split('. ', 1)[0] -%}
+{%- set block = '\n' in normalized or '\r' in normalized
+    or start.startswith(('#', '- ', '+ ', '* ', '```', '~~~', '>'))
+    or normalized.startswith(('    ', '\t'))
+    or ('. ' in start and marker.isdigit())
+    or (') ' in start and start.split(') ', 1)[0].isdigit()) -%}
+{{ label }}{% if normalized %}{{ '\n\n' if block else ' ' }}{{ normalized }}{% endif %}
+{%- endmacro %}
+{%- macro join(parts) -%}
+{{ parts | map('text_block') | select | join('\n\n') }}
+{%- endmacro %}
+{%- macro indented(text, width, first=false) -%}
+{%- set padding = ' ' * width -%}
+{%- set position = namespace(physical_start=true) -%}
+{%- for part in text.splitlines(true) -%}
+{{ (padding if position.physical_start and part.rstrip('\r\n') and (first or not loop.first) else '') ~ part }}
+{%- set position.physical_start = part.endswith('\r') or part.endswith('\n') -%}
+{%- endfor -%}
+{%- endmacro %}
 {%- macro bullets(items) -%}
-{% for item in items %}- {{ item | text_block | indent(2) }}{% if not loop.last %}
-{% endif %}{% endfor %}
+{%- set selected = namespace(items=[]) -%}
+{%- for item in items -%}
+{%- set body = indented(item | text_block, 2) -%}
+{%- set selected.items = selected.items + ['-' ~ (' ' ~ body if body else '')] -%}
+{%- endfor -%}
+{{ selected.items | join('\n') }}
 {%- endmacro %}
 {%- macro checklist(items) -%}
-{% for item in items %}- [{% if item.checked %}x{% else %} {% endif %}] {{ item.text | text_block | indent(6) }}{% if not loop.last %}
-{% endif %}{% endfor %}
+{%- set selected = namespace(items=[]) -%}
+{%- for item in items -%}
+{%- set body = indented(item.text | text_block, 6) -%}
+{%- set selected.items = selected.items + [
+    '- [' ~ ('x' if item.checked else ' ') ~ ']' ~ (' ' ~ body if body else '')
+] -%}
+{%- endfor -%}
+{{ selected.items | join('\n') }}
+{%- endmacro %}
+{%- macro numbered(items) -%}
+{%- set selected = namespace(items=[]) -%}
+{%- for item in items -%}
+{%- set marker = loop.index | string ~ '.' -%}
+{%- set body = indented(item | text_block, (marker | length) + 1) -%}
+{%- set selected.items = selected.items + [marker ~ (' ' ~ body if body else '')] -%}
+{%- endfor -%}
+{{ selected.items | join('\n') }}
 {%- endmacro %}
 {%- macro issue_refs(items) -%}
 {% for item in items %}#{{ item | int }}{% if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro %}
+{%- macro scalar_cell(text) -%}
+{{ links.label(text) | replace('&#13;&#10;', '<br>')
+    | replace('&#13;', '<br>') | replace('&#10;', '<br>') }}
 {%- endmacro %}
 {%- macro table_cell(text) -%}
 {%- set state = namespace(backslashes=0) -%}

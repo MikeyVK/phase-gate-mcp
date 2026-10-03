@@ -83,17 +83,6 @@ def test_refined_plan_retains_authored_ownership_scope_and_evidence_requirements
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Bounded plan",
-        "document_metadata": {
-            "status": "DRAFT — fixture input",
-            "revisions": [
-                {
-                    "version": "0.1",
-                    "date": "2026-10-03",
-                    "author": "Template fixture",
-                    "change": "Authored fixture revision.",
-                }
-            ],
-        },
         "summary": "Implement the approved boundary.",
         "document_metadata": {
             "status": "DRAFT — awaiting review",

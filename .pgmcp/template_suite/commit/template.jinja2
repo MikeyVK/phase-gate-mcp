@@ -1,9 +1,21 @@
 {% extends "shared/templates/bases/tier2_text_tracking.jinja2" %}
 {% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
 {% block tracking_body -%}
-{{ content.type }}{% if content.scope is defined %}({{ content.scope }}){% endif %}{% if content.breaking_change is defined and content.breaking_change %}!{% endif %}: {{ content.subject }}
-{%- if content.body is defined %}{{ '\n\n' ~ content.body }}{% endif %}
-{%- if content.breaking_description is defined %}{{ '\n\nBREAKING CHANGE: ' ~ content.breaking_description }}{% endif %}
-{%- if content.refs is defined %}{{ '\n\nRefs: ' ~ sections.issue_refs(content.refs) }}{% endif %}
-{%- if content.footer is defined %}{{ '\n\n' ~ content.footer }}{% endif %}
-{% endblock %}
+{%- set header = content.type ~ ('(' ~ content.scope ~ ')' if content.scope is defined else '')
+    ~ ('!' if content.breaking_change is defined and content.breaking_change else '')
+    ~ ': ' ~ content.subject -%}
+{%- set selected = namespace(parts=[header]) -%}
+{%- if content.body is defined -%}
+{%- set selected.parts = selected.parts + [content.body | text_block] -%}
+{%- endif -%}
+{%- if content.breaking_description is defined -%}
+{%- set selected.parts = selected.parts + ['BREAKING CHANGE: ' ~ (content.breaking_description | text_block)] -%}
+{%- endif -%}
+{%- if content.refs is defined -%}
+{%- set selected.parts = selected.parts + ['Refs: ' ~ sections.issue_refs(content.refs)] -%}
+{%- endif -%}
+{%- if content.footer is defined -%}
+{%- set selected.parts = selected.parts + [content.footer | text_block] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

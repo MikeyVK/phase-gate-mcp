@@ -8237,3 +8237,6497 @@ Complete final native gate/test DTOs:
   }
 }
 ```
+
+
+## C_DOCS targeted boundary first outputs — delegated collector, 2026-10-03
+
+This appendix records six actual public scaffolds under the current C_DOCS package graph. Contexts contain explicitly authored probe facts, not workflow approval. Every scaffold receipt was fully reconstructed from contiguous cached-resource pages with stable total length and SHA-256 metadata; the UTF-8 SHA-256 was independently recomputed in the collector and matched. Actual output bytes were read through host-native read-only file APIs and hashed; the collector's independent UTF-8 hash matched those raw file hashes. JSON-encoded complete output is authoritative for physical CRLF/LF and significant spaces. Native preflight success is supporting evidence and does not substitute for manual semantic inspection.
+
+Routing corrections before these outputs: six calls without force_target were refused with target_invalid/force_required and written:false. One attempt incorrectly used force:true and was input-schema rejected before writing. The successful exact requests below use the disclosed force_target:true. These were producer invocation corrections, not template defects or failed native checks.
+
+### Boundary decision_structure
+
+The corrected Architecture package uses full section presentation for four-space code, a space-prefixed list, and an ordered 1) list. The multiline Python fence retains its internal CRLF and authored blank line. Structured alternatives remain list entries with presentation indentation on their continuation lines. The final retained fence terminator is an insertion boundary; generated joins use LF.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "architecture",
+  "file_name": "c3_boundary_decision_structure.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Execution Architecture",
+    "concepts": [
+      {
+        "name": "Event stream",
+        "description": "Events move from intake to persistence."
+      }
+    ],
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "decision": "Keep structure",
+        "rationale": "    print(\"keep\")"
+      },
+      {
+        "decision": "Keep list",
+        "rationale": "  - first"
+      },
+      {
+        "decision": "Keep ordered list",
+        "rationale": "1) first"
+      },
+      {
+        "decision": "Keep fenced rationale",
+        "rationale": "\r\n```python\r\nprint(\"first\")\r\n\r\nprint(\"second\")\r\n```\r\n",
+        "alternatives": [
+          "  - alternative first\r\n  - alternative second",
+          "1) alternate ordered",
+          "    print(\"alternate\")"
+        ]
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete cached receipt: `pgmcp://cache/runs/62634cfbeb8948d8b6d7a4d693785ea0`; 930 characters; SHA-256 `79a279d34466dfbcae9cb667034668b0cbd4f4cc87462c8f12ef46a4323cb9d9`.
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_boundary_decision_structure.md",
+  "template_id": "architecture",
+  "package_version": "1.0.0",
+  "package_fingerprint": "unPnOlVzGqCB_s5v"
+}
+`````
+
+Untouched raw output (complete JSON-encoded content):
+
+`````json
+{
+  "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c3_boundary_decision_structure.md",
+  "bytes": 740,
+  "sha256": "fb60fe2f02407fe3b5fd923c3d224879d8c6913ef486da597ead8d2dd12fdaa2",
+  "content": "<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=unPnOlVzGqCB_s5v sf=SLpcwpKdeoAsdX19 -->\n\n# Execution Architecture\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n## Decisions\n\n### Keep structure\n\n    print(\"keep\")\n\n### Keep list\n\n  - first\n\n### Keep ordered list\n\n1) first\n\n### Keep fenced rationale\n\n```python\r\nprint(\"first\")\r\n\r\nprint(\"second\")\r\n```\n\n**Alternatives:**\n\n-   - alternative first\r\n    - alternative second\n- 1) alternate ordered\n-     print(\"alternate\")\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+  "terminal_line_endings": "\n"
+}
+`````
+
+Literal text view (JSON above owns exact byte claims):
+
+`````markdown
+<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=unPnOlVzGqCB_s5v sf=SLpcwpKdeoAsdX19 -->
+
+# Execution Architecture
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Concepts
+
+### 1. Event stream
+
+Events move from intake to persistence.
+
+## Decisions
+
+### Keep structure
+
+    print("keep")
+
+### Keep list
+
+  - first
+
+### Keep ordered list
+
+1) first
+
+### Keep fenced rationale
+
+```python
+print("first")
+
+print("second")
+```
+
+**Alternatives:**
+
+-   - alternative first
+    - alternative second
+- 1) alternate ordered
+-     print("alternate")
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+`````
+
+### Boundary labelled_structure
+
+The corrected shared labelled macro separates **Method:** from the authored 1) first list with one generated empty line; the list stays under its validation obligation and Expected Result remains associated.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "design",
+  "file_name": "c3_boundary_labelled_structure.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Event Path Design",
+    "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+    "requirements_functional": [
+      "Acknowledge only after durable append."
+    ],
+    "requirements_nonfunctional": [
+      "Preserve per-partition order."
+    ],
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "validation": [
+      {
+        "obligation": "Keep list",
+        "method": "1) first",
+        "expected_result": "Structure remains"
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete cached receipt: `pgmcp://cache/runs/2fcb9f53d3c148b189d1b7580a014a49`; 924 characters; SHA-256 `84de10aec9b49ea5fa1bb7e811dd586053a3b4e594883cf975c8bd56b2081ccd`.
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_boundary_labelled_structure.md",
+  "template_id": "design",
+  "package_version": "1.0.0",
+  "package_fingerprint": "luldImxrK1BJ9dmB"
+}
+`````
+
+Untouched raw output (complete JSON-encoded content):
+
+`````json
+{
+  "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c3_boundary_labelled_structure.md",
+  "bytes": 672,
+  "sha256": "b9421542978593d9a9b34a006daec0bc1cbcf6120adcfc7f160a790a293f7602",
+  "content": "<!-- pgmcp:v1 id=design pv=1.0.0 pf=luldImxrK1BJ9dmB sf=SLpcwpKdeoAsdX19 -->\n\n# Event Path Design\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Validation\n\n### Keep list\n\n**Method:**\n\n1) first\n\n**Expected Result:** Structure remains\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+  "terminal_line_endings": "\n"
+}
+`````
+
+Literal text view (JSON above owns exact byte claims):
+
+`````markdown
+<!-- pgmcp:v1 id=design pv=1.0.0 pf=luldImxrK1BJ9dmB sf=SLpcwpKdeoAsdX19 -->
+
+# Event Path Design
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Problem Statement
+
+The consumer can acknowledge an event before its journal append is durable.
+
+## Functional Requirements
+
+- Acknowledge only after durable append.
+
+## Nonfunctional Requirements
+
+- Preserve per-partition order.
+
+## Validation
+
+### Keep list
+
+**Method:**
+
+1) first
+
+**Expected Result:** Structure remains
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+`````
+
+### Boundary revision_order
+
+Caller-supplied order is retained: revision 9.0/date 2026-10-03 precedes revision 0.2/date 2025-01-01, and current header facts come from final supplied 0.2/2025-01-01. Plain pipes are protected. Concrete unresolved presentation finding: author input contains one literal backslash before a pipe (Second \\| reviewer in JSON); table_cell emits only one backslash before the pipe, which Markdown consumes as its pipe escape. The visible literal backslash is therefore lost. This is source-causal to existing parity-based table_cell escaping; no repair was performed by the delegated collector.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "generic_doc",
+  "file_name": "c3_boundary_revision_order.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Authored revision sequence",
+    "purpose": "Observe caller-controlled revision order and table escaping.",
+    "summary": "The final supplied revision owns current header facts.",
+    "document_metadata": {
+      "status": "DRAFT | authored",
+      "revisions": [
+        {
+          "version": "9.0",
+          "date": "2026-10-03",
+          "author": "First | reviewer",
+          "change": "Authored \\ first change."
+        },
+        {
+          "version": "0.2",
+          "date": "2025-01-01",
+          "author": "Second \\| reviewer\nCo-author",
+          "change": "Keep | delimiters\nand \\ literal backslashes."
+        }
+      ]
+    }
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete cached receipt: `pgmcp://cache/runs/4da71131eace49d2a94de26423ce70aa`; 925 characters; SHA-256 `c43199f1507e0cfa2310a4e32497c390e196f12b15a04506987172a103ec9244`.
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_boundary_revision_order.md",
+  "template_id": "generic_doc",
+  "package_version": "1.0.0",
+  "package_fingerprint": "ZM_jywqzBMzPxHq4"
+}
+`````
+
+Untouched raw output (complete JSON-encoded content):
+
+`````json
+{
+  "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c3_boundary_revision_order.md",
+  "bytes": 598,
+  "sha256": "0c1848bcc50ee51b65427e06f189de60927658947710961d48c2376a0d65cfa1",
+  "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=ZM_jywqzBMzPxHq4 sf=SLpcwpKdeoAsdX19 -->\n\n# Authored revision sequence\n\n**Status:** DRAFT &#124; authored  \n**Version:** 0.2  \n**Last Updated:** 2025-01-01\n\n## Purpose\n\nObserve caller-controlled revision order and table escaping.\n\n## Summary\n\nThe final supplied revision owns current header facts.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 9.0 | 2026-10-03 | First \\| reviewer | Authored \\ first change. |\n| 0.2 | 2025-01-01 | Second \\| reviewer<br>Co-author | Keep \\| delimiters<br>and \\ literal backslashes. |\n",
+  "terminal_line_endings": "\n"
+}
+`````
+
+Literal text view (JSON above owns exact byte claims):
+
+`````markdown
+<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=ZM_jywqzBMzPxHq4 sf=SLpcwpKdeoAsdX19 -->
+
+# Authored revision sequence
+
+**Status:** DRAFT &#124; authored  
+**Version:** 0.2  
+**Last Updated:** 2025-01-01
+
+## Purpose
+
+Observe caller-controlled revision order and table escaping.
+
+## Summary
+
+The final supplied revision owns current header facts.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 9.0 | 2026-10-03 | First \| reviewer | Authored \ first change. |
+| 0.2 | 2025-01-01 | Second \| reviewer<br>Co-author | Keep \| delimiters<br>and \ literal backslashes. |
+`````
+
+### Boundary markdown_boundaries
+
+Boundary-only padding is removed from prose. Internal CRLF, the authored internal blank lines, two hard-break spaces, code indentation and fence content remain. Direct custom H2 sections retain caller order; explicit empty Scope In, Migration Steps and custom content/list/checklist carriers remain visible. Continuation indentation is presentation-owned. Whitespace-only admitted list/checklist items remain visible markers but produce generated trailing padding '- ' and '- [ ] '; this is recorded for producer assessment without calling empty carriers a loss of input.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "generic_doc",
+  "file_name": "c3_boundary_markdown_boundaries.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Markdown boundary probe",
+    "purpose": "\r\n \t\r\nRetain authored purpose.  \r\nNext purpose line.\r\n\r\n",
+    "summary": "\n \t\nFirst summary line.  \r\n\r\nSecond summary line.\r\n\t\r\n",
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "scope_in": "",
+    "key_changes": [
+      " \t\n",
+      "One change.\r\n\r\nFollow-up paragraph.  \r\nFinal line."
+    ],
+    "migration_steps": [],
+    "validation_checklist": [
+      {
+        "text": " \t\n",
+        "checked": false
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Structured first",
+        "content": "\r\n\r\n### Authored subsection\r\n\r\n- authored first\r\n- authored second\r\n\r\n```text\r\n  literal  \r\n\r\nlast literal\r\n```\r\n\r\n",
+        "bullets": [
+          "Outer item.\r\n\r\nContinuation.  \r\n\r\n```text\r\ncode\r\n```"
+        ],
+        "checklist": [
+          {
+            "text": "Check first.  \r\nCheck continuation.",
+            "checked": true
+          }
+        ]
+      },
+      {
+        "heading": "Explicit empty",
+        "content": ""
+      },
+      {
+        "heading": "Last section",
+        "bullets": [],
+        "checklist": []
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete cached receipt: `pgmcp://cache/runs/c4347db47d79473793b816fedcf8f0a4`; 930 characters; SHA-256 `b6b2d598a755bcfdf62d86b8da9e8bfb9eb16bd0de2f21e83488bf6fdc9a8aca`.
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_boundary_markdown_boundaries.md",
+  "template_id": "generic_doc",
+  "package_version": "1.0.0",
+  "package_fingerprint": "ZM_jywqzBMzPxHq4"
+}
+`````
+
+Untouched raw output (complete JSON-encoded content):
+
+`````json
+{
+  "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c3_boundary_markdown_boundaries.md",
+  "bytes": 898,
+  "sha256": "fb50b9047ec2bedc5a5acb7ebbf4947bb77aa31baa5ca6d59be052868d5d09de",
+  "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=ZM_jywqzBMzPxHq4 sf=SLpcwpKdeoAsdX19 -->\n\n# Markdown boundary probe\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Purpose\n\nRetain authored purpose.  \r\nNext purpose line.\n\n## Scope In\n\n## Summary\n\nFirst summary line.  \r\n\r\nSecond summary line.\n\n## Key Changes\n\n- \n- One change.\r\n\r\n  Follow-up paragraph.  \r\n  Final line.\n\n## Migration Steps\n\n## Validation Checklist\n\n- [ ] \n\n## Structured first\n\n### Authored subsection\r\n\r\n- authored first\r\n- authored second\r\n\r\n```text\r\n  literal  \r\n\r\nlast literal\r\n```\n\n- Outer item.\r\n\r\n  Continuation.  \r\n\r\n  ```text\r\n  code\r\n  ```\n\n- [x] Check first.  \r\n      Check continuation.\n\n## Explicit empty\n\n## Last section\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+  "terminal_line_endings": "\n"
+}
+`````
+
+Literal text view (JSON above owns exact byte claims):
+
+`````markdown
+<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=ZM_jywqzBMzPxHq4 sf=SLpcwpKdeoAsdX19 -->
+
+# Markdown boundary probe
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Purpose
+
+Retain authored purpose.  
+Next purpose line.
+
+## Scope In
+
+## Summary
+
+First summary line.  
+
+Second summary line.
+
+## Key Changes
+
+- 
+- One change.
+
+  Follow-up paragraph.  
+  Final line.
+
+## Migration Steps
+
+## Validation Checklist
+
+- [ ] 
+
+## Structured first
+
+### Authored subsection
+
+- authored first
+- authored second
+
+```text
+  literal  
+
+last literal
+```
+
+- Outer item.
+
+  Continuation.  
+
+  ```text
+  code
+  ```
+
+- [x] Check first.  
+      Check continuation.
+
+## Explicit empty
+
+## Last section
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+`````
+
+### Boundary validation_data
+
+Raw file and text values retain complete leading/trailing CRLF and significant spaces through JSON literals, rather than prose trimming. Explicit path:null is rendered as null. A separate deliverable retains validates:null distinctly. Raw and null carriers remain attached to their own deliverable; heading escaping protects underscores.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "planning",
+  "file_name": "c3_boundary_validation_data.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Raw ValidationSpec probe",
+    "summary": "Observe literal values without prose normalization.",
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "work_units": [
+      {
+        "id": "U1",
+        "name": "Literal preservation",
+        "goal": "Preserve the complete supplied data.",
+        "deliverables": [
+          {
+            "id": "D_RAW",
+            "description": "Contains-text literal probe.",
+            "validates": {
+              "type": "contains_text",
+              "file": "\r\n  raw file.json  \r\n",
+              "text": "\r\n  literal  \r\n\r\nlast  \r\n",
+              "path": null
+            }
+          },
+          {
+            "id": "D_NULL",
+            "description": "Explicit null validates carrier.",
+            "validates": null
+          }
+        ],
+        "exit_criteria": "Manually compare JSON literals with the caller data."
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete cached receipt: `pgmcp://cache/runs/09a47995967646119f9c150b8f8ea025`; 923 characters; SHA-256 `cdb9939d76e3d3889ee3f2b6250cf6d9779f08355c8fd153d664c9306a824d01`.
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_boundary_validation_data.md",
+  "template_id": "planning",
+  "package_version": "1.0.0",
+  "package_fingerprint": "nx7xUM4sCXt2fPaA"
+}
+`````
+
+Untouched raw output (complete JSON-encoded content):
+
+`````json
+{
+  "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c3_boundary_validation_data.md",
+  "bytes": 866,
+  "sha256": "5852e0d72d81bb1c3ecde32e35f71d2f71030af92e2865e8b579566a9a901011",
+  "content": "<!-- pgmcp:v1 id=planning pv=1.0.0 pf=nx7xUM4sCXt2fPaA sf=SLpcwpKdeoAsdX19 -->\n\n# Raw ValidationSpec probe\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nObserve literal values without prose normalization.\n\n## Work Units\n\n### U1 — Literal preservation\n\n**Goal:** Preserve the complete supplied data.\n\n#### Deliverables\n\n##### D\\_RAW\n\nContains-text literal probe.\n\n**Validates:**\n\n**Type:** contains_text\n\n**File:** \"\\r\\n  raw file.json  \\r\\n\"\n\n**Text:** \"\\r\\n  literal  \\r\\n\\r\\nlast  \\r\\n\"\n\n**Path:** null\n\n##### D\\_NULL\n\nExplicit null validates carrier.\n\n**Validates:** null\n\n#### Exit Criteria\n\nManually compare JSON literals with the caller data.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+  "terminal_line_endings": "\n"
+}
+`````
+
+Literal text view (JSON above owns exact byte claims):
+
+`````markdown
+<!-- pgmcp:v1 id=planning pv=1.0.0 pf=nx7xUM4sCXt2fPaA sf=SLpcwpKdeoAsdX19 -->
+
+# Raw ValidationSpec probe
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Summary
+
+Observe literal values without prose normalization.
+
+## Work Units
+
+### U1 — Literal preservation
+
+**Goal:** Preserve the complete supplied data.
+
+#### Deliverables
+
+##### D\_RAW
+
+Contains-text literal probe.
+
+**Validates:**
+
+**Type:** contains_text
+
+**File:** "\r\n  raw file.json  \r\n"
+
+**Text:** "\r\n  literal  \r\n\r\nlast  \r\n"
+
+**Path:** null
+
+##### D\_NULL
+
+Explicit null validates carrier.
+
+**Validates:** null
+
+#### Exit Criteria
+
+Manually compare JSON literals with the caller data.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+`````
+
+### Boundary commit_boundaries
+
+The authored body and footer lose only blank boundary lines and the last retained terminator. Their internal CRLF paragraph boundaries and significant trailing two spaces remain. Header, refs and footer retain their association/order; native commitlint 21.2.2 accepted the effective message with only the existing Pydantic field-shadow warning.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "commit",
+  "file_name": "c3_boundary_commit_boundaries.txt",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "type": "fix",
+    "scope": "templates",
+    "subject": "Keep authored body and footer",
+    "body": "\r\n \t\r\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\r\n\r\n\t\r\n",
+    "footer": "\n \t\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\r\n\r\n",
+    "refs": [
+      473
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete cached receipt: `pgmcp://cache/runs/dc539b551fb74dfda3bafbfd85058fce`; 1492 characters; SHA-256 `b388b37ad9dbf1b0bbeddb7ecc214a0bcf544ffa8e6b96c62b9608573f44829c`.
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "commit_preflight",
+  "checks": [
+    {
+      "check_id": "commit_message",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "text",
+        "data": "checked message view (first valid provenance line removed):\n\nfix(templates): Keep authored body and footer\n\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\n\nRefs: #473\n\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "commitlint",
+          "version": "1.0.0",
+          "fingerprint": "33ygyZvwX7L9eAnv",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 438,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 225,
+            "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "commitlint",
+            "version": "21.2.2"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_boundary_commit_boundaries.txt",
+  "template_id": "commit",
+  "package_version": "1.0.0",
+  "package_fingerprint": "HR_Rp2ah5MPa5aW6"
+}
+`````
+
+Untouched raw output (complete JSON-encoded content):
+
+`````json
+{
+  "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c3_boundary_commit_boundaries.txt",
+  "bytes": 253,
+  "sha256": "a86c3bfed8b534f32b21a8e57da1567d79e705488769c729490657c61f850584",
+  "content": "# pgmcp:v1 id=commit pv=1.0.0 pf=HR_Rp2ah5MPa5aW6 sf=SLpcwpKdeoAsdX19\n\nfix(templates): Keep authored body and footer\n\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\n\nRefs: #473\n\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\n",
+  "terminal_line_endings": "\n"
+}
+`````
+
+Literal text view (JSON above owns exact byte claims):
+
+`````text
+# pgmcp:v1 id=commit pv=1.0.0 pf=HR_Rp2ah5MPa5aW6 sf=SLpcwpKdeoAsdX19
+
+fix(templates): Keep authored body and footer
+
+First authored paragraph.  
+
+Second authored paragraph.
+
+Refs: #473
+
+Reviewed-by: Template reviewer  
+
+Signed-off-by: Probe author
+`````
+
+### Collector preservation findings and limits
+
+The Architecture and labelled-prose defects reproduced before the producer correction no longer occur in these fresh cases. The metadata backslash-before-pipe display defect remains for producer disposition. Generated trailing padding on empty list/check carriers remains visible in the retained first output for producer assessment. No production source, tests, gates, restart or commit was performed by this collector. No independent GO/PASS is asserted.
+
+## C_DOCS final first outputs — 2026-10-03
+
+These 20 minimal/filled pairs and six targeted boundary outputs supersede the earlier c3_verified_* and delegated first boundary outputs. All were scaffolded after catalog refresh from source-suite identity FAN5Vr-4vcbMMjZ2. The request, complete cached response, exact UTF-8 content and byte hash below are authoritative. JSON-encoded content preserves physical CR/LF and trailing spaces independently of Markdown rendering. Root read every complete file; no fix was applied to these pristine outputs. Resource windows were reconstructed completely with stable receipt hashes and lengths; this collector did not independently recompute the receipt SHA. File SHA256 values were computed over actual disk bytes.
+
+### c3_final_architecture_minimal.md
+
+Receipt: `pgmcp://cache/runs/c53c407a12694afa886cc4b1112353d3`. Bytes: 418; UTF-8 SHA256: `89b9b4256821c0c9d3b19058d17ada721dd4d67b35f396e02d9a881271a14d5c`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "architecture",
+  "file_name": "c3_final_architecture_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Execution Architecture",
+    "concepts": [
+      {
+        "name": "Event stream",
+        "description": "Events move from intake to persistence."
+      }
+    ],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_architecture_minimal.md",
+  "template_id": "architecture",
+  "package_version": "1.0.0",
+  "package_fingerprint": "F3GiYxoJo0WTq92r"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Execution Architecture\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Execution Architecture
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Concepts
+
+### 1. Event stream
+
+Events move from intake to persistence.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_architecture_filled.md
+
+Receipt: `pgmcp://cache/runs/b8bbbde0118846fa920d30408bf853d7`. Bytes: 1027; UTF-8 SHA256: `5fb9a18329fa6031aa7879d0d51244f9eb1ed944e99a89cf69d64181e15d7adf`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "architecture",
+  "file_name": "c3_final_architecture_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Execution Architecture",
+    "purpose": "Describe the order-preserving event path.",
+    "related_docs": [
+      {
+        "label": "Design",
+        "target": "../../../docs/coding_standards/DOCUMENTATION_STANDARD.md"
+      }
+    ],
+    "concepts": [
+      {
+        "name": "Event stream",
+        "description": "Events move from intake to persistence.",
+        "diagram": "flowchart LR\n  Intake --> Journal\n  Journal --> Store",
+        "subsections": [
+          {
+            "name": "Ordering",
+            "description": "Each partition preserves append order."
+          }
+        ]
+      }
+    ],
+    "constraints": [
+      "Never acknowledge before durable append."
+    ],
+    "decisions": [
+      {
+        "decision": "Use a durable journal",
+        "rationale": "Recovery needs an authoritative append order.",
+        "alternatives": [
+          "In-memory queue"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "label": "Journal contract",
+        "target": "../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"
+      }
+    ],
+    "document_metadata": {
+      "status": "DRAFT — review pending",
+      "revisions": [
+        {
+          "version": "1.0",
+          "date": "2026-10-02",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "json",
+        "data": {
+          "issues": [
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\ARCHITECTURE_PRINCIPLES.md>",
+              "line": 41
+            },
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\DOCUMENTATION_STANDARD.md>",
+              "line": 45
+            }
+          ]
+        }
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 571,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_architecture_filled.md",
+  "template_id": "architecture",
+  "package_version": "1.0.0",
+  "package_fingerprint": "F3GiYxoJo0WTq92r"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Execution Architecture\n\n**Status:** DRAFT — review pending  \n**Version:** 1.0  \n**Last Updated:** 2026-10-02\n\n## Purpose\n\nDescribe the order-preserving event path.\n\n## Constraints\n\n- Never acknowledge before durable append.\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n```mermaid\nflowchart LR\n  Intake --> Journal\n  Journal --> Store\n```\n\n#### 1.1. Ordering\n\nEach partition preserves append order.\n\n## Decisions\n\n| Decision | Rationale | Alternatives |\n| --- | --- | --- |\n| Use a durable journal | Recovery needs an authoritative append order. | In-memory queue |\n\n## Sources\n\n- [Journal contract](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)\n\n## Related Documents\n\n- [Design](<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>)\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 1.0 | 2026-10-02 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Execution Architecture
+
+**Status:** DRAFT — review pending  
+**Version:** 1.0  
+**Last Updated:** 2026-10-02
+
+## Purpose
+
+Describe the order-preserving event path.
+
+## Constraints
+
+- Never acknowledge before durable append.
+
+## Concepts
+
+### 1. Event stream
+
+Events move from intake to persistence.
+
+```mermaid
+flowchart LR
+  Intake --> Journal
+  Journal --> Store
+```
+
+#### 1.1. Ordering
+
+Each partition preserves append order.
+
+## Decisions
+
+| Decision | Rationale | Alternatives |
+| --- | --- | --- |
+| Use a durable journal | Recovery needs an authoritative append order. | In-memory queue |
+
+## Sources
+
+- [Journal contract](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)
+
+## Related Documents
+
+- [Design](<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>)
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2026-10-02 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_research_minimal.md
+
+Receipt: `pgmcp://cache/runs/4f449f0d0da549edbc2dfdfd83b7e1d6`. Bytes: 498; UTF-8 SHA256: `b369a811fc7e575077d62de0070742f0fd8a8b0cd714cc6d0877a5e790878012`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "research",
+  "file_name": "c3_final_research_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "First-call template quality research",
+    "problem_statement": "Some shipped templates produce first outputs with formatting defects.",
+    "goals": [
+      "Locate generated presentation defects."
+    ],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_research_minimal.md",
+  "template_id": "research",
+  "package_version": "1.0.0",
+  "package_fingerprint": "lgBwxWMfTAmNNg_O"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=FAN5Vr-4vcbMMjZ2 -->\n\n# First-call template quality research\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nSome shipped templates produce first outputs with formatting defects.\n\n## Goals\n\n- Locate generated presentation defects.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=FAN5Vr-4vcbMMjZ2 -->
+
+# First-call template quality research
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Problem Statement
+
+Some shipped templates produce first outputs with formatting defects.
+
+## Goals
+
+- Locate generated presentation defects.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_research_filled.md
+
+Receipt: `pgmcp://cache/runs/5658fe46f17b44eaba89e888e432d2a5`. Bytes: 1757; UTF-8 SHA256: `ac52572a74a0776496fb0ae8a1fa3f95eca736bdf25962d5663ba4a243e29914`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "research",
+  "file_name": "c3_final_research_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "First-call template quality research",
+    "problem_statement": "Some shipped templates produce first outputs with formatting defects.",
+    "goals": [
+      "Locate generated presentation defects.",
+      "Separate template text from caller-authored strings."
+    ],
+    "background": "Issue 473 reports excess Markdown spacing and mechanical labels.",
+    "findings": "The six Markdown templates extend the same document base and section/link macros.",
+    "questions": [
+      "Which boundaries need an explicit compatibility decision?"
+    ],
+    "references": [
+      {
+        "label": "Documentation Standard",
+        "target": "../../../docs/coding_standards/DOCUMENTATION_STANDARD.md"
+      }
+    ],
+    "evidence": [
+      {
+        "claim": "The document base emits metadata and related-document blocks.",
+        "observation": "The base has explicit conditional blocks for status, version, date, and related docs.",
+        "sources": [
+          {
+            "label": "Markdown document base",
+            "target": "../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2"
+          }
+        ],
+        "invocation": "Render one populated document context",
+        "observed_result": "Authored sample evidence; actual rendering is measured separately.",
+        "observed_at": "2026-10-02T12:00:00Z"
+      }
+    ],
+    "consumers": [
+      {
+        "name": "First-time scaffold caller",
+        "responsibility": "Supplies artifact context.",
+        "impact": "Reads generated Markdown before editing."
+      }
+    ],
+    "risks": [
+      {
+        "description": "A template defect can be misattributed to a user string.",
+        "mitigation": "Use marker strings and compare the raw template path.",
+        "consequence": "A fix could alter valid authored content."
+      }
+    ],
+    "assumptions": [
+      "The supplied context strings are representative."
+    ],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "json",
+        "data": {
+          "issues": [
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\DOCUMENTATION_STANDARD.md>",
+              "line": 32
+            },
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\.pgmcp\\template_suite\\shared\\templates\\bases\\tier2_markdown_document.jinja2>",
+              "line": 40
+            }
+          ]
+        }
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 628,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_research_filled.md",
+  "template_id": "research",
+  "package_version": "1.0.0",
+  "package_fingerprint": "lgBwxWMfTAmNNg_O"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=FAN5Vr-4vcbMMjZ2 -->\n\n# First-call template quality research\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nSome shipped templates produce first outputs with formatting defects.\n\n## Goals\n\n- Locate generated presentation defects.\n- Separate template text from caller-authored strings.\n\n## Background\n\nIssue 473 reports excess Markdown spacing and mechanical labels.\n\n## Findings\n\nThe six Markdown templates extend the same document base and section/link macros.\n\n## Questions\n\n- Which boundaries need an explicit compatibility decision?\n\n## References\n\n- [Documentation Standard](<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>)\n\n## Evidence\n\n### The document base emits metadata and related-document blocks.\n\nThe base has explicit conditional blocks for status, version, date, and related docs.\n\n- [Markdown document base](<../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2>)\n\n**Invocation:** Render one populated document context\n\n**Observed Result:** Authored sample evidence; actual rendering is measured separately.\n\n**Observed At:** 2026-10-02T12:00:00Z\n\n## Consumers\n\n### First-time scaffold caller\n\nSupplies artifact context.\n\n**Impact:** Reads generated Markdown before editing.\n\n## Risks\n\n### A template defect can be misattributed to a user string.\n\nUse marker strings and compare the raw template path.\n\n**Consequence:** A fix could alter valid authored content.\n\n## Assumptions\n\n- The supplied context strings are representative.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=FAN5Vr-4vcbMMjZ2 -->
+
+# First-call template quality research
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Problem Statement
+
+Some shipped templates produce first outputs with formatting defects.
+
+## Goals
+
+- Locate generated presentation defects.
+- Separate template text from caller-authored strings.
+
+## Background
+
+Issue 473 reports excess Markdown spacing and mechanical labels.
+
+## Findings
+
+The six Markdown templates extend the same document base and section/link macros.
+
+## Questions
+
+- Which boundaries need an explicit compatibility decision?
+
+## References
+
+- [Documentation Standard](<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>)
+
+## Evidence
+
+### The document base emits metadata and related-document blocks.
+
+The base has explicit conditional blocks for status, version, date, and related docs.
+
+- [Markdown document base](<../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2>)
+
+**Invocation:** Render one populated document context
+
+**Observed Result:** Authored sample evidence; actual rendering is measured separately.
+
+**Observed At:** 2026-10-02T12:00:00Z
+
+## Consumers
+
+### First-time scaffold caller
+
+Supplies artifact context.
+
+**Impact:** Reads generated Markdown before editing.
+
+## Risks
+
+### A template defect can be misattributed to a user string.
+
+Use marker strings and compare the raw template path.
+
+**Consequence:** A fix could alter valid authored content.
+
+## Assumptions
+
+- The supplied context strings are representative.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_design_minimal.md
+
+Receipt: `pgmcp://cache/runs/ff03e48af0f24200888c46a6205b6037`. Bytes: 565; UTF-8 SHA256: `43b4370d826e7c1991ec16e4f5d7055a9b134b954cf8437df815baf99e48b512`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "design",
+  "file_name": "c3_final_design_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event Path Design",
+    "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+    "requirements_functional": [
+      "Acknowledge only after durable append."
+    ],
+    "requirements_nonfunctional": [
+      "Preserve per-partition order."
+    ],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_design_minimal.md",
+  "template_id": "design",
+  "package_version": "1.0.0",
+  "package_fingerprint": "YApsrGTQgBUKFez2"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Design\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event Path Design
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Problem Statement
+
+The consumer can acknowledge an event before its journal append is durable.
+
+## Functional Requirements
+
+- Acknowledge only after durable append.
+
+## Nonfunctional Requirements
+
+- Preserve per-partition order.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_design_filled.md
+
+Receipt: `pgmcp://cache/runs/5a659146dacd4799a2abd01416cc046b`. Bytes: 1295; UTF-8 SHA256: `cb47264cd9151fbca71633ee1ee27285715df0b05c9538f83cf7c2daad5469b2`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "design",
+  "file_name": "c3_final_design_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event Path Design",
+    "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+    "requirements_functional": [
+      "Acknowledge only after durable append."
+    ],
+    "requirements_nonfunctional": [
+      "Preserve per-partition order."
+    ],
+    "options": [
+      {
+        "name": "Append then acknowledge",
+        "description": "Commit to the journal before replying.",
+        "pros": [
+          "Crash recovery has a durable source."
+        ],
+        "cons": [
+          "Adds append latency."
+        ]
+      }
+    ],
+    "decision": "Append before acknowledgement.",
+    "rationale": "The durability requirement determines the ordering.",
+    "contracts": [
+      {
+        "heading": "Append result",
+        "content": "Returns an explicit durable position."
+      }
+    ],
+    "validation": [
+      {
+        "obligation": "A failed append is not acknowledged",
+        "method": "Inject journal failure",
+        "expected_result": "The call fails and no acknowledgement is sent.",
+        "references": [
+          {
+            "label": "Journal contract",
+            "target": "../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"
+          }
+        ]
+      }
+    ],
+    "risks": [
+      {
+        "description": "Append latency increases.",
+        "mitigation": "Measure the journal path.",
+        "consequence": "Higher tail latency."
+      }
+    ],
+    "document_metadata": {
+      "status": "DRAFT — review pending",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "json",
+        "data": {
+          "issues": [
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\ARCHITECTURE_PRINCIPLES.md>",
+              "line": 59
+            }
+          ]
+        }
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 357,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_design_filled.md",
+  "template_id": "design",
+  "package_version": "1.0.0",
+  "package_fingerprint": "YApsrGTQgBUKFez2"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Design\n\n**Status:** DRAFT — review pending  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Options\n\n### 1. Append then acknowledge\n\nCommit to the journal before replying.\n\n**Pros:**\n\n- Crash recovery has a durable source.\n\n**Cons:**\n\n- Adds append latency.\n\n## Decision\n\nAppend before acknowledgement.\n\n## Rationale\n\nThe durability requirement determines the ordering.\n\n## Contracts\n\n### Append result\n\nReturns an explicit durable position.\n\n## Validation\n\n### A failed append is not acknowledged\n\n**Method:** Inject journal failure\n\n**Expected Result:** The call fails and no acknowledgement is sent.\n\n**References:**\n\n- [Journal contract](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)\n\n## Risks\n\n### Append latency increases.\n\nMeasure the journal path.\n\n**Consequence:** Higher tail latency.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event Path Design
+
+**Status:** DRAFT — review pending  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Problem Statement
+
+The consumer can acknowledge an event before its journal append is durable.
+
+## Functional Requirements
+
+- Acknowledge only after durable append.
+
+## Nonfunctional Requirements
+
+- Preserve per-partition order.
+
+## Options
+
+### 1. Append then acknowledge
+
+Commit to the journal before replying.
+
+**Pros:**
+
+- Crash recovery has a durable source.
+
+**Cons:**
+
+- Adds append latency.
+
+## Decision
+
+Append before acknowledgement.
+
+## Rationale
+
+The durability requirement determines the ordering.
+
+## Contracts
+
+### Append result
+
+Returns an explicit durable position.
+
+## Validation
+
+### A failed append is not acknowledged
+
+**Method:** Inject journal failure
+
+**Expected Result:** The call fails and no acknowledgement is sent.
+
+**References:**
+
+- [Journal contract](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)
+
+## Risks
+
+### Append latency increases.
+
+Measure the journal path.
+
+**Consequence:** Higher tail latency.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_planning_minimal.md
+
+Receipt: `pgmcp://cache/runs/e9c12d0ad2514ea8a7a2455f73fd1375`. Bytes: 619; UTF-8 SHA256: `8487dcabab8e610ef39e801b03c947c1b2abe1f3394345334bbc27da3df0eacc`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "planning",
+  "file_name": "c3_final_planning_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event Path Plan",
+    "summary": "Make acknowledgement follow a durable append.",
+    "work_units": [
+      {
+        "id": "U1",
+        "name": "Append ordering",
+        "goal": "Enforce durable append before acknowledgement.",
+        "deliverables": [
+          {
+            "id": "code",
+            "description": "Updated consumer path."
+          }
+        ],
+        "exit_criteria": "Failure injection proves no early acknowledgement."
+      }
+    ],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_planning_minimal.md",
+  "template_id": "planning",
+  "package_version": "1.0.0",
+  "package_fingerprint": "CscfYyDLqj0OeHml"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Plan\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nMake acknowledgement follow a durable append.\n\n## Work Units\n\n### U1 — Append ordering\n\n**Goal:** Enforce durable append before acknowledgement.\n\n#### Deliverables\n\n##### code\n\nUpdated consumer path.\n\n#### Exit Criteria\n\nFailure injection proves no early acknowledgement.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event Path Plan
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Summary
+
+Make acknowledgement follow a durable append.
+
+## Work Units
+
+### U1 — Append ordering
+
+**Goal:** Enforce durable append before acknowledgement.
+
+#### Deliverables
+
+##### code
+
+Updated consumer path.
+
+#### Exit Criteria
+
+Failure injection proves no early acknowledgement.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_planning_filled.md
+
+Receipt: `pgmcp://cache/runs/ad62bf17fb074542a4fcb0b5bc9d5398`. Bytes: 1333; UTF-8 SHA256: `d6c4d5e352ab346ca0c324bb18f991f10586282e45edddd4aa7261f21175a3ff`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "planning",
+  "file_name": "c3_final_planning_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event Path Plan",
+    "summary": "Make acknowledgement follow a durable append.",
+    "dependencies": [
+      "Approved interface contract"
+    ],
+    "work_units": [
+      {
+        "id": "U1",
+        "name": "Append ordering",
+        "goal": "Enforce durable append before acknowledgement.",
+        "owner": "@imp",
+        "deliverables": [
+          {
+            "id": "code",
+            "description": "Updated consumer path.",
+            "owner": "@imp",
+            "validates": {
+              "type": "contains_text",
+              "file": "mcp_server/consumer.py",
+              "text": "append"
+            }
+          }
+        ],
+        "exit_criteria": "Failure injection proves no early acknowledgement.",
+        "verification": [
+          {
+            "obligation": "Failed append does not acknowledge",
+            "method": "Run focused failure-path test",
+            "expected_result": "No acknowledgement is observed."
+          }
+        ],
+        "risks": [
+          {
+            "description": "Retry may duplicate an append.",
+            "mitigation": "Use the durable event key.",
+            "consequence": "Duplicate journal entries."
+          }
+        ],
+        "stop_conditions": [
+          "Stop if the approved call contract cannot be preserved."
+        ]
+      }
+    ],
+    "phase_deliverables": {
+      "validation": [
+        {
+          "id": "report",
+          "description": "Validation evidence report.",
+          "validates": {
+            "type": "file_exists",
+            "file": "docs/development/issue473/validation.md"
+          }
+        }
+      ]
+    },
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_planning_filled.md",
+  "template_id": "planning",
+  "package_version": "1.0.0",
+  "package_fingerprint": "CscfYyDLqj0OeHml"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Plan\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nMake acknowledgement follow a durable append.\n\n## Dependencies\n\n- Approved interface contract\n\n## Work Units\n\n### U1 — Append ordering\n\n**Goal:** Enforce durable append before acknowledgement.\n\n**Owner:** @imp\n\n#### Deliverables\n\n##### code\n\nUpdated consumer path.\n\n**Owner:** @imp\n\n**Validates:**\n\n**Type:** contains_text\n\n**File:** \"mcp_server/consumer.py\"\n\n**Text:** \"append\"\n\n#### Exit Criteria\n\nFailure injection proves no early acknowledgement.\n\n#### Verification\n\n##### Failed append does not acknowledge\n\n**Method:** Run focused failure-path test\n\n**Expected Result:** No acknowledgement is observed.\n\n#### Risks\n\n##### Retry may duplicate an append.\n\nUse the durable event key.\n\n**Consequence:** Duplicate journal entries.\n\n#### Stop Conditions\n\n- Stop if the approved call contract cannot be preserved.\n\n## Phase Deliverables\n\n### Validation\n\n#### report\n\nValidation evidence report.\n\n**Validates:**\n\n**Type:** file_exists\n\n**File:** \"docs/development/issue473/validation.md\"\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event Path Plan
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Summary
+
+Make acknowledgement follow a durable append.
+
+## Dependencies
+
+- Approved interface contract
+
+## Work Units
+
+### U1 — Append ordering
+
+**Goal:** Enforce durable append before acknowledgement.
+
+**Owner:** @imp
+
+#### Deliverables
+
+##### code
+
+Updated consumer path.
+
+**Owner:** @imp
+
+**Validates:**
+
+**Type:** contains_text
+
+**File:** "mcp_server/consumer.py"
+
+**Text:** "append"
+
+#### Exit Criteria
+
+Failure injection proves no early acknowledgement.
+
+#### Verification
+
+##### Failed append does not acknowledge
+
+**Method:** Run focused failure-path test
+
+**Expected Result:** No acknowledgement is observed.
+
+#### Risks
+
+##### Retry may duplicate an append.
+
+Use the durable event key.
+
+**Consequence:** Duplicate journal entries.
+
+#### Stop Conditions
+
+- Stop if the approved call contract cannot be preserved.
+
+## Phase Deliverables
+
+### Validation
+
+#### report
+
+Validation evidence report.
+
+**Validates:**
+
+**Type:** file_exists
+
+**File:** "docs/development/issue473/validation.md"
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_validation_report_minimal.md
+
+Receipt: `pgmcp://cache/runs/37772dc6cb1f4e15ad3de226a5f5b5a8`. Bytes: 347; UTF-8 SHA256: `32cb05c739619ad46134129b38aca62aad886941d2d16df255abb2fb5cb25163`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "validation_report",
+  "file_name": "c3_final_validation_report_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event path validation",
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_validation_report_minimal.md",
+  "template_id": "validation_report",
+  "package_version": "1.0.0",
+  "package_fingerprint": "CT9NV5LmQjKHFGqX"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=CT9NV5LmQjKHFGqX sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event path validation\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=CT9NV5LmQjKHFGqX sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event path validation
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_validation_report_filled.md
+
+Receipt: `pgmcp://cache/runs/7a08ed5ebf15424aa081f31399f4a1a0`. Bytes: 1132; UTF-8 SHA256: `ede04d52fabe08f7e5a5084ddea8a9e8e0a58b8acab92dc008c4d92d7bb2a095`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "validation_report",
+  "file_name": "c3_final_validation_report_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event path validation",
+    "issue_number": 473,
+    "cycle": "C1",
+    "validation_status": "PARTIAL",
+    "scope": "Durable append ordering.",
+    "obligations": [
+      {
+        "obligation": "Failed append is not acknowledged",
+        "evidence": [
+          {
+            "label": "Failure-path test",
+            "target": "../../../tests/mcp_server/integration/templates/test_validation_artifact.py"
+          }
+        ],
+        "outcome": "Authored sample outcome; not independent validation."
+      }
+    ],
+    "evidence": [
+      {
+        "claim": "The focused failure case preserves ordering.",
+        "observation": "Authored sample observation, supplied to exercise the evidence carrier.",
+        "sources": [
+          {
+            "label": "Sample source",
+            "target": "../../../README.md"
+          }
+        ],
+        "invocation": "Authored example invocation",
+        "observed_result": "Authored example result; not a measured test outcome.",
+        "observed_at": "2026-10-02T12:00:00Z"
+      }
+    ],
+    "failures": [],
+    "caveats": [
+      "PARTIAL is authored sample content, not independent QA status."
+    ],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "json",
+        "data": {
+          "issues": [
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../tests/mcp_server/integration/templates/test_validation_artifact.py>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\tests\\mcp_server\\integration\\templates\\test_validation_artifact.py>",
+              "line": 31
+            },
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../README.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\README.md>",
+              "line": 43
+            }
+          ]
+        }
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 531,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_validation_report_filled.md",
+  "template_id": "validation_report",
+  "package_version": "1.0.0",
+  "package_fingerprint": "CT9NV5LmQjKHFGqX"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=CT9NV5LmQjKHFGqX sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event path validation\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Issue Number\n\n#473\n\n## Cycle\n\nC1\n\n## Validation Status\n\nPARTIAL\n\n## Scope\n\nDurable append ordering.\n\n## Obligations\n\n### Failed append is not acknowledged\n\n**Evidence:**\n\n- [Failure-path test](<../../../tests/mcp_server/integration/templates/test_validation_artifact.py>)\n\n**Outcome:** Authored sample outcome; not independent validation.\n\n## Evidence\n\n### The focused failure case preserves ordering.\n\nAuthored sample observation, supplied to exercise the evidence carrier.\n\n**Sources:**\n\n- [Sample source](<../../../README.md>)\n\n**Invocation:** Authored example invocation\n\n**Observed Result:** Authored example result; not a measured test outcome.\n\n**Observed At:** 2026-10-02T12:00:00Z\n\n## Failures\n\n## Caveats\n\n- PARTIAL is authored sample content, not independent QA status.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=CT9NV5LmQjKHFGqX sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event path validation
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Issue Number
+
+#473
+
+## Cycle
+
+C1
+
+## Validation Status
+
+PARTIAL
+
+## Scope
+
+Durable append ordering.
+
+## Obligations
+
+### Failed append is not acknowledged
+
+**Evidence:**
+
+- [Failure-path test](<../../../tests/mcp_server/integration/templates/test_validation_artifact.py>)
+
+**Outcome:** Authored sample outcome; not independent validation.
+
+## Evidence
+
+### The focused failure case preserves ordering.
+
+Authored sample observation, supplied to exercise the evidence carrier.
+
+**Sources:**
+
+- [Sample source](<../../../README.md>)
+
+**Invocation:** Authored example invocation
+
+**Observed Result:** Authored example result; not a measured test outcome.
+
+**Observed At:** 2026-10-02T12:00:00Z
+
+## Failures
+
+## Caveats
+
+- PARTIAL is authored sample content, not independent QA status.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_reference_minimal.md
+
+Receipt: `pgmcp://cache/runs/e8e62899d445453fb96a531935f30912`. Bytes: 411; UTF-8 SHA256: `eeb59b69c5648fd3bacb0e56c120b4ae960ea581d8f9bcc1255a7c581b5c4a7d`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "reference",
+  "file_name": "c3_final_reference_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event API",
+    "sources": [
+      {
+        "label": "API source",
+        "target": "../../../README.md"
+      }
+    ],
+    "api_reference": [],
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_reference_minimal.md",
+  "template_id": "reference",
+  "package_version": "1.0.0",
+  "package_fingerprint": "kaoepF5DpjMrctvM"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=reference pv=1.0.0 pf=kaoepF5DpjMrctvM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event API\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Sources\n\n- [API source][src-1]\n\n[src-1]: <../../../README.md>\n\n## API Reference\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=reference pv=1.0.0 pf=kaoepF5DpjMrctvM sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event API
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Sources
+
+- [API source][src-1]
+
+[src-1]: <../../../README.md>
+
+## API Reference
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_reference_filled.md
+
+Receipt: `pgmcp://cache/runs/9bfb5052ce774877b749113ab7728e00`. Bytes: 1083; UTF-8 SHA256: `126fad073f6f208d559ab331a353ccba3cfe68df236c6b86a59398c7f502c60c`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "reference",
+  "file_name": "c3_final_reference_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Event API",
+    "sources": [
+      {
+        "label": "API source",
+        "target": "../../../README.md"
+      }
+    ],
+    "api_reference": [
+      {
+        "name": "EventReader",
+        "description": "Reads events in partition order.",
+        "sources": [
+          {
+            "label": "Reader source",
+            "target": "../../../README.md"
+          }
+        ],
+        "methods": [
+          {
+            "signature": "read(partition: str)",
+            "parameters": "partition identifier",
+            "returns": "Event | None",
+            "description": "Returns the next event.",
+            "errors": "Raises JournalUnavailable when storage cannot be read.",
+            "sources": [
+              {
+                "label": "Method source",
+                "target": "../../../README.md"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "test_evidence": [
+      {
+        "label": "Reader tests",
+        "target": "../../../tests/mcp_server/integration/templates/test_reference.py"
+      }
+    ],
+    "usage_examples": [
+      {
+        "description": "Python reader use",
+        "language": "python",
+        "code": "event = reader.read(partition)"
+      }
+    ],
+    "document_metadata": {
+      "status": "DRAFT — review pending",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_reference_filled.md",
+  "template_id": "reference",
+  "package_version": "1.0.0",
+  "package_fingerprint": "kaoepF5DpjMrctvM"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=reference pv=1.0.0 pf=kaoepF5DpjMrctvM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event API\n\n**Status:** DRAFT — review pending  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Sources\n\n- [API source][src-1]\n\n[src-1]: <../../../README.md>\n\n## Test Evidence\n\n- [Reader tests][test-1]\n\n[test-1]: <../../../tests/mcp_server/integration/templates/test_reference.py>\n\n## API Reference\n\n### EventReader\n\nReads events in partition order.\n\n**Sources:**\n\n- [Reader source][api-1-src-1]\n\n[api-1-src-1]: <../../../README.md>\n\n**Methods:**\n\n#### `read(partition: str)`\n\n**Parameters:** partition identifier\n\n**Returns:** Event | None\n\n**Description:** Returns the next event.\n\n**Errors:** Raises JournalUnavailable when storage cannot be read.\n\n**Sources:**\n\n- [Method source][api-1-method-1-src-1]\n\n[api-1-method-1-src-1]: <../../../README.md>\n\n## Usage Examples\n\n### Python reader use\n\n```python\nevent = reader.read(partition)\n```\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=reference pv=1.0.0 pf=kaoepF5DpjMrctvM sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event API
+
+**Status:** DRAFT — review pending  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Sources
+
+- [API source][src-1]
+
+[src-1]: <../../../README.md>
+
+## Test Evidence
+
+- [Reader tests][test-1]
+
+[test-1]: <../../../tests/mcp_server/integration/templates/test_reference.py>
+
+## API Reference
+
+### EventReader
+
+Reads events in partition order.
+
+**Sources:**
+
+- [Reader source][api-1-src-1]
+
+[api-1-src-1]: <../../../README.md>
+
+**Methods:**
+
+#### `read(partition: str)`
+
+**Parameters:** partition identifier
+
+**Returns:** Event | None
+
+**Description:** Returns the next event.
+
+**Errors:** Raises JournalUnavailable when storage cannot be read.
+
+**Sources:**
+
+- [Method source][api-1-method-1-src-1]
+
+[api-1-method-1-src-1]: <../../../README.md>
+
+## Usage Examples
+
+### Python reader use
+
+```python
+event = reader.read(partition)
+```
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_generic_doc_minimal.md
+
+Receipt: `pgmcp://cache/runs/f44879490edf4e02b905303217ea9eb8`. Bytes: 482; UTF-8 SHA256: `658b9b495040a15eaaba663a9efff1f19f78b1534b52b25466de775664d828bd`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "generic_doc",
+  "file_name": "c3_final_generic_doc_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Template Output Review",
+    "purpose": "Record first-call output observations.",
+    "summary": "Review representative generated artifacts for formatting and presentation.",
+    "document_metadata": {
+      "status": "Authored example",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_generic_doc_minimal.md",
+  "template_id": "generic_doc",
+  "package_version": "1.0.0",
+  "package_fingerprint": "xoYbNuJbkallN_DM"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Template Output Review\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Purpose\n\nRecord first-call output observations.\n\n## Summary\n\nReview representative generated artifacts for formatting and presentation.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Template Output Review
+
+**Status:** Authored example  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Purpose
+
+Record first-call output observations.
+
+## Summary
+
+Review representative generated artifacts for formatting and presentation.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_generic_doc_filled.md
+
+Receipt: `pgmcp://cache/runs/f6d1dffe12d74dd9b57c11240551c7cc`. Bytes: 1152; UTF-8 SHA256: `7e518415b928339717e325d0aa3415d7414383ff1aec820a5398d3afc671de73`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "generic_doc",
+  "file_name": "c3_final_generic_doc_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "title": "Template Output Review",
+    "purpose": "Record observations from representative first-call rendering.",
+    "scope_in": "Six shipped concrete template packages.",
+    "scope_out": "Template implementation choices.",
+    "prerequisites": [
+      "Use contexts valid against each package schema."
+    ],
+    "related_docs": [
+      {
+        "label": "Template usage",
+        "target": "../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md"
+      }
+    ],
+    "summary": "Generated formatting and Markdown presentation are assessed separately from caller-owned values.",
+    "key_changes": [
+      "Compare minimal and populated output.",
+      "Record defects by ownership boundary."
+    ],
+    "migration_steps": [],
+    "validation_checklist": [
+      {
+        "text": "Check output using representative contexts.",
+        "checked": false
+      }
+    ],
+    "faq": [
+      {
+        "question": "Does a valid context guarantee polished output?",
+        "answer": "That guarantee remains a research decision."
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Evidence",
+        "content": "Compare generated structure with the supplied values."
+      }
+    ],
+    "document_metadata": {
+      "status": "Research",
+      "revisions": [
+        {
+          "version": "1.0",
+          "date": "2026-10-02",
+          "author": "Template reviewer",
+          "change": "Initial authored example."
+        }
+      ]
+    }
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "json",
+        "data": {
+          "issues": [
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\reference\\TEMPLATE_LIBRARY_USAGE.md>",
+              "line": 52
+            }
+          ]
+        }
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 341,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_generic_doc_filled.md",
+  "template_id": "generic_doc",
+  "package_version": "1.0.0",
+  "package_fingerprint": "xoYbNuJbkallN_DM"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Template Output Review\n\n**Status:** Research  \n**Version:** 1.0  \n**Last Updated:** 2026-10-02\n\n## Purpose\n\nRecord observations from representative first-call rendering.\n\n## Scope In\n\nSix shipped concrete template packages.\n\n## Scope Out\n\nTemplate implementation choices.\n\n## Prerequisites\n\n- Use contexts valid against each package schema.\n\n## Summary\n\nGenerated formatting and Markdown presentation are assessed separately from caller-owned values.\n\n## Key Changes\n\n- Compare minimal and populated output.\n- Record defects by ownership boundary.\n\n## Migration Steps\n\n## Validation Checklist\n\n- [ ] Check output using representative contexts.\n\n## FAQ\n\n### Does a valid context guarantee polished output?\n\nThat guarantee remains a research decision.\n\n## Evidence\n\nCompare generated structure with the supplied values.\n\n## Related Documents\n\n- [Template usage](<../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md>)\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 1.0 | 2026-10-02 | Template reviewer | Initial authored example. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Template Output Review
+
+**Status:** Research  
+**Version:** 1.0  
+**Last Updated:** 2026-10-02
+
+## Purpose
+
+Record observations from representative first-call rendering.
+
+## Scope In
+
+Six shipped concrete template packages.
+
+## Scope Out
+
+Template implementation choices.
+
+## Prerequisites
+
+- Use contexts valid against each package schema.
+
+## Summary
+
+Generated formatting and Markdown presentation are assessed separately from caller-owned values.
+
+## Key Changes
+
+- Compare minimal and populated output.
+- Record defects by ownership boundary.
+
+## Migration Steps
+
+## Validation Checklist
+
+- [ ] Check output using representative contexts.
+
+## FAQ
+
+### Does a valid context guarantee polished output?
+
+That guarantee remains a research decision.
+
+## Evidence
+
+Compare generated structure with the supplied values.
+
+## Related Documents
+
+- [Template usage](<../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md>)
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.0 | 2026-10-02 | Template reviewer | Initial authored example. |
+
+`````
+
+### c3_final_issue_minimal.md
+
+Receipt: `pgmcp://cache/runs/aac66cf715ef40c09d2faded75b1e5f7`. Bytes: 162; UTF-8 SHA256: `ac0bd0ef9a0c4d9987280c76d3d702ac711ca87f85eea03c1d38a48bc6099aa6`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "issue",
+  "file_name": "c3_final_issue_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "problem": "A valid issue body renders without caller-supplied publication metadata."
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_body",
+  "checks": [
+    {
+      "check_id": "markdown_body",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_issue_minimal.md",
+  "template_id": "issue",
+  "package_version": "1.0.0",
+  "package_fingerprint": "EvbPACzaNW6Nn54k"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=issue pv=1.0.0 pf=EvbPACzaNW6Nn54k sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Problem\n\nA valid issue body renders without caller-supplied publication metadata.\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=issue pv=1.0.0 pf=EvbPACzaNW6Nn54k sf=FAN5Vr-4vcbMMjZ2 -->
+
+## Problem
+
+A valid issue body renders without caller-supplied publication metadata.
+
+`````
+
+### c3_final_issue_filled.md
+
+Receipt: `pgmcp://cache/runs/55c9e94cc59d42be883737f294eff586`. Bytes: 653; UTF-8 SHA256: `37e51a27db24832013f0d595d847a95bcd6f506c5e8daddbfd51f5548aafb963`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "issue",
+  "file_name": "c3_final_issue_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "problem": "The generated Markdown contains extra blank lines.",
+    "summary": "The defect appears with valid issue content.",
+    "expected": "Headings and paragraphs have consistent spacing.",
+    "actual": "The rendered body has excessive vertical whitespace.",
+    "context": "Exercise the shipped issue template with valid content.",
+    "reproduction_steps": [
+      "Render the issue package with this context.",
+      "Inspect whitespace between sections."
+    ],
+    "related_docs": [
+      {
+        "label": "Template contract",
+        "target": "../../../.pgmcp/template_suite/issue/context.schema.json"
+      }
+    ]
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_body",
+  "checks": [
+    {
+      "check_id": "markdown_body",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_issue_filled.md",
+  "template_id": "issue",
+  "package_version": "1.0.0",
+  "package_fingerprint": "EvbPACzaNW6Nn54k"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=issue pv=1.0.0 pf=EvbPACzaNW6Nn54k sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Problem\n\nThe generated Markdown contains extra blank lines.\n\n## Summary\n\nThe defect appears with valid issue content.\n\n## Expected Behavior\n\nHeadings and paragraphs have consistent spacing.\n\n## Actual Behavior\n\nThe rendered body has excessive vertical whitespace.\n\n## Context\n\nExercise the shipped issue template with valid content.\n\n## Reproduction Steps\n\n1. Render the issue package with this context.\n2. Inspect whitespace between sections.\n\n## Related Documents\n\n- [Template contract][related-1]\n\n[related-1]: <../../../.pgmcp/template_suite/issue/context.schema.json>\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=issue pv=1.0.0 pf=EvbPACzaNW6Nn54k sf=FAN5Vr-4vcbMMjZ2 -->
+
+## Problem
+
+The generated Markdown contains extra blank lines.
+
+## Summary
+
+The defect appears with valid issue content.
+
+## Expected Behavior
+
+Headings and paragraphs have consistent spacing.
+
+## Actual Behavior
+
+The rendered body has excessive vertical whitespace.
+
+## Context
+
+Exercise the shipped issue template with valid content.
+
+## Reproduction Steps
+
+1. Render the issue package with this context.
+2. Inspect whitespace between sections.
+
+## Related Documents
+
+- [Template contract][related-1]
+
+[related-1]: <../../../.pgmcp/template_suite/issue/context.schema.json>
+
+`````
+
+### c3_final_pr_minimal.md
+
+Receipt: `pgmcp://cache/runs/3cded02aca7d4f3a9bd0c9113793b49e`. Bytes: 155; UTF-8 SHA256: `af7b5136fa13aa7f7708538c57cd05f09b56364ff8abb89d3f9daf1ff78b4cee`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "pr",
+  "file_name": "c3_final_pr_minimal.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "changes": "Describe the change.",
+    "deferred_work": []
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_body",
+  "checks": [
+    {
+      "check_id": "markdown_body",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_pr_minimal.md",
+  "template_id": "pr",
+  "package_version": "1.0.0",
+  "package_fingerprint": "hG0a9tLUxIzayxH4"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=pr pv=1.0.0 pf=hG0a9tLUxIzayxH4 sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Changes\n\nDescribe the change.\n\n## Deferred Work\n\nNo deferred work identified.\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=pr pv=1.0.0 pf=hG0a9tLUxIzayxH4 sf=FAN5Vr-4vcbMMjZ2 -->
+
+## Changes
+
+Describe the change.
+
+## Deferred Work
+
+No deferred work identified.
+
+`````
+
+### c3_final_pr_filled.md
+
+Receipt: `pgmcp://cache/runs/5f87e8ea86644ea0b40bdef89008a466`. Bytes: 659; UTF-8 SHA256: `f9a62d9c43899c9836147aebf1146e7b521f1e6a02ebaf09b5653cc75f60c822`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "pr",
+  "file_name": "c3_final_pr_filled.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "summary": "First-call template output is easier to review.",
+    "changes": "Render each shipped concrete package with minimal and populated valid contexts.",
+    "testing": "Inspect both generated forms for Python formatting and Markdown presentation.",
+    "checklist": [
+      {
+        "text": "Confirm supplied values are preserved.",
+        "checked": true
+      },
+      {
+        "text": "Review rendered whitespace.",
+        "checked": false
+      }
+    ],
+    "breaking_changes": "None.",
+    "deferred_work": [
+      {
+        "description": "Review markdown layout",
+        "rationale": "The generated body should be readable in a pull request.",
+        "references": [
+          {
+            "label": "PR template schema",
+            "target": "../../../.pgmcp/template_suite/pr/context.schema.json"
+          }
+        ]
+      }
+    ],
+    "closes": [
+      473
+    ]
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_body",
+  "checks": [
+    {
+      "check_id": "markdown_body",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "json",
+        "data": {
+          "issues": [
+            {
+              "severity": "warning",
+              "message": "Broken link: '<../../../.pgmcp/template_suite/pr/context.schema.json>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\.pgmcp\\template_suite\\pr\\context.schema.json>",
+              "line": 32
+            }
+          ]
+        }
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 350,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_pr_filled.md",
+  "template_id": "pr",
+  "package_version": "1.0.0",
+  "package_fingerprint": "hG0a9tLUxIzayxH4"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=pr pv=1.0.0 pf=hG0a9tLUxIzayxH4 sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Summary\n\nFirst-call template output is easier to review.\n\n## Changes\n\nRender each shipped concrete package with minimal and populated valid contexts.\n\n## Testing\n\nInspect both generated forms for Python formatting and Markdown presentation.\n\n## Checklist\n\n- [x] Confirm supplied values are preserved.\n- [ ] Review rendered whitespace.\n\n## Breaking Changes\n\nNone.\n\n## Deferred Work\n\n### Review markdown layout\n\nThe generated body should be readable in a pull request.\n\n**References:**\n\n- [PR template schema](<../../../.pgmcp/template_suite/pr/context.schema.json>)\n\n## Closes\n\n#473\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=pr pv=1.0.0 pf=hG0a9tLUxIzayxH4 sf=FAN5Vr-4vcbMMjZ2 -->
+
+## Summary
+
+First-call template output is easier to review.
+
+## Changes
+
+Render each shipped concrete package with minimal and populated valid contexts.
+
+## Testing
+
+Inspect both generated forms for Python formatting and Markdown presentation.
+
+## Checklist
+
+- [x] Confirm supplied values are preserved.
+- [ ] Review rendered whitespace.
+
+## Breaking Changes
+
+None.
+
+## Deferred Work
+
+### Review markdown layout
+
+The generated body should be readable in a pull request.
+
+**References:**
+
+- [PR template schema](<../../../.pgmcp/template_suite/pr/context.schema.json>)
+
+## Closes
+
+#473
+
+`````
+
+### c3_final_commit_minimal.txt
+
+Receipt: `pgmcp://cache/runs/8a1b24187ea64a5d8fe3a36bed6b321a`. Bytes: 95; UTF-8 SHA256: `865260713dc6168f550daf54a7abaf593cf420e64345b70f113c7a593adbd851`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "commit",
+  "file_name": "c3_final_commit_minimal.txt",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "type": "fix",
+    "subject": "Keep caller intent"
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "commit_preflight",
+  "checks": [
+    {
+      "check_id": "commit_message",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "text",
+        "data": "checked message view (first valid provenance line removed):\n\nfix: Keep caller intent\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "commitlint",
+          "version": "1.0.0",
+          "fingerprint": "33ygyZvwX7L9eAnv",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 266,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 225,
+            "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "commitlint",
+            "version": "21.2.2"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_commit_minimal.txt",
+  "template_id": "commit",
+  "package_version": "1.0.0",
+  "package_fingerprint": "0DJN6441j2dDAHAC"
+}
+`````
+
+Lossless content:
+
+`````json
+"# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2\n\nfix: Keep caller intent\n"
+`````
+
+Literal reading view:
+
+`````text
+# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2
+
+fix: Keep caller intent
+
+`````
+
+### c3_final_commit_filled.txt
+
+Receipt: `pgmcp://cache/runs/b312d30cd44a4a45be301b5ff0f375f7`. Bytes: 309; UTF-8 SHA256: `43a6e197d558826b8fcbe0e660625ce71f1107d38c59a02978d41637cb23eb92`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "commit",
+  "file_name": "c3_final_commit_filled.txt",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "type": "feat",
+    "scope": "templates",
+    "subject": "Preserve authored commit framing",
+    "body": "Keep the supplied message text intact.\n\nRetain paragraph boundaries.",
+    "breaking_change": true,
+    "breaking_description": "Consumers must supply explicit commit fields.",
+    "refs": [
+      473,
+      460
+    ],
+    "footer": "Reviewed-by: Template Maintainers"
+  }
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "commit_preflight",
+  "checks": [
+    {
+      "check_id": "commit_message",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "text",
+        "data": "checked message view (first valid provenance line removed):\n\nfeat(templates)!: Preserve authored commit framing\n\nKeep the supplied message text intact.\n\nRetain paragraph boundaries.\n\nBREAKING CHANGE: Consumers must supply explicit commit fields.\n\nRefs: #473, #460\n\nReviewed-by: Template Maintainers\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "commitlint",
+          "version": "1.0.0",
+          "fingerprint": "33ygyZvwX7L9eAnv",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 490,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 225,
+            "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "commitlint",
+            "version": "21.2.2"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_commit_filled.txt",
+  "template_id": "commit",
+  "package_version": "1.0.0",
+  "package_fingerprint": "0DJN6441j2dDAHAC"
+}
+`````
+
+Lossless content:
+
+`````json
+"# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2\n\nfeat(templates)!: Preserve authored commit framing\n\nKeep the supplied message text intact.\n\nRetain paragraph boundaries.\n\nBREAKING CHANGE: Consumers must supply explicit commit fields.\n\nRefs: #473, #460\n\nReviewed-by: Template Maintainers\n"
+`````
+
+Literal reading view:
+
+`````text
+# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2
+
+feat(templates)!: Preserve authored commit framing
+
+Keep the supplied message text intact.
+
+Retain paragraph boundaries.
+
+BREAKING CHANGE: Consumers must supply explicit commit fields.
+
+Refs: #473, #460
+
+Reviewed-by: Template Maintainers
+
+`````
+
+### c3_final_boundary_decision_structure.md
+
+Receipt: `pgmcp://cache/runs/ede44178bdd249c6a8458d694d7176dc`. Bytes: 740; UTF-8 SHA256: `55bdacfabdd5e5d7f742dc7aff3e0ba66b31037ff562c57081ec39c7b7d3af6f`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "architecture",
+  "file_name": "c3_final_boundary_decision_structure.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Execution Architecture",
+    "concepts": [
+      {
+        "name": "Event stream",
+        "description": "Events move from intake to persistence."
+      }
+    ],
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "decision": "Keep structure",
+        "rationale": "    print(\"keep\")"
+      },
+      {
+        "decision": "Keep list",
+        "rationale": "  - first"
+      },
+      {
+        "decision": "Keep ordered list",
+        "rationale": "1) first"
+      },
+      {
+        "decision": "Keep fenced rationale",
+        "rationale": "\r\n```python\r\nprint(\"first\")\r\n\r\nprint(\"second\")\r\n```\r\n",
+        "alternatives": [
+          "  - alternative first\r\n  - alternative second",
+          "1) alternate ordered",
+          "    print(\"alternate\")"
+        ]
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_boundary_decision_structure.md",
+  "template_id": "architecture",
+  "package_version": "1.0.0",
+  "package_fingerprint": "F3GiYxoJo0WTq92r"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Execution Architecture\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n## Decisions\n\n### Keep structure\n\n    print(\"keep\")\n\n### Keep list\n\n  - first\n\n### Keep ordered list\n\n1) first\n\n### Keep fenced rationale\n\n```python\r\nprint(\"first\")\r\n\r\nprint(\"second\")\r\n```\n\n**Alternatives:**\n\n-   - alternative first\r\n    - alternative second\n- 1) alternate ordered\n-     print(\"alternate\")\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Execution Architecture
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Concepts
+
+### 1. Event stream
+
+Events move from intake to persistence.
+
+## Decisions
+
+### Keep structure
+
+    print("keep")
+
+### Keep list
+
+  - first
+
+### Keep ordered list
+
+1) first
+
+### Keep fenced rationale
+
+```python
+print("first")
+
+print("second")
+```
+
+**Alternatives:**
+
+-   - alternative first
+    - alternative second
+- 1) alternate ordered
+-     print("alternate")
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+
+`````
+
+### c3_final_boundary_labelled_structure.md
+
+Receipt: `pgmcp://cache/runs/bb5d36387aca4572b422073b92df618f`. Bytes: 672; UTF-8 SHA256: `13e7a2a0e9abdff698200f73fb84b7b4bf462e8ae363df7679ce34350235c8e5`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "design",
+  "file_name": "c3_final_boundary_labelled_structure.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Event Path Design",
+    "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+    "requirements_functional": [
+      "Acknowledge only after durable append."
+    ],
+    "requirements_nonfunctional": [
+      "Preserve per-partition order."
+    ],
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "validation": [
+      {
+        "obligation": "Keep list",
+        "method": "1) first",
+        "expected_result": "Structure remains"
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_boundary_labelled_structure.md",
+  "template_id": "design",
+  "package_version": "1.0.0",
+  "package_fingerprint": "YApsrGTQgBUKFez2"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Design\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Validation\n\n### Keep list\n\n**Method:**\n\n1) first\n\n**Expected Result:** Structure remains\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Event Path Design
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Problem Statement
+
+The consumer can acknowledge an event before its journal append is durable.
+
+## Functional Requirements
+
+- Acknowledge only after durable append.
+
+## Nonfunctional Requirements
+
+- Preserve per-partition order.
+
+## Validation
+
+### Keep list
+
+**Method:**
+
+1) first
+
+**Expected Result:** Structure remains
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+
+`````
+
+### c3_final_boundary_revision_order.md
+
+Receipt: `pgmcp://cache/runs/ac50b7de86ef460abe72db44b9e5f050`. Bytes: 614; UTF-8 SHA256: `74407a13bf04037084ae9cf7c919b7a4f6f846ccebd9ce1be1ac75b8236fc7a8`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "generic_doc",
+  "file_name": "c3_final_boundary_revision_order.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Authored revision sequence",
+    "purpose": "Observe caller-controlled revision order and table escaping.",
+    "summary": "The final supplied revision owns current header facts.",
+    "document_metadata": {
+      "status": "DRAFT | authored",
+      "revisions": [
+        {
+          "version": "9.0",
+          "date": "2026-10-03",
+          "author": "First | reviewer",
+          "change": "Authored \\ first change."
+        },
+        {
+          "version": "0.2",
+          "date": "2025-01-01",
+          "author": "Second \\| reviewer\nCo-author",
+          "change": "Keep | delimiters\nand \\ literal backslashes."
+        }
+      ]
+    }
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_boundary_revision_order.md",
+  "template_id": "generic_doc",
+  "package_version": "1.0.0",
+  "package_fingerprint": "xoYbNuJbkallN_DM"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Authored revision sequence\n\n**Status:** DRAFT &#124; authored  \n**Version:** 0.2  \n**Last Updated:** 2025-01-01\n\n## Purpose\n\nObserve caller-controlled revision order and table escaping.\n\n## Summary\n\nThe final supplied revision owns current header facts.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 9.0 | 2026-10-03 | First &#124; reviewer | Authored \\\\ first change. |\n| 0.2 | 2025-01-01 | Second \\\\&#124; reviewer<br>Co-author | Keep &#124; delimiters<br>and \\\\ literal backslashes. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Authored revision sequence
+
+**Status:** DRAFT &#124; authored  
+**Version:** 0.2  
+**Last Updated:** 2025-01-01
+
+## Purpose
+
+Observe caller-controlled revision order and table escaping.
+
+## Summary
+
+The final supplied revision owns current header facts.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 9.0 | 2026-10-03 | First &#124; reviewer | Authored \\ first change. |
+| 0.2 | 2025-01-01 | Second \\&#124; reviewer<br>Co-author | Keep &#124; delimiters<br>and \\ literal backslashes. |
+
+`````
+
+### c3_final_boundary_markdown_boundaries.md
+
+Receipt: `pgmcp://cache/runs/7ef8b515cf1d4278a18601358e0e7e9d`. Bytes: 896; UTF-8 SHA256: `c84891a26cadf0ffb47d4065f3f7db3e41df4baea3037a37a39651836fe17ba1`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "generic_doc",
+  "file_name": "c3_final_boundary_markdown_boundaries.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Markdown boundary probe",
+    "purpose": "\r\n \t\r\nRetain authored purpose.  \r\nNext purpose line.\r\n\r\n",
+    "summary": "\n \t\nFirst summary line.  \r\n\r\nSecond summary line.\r\n\t\r\n",
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "scope_in": "",
+    "key_changes": [
+      " \t\n",
+      "One change.\r\n\r\nFollow-up paragraph.  \r\nFinal line."
+    ],
+    "migration_steps": [],
+    "validation_checklist": [
+      {
+        "text": " \t\n",
+        "checked": false
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Structured first",
+        "content": "\r\n\r\n### Authored subsection\r\n\r\n- authored first\r\n- authored second\r\n\r\n```text\r\n  literal  \r\n\r\nlast literal\r\n```\r\n\r\n",
+        "bullets": [
+          "Outer item.\r\n\r\nContinuation.  \r\n\r\n```text\r\ncode\r\n```"
+        ],
+        "checklist": [
+          {
+            "text": "Check first.  \r\nCheck continuation.",
+            "checked": true
+          }
+        ]
+      },
+      {
+        "heading": "Explicit empty",
+        "content": ""
+      },
+      {
+        "heading": "Last section",
+        "bullets": [],
+        "checklist": []
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_boundary_markdown_boundaries.md",
+  "template_id": "generic_doc",
+  "package_version": "1.0.0",
+  "package_fingerprint": "xoYbNuJbkallN_DM"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Markdown boundary probe\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Purpose\n\nRetain authored purpose.  \r\nNext purpose line.\n\n## Scope In\n\n## Summary\n\nFirst summary line.  \r\n\r\nSecond summary line.\n\n## Key Changes\n\n-\n- One change.\r\n\r\n  Follow-up paragraph.  \r\n  Final line.\n\n## Migration Steps\n\n## Validation Checklist\n\n- [ ]\n\n## Structured first\n\n### Authored subsection\r\n\r\n- authored first\r\n- authored second\r\n\r\n```text\r\n  literal  \r\n\r\nlast literal\r\n```\n\n- Outer item.\r\n\r\n  Continuation.  \r\n\r\n  ```text\r\n  code\r\n  ```\n\n- [x] Check first.  \r\n      Check continuation.\n\n## Explicit empty\n\n## Last section\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Markdown boundary probe
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Purpose
+
+Retain authored purpose.  
+Next purpose line.
+
+## Scope In
+
+## Summary
+
+First summary line.  
+
+Second summary line.
+
+## Key Changes
+
+-
+- One change.
+
+  Follow-up paragraph.  
+  Final line.
+
+## Migration Steps
+
+## Validation Checklist
+
+- [ ]
+
+## Structured first
+
+### Authored subsection
+
+- authored first
+- authored second
+
+```text
+  literal  
+
+last literal
+```
+
+- Outer item.
+
+  Continuation.  
+
+  ```text
+  code
+  ```
+
+- [x] Check first.  
+      Check continuation.
+
+## Explicit empty
+
+## Last section
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+
+`````
+
+### c3_final_boundary_validation_data.md
+
+Receipt: `pgmcp://cache/runs/0f341eba116e41aca03583b363c248e8`. Bytes: 866; UTF-8 SHA256: `7bc959193ef6ca31aa0e44c8cee5b226a887d6648e734e3924a9ef0b3bb49520`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "planning",
+  "file_name": "c3_final_boundary_validation_data.md",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "title": "Raw ValidationSpec probe",
+    "summary": "Observe literal values without prose normalization.",
+    "document_metadata": {
+      "status": "Authored boundary probe",
+      "revisions": [
+        {
+          "version": "0.1",
+          "date": "2026-10-03",
+          "author": "Template reviewer",
+          "change": "Initial authored boundary probe."
+        }
+      ]
+    },
+    "work_units": [
+      {
+        "id": "U1",
+        "name": "Literal preservation",
+        "goal": "Preserve the complete supplied data.",
+        "deliverables": [
+          {
+            "id": "D_RAW",
+            "description": "Contains-text literal probe.",
+            "validates": {
+              "type": "contains_text",
+              "file": "\r\n  raw file.json  \r\n",
+              "text": "\r\n  literal  \r\n\r\nlast  \r\n",
+              "path": null
+            }
+          },
+          {
+            "id": "D_NULL",
+            "description": "Explicit null validates carrier.",
+            "validates": null
+          }
+        ],
+        "exit_criteria": "Manually compare JSON literals with the caller data."
+      }
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "markdown_document",
+  "checks": [
+    {
+      "check_id": "markdown_document",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": null,
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "markdown_preflight",
+          "version": "1.0.0",
+          "fingerprint": "v0NjYjqP55u7eH7r",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 92,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "python",
+            "version": "3.13.7"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_boundary_validation_data.md",
+  "template_id": "planning",
+  "package_version": "1.0.0",
+  "package_fingerprint": "CscfYyDLqj0OeHml"
+}
+`````
+
+Lossless content:
+
+`````json
+"<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Raw ValidationSpec probe\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nObserve literal values without prose normalization.\n\n## Work Units\n\n### U1 — Literal preservation\n\n**Goal:** Preserve the complete supplied data.\n\n#### Deliverables\n\n##### D\\_RAW\n\nContains-text literal probe.\n\n**Validates:**\n\n**Type:** contains_text\n\n**File:** \"\\r\\n  raw file.json  \\r\\n\"\n\n**Text:** \"\\r\\n  literal  \\r\\n\\r\\nlast  \\r\\n\"\n\n**Path:** null\n\n##### D\\_NULL\n\nExplicit null validates carrier.\n\n**Validates:** null\n\n#### Exit Criteria\n\nManually compare JSON literals with the caller data.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n"
+`````
+
+Literal reading view:
+
+`````markdown
+<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->
+
+# Raw ValidationSpec probe
+
+**Status:** Authored boundary probe  
+**Version:** 0.1  
+**Last Updated:** 2026-10-03
+
+## Summary
+
+Observe literal values without prose normalization.
+
+## Work Units
+
+### U1 — Literal preservation
+
+**Goal:** Preserve the complete supplied data.
+
+#### Deliverables
+
+##### D\_RAW
+
+Contains-text literal probe.
+
+**Validates:**
+
+**Type:** contains_text
+
+**File:** "\r\n  raw file.json  \r\n"
+
+**Text:** "\r\n  literal  \r\n\r\nlast  \r\n"
+
+**Path:** null
+
+##### D\_NULL
+
+Explicit null validates carrier.
+
+**Validates:** null
+
+#### Exit Criteria
+
+Manually compare JSON literals with the caller data.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |
+
+`````
+
+### c3_final_boundary_commit_boundaries.txt
+
+Receipt: `pgmcp://cache/runs/4a46bba5d11c478fa91525b1edb0d0b6`. Bytes: 253; UTF-8 SHA256: `e95077bd24da865d4fb70607f06baaf83fd817871c9c32d066c0e68b438ebe80`. Exactly one terminal LF: true.
+
+Exact request:
+
+`````json
+{
+  "artifact_type": "commit",
+  "file_name": "c3_final_boundary_commit_boundaries.txt",
+  "target_path": ".pgmcp/temp/issue473",
+  "force_target": true,
+  "context": {
+    "type": "fix",
+    "scope": "templates",
+    "subject": "Keep authored body and footer",
+    "body": "\r\n \t\r\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\r\n\r\n\t\r\n",
+    "footer": "\n \t\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\r\n\r\n",
+    "refs": [
+      473
+    ]
+  },
+  "validation": "enforce"
+}
+`````
+
+Complete response:
+
+`````json
+{
+  "success": true,
+  "written": true,
+  "validation_policy": "enforce",
+  "validation_status": "passed",
+  "profile_id": "commit_preflight",
+  "checks": [
+    {
+      "check_id": "commit_message",
+      "status": "passed",
+      "reason": null,
+      "message": null,
+      "evidence": {
+        "format": "text",
+        "data": "checked message view (first valid provenance line removed):\n\nfix(templates): Keep authored body and footer\n\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\n\nRefs: #473\n\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+      },
+      "request_rejection": null,
+      "invocation": {
+        "adapter": {
+          "adapter_id": "commitlint",
+          "version": "1.0.0",
+          "fingerprint": "33ygyZvwX7L9eAnv",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 438,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 225,
+            "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "external_tools": [
+          {
+            "tool_id": "commitlint",
+            "version": "21.2.2"
+          }
+        ]
+      },
+      "termination_problem": null,
+      "housekeeping": [],
+      "args_source": "configured",
+      "effective_args": []
+    }
+  ],
+  "error_code": null,
+  "error_details": null,
+  "housekeeping": [],
+  "output_path": ".pgmcp/temp/issue473/c3_final_boundary_commit_boundaries.txt",
+  "template_id": "commit",
+  "package_version": "1.0.0",
+  "package_fingerprint": "0DJN6441j2dDAHAC"
+}
+`````
+
+Lossless content:
+
+`````json
+"# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2\n\nfix(templates): Keep authored body and footer\n\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\n\nRefs: #473\n\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\n"
+`````
+
+Literal reading view:
+
+`````text
+# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2
+
+fix(templates): Keep authored body and footer
+
+First authored paragraph.  
+
+Second authored paragraph.
+
+Refs: #473
+
+Reviewed-by: Template reviewer  
+
+Signed-off-by: Probe author
+
+`````
+
+### 473C3FinalTests
+
+`````json
+{
+  "request": {
+    "scope": "targets",
+    "targets": [
+      "tests/mcp_server/integration/templates/test_architecture.py",
+      "tests/mcp_server/integration/templates/test_research_artifact.py",
+      "tests/mcp_server/integration/templates/test_design_artifact.py",
+      "tests/mcp_server/integration/templates/test_planning_artifact.py",
+      "tests/mcp_server/integration/templates/test_validation_artifact.py",
+      "tests/mcp_server/integration/templates/test_reference.py",
+      "tests/mcp_server/integration/templates/test_generic_document.py",
+      "tests/mcp_server/integration/templates/test_shared_documents.py",
+      "tests/mcp_server/integration/templates/test_issue.py",
+      "tests/mcp_server/integration/templates/test_pr.py",
+      "tests/mcp_server/integration/templates/test_commit_artifact.py",
+      "tests/mcp_server/integration/test_installed_distribution_v3.py"
+    ],
+    "tests": [
+      "python_tests"
+    ],
+    "args": {
+      "python_tests": [
+        "-q",
+        "-n",
+        "0",
+        "--tb=short",
+        "-rN"
+      ]
+    },
+    "timeout_seconds": 180
+  },
+  "uri": "pgmcp://cache/runs/e3affeeb5eaf47f19c3dbda134bf192e",
+  "dto": {
+    "success": true,
+    "requested_scope": "targets",
+    "requested_targets": [
+      "tests/mcp_server/integration/templates/test_architecture.py",
+      "tests/mcp_server/integration/templates/test_research_artifact.py",
+      "tests/mcp_server/integration/templates/test_design_artifact.py",
+      "tests/mcp_server/integration/templates/test_planning_artifact.py",
+      "tests/mcp_server/integration/templates/test_validation_artifact.py",
+      "tests/mcp_server/integration/templates/test_reference.py",
+      "tests/mcp_server/integration/templates/test_generic_document.py",
+      "tests/mcp_server/integration/templates/test_shared_documents.py",
+      "tests/mcp_server/integration/templates/test_issue.py",
+      "tests/mcp_server/integration/templates/test_pr.py",
+      "tests/mcp_server/integration/templates/test_commit_artifact.py",
+      "tests/mcp_server/integration/test_installed_distribution_v3.py"
+    ],
+    "selected_tests": [
+      "python_tests"
+    ],
+    "results": [
+      {
+        "test_id": "python_tests",
+        "status": "passed",
+        "reason": null,
+        "message": "Pytest completed the requested native operation (exit 0).",
+        "evidence": {
+          "format": "text",
+          "data": "============================= test session starts =============================\r\nplatform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0\r\nrootdir: C:\\temp\\pgmcp\r\nconfigfile: pyproject.toml\r\nplugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0\r\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\r\ncollected 47 items\r\n\r\ntests\\mcp_server\\integration\\templates\\test_architecture.py ....         [  8%]\r\ntests\\mcp_server\\integration\\templates\\test_research_artifact.py ....    [ 17%]\r\ntests\\mcp_server\\integration\\templates\\test_design_artifact.py ....      [ 25%]\r\ntests\\mcp_server\\integration\\templates\\test_planning_artifact.py .....   [ 36%]\r\ntests\\mcp_server\\integration\\templates\\test_validation_artifact.py ....  [ 44%]\r\ntests\\mcp_server\\integration\\templates\\test_reference.py ....            [ 53%]\r\ntests\\mcp_server\\integration\\templates\\test_generic_document.py ....     [ 61%]\r\ntests\\mcp_server\\integration\\templates\\test_shared_documents.py .....    [ 72%]\r\ntests\\mcp_server\\integration\\templates\\test_issue.py ....                [ 80%]\r\ntests\\mcp_server\\integration\\templates\\test_pr.py ....                   [ 89%]\r\ntests\\mcp_server\\integration\\templates\\test_commit_artifact.py ....      [ 97%]\r\ntests\\mcp_server\\integration\\test_installed_distribution_v3.py .         [100%]\r\n\r\n============================== warnings summary ===============================\r\n..\\..\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198\r\n  C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n    warnings.warn(\r\n\r\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\r\n================== 47 passed, 1 warning in 67.13s (0:01:07) ===================\r\n"
+        },
+        "external_tools": [
+          {
+            "tool_id": "pytest",
+            "version": "9.0.2"
+          }
+        ],
+        "adapter": {
+          "adapter_id": "pytest",
+          "version": "1.0.0",
+          "fingerprint": "m2Mk3Lc50xWA3fi5",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 2302,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "termination_problem": null,
+        "request_rejection": null,
+        "args_source": "caller",
+        "effective_args": [
+          "-q",
+          "-n",
+          "0",
+          "--tb=short",
+          "-rN"
+        ]
+      }
+    ],
+    "error_code": null,
+    "error_details": null
+  }
+}
+`````
+
+### 473C3ConsumerTests
+
+`````json
+{
+  "request": {
+    "scope": "targets",
+    "targets": [
+      "tests/mcp_server/unit/config/test_contracts_loader.py"
+    ],
+    "tests": [
+      "python_tests"
+    ],
+    "args": {
+      "python_tests": [
+        "-q",
+        "-n",
+        "0",
+        "--tb=short",
+        "-rN",
+        "-k",
+        "live_v3_contracts_loading_and_docflow_e01 or nineteen_workflow_variants_satisfy_docflow_e02"
+      ]
+    },
+    "timeout_seconds": 90
+  },
+  "uri": "pgmcp://cache/runs/f7f2436d310942839a512e80f39cce14",
+  "dto": {
+    "success": true,
+    "requested_scope": "targets",
+    "requested_targets": [
+      "tests/mcp_server/unit/config/test_contracts_loader.py"
+    ],
+    "selected_tests": [
+      "python_tests"
+    ],
+    "results": [
+      {
+        "test_id": "python_tests",
+        "status": "passed",
+        "reason": null,
+        "message": "Pytest completed the requested native operation (exit 0).",
+        "evidence": {
+          "format": "text",
+          "data": "============================= test session starts =============================\r\nplatform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0\r\nrootdir: C:\\temp\\pgmcp\r\nconfigfile: pyproject.toml\r\nplugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0\r\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\r\ncollected 24 items / 22 deselected / 2 selected\r\n\r\ntests\\mcp_server\\unit\\config\\test_contracts_loader.py ..                 [100%]\r\n\r\n============================== warnings summary ===============================\r\n..\\..\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198\r\n  C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n    warnings.warn(\r\n\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\ntests/mcp_server/unit/config/test_contracts_loader.py::TestCY068DocflowE01::test_nineteen_workflow_variants_satisfy_docflow_e02\r\n  C:\\temp\\pgmcp\\mcp_server\\utils\\path_resolver.py:135: DeprecationWarning: pathlib.PurePath.is_reserved() is deprecated and scheduled for removal in Python 3.15. Use os.path.isreserved() to detect reserved paths on Windows.\r\n    PureWindowsPath(part).is_reserved() or \":\" in part or part.endswith((\".\", \" \"))\r\n\r\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\r\n================ 2 passed, 22 deselected, 9 warnings in 2.36s =================\r\n"
+        },
+        "external_tools": [
+          {
+            "tool_id": "pytest",
+            "version": "9.0.2"
+          }
+        ],
+        "adapter": {
+          "adapter_id": "pytest",
+          "version": "1.0.0",
+          "fingerprint": "m2Mk3Lc50xWA3fi5",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 2752,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "termination_problem": null,
+        "request_rejection": null,
+        "args_source": "caller",
+        "effective_args": [
+          "-q",
+          "-n",
+          "0",
+          "--tb=short",
+          "-rN",
+          "-k",
+          "live_v3_contracts_loading_and_docflow_e01 or nineteen_workflow_variants_satisfy_docflow_e02"
+        ]
+      }
+    ],
+    "error_code": null,
+    "error_details": null
+  }
+}
+`````
+
+### 473C3FinalGates
+
+`````json
+{
+  "request": {
+    "scope": "targets",
+    "targets": [
+      "tests/mcp_server/integration/templates/test_architecture.py",
+      "tests/mcp_server/integration/templates/test_research_artifact.py",
+      "tests/mcp_server/integration/templates/test_design_artifact.py",
+      "tests/mcp_server/integration/templates/test_planning_artifact.py",
+      "tests/mcp_server/integration/templates/test_validation_artifact.py",
+      "tests/mcp_server/integration/templates/test_reference.py",
+      "tests/mcp_server/integration/templates/test_generic_document.py",
+      "tests/mcp_server/integration/templates/test_shared_documents.py",
+      "tests/mcp_server/integration/templates/test_issue.py",
+      "tests/mcp_server/integration/templates/test_pr.py",
+      "tests/mcp_server/integration/templates/test_commit_artifact.py",
+      "tests/mcp_server/unit/config/test_contracts_loader.py"
+    ],
+    "checks": [
+      "python_format",
+      "python_lint",
+      "python_pyright"
+    ],
+    "timeout_seconds": 90
+  },
+  "uri": "pgmcp://cache/runs/07449acf87b0419791230c7279b7b989",
+  "dto": {
+    "success": true,
+    "run_status": "passed",
+    "requested_scope": "targets",
+    "requested_targets": [
+      "tests/mcp_server/integration/templates/test_architecture.py",
+      "tests/mcp_server/integration/templates/test_research_artifact.py",
+      "tests/mcp_server/integration/templates/test_design_artifact.py",
+      "tests/mcp_server/integration/templates/test_planning_artifact.py",
+      "tests/mcp_server/integration/templates/test_validation_artifact.py",
+      "tests/mcp_server/integration/templates/test_reference.py",
+      "tests/mcp_server/integration/templates/test_generic_document.py",
+      "tests/mcp_server/integration/templates/test_shared_documents.py",
+      "tests/mcp_server/integration/templates/test_issue.py",
+      "tests/mcp_server/integration/templates/test_pr.py",
+      "tests/mcp_server/integration/templates/test_commit_artifact.py",
+      "tests/mcp_server/unit/config/test_contracts_loader.py"
+    ],
+    "selected_profile": null,
+    "removed_targets": [],
+    "results": [
+      {
+        "check_id": "python_format",
+        "status": "passed",
+        "reason": null,
+        "message": null,
+        "evidence": {
+          "format": "text",
+          "data": "stderr:\n12 files already formatted\n"
+        },
+        "external_tools": [
+          {
+            "tool_id": "ruff",
+            "version": "0.15.6"
+          }
+        ],
+        "adapter": {
+          "adapter_id": "ruff",
+          "version": "1.0.0",
+          "fingerprint": "sFWzvJZBN26YRZqa",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 204,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "termination_problem": null,
+        "request_rejection": null,
+        "args_source": "configured",
+        "effective_args": [],
+        "coverage": null,
+        "required_targets": []
+      },
+      {
+        "check_id": "python_lint",
+        "status": "passed",
+        "reason": null,
+        "message": null,
+        "evidence": {
+          "format": "text",
+          "data": "stdout:\nAll checks passed!\n"
+        },
+        "external_tools": [
+          {
+            "tool_id": "ruff",
+            "version": "0.15.6"
+          }
+        ],
+        "adapter": {
+          "adapter_id": "ruff",
+          "version": "1.0.0",
+          "fingerprint": "sFWzvJZBN26YRZqa",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 196,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "termination_problem": null,
+        "request_rejection": null,
+        "args_source": "configured",
+        "effective_args": [],
+        "coverage": null,
+        "required_targets": []
+      },
+      {
+        "check_id": "python_pyright",
+        "status": "passed",
+        "reason": null,
+        "message": null,
+        "evidence": {
+          "format": "text",
+          "data": "stdout:\n{\n    \"version\": \"1.1.408\",\n    \"time\": \"1791056775578\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 12,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 2.423\n    }\n}\n\n"
+        },
+        "external_tools": [
+          {
+            "tool_id": "pyright",
+            "version": "1.1.408"
+          }
+        ],
+        "adapter": {
+          "adapter_id": "pyright",
+          "version": "1.0.0",
+          "fingerprint": "GfhwbqXxleu1yBzE",
+          "contract_version": 1
+        },
+        "capture": {
+          "exit_code": 0,
+          "stdout": {
+            "observed_bytes": 467,
+            "head": null,
+            "tail": null,
+            "truncated": false
+          },
+          "stderr": {
+            "observed_bytes": 0,
+            "head": "",
+            "tail": "",
+            "truncated": false
+          }
+        },
+        "termination_problem": null,
+        "request_rejection": null,
+        "args_source": "configured",
+        "effective_args": [
+          "--level",
+          "warning",
+          "--warnings"
+        ],
+        "coverage": null,
+        "required_targets": []
+      }
+    ],
+    "error_code": null,
+    "error_details": null
+  }
+}
+`````
+
+### Closed metadata rejection boundary
+
+All seven full-document packages reject the removed root status alias, and generic_doc rejects missing document_metadata and empty revisions before writing. These are schema-contract rejection cases, separate from native syntax/presentation proof.
+
+`````json
+[
+  {
+    "type": "architecture",
+    "request": {
+      "artifact_type": "architecture",
+      "file_name": "c3_rejected_legacy_architecture.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Execution Architecture",
+        "concepts": [
+          {
+            "name": "Event stream",
+            "description": "Events move from intake to persistence."
+          }
+        ],
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/26f07be18d5043b0a40b0a50a4514f87",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_architecture.md",
+      "template_id": "architecture",
+      "package_version": "1.0.0",
+      "package_fingerprint": "unPnOlVzGqCB_s5v"
+    }
+  },
+  {
+    "type": "research",
+    "request": {
+      "artifact_type": "research",
+      "file_name": "c3_rejected_legacy_research.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "First-call template quality research",
+        "problem_statement": "Some shipped templates produce first outputs with formatting defects.",
+        "goals": [
+          "Locate generated presentation defects."
+        ],
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/bc02ff5dc74f4ee1b7ca520d3f0f8090",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_research.md",
+      "template_id": "research",
+      "package_version": "1.0.0",
+      "package_fingerprint": "4q0tc8jmMuDStjU0"
+    }
+  },
+  {
+    "type": "design",
+    "request": {
+      "artifact_type": "design",
+      "file_name": "c3_rejected_legacy_design.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Event Path Design",
+        "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+        "requirements_functional": [
+          "Acknowledge only after durable append."
+        ],
+        "requirements_nonfunctional": [
+          "Preserve per-partition order."
+        ],
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/e6ae2df5f9e44d20b3088441252b108d",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_design.md",
+      "template_id": "design",
+      "package_version": "1.0.0",
+      "package_fingerprint": "luldImxrK1BJ9dmB"
+    }
+  },
+  {
+    "type": "planning",
+    "request": {
+      "artifact_type": "planning",
+      "file_name": "c3_rejected_legacy_planning.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Event Path Plan",
+        "summary": "Make acknowledgement follow a durable append.",
+        "work_units": [
+          {
+            "id": "U1",
+            "name": "Append ordering",
+            "goal": "Enforce durable append before acknowledgement.",
+            "deliverables": [
+              {
+                "id": "code",
+                "description": "Updated consumer path."
+              }
+            ],
+            "exit_criteria": "Failure injection proves no early acknowledgement."
+          }
+        ],
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/7230666490884a45be316a911c30f3b8",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_planning.md",
+      "template_id": "planning",
+      "package_version": "1.0.0",
+      "package_fingerprint": "nx7xUM4sCXt2fPaA"
+    }
+  },
+  {
+    "type": "validation_report",
+    "request": {
+      "artifact_type": "validation_report",
+      "file_name": "c3_rejected_legacy_validation_report.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Event path validation",
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/512a1563926346a5be101ce29a52185a",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_validation_report.md",
+      "template_id": "validation_report",
+      "package_version": "1.0.0",
+      "package_fingerprint": "3UgO2r9PT4E81jE_"
+    }
+  },
+  {
+    "type": "reference",
+    "request": {
+      "artifact_type": "reference",
+      "file_name": "c3_rejected_legacy_reference.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Event API",
+        "sources": [
+          {
+            "label": "API source",
+            "target": "../../../README.md"
+          }
+        ],
+        "api_reference": [],
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/732bf806d573412c829093cd5aa7c4c5",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_reference.md",
+      "template_id": "reference",
+      "package_version": "1.0.0",
+      "package_fingerprint": "uz4DGCPDLmKQdYFK"
+    }
+  },
+  {
+    "type": "generic_doc",
+    "request": {
+      "artifact_type": "generic_doc",
+      "file_name": "c3_rejected_legacy_generic_doc.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Template Output Review",
+        "purpose": "Record first-call output observations.",
+        "summary": "Review representative generated artifacts for formatting and presentation.",
+        "document_metadata": {
+          "status": "Authored example",
+          "revisions": [
+            {
+              "version": "0.1",
+              "date": "2026-10-03",
+              "author": "Template reviewer",
+              "change": "Initial authored example."
+            }
+          ]
+        },
+        "status": "Removed legacy root fact"
+      }
+    },
+    "uri": "pgmcp://cache/runs/503a2a2d2bfb408eb8aa061331cc3aea",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "additionalProperties",
+            "message": "Additional properties are not allowed ('status' was unexpected)"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_legacy_generic_doc.md",
+      "template_id": "generic_doc",
+      "package_version": "1.0.0",
+      "package_fingerprint": "ZM_jywqzBMzPxHq4"
+    }
+  },
+  {
+    "type": "generic_doc",
+    "variant": "absent_metadata",
+    "request": {
+      "artifact_type": "generic_doc",
+      "file_name": "c3_rejected_absent_metadata.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Template Output Review",
+        "purpose": "Record first-call output observations.",
+        "summary": "Review representative generated artifacts for formatting and presentation."
+      }
+    },
+    "uri": "pgmcp://cache/runs/11027be0eb904e458d370797ad9cefe5",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "",
+            "keyword": "required",
+            "message": "'document_metadata' is a required property"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_absent_metadata.md",
+      "template_id": "generic_doc",
+      "package_version": "1.0.0",
+      "package_fingerprint": "ZM_jywqzBMzPxHq4"
+    }
+  },
+  {
+    "type": "generic_doc",
+    "variant": "empty_revisions",
+    "request": {
+      "artifact_type": "generic_doc",
+      "file_name": "c3_rejected_empty_revisions.md",
+      "target_path": ".pgmcp/temp/issue473",
+      "force_target": true,
+      "validation": "enforce",
+      "context": {
+        "title": "Template Output Review",
+        "purpose": "Record first-call output observations.",
+        "summary": "Review representative generated artifacts for formatting and presentation.",
+        "document_metadata": {
+          "status": "Authored",
+          "revisions": []
+        }
+      }
+    },
+    "uri": "pgmcp://cache/runs/37b3014433484e09995189fbde48aa83",
+    "dto": {
+      "success": false,
+      "written": false,
+      "validation_policy": "enforce",
+      "validation_status": "not_executed",
+      "profile_id": "markdown_document",
+      "checks": [],
+      "error_code": "context_invalid",
+      "error_details": {
+        "issues": [
+          {
+            "pointer": "/document_metadata/revisions",
+            "keyword": "minItems",
+            "message": "[] should be non-empty"
+          }
+        ]
+      },
+      "housekeeping": [],
+      "output_path": ".pgmcp/temp/issue473/c3_rejected_empty_revisions.md",
+      "template_id": "generic_doc",
+      "package_version": "1.0.0",
+      "package_fingerprint": "ZM_jywqzBMzPxHq4"
+    }
+  }
+]
+`````
+
+## C_DOCS material first failures and final link receipt
+
+Decision structure and labelled ordered-list first outputs passed their narrow native preflight while manually failing the agreed presentation objective. Their original requests/complete responses and lossless output records follow. They remain untouched on disk; final targeted cases above supersede them.
+
+`````json
+{
+  "before": [
+    {
+      "request": {
+        "artifact_type": "architecture",
+        "file_name": "c3_decision_structure_before.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Execution Architecture",
+          "concepts": [
+            {
+              "name": "Event stream",
+              "description": "Events move from intake to persistence."
+            }
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "decisions": [
+            {
+              "decision": "Keep structure",
+              "rationale": "    print(\"keep\")"
+            },
+            {
+              "decision": "Keep list",
+              "rationale": "  - first"
+            },
+            {
+              "decision": "Keep ordered list",
+              "rationale": "1) first"
+            }
+          ]
+        }
+      },
+      "uri": "pgmcp://cache/runs/126332da91c843f9b4ca917e1edc9f23",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c3_decision_structure_before.md",
+        "template_id": "architecture",
+        "package_version": "1.0.0",
+        "package_fingerprint": "HBG-Ns7Ll7gyB_VD"
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "design",
+        "file_name": "c3_labelled_structure_before.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Design",
+          "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+          "requirements_functional": [
+            "Acknowledge only after durable append."
+          ],
+          "requirements_nonfunctional": [
+            "Preserve per-partition order."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "validation": [
+            {
+              "obligation": "Keep list",
+              "method": "1) first",
+              "expected_result": "Structure remains"
+            }
+          ]
+        }
+      },
+      "uri": "pgmcp://cache/runs/609872325b5f4f8e9e2064a4854a5cf1",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c3_labelled_structure_before.md",
+        "template_id": "design",
+        "package_version": "1.0.0",
+        "package_fingerprint": "Sr-miz8su-qEO1W5"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "path": ".pgmcp/temp/issue473/c3_decision_structure_before.md",
+      "content": "<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=HBG-Ns7Ll7gyB_VD sf=eSn4T601-4p-povm -->\n\n# Execution Architecture\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n## Decisions\n\n| Decision | Rationale | Alternatives |\n| --- | --- | --- |\n| Keep structure |     print(\"keep\") |  |\n| Keep list |   - first |  |\n| Keep ordered list | 1) first |  |\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 600,
+      "sha256": "d080ab9b938e19b5265398e52d8ddf7500e6835508933273785a434847bc9c79"
+    },
+    {
+      "path": ".pgmcp/temp/issue473/c3_labelled_structure_before.md",
+      "content": "<!-- pgmcp:v1 id=design pv=1.0.0 pf=Sr-miz8su-qEO1W5 sf=eSn4T601-4p-povm -->\n\n# Event Path Design\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Validation\n\n### Keep list\n\n**Method:** 1) first\n\n**Expected Result:** Structure remains\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 657,
+      "sha256": "91b276a6c1c5dcd64bef5a448efa31ac0c12397297721c4fdc0bb57f8845bb44"
+    }
+  ],
+  "finalLinks": {
+    "request": {
+      "scope": "targets",
+      "targets": [
+        ".pgmcp/temp/issue473/c3_final_architecture_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_architecture_filled.md",
+        ".pgmcp/temp/issue473/c3_final_research_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_research_filled.md",
+        ".pgmcp/temp/issue473/c3_final_design_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_design_filled.md",
+        ".pgmcp/temp/issue473/c3_final_planning_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_planning_filled.md",
+        ".pgmcp/temp/issue473/c3_final_validation_report_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_validation_report_filled.md",
+        ".pgmcp/temp/issue473/c3_final_reference_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_reference_filled.md",
+        ".pgmcp/temp/issue473/c3_final_generic_doc_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_generic_doc_filled.md",
+        ".pgmcp/temp/issue473/c3_final_issue_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_issue_filled.md",
+        ".pgmcp/temp/issue473/c3_final_pr_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_pr_filled.md",
+        "docs/reference/tools/scaffolding.md",
+        "docs/development/issue473/manual-inspection.md",
+        "docs/development/issue473/first-output-evidence.md",
+        "docs/development/issue473/tool-practice-findings.md"
+      ],
+      "profile": "markdown_link_review",
+      "timeout_seconds": 120
+    },
+    "uri": "pgmcp://cache/runs/f6f0c7c5086044f8853f5eddb296cb0d",
+    "dto": {
+      "success": true,
+      "run_status": "passed",
+      "requested_scope": "targets",
+      "requested_targets": [
+        ".pgmcp/temp/issue473/c3_final_architecture_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_architecture_filled.md",
+        ".pgmcp/temp/issue473/c3_final_research_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_research_filled.md",
+        ".pgmcp/temp/issue473/c3_final_design_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_design_filled.md",
+        ".pgmcp/temp/issue473/c3_final_planning_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_planning_filled.md",
+        ".pgmcp/temp/issue473/c3_final_validation_report_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_validation_report_filled.md",
+        ".pgmcp/temp/issue473/c3_final_reference_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_reference_filled.md",
+        ".pgmcp/temp/issue473/c3_final_generic_doc_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_generic_doc_filled.md",
+        ".pgmcp/temp/issue473/c3_final_issue_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_issue_filled.md",
+        ".pgmcp/temp/issue473/c3_final_pr_minimal.md",
+        ".pgmcp/temp/issue473/c3_final_pr_filled.md",
+        "docs/reference/tools/scaffolding.md",
+        "docs/development/issue473/manual-inspection.md",
+        "docs/development/issue473/first-output-evidence.md",
+        "docs/development/issue473/tool-practice-findings.md"
+      ],
+      "selected_profile": "markdown_link_review",
+      "removed_targets": [],
+      "results": [
+        {
+          "check_id": "markdown_links",
+          "status": "passed",
+          "reason": null,
+          "message": null,
+          "evidence": {
+            "format": "json",
+            "data": {
+              "total": 31,
+              "unique": 24,
+              "successful": 27,
+              "unknown": 0,
+              "unsupported": 0,
+              "timeouts": 0,
+              "redirects": 0,
+              "remaps": 0,
+              "excludes": 4,
+              "errors": 0,
+              "cached": 0,
+              "success_map": {},
+              "error_map": {},
+              "timeout_map": {},
+              "suggestion_map": {},
+              "redirect_map": {},
+              "excluded_map": {
+                "C:\\temp\\pgmcp\\docs\\development\\issue473\\manual-inspection.md": [
+                  {
+                    "url": "pgmcp://cache/runs/f7f2436d310942839a512e80f39cce14",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 109,
+                      "column": 444
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 100
+                    }
+                  },
+                  {
+                    "url": "pgmcp://cache/runs/07449acf87b0419791230c7279b7b989",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 109,
+                      "column": 651
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 100
+                    }
+                  },
+                  {
+                    "url": "pgmcp://cache/runs/e3affeeb5eaf47f19c3dbda134bf192e",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 109,
+                      "column": 285
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 200
+                    }
+                  }
+                ],
+                "C:\\temp\\pgmcp\\docs\\development\\issue473\\tool-practice-findings.md": [
+                  {
+                    "url": "pgmcp://cache/runs/fa81c9d40c684c89b73d643c73dfdaa1",
+                    "status": {
+                      "text": "Excluded",
+                      "details": "This is due to your 'exclude' values"
+                    },
+                    "span": {
+                      "line": 123,
+                      "column": 452
+                    },
+                    "duration": {
+                      "secs": 0,
+                      "nanos": 300
+                    }
+                  }
+                ]
+              },
+              "duration": {
+                "secs": 0,
+                "nanos": 67382300
+              },
+              "detailed_stats": false
+            }
+          },
+          "external_tools": [
+            {
+              "tool_id": "lychee",
+              "version": "0.24.2"
+            }
+          ],
+          "adapter": {
+            "adapter_id": "lychee",
+            "version": "1.0.0",
+            "fingerprint": "qA92IhPfuJA_ESpX",
+            "contract_version": 1
+          },
+          "capture": {
+            "exit_code": 0,
+            "stdout": {
+              "observed_bytes": 1449,
+              "head": null,
+              "tail": null,
+              "truncated": false
+            },
+            "stderr": {
+              "observed_bytes": 0,
+              "head": "",
+              "tail": "",
+              "truncated": false
+            }
+          },
+          "termination_problem": null,
+          "request_rejection": null,
+          "args_source": "configured",
+          "effective_args": [
+            "--offline",
+            "--cache=false",
+            "--include-fragments"
+          ],
+          "coverage": null,
+          "required_targets": []
+        }
+      ],
+      "error_code": null,
+      "error_details": null
+    }
+  }
+}
+`````

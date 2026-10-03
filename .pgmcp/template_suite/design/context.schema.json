@@ -4,51 +4,170 @@
   "description": "Valid initial authored Design content; completion is determined by active work-context phase instructions.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["title", "problem_statement", "requirements_functional", "requirements_nonfunctional"],
+  "required": [
+    "title",
+    "problem_statement",
+    "requirements_functional",
+    "requirements_nonfunctional",
+    "document_metadata"
+  ],
   "properties": {
-    "title": {"$ref": "#/$defs/Text"},
-    "status": {"$ref": "#/$defs/Text"},
-    "version": {"$ref": "#/$defs/Text"},
-    "last_updated": {"type": "string", "format": "date", "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"},
-    "purpose": {"$ref": "#/$defs/Prose"},
-    "scope_in": {"$ref": "#/$defs/Prose"},
-    "scope_out": {"$ref": "#/$defs/Prose"},
-    "prerequisites": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-    "related_docs": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}},
-    "problem_statement": {"$ref": "#/$defs/Text"},
-    "requirements_functional": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-    "requirements_nonfunctional": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-    "constraints": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-    "options": {"type": "array", "items": {"$ref": "#/$defs/Alternative"}},
-    "decision": {"$ref": "#/$defs/Prose"},
-    "rationale": {"$ref": "#/$defs/Prose"},
-    "key_decisions": {"type": "array", "items": {"$ref": "../shared/definitions/decision.schema.json"}},
-    "questions": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-    "production_design": {"$ref": "#/$defs/Prose"},
-    "test_design": {"$ref": "#/$defs/Prose"},
-    "contracts": {"type": "array", "items": {"$ref": "#/$defs/Section"}},
-    "flow": {"$ref": "#/$defs/Prose"},
-    "state_and_failures": {"$ref": "#/$defs/Prose"},
-    "preservation": {"$ref": "#/$defs/Prose"},
-    "transition_and_cleanup": {"$ref": "#/$defs/Prose"},
-    "validation": {"type": "array", "items": {"$ref": "../shared/definitions/evidence-requirement.schema.json"}},
-    "risks": {"type": "array", "items": {"$ref": "../shared/definitions/risk.schema.json"}},
-    "planning_consequences": {"$ref": "#/$defs/Prose"},
-    "sources": {"type": "array", "items": {"$ref": "../shared/definitions/link.schema.json"}}
-  },
-  "$defs": {
-    "Text": {"type": "string", "minLength": 1},
-    "Prose": {"type": "string"},
-    "Alternative": {
-      "type": "object", "additionalProperties": false,
-      "required": ["name", "description"],
-      "properties": {
-        "name": {"$ref": "#/$defs/Text"},
-        "description": {"$ref": "#/$defs/Prose"},
-        "pros": {"type": "array", "items": {"$ref": "#/$defs/Text"}},
-        "cons": {"type": "array", "items": {"$ref": "#/$defs/Text"}}
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "purpose": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
       }
     },
-    "Section": {"$ref": "../shared/definitions/section.schema.json"}
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "problem_statement": {
+      "$ref": "#/$defs/Text"
+    },
+    "requirements_functional": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "requirements_nonfunctional": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Alternative"
+      }
+    },
+    "decision": {
+      "$ref": "#/$defs/Prose"
+    },
+    "rationale": {
+      "$ref": "#/$defs/Prose"
+    },
+    "key_decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/decision.schema.json"
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "production_design": {
+      "$ref": "#/$defs/Prose"
+    },
+    "test_design": {
+      "$ref": "#/$defs/Prose"
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Section"
+      }
+    },
+    "flow": {
+      "$ref": "#/$defs/Prose"
+    },
+    "state_and_failures": {
+      "$ref": "#/$defs/Prose"
+    },
+    "preservation": {
+      "$ref": "#/$defs/Prose"
+    },
+    "transition_and_cleanup": {
+      "$ref": "#/$defs/Prose"
+    },
+    "validation": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/evidence-requirement.schema.json"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/risk.schema.json"
+      }
+    },
+    "planning_consequences": {
+      "$ref": "#/$defs/Prose"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "document_metadata": {
+      "$ref": "../shared/definitions/document-metadata.schema.json"
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "Alternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "$ref": "#/$defs/Prose"
+        },
+        "pros": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          }
+        },
+        "cons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          }
+        }
+      }
+    },
+    "Section": {
+      "$ref": "../shared/definitions/section.schema.json"
+    }
   }
 }

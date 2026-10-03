@@ -3,162 +3,127 @@
 {% import "shared/templates/patterns/markdown/links.jinja2" as links %}
 
 {% macro validation_spec(spec) -%}
-**Type:** {{ spec.type }}
-
-**File:** {{ spec.file if spec.file is not none else 'null' }}
-{% if spec.text is defined %}
-**Text:** {{ spec.text if spec.text is not none else 'null' }}
-{% endif %}
-{% if spec.path is defined %}
-**Path:** {{ spec.path if spec.path is not none else 'null' }}
-{% endif %}
+{%- set selected = namespace(parts=[
+    '**Type:** ' ~ spec.type,
+    '**File:** ' ~ (spec.file | tojson)
+]) -%}
+{%- if spec.text is defined -%}
+{%- set selected.parts = selected.parts + ['**Text:** ' ~ (spec.text | tojson)] -%}
+{%- endif -%}
+{%- if spec.path is defined -%}
+{%- set selected.parts = selected.parts + ['**Path:** ' ~ (spec.path | tojson)] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
 {%- endmacro %}
 
 {% macro deliverable(item, level=4) -%}
-{{ sections.heading(item.id, level) }}
-
-{{ item.description }}
-{% if item.owner is defined %}
-
-**Owner:** {{ item.owner }}
-{% endif %}
-{% if item.validates is defined %}
-
-**Validates:**{% if item.validates is none %} null
-{% else %}
-{{ validation_spec(item.validates) }}
-{% endif %}
-{% endif %}
+{%- set selected = namespace(parts=[
+    sections.heading(item.id, level), item.description | text_block
+]) -%}
+{%- if item.owner is defined -%}
+{%- set selected.parts = selected.parts + ['**Owner:** ' ~ item.owner] -%}
+{%- endif -%}
+{%- if item.validates is defined -%}
+{%- if item.validates is none -%}
+{%- set selected.parts = selected.parts + ['**Validates:** null'] -%}
+{%- else -%}
+{%- set selected.parts = selected.parts + ['**Validates:**', validation_spec(item.validates)] -%}
+{%- endif -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
 {%- endmacro %}
 
 {% macro work_unit(item) -%}
-{{ sections.heading(item.id ~ ' — ' ~ item.name, 3) }}
-
-**Goal:** {{ item.goal }}
-{% if item.cycle_number is defined %}
-
-**Cycle Number:** {{ item.cycle_number }}
-{% endif %}
-{% if item.owner is defined %}
-
-**Owner:** {{ item.owner }}
-{% endif %}
-{% if item.scope_in is defined %}
-
-{{ sections.heading('Scope In', 4) }}
-
-{{ item.scope_in }}
-{% endif %}
-{% if item.scope_out is defined %}
-
-{{ sections.heading('Scope Out', 4) }}
-
-{{ item.scope_out }}
-{% endif %}
-{{ sections.heading('Deliverables', 4) }}
-{% for entry in item.deliverables %}
-{{ deliverable(entry, 5) }}
-{% endfor %}
-{{ sections.heading('Exit Criteria', 4) }}
-
-{{ item.exit_criteria }}
-{% if item.dependencies is defined %}
-
-{{ sections.heading('Dependencies', 4) }}
-
-{{ sections.bullets(item.dependencies) }}
-{% endif %}
-{% if item.obligations is defined %}
-
-{{ sections.heading('Obligations', 4) }}
-
-{{ sections.bullets(item.obligations) }}
-{% endif %}
-{% if item.verification is defined %}
-
-{{ sections.heading('Verification', 4) }}
-{% for requirement in item.verification %}
-
-{{ sections.heading(requirement.obligation, 5) }}
-
-**Method:** {{ requirement.method }}
-
-**Expected Result:** {{ requirement.expected_result }}
-{% if requirement.references is defined %}
-
-**References:**
-
-{{ links.inline_list(requirement.references) }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if item.risks is defined %}
-
-{{ sections.heading('Risks', 4) }}
-{% for risk in item.risks %}
-
-{{ sections.heading(risk.description, 5) }}
-
-{{ risk.mitigation }}
-{% if risk.consequence is defined %}
-
-**Consequence:** {{ risk.consequence }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if item.stop_conditions is defined %}
-
-{{ sections.heading('Stop Conditions', 4) }}
-
-{{ sections.bullets(item.stop_conditions) }}
-{% endif %}
+{%- set selected = namespace(parts=[
+    sections.heading(item.id ~ ' — ' ~ item.name, 3),
+    sections.labelled('Goal', item.goal)
+]) -%}
+{%- if item.cycle_number is defined -%}
+{%- set selected.parts = selected.parts + ['**Cycle Number:** ' ~ item.cycle_number] -%}
+{%- endif -%}
+{%- if item.owner is defined -%}
+{%- set selected.parts = selected.parts + ['**Owner:** ' ~ item.owner] -%}
+{%- endif -%}
+{%- for field, title in [('scope_in', 'Scope In'), ('scope_out', 'Scope Out')] -%}
+{%- if item[field] is defined -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(title, 4), item[field] | text_block
+] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- set selected.parts = selected.parts + [sections.heading('Deliverables', 4)] -%}
+{%- for entry in item.deliverables -%}
+{%- set selected.parts = selected.parts + [deliverable(entry, 5)] -%}
+{%- endfor -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading('Exit Criteria', 4), item.exit_criteria | text_block
+] -%}
+{%- for field, title in [('dependencies', 'Dependencies'), ('obligations', 'Obligations')] -%}
+{%- if item[field] is defined -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(title, 4), sections.bullets(item[field])
+] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if item.verification is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Verification', 4)] -%}
+{%- for requirement in item.verification -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(requirement.obligation, 5),
+    sections.labelled('Method', requirement.method),
+    sections.labelled('Expected Result', requirement.expected_result)
+] -%}
+{%- if requirement.references is defined -%}
+{%- set selected.parts = selected.parts + ['**References:**', links.inline_list(requirement.references)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if item.risks is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Risks', 4)] -%}
+{%- for risk in item.risks -%}
+{%- set selected.parts = selected.parts + [sections.heading(risk.description, 5), risk.mitigation | text_block] -%}
+{%- if risk.consequence is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Consequence', risk.consequence)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if item.stop_conditions is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Stop Conditions', 4), sections.bullets(item.stop_conditions)] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
 {%- endmacro %}
 
-{% block document_body %}
-{{ sections.prose('Summary', content.summary) }}
-{% if content.dependencies is defined %}
-
-{{ sections.heading('Dependencies') }}
-
-{{ sections.bullets(content.dependencies) }}
-{% endif %}
-{% if content.risks is defined %}
-
-{{ sections.heading('Risks') }}
-{% for risk in content.risks %}
-
-{{ sections.heading(risk.description, 3) }}
-
-{{ risk.mitigation }}
-{% if risk.consequence is defined %}
-
-**Consequence:** {{ risk.consequence }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.milestones is defined %}
-
-{{ sections.heading('Milestones') }}
-
-{{ sections.bullets(content.milestones) }}
-{% endif %}
-
-{{ sections.heading('Work Units') }}
-{% for item in content.work_units %}
-
-{{ work_unit(item) }}
-{% endfor %}
-{% if content.phase_deliverables is defined %}
-
-{{ sections.heading('Phase Deliverables') }}
-{% for phase in ('design', 'validation', 'documentation') %}
-{% if content.phase_deliverables[phase] is defined %}
-
-{{ sections.heading(phase | title, 3) }}
-{% for item in content.phase_deliverables[phase] %}
-{{ deliverable(item, 4) }}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% endblock %}
+{% block document_body -%}
+{%- set selected = namespace(parts=[sections.prose('Summary', content.summary)]) -%}
+{%- if content.dependencies is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Dependencies'), sections.bullets(content.dependencies)] -%}
+{%- endif -%}
+{%- if content.risks is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Risks')] -%}
+{%- for risk in content.risks -%}
+{%- set selected.parts = selected.parts + [sections.heading(risk.description, 3), risk.mitigation | text_block] -%}
+{%- if risk.consequence is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Consequence', risk.consequence)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if content.milestones is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Milestones'), sections.bullets(content.milestones)] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.heading('Work Units')] -%}
+{%- for item in content.work_units -%}
+{%- set selected.parts = selected.parts + [work_unit(item)] -%}
+{%- endfor -%}
+{%- if content.phase_deliverables is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Phase Deliverables')] -%}
+{%- for phase in ('design', 'validation', 'documentation') -%}
+{%- if content.phase_deliverables[phase] is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading(phase | title, 3)] -%}
+{%- for item in content.phase_deliverables[phase] -%}
+{%- set selected.parts = selected.parts + [deliverable(item, 4)] -%}
+{%- endfor -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

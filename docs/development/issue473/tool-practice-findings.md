@@ -59,3 +59,75 @@ Status: observed sequencing friction; deferred lifecycle/tool coordination. rest
 Expected safe use follows the tool's stated delay: wait at least three seconds, verify the changed healthy PID, then load work context before further calls. Later restarts used that sequence and remained operational. The observation demonstrates a producer sequencing mistake and a possible usability improvement around restart readiness; it does not prove a dead native process or failed tests. No outcome/receipt exists for the timed-out call and it contributes no test evidence. Cache entries are transient across restarts: an unread recheck cache disappeared as expected; the isolated check was rerun without replaying the fix mutation.
 
 No unrelated adapter/server repair was introduced. Full suite/branch gates and independent QA remain outstanding.
+
+## F6 — Template admission failure terminates bootstrap and leaves a falsely ready proxy
+
+Status: confirmed startup/recovery defect; follow-up required. This is an operational defect in the current tools, separate from the issue473 template correction. It must not be accepted as normal handling of an invalid template. No claim is made that issue460 introduced it.
+
+### Trigger and direct cause
+
+During C_DOCS, the new shared Markdown document base selected the latest authored revision with `content.document_metadata.revisions[-1]`. Jinja accepts this expression, but actual startup admission rejected the resolved access. The first package inspected was architecture. Controlled local startup on 2026-10-03 returned exit code 1 and the following complete MCPError facts:
+
+```json
+{
+  "message": "template_input_undeclared",
+  "code": "ERR_CONFIG",
+  "params": {
+    "template_id": "architecture",
+    "template": "shared/templates/bases/tier2_markdown_document.jinja2",
+    "field": "content.document_metadata.revisions.-1",
+    "line": 8
+  }
+}
+```
+
+The diagnostic command was `.venv/Scripts/python.exe -m mcp_server`. A second bounded diagnostic invoked `ServerBootstrapper(Settings.from_env()).bootstrap_target()` and printed only the caught MCPError message/code/params, exposing the actionable details absent from the first traceback. No production source was changed during diagnosis. Source-only producer delegation reached a contrary hypothesis about the negative index; the actual runtime exception above is authoritative evidence.
+
+### Exception and recovery chain
+
+1. `TemplateInputValidator.validate` in `mcp_server/services/template_catalog.py` raises MCPError with code ERR_CONFIG for the undeclared access. Template syntax failures likewise become MCPError in `TemplateGraphResolver`; that related path is established by source inspection, not a separate runtime reproduction.
+2. `ServerBootstrapper.bootstrap_target` propagates this error from `admit_template_suite`/catalog loading.
+3. `mcp_server/cli.py` catches ConfigError and FileNotFoundError to construct DegradedMCPServer. MCPError(code=ERR_CONFIG) is not ConfigError, so this admission error escapes that recovery boundary and terminates the process before MCP initialization.
+4. The proxy starts its stderr reader only after initialize replay. Its subprocess owner may clear server_process when the failed startup exits. In the observed run this ordering lost the original stderr; the local audit log contained no startup exception.
+5. The proxy treats an empty/non-JSON initialize response as a logged observation and continues to log server_ready/restart_completed without checking a successful initialize response and live server. The audit on 2026-10-03 19:10:27–19:10:34 UTC showed proxy PID30612, old server PID32992, failed new PID27152, non-JSON initialize, then server_pid=null and new_server_pid=null while still claiming ready.
+6. `send_to_server` silently returns when server_process is None. The retained client connection therefore has no server to answer health/context/edit/restart requests. The root health request remained unanswered and was abandoned; it is not native test evidence. The built-in restart request also cannot recover through this dead forwarding path.
+
+### Reproduction and impact
+
+Prerequisites: configured delivered suite, the uncorrected shared document base, working proxy/client connection, and normal server restart. In a disposable copy only: use the rejected revision expression, call restart_server, allow startup to complete/fail, inspect the audit events, then request health/context. Compare the direct startup exception with the false ready events and missing MCP response. Do not deliberately crash the working issue473 server again merely to repeat this result.
+
+Impact: one invalid configured template can disable all tools, conceal its actionable package/file/field details from the client, and remove the tool-level recovery path. This is materially more severe than a single rejected scaffold request.
+
+Required follow-up acceptance boundaries: retain the failed package/template/line/field/cause in accessible startup diagnostics; distinguish failed admission from healthy readiness; keep an explicit repair/retry or degraded recovery path available; drain/preserve startup stderr even when a child exits early; report failed initialize/process exit instead of logging ready or silently dropping client calls. Invalid suites must remain rejected. Do not solve this by relaxing admission or activating an invalid snapshot. Exception taxonomy and proxy lifecycle ownership must be reviewed together before repair.
+
+### Authorized issue473 correction and evidence limits
+
+The human authorized the single template source correction and this root-cause record outside MCP because the server was unavailable. The replacement is `content.document_metadata.revisions | last`, using the existing Jinja filter and retaining the approved latest-supplied-revision behavior. An in-memory substitution first completed bootstrap without changing files; after the authorized exact replacement, an unmodified bootstrap of the on-disk suite also completed successfully with exit code 0. The only emitted warning was the existing Pydantic SchemaAttachment.schema shadowing warning.
+
+This local bootstrap is diagnosis/recovery evidence, not a public scaffold, native quality gate, family test run or independent approval. The client/proxy connection still requires reconnection before normal pgmcp execution can resume. No CLI/proxy production repair, additional regression test, admission change or generic issue476 work was performed. The startup/recovery defect remains an explicit current-tool finding for coordination, with the human requirement that invalid Jinja/templates must have diagnostics and a recovery path.
+
+
+## F5 — Shared JSON schema authoring has no direct scaffold route
+
+Status: observed authoring friction; deferred tool coordination. The new shared document-metadata.schema.json was initialized through the admitted generic_doc scaffold because repository instructions require scaffolding for new sources, but the live artifact set has no JSON-schema source package. The initial Markdown scaffold succeeded; replacing its content with the required JSON using safe_edit_file(report) retained the generic_doc selection and ran Markdown preflight. That edit reported written=true with failed validation (missing H1). The final file is JSON without a Markdown provenance line. This failed preflight is not JSON validity evidence.
+
+Reproduce in a disposable directory: discover generic_doc; scaffold an exact *.schema.json filename with its admitted authored document context; replace the generated Markdown with a Draft202012 JSON schema under report policy and inspect selection/profile/check rows. Expected authoring route should assess the intended source role without a misleading inherited Markdown selection. The concrete limitation is the absence of an admitted schema-source scaffold and selection provenance on replacement; no claim is made about all JSON edits.
+
+Separate evidence supplies correctness: the refreshed real catalog admitted all seven dependent document schemas, public discovery exposed their resolved required metadata, public old-root/absent/empty-revision requests were rejected before writing, and the delivered/installed existing tests passed. No new scaffold family, selection rule or JSON adapter was added in #473.
+
+
+## C_DOCS current route evidence and recovery closure
+
+After the authorized exact template correction, the client connection was re-established. The supported restart after the bounded structure repair used the documented delay, then get_work_context confirmed issue473 Implementation cycle3 and health_check confirmed healthy PID27688. F6 remains a startup/recovery defect; corrected package admission and restored normal tools do not repair the proxy/CLI failure chain.
+
+Twenty fresh minimal/filled calls passed their individual Markdown document/body or commit_message preflight rows and persisted untouched. Seven real old-root status requests, missing document_metadata and empty revisions were rejected with context_invalid and written=false. Independent configured offline Lychee link review of the 18 Markdown examples plus active scaffolding reference/findings returned 23 successful, 0 errors, 0 excluded (receipt pgmcp://cache/runs/fa81c9d40c684c89b73d643c73dfdaa1), while filled preflight rows still expose F1 angle-destination warnings. That comparison distinguishes actual valid destinations from the preflight parser's warning.
+
+Existing tests after the structure correction: 47 passed, 1 existing warning, 69.79s in the twelve planned files; the two narrow current contract/docflow consumers additionally passed with 22 deselected and 9 existing warnings in 2.23s. Test gates passed format/lint/Pyright on twelve files. Native Ruff formatting on four migrated tests corrected actual source layout, followed by explicit passing checks. Full configured tests and branch gates remain Validation work. No additional automated content test or permanent harness was created.
+
+## F7 — Catalog refresh is per MCP client
+
+Observed during C_DOCS: the root client refreshed the server/catalog after source edits and discovered Architecture fingerprint F3GiYxoJo0WTq92r, while the delegated collector's separate client still returned its earlier Architecture fingerprint after get_work_context. The collector stopped before producing final output; the root then collected the six final cases with the current fingerprint. Reproduction: use two independent MCP clients, edit a shared template, restart/refresh one client, then request get_work_context and scaffold_schema from the other. Compare complete schema receipt fingerprints, not merely the shared filesystem or context summary. Each client's immutable admitted catalog requires its own refresh. This is a lifecycle/usage constraint; the observation does not establish a new template-engine bug or certify every client implementation. Independent QA must refresh its own client and verify fingerprints before public scaffold evidence. Disposition: document for coordination/tool usability triage; no new catalog layer is built in #473.
+
+### C_DOCS final route refresh
+
+Actual final public scaffolds: 20 pairs plus six boundaries, all written with their individual document/body/message preflight rows passed. Existing template/install tests: 47 passed, 1 warning, 67.13s; actual contracts/docflow consumers: 2 passed, 22 deselected, 9 warnings, 2.36s. Earlier 69.79s/2.23s runs remain historical evidence. Exact final requests, complete DTOs, source identity and file effects are in first-output-evidence.md. Manual reading found substantive presentation defects despite passing content preflights; those preflights prove their narrow configured responsibilities, not all document structure or caller facts.

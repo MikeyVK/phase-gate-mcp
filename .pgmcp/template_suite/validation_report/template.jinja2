@@ -2,118 +2,76 @@
 {% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
 {% import "shared/templates/patterns/markdown/links.jinja2" as links %}
 
-{% block document_body %}
-{% if content.issue_number is defined %}
-{{ sections.heading('Issue Number') }}
-
-{{ sections.issue_refs([content.issue_number]) }}
-{% endif %}
-{% if content.cycle is defined %}
-
-{{ sections.prose('Cycle', content.cycle) }}
-{% endif %}
-{% if content.validation_status is defined %}
-
-{{ sections.prose('Validation Status', content.validation_status) }}
-{% endif %}
-{% if content.scope is defined %}
-
-{{ sections.prose('Scope', content.scope) }}
-{% endif %}
-{% if content.obligations is defined %}
-
-{{ sections.heading('Obligations') }}
-{% for item in content.obligations %}
-
-{{ sections.heading(item.obligation, 3) }}
-
-**Evidence:**
-
-{{ links.inline_list(item.evidence) }}
-{% if item.outcome is defined %}
-
-**Outcome:** {{ item.outcome }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.evidence is defined %}
-
-{{ sections.heading('Evidence') }}
-{% for item in content.evidence %}
-
-{{ sections.heading(item.claim, 3) }}
-
-{{ item.observation }}
-
-**Sources:**
-
-{{ links.inline_list(item.sources) }}
-{% if item.invocation is defined %}
-
-**Invocation:** {{ item.invocation }}
-{% endif %}
-{% if item.observed_result is defined %}
-
-**Observed Result:** {{ item.observed_result }}
-{% endif %}
-{% if item.observed_at is defined %}
-
-**Observed At:** {{ item.observed_at }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.demonstration is defined %}
-
-{{ sections.prose('Demonstration', content.demonstration) }}
-{% endif %}
-{% if content.preservation is defined %}
-
-{{ sections.prose('Preservation', content.preservation) }}
-{% endif %}
-{% if content.containment is defined %}
-
-{{ sections.prose('Containment', content.containment) }}
-{% endif %}
-{% if content.failures is defined %}
-
-{{ sections.heading('Failures') }}
-
-{{ sections.bullets(content.failures) }}
-{% endif %}
-{% if content.caveats is defined %}
-
-{{ sections.heading('Caveats') }}
-
-{{ sections.bullets(content.caveats) }}
-{% endif %}
-{% if content.risks is defined %}
-
-{{ sections.heading('Risks') }}
-{% for item in content.risks %}
-
-{{ sections.heading(item.description, 3) }}
-
-{{ item.mitigation }}
-{% if item.consequence is defined %}
-
-**Consequence:** {{ item.consequence }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.deferred_work is defined %}
-
-{{ sections.heading('Deferred Work') }}
-{% for item in content.deferred_work %}
-
-{{ sections.heading(item.description, 3) }}
-
-{{ item.rationale }}
-{% if item.references is defined %}
-
-**References:**
-
-{{ links.inline_list(item.references) }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% endblock %}
+{% block document_body -%}
+{%- set selected = namespace(parts=[]) -%}
+{%- if content.issue_number is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Issue Number'), sections.issue_refs([content.issue_number])] -%}
+{%- endif -%}
+{%- for field, title in [
+    ('cycle', 'Cycle'), ('validation_status', 'Validation Status'), ('scope', 'Scope')
+] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose(title, content[field])] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if content.obligations is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Obligations')] -%}
+{%- for item in content.obligations -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(item.obligation, 3), '**Evidence:**', links.inline_list(item.evidence)
+] -%}
+{%- if item.outcome is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Outcome', item.outcome)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if content.evidence is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Evidence')] -%}
+{%- for item in content.evidence -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(item.claim, 3), item.observation | text_block,
+    '**Sources:**', links.inline_list(item.sources)
+] -%}
+{%- if item.invocation is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Invocation', item.invocation)] -%}
+{%- endif -%}
+{%- if item.observed_result is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Observed Result', item.observed_result)] -%}
+{%- endif -%}
+{%- if item.observed_at is defined -%}
+{%- set selected.parts = selected.parts + ['**Observed At:** ' ~ item.observed_at] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- for field, title in [
+    ('demonstration', 'Demonstration'), ('preservation', 'Preservation'), ('containment', 'Containment')
+] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose(title, content[field])] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- for field, title in [('failures', 'Failures'), ('caveats', 'Caveats')] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading(title), sections.bullets(content[field])] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if content.risks is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Risks')] -%}
+{%- for item in content.risks -%}
+{%- set selected.parts = selected.parts + [sections.heading(item.description, 3), item.mitigation | text_block] -%}
+{%- if item.consequence is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Consequence', item.consequence)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if content.deferred_work is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Deferred Work')] -%}
+{%- for item in content.deferred_work -%}
+{%- set selected.parts = selected.parts + [sections.heading(item.description, 3), item.rationale | text_block] -%}
+{%- if item.references is defined -%}
+{%- set selected.parts = selected.parts + ['**References:**', links.inline_list(item.references)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Required authored document metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "revisions"
+  ],
+  "properties": {
+    "status": {
+      "$ref": "#/$defs/Text"
+    },
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Revision"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "date",
+        "author",
+        "change"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/Text"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO calendar-date spelling only; calendar validity is not certified by this schema.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
+        },
+        "author": {
+          "$ref": "#/$defs/Text"
+        },
+        "change": {
+          "$ref": "#/$defs/Text"
+        }
+      }
+    }
+  }
+}

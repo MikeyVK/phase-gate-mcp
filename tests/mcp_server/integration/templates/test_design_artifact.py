@@ -89,17 +89,6 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
     options[1] = {"name": "Candidate 2", "description": "", "pros": [], "cons": []}
     context: dict[str, JsonValue] = {
         "title": "Boundary design",
-        "document_metadata": {
-            "status": "DRAFT — fixture input",
-            "revisions": [
-                {
-                    "version": "0.1",
-                    "date": "2026-10-03",
-                    "author": "Template fixture",
-                    "change": "Authored fixture revision.",
-                }
-            ],
-        },
         "problem_statement": "Caller-defined mismatch.",
         "requirements_functional": ["Preserve accepted calls", "Return explicit outcomes"],
         "requirements_nonfunctional": ["Keep bounded runtime"],
@@ -271,6 +260,7 @@ def test_design_explicit_empty_sections_remain_visible(design: DeliveredTemplate
         key: context[key]
         for key in (
             "title",
+            "document_metadata",
             "problem_statement",
             "requirements_functional",
             "requirements_nonfunctional",

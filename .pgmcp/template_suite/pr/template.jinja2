@@ -1,50 +1,37 @@
 {% extends "shared/templates/bases/tier2_markdown_tracking.jinja2" %}
 {% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
 {% import "shared/templates/patterns/markdown/links.jinja2" as links %}
-
-{% block tracking_body %}
-{% if content.summary is defined %}
-{{ sections.prose('Summary', content.summary) }}
-
-{% endif %}
-{{ sections.prose('Changes', content.changes) }}
-{% if content.testing is defined %}
-
-{{ sections.prose('Testing', content.testing) }}
-{% endif %}
-{% if content.checklist is defined %}
-
-{{ sections.heading('Checklist') }}
-
-{{ sections.checklist(content.checklist) }}
-{% endif %}
-{% if content.breaking_changes is defined %}
-
-{{ sections.prose('Breaking Changes', content.breaking_changes) }}
-{% endif %}
-
-{{ sections.heading('Deferred Work') }}
-{% if content.deferred_work %}
-{% for item in content.deferred_work %}
-
-{{ sections.heading(item.description, 3) }}
-
-{{ item.rationale }}
-{% if item.references is defined %}
-
-**References:**
-
-{{ links.inline_list(item.references) }}
-{% endif %}
-{% endfor %}
-{% else %}
-
-No deferred work identified.
-{% endif %}
-{% if content.closes is defined %}
-
-{{ sections.heading('Closes') }}
-
-{{ sections.issue_refs(content.closes) }}
-{% endif %}
-{% endblock %}
+{% block tracking_body -%}
+{%- set selected = namespace(parts=[]) -%}
+{%- if content.summary is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose('Summary', content.summary)] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.prose('Changes', content.changes)] -%}
+{%- if content.testing is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose('Testing', content.testing)] -%}
+{%- endif -%}
+{%- if content.checklist is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Checklist'), sections.checklist(content.checklist)
+])] -%}
+{%- endif -%}
+{%- if content.breaking_changes is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose('Breaking Changes', content.breaking_changes)] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.heading('Deferred Work')] -%}
+{%- for item in content.deferred_work -%}
+{%- set detail = [sections.heading(item.description, 3), item.rationale | text_block] -%}
+{%- if item.references is defined -%}
+{%- set detail = detail + ['**References:**', links.inline_list(item.references)] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.join(detail)] -%}
+{%- else -%}
+{%- set selected.parts = selected.parts + ['No deferred work identified.'] -%}
+{%- endfor -%}
+{%- if content.closes is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Closes'), sections.issue_refs(content.closes)
+])] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}
