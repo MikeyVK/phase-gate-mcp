@@ -15594,3 +15594,4061 @@ Exact final link request/complete DTO and enforce preflight receipts follow. The
   }
 }
 `````
+
+## Independent SHA256 verification refresh — C_RECONCILE
+
+The original root reader checked contiguous complete cache windows, stable run/hash/length metadata and complete codepoint length but did not independently recompute every receipt SHA before parsing. This procedural limitation is disclosed above. The reader now recomputes UTF-8 SHA256 before parsing; independent SHA checks matched all still-available receipts listed below, including nine resolved code schemas and the final 47-/2-test results. Older transient scaffold/gate/rejection receipts had expired, so they could not be retroactively certified from cache.
+
+To close the current evidence-integrity gap, the producer scaffolded 26 separate c4_receipt_* instances with exactly the original C3 contexts under the unchanged final source graph. All individual content-preflight rows passed and all complete receipts were independently SHA verified before parsing. A disk byte read found each of the 26 new outputs identical in content, byte length and UTF-8 SHA256 to its untouched c3_final_* counterpart. Final pairs remain the original 38 files; the new files are independent receipt-verification instances, not fixes or template changes. The nine context rejections were repeated under the current graph and independently verified: context_invalid, written=false in every case. The twelve changed test-file format/lint/Pyright selection was refreshed and passed. Production/templates/tests, caller contexts, native behavior and source identities were not modified; no content tests/harness were created.
+
+`````json
+{
+  "availableEarlierReceiptsVerified": [
+    {
+      "uri": "pgmcp://cache/runs/4a46bba5d11c478fa91525b1edb0d0b6",
+      "run_id": "4a46bba5d11c478fa91525b1edb0d0b6",
+      "total_chars": 1498,
+      "sha256": "e1b9d39870491f4a11be8e2eb96437b8b7d564c1d8ea484ed2de7c85c944b8f7",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/e3affeeb5eaf47f19c3dbda134bf192e",
+      "run_id": "e3affeeb5eaf47f19c3dbda134bf192e",
+      "total_chars": 3625,
+      "sha256": "c27b68350fa87dea9a3b4d5f41188df4fa72d669c137e43c4a6e6e9bbc6251c9",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/f7f2436d310942839a512e80f39cce14",
+      "run_id": "f7f2436d310942839a512e80f39cce14",
+      "total_chars": 3472,
+      "sha256": "7b7b5158bdac454f9f90b7b30280787377b65c9d33829d34245d6e2225a75837",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/1876802496a94bb896ccbe00fc880f3b",
+      "run_id": "1876802496a94bb896ccbe00fc880f3b",
+      "total_chars": 2574,
+      "sha256": "69c1680f481a560aa712ec09dafdea2d4244e93507dd8822e7ecbb1fa70fa397",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/16c9ceb9c65a406db113cc37ac2d6700",
+      "run_id": "16c9ceb9c65a406db113cc37ac2d6700",
+      "total_chars": 106907,
+      "sha256": "6884c79f324b185d2406d1f586ba9d5cf09f1b9ab2000fa91e4a1a96a5ffb7f1",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/cf7241f736634cf085902b4fd71a797d",
+      "run_id": "cf7241f736634cf085902b4fd71a797d",
+      "total_chars": 106713,
+      "sha256": "e9374db95641be3fd9add951af7e01aa04d6489ad7b2ad7d78f192bcb35c61c8",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/375c63d763cf453fa72be8075d66d34b",
+      "run_id": "375c63d763cf453fa72be8075d66d34b",
+      "total_chars": 107236,
+      "sha256": "f120323b297bae4d93c4e840999dbf5737f0a9133dda311f2769d110f67eef54",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/e3b978fcf3e64e3cbd68715866e528e0",
+      "run_id": "e3b978fcf3e64e3cbd68715866e528e0",
+      "total_chars": 107351,
+      "sha256": "fd73578ddc69c8eb09aa8189582d06eec1ca762b94bcf57de7407c48c5dc22cb",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/248e90c17c9a4431a218bfd2062d8910",
+      "run_id": "248e90c17c9a4431a218bfd2062d8910",
+      "total_chars": 125839,
+      "sha256": "767485a16491f6fa79da8e1ee4134535517b68b240e1480c503afc28dd97f9d9",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/8ad1b230eed84141856a2e8da07d6647",
+      "run_id": "8ad1b230eed84141856a2e8da07d6647",
+      "total_chars": 125754,
+      "sha256": "066713167b7ca75825ff57e280f139a2e3a6739a8ae82a2f9781e33a49b67136",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/5acb09cd261249449be407171f05e474",
+      "run_id": "5acb09cd261249449be407171f05e474",
+      "total_chars": 134549,
+      "sha256": "79725fb0932a5be5fa994dd60f057e5c50e58f243b4e0ed44b915d9cfb8b3ab0",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/083f450e02a74162a86c20e12b7ad292",
+      "run_id": "083f450e02a74162a86c20e12b7ad292",
+      "total_chars": 134570,
+      "sha256": "cce8f74565f070b2472dddb3de174db1b125d2c3175943ec685a926fb4e3d510",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/a15535b831104befa9de1e2d49fa922d",
+      "run_id": "a15535b831104befa9de1e2d49fa922d",
+      "total_chars": 10654,
+      "sha256": "a3304fe248debdee6badd7d6a4153f931030f92098011460efdc964f690231f2",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/403f866b466b4bb18ed7ef0ce9fbbda4",
+      "run_id": "403f866b466b4bb18ed7ef0ce9fbbda4",
+      "total_chars": 931,
+      "sha256": "c9663203a0a982b42db751ad483e43eee3b43685582ad7c412442ba67b78526d",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/e32cbf3cfbe04840a06a5f4391852a84",
+      "run_id": "e32cbf3cfbe04840a06a5f4391852a84",
+      "total_chars": 918,
+      "sha256": "35de75769811dc52307c96600d8da3c321f9cbe12537006ff868531e84b704bf",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/4f52152569a34579ba2dcb07ee805933",
+      "run_id": "4f52152569a34579ba2dcb07ee805933",
+      "total_chars": 930,
+      "sha256": "0d6f8b74300d993b48aceda5ee8c02ed4ddbd0bfb744da4b8bcbab1100065e31",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/2df016f070264f5bb9a9ddac2e5466c6",
+      "run_id": "2df016f070264f5bb9a9ddac2e5466c6",
+      "total_chars": 916,
+      "sha256": "c9f2671150b06ba75e2a82625e2feb17edf09f7580ec944760b4b34a11f9e387",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/aa6cb72a28a84691824ebac96ed3550f",
+      "run_id": "aa6cb72a28a84691824ebac96ed3550f",
+      "total_chars": 921,
+      "sha256": "c4b165051b83a04ee9a79271c423748d1e4cd824d20bf5e08f182080be98f133",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/931a2330e85f4788a78716a61dccfae0",
+      "run_id": "931a2330e85f4788a78716a61dccfae0",
+      "total_chars": 940,
+      "sha256": "c030a4763c039dcdf69eca976761276aef80eb8927af39d8bc8ac84c6f086fba",
+      "verified": true
+    },
+    {
+      "uri": "pgmcp://cache/runs/944b4551eaff49c2ac1fdd36180584b1",
+      "run_id": "944b4551eaff49c2ac1fdd36180584b1",
+      "total_chars": 945,
+      "sha256": "ec746870f798a5c4926f286428983a6365c37e8a2d6922cd15b09eeeedf6292b",
+      "verified": true
+    }
+  ],
+  "currentEquivalentScaffolds": [
+    {
+      "original_file": "c3_final_architecture_minimal.md",
+      "request": {
+        "artifact_type": "architecture",
+        "file_name": "c4_receipt_architecture_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Execution Architecture",
+          "concepts": [
+            {
+              "name": "Event stream",
+              "description": "Events move from intake to persistence."
+            }
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/ccedbe4ed01242a692472186c1f937a6",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_architecture_minimal.md",
+        "template_id": "architecture",
+        "package_version": "1.0.0",
+        "package_fingerprint": "F3GiYxoJo0WTq92r"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/ccedbe4ed01242a692472186c1f937a6",
+        "run_id": "ccedbe4ed01242a692472186c1f937a6",
+        "total_chars": 931,
+        "sha256": "97b4384ff32ce6bd5ba645f3250f9d1ba6f54909d9793c6477b33d9cfe4270bc",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_architecture_filled.md",
+      "request": {
+        "artifact_type": "architecture",
+        "file_name": "c4_receipt_architecture_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Execution Architecture",
+          "purpose": "Describe the order-preserving event path.",
+          "related_docs": [
+            {
+              "label": "Design",
+              "target": "../../../docs/coding_standards/DOCUMENTATION_STANDARD.md"
+            }
+          ],
+          "concepts": [
+            {
+              "name": "Event stream",
+              "description": "Events move from intake to persistence.",
+              "diagram": "flowchart LR\n  Intake --> Journal\n  Journal --> Store",
+              "subsections": [
+                {
+                  "name": "Ordering",
+                  "description": "Each partition preserves append order."
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            "Never acknowledge before durable append."
+          ],
+          "decisions": [
+            {
+              "decision": "Use a durable journal",
+              "rationale": "Recovery needs an authoritative append order.",
+              "alternatives": [
+                "In-memory queue"
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "label": "Journal contract",
+              "target": "../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"
+            }
+          ],
+          "document_metadata": {
+            "status": "DRAFT — review pending",
+            "revisions": [
+              {
+                "version": "1.0",
+                "date": "2026-10-02",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/6b8a487fdba2478e8acb254d672b3992",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "json",
+              "data": {
+                "issues": [
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\ARCHITECTURE_PRINCIPLES.md>",
+                    "line": 41
+                  },
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\DOCUMENTATION_STANDARD.md>",
+                    "line": 45
+                  }
+                ]
+              }
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 571,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_architecture_filled.md",
+        "template_id": "architecture",
+        "package_version": "1.0.0",
+        "package_fingerprint": "F3GiYxoJo0WTq92r"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/6b8a487fdba2478e8acb254d672b3992",
+        "run_id": "6b8a487fdba2478e8acb254d672b3992",
+        "total_chars": 1394,
+        "sha256": "ec5a24b881ee6e51ed1aa373d302fd539955308014b0c5d7cdcf01df934d5f08",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_research_minimal.md",
+      "request": {
+        "artifact_type": "research",
+        "file_name": "c4_receipt_research_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "First-call template quality research",
+          "problem_statement": "Some shipped templates produce first outputs with formatting defects.",
+          "goals": [
+            "Locate generated presentation defects."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/134a6b1a80b44e76b8ca031880725f59",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_research_minimal.md",
+        "template_id": "research",
+        "package_version": "1.0.0",
+        "package_fingerprint": "lgBwxWMfTAmNNg_O"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/134a6b1a80b44e76b8ca031880725f59",
+        "run_id": "134a6b1a80b44e76b8ca031880725f59",
+        "total_chars": 923,
+        "sha256": "161af718178a22f112b463f7c33304a07ce58ba44d5b1957a52dbef0c826e9b2",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_research_filled.md",
+      "request": {
+        "artifact_type": "research",
+        "file_name": "c4_receipt_research_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "First-call template quality research",
+          "problem_statement": "Some shipped templates produce first outputs with formatting defects.",
+          "goals": [
+            "Locate generated presentation defects.",
+            "Separate template text from caller-authored strings."
+          ],
+          "background": "Issue 473 reports excess Markdown spacing and mechanical labels.",
+          "findings": "The six Markdown templates extend the same document base and section/link macros.",
+          "questions": [
+            "Which boundaries need an explicit compatibility decision?"
+          ],
+          "references": [
+            {
+              "label": "Documentation Standard",
+              "target": "../../../docs/coding_standards/DOCUMENTATION_STANDARD.md"
+            }
+          ],
+          "evidence": [
+            {
+              "claim": "The document base emits metadata and related-document blocks.",
+              "observation": "The base has explicit conditional blocks for status, version, date, and related docs.",
+              "sources": [
+                {
+                  "label": "Markdown document base",
+                  "target": "../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2"
+                }
+              ],
+              "invocation": "Render one populated document context",
+              "observed_result": "Authored sample evidence; actual rendering is measured separately.",
+              "observed_at": "2026-10-02T12:00:00Z"
+            }
+          ],
+          "consumers": [
+            {
+              "name": "First-time scaffold caller",
+              "responsibility": "Supplies artifact context.",
+              "impact": "Reads generated Markdown before editing."
+            }
+          ],
+          "risks": [
+            {
+              "description": "A template defect can be misattributed to a user string.",
+              "mitigation": "Use marker strings and compare the raw template path.",
+              "consequence": "A fix could alter valid authored content."
+            }
+          ],
+          "assumptions": [
+            "The supplied context strings are representative."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/e64c11c9c18e42fabcaf0dc308040318",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "json",
+              "data": {
+                "issues": [
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\DOCUMENTATION_STANDARD.md>",
+                    "line": 32
+                  },
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\.pgmcp\\template_suite\\shared\\templates\\bases\\tier2_markdown_document.jinja2>",
+                    "line": 40
+                  }
+                ]
+              }
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 628,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_research_filled.md",
+        "template_id": "research",
+        "package_version": "1.0.0",
+        "package_fingerprint": "lgBwxWMfTAmNNg_O"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/e64c11c9c18e42fabcaf0dc308040318",
+        "run_id": "e64c11c9c18e42fabcaf0dc308040318",
+        "total_chars": 1443,
+        "sha256": "a2921edf120e9e6656149603af86aeb3b103ca1948790e0f2c8b25f333096816",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_design_minimal.md",
+      "request": {
+        "artifact_type": "design",
+        "file_name": "c4_receipt_design_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Design",
+          "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+          "requirements_functional": [
+            "Acknowledge only after durable append."
+          ],
+          "requirements_nonfunctional": [
+            "Preserve per-partition order."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/59505f34f8304f3bae88f0e7c0324b81",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_design_minimal.md",
+        "template_id": "design",
+        "package_version": "1.0.0",
+        "package_fingerprint": "YApsrGTQgBUKFez2"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/59505f34f8304f3bae88f0e7c0324b81",
+        "run_id": "59505f34f8304f3bae88f0e7c0324b81",
+        "total_chars": 919,
+        "sha256": "239170d87d785dd3df9ccc9cc2a2b0524b9cc6f9f40969be5031d68f10f3c5d4",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_design_filled.md",
+      "request": {
+        "artifact_type": "design",
+        "file_name": "c4_receipt_design_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Design",
+          "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+          "requirements_functional": [
+            "Acknowledge only after durable append."
+          ],
+          "requirements_nonfunctional": [
+            "Preserve per-partition order."
+          ],
+          "options": [
+            {
+              "name": "Append then acknowledge",
+              "description": "Commit to the journal before replying.",
+              "pros": [
+                "Crash recovery has a durable source."
+              ],
+              "cons": [
+                "Adds append latency."
+              ]
+            }
+          ],
+          "decision": "Append before acknowledgement.",
+          "rationale": "The durability requirement determines the ordering.",
+          "contracts": [
+            {
+              "heading": "Append result",
+              "content": "Returns an explicit durable position."
+            }
+          ],
+          "validation": [
+            {
+              "obligation": "A failed append is not acknowledged",
+              "method": "Inject journal failure",
+              "expected_result": "The call fails and no acknowledgement is sent.",
+              "references": [
+                {
+                  "label": "Journal contract",
+                  "target": "../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"
+                }
+              ]
+            }
+          ],
+          "risks": [
+            {
+              "description": "Append latency increases.",
+              "mitigation": "Measure the journal path.",
+              "consequence": "Higher tail latency."
+            }
+          ],
+          "document_metadata": {
+            "status": "DRAFT — review pending",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/e7a08bdb68dc4e17b0f5030377f7f1f1",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "json",
+              "data": {
+                "issues": [
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\coding_standards\\ARCHITECTURE_PRINCIPLES.md>",
+                    "line": 59
+                  }
+                ]
+              }
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 357,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_design_filled.md",
+        "template_id": "design",
+        "package_version": "1.0.0",
+        "package_fingerprint": "YApsrGTQgBUKFez2"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/e7a08bdb68dc4e17b0f5030377f7f1f1",
+        "run_id": "e7a08bdb68dc4e17b0f5030377f7f1f1",
+        "total_chars": 1168,
+        "sha256": "e7aeab1711f3a484bde177a066fe6aaafa2ad887c9164d39dc3236f64ace8306",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_planning_minimal.md",
+      "request": {
+        "artifact_type": "planning",
+        "file_name": "c4_receipt_planning_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Plan",
+          "summary": "Make acknowledgement follow a durable append.",
+          "work_units": [
+            {
+              "id": "U1",
+              "name": "Append ordering",
+              "goal": "Enforce durable append before acknowledgement.",
+              "deliverables": [
+                {
+                  "id": "code",
+                  "description": "Updated consumer path."
+                }
+              ],
+              "exit_criteria": "Failure injection proves no early acknowledgement."
+            }
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/ff2c82bf79ff44feb35312e71a130260",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_planning_minimal.md",
+        "template_id": "planning",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CscfYyDLqj0OeHml"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/ff2c82bf79ff44feb35312e71a130260",
+        "run_id": "ff2c82bf79ff44feb35312e71a130260",
+        "total_chars": 923,
+        "sha256": "3bccaba1cd33d66a4376d3e9f799ed03d1988eebc527af9485c29b467bf73db7",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_planning_filled.md",
+      "request": {
+        "artifact_type": "planning",
+        "file_name": "c4_receipt_planning_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Plan",
+          "summary": "Make acknowledgement follow a durable append.",
+          "dependencies": [
+            "Approved interface contract"
+          ],
+          "work_units": [
+            {
+              "id": "U1",
+              "name": "Append ordering",
+              "goal": "Enforce durable append before acknowledgement.",
+              "owner": "@imp",
+              "deliverables": [
+                {
+                  "id": "code",
+                  "description": "Updated consumer path.",
+                  "owner": "@imp",
+                  "validates": {
+                    "type": "contains_text",
+                    "file": "mcp_server/consumer.py",
+                    "text": "append"
+                  }
+                }
+              ],
+              "exit_criteria": "Failure injection proves no early acknowledgement.",
+              "verification": [
+                {
+                  "obligation": "Failed append does not acknowledge",
+                  "method": "Run focused failure-path test",
+                  "expected_result": "No acknowledgement is observed."
+                }
+              ],
+              "risks": [
+                {
+                  "description": "Retry may duplicate an append.",
+                  "mitigation": "Use the durable event key.",
+                  "consequence": "Duplicate journal entries."
+                }
+              ],
+              "stop_conditions": [
+                "Stop if the approved call contract cannot be preserved."
+              ]
+            }
+          ],
+          "phase_deliverables": {
+            "validation": [
+              {
+                "id": "report",
+                "description": "Validation evidence report.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue473/validation.md"
+                }
+              }
+            ]
+          },
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/cee4da29f860424cb61c5041d143f073",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_planning_filled.md",
+        "template_id": "planning",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CscfYyDLqj0OeHml"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/cee4da29f860424cb61c5041d143f073",
+        "run_id": "cee4da29f860424cb61c5041d143f073",
+        "total_chars": 922,
+        "sha256": "83ff8a00eb49439c1d5ef31c3a8e0dd333cc3bc0a13e10cbc79865d5e7b8e28b",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_validation_report_minimal.md",
+      "request": {
+        "artifact_type": "validation_report",
+        "file_name": "c4_receipt_validation_report_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event path validation",
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/4ca1e13ac93f4f4f9a967114bf8510ef",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_validation_report_minimal.md",
+        "template_id": "validation_report",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CT9NV5LmQjKHFGqX"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/4ca1e13ac93f4f4f9a967114bf8510ef",
+        "run_id": "4ca1e13ac93f4f4f9a967114bf8510ef",
+        "total_chars": 941,
+        "sha256": "f589bf8f89d0ef6b27d0a81718f6f59e1d6d8bc4347d6375d6cc0ea374a3e00c",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_validation_report_filled.md",
+      "request": {
+        "artifact_type": "validation_report",
+        "file_name": "c4_receipt_validation_report_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event path validation",
+          "issue_number": 473,
+          "cycle": "C1",
+          "validation_status": "PARTIAL",
+          "scope": "Durable append ordering.",
+          "obligations": [
+            {
+              "obligation": "Failed append is not acknowledged",
+              "evidence": [
+                {
+                  "label": "Failure-path test",
+                  "target": "../../../tests/mcp_server/integration/templates/test_validation_artifact.py"
+                }
+              ],
+              "outcome": "Authored sample outcome; not independent validation."
+            }
+          ],
+          "evidence": [
+            {
+              "claim": "The focused failure case preserves ordering.",
+              "observation": "Authored sample observation, supplied to exercise the evidence carrier.",
+              "sources": [
+                {
+                  "label": "Sample source",
+                  "target": "../../../README.md"
+                }
+              ],
+              "invocation": "Authored example invocation",
+              "observed_result": "Authored example result; not a measured test outcome.",
+              "observed_at": "2026-10-02T12:00:00Z"
+            }
+          ],
+          "failures": [],
+          "caveats": [
+            "PARTIAL is authored sample content, not independent QA status."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/49d95821725c41d89f0c17f9be1777ba",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "json",
+              "data": {
+                "issues": [
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../tests/mcp_server/integration/templates/test_validation_artifact.py>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\tests\\mcp_server\\integration\\templates\\test_validation_artifact.py>",
+                    "line": 31
+                  },
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../README.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\README.md>",
+                    "line": 43
+                  }
+                ]
+              }
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 531,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_validation_report_filled.md",
+        "template_id": "validation_report",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CT9NV5LmQjKHFGqX"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/49d95821725c41d89f0c17f9be1777ba",
+        "run_id": "49d95821725c41d89f0c17f9be1777ba",
+        "total_chars": 1364,
+        "sha256": "93dbc55481d37b78552a04d7277e71474dea026f6abecc2fd9ce17b4b6702343",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_reference_minimal.md",
+      "request": {
+        "artifact_type": "reference",
+        "file_name": "c4_receipt_reference_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event API",
+          "sources": [
+            {
+              "label": "API source",
+              "target": "../../../README.md"
+            }
+          ],
+          "api_reference": [],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/ead76440972e4cd986b6720c94186b09",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_reference_minimal.md",
+        "template_id": "reference",
+        "package_version": "1.0.0",
+        "package_fingerprint": "kaoepF5DpjMrctvM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/ead76440972e4cd986b6720c94186b09",
+        "run_id": "ead76440972e4cd986b6720c94186b09",
+        "total_chars": 925,
+        "sha256": "e64eb168adf7348b1d3306781d4f180b5564f4bcf2c206b7c570ebfa9611b597",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_reference_filled.md",
+      "request": {
+        "artifact_type": "reference",
+        "file_name": "c4_receipt_reference_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event API",
+          "sources": [
+            {
+              "label": "API source",
+              "target": "../../../README.md"
+            }
+          ],
+          "api_reference": [
+            {
+              "name": "EventReader",
+              "description": "Reads events in partition order.",
+              "sources": [
+                {
+                  "label": "Reader source",
+                  "target": "../../../README.md"
+                }
+              ],
+              "methods": [
+                {
+                  "signature": "read(partition: str)",
+                  "parameters": "partition identifier",
+                  "returns": "Event | None",
+                  "description": "Returns the next event.",
+                  "errors": "Raises JournalUnavailable when storage cannot be read.",
+                  "sources": [
+                    {
+                      "label": "Method source",
+                      "target": "../../../README.md"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "test_evidence": [
+            {
+              "label": "Reader tests",
+              "target": "../../../tests/mcp_server/integration/templates/test_reference.py"
+            }
+          ],
+          "usage_examples": [
+            {
+              "description": "Python reader use",
+              "language": "python",
+              "code": "event = reader.read(partition)"
+            }
+          ],
+          "document_metadata": {
+            "status": "DRAFT — review pending",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/ad34825fd0de4ece8c3578cf17a4f825",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_reference_filled.md",
+        "template_id": "reference",
+        "package_version": "1.0.0",
+        "package_fingerprint": "kaoepF5DpjMrctvM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/ad34825fd0de4ece8c3578cf17a4f825",
+        "run_id": "ad34825fd0de4ece8c3578cf17a4f825",
+        "total_chars": 924,
+        "sha256": "aea0101bd116df9b316a8ddd7a772903c46f57c653e121cda9662041e1fa01a9",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_generic_doc_minimal.md",
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_receipt_generic_doc_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Template Output Review",
+          "purpose": "Record first-call output observations.",
+          "summary": "Review representative generated artifacts for formatting and presentation.",
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/76ff50bb02ef4863a7d12c81bb48e213",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_generic_doc_minimal.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/76ff50bb02ef4863a7d12c81bb48e213",
+        "run_id": "76ff50bb02ef4863a7d12c81bb48e213",
+        "total_chars": 929,
+        "sha256": "b5a6d8948719a88192dd927fabd012a0e9e184129dfe09eb9e01a2e49b0e1171",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_generic_doc_filled.md",
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_receipt_generic_doc_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Template Output Review",
+          "purpose": "Record observations from representative first-call rendering.",
+          "scope_in": "Six shipped concrete template packages.",
+          "scope_out": "Template implementation choices.",
+          "prerequisites": [
+            "Use contexts valid against each package schema."
+          ],
+          "related_docs": [
+            {
+              "label": "Template usage",
+              "target": "../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md"
+            }
+          ],
+          "summary": "Generated formatting and Markdown presentation are assessed separately from caller-owned values.",
+          "key_changes": [
+            "Compare minimal and populated output.",
+            "Record defects by ownership boundary."
+          ],
+          "migration_steps": [],
+          "validation_checklist": [
+            {
+              "text": "Check output using representative contexts.",
+              "checked": false
+            }
+          ],
+          "faq": [
+            {
+              "question": "Does a valid context guarantee polished output?",
+              "answer": "That guarantee remains a research decision."
+            }
+          ],
+          "sections": [
+            {
+              "heading": "Evidence",
+              "content": "Compare generated structure with the supplied values."
+            }
+          ],
+          "document_metadata": {
+            "status": "Research",
+            "revisions": [
+              {
+                "version": "1.0",
+                "date": "2026-10-02",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/ad8054c0d3b942e5b38dad1a6a480462",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "json",
+              "data": {
+                "issues": [
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\docs\\reference\\TEMPLATE_LIBRARY_USAGE.md>",
+                    "line": 52
+                  }
+                ]
+              }
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 341,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_generic_doc_filled.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/ad8054c0d3b942e5b38dad1a6a480462",
+        "run_id": "ad8054c0d3b942e5b38dad1a6a480462",
+        "total_chars": 1162,
+        "sha256": "ae43eb387217f4e1807c936df6d220c15855b4e445f2a7aa24f435650f2710bc",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_issue_minimal.md",
+      "request": {
+        "artifact_type": "issue",
+        "file_name": "c4_receipt_issue_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "problem": "A valid issue body renders without caller-supplied publication metadata."
+        }
+      },
+      "uri": "pgmcp://cache/runs/993824248bcb49368e6a5565adf1f929",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_issue_minimal.md",
+        "template_id": "issue",
+        "package_version": "1.0.0",
+        "package_fingerprint": "EvbPACzaNW6Nn54k"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/993824248bcb49368e6a5565adf1f929",
+        "run_id": "993824248bcb49368e6a5565adf1f929",
+        "total_chars": 909,
+        "sha256": "b341c012872ec233ccff30a7a8936c4d64ce485c4ca8c48a15e60d5ef36ea43a",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_issue_filled.md",
+      "request": {
+        "artifact_type": "issue",
+        "file_name": "c4_receipt_issue_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "problem": "The generated Markdown contains extra blank lines.",
+          "summary": "The defect appears with valid issue content.",
+          "expected": "Headings and paragraphs have consistent spacing.",
+          "actual": "The rendered body has excessive vertical whitespace.",
+          "context": "Exercise the shipped issue template with valid content.",
+          "reproduction_steps": [
+            "Render the issue package with this context.",
+            "Inspect whitespace between sections."
+          ],
+          "related_docs": [
+            {
+              "label": "Template contract",
+              "target": "../../../.pgmcp/template_suite/issue/context.schema.json"
+            }
+          ]
+        }
+      },
+      "uri": "pgmcp://cache/runs/2e3679205c614fca9abb845f559fddeb",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_issue_filled.md",
+        "template_id": "issue",
+        "package_version": "1.0.0",
+        "package_fingerprint": "EvbPACzaNW6Nn54k"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/2e3679205c614fca9abb845f559fddeb",
+        "run_id": "2e3679205c614fca9abb845f559fddeb",
+        "total_chars": 908,
+        "sha256": "03cf6076ef031f13f07600d53a59ca14e1e554846a929b00e600fc6e3925d4b6",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_pr_minimal.md",
+      "request": {
+        "artifact_type": "pr",
+        "file_name": "c4_receipt_pr_minimal.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "changes": "Describe the change.",
+          "deferred_work": []
+        }
+      },
+      "uri": "pgmcp://cache/runs/a6151654cd124bb5bac021b56c5e6eed",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_pr_minimal.md",
+        "template_id": "pr",
+        "package_version": "1.0.0",
+        "package_fingerprint": "hG0a9tLUxIzayxH4"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/a6151654cd124bb5bac021b56c5e6eed",
+        "run_id": "a6151654cd124bb5bac021b56c5e6eed",
+        "total_chars": 903,
+        "sha256": "1c455554970c7f5a9f78dd2396723fa9f5abede799d40b5fd2c202ca9a24e6ec",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_pr_filled.md",
+      "request": {
+        "artifact_type": "pr",
+        "file_name": "c4_receipt_pr_filled.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "summary": "First-call template output is easier to review.",
+          "changes": "Render each shipped concrete package with minimal and populated valid contexts.",
+          "testing": "Inspect both generated forms for Python formatting and Markdown presentation.",
+          "checklist": [
+            {
+              "text": "Confirm supplied values are preserved.",
+              "checked": true
+            },
+            {
+              "text": "Review rendered whitespace.",
+              "checked": false
+            }
+          ],
+          "breaking_changes": "None.",
+          "deferred_work": [
+            {
+              "description": "Review markdown layout",
+              "rationale": "The generated body should be readable in a pull request.",
+              "references": [
+                {
+                  "label": "PR template schema",
+                  "target": "../../../.pgmcp/template_suite/pr/context.schema.json"
+                }
+              ]
+            }
+          ],
+          "closes": [
+            473
+          ]
+        }
+      },
+      "uri": "pgmcp://cache/runs/1f442f853e5c4d038d9eee8fe1ebb0f2",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_body",
+        "checks": [
+          {
+            "check_id": "markdown_body",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "json",
+              "data": {
+                "issues": [
+                  {
+                    "severity": "warning",
+                    "message": "Broken link: '<../../../.pgmcp/template_suite/pr/context.schema.json>' not found at C:\\temp\\pgmcp\\.pgmcp\\temp\\.pgmcp\\template_suite\\pr\\context.schema.json>",
+                    "line": 32
+                  }
+                ]
+              }
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 350,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_pr_filled.md",
+        "template_id": "pr",
+        "package_version": "1.0.0",
+        "package_fingerprint": "hG0a9tLUxIzayxH4"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/1f442f853e5c4d038d9eee8fe1ebb0f2",
+        "run_id": "1f442f853e5c4d038d9eee8fe1ebb0f2",
+        "total_chars": 1145,
+        "sha256": "bf257b6319015ea23901a019a4a7576cfd0b5ae96956ff59187b8156605fab3d",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_commit_minimal.txt",
+      "request": {
+        "artifact_type": "commit",
+        "file_name": "c4_receipt_commit_minimal.txt",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "type": "fix",
+          "subject": "Keep caller intent"
+        }
+      },
+      "uri": "pgmcp://cache/runs/b13a6b6419e04cf3ac98e766ccb6451e",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "commit_preflight",
+        "checks": [
+          {
+            "check_id": "commit_message",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "text",
+              "data": "checked message view (first valid provenance line removed):\n\nfix: Keep caller intent\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "commitlint",
+                "version": "1.0.0",
+                "fingerprint": "33ygyZvwX7L9eAnv",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 266,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 225,
+                  "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "commitlint",
+                  "version": "21.2.2"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_commit_minimal.txt",
+        "template_id": "commit",
+        "package_version": "1.0.0",
+        "package_fingerprint": "0DJN6441j2dDAHAC"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/b13a6b6419e04cf3ac98e766ccb6451e",
+        "run_id": "b13a6b6419e04cf3ac98e766ccb6451e",
+        "total_chars": 1316,
+        "sha256": "ca76b054fb23f6a0e771ad67913964c9401a159c2d59c65f1122604b72dd693e",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_commit_filled.txt",
+      "request": {
+        "artifact_type": "commit",
+        "file_name": "c4_receipt_commit_filled.txt",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "type": "feat",
+          "scope": "templates",
+          "subject": "Preserve authored commit framing",
+          "body": "Keep the supplied message text intact.\n\nRetain paragraph boundaries.",
+          "breaking_change": true,
+          "breaking_description": "Consumers must supply explicit commit fields.",
+          "refs": [
+            473,
+            460
+          ],
+          "footer": "Reviewed-by: Template Maintainers"
+        }
+      },
+      "uri": "pgmcp://cache/runs/c49478831f1b4a008941eb1a9610f8d7",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "commit_preflight",
+        "checks": [
+          {
+            "check_id": "commit_message",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "text",
+              "data": "checked message view (first valid provenance line removed):\n\nfeat(templates)!: Preserve authored commit framing\n\nKeep the supplied message text intact.\n\nRetain paragraph boundaries.\n\nBREAKING CHANGE: Consumers must supply explicit commit fields.\n\nRefs: #473, #460\n\nReviewed-by: Template Maintainers\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "commitlint",
+                "version": "1.0.0",
+                "fingerprint": "33ygyZvwX7L9eAnv",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 490,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 225,
+                  "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "commitlint",
+                  "version": "21.2.2"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_commit_filled.txt",
+        "template_id": "commit",
+        "package_version": "1.0.0",
+        "package_fingerprint": "0DJN6441j2dDAHAC"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/c49478831f1b4a008941eb1a9610f8d7",
+        "run_id": "c49478831f1b4a008941eb1a9610f8d7",
+        "total_chars": 1539,
+        "sha256": "cd0f35058f07bbc2f2d11963d0dd79dc477dafbf17dcb9a6befc352e6522caa7",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_boundary_decision_structure.md",
+      "request": {
+        "artifact_type": "architecture",
+        "file_name": "c4_receipt_boundary_decision_structure.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "context": {
+          "title": "Execution Architecture",
+          "concepts": [
+            {
+              "name": "Event stream",
+              "description": "Events move from intake to persistence."
+            }
+          ],
+          "document_metadata": {
+            "status": "Authored boundary probe",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored boundary probe."
+              }
+            ]
+          },
+          "decisions": [
+            {
+              "decision": "Keep structure",
+              "rationale": "    print(\"keep\")"
+            },
+            {
+              "decision": "Keep list",
+              "rationale": "  - first"
+            },
+            {
+              "decision": "Keep ordered list",
+              "rationale": "1) first"
+            },
+            {
+              "decision": "Keep fenced rationale",
+              "rationale": "\r\n```python\r\nprint(\"first\")\r\n\r\nprint(\"second\")\r\n```\r\n",
+              "alternatives": [
+                "  - alternative first\r\n  - alternative second",
+                "1) alternate ordered",
+                "    print(\"alternate\")"
+              ]
+            }
+          ]
+        },
+        "validation": "enforce"
+      },
+      "uri": "pgmcp://cache/runs/c5adfed03f50485ba184c2eaa44a1f6a",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_boundary_decision_structure.md",
+        "template_id": "architecture",
+        "package_version": "1.0.0",
+        "package_fingerprint": "F3GiYxoJo0WTq92r"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/c5adfed03f50485ba184c2eaa44a1f6a",
+        "run_id": "c5adfed03f50485ba184c2eaa44a1f6a",
+        "total_chars": 938,
+        "sha256": "049d06cb7811426808f3dff8f1aaf20b82ea27f9b7203129f29390056ac03446",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_boundary_labelled_structure.md",
+      "request": {
+        "artifact_type": "design",
+        "file_name": "c4_receipt_boundary_labelled_structure.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "context": {
+          "title": "Event Path Design",
+          "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+          "requirements_functional": [
+            "Acknowledge only after durable append."
+          ],
+          "requirements_nonfunctional": [
+            "Preserve per-partition order."
+          ],
+          "document_metadata": {
+            "status": "Authored boundary probe",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored boundary probe."
+              }
+            ]
+          },
+          "validation": [
+            {
+              "obligation": "Keep list",
+              "method": "1) first",
+              "expected_result": "Structure remains"
+            }
+          ]
+        },
+        "validation": "enforce"
+      },
+      "uri": "pgmcp://cache/runs/6c210725b96e465782ac85a858a1a3ab",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_boundary_labelled_structure.md",
+        "template_id": "design",
+        "package_version": "1.0.0",
+        "package_fingerprint": "YApsrGTQgBUKFez2"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/6c210725b96e465782ac85a858a1a3ab",
+        "run_id": "6c210725b96e465782ac85a858a1a3ab",
+        "total_chars": 932,
+        "sha256": "d313bbdda44ee342654a4809454ebd7c8061ec8c4f06f34b2e0da4edb933e4d5",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_boundary_revision_order.md",
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_receipt_boundary_revision_order.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "context": {
+          "title": "Authored revision sequence",
+          "purpose": "Observe caller-controlled revision order and table escaping.",
+          "summary": "The final supplied revision owns current header facts.",
+          "document_metadata": {
+            "status": "DRAFT | authored",
+            "revisions": [
+              {
+                "version": "9.0",
+                "date": "2026-10-03",
+                "author": "First | reviewer",
+                "change": "Authored \\ first change."
+              },
+              {
+                "version": "0.2",
+                "date": "2025-01-01",
+                "author": "Second \\| reviewer\nCo-author",
+                "change": "Keep | delimiters\nand \\ literal backslashes."
+              }
+            ]
+          }
+        },
+        "validation": "enforce"
+      },
+      "uri": "pgmcp://cache/runs/5e8d0520e7a346c3b9cc3d6fa5272bf3",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_boundary_revision_order.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/5e8d0520e7a346c3b9cc3d6fa5272bf3",
+        "run_id": "5e8d0520e7a346c3b9cc3d6fa5272bf3",
+        "total_chars": 933,
+        "sha256": "d956d50dddd8101ad9d7a8ec84eecfdd48ba6ea0c60e97c64bf5671fa2386582",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_boundary_markdown_boundaries.md",
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_receipt_boundary_markdown_boundaries.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "context": {
+          "title": "Markdown boundary probe",
+          "purpose": "\r\n \t\r\nRetain authored purpose.  \r\nNext purpose line.\r\n\r\n",
+          "summary": "\n \t\nFirst summary line.  \r\n\r\nSecond summary line.\r\n\t\r\n",
+          "document_metadata": {
+            "status": "Authored boundary probe",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored boundary probe."
+              }
+            ]
+          },
+          "scope_in": "",
+          "key_changes": [
+            " \t\n",
+            "One change.\r\n\r\nFollow-up paragraph.  \r\nFinal line."
+          ],
+          "migration_steps": [],
+          "validation_checklist": [
+            {
+              "text": " \t\n",
+              "checked": false
+            }
+          ],
+          "sections": [
+            {
+              "heading": "Structured first",
+              "content": "\r\n\r\n### Authored subsection\r\n\r\n- authored first\r\n- authored second\r\n\r\n```text\r\n  literal  \r\n\r\nlast literal\r\n```\r\n\r\n",
+              "bullets": [
+                "Outer item.\r\n\r\nContinuation.  \r\n\r\n```text\r\ncode\r\n```"
+              ],
+              "checklist": [
+                {
+                  "text": "Check first.  \r\nCheck continuation.",
+                  "checked": true
+                }
+              ]
+            },
+            {
+              "heading": "Explicit empty",
+              "content": ""
+            },
+            {
+              "heading": "Last section",
+              "bullets": [],
+              "checklist": []
+            }
+          ]
+        },
+        "validation": "enforce"
+      },
+      "uri": "pgmcp://cache/runs/464948f8c0be4b308d4a24810463af55",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_boundary_markdown_boundaries.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/464948f8c0be4b308d4a24810463af55",
+        "run_id": "464948f8c0be4b308d4a24810463af55",
+        "total_chars": 938,
+        "sha256": "7375470b20092d84764f22096cc9c902642b425a9d06b45758e101ff983d99b0",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_boundary_validation_data.md",
+      "request": {
+        "artifact_type": "planning",
+        "file_name": "c4_receipt_boundary_validation_data.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "context": {
+          "title": "Raw ValidationSpec probe",
+          "summary": "Observe literal values without prose normalization.",
+          "document_metadata": {
+            "status": "Authored boundary probe",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored boundary probe."
+              }
+            ]
+          },
+          "work_units": [
+            {
+              "id": "U1",
+              "name": "Literal preservation",
+              "goal": "Preserve the complete supplied data.",
+              "deliverables": [
+                {
+                  "id": "D_RAW",
+                  "description": "Contains-text literal probe.",
+                  "validates": {
+                    "type": "contains_text",
+                    "file": "\r\n  raw file.json  \r\n",
+                    "text": "\r\n  literal  \r\n\r\nlast  \r\n",
+                    "path": null
+                  }
+                },
+                {
+                  "id": "D_NULL",
+                  "description": "Explicit null validates carrier.",
+                  "validates": null
+                }
+              ],
+              "exit_criteria": "Manually compare JSON literals with the caller data."
+            }
+          ]
+        },
+        "validation": "enforce"
+      },
+      "uri": "pgmcp://cache/runs/fac3ffea38b4471e90285b1ba387f3a8",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "markdown_document",
+        "checks": [
+          {
+            "check_id": "markdown_document",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": null,
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "markdown_preflight",
+                "version": "1.0.0",
+                "fingerprint": "v0NjYjqP55u7eH7r",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 92,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 0,
+                  "head": "",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "python",
+                  "version": "3.13.7"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_boundary_validation_data.md",
+        "template_id": "planning",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CscfYyDLqj0OeHml"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/fac3ffea38b4471e90285b1ba387f3a8",
+        "run_id": "fac3ffea38b4471e90285b1ba387f3a8",
+        "total_chars": 931,
+        "sha256": "c83f26a381a503c1630d51096420e896d3cc5bca271cdd9c2bd4b5810cc5a745",
+        "verified": true
+      }
+    },
+    {
+      "original_file": "c3_final_boundary_commit_boundaries.txt",
+      "request": {
+        "artifact_type": "commit",
+        "file_name": "c4_receipt_boundary_commit_boundaries.txt",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "context": {
+          "type": "fix",
+          "scope": "templates",
+          "subject": "Keep authored body and footer",
+          "body": "\r\n \t\r\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\r\n\r\n\t\r\n",
+          "footer": "\n \t\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\r\n\r\n",
+          "refs": [
+            473
+          ]
+        },
+        "validation": "enforce"
+      },
+      "uri": "pgmcp://cache/runs/3efcbb4506ba4f4ab15625c7f577e4ac",
+      "dto": {
+        "success": true,
+        "written": true,
+        "validation_policy": "enforce",
+        "validation_status": "passed",
+        "profile_id": "commit_preflight",
+        "checks": [
+          {
+            "check_id": "commit_message",
+            "status": "passed",
+            "reason": null,
+            "message": null,
+            "evidence": {
+              "format": "text",
+              "data": "checked message view (first valid provenance line removed):\n\nfix(templates): Keep authored body and footer\n\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\n\nRefs: #473\n\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\n\nnative exit code: 0\nstdout:\n\nstderr:\n"
+            },
+            "request_rejection": null,
+            "invocation": {
+              "adapter": {
+                "adapter_id": "commitlint",
+                "version": "1.0.0",
+                "fingerprint": "33ygyZvwX7L9eAnv",
+                "contract_version": 1
+              },
+              "capture": {
+                "exit_code": 0,
+                "stdout": {
+                  "observed_bytes": 438,
+                  "head": null,
+                  "tail": null,
+                  "truncated": false
+                },
+                "stderr": {
+                  "observed_bytes": 225,
+                  "head": "C:\\Users\\miche\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pydantic\\_internal\\_fields.py:198: UserWarning: Field name \"schema\" in \"SchemaAttachment\" shadows an attribute in parent \"BaseModel\"\r\n  warnings.warn(\r\n",
+                  "tail": "",
+                  "truncated": false
+                }
+              },
+              "external_tools": [
+                {
+                  "tool_id": "commitlint",
+                  "version": "21.2.2"
+                }
+              ]
+            },
+            "termination_problem": null,
+            "housekeeping": [],
+            "args_source": "configured",
+            "effective_args": []
+          }
+        ],
+        "error_code": null,
+        "error_details": null,
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_receipt_boundary_commit_boundaries.txt",
+        "template_id": "commit",
+        "package_version": "1.0.0",
+        "package_fingerprint": "0DJN6441j2dDAHAC"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/3efcbb4506ba4f4ab15625c7f577e4ac",
+        "run_id": "3efcbb4506ba4f4ab15625c7f577e4ac",
+        "total_chars": 1500,
+        "sha256": "07cb2160f8fe235ea2ad742b2127922fd53882669fca34603158cfa512700275",
+        "verified": true
+      }
+    }
+  ],
+  "byteEquality": [
+    {
+      "original": "c3_final_architecture_minimal.md",
+      "fresh": "c4_receipt_architecture_minimal.md",
+      "sha256": "89b9b4256821c0c9d3b19058d17ada721dd4d67b35f396e02d9a881271a14d5c",
+      "bytes": 418,
+      "identical": true
+    },
+    {
+      "original": "c3_final_architecture_filled.md",
+      "fresh": "c4_receipt_architecture_filled.md",
+      "sha256": "5fb9a18329fa6031aa7879d0d51244f9eb1ed944e99a89cf69d64181e15d7adf",
+      "bytes": 1027,
+      "identical": true
+    },
+    {
+      "original": "c3_final_research_minimal.md",
+      "fresh": "c4_receipt_research_minimal.md",
+      "sha256": "b369a811fc7e575077d62de0070742f0fd8a8b0cd714cc6d0877a5e790878012",
+      "bytes": 498,
+      "identical": true
+    },
+    {
+      "original": "c3_final_research_filled.md",
+      "fresh": "c4_receipt_research_filled.md",
+      "sha256": "ac52572a74a0776496fb0ae8a1fa3f95eca736bdf25962d5663ba4a243e29914",
+      "bytes": 1757,
+      "identical": true
+    },
+    {
+      "original": "c3_final_design_minimal.md",
+      "fresh": "c4_receipt_design_minimal.md",
+      "sha256": "43b4370d826e7c1991ec16e4f5d7055a9b134b954cf8437df815baf99e48b512",
+      "bytes": 565,
+      "identical": true
+    },
+    {
+      "original": "c3_final_design_filled.md",
+      "fresh": "c4_receipt_design_filled.md",
+      "sha256": "cb47264cd9151fbca71633ee1ee27285715df0b05c9538f83cf7c2daad5469b2",
+      "bytes": 1295,
+      "identical": true
+    },
+    {
+      "original": "c3_final_planning_minimal.md",
+      "fresh": "c4_receipt_planning_minimal.md",
+      "sha256": "8487dcabab8e610ef39e801b03c947c1b2abe1f3394345334bbc27da3df0eacc",
+      "bytes": 619,
+      "identical": true
+    },
+    {
+      "original": "c3_final_planning_filled.md",
+      "fresh": "c4_receipt_planning_filled.md",
+      "sha256": "d6c4d5e352ab346ca0c324bb18f991f10586282e45edddd4aa7261f21175a3ff",
+      "bytes": 1333,
+      "identical": true
+    },
+    {
+      "original": "c3_final_validation_report_minimal.md",
+      "fresh": "c4_receipt_validation_report_minimal.md",
+      "sha256": "32cb05c739619ad46134129b38aca62aad886941d2d16df255abb2fb5cb25163",
+      "bytes": 347,
+      "identical": true
+    },
+    {
+      "original": "c3_final_validation_report_filled.md",
+      "fresh": "c4_receipt_validation_report_filled.md",
+      "sha256": "ede04d52fabe08f7e5a5084ddea8a9e8e0a58b8acab92dc008c4d92d7bb2a095",
+      "bytes": 1132,
+      "identical": true
+    },
+    {
+      "original": "c3_final_reference_minimal.md",
+      "fresh": "c4_receipt_reference_minimal.md",
+      "sha256": "eeb59b69c5648fd3bacb0e56c120b4ae960ea581d8f9bcc1255a7c581b5c4a7d",
+      "bytes": 411,
+      "identical": true
+    },
+    {
+      "original": "c3_final_reference_filled.md",
+      "fresh": "c4_receipt_reference_filled.md",
+      "sha256": "126fad073f6f208d559ab331a353ccba3cfe68df236c6b86a59398c7f502c60c",
+      "bytes": 1083,
+      "identical": true
+    },
+    {
+      "original": "c3_final_generic_doc_minimal.md",
+      "fresh": "c4_receipt_generic_doc_minimal.md",
+      "sha256": "658b9b495040a15eaaba663a9efff1f19f78b1534b52b25466de775664d828bd",
+      "bytes": 482,
+      "identical": true
+    },
+    {
+      "original": "c3_final_generic_doc_filled.md",
+      "fresh": "c4_receipt_generic_doc_filled.md",
+      "sha256": "7e518415b928339717e325d0aa3415d7414383ff1aec820a5398d3afc671de73",
+      "bytes": 1152,
+      "identical": true
+    },
+    {
+      "original": "c3_final_issue_minimal.md",
+      "fresh": "c4_receipt_issue_minimal.md",
+      "sha256": "ac0bd0ef9a0c4d9987280c76d3d702ac711ca87f85eea03c1d38a48bc6099aa6",
+      "bytes": 162,
+      "identical": true
+    },
+    {
+      "original": "c3_final_issue_filled.md",
+      "fresh": "c4_receipt_issue_filled.md",
+      "sha256": "37e51a27db24832013f0d595d847a95bcd6f506c5e8daddbfd51f5548aafb963",
+      "bytes": 653,
+      "identical": true
+    },
+    {
+      "original": "c3_final_pr_minimal.md",
+      "fresh": "c4_receipt_pr_minimal.md",
+      "sha256": "af7b5136fa13aa7f7708538c57cd05f09b56364ff8abb89d3f9daf1ff78b4cee",
+      "bytes": 155,
+      "identical": true
+    },
+    {
+      "original": "c3_final_pr_filled.md",
+      "fresh": "c4_receipt_pr_filled.md",
+      "sha256": "f9a62d9c43899c9836147aebf1146e7b521f1e6a02ebaf09b5653cc75f60c822",
+      "bytes": 659,
+      "identical": true
+    },
+    {
+      "original": "c3_final_commit_minimal.txt",
+      "fresh": "c4_receipt_commit_minimal.txt",
+      "sha256": "865260713dc6168f550daf54a7abaf593cf420e64345b70f113c7a593adbd851",
+      "bytes": 95,
+      "identical": true
+    },
+    {
+      "original": "c3_final_commit_filled.txt",
+      "fresh": "c4_receipt_commit_filled.txt",
+      "sha256": "43a6e197d558826b8fcbe0e660625ce71f1107d38c59a02978d41637cb23eb92",
+      "bytes": 309,
+      "identical": true
+    },
+    {
+      "original": "c3_final_boundary_decision_structure.md",
+      "fresh": "c4_receipt_boundary_decision_structure.md",
+      "sha256": "55bdacfabdd5e5d7f742dc7aff3e0ba66b31037ff562c57081ec39c7b7d3af6f",
+      "bytes": 740,
+      "identical": true
+    },
+    {
+      "original": "c3_final_boundary_labelled_structure.md",
+      "fresh": "c4_receipt_boundary_labelled_structure.md",
+      "sha256": "13e7a2a0e9abdff698200f73fb84b7b4bf462e8ae363df7679ce34350235c8e5",
+      "bytes": 672,
+      "identical": true
+    },
+    {
+      "original": "c3_final_boundary_revision_order.md",
+      "fresh": "c4_receipt_boundary_revision_order.md",
+      "sha256": "74407a13bf04037084ae9cf7c919b7a4f6f846ccebd9ce1be1ac75b8236fc7a8",
+      "bytes": 614,
+      "identical": true
+    },
+    {
+      "original": "c3_final_boundary_markdown_boundaries.md",
+      "fresh": "c4_receipt_boundary_markdown_boundaries.md",
+      "sha256": "c84891a26cadf0ffb47d4065f3f7db3e41df4baea3037a37a39651836fe17ba1",
+      "bytes": 896,
+      "identical": true
+    },
+    {
+      "original": "c3_final_boundary_validation_data.md",
+      "fresh": "c4_receipt_boundary_validation_data.md",
+      "sha256": "7bc959193ef6ca31aa0e44c8cee5b226a887d6648e734e3924a9ef0b3bb49520",
+      "bytes": 866,
+      "identical": true
+    },
+    {
+      "original": "c3_final_boundary_commit_boundaries.txt",
+      "fresh": "c4_receipt_boundary_commit_boundaries.txt",
+      "sha256": "e95077bd24da865d4fb70607f06baaf83fd817871c9c32d066c0e68b438ebe80",
+      "bytes": 253,
+      "identical": true
+    }
+  ],
+  "losslessOutputs": [
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_architecture_filled.md",
+      "content": "<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Execution Architecture\n\n**Status:** DRAFT — review pending  \n**Version:** 1.0  \n**Last Updated:** 2026-10-02\n\n## Purpose\n\nDescribe the order-preserving event path.\n\n## Constraints\n\n- Never acknowledge before durable append.\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n```mermaid\nflowchart LR\n  Intake --> Journal\n  Journal --> Store\n```\n\n#### 1.1. Ordering\n\nEach partition preserves append order.\n\n## Decisions\n\n| Decision | Rationale | Alternatives |\n| --- | --- | --- |\n| Use a durable journal | Recovery needs an authoritative append order. | In-memory queue |\n\n## Sources\n\n- [Journal contract](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)\n\n## Related Documents\n\n- [Design](<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>)\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 1.0 | 2026-10-02 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1027,
+      "sha256": "5fb9a18329fa6031aa7879d0d51244f9eb1ed944e99a89cf69d64181e15d7adf"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_architecture_minimal.md",
+      "content": "<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Execution Architecture\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 418,
+      "sha256": "89b9b4256821c0c9d3b19058d17ada721dd4d67b35f396e02d9a881271a14d5c"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_boundary_commit_boundaries.txt",
+      "content": "# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2\n\nfix(templates): Keep authored body and footer\n\nFirst authored paragraph.  \r\n\r\nSecond authored paragraph.\n\nRefs: #473\n\nReviewed-by: Template reviewer  \r\n\r\nSigned-off-by: Probe author\n",
+      "bytes": 253,
+      "sha256": "e95077bd24da865d4fb70607f06baaf83fd817871c9c32d066c0e68b438ebe80"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_boundary_decision_structure.md",
+      "content": "<!-- pgmcp:v1 id=architecture pv=1.0.0 pf=F3GiYxoJo0WTq92r sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Execution Architecture\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Concepts\n\n### 1. Event stream\n\nEvents move from intake to persistence.\n\n## Decisions\n\n### Keep structure\n\n    print(\"keep\")\n\n### Keep list\n\n  - first\n\n### Keep ordered list\n\n1) first\n\n### Keep fenced rationale\n\n```python\r\nprint(\"first\")\r\n\r\nprint(\"second\")\r\n```\n\n**Alternatives:**\n\n-   - alternative first\r\n    - alternative second\n- 1) alternate ordered\n-     print(\"alternate\")\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+      "bytes": 740,
+      "sha256": "55bdacfabdd5e5d7f742dc7aff3e0ba66b31037ff562c57081ec39c7b7d3af6f"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_boundary_labelled_structure.md",
+      "content": "<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Design\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Validation\n\n### Keep list\n\n**Method:**\n\n1) first\n\n**Expected Result:** Structure remains\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+      "bytes": 672,
+      "sha256": "13e7a2a0e9abdff698200f73fb84b7b4bf462e8ae363df7679ce34350235c8e5"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_boundary_markdown_boundaries.md",
+      "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Markdown boundary probe\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Purpose\n\nRetain authored purpose.  \r\nNext purpose line.\n\n## Scope In\n\n## Summary\n\nFirst summary line.  \r\n\r\nSecond summary line.\n\n## Key Changes\n\n-\n- One change.\r\n\r\n  Follow-up paragraph.  \r\n  Final line.\n\n## Migration Steps\n\n## Validation Checklist\n\n- [ ]\n\n## Structured first\n\n### Authored subsection\r\n\r\n- authored first\r\n- authored second\r\n\r\n```text\r\n  literal  \r\n\r\nlast literal\r\n```\n\n- Outer item.\r\n\r\n  Continuation.  \r\n\r\n  ```text\r\n  code\r\n  ```\n\n- [x] Check first.  \r\n      Check continuation.\n\n## Explicit empty\n\n## Last section\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+      "bytes": 896,
+      "sha256": "c84891a26cadf0ffb47d4065f3f7db3e41df4baea3037a37a39651836fe17ba1"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_boundary_revision_order.md",
+      "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Authored revision sequence\n\n**Status:** DRAFT &#124; authored  \n**Version:** 0.2  \n**Last Updated:** 2025-01-01\n\n## Purpose\n\nObserve caller-controlled revision order and table escaping.\n\n## Summary\n\nThe final supplied revision owns current header facts.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 9.0 | 2026-10-03 | First &#124; reviewer | Authored \\\\ first change. |\n| 0.2 | 2025-01-01 | Second \\\\&#124; reviewer<br>Co-author | Keep &#124; delimiters<br>and \\\\ literal backslashes. |\n",
+      "bytes": 614,
+      "sha256": "74407a13bf04037084ae9cf7c919b7a4f6f846ccebd9ce1be1ac75b8236fc7a8"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_boundary_validation_data.md",
+      "content": "<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Raw ValidationSpec probe\n\n**Status:** Authored boundary probe  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nObserve literal values without prose normalization.\n\n## Work Units\n\n### U1 — Literal preservation\n\n**Goal:** Preserve the complete supplied data.\n\n#### Deliverables\n\n##### D\\_RAW\n\nContains-text literal probe.\n\n**Validates:**\n\n**Type:** contains_text\n\n**File:** \"\\r\\n  raw file.json  \\r\\n\"\n\n**Text:** \"\\r\\n  literal  \\r\\n\\r\\nlast  \\r\\n\"\n\n**Path:** null\n\n##### D\\_NULL\n\nExplicit null validates carrier.\n\n**Validates:** null\n\n#### Exit Criteria\n\nManually compare JSON literals with the caller data.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored boundary probe. |\n",
+      "bytes": 866,
+      "sha256": "7bc959193ef6ca31aa0e44c8cee5b226a887d6648e734e3924a9ef0b3bb49520"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_commit_filled.txt",
+      "content": "# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2\n\nfeat(templates)!: Preserve authored commit framing\n\nKeep the supplied message text intact.\n\nRetain paragraph boundaries.\n\nBREAKING CHANGE: Consumers must supply explicit commit fields.\n\nRefs: #473, #460\n\nReviewed-by: Template Maintainers\n",
+      "bytes": 309,
+      "sha256": "43a6e197d558826b8fcbe0e660625ce71f1107d38c59a02978d41637cb23eb92"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_commit_minimal.txt",
+      "content": "# pgmcp:v1 id=commit pv=1.0.0 pf=0DJN6441j2dDAHAC sf=FAN5Vr-4vcbMMjZ2\n\nfix: Keep caller intent\n",
+      "bytes": 95,
+      "sha256": "865260713dc6168f550daf54a7abaf593cf420e64345b70f113c7a593adbd851"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_design_filled.md",
+      "content": "<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Design\n\n**Status:** DRAFT — review pending  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Options\n\n### 1. Append then acknowledge\n\nCommit to the journal before replying.\n\n**Pros:**\n\n- Crash recovery has a durable source.\n\n**Cons:**\n\n- Adds append latency.\n\n## Decision\n\nAppend before acknowledgement.\n\n## Rationale\n\nThe durability requirement determines the ordering.\n\n## Contracts\n\n### Append result\n\nReturns an explicit durable position.\n\n## Validation\n\n### A failed append is not acknowledged\n\n**Method:** Inject journal failure\n\n**Expected Result:** The call fails and no acknowledgement is sent.\n\n**References:**\n\n- [Journal contract](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)\n\n## Risks\n\n### Append latency increases.\n\nMeasure the journal path.\n\n**Consequence:** Higher tail latency.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1295,
+      "sha256": "cb47264cd9151fbca71633ee1ee27285715df0b05c9538f83cf7c2daad5469b2"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_design_minimal.md",
+      "content": "<!-- pgmcp:v1 id=design pv=1.0.0 pf=YApsrGTQgBUKFez2 sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Design\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nThe consumer can acknowledge an event before its journal append is durable.\n\n## Functional Requirements\n\n- Acknowledge only after durable append.\n\n## Nonfunctional Requirements\n\n- Preserve per-partition order.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 565,
+      "sha256": "43b4370d826e7c1991ec16e4f5d7055a9b134b954cf8437df815baf99e48b512"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_generic_doc_filled.md",
+      "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Template Output Review\n\n**Status:** Research  \n**Version:** 1.0  \n**Last Updated:** 2026-10-02\n\n## Purpose\n\nRecord observations from representative first-call rendering.\n\n## Scope In\n\nSix shipped concrete template packages.\n\n## Scope Out\n\nTemplate implementation choices.\n\n## Prerequisites\n\n- Use contexts valid against each package schema.\n\n## Summary\n\nGenerated formatting and Markdown presentation are assessed separately from caller-owned values.\n\n## Key Changes\n\n- Compare minimal and populated output.\n- Record defects by ownership boundary.\n\n## Migration Steps\n\n## Validation Checklist\n\n- [ ] Check output using representative contexts.\n\n## FAQ\n\n### Does a valid context guarantee polished output?\n\nThat guarantee remains a research decision.\n\n## Evidence\n\nCompare generated structure with the supplied values.\n\n## Related Documents\n\n- [Template usage](<../../../docs/reference/TEMPLATE_LIBRARY_USAGE.md>)\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 1.0 | 2026-10-02 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1152,
+      "sha256": "7e518415b928339717e325d0aa3415d7414383ff1aec820a5398d3afc671de73"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_generic_doc_minimal.md",
+      "content": "<!-- pgmcp:v1 id=generic_doc pv=1.0.0 pf=xoYbNuJbkallN_DM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Template Output Review\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Purpose\n\nRecord first-call output observations.\n\n## Summary\n\nReview representative generated artifacts for formatting and presentation.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 482,
+      "sha256": "658b9b495040a15eaaba663a9efff1f19f78b1534b52b25466de775664d828bd"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_issue_filled.md",
+      "content": "<!-- pgmcp:v1 id=issue pv=1.0.0 pf=EvbPACzaNW6Nn54k sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Problem\n\nThe generated Markdown contains extra blank lines.\n\n## Summary\n\nThe defect appears with valid issue content.\n\n## Expected Behavior\n\nHeadings and paragraphs have consistent spacing.\n\n## Actual Behavior\n\nThe rendered body has excessive vertical whitespace.\n\n## Context\n\nExercise the shipped issue template with valid content.\n\n## Reproduction Steps\n\n1. Render the issue package with this context.\n2. Inspect whitespace between sections.\n\n## Related Documents\n\n- [Template contract][related-1]\n\n[related-1]: <../../../.pgmcp/template_suite/issue/context.schema.json>\n",
+      "bytes": 653,
+      "sha256": "37e51a27db24832013f0d595d847a95bcd6f506c5e8daddbfd51f5548aafb963"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_issue_minimal.md",
+      "content": "<!-- pgmcp:v1 id=issue pv=1.0.0 pf=EvbPACzaNW6Nn54k sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Problem\n\nA valid issue body renders without caller-supplied publication metadata.\n",
+      "bytes": 162,
+      "sha256": "ac0bd0ef9a0c4d9987280c76d3d702ac711ca87f85eea03c1d38a48bc6099aa6"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_planning_filled.md",
+      "content": "<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Plan\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nMake acknowledgement follow a durable append.\n\n## Dependencies\n\n- Approved interface contract\n\n## Work Units\n\n### U1 — Append ordering\n\n**Goal:** Enforce durable append before acknowledgement.\n\n**Owner:** @imp\n\n#### Deliverables\n\n##### code\n\nUpdated consumer path.\n\n**Owner:** @imp\n\n**Validates:**\n\n**Type:** contains_text\n\n**File:** \"mcp_server/consumer.py\"\n\n**Text:** \"append\"\n\n#### Exit Criteria\n\nFailure injection proves no early acknowledgement.\n\n#### Verification\n\n##### Failed append does not acknowledge\n\n**Method:** Run focused failure-path test\n\n**Expected Result:** No acknowledgement is observed.\n\n#### Risks\n\n##### Retry may duplicate an append.\n\nUse the durable event key.\n\n**Consequence:** Duplicate journal entries.\n\n#### Stop Conditions\n\n- Stop if the approved call contract cannot be preserved.\n\n## Phase Deliverables\n\n### Validation\n\n#### report\n\nValidation evidence report.\n\n**Validates:**\n\n**Type:** file_exists\n\n**File:** \"docs/development/issue473/validation.md\"\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1333,
+      "sha256": "d6c4d5e352ab346ca0c324bb18f991f10586282e45edddd4aa7261f21175a3ff"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_planning_minimal.md",
+      "content": "<!-- pgmcp:v1 id=planning pv=1.0.0 pf=CscfYyDLqj0OeHml sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event Path Plan\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Summary\n\nMake acknowledgement follow a durable append.\n\n## Work Units\n\n### U1 — Append ordering\n\n**Goal:** Enforce durable append before acknowledgement.\n\n#### Deliverables\n\n##### code\n\nUpdated consumer path.\n\n#### Exit Criteria\n\nFailure injection proves no early acknowledgement.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 619,
+      "sha256": "8487dcabab8e610ef39e801b03c947c1b2abe1f3394345334bbc27da3df0eacc"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_pr_filled.md",
+      "content": "<!-- pgmcp:v1 id=pr pv=1.0.0 pf=hG0a9tLUxIzayxH4 sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Summary\n\nFirst-call template output is easier to review.\n\n## Changes\n\nRender each shipped concrete package with minimal and populated valid contexts.\n\n## Testing\n\nInspect both generated forms for Python formatting and Markdown presentation.\n\n## Checklist\n\n- [x] Confirm supplied values are preserved.\n- [ ] Review rendered whitespace.\n\n## Breaking Changes\n\nNone.\n\n## Deferred Work\n\n### Review markdown layout\n\nThe generated body should be readable in a pull request.\n\n**References:**\n\n- [PR template schema](<../../../.pgmcp/template_suite/pr/context.schema.json>)\n\n## Closes\n\n#473\n",
+      "bytes": 659,
+      "sha256": "f9a62d9c43899c9836147aebf1146e7b521f1e6a02ebaf09b5653cc75f60c822"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_pr_minimal.md",
+      "content": "<!-- pgmcp:v1 id=pr pv=1.0.0 pf=hG0a9tLUxIzayxH4 sf=FAN5Vr-4vcbMMjZ2 -->\n\n## Changes\n\nDescribe the change.\n\n## Deferred Work\n\nNo deferred work identified.\n",
+      "bytes": 155,
+      "sha256": "af7b5136fa13aa7f7708538c57cd05f09b56364ff8abb89d3f9daf1ff78b4cee"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_reference_filled.md",
+      "content": "<!-- pgmcp:v1 id=reference pv=1.0.0 pf=kaoepF5DpjMrctvM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event API\n\n**Status:** DRAFT — review pending  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Sources\n\n- [API source][src-1]\n\n[src-1]: <../../../README.md>\n\n## Test Evidence\n\n- [Reader tests][test-1]\n\n[test-1]: <../../../tests/mcp_server/integration/templates/test_reference.py>\n\n## API Reference\n\n### EventReader\n\nReads events in partition order.\n\n**Sources:**\n\n- [Reader source][api-1-src-1]\n\n[api-1-src-1]: <../../../README.md>\n\n**Methods:**\n\n#### `read(partition: str)`\n\n**Parameters:** partition identifier\n\n**Returns:** Event | None\n\n**Description:** Returns the next event.\n\n**Errors:** Raises JournalUnavailable when storage cannot be read.\n\n**Sources:**\n\n- [Method source][api-1-method-1-src-1]\n\n[api-1-method-1-src-1]: <../../../README.md>\n\n## Usage Examples\n\n### Python reader use\n\n```python\nevent = reader.read(partition)\n```\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1083,
+      "sha256": "126fad073f6f208d559ab331a353ccba3cfe68df236c6b86a59398c7f502c60c"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_reference_minimal.md",
+      "content": "<!-- pgmcp:v1 id=reference pv=1.0.0 pf=kaoepF5DpjMrctvM sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event API\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Sources\n\n- [API source][src-1]\n\n[src-1]: <../../../README.md>\n\n## API Reference\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 411,
+      "sha256": "eeb59b69c5648fd3bacb0e56c120b4ae960ea581d8f9bcc1255a7c581b5c4a7d"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_research_filled.md",
+      "content": "<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=FAN5Vr-4vcbMMjZ2 -->\n\n# First-call template quality research\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nSome shipped templates produce first outputs with formatting defects.\n\n## Goals\n\n- Locate generated presentation defects.\n- Separate template text from caller-authored strings.\n\n## Background\n\nIssue 473 reports excess Markdown spacing and mechanical labels.\n\n## Findings\n\nThe six Markdown templates extend the same document base and section/link macros.\n\n## Questions\n\n- Which boundaries need an explicit compatibility decision?\n\n## References\n\n- [Documentation Standard](<../../../docs/coding_standards/DOCUMENTATION_STANDARD.md>)\n\n## Evidence\n\n### The document base emits metadata and related-document blocks.\n\nThe base has explicit conditional blocks for status, version, date, and related docs.\n\n- [Markdown document base](<../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2>)\n\n**Invocation:** Render one populated document context\n\n**Observed Result:** Authored sample evidence; actual rendering is measured separately.\n\n**Observed At:** 2026-10-02T12:00:00Z\n\n## Consumers\n\n### First-time scaffold caller\n\nSupplies artifact context.\n\n**Impact:** Reads generated Markdown before editing.\n\n## Risks\n\n### A template defect can be misattributed to a user string.\n\nUse marker strings and compare the raw template path.\n\n**Consequence:** A fix could alter valid authored content.\n\n## Assumptions\n\n- The supplied context strings are representative.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1757,
+      "sha256": "ac52572a74a0776496fb0ae8a1fa3f95eca736bdf25962d5663ba4a243e29914"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_research_minimal.md",
+      "content": "<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=FAN5Vr-4vcbMMjZ2 -->\n\n# First-call template quality research\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Problem Statement\n\nSome shipped templates produce first outputs with formatting defects.\n\n## Goals\n\n- Locate generated presentation defects.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 498,
+      "sha256": "b369a811fc7e575077d62de0070742f0fd8a8b0cd714cc6d0877a5e790878012"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_validation_report_filled.md",
+      "content": "<!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=CT9NV5LmQjKHFGqX sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event path validation\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Issue Number\n\n#473\n\n## Cycle\n\nC1\n\n## Validation Status\n\nPARTIAL\n\n## Scope\n\nDurable append ordering.\n\n## Obligations\n\n### Failed append is not acknowledged\n\n**Evidence:**\n\n- [Failure-path test](<../../../tests/mcp_server/integration/templates/test_validation_artifact.py>)\n\n**Outcome:** Authored sample outcome; not independent validation.\n\n## Evidence\n\n### The focused failure case preserves ordering.\n\nAuthored sample observation, supplied to exercise the evidence carrier.\n\n**Sources:**\n\n- [Sample source](<../../../README.md>)\n\n**Invocation:** Authored example invocation\n\n**Observed Result:** Authored example result; not a measured test outcome.\n\n**Observed At:** 2026-10-02T12:00:00Z\n\n## Failures\n\n## Caveats\n\n- PARTIAL is authored sample content, not independent QA status.\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 1132,
+      "sha256": "ede04d52fabe08f7e5a5084ddea8a9e8e0a58b8acab92dc008c4d92d7bb2a095"
+    },
+    {
+      "path": "C:\\temp\\pgmcp\\.pgmcp\\temp\\issue473\\c4_receipt_validation_report_minimal.md",
+      "content": "<!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=CT9NV5LmQjKHFGqX sf=FAN5Vr-4vcbMMjZ2 -->\n\n# Event path validation\n\n**Status:** Authored example  \n**Version:** 0.1  \n**Last Updated:** 2026-10-03\n\n## Version History\n\n| Version | Date | Author | Changes |\n| --- | --- | --- | --- |\n| 0.1 | 2026-10-03 | Template reviewer | Initial authored example. |\n",
+      "bytes": 347,
+      "sha256": "32cb05c739619ad46134129b38aca62aad886941d2d16df255abb2fb5cb25163"
+    }
+  ],
+  "currentRejections": [
+    {
+      "request": {
+        "artifact_type": "architecture",
+        "file_name": "c4_rejected_legacy_architecture.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Execution Architecture",
+          "concepts": [
+            {
+              "name": "Event stream",
+              "description": "Events move from intake to persistence."
+            }
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/c5ccc1929aeb403884f9a8e60e6a3335",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_architecture.md",
+        "template_id": "architecture",
+        "package_version": "1.0.0",
+        "package_fingerprint": "F3GiYxoJo0WTq92r"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/c5ccc1929aeb403884f9a8e60e6a3335",
+        "run_id": "c5ccc1929aeb403884f9a8e60e6a3335",
+        "total_chars": 513,
+        "sha256": "488353f95b93a2b1c21be6b4867b4f97c8793c8c31af54052a9db3c4a5eca757",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "research",
+        "file_name": "c4_rejected_legacy_research.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "First-call template quality research",
+          "problem_statement": "Some shipped templates produce first outputs with formatting defects.",
+          "goals": [
+            "Locate generated presentation defects."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/5ebd927087ba4ff785cffc3f409fa91c",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_research.md",
+        "template_id": "research",
+        "package_version": "1.0.0",
+        "package_fingerprint": "lgBwxWMfTAmNNg_O"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/5ebd927087ba4ff785cffc3f409fa91c",
+        "run_id": "5ebd927087ba4ff785cffc3f409fa91c",
+        "total_chars": 505,
+        "sha256": "a275e5dcd8cc0a64ac1750b32777e2e9b35f36ff9ca30f0bce8145dbe1a89586",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "design",
+        "file_name": "c4_rejected_legacy_design.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Design",
+          "problem_statement": "The consumer can acknowledge an event before its journal append is durable.",
+          "requirements_functional": [
+            "Acknowledge only after durable append."
+          ],
+          "requirements_nonfunctional": [
+            "Preserve per-partition order."
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/244e5d60513b4d09969656c23b9b63e0",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_design.md",
+        "template_id": "design",
+        "package_version": "1.0.0",
+        "package_fingerprint": "YApsrGTQgBUKFez2"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/244e5d60513b4d09969656c23b9b63e0",
+        "run_id": "244e5d60513b4d09969656c23b9b63e0",
+        "total_chars": 501,
+        "sha256": "0db09345d12f589a2329f8611962de9813af7419a41d69db1b42b5401f76b1fe",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "planning",
+        "file_name": "c4_rejected_legacy_planning.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event Path Plan",
+          "summary": "Make acknowledgement follow a durable append.",
+          "work_units": [
+            {
+              "id": "U1",
+              "name": "Append ordering",
+              "goal": "Enforce durable append before acknowledgement.",
+              "deliverables": [
+                {
+                  "id": "code",
+                  "description": "Updated consumer path."
+                }
+              ],
+              "exit_criteria": "Failure injection proves no early acknowledgement."
+            }
+          ],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/f123a76b6604434faca2cee28fae68ff",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_planning.md",
+        "template_id": "planning",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CscfYyDLqj0OeHml"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/f123a76b6604434faca2cee28fae68ff",
+        "run_id": "f123a76b6604434faca2cee28fae68ff",
+        "total_chars": 505,
+        "sha256": "9c4be2868ed3fc398ebfbdf7c3c7b0f3d61555e7cea994c3ceeb634b6a119897",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "validation_report",
+        "file_name": "c4_rejected_legacy_validation_report.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event path validation",
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/b29b91fd14304948800f009b45eb2153",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_validation_report.md",
+        "template_id": "validation_report",
+        "package_version": "1.0.0",
+        "package_fingerprint": "CT9NV5LmQjKHFGqX"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/b29b91fd14304948800f009b45eb2153",
+        "run_id": "b29b91fd14304948800f009b45eb2153",
+        "total_chars": 523,
+        "sha256": "74b7e2ae140e260bd922e0a03755e974cba616a88dffe5f61ee814470d2ca3c2",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "reference",
+        "file_name": "c4_rejected_legacy_reference.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Event API",
+          "sources": [
+            {
+              "label": "API source",
+              "target": "../../../README.md"
+            }
+          ],
+          "api_reference": [],
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/d110334ecb6241b58eeab77fb64fede8",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_reference.md",
+        "template_id": "reference",
+        "package_version": "1.0.0",
+        "package_fingerprint": "kaoepF5DpjMrctvM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/d110334ecb6241b58eeab77fb64fede8",
+        "run_id": "d110334ecb6241b58eeab77fb64fede8",
+        "total_chars": 507,
+        "sha256": "a8a9be46493efd857433f6258d1f64d671dc1219716d665be790a2cee03e7c92",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_rejected_legacy_generic_doc.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Template Output Review",
+          "purpose": "Record first-call output observations.",
+          "summary": "Review representative generated artifacts for formatting and presentation.",
+          "document_metadata": {
+            "status": "Authored example",
+            "revisions": [
+              {
+                "version": "0.1",
+                "date": "2026-10-03",
+                "author": "Template reviewer",
+                "change": "Initial authored example."
+              }
+            ]
+          },
+          "status": "Removed legacy root fact"
+        }
+      },
+      "uri": "pgmcp://cache/runs/3e520054535f44d5b2f8de4cb20e3e77",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "additionalProperties",
+              "message": "Additional properties are not allowed ('status' was unexpected)"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_legacy_generic_doc.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/3e520054535f44d5b2f8de4cb20e3e77",
+        "run_id": "3e520054535f44d5b2f8de4cb20e3e77",
+        "total_chars": 511,
+        "sha256": "1fe60a5a43e37e8e374a84f35f3549174b42c40281a0322bb0b7457cb3457a4f",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_rejected_absent_metadata.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Template Output Review",
+          "purpose": "Record first-call output observations.",
+          "summary": "Review representative generated artifacts for formatting and presentation."
+        }
+      },
+      "uri": "pgmcp://cache/runs/44fe1e2f990545bea77ad300c6ca9570",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "",
+              "keyword": "required",
+              "message": "'document_metadata' is a required property"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_absent_metadata.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/44fe1e2f990545bea77ad300c6ca9570",
+        "run_id": "44fe1e2f990545bea77ad300c6ca9570",
+        "total_chars": 475,
+        "sha256": "8debe34007e80d05ef1f65ecf9471de906dfe3620b92ed3abff4415a0828aa87",
+        "verified": true
+      }
+    },
+    {
+      "request": {
+        "artifact_type": "generic_doc",
+        "file_name": "c4_rejected_empty_revisions.md",
+        "target_path": ".pgmcp/temp/issue473",
+        "force_target": true,
+        "validation": "enforce",
+        "context": {
+          "title": "Template Output Review",
+          "purpose": "Record first-call output observations.",
+          "summary": "Review representative generated artifacts for formatting and presentation.",
+          "document_metadata": {
+            "status": "Authored",
+            "revisions": []
+          }
+        }
+      },
+      "uri": "pgmcp://cache/runs/c411e0b777dd4cd995728df121b6e488",
+      "dto": {
+        "success": false,
+        "written": false,
+        "validation_policy": "enforce",
+        "validation_status": "not_executed",
+        "profile_id": "markdown_document",
+        "checks": [],
+        "error_code": "context_invalid",
+        "error_details": {
+          "issues": [
+            {
+              "pointer": "/document_metadata/revisions",
+              "keyword": "minItems",
+              "message": "[] should be non-empty"
+            }
+          ]
+        },
+        "housekeeping": [],
+        "output_path": ".pgmcp/temp/issue473/c4_rejected_empty_revisions.md",
+        "template_id": "generic_doc",
+        "package_version": "1.0.0",
+        "package_fingerprint": "xoYbNuJbkallN_DM"
+      },
+      "verification": {
+        "uri": "pgmcp://cache/runs/c411e0b777dd4cd995728df121b6e488",
+        "run_id": "c411e0b777dd4cd995728df121b6e488",
+        "total_chars": 483,
+        "sha256": "1d46172a179fa200ccb389552bdd602990ad633fdb7985843c57e3eaf0612581",
+        "verified": true
+      }
+    }
+  ],
+  "currentTestFileGates": {
+    "request": {
+      "scope": "targets",
+      "targets": [
+        "tests/mcp_server/integration/templates/test_architecture.py",
+        "tests/mcp_server/integration/templates/test_research_artifact.py",
+        "tests/mcp_server/integration/templates/test_design_artifact.py",
+        "tests/mcp_server/integration/templates/test_planning_artifact.py",
+        "tests/mcp_server/integration/templates/test_validation_artifact.py",
+        "tests/mcp_server/integration/templates/test_reference.py",
+        "tests/mcp_server/integration/templates/test_generic_document.py",
+        "tests/mcp_server/integration/templates/test_shared_documents.py",
+        "tests/mcp_server/integration/templates/test_issue.py",
+        "tests/mcp_server/integration/templates/test_pr.py",
+        "tests/mcp_server/integration/templates/test_commit_artifact.py",
+        "tests/mcp_server/unit/config/test_contracts_loader.py"
+      ],
+      "checks": [
+        "python_format",
+        "python_lint",
+        "python_pyright"
+      ],
+      "timeout_seconds": 90
+    },
+    "uri": "pgmcp://cache/runs/33ab03c16f32485f899b03ec9acfa4c1",
+    "dto": {
+      "success": true,
+      "run_status": "passed",
+      "requested_scope": "targets",
+      "requested_targets": [
+        "tests/mcp_server/integration/templates/test_architecture.py",
+        "tests/mcp_server/integration/templates/test_research_artifact.py",
+        "tests/mcp_server/integration/templates/test_design_artifact.py",
+        "tests/mcp_server/integration/templates/test_planning_artifact.py",
+        "tests/mcp_server/integration/templates/test_validation_artifact.py",
+        "tests/mcp_server/integration/templates/test_reference.py",
+        "tests/mcp_server/integration/templates/test_generic_document.py",
+        "tests/mcp_server/integration/templates/test_shared_documents.py",
+        "tests/mcp_server/integration/templates/test_issue.py",
+        "tests/mcp_server/integration/templates/test_pr.py",
+        "tests/mcp_server/integration/templates/test_commit_artifact.py",
+        "tests/mcp_server/unit/config/test_contracts_loader.py"
+      ],
+      "selected_profile": null,
+      "removed_targets": [],
+      "results": [
+        {
+          "check_id": "python_format",
+          "status": "passed",
+          "reason": null,
+          "message": null,
+          "evidence": {
+            "format": "text",
+            "data": "stderr:\n12 files already formatted\n"
+          },
+          "external_tools": [
+            {
+              "tool_id": "ruff",
+              "version": "0.15.6"
+            }
+          ],
+          "adapter": {
+            "adapter_id": "ruff",
+            "version": "1.0.0",
+            "fingerprint": "sFWzvJZBN26YRZqa",
+            "contract_version": 1
+          },
+          "capture": {
+            "exit_code": 0,
+            "stdout": {
+              "observed_bytes": 204,
+              "head": null,
+              "tail": null,
+              "truncated": false
+            },
+            "stderr": {
+              "observed_bytes": 0,
+              "head": "",
+              "tail": "",
+              "truncated": false
+            }
+          },
+          "termination_problem": null,
+          "request_rejection": null,
+          "args_source": "configured",
+          "effective_args": [],
+          "coverage": null,
+          "required_targets": []
+        },
+        {
+          "check_id": "python_lint",
+          "status": "passed",
+          "reason": null,
+          "message": null,
+          "evidence": {
+            "format": "text",
+            "data": "stdout:\nAll checks passed!\n"
+          },
+          "external_tools": [
+            {
+              "tool_id": "ruff",
+              "version": "0.15.6"
+            }
+          ],
+          "adapter": {
+            "adapter_id": "ruff",
+            "version": "1.0.0",
+            "fingerprint": "sFWzvJZBN26YRZqa",
+            "contract_version": 1
+          },
+          "capture": {
+            "exit_code": 0,
+            "stdout": {
+              "observed_bytes": 196,
+              "head": null,
+              "tail": null,
+              "truncated": false
+            },
+            "stderr": {
+              "observed_bytes": 0,
+              "head": "",
+              "tail": "",
+              "truncated": false
+            }
+          },
+          "termination_problem": null,
+          "request_rejection": null,
+          "args_source": "configured",
+          "effective_args": [],
+          "coverage": null,
+          "required_targets": []
+        },
+        {
+          "check_id": "python_pyright",
+          "status": "passed",
+          "reason": null,
+          "message": null,
+          "evidence": {
+            "format": "text",
+            "data": "stdout:\n{\n    \"version\": \"1.1.408\",\n    \"time\": \"1791059304807\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 12,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 2.189\n    }\n}\n\n"
+          },
+          "external_tools": [
+            {
+              "tool_id": "pyright",
+              "version": "1.1.408"
+            }
+          ],
+          "adapter": {
+            "adapter_id": "pyright",
+            "version": "1.0.0",
+            "fingerprint": "GfhwbqXxleu1yBzE",
+            "contract_version": 1
+          },
+          "capture": {
+            "exit_code": 0,
+            "stdout": {
+              "observed_bytes": 467,
+              "head": null,
+              "tail": null,
+              "truncated": false
+            },
+            "stderr": {
+              "observed_bytes": 0,
+              "head": "",
+              "tail": "",
+              "truncated": false
+            }
+          },
+          "termination_problem": null,
+          "request_rejection": null,
+          "args_source": "configured",
+          "effective_args": [
+            "--level",
+            "warning",
+            "--warnings"
+          ],
+          "coverage": null,
+          "required_targets": []
+        }
+      ],
+      "error_code": null,
+      "error_details": null
+    },
+    "verification": {
+      "uri": "pgmcp://cache/runs/33ab03c16f32485f899b03ec9acfa4c1",
+      "run_id": "33ab03c16f32485f899b03ec9acfa4c1",
+      "total_chars": 3076,
+      "sha256": "1550b16d9ae4b2360f5c0e5c1602c2905f10c8930c621dc5f8b8485fc734492f",
+      "verified": true
+    }
+  }
+}
+`````

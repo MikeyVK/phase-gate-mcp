@@ -115,6 +115,10 @@ Final configured offline Markdown link review passed with 56 successful links, 0
 
 Pre-commit reality check: all fifteen deliverables map to concrete source, actual raw output or current native evidence; the final inventory contains 38 pristine pairs with current package graph identities; material failures and separate fix instances remain distinguishable; caller facts/interiors/presence remain preserved; active known inputs are migrated; F6 is explicit operational follow-up rather than claimed repaired. The current ten-file C4 inventory contains only planned standards/instructions/evidence and tool-maintained cycle state. Full configured tests and broad branch gates have not been run and remain Validation work. Independent review is requested; producer evidence is not GO.
 
+## Receipt-integrity refresh during independent review
+
+The root reader was tightened to independently recompute full UTF-8 SHA256 before parsing. Nine current resolved code schemas, still-available native/test/edit/link receipts and all new repeated scaffold/rejection receipts matched their advertised hashes. Older transient receipts could not be retroactively certified. Twenty-six separately scaffolded c4_receipt_* outputs, using the identical contexts and unchanged final source graph, are byte-for-byte identical to all twenty C3 final pairs and six final boundary outputs. All fresh content-preflight rows passed; the nine repeated schema rejections returned context_invalid/written=false. The twelve changed test-file format/lint/Pyright checks passed again. Exact requests, complete responses, independent hashes and byte-equality records are in first-output-evidence.md. This refresh changes evidence only and does not modify the 38 pristine final outputs, templates, production or tests. Independent QA was notified; no new content test or permanent harness was added.
+
 ## Version History
 
 | Version | Date | Author | Changes |
