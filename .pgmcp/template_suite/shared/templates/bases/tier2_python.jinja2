@@ -3,3 +3,4 @@
 {% block comment_start %}#{% endblock %}
 {% block module_documentation %}{{ imports.documentation(content.description) }}{% endblock %}
 {% block module_imports %}{{ imports.groups(content.imports | default({}), {}) }}{% endblock %}
+{% block code_separator %}{{ '\n\n\n' }}{% endblock %}

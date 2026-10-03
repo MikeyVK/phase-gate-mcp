@@ -54,7 +54,7 @@
 {%- else -%}{{ value }}{%- endif -%}
 {%- endmacro %}
 
-{% macro documentation(text) -%}{{ literal(text) }}{%- endmacro %}
+{% macro documentation(text) -%}{{ literal(text | text_block) }}{%- endmacro %}
 
 {% macro statement(record) -%}
 {%- if record.kind == 'import' -%}

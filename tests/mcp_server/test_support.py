@@ -44,6 +44,7 @@ from mcp_server.schemas import (
 from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_contract_loader import TemplateContractLoader
+from mcp_server.services.template_engine import register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_suite
 from mcp_server.tools.issue_tools import CreateIssueTool
@@ -495,6 +496,7 @@ def make_template_suite_admission(
     """Bind real admission readers to explicit roots without executing native tools."""
     validator = ConfigValidator()
     environment = Environment()
+    register_template_filters(environment)
     provenance = freeze_json(ArtifactIdentity.model_json_schema())
     assert isinstance(provenance, FrozenJsonObject)
 

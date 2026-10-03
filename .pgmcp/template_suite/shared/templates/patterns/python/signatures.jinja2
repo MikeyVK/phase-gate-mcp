@@ -8,10 +8,10 @@
 {% macro method(signature, body, instance=true) -%}
 {% if signature.async %}async {% endif %}def {{ signature.name }}({{ parameters(signature.parameters, instance) }}) -> {{ signature.return_type }}:
     {{ values.documentation(signature.description) }}
-{{ body | indent(4, true) }}
+{{ body | text_block | indent(4, true) }}
 {%- endmacro %}
 
 {% macro constructor(record) -%}
 def __init__({{ parameters(record.parameters, true) }}) -> None:
-{{ record.body | indent(4, true) }}
+{{ record.body | text_block | indent(4, true) }}
 {%- endmacro %}

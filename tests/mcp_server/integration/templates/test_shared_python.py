@@ -20,7 +20,7 @@ from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
-from mcp_server.services.template_engine import TemplateEngine
+from mcp_server.services.template_engine import TemplateEngine, register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from tests.mcp_server.integration.adapters.test_typescript_syntax import (
     TypeScriptPackage,
@@ -39,6 +39,7 @@ def render(tmp_path: Path, repo: Path, template: str, content: dict[str, JsonVal
     package.mkdir(exist_ok=True)
     (package / "template.jinja2").write_text(template, encoding="utf-8")
     parser = Environment()
+    register_template_filters(parser)
     graph = TemplateGraphResolver(suite, parser.parse).resolve(
         (("custom.consumer", "consumer/template.jinja2"),)
     )

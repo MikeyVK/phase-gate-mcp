@@ -121,6 +121,7 @@ from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_contract_loader import TemplateContractLoader
+from mcp_server.services.template_engine import register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 
 package = Path(mcp_server.__file__).resolve().parent
@@ -131,6 +132,7 @@ loader = ConfigLoader(config_root, suite, context_schema_reader=contracts.load_c
 validator = ConfigValidator()
 checks = loader.load_checks_config()
 parser = Environment()
+register_template_filters(parser)
 graph = TemplateGraphResolver(suite, parser.parse)
 inputs = TemplateInputValidator(parser.parse, freeze_json(ArtifactIdentity.model_json_schema()))
 catalog = TemplateCatalogLoader(

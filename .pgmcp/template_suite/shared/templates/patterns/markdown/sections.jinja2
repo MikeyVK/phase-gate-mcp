@@ -5,14 +5,14 @@
 {%- macro prose(title, text) -%}
 {{ heading(title) }}
 
-{{ text }}
+{{ text | text_block }}
 {%- endmacro %}
 {%- macro bullets(items) -%}
-{% for item in items %}- {{ item | indent(2) }}{% if not loop.last %}
+{% for item in items %}- {{ item | text_block | indent(2) }}{% if not loop.last %}
 {% endif %}{% endfor %}
 {%- endmacro %}
 {%- macro checklist(items) -%}
-{% for item in items %}- [{% if item.checked %}x{% else %} {% endif %}] {{ item.text | indent(6) }}{% if not loop.last %}
+{% for item in items %}- [{% if item.checked %}x{% else %} {% endif %}] {{ item.text | text_block | indent(6) }}{% if not loop.last %}
 {% endif %}{% endfor %}
 {%- endmacro %}
 {%- macro issue_refs(items) -%}
@@ -40,7 +40,7 @@
 {%- set character = '~' if '`' in language else '`' -%}
 {%- set fence = delimiter(code, 3, character) -%}
 {{ fence }}{{ language }}
-{{ code }}
+{{ code | text_block }}
 {{ fence }}
 {%- endmacro %}
 {%- macro inline_code(code) -%}

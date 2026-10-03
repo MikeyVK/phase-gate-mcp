@@ -1,8 +1,9 @@
 {% extends "shared/templates/bases/tier0_root.jinja2" %}
-{% block content %}
-{% block document_heading required %}{% endblock %}
-{% block document_metadata %}{% endblock %}
-{% block document_before %}{% endblock %}
-{% block document_body required %}{% endblock %}
-{% block document_after %}{% endblock %}
-{% endblock %}
+{% block content -%}
+{% set heading %}{% block document_heading required %}{% endblock %}{% endset -%}
+{% set metadata %}{% block document_metadata %}{% endblock %}{% endset -%}
+{% set before %}{% block document_before %}{% endblock %}{% endset -%}
+{% set body %}{% block document_body required %}{% endblock %}{% endset -%}
+{% set after %}{% block document_after %}{% endblock %}{% endset -%}
+{{ [heading | text_block, metadata | text_block, before | text_block, body | text_block, after | text_block] | select | join('\n\n') }}
+{%- endblock %}
