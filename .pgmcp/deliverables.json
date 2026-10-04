@@ -19,7 +19,7 @@
       "created_at": "2026-10-02T12:11:16.409929+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 4,
+          "total": 5,
           "cycles": [
             {
               "cycle_number": 1,
@@ -108,6 +108,21 @@
                 }
               ],
               "exit_criteria": "Active docs/instructions are reconciled with their sources and relevant links verified; final inventory contains 19 reviewed families/38 current first outputs without requiring uninvalidated reruns; all tool routes have actual evidence or an explicit justified limitation and findings have disposition; narrow invalidated tests/gates pass; independent Implementation review is requested before Validation, whose full suite/broad gates remain outstanding."
+            },
+            {
+              "cycle_number": 5,
+              "name": "C_HEADER_CONSUMER \u2014 missed existing render consumer",
+              "deliverables": [
+                {
+                  "id": "D5_CONSUMER",
+                  "description": "Migrate the existing header-reader test rendering Environment through the real shared register_template_filters and align its exact provenance/body separator with the approved root layout; preserve independent vectors, three frames, maximum header length and round-trip checks."
+                },
+                {
+                  "id": "D5_EVIDENCE",
+                  "description": "Verify the whole existing header-reader test module and format/lint/Pyright gates, record the reused failing baseline and narrow repair evidence without new tests or production/template/adapter changes."
+                }
+              ],
+              "exit_criteria": "All 68 existing header-reader cases pass; format/lint/Pyright pass for the modified test module; independent provenance values, three frames, header length bounds and round-trip assertions are preserved. The repair is test-consumer migration only; no local fake filter, skip, production-root edit, new coverage or deferred branch-filter implementation. Return to Validation for fresh configured full-suite evidence and focused external re-review."
             }
           ]
         },
