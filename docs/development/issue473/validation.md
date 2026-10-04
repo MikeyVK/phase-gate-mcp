@@ -3,7 +3,7 @@
 # Issue 473 — Validation
 
 **Status:** Validation blocked; independent review requested  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-04
 
 ## Purpose
@@ -38,7 +38,7 @@ bug/473-first-call-template-quality against parent main; production/template/tes
 
 - [Planning](<planning.md>)
 
-**Outcome:** Not fulfilled: the configured run_tests call timed out at the MCP transport boundary after 300 seconds; no native result DTO or complete test totals were returned.
+**Outcome:** Current run completed with 6 failed, 2769 passed, 1 skipped, 1 xpassed and 229 warnings in 320.27 seconds. The earlier 300-second transport timeout remains historical evidence; see Latest Validation execution.
 
 ### V\_BRANCH\_CHECKS — configured Python review and branch Markdown links
 
@@ -47,7 +47,7 @@ bug/473-first-call-template-quality against parent main; production/template/tes
 - [Python review receipt](<pgmcp://cache/runs/bce86b0768b64271b8fdf2f1632a1d3d>)
 - [Markdown review receipt](<pgmcp://cache/runs/944deb18930d44a49d17924aa388146d>)
 
-**Outcome:** Python review incomplete: format and Pyright unavailable, lint and Mypy failed. Markdown links passed. Full native row interpretation follows in the verified receipt appendix.
+**Outcome:** Current Python review remains incomplete: format and Pyright unavailable, lint and Mypy failed. Current Markdown links failed with 41 errors in four AGENTS source/mirror copies. Earlier passing Markdown evidence is historical; see Latest Validation execution.
 
 ### V\_CORRECTED\_BEHAVIOR — all nineteen families and approved preservation obligations
 
@@ -202,11 +202,11 @@ The cache contains the multi-megabyte Python diagnostics and the response-limit 
 
 ## Validation disposition and pre-commit reality check
 
-V_CORRECTED_BEHAVIOR is supported by the unchanged actual first-output and preservation evidence reviewed independently at Implementation. V_FULL_TESTS is unfulfilled, and V_BRANCH_CHECKS contains incomplete/failed Python rows. Producer Validation status is therefore FAIL. Broad failure evidence has not demonstrated a new template defect; it has also not established the required absence of regression. Neither scoped success nor a passed Markdown gate closes those missing obligations.
+Historical disposition before the larger-window rerun: V_CORRECTED_BEHAVIOR was supported, V_FULL_TESTS was missing and V_BRANCH_CHECKS contained incomplete/failed Python rows. The current disposition and complete negative suite result are in Latest Validation execution below.
 
 All nineteen families and the fifteen Implementation deliverables remain mapped in implementation.md/manual-inspection.md. No new automated content or regression tests, fixes to pristine artifacts, production/template changes, relaxed native arguments or compatibility bridge were made in Validation. F6 remains a priority separately scoped bootstrap/proxy recovery follow-up; issue476 remains explicitly separate. Documentation/Ready/merge have not been entered.
 
-## Bug / Validation Hand-over
+## Bug / Validation Hand-over (historical attempt)
 
 ### Scope
 
@@ -290,6 +290,92 @@ The owner added explicit deferral as the fourth completion obligation and instru
 
 Execution order: commit the deferral; perform the approved single configured full-suite run; complete current-tool branch-gate evidence without hiding limitations; commit the updated Validation report and request the external Beoordeel designplan review. Existing scoped Python successes remain evidence, not an undeclared replacement for the prescribed broad gate. Later Documentation/Ready carries the deferred work to coordination.
 
+## Latest Validation execution — 2026-10-04
+
+This section supersedes earlier current-outcome statements; the earlier attempts remain historical evidence. The deferred branch-check solution was recorded and pushed first in commit a1581d64. No production, adapter, template, test or native configuration was changed during this continuation.
+
+### Single configured full-suite outcome
+
+Exact call:
+
+```json
+{"scope":"configured","timeout_seconds":1200}
+```
+
+No args override, target restriction or partition was used. Pytest 9.0.2 used pyproject.toml, testpaths=tests/mcp_server and eight xdist workers, collecting 2777 items. The complete native response reports **6 failed, 2769 passed, 1 skipped, 1 xpassed, 229 warnings in 320.27 seconds** (exit 1). PGMCP operation success=true with a failed python_tests row, args_source=configured, effective_args=[], no request rejection or termination problem. Receipt: pgmcp://cache/runs/03731e6f09214698be363140f3ae16b5.
+
+The accepted stdout capture records 803612 observed bytes, truncated=false; native evidence is retained in the cached result. Delivery after a 320.27-second native run demonstrates that this active call survived the former 300-second client boundary. It does not independently measure the exact client's 1800-second limit. The 804155-character cache was size-checked and only bounded diagnostic windows were read; no complete verbose-log download or routine hash calculation was performed.
+
+### Six reproducible existing-consumer failures
+
+All six failures are parameter variants of [test_selected_graph_renders_retained_root_and_round_trips](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py): maximum=False/True crossed with Python, TypeScript and HTML comment framing. A focused existing-test reproduction used:
+
+```json
+{
+  "scope":"targets",
+  "targets":["tests/mcp_server/unit/services/test_artifact_header_reader.py"],
+  "args":{"python_tests":["-q","-n","0","--tb=short","-k","selected_graph_renders_retained_root_and_round_trips"]},
+  "timeout_seconds":120
+}
+```
+
+Observed: **6 failed, 62 deselected, 1 warning in 0.60 seconds**, receipt pgmcp://cache/runs/08652be30dc6484992f69012b557b0de. Every variant raises jinja2.exceptions.TemplateAssertionError: No filter named 'text_block'. The test renders the delivered [tier0 root](../../../.pgmcp/template_suite/shared/templates/bases/tier0_root.jinja2) using its own fresh Environment without [register_template_filters](../../../mcp_server/services/template_engine.py). The shared root now requires that registration. This is a missed existing test consumer of the issue473 rendering contract, not a branch-filtering defect to defer.
+
+Source inspection also shows that this test's exact expected string uses one LF between provenance and body, whereas the delivered root now generates a blank separator. That is a further expectation-alignment question for review; it is not a newly executed post-fix assertion failure. No test patch, fake local filter or production change was made in Validation.
+
+### Fresh branch-gate outcomes
+
+| Exact call | Current result | Evidence |
+| --- | --- | --- |
+| run_checks(scope="branch", profile="python_review", timeout_seconds=300) | incomplete: python_format unavailable, python_lint failed, python_types failed, python_pyright unavailable; configured native arguments retained | pgmcp://cache/runs/960376869dbb47dea4a9cead1148ce27 |
+| run_checks(scope="branch", profile="markdown_link_review", timeout_seconds=300) | failed: 489 successful, 46 excluded, 41 errors, 0 timeouts; native Lychee exit 1 | pgmcp://cache/runs/9bda2cb245ca417480053b5aa23e6b60 |
+
+The Python broad call again delivers mixed branch paths to native Python tools. Its first diagnostic is Ruff's experimental Markdown-formatting refusal; the large Pyright capture also contains Python syntax diagnostics against first-output-evidence.md. The result is 12242619 characters; only bounded diagnostic windows were read. These fresh row statuses and representative diagnostics reproduce the already documented tool limitation; they do not turn the original failure into a pass.
+
+All 41 current link errors are in four non-root AGENTS copies: docs/agents/codex/AGENTS.md (11), docs/agents/vscode/copilot/AGENTS.md (8), docs/agents/antigravity/AGENTS.md (11) and .agents/AGENTS.md (11). Their workspace-root destinations are interpreted relative to the source/mirror directory. The same unchanged link-target limitation was recorded in the prior eight-file policy check. Native extension applicability and source/mirror link conventions require separate assessment; no skip/exclusion was added to force a passing branch run.
+
+Fresh passing Python evidence is reused because production and test files are unchanged: format/lint/Pyright on all 24 changed Python files and strict Mypy on the three changed production files. The independent checks are indexed in the owner-refinement section. Test-only Mypy diagnostics are not reclassified as mandatory gate failures. These scoped results remain supporting evidence until the required branch-gate route has an explicit reviewed disposition.
+
+### Current disposition and review request
+
+V_FULL_TESTS now has a complete negative result rather than missing output. V_BRANCH_CHECKS has explicit current failed/incomplete broad rows and passing scoped Python evidence. V_CORRECTED_BEHAVIOR retains the unchanged 19-family manual, 38-output, boundary and independent Implementation evidence. Producer Validation status remains **FAIL**: the six missed-consumer failures are unresolved, and no successful required branch-gate disposition is claimed.
+
+Pre-commit reality check: the full configured suite was not weakened, partitioned or rerun to hide failures; the narrow repetition diagnoses an existing failure rather than adding coverage. No production, template, test or adapter repair was performed. The deferred branch-check proposal stays outside issue473 implementation. Required failures are presented for independent review, not silently deferred as unrelated.
+
+### Bug / Validation Hand-over (current)
+
+#### Scope
+
+- Full native-configured suite with the owner-approved budget, fresh branch Python/Markdown gates, narrow reproduction of the six real failures and unchanged corrected-output evidence.
+- Deferred branch-check research is documented; no production implementation of that proposal.
+- Documentation, Ready and merge remain pending.
+
+#### Deliverables
+
+- [Validation report](validation.md), [Planning](planning.md), [Design](design.md), [Approved Strategy](research.md#approved-strategy).
+- [Implementation mapping](implementation.md), [Manual inspection](manual-inspection.md), [Exact first-output evidence](first-output-evidence.md).
+- [Separate-issue deferred research](tool-practice-findings.md#deferred-branch-wide-check-solution--owner-disposition-2026-10-04).
+- [Failing existing test consumer](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py) and [shared root](../../../.pgmcp/template_suite/shared/templates/bases/tier0_root.jinja2).
+
+#### Evidence
+
+- Full suite: 6 failed, 2769 passed, 1 skipped, 1 xpassed, 229 warnings, 320.27 seconds.
+- Focused reproduction: 6 failed, 62 deselected, 1 warning, 0.60 seconds; missing text_block registration.
+- Branch Python: incomplete; format/Pyright unavailable and lint/Mypy failed.
+- Branch links: 489 successful, 46 excluded, 41 errors.
+- Reused passing format/lint/Pyright for 24 changed Python files, strict Mypy for three production files and independently reviewed actual scaffold evidence.
+
+#### Open Work
+
+- Assess and route the six existing-consumer failures within issue473; do not defer them with the branch-selection proposal.
+- Determine the accepted branch-gate disposition and source/mirror link responsibility while preserving the original failed evidence.
+- Carry the deferred selection solution to a separate issue through coordination.
+- Independent QA determines the applicable workflow verdict; producer does not claim GO.
+
+#### Review Request
+
+- External Beoordeel designplan review requested. Read the current primary evidence and exact negative results; report findings and the authority-appropriate assessment.
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -298,4 +384,6 @@ Execution order: commit the deferral; perform the approved single configured ful
 | 0.2 | 2026-10-04 | @imp validator | Restore owner-approved issue460 partitioning, persist concise cache/deadline instructions and main rollout, and retain diagnostic/gate distinctions. |
 | 0.3 | 2026-10-04 | @imp validator | Recover the original timeout decision and supersede partitioning with the approved larger client window, full-run budget and durable main/host rollout. |
 | 0.4 | 2026-10-04 | @imp validator | Record the owner's separate-issue deferral and execution order before completing current-tool Validation and requesting external review. |
+
+| 0.5 | 2026-10-04 | @imp validator | Record the complete 2777-item native suite, six reproducible missed-consumer failures, current branch Python/link outcomes and outcome-neutral external review hand-over. |
 
