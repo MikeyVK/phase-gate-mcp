@@ -142,23 +142,22 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
 ### Option C: Codex Setup
 
 - Keep machine-specific paths and secrets in the Git-ignored `.codex/config.toml`.
-- Set the existing PGMCP connection's client deadline to the approved value:
+- Set the existing PGMCP connection's client window to the approved value:
 
 ```toml
 [mcp_servers.phase_gate_mcp]
-tool_timeout_sec = 300
+tool_timeout_sec = 1800
 ```
 
 - Preserve the connection's existing command, cwd, environment and other settings.
-- Confirm activation in the client connection; restarting only PGMCP does not prove activation.
-- Use bounded selections for long test/check runs. Do not raise the client deadline.
-- For one test binding, use a per-call execution budget of 240 seconds, leaving margin within 300 seconds for stopping and result delivery.
-- For multiple checks, keep their cumulative execution/stop budgets below the client deadline or split the checks.
-- Preserve native arguments and full required coverage; record each partition's scope and result.
-- Source: [issue460 owner decision](../development/issue460/validation.md#owner-decision--client-timeout-2026-09-26).
+- Activate the changed setting in the Codex client connection; restarting only PGMCP does not prove activation.
+- Keep normal check/test/fix calls focused and retain their configured default execution budgets.
+- For the required full native-configured suite, use `run_tests(scope="configured", timeout_seconds=1200)`. Keep native execution arguments unchanged.
+- The client window covers the complete MCP call, including adapter execution, bounded stopping and result delivery. Account for all selected bindings when choosing per-call budgets.
+- Do not partition a required full run solely because its known workload exceeds a short default timeout. A timed-out or incomplete run remains incomplete evidence.
+- Rationale: the client previously stopped waiting before the full-suite result could be delivered. The owner approved a 1800-second client window and a 1200-second full-test execution budget on 2026-10-04, superseding the [issue460 300-second/partition decision](../development/issue460/validation.md#owner-decision--client-timeout-2026-09-26). Neither setting promises completion of an arbitrarily long run.
 
-The client setting remains local. This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. Apply the setting to each host/client connection; a Git merge cannot activate an ignored local configuration.
-
+This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. On every host using main, apply this policy to the local connection and activate it. A Git merge cannot update or activate a Git-ignored client configuration; retain existing machine paths and secrets.
 
 ## 4. Agent Files & Git Availability
 
@@ -196,6 +195,7 @@ Verify that the MCP server is active by running the following command in the cha
 |---|---|---|
 | `.vscode/mcp.json` | VS Code MCP server config | Copy from `docs/setup/mcp.json` (VS Code only) |
 | `.agents/mcp_config.json` | Antigravity local MCP config | Create under `.agents/` directory (Antigravity only) |
-| `.codex/config.toml` | Codex local MCP config | Apply Option C; keep tool_timeout_sec=300 and partition long verification |
+| `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+

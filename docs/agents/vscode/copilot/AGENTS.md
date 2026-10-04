@@ -160,11 +160,11 @@ or merely create shallow or tautological asserts to satisfy tooling.
    - Reuse already-read results until invalidated.
    - Check result size before paging; stop blind multi-megabyte downloads.
    - Verify SHA-256 once for multipart assembly or an explicit identity requirement; do not hash routine actions.
-10. **Bounded Execution:**
-   - Respect the active client deadline; include execution, stopping and response time.
-   - Partition long tests/checks; preserve native arguments and required coverage.
-   - Record partition coverage, failures and omissions.
-   - Complete-suite coverage may use bounded partitions; do not increase deadlines without approval.
+10. **Execution Budgets:**
+   - Use the active phase's required scope; keep normal calls focused.
+   - For required full-suite runs, raise timeout_seconds to fit the workload; do not split solely to fit a short timeout.
+   - Keep the client window large enough for the whole call, stopping and response delivery; follow docs/setup/README.md.
+   - Preserve native arguments and required coverage; report timed-out or incomplete runs as incomplete.
 
 ---
 
@@ -308,3 +308,4 @@ delegation; epic review and lifecycle continuation remain with `@co`.
 ---
 
 **Remember: These rules are enforced. Violations will be rejected by the user. When in doubt, consult the Tool Priority Matrix or ask the user.**
+
