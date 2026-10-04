@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking — shipped scaffold contexts**: Full-document packages require authored status and a nonempty revision history through document_metadata, including minimal contexts. Module and class prose use the selected package's explicit fields; removed aliases have no legacy fallback. Rediscover the schema and migrate callers before generation. Tracking bodies keep publication title and labels outside their scaffold context (#473).
+- **Scaffold presentation**: Shared templates own metadata/header/history, generated section spacing and one terminal LF. Blank edge lines of selected prose/code fragments are normalized while meaningful caller interiors and explicit empty optional content are preserved. Scaffolds remain starting points requiring authored review (#473).
+
+### Fixed
+
+- **First-call template quality**: Corrected generated code/document composition and migrated known consumers, including direct Jinja environments that render the shared root. Native quality results apply to their configured checks and baseline-clean caller fragments; arbitrary caller content and generic schema-field consumption are not certified (#473).
+
 ### Removed
 - **Breaking — Generic documentation search**: Removed the `search_documentation` MCP tool, its dedicated indexing/search services, contracts, tests, and agent allowlist entries. Agents now use host-native repository search; upgraded MCP clients must refresh or reconnect before requesting the new tool inventory (#443).
 

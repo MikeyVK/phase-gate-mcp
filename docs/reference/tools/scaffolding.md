@@ -62,6 +62,14 @@ The result reports the selected template identity, package version/fingerprint, 
 
 Every newly scaffolded artifact carries the compact `pgmcp:v1` provenance record on its first physical line. The record is not an alternate schema or package registry. Package manifests, context schema and policy own their respective facts; artifact-location config selects default destinations. Use [editing.md](editing.md) for changes to an existing file.
 
+## Context migration and output responsibilities
+
+Full-document packages require authored document_metadata with explicit status and a nonempty revision list, including minimal contexts. The visible header and final Version History table use those supplied facts; the technical first-line provenance remains a separate generation-source record. Issue, PR and Commit bodies retain their own publication contracts. See the [Documentation Standard](../../coding_standards/DOCUMENTATION_STANDARD.md#scaffolded-document-metadata-and-whitespace).
+
+Templates own generated separators and one terminal LF. Selected prose/code fragments lose only blank edge lines; meaningful interiors, literal values and admitted explicit empty content remain caller-owned. Module and class descriptions describe different scopes; use the discovered package fields instead of copying a removed alias or using one description as a fallback. The [Code Style Guide](../../coding_standards/CODE_STYLE.md#scaffold-output-responsibilities) defines the corresponding output responsibilities.
+
+When a package input contract changes, rediscover its schema and migrate affected callers explicitly. The issue473 changed-context transition intentionally provides no legacy aliases. Native preflight acceptance is evidence for its configured checks; it does not certify arbitrary dependencies, semantic completeness or caller-authored code quality. Read the actual generated file before treating it as a finished deliverable.
+
 ## Related references
 
 - [Tools reference index](README.md)

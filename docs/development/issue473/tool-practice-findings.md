@@ -2,8 +2,8 @@
 
 # Issue 473 — Current Tool Practice Findings
 
-**Status:** Validation in progress; follow-up findings recorded
-**Version:** 0.3
+**Status:** Validated correction; deferred findings ready for coordination
+**Version:** 0.4
 **Last Updated:** 2026-10-04
 
 This assessment describes current practical behavior, with no pre-460 score or assumed regression attribution. Root issue473 template defects are corrected within their planned cycles; unrelated tool findings remain reproduction evidence for coordination. Exact actual scaffold requests, outputs and complete factual rows are in [first-output evidence](first-output-evidence.md).
@@ -14,7 +14,7 @@ Public schema discovery exposes complete resolved contexts and source fingerprin
 
 Safe edit of production/fixture Python runs Python syntax preflight (Python 3.13.7). Jinja-source edits under report mode return written=true, validation_status=not_executed, profile=null, checks=[]: this is an explicit routing limitation, not admission proof. Real admission/render tests and refreshed public scaffolds supply that separate evidence.
 
-Run tests preserves configured arguments and full native outcomes; the initial C_SHARED subset reported 183 passed accurately. Negative native results were retained and exposed two omitted filter-registration consumers. Run checks preserves independent format/lint/Mypy/Pyright outcomes; Pyright correctly detected protected-member access in the initial registration implementation. Existing pure filters were moved into the same engine module so the shared registration no longer crosses private class members. A subsequent check passes both typing rows; module-level function-spacing formatting is being corrected.
+Run tests preserves configured arguments and full native outcomes; the initial C_SHARED subset reported 183 passed accurately. Negative native results were retained and exposed two omitted filter-registration consumers. Run checks preserves independent format/lint/Mypy/Pyright outcomes; Pyright correctly detected protected-member access in the initial registration implementation. Existing pure filters were moved into the same engine module so the shared registration no longer crosses private class members. A subsequent check passed both typing rows; the later C_SHARED fix route below records the source-formatting correction.
 
 ## F1 — Markdown preflight misreads angle-bracket destinations
 
@@ -151,7 +151,7 @@ Current findings F1–F7 have individual reproductions, impact, uncertainty and 
 
 The initial implementation-report scaffold request omitted required purpose/summary and used section.title instead of the discovered section.heading; the public tool rejected it with context_invalid and no write. The immediately corrected admitted request succeeded. This was a producer input error, not a tool finding, and is excluded from product-fault claims.
 
-All findings are documentation for later triage; no unrelated CLI/proxy/adapter repair was added. No unresolved known #473 correction blocker is intentionally hidden; independent QA may identify further blockers. Full configured tests, branch gates, later documentation/ready progression and merge remain outstanding at this hand-over.
+All findings are documentation for later triage; no unrelated CLI/proxy/adapter repair was added. No unresolved known #473 correction blocker is intentionally hidden; independent QA may identify further blockers. At that Implementation hand-over, full configured tests, branch gates and later progression were outstanding. [Validation](validation.md#independent-validation-closure--2026-10-04) now records independent GO and the explicitly accepted issue-specific gate disposition; Documentation/Ready/merge retain their own boundaries.
 
 
 ## Selection intent applicability audit — 2026-10-04
@@ -262,6 +262,29 @@ Additional source-level reproduction: request explicit targets tests/ and tests/
 
 In the owner's overall completion list, deferral is the fourth obligation, performed first. Later Documentation/Ready must carry this hand-off forward. The follow-up implementation is not a prerequisite that expands issue473; incomplete required Validation evidence remains explicitly reviewable.
 
+## Documentation closure and coordination triage — 2026-10-04
+
+The template correction and missed existing consumer are validated. External QA returned Validation → Documentation GO on 2756f8dd; [Validation 0.7](validation.md#independent-validation-closure--2026-10-04) indexes the independent 2775-pass full suite and accepted changed-file gates. The source-level examples above retain their original dates/stages; corrected issue473 defects are not reopened as current defects by historical negative evidence.
+
+| Follow-up | Evidence / reproduction entry point | Current disposition / boundary |
+| --- | --- | --- |
+| F6 bootstrap/proxy diagnostics and recovery | F6 above: invalid Jinja package admission, startup stderr and false ready proxy chain | Confirmed separate repair candidate; prioritize preserved startup diagnostics and an actionable recovery path. The package correction restores this branch but does not repair CLI/proxy lifecycle behavior. |
+| F1 Markdown angle destinations | F1 above and exact PR scaffold request in first-output-evidence.md | Confirmed bounded false-positive example; investigate native parsing separately, preserving valid destinations. |
+| F2 cache windows and V-F10 excessive reads | F2 above and Validation V-F10 | Supported bounded reading plus producer efficiency failure. Follow the current AGENTS cache/hash instructions; assess selective diagnostics/export as later usability work, without routine full downloads. |
+| F3 verbose native failure bounds | F3 above, same existing RED subset with native traceback output | Reproducible operational limit; do not count unavailable output as RED/pass. Investigate negative-result usability without promising unlimited native responses. |
+| F4 immediate restart race and F7 client catalog refresh | Exact multi-client/restart steps above | Current lifecycle constraints; improve guidance/triage only after separating expected client ownership from a confirmed implementation defect. |
+| F5 schema-source authoring friction | F5 above | Missing direct schema-authoring route, separately triaged. No new artifact type or schema pipeline was added. |
+| Branch-check selection | Full nine-package audit and Deferred branch-wide check solution above; historical broad failures in Validation | Owner explicitly deferred production/adapter/wire/resolver implementation to another issue. Preserve proposed intent, native config reuse, file/folder semantics and unresolved migration/feasibility choices. |
+| Four AGENTS source/runtime link locations | Validation's exact 41 native failures, nine root-relative targets and release deployment context | Reviewed issue473-specific coverage exception. Preserve source/deploy conventions; no blanket link-check exclusion or directory-relative rewrite is approved. |
+| Cross-session receipt visibility | Producer run 8d4a6cb1a32e40eaac12bdf9bb1d1743 and Markdown receipts were unavailable through QA's MCP session; QA independently reran the configured suite and accepted Markdown selection | Observed hand-off friction, with no established storage/expiry/transport root cause. Triage result accessibility and durable hand-off options separately; do not infer native failure from an inaccessible receipt. |
+| Issue476 generic schema/template consumption | Research's explicit separate-scope decision and actual/manual nineteen-family evidence | Keep generic field-consumption analysis/enforcement separate. The concrete corrected outputs do not prove generic consumption of every admitted field. |
+
+Cross-session reproduction: produce a result receipt through one MCP session, attempt that exact URI through an independent session, and record native/resource outcomes separately. In this review the producer had a complete passed result, while QA could not read it and obtained its own passing result (02ec0cdfbc5b465a821db8bd5d5e85f0); unavailable resource access did not invalidate native completion. This records an observed case, not a claim that every receipt is session-local or always inaccessible.
+
+Coordination receives candidate findings with these reproduction indexes, actual impact and limitations. No new issue number, prioritization approval or implemented remedy is fabricated. Ready should carry this index forward; only coordination assigns follow-up issues. F6, generic476 and the branch-selection proposal must remain distinct work units unless a later explicit owner decision combines them.
+
+Routine success/status uses tool summaries. Read cached DTOs only for needed structured facts or diagnostics, check size before paging, reuse prior reads and verify multipart identity once when needed. The prior excessive cache exercise remains disclosed as producer inefficiency; it is not the recommended workflow.
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -269,4 +292,5 @@ In the owner's overall completion list, deferral is the fourth obligation, perfo
 | 0.1 | 2026-10-03 | Not recorded in the original document | Existing current-tool implementation findings and route assessment. |
 | 0.2 | 2026-10-04 | @imp validator | Audit all nine available adapter packages for selection-intent applicability, record existing native verification and identify bounded follow-up contract/resolver work. |
 | 0.3 | 2026-10-04 | @imp validator | Explicitly defer the branch-check solution to a separate issue, preserve boundary decisions and unresolved design/migration questions, and record the owner-ordered Validation continuation. |
+| 0.4 | 2026-10-04 | @imp documenter | Close stale current-status claims after independent Validation GO and finalize bounded coordination triage, including cross-session receipt visibility and explicit deferred-work separation. |
 

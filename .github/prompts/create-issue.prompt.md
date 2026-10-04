@@ -34,7 +34,7 @@ Do not ask about fields you did not select unless the user volunteers them.
 
 Use conversation context or ask the user for:
 
-- `title` — concise issue title (required)
+- Publication `title` — concise issue title for `create_issue` (required; not a scaffold-context field)
 - `problem` — what is wrong or needed (required)
 - The optional fields selected in Step 1
 

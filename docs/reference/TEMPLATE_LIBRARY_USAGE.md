@@ -1,7 +1,7 @@
 # Template Library Usage
 
 **Status:** DEFINITIVE  
-**Last Updated:** 2026-09-24
+**Last Updated:** 2026-10-04
 
 Use the active template suite to discover a suitable artifact package, inspect its caller schema, create a valid starting point, and refine the result for its intended use. The runtime catalog and resolved package schema own exact IDs, purposes, fields, and package identity; this guide intentionally contains no copied inventory.
 
@@ -14,6 +14,8 @@ Build the caller context from the resolved schema, then call `scaffold_artifact`
 A successful scaffold gives you a valid basis. Read the result and refine the file with your editor or `safe_edit_file` to meet the task's actual requirements. First-call validity is not a substitute for review or completion. For safe-edit validation, choose `enforce` when a failed required check must block the write, or `report` when the findings should be returned while continuing. Independent safety and operational checks still apply.
 
 The public [scaffolding tool reference](tools/scaffolding.md) documents the current operation and schema behavior. The [editing reference](tools/editing.md) explains refinement and validation policy.
+
+The [context migration and output responsibilities](tools/scaffolding.md#context-migration-and-output-responsibilities) explain mandatory authored document metadata, revision history, preserved caller content and clean input migration. These requirements are separate from technical package provenance; use the selected schema for exact admitted fields.
 
 ## Extend or maintain a package
 

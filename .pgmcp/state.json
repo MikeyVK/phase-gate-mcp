@@ -3,7 +3,7 @@
   "branch": "bug/473-first-call-template-quality",
   "issue_number": 473,
   "workflow_name": "bug",
-  "current_phase": "validation",
+  "current_phase": "documentation",
   "current_cycle": 5,
   "last_cycle": 5,
   "cycle_history": [
@@ -92,6 +92,14 @@
       "to_phase": "validation",
       "timestamp": "2026-10-04T18:57:49.803155+00:00",
       "human_approval_message": "Owner authorized the focused repair and renewed Validation on 2026-10-04; independent external QA returned Implementation \u2192 Validation GO for cycle5 on b3e3719f.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-10-04T19:21:47.517824+00:00",
+      "human_approval_message": "Owner approved on 2026-10-04: 'door naar de doc phase'; independent QA returned Validation \u2192 Documentation GO on 2756f8dd, indexed in 2474bc82.",
       "forced": false,
       "skip_reason": null
     }
