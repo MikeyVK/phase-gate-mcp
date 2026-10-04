@@ -2,8 +2,8 @@
 
 # Issue 473 — Documentation Reconciliation
 
-**Status:** Documentation — independent review requested  
-**Version:** 0.1  
+**Status:** Documentation — independent review completed; Ready pending  
+**Version:** 0.2  
 **Last Updated:** 2026-10-04
 
 ## Purpose
@@ -80,13 +80,13 @@ Issue #476 remains separately scoped to generic schema/template consumption. Cur
 
 ### Open Work
 
-- Independent Documentation review and Ready phase.
+- Ready phase; independent Documentation review completed below.
 - Deferred tool/adapter/issue476 hand-off as explicitly indexed above.
 - The original 41 AGENTS source-location link errors in four files remain the accepted deployment-context limitation, not silently repaired or globally excluded.
 
 ### Review Request
 
-- Review requested; no independent Documentation approval is claimed.
+- Independent review completed: GO for Documentation → Ready on reviewed commit 620fdd53; the closure below records its scope and limits.
 
 ## Documentation verification appendix
 
@@ -96,8 +96,17 @@ All existing-file edits passed their enforce content preflight; the report scaff
 
 Direct text comparisons passed for Codex create-issue source/active workflow, VS Code create-issue source/active prompt, Codex AGENTS source/active copy and VS Code AGENTS source/root copy. Unchanged Validation/native/scaffold evidence remains valid because this phase changes only documentation and instruction text. Pre-commit review found no new runtime contract, adapter behavior, release/version bump, generated asset build, extra tests or hidden deferred implementation.
 
+## Independent Documentation closure — 2026-10-04
+
+The separately invoked @qa doc-reviewer in Beoordeel designplan returned GO for Documentation → Ready on commit 620fdd53, with no new in-scope findings or open blockers. DOC_CURRENT and DOC_TRIAGE are complete. QA independently confirmed the current input/publication contracts and exact text parity for all four source/runtime pairs.
+
+QA's native offline markdown_link_review over all eleven changed documentation/instruction files passed: 80 successful links, 16 existing native exclusions, 0 errors, 0 time-outs and native exit 0, without truncation, request rejection or termination problem (receipt pgmcp://cache/runs/edbf68dacfdb43c7b829a7e84a9b5423). The exclusions cover HTTPS and internal pgmcp: references; this is not certification of external reachability. The documentation-only delta leaves the previous full-suite, Python-check and actual scaffold evidence valid.
+
+This closure records the received verdict without changing the reviewed contracts. Ready remains pending. Carry the explicit deferred index and accepted limitation around the original 41 AGENTS links forward. Package build, deployment and merge were not performed or approved by this Documentation review.
+
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
+| 0.2 | 2026-10-04 | @imp documenter | Index independent Documentation GO, its narrow verification and unchanged deferred/Ready boundaries. |
 | 0.1 | 2026-10-04 | @imp documenter | Reconcile validated scaffold contracts, authoritative instruction sources and deferred triage with source/runtime parity and focused documentation evidence. |
