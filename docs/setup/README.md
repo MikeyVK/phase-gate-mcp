@@ -139,6 +139,27 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
 4. **Restart Antigravity:**
    Fully restart the Google Antigravity application or reload your workspace session to apply the changes and start the MCP server.
 
+### Option C: Codex Setup
+
+- Keep machine-specific paths and secrets in the Git-ignored `.codex/config.toml`.
+- Set the existing PGMCP connection's client deadline to the approved value:
+
+```toml
+[mcp_servers.phase_gate_mcp]
+tool_timeout_sec = 300
+```
+
+- Preserve the connection's existing command, cwd, environment and other settings.
+- Confirm activation in the client connection; restarting only PGMCP does not prove activation.
+- Use bounded selections for long test/check runs. Do not raise the client deadline.
+- For one test binding, use a per-call execution budget of 240 seconds, leaving margin within 300 seconds for stopping and result delivery.
+- For multiple checks, keep their cumulative execution/stop budgets below the client deadline or split the checks.
+- Preserve native arguments and full required coverage; record each partition's scope and result.
+- Source: [issue460 owner decision](../development/issue460/validation.md#owner-decision--client-timeout-2026-09-26).
+
+The client setting remains local. This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. Apply the setting to each host/client connection; a Git merge cannot activate an ignored local configuration.
+
+
 ## 4. Agent Files & Git Availability
 
 All core files defining the agent behaviors, constraints, workflows, and role prompts are fully tracked in Git and immediately available when cloning the repository. 
@@ -175,5 +196,6 @@ Verify that the MCP server is active by running the following command in the cha
 |---|---|---|
 | `.vscode/mcp.json` | VS Code MCP server config | Copy from `docs/setup/mcp.json` (VS Code only) |
 | `.agents/mcp_config.json` | Antigravity local MCP config | Create under `.agents/` directory (Antigravity only) |
+| `.codex/config.toml` | Codex local MCP config | Apply Option C; keep tool_timeout_sec=300 and partition long verification |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
