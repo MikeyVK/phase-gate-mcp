@@ -2,8 +2,8 @@
 
 # Issue 473 — Validation
 
-**Status:** Validation complete under reviewed gate disposition; independent review requested  
-**Version:** 0.6  
+**Status:** Independent Validation GO on 2756f8dd; Documentation pending  
+**Version:** 0.7  
 **Last Updated:** 2026-10-04
 
 ## Purpose
@@ -516,6 +516,24 @@ Producer Validation assessment is **PASS under the explicit independently review
 
 - Targeted external Validation review requested. Reuse unchanged evidence; review only invalidated surfaces and this phase's new results.
 
+## Independent Validation closure — 2026-10-04
+
+External Beoordeel designplan QA returned **GO for Validation → Documentation on commit 2756f8dd**, with no remaining P1/P2 blocker in the targeted re-review. This section records the completed review; earlier requests and failures remain historical evidence.
+
+The producer's transient receipts were not available through QA's separate MCP session. QA therefore independently repeated the necessary full native-configured suite and the accepted 24-file Markdown route, while reusing its still-valid Python and consumer/scaffold evidence.
+
+| Independent verification | Native outcome | QA receipt |
+| --- | --- | --- |
+| run_tests(scope="configured", timeout_seconds=1200), no args/targets/partitions | 2777 items, eight workers; **2775 passed, 1 skipped, 1 xpassed, 229 warnings in 316.20 seconds**; exit0, configured arguments, no rejection/termination problem | pgmcp://cache/runs/02ec0cdfbc5b465a821db8bd5d5e85f0 |
+| Accepted 24-file markdown_link_review | **563 successful links, 48 existing exclusions, 0 errors, 0 timeouts**, exit0; includes the new Validation inventory links | pgmcp://cache/runs/195c871e6fad47c9ab0fcedffaa9ecf1 |
+| Python changed-file obligations | Valid 24-file evidence plus independent header-reader format/lint/Pyright, and unchanged three-production-file strict Mypy | Prior independent receipts indexed above |
+
+The separate QA result closes the original receipt-access limitation for this verdict; it does not make caches cross-session durable or classify inaccessible receipts as failed native runs. No new cache/export implementation was added. The skip, XPASS and warning totals match the prior negative full suite and remain disclosed caveats. The four AGENTS source/runtime exceptions and the original 41 failures retain their accepted issue-specific deployment-context disposition.
+
+QA confirms the six missed-consumer failures are resolved, the existing provenance/frame/length/round-trip assertions are preserved, and no subsequent source change invalidates the underlying evidence. Deferred branch-selection implementation, F1–F7 and issue476 remain separate; F6 startup diagnostics/recovery retains priority for coordination.
+
+The verdict authorizes Documentation. Documentation and Ready retain their own review moments; this records no merge approval. This revision adds the received verdict/evidence index only and does not change code, tests, templates, configured gates or the reviewed outcome.
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -527,4 +545,6 @@ Producer Validation assessment is **PASS under the explicit independently review
 
 | 0.5 | 2026-10-04 | @imp validator | Record the complete 2777-item native suite, six reproducible missed-consumer failures, current branch Python/link outcomes and outcome-neutral external review hand-over. |
 | 0.6 | 2026-10-04 | @imp validator | Close the six consumer failures with a fresh passing configured suite, explicit independent gate-route acceptance, complete changed-file inventories and targeted Validation hand-over. |
+
+| 0.7 | 2026-10-04 | @imp validator | Record external Validation GO on 2756f8dd, independent passing full-suite/link evidence, transient receipt limitation and remaining Documentation/Ready boundaries. |
 
