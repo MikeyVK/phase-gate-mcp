@@ -115,7 +115,7 @@
           "deliverables": [
             {
               "id": "V_FULL_TESTS",
-              "description": "Complete native-configured suite coverage is recorded through bounded partitions within the approved client deadline; preserve native arguments, account for every collected test and record exact outcomes; rerun only failed, incomplete or invalidated partitions."
+              "description": "The single full native-configured suite is executed with a workload-appropriate per-call budget and a larger client window; preserve native arguments and record the complete native outcome, exact failures and any timeout or missing evidence. Do not partition solely to fit a short timeout."
             },
             {
               "id": "V_BRANCH_CHECKS",

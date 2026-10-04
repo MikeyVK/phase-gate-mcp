@@ -3,7 +3,7 @@
 # Issue 473 — Validation
 
 **Status:** Validation blocked; independent review requested  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-04
 
 ## Purpose
@@ -244,18 +244,21 @@ All nineteen families and the fifteen Implementation deliverables remain mapped 
 
 The newly scaffolded report and the outcome appendix passed their selected enforce content preflights. A separate configured offline markdown_link_review on docs/development/issue473/validation.md passed (receipt pgmcp://cache/runs/a05872435c48431a9ce5a43cf0ecb0c5). This verifies the report's links only; it does not change the failed/missing broad Validation obligations. The final verification note introduces no new linked target.
 
-## Owner refinement — bounded execution and main rollout, 2026-10-04
+## Owner refinement — full-run budgets and main rollout, 2026-10-04
 
-The human explicitly requested the issue460 remedy and a durable rollout. The [2026-09-26 owner decision](../issue460/validation.md#owner-decision--client-timeout-2026-09-26) selected a 300-second Codex client deadline and bounded partitions with complete coverage, rather than another deadline increase. The local .codex/config.toml already contains tool_timeout_sec=300; no local setting reset was observed. The lost refinement was the partitioning instruction, while current phase prose again demanded one indivisible call. The previous suggestion to raise the client value to600 is withdrawn.
+The human approved a larger Codex client window and full-run execution budget after reviewing the historical [issue460 decision](../issue460/validation.md#owner-decision--client-timeout-2026-09-26). That original decision raised the client setting from 120 to 300 seconds and allowed partitions. It was recovered from the original human message and the MCP safe_edit_file write of 2026-09-26. The current checkout still had 300 seconds; no local reset was observed. Because the client configuration is Git-ignored, its value is not distributed by branch integration.
+
+The current approval supersedes the earlier partition policy for issue473: execute the single full native-configured suite with enough time for its workload. The previous version of this report applied the historical policy too broadly; its 300-second/partition instructions are replaced here. Prior failed/incomplete execution evidence remains unchanged.
 
 ### Applied route
 
-- Persist concise cache/hash and bounded-execution rules in AGENTS.md, its active .agents copy and the three shipped agent instruction sources.
-- Persist the client deadline and host-local activation steps in docs/setup/README.md; retain machine paths/secrets outside Git.
-- Update Planning V_FULL_TESTS and its tool-managed deliverable: full configured collection coverage may be executed through bounded target partitions.
-- Use timeout_seconds=240 for each single-binding test partition; preserve native execution arguments and leave margin for stopping/result delivery.
-- Account for every configured collected test in the partition inventory. Report failures, skips, overlaps and missing coverage explicitly; rerun only failed, incomplete or invalidated partitions.
-- Keep prior timeout/failure evidence. This instruction repair is not completed suite evidence.
+- Set the local .codex/config.toml client window to tool_timeout_sec=1800 through safe_edit_file. The on-disk setting is not proof of activation in the current Codex connection.
+- Persist the value, rationale, host rollout and activation requirement in docs/setup/README.md; keep machine paths/secrets outside Git.
+- Replace the partition instructions in all five AGENTS sources with concise scope/budget guidance; retain the cache/hash rules.
+- Update Planning V_FULL_TESTS and its tool-managed deliverable to the single configured full-suite route.
+- After client activation, use run_tests(scope="configured", timeout_seconds=1200), preserving native execution arguments. Normal focused calls keep their configured defaults.
+- Budget for the complete MCP call, bounded stopping and result delivery; consider all selected bindings. A timeout or missing result remains incomplete evidence.
+- No source, adapter-contract, native selection or additional automated content/regression test changes are included in this refinement.
 
 ### Python gate diagnostic clarification
 
@@ -263,15 +266,23 @@ The already executed all24 changed-Python diagnostic passed format, lint and Pyr
 
 ### Plan to integrate on main
 
-1. Review the tracked policy/setup changes and the issue473 Planning refinement independently. Keep policy/setup edits in a separate commit from issue-specific evidence.
-2. Close outstanding Validation obligations through the approved bounded route, then follow Documentation/Ready and the normal reviewed issue473 PR integration into main.
-3. Under coordination ownership, align the shared Validation wording in .pgmcp/config/contracts.yaml with complete coverage through bounded partitions. The five existing indivisible-run phrases must not reintroduce the rejected call shape. Align the shipped default from its release source; do not patch ignored generated assets.
-4. Carry all five AGENTS instruction copies and the setup policy together through release asset assembly, following the [release assets procedure](../../reference/release-assets-procedure.md).
-5. On each host using main, apply the tracked setup policy to its ignored local Codex connection: tool_timeout_sec=300, preserved machine command/cwd/environment, and confirmed activation. A merge or PGMCP-only restart does not prove client activation.
-6. Verify a bounded call returns a complete result and reconcile the partition inventory with the full configured suite. Retain incomplete runs as missing evidence.
+1. Review the tracked policy/setup changes and issue473 Planning refinement independently; retain prior incomplete run evidence.
+2. After client activation, complete the configured full-suite and remaining Validation obligations, then follow Documentation/Ready and normal reviewed issue473 integration into main.
+3. Keep the shared configured-full-suite workflow requirement. No global contract change to permit mandatory partitioning is needed.
+4. Carry all five AGENTS sources and the setup policy together through release asset assembly, following the [release assets procedure](../../reference/release-assets-procedure.md).
+5. On each host using main, apply the tracked setup policy to its ignored local Codex connection: tool_timeout_sec=1800, preserved command/cwd/environment and confirmed client activation.
+6. Confirm a complete result is delivered for the configured full run. Preserve failures/timeouts honestly; an on-disk setting, merge or PGMCP-only restart does not certify client activation or test completion.
+
+Native target filtering and an explicit-selection escape route remain under owner discussion. The existing adapter request is unchanged; no configured selection is treated as an unconditional allowlist in this issue.
 
 No main checkout/merge, global workflow-contract edit, generated asset rebuild or new content/regression tests were performed here. F6 recovery and generic issue476 remain separately scoped. The Validation status remains FAIL until the required evidence is complete.
 
+
+### Verification of the timeout policy refinement
+
+All eight tracked text edits passed their safe_edit_file enforce content preflights; the ignored local client setting was written with report validation. An offline markdown_link_review over all eight edited files reported 41 missing-path diagnostics, all in the four non-root AGENTS source/mirror files (receipt pgmcp://cache/runs/9de6564e3f854e9ba1c5c6710ee67cbc). Every reported relative link target was already present in the pre-edit source snapshot; none belongs to the changed budget/cache clauses. The source files retain workspace-root link conventions that do not resolve from their source/mirror directories. This result is retained as a documentation limitation, not represented as a passing eight-file link gate. It does not prove completion of the full native suite or activation of the new client window.
+
+The separate offline link check of the root AGENTS file and the changed setup, Planning and Validation documents passed (receipt pgmcp://cache/runs/0e390d96dbeb4ddaafd234dcd05bcf43). This narrower passing result does not replace the recorded eight-file failure or the pending full Validation obligations.
 
 ## Version History
 
@@ -279,3 +290,5 @@ No main checkout/merge, global workflow-contract edit, generated asset rebuild o
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | @imp validator | Record configured full-suite attempt, branch-wide checks, corrected-behavior mapping and unresolved Validation evidence. |
 | 0.2 | 2026-10-04 | @imp validator | Restore owner-approved issue460 partitioning, persist concise cache/deadline instructions and main rollout, and retain diagnostic/gate distinctions. |
+| 0.3 | 2026-10-04 | @imp validator | Recover the original timeout decision and supersede partitioning with the approved larger client window, full-run budget and durable main/host rollout. |
+
