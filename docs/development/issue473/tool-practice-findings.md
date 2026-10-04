@@ -2,9 +2,9 @@
 
 # Issue 473 — Current Tool Practice Findings
 
-**Status:** Implementation in progress
-**Version:** 0.1
-**Last Updated:** 2026-10-03
+**Status:** Validation in progress; follow-up findings recorded
+**Version:** 0.2
+**Last Updated:** 2026-10-04
 
 This assessment describes current practical behavior, with no pre-460 score or assumed regression attribution. Root issue473 template defects are corrected within their planned cycles; unrelated tool findings remain reproduction evidence for coordination. Exact actual scaffold requests, outputs and complete factual rows are in [first-output evidence](first-output-evidence.md).
 
@@ -152,3 +152,89 @@ Current findings F1–F7 have individual reproductions, impact, uncertainty and 
 The initial implementation-report scaffold request omitted required purpose/summary and used section.title instead of the discovered section.heading; the public tool rejected it with context_invalid and no write. The immediately corrected admitted request succeeded. This was a producer input error, not a tool finding, and is excluded from product-fault claims.
 
 All findings are documentation for later triage; no unrelated CLI/proxy/adapter repair was added. No unresolved known #473 correction blocker is intentionally hidden; independent QA may identify further blockers. Full configured tests, branch gates, later documentation/ready progression and merge remain outstanding at this hand-over.
+
+
+## Selection intent applicability audit — 2026-10-04
+
+**Disposition:** owner-requested cross-adapter research for later coordination. The selection-intent direction has been discussed with the owner; this audit identifies current behavior and required work, not an implemented or independently approved adapter contract.
+
+### Inventory and method
+
+Nine bundled adapter packages are available: Ruff, Mypy, Pyright, Pytest, Lychee, Python syntax, TypeScript syntax, Markdown preflight and Commitlint. Their manifests declare ten check capabilities, one test capability and two fix capabilities. Lychee links admits both selection and content input. The configured workspace_adapters directory is absent and trusted_adapter_ids is empty; no additional workspace adapter was found. Read [catalog admission](../../../mcp_server/execution/catalog.py), [bootstrap roots](../../../mcp_server/bootstrap.py) and the configured [checks](../../../.pgmcp/config/checks.yaml), [tests](../../../.pgmcp/config/tests.yaml), [fixes](../../../.pgmcp/config/fixes.yaml) and [adapter trust](../../../.pgmcp/config/adapters.yaml).
+
+The review inspected all nine manifests, the corresponding request/launch paths, native dependency declarations, current native configurations and applicable native documentation/source. Current selection semantics were also exercised through six existing integration cases. No production/test code, native configuration or adapter contract was changed. No new automated content or regression test was added. Source review and passing existing tests do not certify a future selection_intent implementation.
+
+The proposed meanings are:
+
+| Intent | Meaning |
+| --- | --- |
+| configured_candidates | Assess only supplied candidates that belong to the native configured/discovered initial source selection for the requested operation. |
+| explicit_sources | Preserve the native meaning of explicit files/directories, replacing default starting paths where the native tool normally does so; retain native analysis settings and applicable native exclusions. |
+
+A file is a concrete source; a directory remains a native discovery root. Neither intent is permission to turn off quality rules, override every exclusion, expand to unrelated start sources or copy native configuration into PGMCP configuration.
+
+### Applicability and concrete adapter work
+
+| Package / input / operation | Current observable semantics | Meaning of the proposed intent | Required behavior change |
+| --- | --- | --- | --- |
+| Ruff selection check: lint | Supplied paths are explicit native arguments. They can bypass discovery includes/excludes and ignore rules unless native force-exclude requires exclusions. | Candidate mode must use effective native discovery and lint applicability; explicit mode retains normal explicit-source semantics. | Yes for candidate mode. Reuse native configuration/discovery; force-exclude alone does not prove discovery includes/file applicability. |
+| Ruff selection check: format | Supplied files/directories reach native format; formatting has operation-specific exclusions/applicability. | Same intent distinction, resolved for format rather than inferred from lint's source list. | Yes for candidate mode. A lint --show-files result is not by itself proof of the formatter's effective selection. |
+| Ruff fix: lint / format | Public apply_fixes admits explicit regular files only. The adapter preserves native configuration and source/write guards. | Current public route has explicit_sources semantics. There is no current branch/candidate fix route. | No new candidate filtering is required for the current fix API. Retain explicit semantics; admit/validate a new field only if the eventual fix wire contract carries it. Share operation-appropriate native selection machinery if a candidate fix route is later approved. |
+| Mypy selection check: types | Explicit sources replace files/modules/packages defaults. Native exclude affects recursive discovery, not explicit files. Configured calls preserve native defaults. | Candidate mode must retain native configured initial sources, including configured modules/packages where used. Explicit mode preserves outside-root files/directories and module overrides. | Yes for candidate mode. Reuse the native parser/configuration/source discovery; do not recopy files or exclude rules. |
+| Pyright selection check: types | Nonempty adapter targets use the native filename channel. Native CLI overrides configured include roots while retaining exclude and analysis settings. | Candidate mode retains configured include/exclude/discovery eligibility; explicit mode preserves native explicit include override. | Yes for candidate mode. Reuse native configuration/enumeration; do not parse include/exclude/extends independently in PGMCP. |
+| Lychee selection check: links | Files/directories reach native Lychee via the owned filename channel. Native directory traversal applies extensions and ignore rules. Explicit files/glob matches bypass the extension discovery filter; exclude_path still applies. | Candidate mode applies effective source discovery restrictions. Explicit mode retains native explicit-file handling. URL filters are link policy, not a project file allowlist. | Yes for candidate mode. Native dump-inputs/get_sources can inform a native resolver investigation, but passing the same explicit files to dump-inputs would still bypass extensions. Do not add a Markdown-only rule or a second extension list. |
+| Lychee content check: links | One proposed snapshot has an owned logical path/base/remap. | No candidate discovery occurs; exact supplied content remains the subject. | None. Keep selection_intent out of the content request. |
+| Pytest test: tests | Empty targets use configured discovery/testpaths; explicit files/directories replace starting paths. Native collectors/plugins determine tests; explicit .py sources can bypass python_files discovery patterns. | Explicit mode already matches current targets behavior. Candidate mode would require native configured collection eligibility, not a hardcoded test_*.py/.py filter. | No behavior change required for the currently admitted configured/targets routes. run_tests has configured/workspace/targets, with no branch scope. A future candidate route would require native collection-aware filtering. The workspace route's intent must be decided explicitly, not silently narrowed to testpaths. |
+| Python syntax content check: syntax | Parses exactly the supplied Python snapshot. No source selection. | None. | None; no intent field needed. |
+| TypeScript syntax content check: syntax | Checks exactly the supplied TypeScript snapshot. Native project selection diagnostics are deliberately outside snapshot validity. | None; tsconfig analysis options remain relevant, project include/exclude roots do not select the snapshot. | None; do not filter supplied content by tsconfig file lists. |
+| Markdown preflight content check: document / body | Examines exactly one supplied document/body snapshot. | None. | None; no intent field needed. |
+| Commitlint content check: message | Checks the supplied message under native commit rules. | None. | None; source directories do not select a message. |
+
+**Concrete new candidate behavior is therefore needed in four packages:** Ruff (lint and format checks), Mypy, Pyright and Lychee selection. Pytest and Ruff fixes already expose explicit-source routes; do not invent an additional candidate operation solely to give the new field work. All four content-only packages and Lychee's content route have no selection-intent responsibility.
+
+### Native evidence and reuse constraints
+
+- Ruff: [native discovery documentation](https://docs.astral.sh/ruff/configuration/#python-file-discovery) distinguishes discovered paths from explicit inputs and supports operation-specific exclusions. [force-exclude](https://docs.astral.sh/ruff/settings/#force-exclude) enforces configured exclusions on explicit paths. The passing existing pinned-native exclusion case proves current explicit/discovery distinction, not a complete new candidate resolver.
+- Mypy 1.19.1: [native option handling](https://github.com/python/mypy/blob/v1.19.1/mypy/main.py#L1360) selects configured roots only when explicit source selectors are absent. [native source creation](https://github.com/python/mypy/blob/v1.19.1/mypy/find_sources.py#L25) distinguishes files from recursive directory discovery. The current adapter already uses the installed native option/config parser.
+- Pyright 1.1.408: [service include override](https://github.com/microsoft/pyright/blob/1.1.408/packages/pyright-internal/src/analyzer/service.ts#L1032) replaces include specs for explicit CLI sources. [SourceEnumerator](https://github.com/microsoft/pyright/blob/1.1.408/packages/pyright-internal/src/analyzer/sourceEnumerator.ts#L151) still applies native exclusions to roots. Include/exclude/ignore are different responsibilities; imports may pull in dependencies beyond the initial selected roots.
+- Lychee 0.24.2: [native InputResolver](https://github.com/lycheeverse/lychee/blob/lychee-v0.24.2/lychee-lib/src/types/input/resolver.rs) applies extension/ignore filters to traversal, deliberately bypasses extension filtering for explicit files/glob matches, and retains excluded-path filtering. This source qualifies the shorter [CLI extensions description](https://lychee.cli.rs/guides/cli/#--extensions). No native project-root allowlist equivalent to Mypy files is established here.
+- Pytest 9.0.2: [native Python collection](https://github.com/pytest-dev/pytest/blob/9.0.2/src/_pytest/python.py#L183) distinguishes explicitly supplied files from discovery patterns. Collection hooks/plugins remain authoritative; a generic filename predicate cannot represent all native test collectors.
+
+Public/stable native discovery routes sufficient for the new candidate behavior have not been established for every pinned operation. In particular, Ruff format and Pyright require a bounded native-resolver feasibility decision before implementation. A private native helper, extra discovery invocation or full analysis followed by diagnostic filtering is not implicitly approved. Filtering diagnostics after checking/fixing unrelated initial sources would not meet the intended selection restriction.
+
+### Existing behavior verification and reproduction
+
+Run run_tests with scope=targets on the five existing adapter integration files and python_tests arguments:
+
+```json
+{
+  "python_tests": [
+    "-q", "-n", "0", "--tb=short", "-k",
+    "native_fixture_exclusion_distinguishes_discovery_from_explicit_targets or configured_roots_and_explicit_tests_use_native_selection or native_discovery_and_literal_targets or configured_discovery_and_deliberate_native_expansion or native_literal_selection"
+  ]
+}
+```
+
+Use timeout_seconds=240. Targets: [Ruff checks](../../../tests/mcp_server/integration/adapters/test_ruff_checks.py), [Mypy](../../../tests/mcp_server/integration/adapters/test_mypy.py), [Pyright](../../../tests/mcp_server/integration/adapters/test_pyright.py), [Pytest](../../../tests/mcp_server/integration/adapters/test_pytest.py) and [Lychee](../../../tests/mcp_server/integration/adapters/test_lychee.py).
+
+Observed: **6 passed, 207 deselected, 2 warnings, 29.26 seconds**; receipt pgmcp://cache/runs/902905bb03fd44d387d59792b2ec9b30. The cached result was read once for exact selected counts and native evidence. The two warnings concern SchemaAttachment.schema shadowing and TestCapability collection. These cases exercise current native root override, Ruff exclusion, Pytest default/expanded selection and Lychee file/directory transport. They do not directly exercise the proposed candidate filter or Lychee's extension bypass; the latter is established by pinned native source inspection.
+
+### Contract and generic boundary findings for follow-up
+
+- Current selection/test/fix wire validators reject unknown keys. If a role receives selection_intent, its wire schema, validator and admitted role contract must be updated even when both intents have identical behavior. Do not broadcast the field to content requests or silently send it to existing v1 packages.
+- Preserve the established configured empty-target call. An originally nonempty candidate selection filtered to nothing must not become native default discovery; no remaining candidate must never expand to the whole configured project. Define the empty-applicable outcome explicitly without inventing a successful native run.
+- No per-file skip report is required by the owner's current preference. That does not remove the need to distinguish no applicable sources from a failed/incomplete run.
+- Preserve explicit directory plus explicit descendant-file combinations. The current [ScopeResolver collapse](../../../mcp_server/execution/check_selection.py) removes contained paths: targets=[tests/, tests/generated.py] can lose the deliberate explicit file. Native discovery may exclude that file while direct file selection admits it. This is a concrete generic selection reconciliation item, separate from adapter-specific filtering.
+- Do not use the type checkers' transitive import closure as the initial configured source set. Native import following and diagnostic suppression remain native analysis policy.
+- Existing apply_fixes requires files and has only targets scope; directory or branch fixing would be a separate API/scope decision. Existing run_tests has no branch scope. The intent mapping for workspace and configured calls remains to be specified without weakening their existing behavior.
+- Select the contract migration/breakage strategy explicitly for the affected adapter roles. The earlier no-legacy template strategy does not automatically authorize an adapter-wire migration.
+- Respect [architecture SRP/DRY/SSOT/explicitness](../../coding_standards/ARCHITECTURE_PRINCIPLES.md): generic code owns selection intent, adapters own native applicability, and native configuration remains authoritative. No duplicated native extension/glob/exclusion/config hierarchy is approved.
+
+This audit is follow-up triage evidence. It does not broaden issue473's template correction into adapter implementation, close its pending full Validation obligations or claim independent QA approval.
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-03 | Not recorded in the original document | Existing current-tool implementation findings and route assessment. |
+| 0.2 | 2026-10-04 | @imp validator | Audit all nine available adapter packages for selection-intent applicability, record existing native verification and identify bounded follow-up contract/resolver work. |
