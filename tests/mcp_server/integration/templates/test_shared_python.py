@@ -20,7 +20,7 @@ from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
-from mcp_server.services.template_engine import TemplateEngine
+from mcp_server.services.template_engine import TemplateEngine, register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from tests.mcp_server.integration.adapters.test_typescript_syntax import (
     TypeScriptPackage,
@@ -39,6 +39,7 @@ def render(tmp_path: Path, repo: Path, template: str, content: dict[str, JsonVal
     package.mkdir(exist_ok=True)
     (package / "template.jinja2").write_text(template, encoding="utf-8")
     parser = Environment()
+    register_template_filters(parser)
     graph = TemplateGraphResolver(suite, parser.parse).resolve(
         (("custom.consumer", "consumer/template.jinja2"),)
     )
@@ -73,6 +74,8 @@ def test_python_base_composes_fixed_and_caller_imports(
         tmp_path,
         pytestconfig.rootpath,
         '{% extends "shared/templates/bases/tier2_python.jinja2" %}\n'
+        "{% block module_documentation %}{{ imports.documentation(content.description) }}"
+        "{% endblock %}\n"
         '{% block module_imports %}{{ imports.groups(content.imports, {"stdlib": ['
         '{"kind":"import","module":"sys"}]}) }}{% endblock %}\n'
         "{% block code %}VALUE = 1{% endblock %}",
@@ -288,14 +291,16 @@ def test_pydantic_literals_order_and_configuration_without_model_execution(
         tmp_path,
         pytestconfig.rootpath,
         '{% extends "shared/templates/bases/tier2_python.jinja2" %}\n'
+        "{% block module_documentation %}{{ imports.documentation(content.description) }}"
+        "{% endblock %}\n"
         '{% import "shared/templates/patterns/python/pydantic.jinja2" as model %}\n'
         "{% block module_imports %}{{ imports.groups(content.imports | default({}), "
         '{"third_party": [{"kind":"from","module":"pydantic","names": ['
         '{"name":"BaseModel"},{"name":"ConfigDict"},{"name":"Field"}]}]}) }}{% endblock %}\n'
         "{% block code %}class Example(BaseModel):\n"
         "    {{ imports.documentation(content.description) }}\n"
-        "    {{ model.model_config(content.frozen, content.examples) }}\n"
-        "{{ model.fields(content.fields) | indent(4, true) }}\n"
+        "{{ imports.indented(model.model_config(content.frozen, content.examples), 4) }}\n"
+        "{{ imports.indented(model.fields(content.fields), 4) }}\n"
         "{% endblock %}",
         {
             "description": "Example model",
@@ -338,9 +343,11 @@ def test_shared_signatures_keep_order_defaults_and_explicit_stub_behavior(
         tmp_path,
         pytestconfig.rootpath,
         '{% extends "shared/templates/bases/tier2_python.jinja2" %}\n'
+        "{% block module_documentation %}{{ imports.documentation(content.description) }}"
+        "{% endblock %}\n"
         '{% import "shared/templates/patterns/python/signatures.jinja2" as signatures %}\n'
         "{% block code %}class Reader:\n"
-        "{{ signatures.method(content.signature, content.stub) | indent(4, true) }}\n"
+        "{{ imports.indented(signatures.method(content.signature, content.stub), 4) }}\n"
         "{% endblock %}",
         {
             "description": "Explicit method",
@@ -378,6 +385,8 @@ def test_explicit_pytest_bodies_fixtures_and_markers_are_not_inferred(
         tmp_path,
         pytestconfig.rootpath,
         '{% extends "shared/templates/bases/tier2_python.jinja2" %}\n'
+        "{% block module_documentation %}{{ imports.documentation(content.description) }}"
+        "{% endblock %}\n"
         '{% import "shared/templates/patterns/testing/pytest.jinja2" as tests %}\n'
         "{% block code %}{{ tests.module_markers(content.markers) }}\n"
         "{{ tests.fixture(content.fixture) }}\n"
@@ -440,6 +449,8 @@ def test_logging_is_explicit_and_quoted(
             tmp_path / str(index),
             pytestconfig.rootpath,
             '{% extends "shared/templates/bases/tier2_python.jinja2" %}\n'
+            "{% block module_documentation %}{{ imports.documentation(content.description) }}"
+            "{% endblock %}\n"
             '{% import "shared/templates/patterns/python/logging.jinja2" as logging_pattern %}\n'
             '{% block module_imports %}{{ imports.groups({}, {"stdlib": '
             '[{"kind":"import","module":"logging"}]} if content.logging is defined else {}) }}'
@@ -471,6 +482,14 @@ def test_typescript_frame_preserves_native_imports_and_safe_documentation(
         tmp_path / "rendered",
         pytestconfig.rootpath,
         '{% extends "shared/templates/bases/tier2_typescript.jinja2" %}\n'
+        "{% block module_documentation %}/**\n{{ content.description "
+        "| text_block "
+        "| replace('\\\\', '\\\\\\\\') "
+        "| replace('*/', '*\\\\/') "
+        "| replace('\\r', '\\\\r') "
+        "| replace('\\t', '\\\\t') "
+        "| replace('\\x00', '\\\\0') "
+        "| indent(' * ', true) }}\n */{% endblock %}\n"
         "{% block code %}export const value = 1;{% endblock %}",
         {
             "description": "Multiline 😀\nclose */ stays a comment.\tBackslash \\",

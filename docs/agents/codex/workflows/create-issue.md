@@ -33,7 +33,7 @@ Do not ask about fields you did not select unless the user volunteers them.
 
 Use conversation context or ask the user for:
 
-- `title` — concise issue title (required)
+- Publication `title` — concise issue title for `create_issue` (required; not a scaffold-context field)
 - `problem` — what is wrong or needed (required)
 - The optional fields selected in Step 1
 
@@ -56,24 +56,22 @@ Do not invent values for `priority` or `scope`. If uncertain, ask.
 
 ## Step 4: Scaffold the issue body
 
-Call `scaffold_artifact` with the collected context. Include only fields with actual values — omit empty optional fields entirely.
+Call `scaffold_artifact` with the discovered issue-body context. Omit optional fields that were not supplied; preserve explicitly supplied empty values when the schema admits them and they express the caller's intent. Publication title, labels, priority and other envelope metadata belong to `create_issue`, not the scaffold context.
 
 ```
 scaffold_artifact(
   artifact_type="issue",
-  name="<slug-from-title>",
+  file_name="<slug-from-title>.md",
   context={
-    "title": "<title>",
     "problem": "<problem>",
-    # include only fields selected in Step 1 that the user provided
-    "labels": []  # leave empty — assembled by create_issue
+    # include admitted optional fields selected in Step 1 that the user provided
   }
 )
 ```
 
-Read the scaffolded file path returned by `scaffold_artifact` and show its content to the user. Offer to adjust before submitting.
+Read the exact saved file returned by `scaffold_artifact`. Keep its technical provenance in the local artifact. For publication, remove only a recognized first-line `<!-- pgmcp:v1 ... -->` marker and its separating blank line; retain all other comments, content, internal whitespace and real newlines. If that first-line marker is absent, publish the file content as read. Show the concrete publication body and title to the user and offer to adjust before submitting.
 
-> **Important:** Pass the exact file content as the `body` in Step 5. Do NOT retype or reconstruct the body — retyping produces literal `\n` escape sequences instead of real newlines, which breaks formatting on GitHub.
+> **Important:** Pass the exact reviewed publication body as `body` in Step 5. Perform only the provenance extraction above; do not retype or reconstruct the Markdown or convert real newlines to literal `\n` sequences.
 
 ---
 

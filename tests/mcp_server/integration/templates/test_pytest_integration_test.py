@@ -185,7 +185,7 @@ def test_explicit_json_and_filesystem_components_execute_with_native_pytest(
     assert [arg.arg for arg in functions[1].args.args] == ["tmp_path", "payload"]
     assert [
         ast.unparse(item) for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))
-    ] == ["from pathlib import Path", "import json", "import pytest"]
+    ] == ["import json", "from pathlib import Path", "import pytest"]
     markers = [item for item in tree.body if isinstance(item, ast.Assign)]
     assert len(markers) == 1 and ast.unparse(markers[0].targets[0]) == "pytestmark"
     assert not any(isinstance(item, ast.ClassDef) for item in tree.body)

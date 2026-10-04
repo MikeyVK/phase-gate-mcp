@@ -52,14 +52,18 @@ def parse_protocol(output: str) -> tuple[ast.Module, ast.ClassDef]:
 def test_empty_protocol_keeps_identity_without_fabricated_methods(
     delivered_protocol: DeliveredTemplate, syntax_package: SyntaxPackage, tmp_path: Path
 ) -> None:
-    context = {"class_name": "exact_name", "description": "Explicit empty class."}
+    context = {
+        "class_name": "exact_name",
+        "class_description": "Explicit empty class.",
+        "module_description": "Explicit empty class.",
+    }
     output = delivered_protocol.renderer.render(
         "python_protocol", context, delivered_protocol.provenance
     )
     tree, cls = parse_protocol(output)
     assert cls.name == "exact_name"
     assert [ast.unparse(base) for base in cls.bases] == ["Protocol"]
-    assert ast.get_docstring(tree) == ast.get_docstring(cls) == context["description"]
+    assert ast.get_docstring(tree) == ast.get_docstring(cls) == context["class_description"]
     assert len(cls.body) == 2 and isinstance(cls.body[-1], ast.Pass)
     imports = [item for item in tree.body if isinstance(item, ast.ImportFrom)]
     assert len(imports) == 1 and imports[0].module == "typing"
@@ -77,7 +81,7 @@ def test_explicit_bases_imports_and_ordered_sync_async_signatures(
 ) -> None:
     context: dict[str, JsonValue] = {
         "class_name": "exact_reader",
-        "description": 'Class "description" 😀\nnext line',
+        "class_description": 'Class "description" 😀\nnext line',
         "module_description": "Separate module prose",
         "imports": {
             "project": [
@@ -131,7 +135,7 @@ def test_explicit_bases_imports_and_ordered_sync_async_signatures(
         "Protocol",
     ]
     assert ast.get_docstring(tree) == context["module_description"]
-    assert ast.get_docstring(cls) == context["description"]
+    assert ast.get_docstring(cls) == context["class_description"]
     imports = [
         item
         for item in tree.body
@@ -173,7 +177,11 @@ def test_explicit_bases_imports_and_ordered_sync_async_signatures(
 def test_protocol_context_rejects_bodies_and_caller_owned_self(
     delivered_protocol: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit class"}
+    base: dict[str, JsonValue] = {
+        "class_name": "Example",
+        "class_description": "Explicit class",
+        "module_description": "Explicit class",
+    }
     method: dict[str, JsonValue] = {
         "name": "read",
         "description": "Read input",
@@ -182,8 +190,8 @@ def test_protocol_context_rejects_bodies_and_caller_owned_self(
         "return_type": "None",
     }
     invalid: list[dict[str, JsonValue]] = [
-        {"class_name": "Example"},
-        {**base, "description": ""},
+        {"class_name": "Example", "module_description": "Explicit class"},
+        {**base, "class_description": ""},
         {**base, "class_name": "class"},
         {**base, "service_type": "query"},
         {**base, "logging": {}},
@@ -227,7 +235,8 @@ def test_invalid_native_parameter_order_remains_a_syntax_failure(
         "python_protocol",
         {
             "class_name": "InvalidOrder",
-            "description": "Native signature syntax",
+            "class_description": "Native signature syntax",
+            "module_description": "Native signature syntax",
             "methods": [
                 {
                     "name": "read",

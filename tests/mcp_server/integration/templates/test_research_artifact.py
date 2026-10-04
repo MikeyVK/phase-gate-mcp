@@ -45,6 +45,17 @@ def test_minimal_research_is_a_valid_initial_basis_without_invented_completion(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Investigate behavior",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "problem_statement": "Observed mismatch.",
         "goals": [],
     }
@@ -68,9 +79,17 @@ def test_all_research_carriers_keep_authored_strategy_evidence_and_distinct_link
         "title": "Boundary research",
         "problem_statement": "Caller-observed problem.",
         "goals": ["Observe the boundary", "Compare transition costs"],
-        "status": "DRAFT — awaiting review",
-        "version": "2.4",
-        "last_updated": "2026-09-14",
+        "document_metadata": {
+            "status": "DRAFT — awaiting review",
+            "revisions": [
+                {
+                    "version": "2.4",
+                    "date": "2026-09-14",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "**Caller purpose**",
         "scope_in": "Included boundary",
         "scope_out": "Excluded work",
@@ -148,6 +167,17 @@ def test_explicit_empty_sections_remain_visible_without_placeholders(
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Initial skeleton",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "problem_statement": "Known problem.",
         "goals": [],
         "purpose": "",
@@ -167,7 +197,9 @@ def test_explicit_empty_sections_remain_visible_without_placeholders(
         "assumptions": [],
     }
     output = research.renderer.render("research", context, research.provenance)
-    base = {key: context[key] for key in ("title", "problem_statement", "goals")}
+    base = {
+        key: context[key] for key in ("title", "document_metadata", "problem_statement", "goals")
+    }
     absent = research.renderer.render("research", base, research.provenance)
     headings = [line for line in output.splitlines() if line.startswith("## ")]
     absent_headings = [line for line in absent.splitlines() if line.startswith("## ")]
@@ -179,23 +211,91 @@ def test_explicit_empty_sections_remain_visible_without_placeholders(
 def test_schema_rejects_legacy_aliases_primitive_records_and_invalid_presence(
     research: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"title": "Research", "problem_statement": "Problem", "goals": []}
+    base: dict[str, JsonValue] = {
+        "title": "Research",
+        "document_metadata": {
+            "status": "DRAFT — fixture input",
+            "revisions": [
+                {
+                    "version": "0.1",
+                    "date": "2026-10-03",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
+        "problem_statement": "Problem",
+        "goals": [],
+    }
     evidence: dict[str, JsonValue] = {"claim": "Claim", "observation": "", "sources": []}
     invalid: list[dict[str, JsonValue]] = [
-        {"title": "Research", "problem_statement": "Problem"},
+        {
+            "title": "Research",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+            "problem_statement": "Problem",
+        },
         {**base, "title": ""},
         {**base, "problem_statement": ""},
         {**base, "goals": "Goal"},
         {**base, "goals": [""]},
-        {**base, "status": ""},
+        {
+            **base,
+            "document_metadata": {
+                "status": "",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
         {**base, "background": None},
         {**base, "questions_list": []},
         {**base, "open_questions": []},
         {**base, "workflow": "inferred"},
         {**base, "approved_strategy": True},
         {**base, "references": ["[Source](source.md)"]},
-        {**base, "last_updated": "tomorrow"},
-        {**base, "last_updated": "2026-09-14\n"},
+        {
+            **base,
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "tomorrow",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
+        {
+            **base,
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-09-14\n",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
         {**base, "evidence": [{**evidence, "observed_at": "yesterday"}]},
         {**base, "evidence": [{"claim": "Claim", "observation": ""}]},
         {**base, "evidence": [{**evidence, "approval": True}]},

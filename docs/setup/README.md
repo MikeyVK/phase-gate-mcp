@@ -139,6 +139,26 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
 4. **Restart Antigravity:**
    Fully restart the Google Antigravity application or reload your workspace session to apply the changes and start the MCP server.
 
+### Option C: Codex Setup
+
+- Keep machine-specific paths and secrets in the Git-ignored `.codex/config.toml`.
+- Set the existing PGMCP connection's client window to the approved value:
+
+```toml
+[mcp_servers.phase_gate_mcp]
+tool_timeout_sec = 1800
+```
+
+- Preserve the connection's existing command, cwd, environment and other settings.
+- Activate the changed setting in the Codex client connection; restarting only PGMCP does not prove activation.
+- Keep normal check/test/fix calls focused and retain their configured default execution budgets.
+- For the required full native-configured suite, use `run_tests(scope="configured", timeout_seconds=1200)`. Keep native execution arguments unchanged.
+- The client window covers the complete MCP call, including adapter execution, bounded stopping and result delivery. Account for all selected bindings when choosing per-call budgets.
+- Do not partition a required full run solely because its known workload exceeds a short default timeout. A timed-out or incomplete run remains incomplete evidence.
+- Rationale: the client previously stopped waiting before the full-suite result could be delivered. The owner approved a 1800-second client window and a 1200-second full-test execution budget on 2026-10-04, superseding the [issue460 300-second/partition decision](../development/issue460/validation.md#owner-decision--client-timeout-2026-09-26). Neither setting promises completion of an arbitrarily long run.
+
+This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. On every host using main, apply this policy to the local connection and activate it. A Git merge cannot update or activate a Git-ignored client configuration; retain existing machine paths and secrets.
+
 ## 4. Agent Files & Git Availability
 
 All core files defining the agent behaviors, constraints, workflows, and role prompts are fully tracked in Git and immediately available when cloning the repository. 
@@ -175,5 +195,7 @@ Verify that the MCP server is active by running the following command in the cha
 |---|---|---|
 | `.vscode/mcp.json` | VS Code MCP server config | Copy from `docs/setup/mcp.json` (VS Code only) |
 | `.agents/mcp_config.json` | Antigravity local MCP config | Create under `.agents/` directory (Antigravity only) |
+| `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+

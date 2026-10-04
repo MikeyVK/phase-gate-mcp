@@ -120,7 +120,7 @@ from mcp_server.services.template_catalog import (
     TemplateInputValidator,
 )
 from mcp_server.services.template_contract_loader import TemplateContractLoader
-from mcp_server.services.template_engine import TemplateEngine
+from mcp_server.services.template_engine import TemplateEngine, register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from mcp_server.services.template_proposal import admit_template_suite
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
@@ -432,6 +432,7 @@ class ServerBootstrapper:
 
             # Admit one complete source snapshot before constructing runtime consumers.
             parser = Environment()
+            register_template_filters(parser)
             provenance_schema = freeze_json(ArtifactIdentity.model_json_schema())
             assert isinstance(provenance_schema, FrozenJsonObject)
             package_root = Path(__file__).resolve().parent

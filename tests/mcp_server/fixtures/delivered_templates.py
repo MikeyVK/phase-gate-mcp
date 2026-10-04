@@ -22,7 +22,7 @@ from mcp_server.services.template_catalog import (
     TemplateInputValidator,
 )
 from mcp_server.services.template_contract_loader import TemplateContractLoader
-from mcp_server.services.template_engine import TemplateEngine
+from mcp_server.services.template_engine import TemplateEngine, register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 
 
@@ -50,6 +50,7 @@ def load_delivered_template(
     )
     validator = ConfigValidator()
     parser = Environment()
+    register_template_filters(parser)
     graph = TemplateGraphResolver(destination, parser.parse)
     provenance_schema = freeze_json(ArtifactIdentity.model_json_schema())
     assert isinstance(provenance_schema, FrozenJsonObject)

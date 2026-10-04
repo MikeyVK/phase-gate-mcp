@@ -29,6 +29,7 @@ from mcp_server.services.template_activation import (
 )
 from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_contract_loader import TemplateContractLoader
+from mcp_server.services.template_engine import register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from mcp_server.services.template_proposal import (
     SuiteSnapshot,
@@ -86,6 +87,7 @@ def build_default_operation(
     workspace_adapters = server_root / "workspace_adapters"
     validator = ConfigValidator()
     environment = Environment()
+    register_template_filters(environment)
     provenance = freeze_json(ArtifactIdentity.model_json_schema())
     assert isinstance(provenance, FrozenJsonObject)
 

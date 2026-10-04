@@ -2,103 +2,67 @@
 {% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
 {% import "shared/templates/patterns/markdown/links.jinja2" as links %}
 
-{% block document_body %}
-{{ sections.prose('Problem Statement', content.problem_statement) }}
-
-{{ sections.heading('Goals') }}
-
-{{ sections.bullets(content.goals) }}
-
-{% if content.background is defined %}
-
-{{ sections.prose('Background', content.background) }}
-{% endif %}
-{% if content.findings is defined %}
-
-{{ sections.prose('Findings', content.findings) }}
-{% endif %}
-{% if content.questions is defined %}
-
-{{ sections.heading('Questions') }}
-
-{{ sections.bullets(content.questions) }}
-{% endif %}
-{% if content.references is defined %}
-
-{{ sections.heading('References') }}
-
-{{ links.inline_list(content.references) }}
-{% endif %}
-{% if content.approved_strategy is defined %}
-
-{{ sections.prose('Approved Strategy', content.approved_strategy) }}
-{% endif %}
-{% if content.expected_results is defined %}
-
-{{ sections.prose('Expected Results', content.expected_results) }}
-{% endif %}
-{% if content.evidence is defined %}
-
-{{ sections.heading('Evidence') }}
-{% for item in content.evidence %}
-{% if not loop.first %}
-
-{% endif %}
-{{ sections.heading(item.claim, 3) }}
-
-{{ item.observation }}
-{% if item.sources is defined %}
-
-{{ links.inline_list(item.sources) }}
-{% endif %}
-{% if item.invocation is defined %}
-
-**Invocation:** {{ item.invocation }}
-{% endif %}
-{% if item.observed_result is defined %}
-
-**Observed Result:** {{ item.observed_result }}
-{% endif %}
-{% if item.observed_at is defined %}
-
-**Observed At:** {{ item.observed_at }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.consumers is defined %}
-
-{{ sections.heading('Consumers') }}
-{% for item in content.consumers %}
-{% if not loop.first %}
-
-{% endif %}
-{{ sections.heading(item.name, 3) }}
-
-{{ item.responsibility }}
-
-**Impact:** {{ item.impact }}
-{% endfor %}
-{% endif %}
-{% if content.risks is defined %}
-
-{{ sections.heading('Risks') }}
-{% for item in content.risks %}
-{% if not loop.first %}
-
-{% endif %}
-{{ sections.heading(item.description, 3) }}
-
-{{ item.mitigation }}
-{% if item.consequence is defined %}
-
-**Consequence:** {{ item.consequence }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.assumptions is defined %}
-
-{{ sections.heading('Assumptions') }}
-
-{{ sections.bullets(content.assumptions) }}
-{% endif %}
-{% endblock %}
+{% block document_body -%}
+{%- set selected = namespace(parts=[
+    sections.prose('Problem Statement', content.problem_statement),
+    sections.heading('Goals'),
+    sections.bullets(content.goals)
+]) -%}
+{%- for field, title in [('background', 'Background'), ('findings', 'Findings')] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose(title, content[field])] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if content.questions is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Questions'), sections.bullets(content.questions)] -%}
+{%- endif -%}
+{%- if content.references is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('References'), links.inline_list(content.references)] -%}
+{%- endif -%}
+{%- for field, title in [('approved_strategy', 'Approved Strategy'), ('expected_results', 'Expected Results')] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose(title, content[field])] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if content.evidence is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Evidence')] -%}
+{%- for item in content.evidence -%}
+{%- set selected.parts = selected.parts + [sections.heading(item.claim, 3), item.observation | text_block] -%}
+{%- if item.sources is defined -%}
+{%- set selected.parts = selected.parts + [links.inline_list(item.sources)] -%}
+{%- endif -%}
+{%- if item.invocation is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Invocation', item.invocation)] -%}
+{%- endif -%}
+{%- if item.observed_result is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Observed Result', item.observed_result)] -%}
+{%- endif -%}
+{%- if item.observed_at is defined -%}
+{%- set selected.parts = selected.parts + ['**Observed At:** ' ~ item.observed_at] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if content.consumers is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Consumers')] -%}
+{%- for item in content.consumers -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(item.name, 3),
+    item.responsibility | text_block,
+    sections.labelled('Impact', item.impact)
+] -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if content.risks is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Risks')] -%}
+{%- for item in content.risks -%}
+{%- set selected.parts = selected.parts + [sections.heading(item.description, 3), item.mitigation | text_block] -%}
+{%- if item.consequence is defined -%}
+{%- set selected.parts = selected.parts + [sections.labelled('Consequence', item.consequence)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- if content.assumptions is defined -%}
+{%- set selected.parts = selected.parts + [sections.heading('Assumptions'), sections.bullets(content.assumptions)] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

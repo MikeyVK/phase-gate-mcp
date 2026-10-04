@@ -4,25 +4,42 @@
 {% block comment_start %}<!--{% endblock %}
 {% block comment_end %} -->{% endblock %}
 {% block document_heading %}{{ sections.heading(content.title, 1) }}{% endblock %}
-{% block document_metadata %}
-{% if content.status is defined %}**Status:** {{ links.label(content.status) }}
-{% endif %}{% if content.version is defined %}**Version:** {{ links.label(content.version) }}
-{% endif %}{% if content.last_updated is defined %}**Last Updated:** {{ links.label(content.last_updated) }}
-{% endif %}{% endblock %}
-{% block document_before %}
-{% if content.purpose is defined %}{{ sections.prose('Purpose', content.purpose) }}
-
-{% endif %}{% if content.scope_in is defined %}{{ sections.prose('Scope In', content.scope_in) }}
-
-{% endif %}{% if content.scope_out is defined %}{{ sections.prose('Scope Out', content.scope_out) }}
-
-{% endif %}{% if content.prerequisites is defined %}{{ sections.heading('Prerequisites') }}
-
-{{ sections.bullets(content.prerequisites) }}
-
-{% endif %}{% endblock %}
-{% block document_after %}
-{% if content.related_docs is defined %}{{ sections.heading('Related Documents') }}
-
-{{ links.inline_list(content.related_docs) }}
-{% endif %}{% endblock %}
+{% block document_metadata -%}
+{%- set current = content.document_metadata.revisions | last -%}
+{{ '**Status:** ' ~ links.label(content.document_metadata.status) ~ '  \n'
+    ~ '**Version:** ' ~ links.label(current.version) ~ '  \n'
+    ~ '**Last Updated:** ' ~ links.label(current.date) }}
+{%- endblock %}
+{% block document_before -%}
+{%- set selected = namespace(parts=[]) -%}
+{%- for field, heading in [('purpose', 'Purpose'), ('scope_in', 'Scope In'), ('scope_out', 'Scope Out')] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose(heading, content[field])] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if content.prerequisites is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Prerequisites'), sections.bullets(content.prerequisites)
+])] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}
+{% block document_after -%}
+{%- set selected = namespace(parts=[]) -%}
+{%- if content.related_docs is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Related Documents'), links.inline_list(content.related_docs)
+])] -%}
+{%- endif -%}
+{%- set history = namespace(rows=['| Version | Date | Author | Changes |', '| --- | --- | --- | --- |']) -%}
+{%- for revision in content.document_metadata.revisions -%}
+{%- set history.rows = history.rows + [
+    '| ' ~ sections.scalar_cell(revision.version) ~ ' | ' ~ sections.scalar_cell(revision.date)
+    ~ ' | ' ~ sections.scalar_cell(revision.author) ~ ' | ' ~ sections.scalar_cell(revision.change) ~ ' |'
+] -%}
+{%- endfor -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Version History'), history.rows | join('\n')
+])] -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

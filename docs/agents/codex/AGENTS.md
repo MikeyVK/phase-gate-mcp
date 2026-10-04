@@ -154,7 +154,17 @@ or merely create shallow or tautological asserts to satisfy tooling.
 6. **Human-in-the-Loop:** Tooling and branch locks enforce PR-merge approval; Ready does not duplicate that check. `force_phase_transition` requires approval + reason.
 7. **Quality Gates:** Use the scope and timing required by the active phase and plan. Reuse fresh passing evidence unless subsequent changes invalidate it.
 8. **Type-Checking Consistency:** Resolve typing issues using [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md). No global disables; targeted ignores only as last resort.
-9. **Resource Caching:** All MCP tools cache their structured Pydantic DTO outputs as MCP Resources (`pgmcp://cache/runs/{run_id}`). Tools return a presented text summary and the resource URI. When you need to inspect complete structured data or verbose process logs (e.g. from `run_checks` or `run_tests`), you MUST read the cached resource URI (do not try to parse or scrape the text output).
+9. **Cache Reads and Hashes:**
+   - Use tool summaries for routine success and status.
+   - Read cached DTOs only for needed diagnostics or structured fields; never reconstruct DTOs from summaries.
+   - Reuse already-read results until invalidated.
+   - Check result size before paging; stop blind multi-megabyte downloads.
+   - Verify SHA-256 once for multipart assembly or an explicit identity requirement; do not hash routine actions.
+10. **Execution Budgets:**
+   - Use the active phase's required scope; keep normal calls focused.
+   - For required full-suite runs, raise timeout_seconds to fit the workload; do not split solely to fit a short timeout.
+   - Keep the client window large enough for the whole call, stopping and response delivery; follow docs/setup/README.md.
+   - Preserve native arguments and required coverage; report timed-out or incomplete runs as incomplete.
 
 ---
 
@@ -298,3 +308,4 @@ delegation; epic review and lifecycle continuation remain with `@co`.
 ---
 
 **Remember: These rules are enforced. Violations will be rejected by the user. When in doubt, consult the Tool Priority Matrix or ask the user.**
+

@@ -5,23 +5,12 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "title"
+    "title",
+    "document_metadata"
   ],
   "properties": {
     "title": {
       "$ref": "#/$defs/Text"
-    },
-    "status": {
-      "$ref": "#/$defs/Text"
-    },
-    "version": {
-      "$ref": "#/$defs/Text"
-    },
-    "last_updated": {
-      "type": "string",
-      "format": "date",
-      "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
     },
     "purpose": {
       "$ref": "#/$defs/Prose"
@@ -106,6 +95,9 @@
       "items": {
         "$ref": "#/$defs/DeferredItem"
       }
+    },
+    "document_metadata": {
+      "$ref": "../shared/definitions/document-metadata.schema.json"
     }
   },
   "$defs": {

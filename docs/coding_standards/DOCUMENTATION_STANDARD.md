@@ -3,8 +3,8 @@
 # Documentation Standard
 
 **Status:** DEFINITIVE  
-**Version:** 1.0  
-**Last Updated:** 2026-05-21
+**Version:** 1.2  
+**Last Updated:** 2026-10-03
 
 ---
 
@@ -50,6 +50,30 @@ This document defines the shared documentation rules for pre-implementation and 
 - Avoid long unstructured prose when a table, short list, or Mermaid diagram communicates the same information more clearly.
 - Prefer concise evidence-backed statements over broad narrative summaries.
 
+## Scaffolded Document Metadata And Whitespace
+
+Full-document packages require one shared `document_metadata` input with an explicit
+status and a nonempty ordered revision list. Each revision supplies version, date, author
+and change. The visible header takes current version/date from the final supplied
+revision; the terminal Version History table preserves the caller's sequence and facts.
+Do not fabricate approval, authorship, dates or revisions, and do not sort the history.
+Metadata remains mandatory for minimal full-document contexts. Technical first-line
+provenance identifies the template/package/suite; it is separate from authored document
+facts and does not replace the visible header or history.
+
+Issue, PR and Commit packages follow their own body/message contracts. They do not
+inherit the full-document header/history. Publication title, labels and other envelope
+fields belong to the publication tool. Retain technical provenance in the saved local
+artifact; exclude that single recognized first-line marker from a published body.
+
+Templates own section/list joins and one terminal LF. Boundary-only normalization of
+chosen prose/code fragments removes blank edge lines while preserving internal blank
+lines, line endings, Markdown hard-break spaces, fence indentation and literal data.
+Omitted optional content and defined empty content have distinct meanings; preserve
+explicit empty carriers where the package contract admits them. Scaffolded structure is
+a valid starting point, requiring authored content review rather than declaring a finished
+or approved document. Native syntax/style acceptance does not prove semantic quality.
+
 ## Evidence And Traceability
 
 - Prefer concrete evidence over general statements: cite specific files, symbols, behaviors, interfaces, flows, logs, or references where possible.
@@ -79,10 +103,10 @@ This document defines the shared documentation rules for pre-implementation and 
 
 <!-- Link definitions -->
 
-[related-1]: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md
-[related-2]: docs/coding_standards/CODE_STYLE.md
-[related-3]: docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md
-[related-4]: docs/coding_standards/QUALITY_GATES.md
+[related-1]: ARCHITECTURE_PRINCIPLES.md
+[related-2]: CODE_STYLE.md
+[related-3]: TYPE_CHECKING_PLAYBOOK.md
+[related-4]: QUALITY_GATES.md
 
 ---
 
@@ -92,3 +116,4 @@ This document defines the shared documentation rules for pre-implementation and 
 |---------|------|--------|---------|
 | 1.0 |  | Agent | Initial draft |
 | 1.1 | 2026-06-17 | Agent | Clarify distinction between interface contracts and implementation bleed |
+| 1.2 | 2026-10-03 | @imp implementer | Align required full-document metadata/history, tracking publication boundaries and whitespace ownership with the approved template contracts; correct local related links. |

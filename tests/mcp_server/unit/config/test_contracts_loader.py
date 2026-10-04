@@ -994,9 +994,17 @@ class TestCY068DocflowE01:
         # 1. Research carrier (covers Feature, Bug, Refactor, Chore, Epic research semantics)
         research_context = {
             "title": "Representative Research Carrier",
-            "status": "APPROVED",
-            "version": "1.0",
-            "last_updated": "2026-09-17",
+            "document_metadata": {
+                "status": "APPROVED",
+                "revisions": [
+                    {
+                        "version": "1.0",
+                        "date": "2026-09-17",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
             "problem_statement": (
                 f"{sentinel_map['Bug Research']}\n"
                 "Investigate responsibility and coupling problems, reproduction context, "
@@ -1045,9 +1053,17 @@ class TestCY068DocflowE01:
         # 2. Design carrier (covers Feature, Bug, Refactor, Epic design semantics)
         design_context = {
             "title": "Representative Design Carrier",
-            "status": "APPROVED",
-            "version": "1.0",
-            "last_updated": "2026-09-17",
+            "document_metadata": {
+                "status": "APPROVED",
+                "revisions": [
+                    {
+                        "version": "1.0",
+                        "date": "2026-09-17",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
             "problem_statement": (
                 f"{sentinel_map['Bug Design']}\n"
                 "Technical design resolving root cause, public interfaces, and constraints."
@@ -1110,9 +1126,17 @@ class TestCY068DocflowE01:
         # 3. Planning carrier (covers Feature, Bug, Refactor, Docs, Epic planning semantics)
         planning_context = {
             "title": "Representative Planning Carrier",
-            "status": "APPROVED",
-            "version": "1.0",
-            "last_updated": "2026-09-17",
+            "document_metadata": {
+                "status": "APPROVED",
+                "revisions": [
+                    {
+                        "version": "1.0",
+                        "date": "2026-09-17",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
             "summary": (
                 f"{sentinel_map['Feature Planning']}\n"
                 "Decomposition of approved design into dependency-ordered work units, "
@@ -1190,9 +1214,17 @@ class TestCY068DocflowE01:
         ]
         validation_context = {
             "title": "Representative Validation Carrier",
-            "status": "APPROVED",
-            "version": "1.0",
-            "last_updated": "2026-09-17",
+            "document_metadata": {
+                "status": "APPROVED",
+                "revisions": [
+                    {
+                        "version": "1.0",
+                        "date": "2026-09-17",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
             "issue_number": 460,
             "cycle": "CY068",
             "validation_status": "PASS",

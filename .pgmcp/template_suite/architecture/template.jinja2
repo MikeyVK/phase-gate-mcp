@@ -2,56 +2,92 @@
 {% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
 {% import "shared/templates/patterns/markdown/links.jinja2" as links %}
 
-{% block document_body %}
-{% if content.constraints is defined %}
-{{ sections.heading('Constraints') }}
+{% macro concept(item, index) -%}
+{%- set selected = namespace(parts=[sections.heading(index ~ '. ' ~ item.name, 3), item.description | text_block]) -%}
+{%- if item.diagram is defined -%}
+{%- set selected.parts = selected.parts + [sections.code_fence(item.diagram, 'mermaid')] -%}
+{%- endif -%}
+{%- for subsection in item.subsections | default([]) -%}
+{%- set selected.parts = selected.parts + [
+    sections.heading(index ~ '.' ~ loop.index ~ '. ' ~ subsection.name, 4),
+    subsection.description | text_block
+] -%}
+{%- endfor -%}
+{{ sections.join(selected.parts) }}
+{%- endmacro %}
 
-{{ sections.bullets(content.constraints) }}
-{% endif %}
+{% macro plain_line(text) -%}
+{%- set plain = namespace(value='\n' not in text and '\r' not in text
+    and not text.startswith(('    ', '\t'))) -%}
+{%- set start = text.lstrip(' \t') -%}
+{%- for marker in ['#', '`', '*', '[', ']', '<', '>', '~'] -%}
+{%- if marker in text -%}{%- set plain.value = false -%}{%- endif -%}
+{%- endfor -%}
+{%- if start.startswith(('- ', '+ ')) or start.split('. ', 1)[0].isdigit()
+    or start.split(') ', 1)[0].isdigit() -%}
+{%- set plain.value = false -%}
+{%- endif -%}
+{{ 'plain' if plain.value else '' }}
+{%- endmacro %}
 
-{{ sections.heading('Concepts') }}
-{% for concept in content.concepts %}
+{% macro decision_sections(records) -%}
+{%- set selected = namespace(parts=[], rows=[]) -%}
+{%- set table_header = '| Decision | Rationale | Alternatives |\n| --- | --- | --- |' -%}
+{%- for item in records -%}
+{%- set compact = namespace(value=plain_line(item.decision) and plain_line(item.rationale)) -%}
+{%- if item.alternatives is defined and not item.alternatives -%}
+{%- set compact.value = false -%}
+{%- endif -%}
+{%- for alternative in item.alternatives | default([]) -%}
+{%- if not plain_line(alternative) -%}{%- set compact.value = false -%}{%- endif -%}
+{%- endfor -%}
+{%- if compact.value -%}
+{%- set alternatives = namespace(cells=[]) -%}
+{%- for alternative in item.alternatives | default([]) -%}
+{%- set alternatives.cells = alternatives.cells + [sections.table_cell(alternative)] -%}
+{%- endfor -%}
+{%- set selected.rows = selected.rows + [
+    '| ' ~ sections.table_cell(item.decision) ~ ' | ' ~ sections.table_cell(item.rationale)
+    ~ ' | ' ~ (alternatives.cells | join('<br>')) ~ ' |'
+] -%}
+{%- else -%}
+{%- if selected.rows -%}
+{%- set selected.parts = selected.parts + [table_header ~ '\n' ~ (selected.rows | join('\n'))] -%}
+{%- set selected.rows = [] -%}
+{%- endif -%}
+{%- set detail = [sections.heading(item.decision, 3), item.rationale | text_block] -%}
+{%- if item.alternatives is defined -%}
+{%- set detail = detail + ['**Alternatives:**', sections.bullets(item.alternatives)] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.join(detail)] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if selected.rows -%}
+{%- set selected.parts = selected.parts + [table_header ~ '\n' ~ (selected.rows | join('\n'))] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endmacro %}
 
-{{ sections.heading(loop.index ~ '. ' ~ concept.name, 3) }}
-
-{{ concept.description }}
-{% if concept.diagram is defined %}
-
-{{ sections.heading('Diagram', 4) }}
-
-{{ sections.code_fence(concept.diagram, 'mermaid') }}
-{% endif %}
-{% if concept.subsections is defined %}
-
-**Subsections:**
-{% for subsection in concept.subsections %}
-
-{{ sections.heading(subsection.name, 4) }}
-
-{{ subsection.description }}
-{% endfor %}
-{% endif %}
-{% endfor %}
-{% if content.decisions is defined %}
-
-{{ sections.heading('Decisions') }}
-{% for item in content.decisions %}
-
-{{ sections.heading(item.decision, 3) }}
-
-{{ item.rationale }}
-{% if item.alternatives is defined %}
-
-**Alternatives:**
-
-{{ sections.bullets(item.alternatives) }}
-{% endif %}
-{% endfor %}
-{% endif %}
-{% if content.sources is defined %}
-
-{{ sections.heading('Sources') }}
-
-{{ links.inline_list(content.sources) }}
-{% endif %}
-{% endblock %}
+{% block document_body -%}
+{%- set selected = namespace(parts=[]) -%}
+{%- if content.constraints is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Constraints'), sections.bullets(content.constraints)
+])] -%}
+{%- endif -%}
+{%- set selected.parts = selected.parts + [sections.heading('Concepts')] -%}
+{%- for item in content.concepts -%}
+{%- set selected.parts = selected.parts + [concept(item, loop.index)] -%}
+{%- endfor -%}
+{%- if content.decisions is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Decisions'), decision_sections(content.decisions)
+])] -%}
+{%- endif -%}
+{%- if content.sources is defined -%}
+{%- set selected.parts = selected.parts + [sections.join([
+    sections.heading('Sources'), links.inline_list(content.sources)
+])] -%}
+{%- endif -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

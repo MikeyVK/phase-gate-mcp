@@ -107,7 +107,10 @@ process.stdout.write(JSON.stringify({diagnostics, classes: facts, imports, versi
 def test_omitted_and_empty_fields_keep_exported_class_and_object_constructor(
     delivered_dto: DeliveredTemplate, typescript_package: TypeScriptPackage
 ) -> None:
-    context: dict[str, JsonValue] = {"class_name": "$Empty", "description": "An explicit DTO."}
+    context: dict[str, JsonValue] = {
+        "class_name": "$Empty",
+        "class_description": "An explicit DTO.",
+    }
     output = delivered_dto.renderer.render("typescript_dto", context, delivered_dto.provenance)
     assert output == delivered_dto.renderer.render(
         "typescript_dto", {**context, "fields": []}, delivered_dto.provenance
@@ -137,7 +140,7 @@ def test_explicit_fields_preserve_native_types_and_strict_optional_behavior(
 ) -> None:
     context: dict[str, JsonValue] = {
         "class_name": "RésuméDTO",
-        "description": "Explicit class */ text\nNext line 😀",
+        "class_description": "Explicit class */ text\nNext line 😀",
         "module_description": "Separate module documentation.",
         "imports": [
             'import type { Contract } from "./support";',
@@ -233,7 +236,10 @@ assert.equal(data.enabled, false);
 def test_schema_rejects_legacy_fields_unknown_properties_and_invalid_symbols(
     delivered_dto: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit DTO"}
+    base: dict[str, JsonValue] = {
+        "class_name": "Example",
+        "class_description": "Explicit DTO",
+    }
     field: dict[str, JsonValue] = {
         "name": "value",
         "type": "{ count: number }",
@@ -242,7 +248,7 @@ def test_schema_rejects_legacy_fields_unknown_properties_and_invalid_symbols(
     }
     invalid: list[dict[str, JsonValue]] = [
         {"class_name": "Example"},
-        {**base, "description": ""},
+        {**base, "class_description": ""},
         {**base, "class_name": "class"},
         {**base, "class_name": "Invalid-Name"},
         {**base, "class_name": "Example\n"},
@@ -272,7 +278,7 @@ def test_native_syntax_check_reports_invalid_caller_type_without_writing(
 ) -> None:
     context: dict[str, JsonValue] = {
         "class_name": "Broken",
-        "description": "Caller owns annotation syntax",
+        "class_description": "Caller owns annotation syntax",
         "fields": [{"name": "value", "type": "{ count: }", "readonly": False, "optional": False}],
     }
     output = delivered_dto.renderer.render("typescript_dto", context, delivered_dto.provenance)

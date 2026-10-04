@@ -1,10 +1,45 @@
 {% import "shared/templates/patterns/python/imports.jinja2" as values %}
+{% macro model_value(value) -%}
+{%- set selected = namespace(items=[]) -%}
+{%- if value is mapping -%}
+{%- for key, item in value.items() -%}
+{%- set selected.items = selected.items + [values.literal(key) ~ ": " ~ model_value(item) ~ ","] -%}
+{%- endfor -%}
+{{ "{\n" ~ values.indented(selected.items | join("\n"), 4) ~ "\n}" if selected.items else "{}" }}
+{%- elif value is sequence and value is not string -%}
+{%- for item in value -%}
+{%- set selected.items = selected.items + [model_value(item) ~ ","] -%}
+{%- endfor -%}
+{{ "[\n" ~ values.indented(selected.items | join("\n"), 4) ~ "\n]" if selected.items else "[]" }}
+{%- else -%}
+{{ values.literal(value) }}
+{%- endif -%}
+{%- endmacro %}
+
 {% macro model_config(frozen, examples) -%}
-model_config = ConfigDict(extra="forbid", frozen={{ values.literal(frozen) }}{% if examples %}, json_schema_extra={"examples": {{ values.literal(examples) }}}{% endif %})
+{%- set arguments = ['extra="forbid",', "frozen=" ~ values.literal(frozen) ~ ","] -%}
+{%- if examples -%}
+{%- set arguments = arguments + ["json_schema_extra=" ~ model_value({"examples": examples}) ~ ","] -%}
+{%- endif -%}
+{{ "model_config = ConfigDict(\n" ~ values.indented(arguments | join("\n"), 4) ~ "\n)" }}
 {%- endmacro %}
 
 {% macro fields(records) -%}
-{% for field in records -%}
-{{ field.name }}: {{ field.type }} = Field({% if field.default is defined %}default={{ values.literal(field.default) }}, {% elif field.default_factory is defined %}default_factory={{ field.default_factory }}, {% endif %}description={{ values.literal(field.description) }}{% for name in ['ge', 'gt', 'le', 'lt', 'min_length', 'max_length', 'pattern'] %}{% if field[name] is defined %}, {{ name }}={{ values.literal(field[name]) }}{% endif %}{% endfor %})
-{% endfor -%}
+{%- set selected = namespace(fields=[]) -%}
+{%- for field in records -%}
+{%- set arguments = namespace(items=[]) -%}
+{%- if field.default is defined -%}
+{%- set arguments.items = arguments.items + ["default=" ~ model_value(field.default) ~ ","] -%}
+{%- elif field.default_factory is defined -%}
+{%- set arguments.items = arguments.items + ["default_factory=" ~ field.default_factory ~ ","] -%}
+{%- endif -%}
+{%- set arguments.items = arguments.items + ["description=" ~ values.documentation(field.description) ~ ","] -%}
+{%- for name in ['ge', 'gt', 'le', 'lt', 'min_length', 'max_length', 'pattern'] -%}
+{%- if field[name] is defined -%}
+{%- set arguments.items = arguments.items + [name ~ "=" ~ values.literal(field[name]) ~ ","] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- set selected.fields = selected.fields + [field.name ~ ": " ~ field.type ~ " = Field(\n" ~ values.indented(arguments.items | join("\n"), 4) ~ "\n)"] -%}
+{%- endfor -%}
+{{ selected.fields | join("\n") }}
 {%- endmacro %}

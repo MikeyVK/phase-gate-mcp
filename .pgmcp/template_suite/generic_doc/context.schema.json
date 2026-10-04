@@ -7,23 +7,12 @@
   "required": [
     "title",
     "purpose",
-    "summary"
+    "summary",
+    "document_metadata"
   ],
   "properties": {
     "title": {
       "$ref": "#/$defs/Text"
-    },
-    "status": {
-      "$ref": "#/$defs/Text"
-    },
-    "version": {
-      "$ref": "#/$defs/Text"
-    },
-    "last_updated": {
-      "type": "string",
-      "format": "date",
-      "description": "ISO calendar-date spelling only; Calendar validity is not certified by this schema.",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\\s\\S])"
     },
     "purpose": {
       "$ref": "#/$defs/Text"
@@ -78,6 +67,9 @@
       "items": {
         "$ref": "../shared/definitions/section.schema.json"
       }
+    },
+    "document_metadata": {
+      "$ref": "../shared/definitions/document-metadata.schema.json"
     }
   },
   "$defs": {

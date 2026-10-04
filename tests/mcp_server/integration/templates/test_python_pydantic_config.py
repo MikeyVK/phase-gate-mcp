@@ -65,7 +65,8 @@ def test_empty_configuration_respects_explicit_frozen_choice(
 ) -> None:
     context = {
         "class_name": "exact_settings",
-        "description": "Explicit settings.",
+        "class_description": "Explicit settings.",
+        "module_description": "Explicit settings.",
         "frozen": frozen,
     }
     output = delivered_config.renderer.render(
@@ -73,7 +74,7 @@ def test_empty_configuration_respects_explicit_frozen_choice(
     )
     tree, model, options = parse_config(output)
     assert model.name == "exact_settings"
-    assert ast.get_docstring(tree) == ast.get_docstring(model) == context["description"]
+    assert ast.get_docstring(tree) == ast.get_docstring(model) == context["class_description"]
     assert options["frozen"] is frozen
     assert "json_schema_extra" not in options
     assert not any(isinstance(item, (ast.AnnAssign, ast.FunctionDef)) for item in model.body)
@@ -129,7 +130,7 @@ def test_populated_configuration_keeps_examples_optional_and_exact_values(
     ]
     context: dict[str, JsonValue] = {
         "class_name": "exact_settings",
-        "description": 'Caller "description" 😀\nnext line',
+        "class_description": 'Caller "description" 😀\nnext line',
         "module_description": "Separate module prose",
         "frozen": False,
         "imports": {
@@ -150,7 +151,7 @@ def test_populated_configuration_keeps_examples_optional_and_exact_values(
     assert context == before
     assert model.name == "exact_settings"
     assert ast.get_docstring(tree) == context["module_description"]
-    assert ast.get_docstring(model) == context["description"]
+    assert ast.get_docstring(model) == context["class_description"]
     assert options["frozen"] is False
     if examples:
         assert options["json_schema_extra"] == {"examples": examples}
@@ -189,15 +190,20 @@ def test_config_context_requires_frozen_and_reuses_closed_model_field_rules(
 ) -> None:
     base: dict[str, JsonValue] = {
         "class_name": "Settings",
-        "description": "Settings",
+        "class_description": "Settings",
+        "module_description": "Settings",
         "frozen": False,
     }
     field: dict[str, JsonValue] = {"name": "value", "type": "int", "description": "Value"}
     invalid: list[dict[str, JsonValue]] = [
-        {"class_name": "Settings", "description": "Settings"},
+        {
+            "class_name": "Settings",
+            "class_description": "Settings",
+            "module_description": "Settings",
+        },
         {**base, "frozen": None},
         {**base, "frozen": "false"},
-        {**base, "description": ""},
+        {**base, "class_description": ""},
         {**base, "loader": "config.json"},
         {**base, "layer": "Configuration"},
         {**base, "fields": None},

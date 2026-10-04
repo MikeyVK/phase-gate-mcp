@@ -20,10 +20,7 @@ class TemplateEngine:
 
     def __init__(self, *, environment: Environment) -> None:
         self._env = environment
-        self._env.filters["pascalcase"] = self._filter_pascalcase
-        self._env.filters["snakecase"] = self._filter_snakecase
-        self._env.filters["kebabcase"] = self._filter_kebabcase
-        self._env.filters["validate_identifier"] = self._filter_validate_identifier
+        register_template_filters(self._env)
 
     @property
     def env(self) -> Environment:
@@ -67,85 +64,104 @@ class TemplateEngine:
         """Render an explicit content/provenance envelope without transforming its values."""
         return str(self.get_template(template_name).render(context))
 
-    # Custom Jinja2 filters
 
-    @staticmethod
-    def _filter_pascalcase(value: str) -> str:
-        """Convert string to PascalCase.
+def _filter_pascalcase(value: str) -> str:
+    """Convert string to PascalCase.
 
-        Args:
-            value: Input string (snake_case, kebab-case, or mixed)
+    Args:
+        value: Input string (snake_case, kebab-case, or mixed)
 
-        Returns:
-            PascalCase string
+    Returns:
+        PascalCase string
 
-        Example:
-            >>> _filter_pascalcase("test_name")
-            'TestName'
-        """
-        # Split on underscores, hyphens, and existing capitals
-        words = re.split(r"[_\-]+", value)
-        return "".join(word.capitalize() for word in words if word)
+    Example:
+        >>> _filter_pascalcase("test_name")
+        'TestName'
+    """
+    # Split on underscores, hyphens, and existing capitals
+    words = re.split(r"[_\-]+", value)
+    return "".join(word.capitalize() for word in words if word)
 
-    @staticmethod
-    def _filter_snakecase(value: str) -> str:
-        """Convert string to snake_case.
 
-        Args:
-            value: Input string (PascalCase, kebab-case, or mixed)
+def _filter_snakecase(value: str) -> str:
+    """Convert string to snake_case.
 
-        Returns:
-            snake_case string
+    Args:
+        value: Input string (PascalCase, kebab-case, or mixed)
 
-        Example:
-            >>> _filter_snakecase("TestName")
-            'test_name'
-        """
-        # Insert underscore before capitals (except first)
-        s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", value)
-        # Insert underscore before capital sequences
-        s2 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1)
-        # Replace hyphens with underscores
-        s3 = s2.replace("-", "_")
-        return s3.lower()
+    Returns:
+        snake_case string
 
-    @staticmethod
-    def _filter_kebabcase(value: str) -> str:
-        """Convert string to kebab-case.
+    Example:
+        >>> _filter_snakecase("TestName")
+        'test_name'
+    """
+    # Insert underscore before capitals (except first)
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", value)
+    # Insert underscore before capital sequences
+    s2 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1)
+    # Replace hyphens with underscores
+    s3 = s2.replace("-", "_")
+    return s3.lower()
 
-        Args:
-            value: Input string (PascalCase, snake_case, or mixed)
 
-        Returns:
-            kebab-case string
+def _filter_kebabcase(value: str) -> str:
+    """Convert string to kebab-case.
 
-        Example:
-            >>> _filter_kebabcase("TestName")
-            'test-name'
-        """
-        # Use snakecase logic, then replace underscores with hyphens
-        snake = TemplateEngine._filter_snakecase(value)
-        return snake.replace("_", "-")
+    Args:
+        value: Input string (PascalCase, snake_case, or mixed)
 
-    @staticmethod
-    def _filter_validate_identifier(value: str) -> str:
-        """Validate and return Python identifier.
+    Returns:
+        kebab-case string
 
-        Args:
-            value: String to validate as Python identifier
+    Example:
+        >>> _filter_kebabcase("TestName")
+        'test-name'
+    """
+    # Use snakecase logic, then replace underscores with hyphens
+    snake = _filter_snakecase(value)
+    return snake.replace("_", "-")
 
-        Returns:
-            Original value if valid identifier
 
-        Raises:
-            ValueError: If value is not a valid Python identifier
+def _filter_validate_identifier(value: str) -> str:
+    """Validate and return Python identifier.
 
-        Example:
-            >>> _filter_validate_identifier("valid_name")
-            'valid_name'
-            >>> _filter_validate_identifier("123invalid")
-            ValueError: Invalid Python identifier: 123invalid
-        """
-        if not value.isidentifier():
-            raise ValueError(f"Invalid Python identifier: {value}")
-        return value
+    Args:
+        value: String to validate as Python identifier
+
+    Returns:
+        Original value if valid identifier
+
+    Raises:
+        ValueError: If value is not a valid Python identifier
+
+    Example:
+        >>> _filter_validate_identifier("valid_name")
+        'valid_name'
+        >>> _filter_validate_identifier("123invalid")
+        ValueError: Invalid Python identifier: 123invalid
+    """
+    if not value.isidentifier():
+        raise ValueError(f"Invalid Python identifier: {value}")
+    return value
+
+
+def text_block(value: str) -> str:
+    """Remove only blank edge lines and the final retained line terminator.
+
+    Space/tab-only edge lines are padding. Retained indentation, trailing spaces
+    on meaningful lines and internal line endings belong to the caller.
+    """
+    if not value.strip(" \t\r\n"):
+        return ""
+    without_leading = re.sub(r"\A(?:[ \t]*(?:\r\n|\r|\n))*", "", value)
+    return re.sub(r"(?:(?:\r\n|\r|\n)[ \t]*)+\Z", "", without_leading)
+
+
+def register_template_filters(environment: Environment) -> None:
+    """Expose the same real filter vocabulary to admission and rendering."""
+    environment.filters["pascalcase"] = _filter_pascalcase
+    environment.filters["snakecase"] = _filter_snakecase
+    environment.filters["kebabcase"] = _filter_kebabcase
+    environment.filters["validate_identifier"] = _filter_validate_identifier
+    environment.filters["text_block"] = text_block

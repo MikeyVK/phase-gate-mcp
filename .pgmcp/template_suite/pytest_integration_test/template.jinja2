@@ -1,10 +1,16 @@
 {% extends "shared/templates/bases/tier2_python.jinja2" %}
 {% import "shared/templates/patterns/testing/pytest.jinja2" as testing %}
-{% block code %}
-{{ testing.module_markers(content.markers | default([])) }}
-{% for fixture in content.fixtures | default([]) %}
-{{ testing.fixture(fixture) }}
-
-{% endfor %}
-{{ testing.cases(content.cases, content.class_name | default(none)) }}
-{% endblock %}
+{% block module_documentation %}{{ imports.documentation(content.description) }}{% endblock %}
+{% block code_separator %}{{ "\n\n" if content.markers | default([]) else "\n\n\n" }}{% endblock %}
+{% block code -%}
+{%- set selected = namespace(fragments=[]) -%}
+{%- set markers = testing.module_markers(content.markers | default([])) | text_block -%}
+{%- if markers -%}
+{%- set selected.fragments = selected.fragments + [markers] -%}
+{%- endif -%}
+{%- for fixture in content.fixtures | default([]) -%}
+{%- set selected.fragments = selected.fragments + [testing.fixture(fixture) | text_block] -%}
+{%- endfor -%}
+{%- set selected.fragments = selected.fragments + [testing.cases(content.cases, content.class_name | default(none)) | text_block] -%}
+{{ selected.fragments | select | join("\n\n\n") }}
+{%- endblock %}

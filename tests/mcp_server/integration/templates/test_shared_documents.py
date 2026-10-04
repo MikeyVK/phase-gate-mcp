@@ -80,19 +80,48 @@ def test_common_document_fields_preserve_absent_empty_and_populated_content(
     tmp_path: Path, pytestconfig: pytest.Config, markdown_package: MarkdownPackage
 ) -> None:
     repo = pytestconfig.rootpath
-    minimal = render(tmp_path, repo, DOCUMENT, {"title": "Explicit title"})
+    minimal = render(
+        tmp_path,
+        repo,
+        DOCUMENT,
+        {
+            "title": "Explicit title",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
+        },
+    )
     assert minimal.count("\n# ") == 1
     headings = ("Purpose", "Scope In", "Scope Out", "Prerequisites", "Related Documents")
     for absent in headings:
         assert f"## {absent}" not in minimal
-    for absent in ("Status:", "Version:", "Last Updated:", "Version History", "Initial draft"):
-        assert absent not in minimal
+    for supplied in ("Status:", "Version:", "Last Updated:", "Version History"):
+        assert supplied in minimal
     empty = render(
         tmp_path,
         repo,
         DOCUMENT,
         {
             "title": "Explicit title",
+            "document_metadata": {
+                "status": "DRAFT — fixture input",
+                "revisions": [
+                    {
+                        "version": "0.1",
+                        "date": "2026-10-03",
+                        "author": "Template fixture",
+                        "change": "Authored fixture revision.",
+                    }
+                ],
+            },
             "purpose": "",
             "scope_in": "",
             "scope_out": "",
@@ -106,9 +135,17 @@ def test_common_document_fields_preserve_absent_empty_and_populated_content(
     assert "None" not in empty
     context: dict[str, JsonValue] = {
         "title": "Authored [title]\n# not another heading #",
-        "status": "DRAFT — awaiting review",
-        "version": "2.3",
-        "last_updated": "2026-09-14",
+        "document_metadata": {
+            "status": "DRAFT — awaiting review",
+            "revisions": [
+                {
+                    "version": "2.3",
+                    "date": "2026-09-14",
+                    "author": "Template fixture",
+                    "change": "Authored fixture revision.",
+                }
+            ],
+        },
         "purpose": "**Authored** purpose",
         "scope_in": "Include this",
         "scope_out": "Exclude that",

@@ -71,11 +71,16 @@ def test_empty_dto_is_documented_immutable_and_native_syntax_valid(
     extra: dict[str, JsonValue],
     examples: JsonValue,
 ) -> None:
-    context = {"class_name": "exact_name", "description": "An explicitly empty DTO.", **extra}
+    context = {
+        "class_name": "exact_name",
+        "class_description": "An explicitly empty DTO.",
+        "module_description": "An explicitly empty DTO.",
+        **extra,
+    }
     output = delivered_dto.renderer.render("python_pydantic_dto", context, delivered_dto.provenance)
     tree, model, options = parse_model(output)
     assert model.name == "exact_name"
-    assert ast.get_docstring(tree) == ast.get_docstring(model) == context["description"]
+    assert ast.get_docstring(tree) == ast.get_docstring(model) == context["class_description"]
     assert not any(isinstance(item, ast.AnnAssign) for item in model.body)
     if examples is None:
         assert "json_schema_extra" not in options
@@ -128,7 +133,7 @@ def test_populated_dto_preserves_explicit_values_constraints_imports_and_example
     examples: list[JsonValue] = [{"does_not_match_fields": [False, 0, None]}]
     context: dict[str, JsonValue] = {
         "class_name": "exact_name",
-        "description": 'Class "documentation" 😀\nsecond line',
+        "class_description": 'Class "documentation" 😀\nsecond line',
         "module_description": "A separate module description",
         "imports": {
             "stdlib": [{"kind": "import", "module": "collections"}],
@@ -145,7 +150,7 @@ def test_populated_dto_preserves_explicit_values_constraints_imports_and_example
     tree, model, options = parse_model(output)
     assert context == before
     assert ast.get_docstring(tree) == context["module_description"]
-    assert ast.get_docstring(model) == context["description"]
+    assert ast.get_docstring(model) == context["class_description"]
     assert options["json_schema_extra"] == {"examples": examples}
     imports = [item for item in tree.body if isinstance(item, (ast.Import, ast.ImportFrom))]
     assert isinstance(imports[0], ast.ImportFrom) and imports[0].module == "__future__"
@@ -180,11 +185,15 @@ def test_populated_dto_preserves_explicit_values_constraints_imports_and_example
 def test_context_rejects_legacy_and_invalid_concrete_combinations(
     delivered_dto: DeliveredTemplate,
 ) -> None:
-    base: dict[str, JsonValue] = {"class_name": "Example", "description": "Explicit DTO"}
+    base: dict[str, JsonValue] = {
+        "class_name": "Example",
+        "class_description": "Explicit DTO",
+        "module_description": "Explicit DTO",
+    }
     field: dict[str, JsonValue] = {"name": "value", "type": "int", "description": "Value"}
     invalid: list[dict[str, JsonValue]] = [
-        {"class_name": "Example"},
-        {**base, "description": ""},
+        {"class_name": "Example", "module_description": "Explicit DTO"},
+        {**base, "class_description": ""},
         {**base, "class_name": "class"},
         {**base, "frozen": False},
         {**base, "layer": "DTOs"},
@@ -235,7 +244,8 @@ def test_native_annotation_failure_is_not_claimed_as_valid_output(
         "python_pydantic_dto",
         {
             "class_name": "BrokenAnnotation",
-            "description": "Native syntax remains the language checker responsibility",
+            "class_description": "Native syntax remains the language checker responsibility",
+            "module_description": "Native syntax remains the language checker responsibility",
             "fields": [{"name": "value", "type": "list[", "description": "Incomplete annotation"}],
             "examples": [{}],
         },

@@ -2,5 +2,7 @@
 {%- macro provenance_fields(record) -%}
 pgmcp:v1 id={{ record.id }} pv={{ record.pv }} pf={{ record.pf }} sf={{ record.sf }}
 {%- endmacro -%}
-{% block comment_start required %}{% endblock %} {{ provenance_fields(provenance) }}{% block comment_end %}{% endblock %}
-{% block content required %}{% endblock -%}
+{%- set artifact -%}
+{% block comment_start required %}{% endblock %} {{ provenance_fields(provenance) }}{% block comment_end %}{% endblock %}{{ '\n\n' }}{% block content required %}{% endblock %}
+{%- endset -%}
+{{ artifact | text_block }}{{ '\n' -}}
