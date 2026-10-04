@@ -2,8 +2,8 @@
 
 # Issue 473 — Validation
 
-**Status:** Validation blocked; independent review requested  
-**Version:** 0.5  
+**Status:** Validation complete under reviewed gate disposition; independent review requested  
+**Version:** 0.6  
 **Last Updated:** 2026-10-04
 
 ## Purpose
@@ -24,7 +24,7 @@ Generic issue476 consumption enforcement, unrelated CLI/proxy/adapter repairs, a
 
 ## Validation Status
 
-FAIL
+PASS
 
 ## Scope
 
@@ -38,7 +38,7 @@ bug/473-first-call-template-quality against parent main; production/template/tes
 
 - [Planning](<planning.md>)
 
-**Outcome:** Current run completed with 6 failed, 2769 passed, 1 skipped, 1 xpassed and 229 warnings in 320.27 seconds. The earlier 300-second transport timeout remains historical evidence; see Latest Validation execution.
+**Outcome:** Fresh post-cycle5 configured suite passed: 2775 passed, 1 skipped, 1 xpassed, 229 warnings in 326.96 seconds. Earlier incomplete/negative attempts remain historical evidence; see Latest Validation after cycle 5.
 
 ### V\_BRANCH\_CHECKS — configured Python review and branch Markdown links
 
@@ -47,7 +47,7 @@ bug/473-first-call-template-quality against parent main; production/template/tes
 - [Python review receipt](<pgmcp://cache/runs/bce86b0768b64271b8fdf2f1632a1d3d>)
 - [Markdown review receipt](<pgmcp://cache/runs/944deb18930d44a49d17924aa388146d>)
 
-**Outcome:** Current Python review remains incomplete: format and Pyright unavailable, lint and Mypy failed. Current Markdown links failed with 41 errors in four AGENTS source/mirror copies. Earlier passing Markdown evidence is historical; see Latest Validation execution.
+**Outcome:** Explicit issue473-specific replacement gate coverage accepted by independent QA and passed: all 25 changed Python files have format/lint/Pyright coverage, three production files have Mypy coverage, and the reviewed 24-file Markdown selection passes. Original negative branch calls and four source/runtime link exceptions remain recorded; see Latest Validation after cycle 5.
 
 ### V\_CORRECTED\_BEHAVIOR — all nineteen families and approved preservation obligations
 
@@ -290,7 +290,9 @@ The owner added explicit deferral as the fourth completion obligation and instru
 
 Execution order: commit the deferral; perform the approved single configured full-suite run; complete current-tool branch-gate evidence without hiding limitations; commit the updated Validation report and request the external Beoordeel designplan review. Existing scoped Python successes remain evidence, not an undeclared replacement for the prescribed broad gate. Later Documentation/Ready carries the deferred work to coordination.
 
-## Latest Validation execution — 2026-10-04
+## Validation execution before cycle 5 — 2026-10-04
+
+Historical pre-repair evidence. The latest outcome follows in Latest Validation after cycle 5.
 
 This section supersedes earlier current-outcome statements; the earlier attempts remain historical evidence. The deferred branch-check solution was recorded and pushed first in commit a1581d64. No production, adapter, template, test or native configuration was changed during this continuation.
 
@@ -376,6 +378,144 @@ Pre-commit reality check: the full configured suite was not weakened, partitione
 
 - External Beoordeel designplan review requested. Read the current primary evidence and exact negative results; report findings and the authority-appropriate assessment.
 
+## Latest Validation after cycle 5 — 2026-10-04
+
+### Authority and bounded correction
+
+The owner authorized one focused repair cycle after the independent NOGO on 9c164c4c. Repair commits 3d3162ac and b3e3719f migrate only the existing header-reader test environment and exact separator expectation, with phase documents and tool-managed deliverables/state. Production, templates, adapters and native configuration are unchanged. No new test, fake filter, skip, compatibility bridge or deferred selection implementation was added.
+
+Independent external Beoordeel designplan QA returned **Implementation → Validation GO for cycle 5** on b3e3719f. Its configured eight-worker module run passed 68 tests with 9 warnings in 4.50 seconds (pgmcp://cache/runs/a1073300f0314217a39f3b9f198d5654); format/lint/Pyright passed (pgmcp://cache/runs/5bb4ed4d0f5348feb7fa313ad0093460). The independent vectors, three comment frames, both length cases and header-reader round-trip assertions were retained. This GO authorizes renewed Validation; it is not a Validation verdict.
+
+### Fresh single configured suite
+
+```json
+{"scope":"configured","timeout_seconds":1200}
+```
+
+No argument override, targets, deselection or partition. Native Pytest 9.0.2 used pyproject.toml, tests/mcp_server, eight workers and **2777 items**. Result: **2775 passed, 1 skipped, 1 xpassed, 229 warnings in 326.96 seconds**, no failures, exit 0. Operation success=true; python_tests passed; args_source=configured; effective_args=[]; no request rejection or termination problem. Receipt pgmcp://cache/runs/8d4a6cb1a32e40eaac12bdf9bb1d1743.
+
+The counts reconcile with the prior same-sized negative suite: six failures became six additional passes; one skip, one XPASS and 229 warnings remain. Skip/XPASS are native outcomes and are not counted as ordinary passed tests or silently removed. The accepted stdout capture has 795557 observed bytes and truncated=false; the cached response has 796100 characters. Only a size-aware opening window and a terminal diagnostic window were read for structured facts/counts, without downloading the verbose session or computing routine hashes. The complete returned native result remains available through the receipt; excerpts are not presented as the complete log.
+
+### Explicit reviewed replacement gate coverage
+
+Independent QA accepted the following **issue473-specific** disposition in its cycle5 verdict. The historical mixed branch Python failures and 41 source/mirror link failures remain failures. They are not reclassified as native passes. The reviewed replacement proves the applicable changed-file obligations without introducing the deferred adapter solution or changing shared configuration.
+
+| Surface | Accepted coverage and current evidence |
+| --- | --- |
+| All 25 changed Python files | Reuse valid format/lint/Pyright results on the 24 unmodified files; combine the new header-reader checks, all passed. |
+| Three changed production files | Reuse unchanged strict Mypy success for bootstrap.py, cli_renewal.py and services/template_engine.py. No test Mypy gate is invented. |
+| Changed Markdown | Native offline markdown_link_review on root AGENTS.md and every other changed Markdown file except the four explicitly reviewed source/runtime copies: 24 files, passed; 504 successful links, 37 excluded by existing native configuration, 0 errors, 0 timeouts. |
+| Four instruction copies | Source/deployment-context disposition accepted: their nine unique link targets equal the root link target set and all exist relative to workspace root. Preserve their source/runtime text and the recorded original 41 directory-relative failures. |
+
+Python receipts: prior producer pgmcp://cache/runs/0205064b31494471917a8338922e0a60 and pgmcp://cache/runs/684f2302ac784d37983cd7ae22b4c828; independent 24-file review pgmcp://cache/runs/d9162d4276d940e7acde1f48bd7254bb and production Mypy pgmcp://cache/runs/d03c47fac6b14fdaa0a9a77d69debe81; new header-reader gates pgmcp://cache/runs/fc486b1fdf984812a56a937dee34f200 and independent pgmcp://cache/runs/5bb4ed4d0f5348feb7fa313ad0093460. No production/test edit after those respective checks invalidates their evidence.
+
+The exact fresh Markdown call uses scope=targets, targets equal the 24-file inventory below, profile=markdown_link_review, timeout_seconds=120, with no args override. Receipt pgmcp://cache/runs/05686421ee68496fa1d939860f4a8fb9. Its existing native excluded links include non-file schemes/remote references; no new native ignore was added for this route.
+
+The four reviewed exceptions are .agents/AGENTS.md, docs/agents/codex/AGENTS.md, docs/agents/antigravity/AGENTS.md and docs/agents/vscode/copilot/AGENTS.md. [Release source and dev-sync responsibility](../../reference/release-assets-procedure.md#1-specification-agent-instruction-sources-ssot) explains why blindly changing source-relative destinations would change active-host behavior. Host-native source comparison confirms VS Code source equals root AGENTS.md and Codex source equals .agents/AGENTS.md. All four contain the same nine unique targets, with no additional link targets. The exception is limited to this accepted issue-specific gate route; it does not certify arbitrary source-directory hyperlink navigation or all host deployments.
+
+### Complete changed-file inventories against main
+
+The MCP git_diff_stat inventory for b3e3719f against main records 101 changed files (pgmcp://cache/runs/e244406424a148c48de18737a7d67dc6). Host-native repository search resolves shortened stat names against actual files. The following 25 Python files and 28 Markdown files (24 checked, four explicitly named exceptions) account for all changed files of those types. Later Validation document/state commits do not add another source or Markdown file.
+
+Python inventory:
+
+- [mcp_server/bootstrap.py](../../../mcp_server/bootstrap.py)
+- [mcp_server/cli_renewal.py](../../../mcp_server/cli_renewal.py)
+- [mcp_server/services/template_engine.py](../../../mcp_server/services/template_engine.py)
+- [tests/mcp_server/fixtures/delivered_templates.py](../../../tests/mcp_server/fixtures/delivered_templates.py)
+- [tests/mcp_server/fixtures/installed_distribution.py](../../../tests/mcp_server/fixtures/installed_distribution.py)
+- [tests/mcp_server/integration/templates/test_architecture.py](../../../tests/mcp_server/integration/templates/test_architecture.py)
+- [tests/mcp_server/integration/templates/test_design_artifact.py](../../../tests/mcp_server/integration/templates/test_design_artifact.py)
+- [tests/mcp_server/integration/templates/test_generic_document.py](../../../tests/mcp_server/integration/templates/test_generic_document.py)
+- [tests/mcp_server/integration/templates/test_planning_artifact.py](../../../tests/mcp_server/integration/templates/test_planning_artifact.py)
+- [tests/mcp_server/integration/templates/test_pytest_integration_test.py](../../../tests/mcp_server/integration/templates/test_pytest_integration_test.py)
+- [tests/mcp_server/integration/templates/test_python_adapter.py](../../../tests/mcp_server/integration/templates/test_python_adapter.py)
+- [tests/mcp_server/integration/templates/test_python_class.py](../../../tests/mcp_server/integration/templates/test_python_class.py)
+- [tests/mcp_server/integration/templates/test_python_protocol.py](../../../tests/mcp_server/integration/templates/test_python_protocol.py)
+- [tests/mcp_server/integration/templates/test_python_pydantic_config.py](../../../tests/mcp_server/integration/templates/test_python_pydantic_config.py)
+- [tests/mcp_server/integration/templates/test_python_pydantic_dto.py](../../../tests/mcp_server/integration/templates/test_python_pydantic_dto.py)
+- [tests/mcp_server/integration/templates/test_python_worker.py](../../../tests/mcp_server/integration/templates/test_python_worker.py)
+- [tests/mcp_server/integration/templates/test_reference.py](../../../tests/mcp_server/integration/templates/test_reference.py)
+- [tests/mcp_server/integration/templates/test_research_artifact.py](../../../tests/mcp_server/integration/templates/test_research_artifact.py)
+- [tests/mcp_server/integration/templates/test_shared_documents.py](../../../tests/mcp_server/integration/templates/test_shared_documents.py)
+- [tests/mcp_server/integration/templates/test_shared_python.py](../../../tests/mcp_server/integration/templates/test_shared_python.py)
+- [tests/mcp_server/integration/templates/test_typescript_artifact.py](../../../tests/mcp_server/integration/templates/test_typescript_artifact.py)
+- [tests/mcp_server/integration/templates/test_validation_artifact.py](../../../tests/mcp_server/integration/templates/test_validation_artifact.py)
+- [tests/mcp_server/test_support.py](../../../tests/mcp_server/test_support.py)
+- [tests/mcp_server/unit/config/test_contracts_loader.py](../../../tests/mcp_server/unit/config/test_contracts_loader.py)
+- [tests/mcp_server/unit/services/test_artifact_header_reader.py](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py)
+
+Checked Markdown inventory:
+
+- [.agents/workflows/create-issue.md](../../../.agents/workflows/create-issue.md)
+- [.github/prompts/create-issue.prompt.md](../../../.github/prompts/create-issue.prompt.md)
+- [AGENTS.md](../../../AGENTS.md)
+- [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)
+- [docs/coding_standards/CODE_STYLE.md](../../../docs/coding_standards/CODE_STYLE.md)
+- [docs/coding_standards/DOCUMENTATION_STANDARD.md](../../../docs/coding_standards/DOCUMENTATION_STANDARD.md)
+- [docs/development/issue473/design-document-comparison.md](../../../docs/development/issue473/design-document-comparison.md)
+- [docs/development/issue473/design.md](../../../docs/development/issue473/design.md)
+- [docs/development/issue473/document-family-comparison.md](../../../docs/development/issue473/document-family-comparison.md)
+- [docs/development/issue473/first-output-evidence.md](../../../docs/development/issue473/first-output-evidence.md)
+- [docs/development/issue473/first-output-survey.md](../../../docs/development/issue473/first-output-survey.md)
+- [docs/development/issue473/implementation.md](../../../docs/development/issue473/implementation.md)
+- [docs/development/issue473/manual-inspection.md](../../../docs/development/issue473/manual-inspection.md)
+- [docs/development/issue473/native-tooling-follow-up.md](../../../docs/development/issue473/native-tooling-follow-up.md)
+- [docs/development/issue473/planning.md](../../../docs/development/issue473/planning.md)
+- [docs/development/issue473/python-class-comparison.md](../../../docs/development/issue473/python-class-comparison.md)
+- [docs/development/issue473/python-family-comparison.md](../../../docs/development/issue473/python-family-comparison.md)
+- [docs/development/issue473/research.md](../../../docs/development/issue473/research.md)
+- [docs/development/issue473/tool-practice-findings.md](../../../docs/development/issue473/tool-practice-findings.md)
+- [docs/development/issue473/tracking-typescript-comparison.md](../../../docs/development/issue473/tracking-typescript-comparison.md)
+- [docs/development/issue473/validation.md](../../../docs/development/issue473/validation.md)
+- [docs/development/issue473/whitespace-comparison.md](../../../docs/development/issue473/whitespace-comparison.md)
+- [docs/reference/tools/scaffolding.md](../../../docs/reference/tools/scaffolding.md)
+- [docs/setup/README.md](../../../docs/setup/README.md)
+
+### Current deliverable outcome
+
+| Obligation | Current producer outcome |
+| --- | --- |
+| V_FULL_TESTS | Complete fresh configured suite passed after the six consumer failures were corrected. |
+| V_BRANCH_CHECKS | Accepted replacement Python coverage and 24-file Markdown route passed; retain original negative broad calls and the four explicit deployment-context exceptions. |
+| V_CORRECTED_BEHAVIOR | Unchanged nineteen-family actual/manual preservation evidence plus independently reviewed existing-consumer migration; no new content harness. |
+
+Producer Validation assessment is **PASS under the explicit independently reviewed gate disposition**, with a new independent Validation review requested. The first incomplete test attempt, subsequent negative full suite, negative broad Python runs and 41 link failures remain historical evidence. A producer PASS is not independent Validation GO and does not authorize Documentation/Ready/merge by itself.
+
+### Bug / Validation Hand-over (after cycle 5)
+
+#### Scope
+
+- Complete the missed consumer in one authorized cycle and validate it with the full native suite and accepted changed-file gate coverage.
+- Preserve all historical failures and the separate deferred branch-check research.
+- Exclude production/template/adapter changes, new coverage, Documentation/Ready progression and merge.
+
+#### Deliverables
+
+- [Validation](validation.md), [Planning cycle5](planning.md#owner-authorized-repair-cycle-c_header_consumer--2026-10-04), [Repair Implementation](implementation.md#c_header_consumer--owner-authorized-cycle-5-repair-2026-10-04).
+- [Changed header-reader consumer](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py).
+- [Manual evidence](manual-inspection.md), [Actual first outputs](first-output-evidence.md), [Approved Strategy](research.md#approved-strategy), [Design](design.md).
+- [Deferred branch-check hand-off](tool-practice-findings.md#deferred-branch-wide-check-solution--owner-disposition-2026-10-04).
+
+#### Evidence
+
+- Fresh single configured suite: 2775 passed, 1 skipped, 1 xpassed, 229 warnings, 326.96 seconds, native exit0.
+- Existing module producer: 68 passed, 1 warning; independent configured module: 68 passed, 9 warnings.
+- Combined accepted 25-file format/lint/Pyright and three-production-file Mypy coverage passed.
+- Accepted 24-file Markdown route passed: 504 successful links, 37 excluded, 0 errors.
+- Independent cycle5 GO permits Validation; a fresh Validation verdict is pending.
+
+#### Open Work
+
+- Independent targeted Validation re-review of the repair closure, fresh suite and explicit replacement gate disposition.
+- Carry separately deferred adapter selection and existing F1–F7/issue476 items through Documentation/Ready to coordination.
+- Remaining skip, XPASS and warnings are disclosed native caveats, not hidden failures.
+- Documentation/Ready/merge follow their own required review boundaries.
+
+#### Review Request
+
+- Targeted external Validation review requested. Reuse unchanged evidence; review only invalidated surfaces and this phase's new results.
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -386,4 +526,5 @@ Pre-commit reality check: the full configured suite was not weakened, partitione
 | 0.4 | 2026-10-04 | @imp validator | Record the owner's separate-issue deferral and execution order before completing current-tool Validation and requesting external review. |
 
 | 0.5 | 2026-10-04 | @imp validator | Record the complete 2777-item native suite, six reproducible missed-consumer failures, current branch Python/link outcomes and outcome-neutral external review hand-over. |
+| 0.6 | 2026-10-04 | @imp validator | Close the six consumer failures with a fresh passing configured suite, explicit independent gate-route acceptance, complete changed-file inventories and targeted Validation hand-over. |
 
