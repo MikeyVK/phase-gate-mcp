@@ -3,7 +3,7 @@
 # Issue 473 — Implementation Evidence and Hand-over
 
 **Status:** Implementation — independent review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-03
 
 ## Scope and authority
@@ -119,8 +119,62 @@ Pre-commit reality check: all fifteen deliverables map to concrete source, actua
 
 The root reader was tightened to independently recompute full UTF-8 SHA256 before parsing. Nine current resolved code schemas, still-available native/test/edit/link receipts and all new repeated scaffold/rejection receipts matched their advertised hashes. Older transient receipts could not be retroactively certified. Twenty-six separately scaffolded c4_receipt_* outputs, using the identical contexts and unchanged final source graph, are byte-for-byte identical to all twenty C3 final pairs and six final boundary outputs. All fresh content-preflight rows passed; the nine repeated schema rejections returned context_invalid/written=false. The twelve changed test-file format/lint/Pyright checks passed again. Exact requests, complete responses, independent hashes and byte-equality records are in first-output-evidence.md. This refresh changes evidence only and does not modify the 38 pristine final outputs, templates, production or tests. Independent QA was notified; no new content test or permanent harness was added.
 
+## C_HEADER_CONSUMER — owner-authorized cycle 5 repair, 2026-10-04
+
+Independent Validation QA returned NOGO on 9c164c4c for a missed existing test consumer. The owner authorized one focused repair cycle and renewed Validation/review. Implementation was reopened through the audited force_phase_transition; cycle 5 was appended through update_planning_deliverables and entered through transition_cycle. This completes the approved known-consumer migration; no new strategy or production feature is introduced.
+
+| Deliverable | Actual correction / evidence |
+| --- | --- |
+| D5_CONSUMER | [Existing header-reader module](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py) imports and calls the public register_template_filters on its own renderer before template loading. Exact expected output uses the root's approved blank provenance/body separator. |
+| D5_EVIDENCE | Whole existing module: 68 passed, 1 existing warning, 0.37 seconds; format, lint and Pyright passed on that module. |
+
+Negative baseline is reused: full suite six failures and focused producer/independent QA repetitions all raised No filter named 'text_block'. No duplicate RED test or ceremonial negative rerun was added. The change adds one import, one real registration call and adjusts the expected separator; it preserves independently authored identity vectors, both length cases, all three frames, first-line maximums and ArtifactHeaderReader round trips.
+
+Exact verification calls:
+
+```json
+{"scope":"targets","targets":["tests/mcp_server/unit/services/test_artifact_header_reader.py"],"args":{"python_tests":["-q","-n","0","--tb=short"]},"timeout_seconds":120}
+```
+
+```json
+{"scope":"targets","targets":["tests/mcp_server/unit/services/test_artifact_header_reader.py"],"checks":["python_format","python_lint","python_pyright"],"timeout_seconds":120}
+```
+
+Receipts: pgmcp://cache/runs/56fb72e93cff44708f2ed9a6052ee2af and pgmcp://cache/runs/fc486b1fdf984812a56a937dee34f200. This is existing test maintenance, not a new automated content/regression suite. No fake filter, skip, production/template/adapter/native-configuration change or additional refactor was made. Existing production gates and actual scaffold evidence remain unaffected. A single fresh configured suite belongs to renewed Validation after independent repair review.
+
+### Bug / Implementation Hand-over (cycle 5)
+
+#### Scope
+
+- Complete the missed header-reader consumer migration in one focused cycle.
+- Exclude production/template edits, new tests and the deferred branch-selection solution.
+
+#### Deliverables
+
+- [Planning cycle 5](planning.md#owner-authorized-repair-cycle-c_header_consumer--2026-10-04): D5_CONSUMER and D5_EVIDENCE.
+- [Changed test consumer](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py), [real shared registration](../../../mcp_server/services/template_engine.py), [delivered root](../../../.pgmcp/template_suite/shared/templates/bases/tier0_root.jinja2).
+- Complete repair diff is relative to 9c164c4c; only the existing test module, phase documents and tool-managed workflow state/deliverables changed.
+
+#### Evidence
+
+- Reused causal six-failure baseline and independent QA diagnosis.
+- 68 existing tests passed; format/lint/Pyright passed.
+- All independent provenance/frame/length/round-trip assertions retained; no production contract modified.
+
+#### Open Work
+
+- Independent targeted Implementation review, then fresh configured full suite.
+- Explicit disposition of existing broad Python failures and deployed-instruction link context in Validation.
+- Deferred branch-check proposal remains separate; Documentation/Ready await the required reviews.
+
+#### Review Request
+
+- Targeted external review requested; producer does not claim GO.
+
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | @imp implementer | Record four correction cycles, all fifteen deliverables, nineteen-family first outputs, preservation/native evidence, known consumer closure and deferred tool triage. |
+| 0.2 | 2026-10-04 | @imp implementer | Record cycle 5's real filter registration and approved separator migration in the existing header-reader tests, 68 passing cases and scoped quality gates. |
+

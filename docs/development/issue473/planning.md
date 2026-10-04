@@ -3,7 +3,7 @@
 # Issue 473 — First-call Template Quality Planning
 
 **Status:** PLANNING — independent review requested
-**Version:** 0.4
+**Version:** 0.5
 **Last Updated:** 2026-10-04
 
 ## Authority, outcome and scope
@@ -24,6 +24,7 @@ The human explicitly chose actual scaffolding and manual agent inspection instea
 | 2 | C_CODE | C_SHARED | Six Python classes, two Pytest families and TypeScript first outputs |
 | 3 | C_DOCS | C_CODE | Seven full-document and three tracking first outputs |
 | 4 | C_RECONCILE | C_DOCS | Active consumer/standards consistency and complete inspection/tool evidence |
+| 5 | C_HEADER_CONSUMER | Validation NOGO and owner-directed repair | Migrate the missed existing header-reader renderer and separator expectation |
 
 All cycles belong to `@imp implementer`. Dependencies are sequential to keep shared-source changes and evidence freshness understandable. The human/independent QA workflow owns phase approval; producer-delegated findings cannot authorize progression.
 
@@ -329,7 +330,7 @@ Documentation reconciles only current claims invalidated by validated final beha
 
 ## Structured payload and review discipline
 
-The saved payload contains four sequential cycles. Cycle numbers, names, deliverable IDs/descriptions and exit criteria are identical to this document. Validation and Documentation IDs/descriptions also agree. No `contains_text` marker, file count or structural deliverable check is treated as substantive proof of an objective; manual/native review remains necessary. No automated semantic `validates` rules are added as a substitute for the agreed inspection.
+The saved payload now contains five sequential cycles: the original four plus the owner-authorized C_HEADER_CONSUMER repair. Cycle numbers, names, deliverable IDs/descriptions and exit criteria are identical to this document. Validation and Documentation IDs/descriptions also agree. No `contains_text` marker, file count or structural deliverable check is treated as substantive proof of an objective; manual/native review remains necessary. No automated semantic `validates` rules are added as a substitute for the agreed inspection.
 
 Persist with `save_planning_deliverables(issue_number=473, planning_deliverables=...)`, then read the complete result and `get_project_plan` and compare the saved payload to the authored inventory. Do not hand-edit deliverables/state files. Document dependencies and stops remain binding even where the stored schema has no dependency field.
 
@@ -408,6 +409,17 @@ Pre-commit reality check: each Design obligation has a cycle/evidence owner; sha
 - [Delivered fixture](../../../tests/mcp_server/fixtures/delivered_templates.py)
 - [Installed-distribution fixture](../../../tests/mcp_server/fixtures/installed_distribution.py)
 
+## Owner-authorized repair cycle C_HEADER_CONSUMER — 2026-10-04
+
+Independent Validation QA returned NOGO on 9c164c4c: the six existing header-reader render variants use an unregistered Jinja environment, and their exact separator expectation predates the approved root layout. The owner requested one focused fix cycle followed by focused Validation and external re-review. Reopen Implementation for cycle 5; this is a missed-consumer completion of Design, not a new design or compatibility strategy.
+
+| Deliverable | Scope |
+| --- | --- |
+| D5_CONSUMER | Register the real shared filters in the existing test renderer and expect the approved blank separator. Preserve independent provenance values, all three frames, maximum header bounds and round-trip assertions. |
+| D5_EVIDENCE | Run the whole existing 68-case header-reader module and its format/lint/Pyright checks. Reuse the six producer/QA failures as the negative baseline; add no tests. |
+
+Exit: all existing module cases and relevant test gates pass. No fake filter, skip, production/template/adapter edit or new regression harness. Return to Validation, preserve historical broad failures, explicitly record reviewed replacement Python coverage and deployed-instruction link context, then perform the QA-requested single fresh configured full suite and focused external review. Unchanged broad gates/manual evidence are reused unless the repair invalidates them.
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -416,4 +428,5 @@ Pre-commit reality check: each Design obligation has a cycle/evidence owner; sha
 | 0.2 | 2026-10-03 | @imp planner (Codex) | Replace unsupported syntax selections with existing scaffold content-preflight receipts and already selected family-test evidence, retaining cycle payload and syntax obligations. |
 | 0.3 | 2026-10-04 | @imp validator | Apply the owner's issue460 deadline decision: complete suite coverage through bounded partitions, unchanged native arguments and explicit coverage accounting. |
 | 0.4 | 2026-10-04 | @imp validator | Supersede the partition route with the owner-approved 1800-second client window and single configured full-suite invocation with a 1200-second execution budget. |
+| 0.5 | 2026-10-04 | @imp implementer | Add the owner-authorized cycle 5 to migrate the missed existing header-reader renderer/separator, preserving all valuable assertions and deferring adapter work. |
 

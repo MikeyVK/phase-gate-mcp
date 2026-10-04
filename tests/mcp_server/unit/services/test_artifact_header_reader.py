@@ -17,6 +17,7 @@ from mcp_server.core.interfaces.artifact_header_reader import (
 )
 from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
+from mcp_server.services.template_engine import register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots, write_package_tree
 
@@ -191,6 +192,7 @@ def test_selected_graph_renders_retained_root_and_round_trips(
         undefined=StrictUndefined,
         keep_trailing_newline=True,
     )
+    register_template_filters(renderer)
     identity = (
         ArtifactIdentity(id="a" * 24, pv="1.2.3-beta1", pf="A" * 16, sf="B" * 16)
         if maximum
@@ -204,7 +206,7 @@ def test_selected_graph_renders_retained_root_and_round_trips(
     rendered = renderer.get_template(graph.roots[0].template_name).render(
         provenance=identity, content={"body": "original body\n"}
     )
-    assert rendered == frame_start + " " + expected + frame_end + "\noriginal body\n"
+    assert rendered == frame_start + " " + expected + frame_end + "\n\noriginal body\n"
     assert len(rendered.split("\n", 1)[0]) <= 100
     if maximum and frame_start == "<!--":
         assert len(rendered.split("\n", 1)[0]) == 100

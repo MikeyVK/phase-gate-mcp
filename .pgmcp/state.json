@@ -3,8 +3,8 @@
   "branch": "bug/473-first-call-template-quality",
   "issue_number": 473,
   "workflow_name": "bug",
-  "current_phase": "validation",
-  "current_cycle": 4,
+  "current_phase": "implementation",
+  "current_cycle": 5,
   "last_cycle": 4,
   "cycle_history": [
     {
@@ -24,6 +24,12 @@
       "name": "C_RECONCILE \u2014 active consumers and complete evidence",
       "forced": false,
       "entered": "2026-10-03T20:08:44.775546+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "C_HEADER_CONSUMER \u2014 missed existing render consumer",
+      "forced": false,
+      "entered": "2026-10-04T18:45:16.575717+00:00"
     }
   ],
   "required_phases": [
@@ -36,7 +42,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Reopen Implementation after independent Validation NOGO on 9c164c4c for one owner-authorized existing-test consumer migration cycle; no gate is waived.",
   "issue_title": "bug: Improve first-call quality of shipped concrete templates",
   "parent_branch": "main",
   "created_at": "2026-10-02T12:11:16.417982+00:00",
@@ -72,8 +78,16 @@
       "human_approval_message": "User: Prima go voor validatie. Independent QA GO Implementation \u2192 Validation for 1a0360ac with evidence-only 9d27e4d2; no remaining blocking findings.",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-04T18:44:49.893500+00:00",
+      "human_approval_message": "Owner approved on 2026-10-04: 'Laten we deze gefaalde testen in 1 gerichte fix cycle oplossen en daarna validation gericht opnieuw draaien en externe qa ook gericht opnieuw laten beoordelen.'",
+      "forced": true,
+      "skip_reason": "Reopen Implementation after independent Validation NOGO on 9c164c4c for one owner-authorized existing-test consumer migration cycle; no gate is waived."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "green"
 }
