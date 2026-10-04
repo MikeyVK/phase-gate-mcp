@@ -115,7 +115,7 @@
           "deliverables": [
             {
               "id": "V_FULL_TESTS",
-              "description": "One complete native-configured run_tests(scope='configured') and exact native outcomes are recorded in Validation; rerun only when invalidated."
+              "description": "Complete native-configured suite coverage is recorded through bounded partitions within the approved client deadline; preserve native arguments, account for every collected test and record exact outcomes; rerun only failed, incomplete or invalidated partitions."
             },
             {
               "id": "V_BRANCH_CHECKS",

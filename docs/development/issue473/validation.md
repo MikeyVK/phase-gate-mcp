@@ -3,8 +3,8 @@
 # Issue 473 — Validation
 
 **Status:** Validation blocked; independent review requested  
-**Version:** 0.1  
-**Last Updated:** 2026-10-03
+**Version:** 0.2  
+**Last Updated:** 2026-10-04
 
 ## Purpose
 
@@ -244,8 +244,38 @@ All nineteen families and the fifteen Implementation deliverables remain mapped 
 
 The newly scaffolded report and the outcome appendix passed their selected enforce content preflights. A separate configured offline markdown_link_review on docs/development/issue473/validation.md passed (receipt pgmcp://cache/runs/a05872435c48431a9ce5a43cf0ecb0c5). This verifies the report's links only; it does not change the failed/missing broad Validation obligations. The final verification note introduces no new linked target.
 
+## Owner refinement — bounded execution and main rollout, 2026-10-04
+
+The human explicitly requested the issue460 remedy and a durable rollout. The [2026-09-26 owner decision](../issue460/validation.md#owner-decision--client-timeout-2026-09-26) selected a 300-second Codex client deadline and bounded partitions with complete coverage, rather than another deadline increase. The local .codex/config.toml already contains tool_timeout_sec=300; no local setting reset was observed. The lost refinement was the partitioning instruction, while current phase prose again demanded one indivisible call. The previous suggestion to raise the client value to600 is withdrawn.
+
+### Applied route
+
+- Persist concise cache/hash and bounded-execution rules in AGENTS.md, its active .agents copy and the three shipped agent instruction sources.
+- Persist the client deadline and host-local activation steps in docs/setup/README.md; retain machine paths/secrets outside Git.
+- Update Planning V_FULL_TESTS and its tool-managed deliverable: full configured collection coverage may be executed through bounded target partitions.
+- Use timeout_seconds=240 for each single-binding test partition; preserve native execution arguments and leave margin for stopping/result delivery.
+- Account for every configured collected test in the partition inventory. Report failures, skips, overlaps and missing coverage explicitly; rerun only failed, incomplete or invalidated partitions.
+- Keep prior timeout/failure evidence. This instruction repair is not completed suite evidence.
+
+### Python gate diagnostic clarification
+
+The already executed all24 changed-Python diagnostic passed format, lint and Pyright; its complete DTO is approximately13KB (receipt pgmcp://cache/runs/0205064b31494471917a8338922e0a60). Mypy found44 errors in11 test files. Strict test Mypy is diagnostic under the [current quality policy](../../coding_standards/QUALITY_GATES.md), not a newly mandatory gate. A separate Mypy selection on the3 changed production files passed (receipt pgmcp://cache/runs/684f2302ac784d37983cd7ae22b4c828). Those facts do not silently replace the prescribed branch-check route; its formal disposition remains open.
+
+### Plan to integrate on main
+
+1. Review the tracked policy/setup changes and the issue473 Planning refinement independently. Keep policy/setup edits in a separate commit from issue-specific evidence.
+2. Close outstanding Validation obligations through the approved bounded route, then follow Documentation/Ready and the normal reviewed issue473 PR integration into main.
+3. Under coordination ownership, align the shared Validation wording in .pgmcp/config/contracts.yaml with complete coverage through bounded partitions. The five existing indivisible-run phrases must not reintroduce the rejected call shape. Align the shipped default from its release source; do not patch ignored generated assets.
+4. Carry all five AGENTS instruction copies and the setup policy together through release asset assembly, following the [release assets procedure](../../reference/release-assets-procedure.md).
+5. On each host using main, apply the tracked setup policy to its ignored local Codex connection: tool_timeout_sec=300, preserved machine command/cwd/environment, and confirmed activation. A merge or PGMCP-only restart does not prove client activation.
+6. Verify a bounded call returns a complete result and reconcile the partition inventory with the full configured suite. Retain incomplete runs as missing evidence.
+
+No main checkout/merge, global workflow-contract edit, generated asset rebuild or new content/regression tests were performed here. F6 recovery and generic issue476 remain separately scoped. The Validation status remains FAIL until the required evidence is complete.
+
+
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | @imp validator | Record configured full-suite attempt, branch-wide checks, corrected-behavior mapping and unresolved Validation evidence. |
+| 0.2 | 2026-10-04 | @imp validator | Restore owner-approved issue460 partitioning, persist concise cache/deadline instructions and main rollout, and retain diagnostic/gate distinctions. |

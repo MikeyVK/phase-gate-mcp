@@ -3,8 +3,8 @@
 # Issue 473 — First-call Template Quality Planning
 
 **Status:** PLANNING — independent review requested
-**Version:** 0.2
-**Last Updated:** 2026-10-03
+**Version:** 0.3
+**Last Updated:** 2026-10-04
 
 ## Authority, outcome and scope
 
@@ -313,13 +313,15 @@ These phase deliverables are stored alongside the cycles; they are planned oblig
 
 | Phase | Deliverable ID | Description |
 | --- | --- | --- |
-| validation | V_FULL_TESTS | One complete native-configured run_tests(scope='configured') and exact native outcomes are recorded in Validation; rerun only when invalidated. |
+| validation | V_FULL_TESTS | Complete native-configured suite coverage is recorded through bounded partitions within the approved client deadline; preserve native arguments, account for every collected test and record exact outcomes; rerun only failed, incomplete or invalidated partitions. |
 | validation | V_BRANCH_CHECKS | Required branch-wide configured Python review and affected Markdown link evidence are recorded with failures/availability and parent-main scope. |
 | validation | V_CORRECTED_BEHAVIOR | Validation maps 19-family manual first-output evidence, boundaries, consumer migration and current-tool findings to Design/Planning obligations and residual limitations. |
 | documentation | DOC_CURRENT | Reconcile active references/instructions against validated final behavior and inspect source/mirror consistency; update only invalidated current claims and links. |
 | documentation | DOC_TRIAGE | Finalize deferred current-tool findings and #476 evidence hand-off for coordination, with actual impact, reproduction and coverage limitations. |
 
-Validation uses `run_tests(scope="configured")` for one complete native-configured run and `run_checks(scope="branch")` for the workflow-required branch-wide gates. Its configured default Python review remains in force. Run branch Markdown link review with `profile="markdown_link_review"` for affected document consumers where the Python profile cannot provide that evidence. Record the actual selected scope/rows and branch parent main; broad diagnostic selections are not silently substituted for mandated evidence.
+Owner refinement, 2026-10-04: follow the [issue460 timeout decision](../issue460/validation.md#owner-decision--client-timeout-2026-09-26). Keep the client deadline at 300 seconds and establish the full native-configured collection inventory. Execute that inventory through bounded `run_tests(scope="targets", targets=[...], timeout_seconds=240)` partitions, preserving native execution arguments and recording test IDs/coverage, exact results, failures and omissions. Partition unions must account for the complete configured inventory; a partial or timed-out partition cannot count as completed coverage. No additional automated coverage harness or content tests are introduced. This owner-approved route replaces the indivisible invocation requirement, not the full-suite coverage requirement.
+
+The required branch-wide checks remain subject to their stated obligations. The diagnosed explicit Python selection and production-only Mypy route are recorded in Validation; they are not silently substituted here. Retain branch Markdown link review with `profile="markdown_link_review"`, branch parent main and exact selected scope/rows.
 
 Reuse fresh manual/context/native evidence where it proves the corrected behavior. Rerun the narrow actual scaffold reproduction if the full suite does not expose it. The human prohibition on additional automated content/regression tests remains binding in Validation; a newly discovered gap is discussed rather than silently turned into a new suite. Any failed/unavailable required gate is reported, not weakened or reinterpreted.
 
@@ -412,3 +414,4 @@ Pre-commit reality check: each Design obligation has a cycle/evidence owner; sha
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | @imp planner (Codex) | Four correction cycles with matching structured deliverables, bounded existing checks, actual scaffold/manual evidence, active consumer closure and current-tool findings obligations. |
 | 0.2 | 2026-10-03 | @imp planner (Codex) | Replace unsupported syntax selections with existing scaffold content-preflight receipts and already selected family-test evidence, retaining cycle payload and syntax obligations. |
+| 0.3 | 2026-10-04 | @imp validator | Apply the owner's issue460 deadline decision: complete suite coverage through bounded partitions, unchanged native arguments and explicit coverage accounting. |
