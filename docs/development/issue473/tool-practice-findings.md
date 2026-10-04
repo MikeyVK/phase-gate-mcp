@@ -3,7 +3,7 @@
 # Issue 473 — Current Tool Practice Findings
 
 **Status:** Validation in progress; follow-up findings recorded
-**Version:** 0.2
+**Version:** 0.3
 **Last Updated:** 2026-10-04
 
 This assessment describes current practical behavior, with no pre-460 score or assumed regression attribution. Root issue473 template defects are corrected within their planned cycles; unrelated tool findings remain reproduction evidence for coordination. Exact actual scaffold requests, outputs and complete factual rows are in [first-output evidence](first-output-evidence.md).
@@ -232,9 +232,41 @@ Observed: **6 passed, 207 deselected, 2 warnings, 29.26 seconds**; receipt pgmcp
 
 This audit is follow-up triage evidence. It does not broaden issue473's template correction into adapter implementation, close its pending full Validation obligations or claim independent QA approval.
 
+## Deferred branch-wide check solution — owner disposition, 2026-10-04
+
+**Decision:** carry this investigation into a separate follow-up issue. Issue473 records the evidence and performs its required Validation; it does not implement selection_intent, adapter filtering, target-collapse changes or native-selection infrastructure. The owner explicitly requested this separation before further Validation. Coordination owns later issue creation, prioritization and assignment; no follow-up issue number is fabricated.
+
+### Problem and reproduction index
+
+The current branch Python profile passes the same mixed Git-derived selection to every selected native adapter. Explicit native inputs can bypass discovery restrictions or replace configured start roots, so merely forwarding branch paths does not mean "check the applicable changed sources". The exact failed broad request, native outcomes and scoped Python workaround are preserved in [Validation V-F8](validation.md#v-f8--branch-python-profile-sends-mixed-source-kinds-to-native-python-tools). The preceding applicability audit contains all nine packages, native references and the six existing-case reproduction (6 passed); it is the primary research inventory.
+
+Additional source-level reproduction: request explicit targets tests/ and tests/generated.py together, where native recursive discovery excludes the descendant but direct file input admits it. ScopeResolver._collapse_targets currently removes the descendant before the adapter receives it. This is source evidence, not a claimed newly executed reproduction.
+
+### Discussed direction and unresolved design decisions
+
+| Boundary | Discussed direction | Follow-up obligation |
+| --- | --- | --- |
+| Generic selection | Translate caller intent to configured_candidates or explicit_sources; retain Git/branch knowledge here. | Decide configured/workspace mappings and preserve deliberate directory-plus-file inputs. Do not flatten directories generically. |
+| Adapter applicability | Candidate checks assess the native configured/discovered initial source set; explicit checks retain native explicit-source semantics. | Implement only meaningful responsibilities: Ruff lint/format, Mypy, Pyright and Lychee selection; avoid invented candidate behavior in content, existing fixes or Pytest routes. |
+| Native configuration | Reuse native configuration and discovery, including operation-specific applicability and exclusions. | Establish a supported resolver for each pinned native operation, especially Ruff format and Pyright. Do not duplicate extension, glob, root or exclusion settings in generic code or adapter configuration. |
+| Empty result | A nonempty candidate request with no applicable sources must not fall back to configured full-project discovery. | Define an honest no-applicable-sources result without claiming a native pass. Per-file skip reporting is not requested. |
+| Wire contract | Only receiving selection roles need the semantic field; content requests remain exact snapshots. | Choose compatibility/migration strategy per affected role before Design. Current strict validators reject unknown fields; the template clean-break decision is not adapter migration approval. |
+| Feasibility and coverage | Existing native discovery tests establish today's behavior. | Resolve native API/private-helper and extra-invocation trade-offs; define meaningful evidence in the follow-up plan. No extra content/regression suite or permanent harness is authorized by this research record. |
+
+### Issue473 execution order
+
+1. Record and commit this deferred research first.
+2. Execute the single configured full-suite run with the approved 1200-second native budget and 1800-second client window.
+3. Complete branch-check evidence using the current tools, retaining historical failures and any required-gate limitation; no production repair or silent gate substitution.
+4. Finalize the Validation report and request the external Beoordeel designplan review.
+
+In the owner's overall completion list, deferral is the fourth obligation, performed first. Later Documentation/Ready must carry this hand-off forward. The follow-up implementation is not a prerequisite that expands issue473; incomplete required Validation evidence remains explicitly reviewable.
+
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-03 | Not recorded in the original document | Existing current-tool implementation findings and route assessment. |
 | 0.2 | 2026-10-04 | @imp validator | Audit all nine available adapter packages for selection-intent applicability, record existing native verification and identify bounded follow-up contract/resolver work. |
+| 0.3 | 2026-10-04 | @imp validator | Explicitly defer the branch-check solution to a separate issue, preserve boundary decisions and unresolved design/migration questions, and record the owner-ordered Validation continuation. |
+

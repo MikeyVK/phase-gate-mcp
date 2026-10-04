@@ -3,7 +3,7 @@
 # Issue 473 — Validation
 
 **Status:** Validation blocked; independent review requested  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-04
 
 ## Purpose
@@ -284,6 +284,12 @@ All eight tracked text edits passed their safe_edit_file enforce content preflig
 
 The separate offline link check of the root AGENTS file and the changed setup, Planning and Validation documents passed (receipt pgmcp://cache/runs/0e390d96dbeb4ddaafd234dcd05bcf43). This narrower passing result does not replace the recorded eight-file failure or the pending full Validation obligations.
 
+## Owner continuation and deferred branch-check solution — 2026-10-04
+
+The owner added explicit deferral as the fourth completion obligation and instructed that it be performed first. The complete research, discussed selection-intent direction, nine-package applicability, native evidence, generic target-collapse finding, unresolved resolver/wire migration decisions and separate-issue disposition are recorded in [the deferred hand-off](tool-practice-findings.md#deferred-branch-wide-check-solution--owner-disposition-2026-10-04). No production, adapter, test or native configuration change is part of this continuation.
+
+Execution order: commit the deferral; perform the approved single configured full-suite run; complete current-tool branch-gate evidence without hiding limitations; commit the updated Validation report and request the external Beoordeel designplan review. Existing scoped Python successes remain evidence, not an undeclared replacement for the prescribed broad gate. Later Documentation/Ready carries the deferred work to coordination.
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -291,4 +297,5 @@ The separate offline link check of the root AGENTS file and the changed setup, P
 | 0.1 | 2026-10-03 | @imp validator | Record configured full-suite attempt, branch-wide checks, corrected-behavior mapping and unresolved Validation evidence. |
 | 0.2 | 2026-10-04 | @imp validator | Restore owner-approved issue460 partitioning, persist concise cache/deadline instructions and main rollout, and retain diagnostic/gate distinctions. |
 | 0.3 | 2026-10-04 | @imp validator | Recover the original timeout decision and supersede partitioning with the approved larger client window, full-run budget and durable main/host rollout. |
+| 0.4 | 2026-10-04 | @imp validator | Record the owner's separate-issue deferral and execution order before completing current-tool Validation and requesting external review. |
 
