@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.schemas.deliverables import CyclePlanningModel
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 
 
 class BaseToolOutput(BaseModel):
@@ -31,7 +32,7 @@ class HealthStatus(StrEnum):
 
 class HealthCheckOutput(BaseToolOutput):
     status: HealthStatus = HealthStatus.HEALTHY
-    reason: str | None = None
+    startup_diagnostic: StartupDiagnostic | None = None
     version: str
     pid: int
     platform: str

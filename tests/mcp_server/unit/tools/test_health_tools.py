@@ -21,6 +21,9 @@ from unittest.mock import patch
 import pytest
 
 # Project modules
+from mcp_server.config.settings import Settings
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 from mcp_server.tools.health_tools import HealthCheckTool
 
 
@@ -34,7 +37,7 @@ class TestHealthAndAdminTools:
         from mcp_server.schemas.tool_outputs import HealthCheckOutput  # noqa: PLC0415
         from mcp_server.tools.health_tools import HealthCheckInput  # noqa: PLC0415
 
-        tool = HealthCheckTool()
+        tool = HealthCheckTool(settings=Settings())
         context = NoteContext()
         params = HealthCheckInput()
 
@@ -45,16 +48,19 @@ class TestHealthAndAdminTools:
         assert result.status == "healthy"
 
     @pytest.mark.asyncio
-    async def test_health_check_tool_with_injected_override(self) -> None:
-        """HealthCheckTool should execute and return unhealthy status and reason when overridden."""
+    async def test_health_check_tool_with_injected_diagnostic(self) -> None:
+        """HealthCheckTool should return unhealthy status and the injected startup diagnostic."""
         from mcp_server.core.operation_notes import NoteContext  # noqa: PLC0415
         from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus  # noqa: PLC0415
         from mcp_server.tools.health_tools import HealthCheckInput  # noqa: PLC0415
 
-        tool = HealthCheckTool(
-            override_status=HealthStatus.UNHEALTHY,
-            override_reason="Database connection failed",
+        diagnostic = StartupDiagnostic(
+            exception_type="mcp_server.core.exceptions.ConfigError",
+            message="Database connection failed",
+            code="ERR_CONFIG",
+            params=FrozenJsonObject(()),
         )
+        tool = HealthCheckTool(settings=Settings(), startup_diagnostic=diagnostic)
         context = NoteContext()
         params = HealthCheckInput()
 
@@ -63,7 +69,7 @@ class TestHealthAndAdminTools:
         assert isinstance(result, HealthCheckOutput)
         assert result.success
         assert result.status == HealthStatus.UNHEALTHY
-        assert result.reason == "Database connection failed"
+        assert result.startup_diagnostic == diagnostic
 
     @pytest.mark.asyncio
     async def test_restart_server_tool_returns_dto(self, tmp_path: Path) -> None:

@@ -910,7 +910,7 @@ class ServerBootstrapper:
                 state_engine=managers.phase_state_engine,
             ),
             CheckMergeTool(manager=managers.git_manager),
-            HealthCheckTool(),
+            HealthCheckTool(settings=settings),
             RestartServerTool(
                 server_root=(Path(settings.server.workspace_root) / settings.server.server_root_dir)
             ),

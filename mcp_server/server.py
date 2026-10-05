@@ -6,6 +6,7 @@ import sys
 import time
 import uuid
 from io import TextIOWrapper
+from pathlib import Path
 from typing import Any, cast
 
 import anyio
@@ -37,6 +38,7 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.presentation_output import PresentedOutput
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
@@ -250,29 +252,36 @@ class MCPServer:
 
 
 class DegradedMCPServer(MCPServer):
-    """Degraded MCP server initialized when a config error occurs."""
+    """Compose only diagnostic and retry tools after recognized startup rejection."""
 
-    def __init__(self, settings: Settings, reason: str) -> None:
-        """Initialize the degraded server with only the health check tool."""
-        from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus  # noqa: PLC0415
+    def __init__(
+        self, settings: Settings, diagnostic: StartupDiagnostic, presenter: IPresenter
+    ) -> None:
+        """Keep recovery independent of rejected configuration and template admission."""
+        from mcp_server.schemas.tool_outputs import (  # noqa: PLC0415
+            HealthCheckOutput,
+            RestartServerOutput,
+        )
+        from mcp_server.tools.admin_tools import RestartServerTool  # noqa: PLC0415
         from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
 
-        health_tool = HealthCheckTool(
-            override_status=HealthStatus.UNHEALTHY,
-            override_reason=reason,
-        )
-
+        health_tool = HealthCheckTool(settings, diagnostic)
+        restart_tool = RestartServerTool(server_root=Path(settings.server.resolved_server_root))
         super().__init__(
             settings=settings,
-            # The decorator validates HealthCheckInput before invoking this typed tool.
             tools=[
                 ToolErrorHandlerDecorator(
                     InputValidationDecorator[HealthCheckOutput](
                         cast(ICoreTool[BaseModel, HealthCheckOutput], health_tool)
                     )
-                )
+                ),
+                ToolErrorHandlerDecorator(
+                    InputValidationDecorator[RestartServerOutput](
+                        cast(ICoreTool[BaseModel, RestartServerOutput], restart_tool)
+                    )
+                ),
             ],
             resources=[],
-            presenter=None,
+            presenter=presenter,
             publisher=None,
         )

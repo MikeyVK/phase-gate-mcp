@@ -855,13 +855,26 @@ def test_server_constructor_clean() -> None:
 async def test_degraded_health_tool_uses_normalized_pipeline(tmp_path: Path) -> None:
     """The config-error fallback remains callable through the outer tool contract."""
     from mcp_server.config.settings import ServerSettings, Settings  # noqa: PLC0415
+    from mcp_server.core.interfaces.template_catalog import FrozenJsonObject  # noqa: PLC0415
+    from mcp_server.presenters import SchemaResourcePresenter  # noqa: PLC0415
+    from mcp_server.presenters.startup_recovery_presenter import (  # noqa: PLC0415
+        StartupRecoveryPresenter,
+    )
+    from mcp_server.schemas.startup_diagnostic import StartupDiagnostic  # noqa: PLC0415
     from mcp_server.schemas.tool_outputs import HealthCheckOutput  # noqa: PLC0415
     from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
 
     server = DegradedMCPServer(
-        Settings(server=ServerSettings(workspace_root=str(tmp_path))), "Invalid configuration"
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        StartupDiagnostic(
+            exception_type="mcp_server.core.exceptions.ConfigError",
+            message="Invalid configuration",
+            code="ERR_CONFIG",
+            params=FrozenJsonObject(()),
+        ),
+        StartupRecoveryPresenter(SchemaResourcePresenter()),
     )
-    assert [tool.name for tool in server.tools] == ["health_check"]
+    assert [tool.name for tool in server.tools] == ["health_check", "restart_server"]
     execution = await server.tools[0].execute({}, NoteContext())
     assert isinstance(execution.operation, HealthCheckOutput)
     assert execution.attachments == ()
