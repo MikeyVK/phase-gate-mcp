@@ -3,7 +3,7 @@
 # Startup admission diagnostics and recovery — Planning (#481)
 
 **Status:** PLANNING DRAFT — review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-05
 
 ## Purpose
@@ -41,10 +41,12 @@ Initial recovery/server health and transport readiness are separate outcomes. An
 | Phase | Evidence and timing |
 | --- | --- |
 | Planning | Scaffold preflight plus run_checks(scope='targets', targets=['docs/development/issue481/planning.md'], profile='markdown_link_review', timeout_seconds=300). Verify document/payload cycle IDs, descriptions and ordering via get_project_plan. |
-| Implementation | One focused python_review on the final changed production Python files (600-second request budget, native arguments unchanged). Apply syntax/format/lint checks to mechanically changed test callers; no test Mypy gate or test execution. No runtime acceptance claim yet. |
-| Validation | Once: run_checks(scope='branch', checks=['python_format','python_lint','python_pyright'], timeout_seconds=600) and run_checks(scope='configured', checks=['python_types'], timeout_seconds=600), preserving the configured strict Mypy production scope. Add the single process demonstration above. No regression suite. Reuse fresh evidence unless invalidated. |
-| Documentation | Native edit validation plus markdown_link_review on the two changed reference files; extend only for another actually changed Markdown target. |
+| Implementation | Select existing changed files from the current Git diff/status at the check moment. Production .py targets: run_checks(scope='targets', targets=<production Python selection>, profile='python_review', timeout_seconds=600). Mechanically changed test .py targets: scope='targets', checks=['python_syntax','python_format','python_lint']. No test Mypy gate or test execution. Record actual targets and receipts; no runtime acceptance claim yet. |
+| Validation | Refresh the Git selection; rerun appropriate scope='targets' checks only for changed/invalidated production or mechanical-test Python evidence. At the end of Validation, run once: run_checks(scope='configured', checks=['python_format','python_lint','python_pyright'], timeout_seconds=600) and the separate run_checks(scope='configured', checks=['python_types'], timeout_seconds=600). These workspace-wide runs use native configured selection; Mypy retains its configured production scope. Add the single process demonstration above. No regression suite. |
+| Documentation | Native edit validation and run_checks(scope='targets', targets=<current Git-selected changed Markdown files needing fresh evidence>, profile='markdown_link_review', timeout_seconds=300). Include the two changed reference files; reuse valid prior document evidence. |
 | Ready | Inspect final status/diff and reuse fresh evidence; create no extra tests or checks merely to repeat a completed phase. |
+
+Use git_diff_stat(target_branch=<recorded parent>, source_branch='HEAD') and git_status at each applicable check moment to select committed and working-tree changes. Deduplicate existing paths; separate production .py, mechanically changed test .py and Markdown into the targets suitable for each check. Do not send deleted paths, Markdown or workflow JSON to Python checks. Record the selected paths and any exclusions; skip empty target groups. Never use scope='branch' as an implicit file-type filter. The final scope='configured' runs supply no targets and preserve native configured arguments/selection.
 
 Use required MCP tools for scaffolding/edits, phase/cycle state, commits and checks. No workflow/configuration change is planned to encode an issue-local testing exception. Deliverable validators are intentionally null: file presence or keyword assertions would not prove these behavioral contracts; review the recorded native and process evidence instead.
 
@@ -83,7 +85,7 @@ Document tools/list refresh/reconnect and measure valid startup plus the real ti
 ## Milestones
 
 - C481.1: implement and statically verify the complete recovery correction; one implementation review/commit boundary.
-- Validation: perform the one isolated process demonstration and final branch gates, then record actual acceptance evidence once.
+- Validation: perform the one isolated process demonstration and final configured workspace checks; refresh Git-selected per-type targets only when prior evidence is invalidated, then record actual acceptance evidence once.
 - Documentation: reconcile the two current operational references and their links.
 - Ready: assemble the verified PR and coordination hand-over using fresh evidence; no repeated verification or duplicate approval ceremony.
 
@@ -119,13 +121,13 @@ Proxy drains generation-bound streams, completes a validated live initialize exc
 
 ##### D481.1.3
 
-All current health/degraded composition callers use the clean-break contracts; removed fields/parameters have no compatibility path; focused native static checks pass on final changed production Python files.
+All current health/degraded composition callers use the clean-break contracts; removed fields/parameters have no compatibility path; focused native static checks pass on current Git-selected production Python targets and applicable mechanical test-callers targets, with exact selections recorded.
 
 **Validates:** null
 
 #### Exit Criteria
 
-D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant source review completed and focused python_review passed on the final changed production files. Record the exact target list and receipts in the implementation hand-over. Behavioral acceptance remains pending Validation; no pytest/unittest/regression run or artificial RED commit.
+D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant source review completed and focused python_review passed on current Git-selected production .py targets, with syntax/format/lint evidence for mechanically changed test .py targets. Record exact per-check target lists and receipts in the implementation hand-over. Behavioral acceptance and final configured workspace checks remain pending Validation; no pytest/unittest/regression run or artificial RED commit.
 
 #### Dependencies
 
@@ -149,7 +151,7 @@ D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant
 
 ##### Current caller parity and production quality
 
-**Method:** Repository search for removed health contracts and run_checks(scope='targets', targets=<actual changed production Python files>, profile='python_review', timeout_seconds=600).
+**Method:** Repository search for removed health contracts; select existing changed paths using current Git diff/status. Run python_review with scope='targets' on production .py only; use scope='targets', checks=['python_syntax','python_format','python_lint'] on mechanically changed test .py only. Preserve native arguments, use timeout_seconds=600 and record the actual selected paths.
 
 **Expected Result:** No live legacy caller; production format/lint/types/pyright pass with native configured arguments; mechanical test callers have applicable syntax/format/lint evidence. Strict test Mypy is not made mandatory. No test execution or invented regression evidence.
 
@@ -171,7 +173,7 @@ D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant
 
 #### V481.1
 
-One concise validation record contains the isolated direct-CLI/proxy rejection, complete diagnostics, repeated rejection and corrected restart captures; exit/initialize-failure/timeout/race outcomes and timings; final branch static gates; exact outcomes and any limitations, with no regression-test runs.
+One concise validation record contains the isolated direct-CLI/proxy rejection, complete diagnostics, repeated rejection and corrected restart captures; exit/initialize-failure/timeout/race outcomes and timings; current Git-selected per-type target evidence and final scope=configured workspace static checks, retaining separate configured production Mypy; exact outcomes and any limitations, with no regression-test runs.
 
 **Validates:** null
 
@@ -195,4 +197,4 @@ Current health/restart and proxy references match the new diagnostic schema, rec
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-05 | @imp planner | Plan one implementation cycle and bounded validation/documentation after independent Design GO. |
-
+| 0.2 | 2026-10-05 | @imp planner | Correct the QA P2 gate-selection blocker: current Git-selected targets per check type and final configured workspace checks. |
