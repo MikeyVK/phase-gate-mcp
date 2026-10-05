@@ -381,7 +381,7 @@ class MCPProxy:
 
     def _handle_server_message(self, child: _Child, message: dict[str, Any]) -> None:
         with self.lock:
-            if self._child is not child or child.failed or self._stopped:
+            if self._child is not child or child.failed or child.restart_requested or self._stopped:
                 return
             if "method" in message:
                 self._write_client(message)
@@ -490,10 +490,21 @@ class MCPProxy:
                 if not self._stopped:
                     self._state = "unavailable"
             self._event(
-                "server_start_failed", level="ERROR", error=str(error), generation=generation
+                "server_start_failed",
+                level="ERROR",
+                error=str(error),
+                generation=generation,
+                server_pid=None,
             )
             if is_restart:
-                self._event("restart_failed", level="ERROR", reason="server_start_failed")
+                self._event(
+                    "restart_failed",
+                    level="ERROR",
+                    reason="server_start_failed",
+                    error=str(error),
+                    generation=generation,
+                    server_pid=None,
+                )
             return
         child = _Child(generation, process, is_restart, started_at)
         with self.lock:
