@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "481": {
+      "issue_title": "bug: Preserve startup diagnostics and recover from admission failures",
+      "workflow_name": "bug",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-05T09:01:16.861928+00:00"
+    }
+  }
+}
