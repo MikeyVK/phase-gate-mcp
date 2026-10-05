@@ -3,7 +3,7 @@
   "branch": "bug/481-startup-admission-recovery",
   "issue_number": 481,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -59,6 +59,14 @@
       "to_phase": "documentation",
       "timestamp": "2026-10-05T13:34:45.552899+00:00",
       "human_approval_message": "Ik ben het hiermee eens maak dit expliciet, zonder alle documentatie bij te werken. Daarna door naar de doc phase. Owner explicitly accepted the recorded configured gate limitations: Ja dat mag; no further production or test Python changes are authorized.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-10-05T13:48:41.434823+00:00",
+      "human_approval_message": "Door naar ready en daarna overdracht naar 'Coordination' middels 'end-issue' skill. Independent QA GO for Validation and Documentation -> Ready on e88d8b81496d39c264082e0ead9e1f63c8f247d5 in Beoordeel designplan, turn 01a10c4b-ee67-7932-810a-163ed13f9af0.",
       "forced": false,
       "skip_reason": null
     }
