@@ -3,9 +3,9 @@
   "branch": "bug/481-startup-admission-recovery",
   "issue_number": 481,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 1,
-  "last_cycle": 0,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -43,6 +43,14 @@
       "to_phase": "implementation",
       "timestamp": "2026-10-05T11:43:06.744457+00:00",
       "human_approval_message": "Owner: Top, door met implementatie. Independent @qa Beoordeel designplan returned GO Planning -> Implementation on b965961f after the focused P2 recheck.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-05T12:33:41.021812+00:00",
+      "human_approval_message": "Door naar de validation phase",
       "forced": false,
       "skip_reason": null
     }
