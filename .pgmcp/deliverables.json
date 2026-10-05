@@ -16,7 +16,92 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-05T06:20:11.390951+00:00"
+      "created_at": "2026-10-05T06:20:11.390951+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "Compact ASCII schema cutover",
+              "deliverables": [
+                {
+                  "id": "D_ASCII_SHARED",
+                  "description": "Shared Python identifiers, dotted/relative modules, decorators/default_factory and exact ASCII reserved-name guards implement the approved contract.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": ".pgmcp/template_suite/shared/definitions/python.schema.json"
+                  }
+                },
+                {
+                  "id": "D_CLASS_DUNDER",
+                  "description": "Plain-class dunder exclusion retains its ASCII restriction and removes Unicode-equivalence alternatives.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": ".pgmcp/template_suite/python_class/context.schema.json"
+                  }
+                },
+                {
+                  "id": "D_REGRESSION",
+                  "description": "Durable public-boundary shared and all-eight shipped-consumer tests cover ASCII acceptance, Unicode rejection, imports/reserved names and Unicode content preservation.",
+                  "validates": {
+                    "type": "contains_text",
+                    "file": "tests/mcp_server/integration/templates/test_shared_python.py",
+                    "text": "test_shipped_python_ascii"
+                  }
+                },
+                {
+                  "id": "D_CLEANUP",
+                  "description": "Both pytest-family obsolete Unicode class acceptance cases are migrated to rejection; no production helper, resolver or output-template change."
+                }
+              ],
+              "exit_criteria": "D_ASCII_SHARED, D_CLASS_DUNDER, D_REGRESSION and D_CLEANUP implemented; focused nine-file family suite completes with intended ASCII/content/native outcomes; changed test files pass format/lint/Pyright; actual discovery payload materially reduced for all eight packages; independent implementation review requested."
+            }
+          ]
+        },
+        "validation": {
+          "deliverables": [
+            {
+              "id": "V_FULL",
+              "description": "One complete configured native test suite and branch gates with exact outcomes in Validation.",
+              "validates": {
+                "type": "file_exists",
+                "file": "docs/development/issue486/validation.md"
+              }
+            },
+            {
+              "id": "V_METRICS",
+              "description": "Before/after all-eight resource codepoint and pattern measurements, tokenizer limitation explicit; no latency/model-quality claim.",
+              "validates": {
+                "type": "contains_text",
+                "file": "docs/development/issue486/validation.md",
+                "text": "Schema size"
+              }
+            }
+          ]
+        },
+        "documentation": {
+          "deliverables": [
+            {
+              "id": "DOC_BOUNDARY",
+              "description": "Current scaffolding reference explains ASCII structured names, preserved Unicode content and clean-break rediscovery.",
+              "validates": {
+                "type": "contains_text",
+                "file": "docs/reference/tools/scaffolding.md",
+                "text": "ASCII"
+              }
+            },
+            {
+              "id": "DOC_EVIDENCE",
+              "description": "Documentation report indexes active surfaces, unchanged historical material, fresh links and QA caveats.",
+              "validates": {
+                "type": "file_exists",
+                "file": "docs/development/issue486/documentation.md"
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
