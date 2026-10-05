@@ -143,7 +143,7 @@ D_ASCII_SHARED, D_CLASS_DUNDER, D_REGRESSION and D_CLEANUP implemented; focused 
 
 #### V\_FULL
 
-One complete configured native test suite and branch gates with exact outcomes in Validation.
+Run one complete run_tests(scope='configured', timeout_seconds=1200), without targets, partitions or native argument overrides. Run run_checks(scope='branch', profile='markdown_link_review', timeout_seconds=300) over the full branch inventory, including every changed Markdown file. All actually changed Python tests require targeted python_format/python_lint/python_pyright; reuse fresh passing cycle evidence unless invalidated. No production Python change is planned; strict production-scoped Mypy has no changed target and test-Mypy is not a new gate. Any mixed branch call retains its exact native failure/unavailable outcome, is distinguished from applicable targeted coverage, and requires independent issue486-specific QA disposition before progression; no inherited #473 exception or failure-to-pass relabeling. Record exact evidence in Validation.
 
 **Validates:**
 
