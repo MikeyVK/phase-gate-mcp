@@ -3,7 +3,7 @@
   "branch": "bug/481-startup-admission-recovery",
   "issue_number": 481,
   "workflow_name": "bug",
-  "current_phase": "validation",
+  "current_phase": "documentation",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -51,6 +51,14 @@
       "to_phase": "validation",
       "timestamp": "2026-10-05T12:33:41.021812+00:00",
       "human_approval_message": "Door naar de validation phase",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-10-05T13:34:45.552899+00:00",
+      "human_approval_message": "Ik ben het hiermee eens maak dit expliciet, zonder alle documentatie bij te werken. Daarna door naar de doc phase. Owner explicitly accepted the recorded configured gate limitations: Ja dat mag; no further production or test Python changes are authorized.",
       "forced": false,
       "skip_reason": null
     }
