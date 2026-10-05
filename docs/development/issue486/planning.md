@@ -18,6 +18,8 @@ Resolver/runtime/presentation/cache redesign, TypeScript policy, normalization/b
 
 One cycle changes the schema contract at its existing owner and adapts durable tests together. RED is justified by the uncovered ASCII-only admission obligation, not imposed on unrelated behavior-preserving structure. Design 88645a4f and Research d426001e received independent QA GO.
 
+Validation selection: run_tests(scope='configured', timeout_seconds=1200), without targets or native argument overrides, retains configured coverage and workers. Run run_checks(scope='branch', profile='markdown_link_review', timeout_seconds=300) over the complete branch inventory. Reuse fresh targeted python_format/python_lint/python_pyright evidence for all changed Python tests unless invalidated; no production Python change is planned, so strict production-scoped Mypy has no changed target. Branch scope sends every changed path to selected native checks; do not send Markdown/JSON to Python type-checkers or reinterpret their resulting errors as passes.
+
 ## Dependencies
 
 - Approved Strategy recorded in issue/Research; independent Design GO at 88645a4f.
