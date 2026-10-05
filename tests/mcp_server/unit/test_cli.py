@@ -9,13 +9,15 @@ Tests for CLI.
 # Standard library
 import contextlib
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 # Third-party
 import pytest
 
 from mcp_server.cli import main
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 
 
 def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -175,7 +177,16 @@ def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
     ):
         degraded.return_value.run = AsyncMock()
         main(settings)
-        degraded.assert_called_once_with(settings, "Corrupt artifacts.yaml config")
+        degraded.assert_called_once_with(
+            settings,
+            StartupDiagnostic(
+                exception_type="mcp_server.core.exceptions.ConfigError",
+                message="Corrupt artifacts.yaml config",
+                code="ERR_CONFIG",
+                params=FrozenJsonObject(()),
+            ),
+            ANY,
+        )
         degraded.return_value.run.assert_called_once()
 
 
@@ -200,7 +211,16 @@ def test_cli_degraded_server_on_version_mismatch(tmp_path: Path) -> None:
     ):
         degraded.return_value.run = AsyncMock()
         main(settings)
-        degraded.assert_called_once_with(settings, "Workspace version mismatch")
+        degraded.assert_called_once_with(
+            settings,
+            StartupDiagnostic(
+                exception_type="mcp_server.core.exceptions.ConfigError",
+                message="Workspace version mismatch",
+                code="ERR_CONFIG",
+                params=FrozenJsonObject(()),
+            ),
+            ANY,
+        )
 
 
 def test_cli_upgrade_missing_server_root_exits_1(tmp_path: Path) -> None:

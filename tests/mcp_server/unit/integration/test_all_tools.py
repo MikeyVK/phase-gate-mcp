@@ -11,6 +11,7 @@ from unittest.mock import ANY, MagicMock
 
 import pytest
 
+from mcp_server.config.settings import Settings
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitPushResult
 from mcp_server.schemas.github_models import IssueReadModel
@@ -171,7 +172,7 @@ def make_core_tools() -> list[object]:
         make_git_merge_tool(),
         make_git_push_tool(),
         make_git_delete_branch_tool(),
-        HealthCheckTool(),
+        HealthCheckTool(settings=Settings()),
     ]
 
 
@@ -361,7 +362,7 @@ class TestDevelopmentToolsIntegration:
     @pytest.mark.asyncio
     async def test_health_check_tool_flow(self) -> None:
         """Test health check tool complete flow."""
-        tool = HealthCheckTool()
+        tool = HealthCheckTool(settings=Settings())
         result = await tool.execute(HealthCheckInput(), NoteContext())
 
         assert result.status == "healthy"
@@ -448,7 +449,7 @@ class TestToolSchemas:
 
     def test_all_dev_tools_have_schemas(self) -> None:
         tools = [
-            HealthCheckTool(),
+            HealthCheckTool(settings=Settings()),
         ]
         for tool in tools:
             schema = tool.input_schema

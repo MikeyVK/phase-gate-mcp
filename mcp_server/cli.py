@@ -8,6 +8,40 @@ from pathlib import Path
 
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import Settings
+from mcp_server.core.exceptions import ConfigError, MCPError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
+from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
+from mcp_server.presenters.startup_recovery_presenter import StartupRecoveryPresenter
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+
+
+def _capture_startup_diagnostic(
+    error: BaseException, seen: frozenset[int] = frozenset()
+) -> StartupDiagnostic:
+    """Detach original exception facts without discarding parameters or cause."""
+    seen = seen | {id(error)}
+    cause = error.__cause__
+    if cause is None and not error.__suppress_context__:
+        cause = error.__context__
+    params = freeze_json(error.params if isinstance(error, MCPError) else {})
+    assert isinstance(params, FrozenJsonObject)
+    file_path = None
+    if isinstance(error, ConfigError):
+        file_path = error.file_path
+    elif isinstance(error, FileNotFoundError) and error.filename is not None:
+        file_path = str(error.filename)
+    return StartupDiagnostic(
+        exception_type=f"{type(error).__module__}.{type(error).__qualname__}",
+        message=error.message if isinstance(error, MCPError) else str(error),
+        code=error.code if isinstance(error, MCPError) else None,
+        params=params,
+        file_path=file_path,
+        cause=(
+            _capture_startup_diagnostic(cause, seen)
+            if cause is not None and id(cause) not in seen
+            else None
+        ),
+    )
 
 
 def main(settings: Settings | None = None) -> None:
@@ -85,14 +119,19 @@ def main(settings: Settings | None = None) -> None:
         )
         sys.exit(1)
 
-    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
     from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
 
     bootstrapper = ServerBootstrapper(_settings)
     try:
         server = bootstrapper.bootstrap_target()
-    except (ConfigError, FileNotFoundError) as e:
-        server = DegradedMCPServer(_settings, str(e))
+    except (MCPError, FileNotFoundError) as error:
+        if isinstance(error, MCPError) and error.code != "ERR_CONFIG":
+            raise
+        server = DegradedMCPServer(
+            _settings,
+            _capture_startup_diagnostic(error),
+            StartupRecoveryPresenter(SchemaResourcePresenter()),
+        )
     asyncio.run(server.run())
 
 

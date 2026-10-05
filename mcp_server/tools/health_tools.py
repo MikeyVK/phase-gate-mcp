@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 from mcp_server.config.settings import Settings
 from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus
 
 START_TIME = time.time()
@@ -28,13 +29,13 @@ class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
 
     def __init__(
         self,
-        override_status: HealthStatus | None = None,
-        override_reason: str | None = None,
+        settings: Settings,
+        startup_diagnostic: StartupDiagnostic | None = None,
     ) -> None:
-        """Initialize with optional status override."""
+        """Receive the resolved settings and optional immutable startup failure."""
         super().__init__()
-        self.override_status = override_status
-        self.override_reason = override_reason
+        self._settings = settings
+        self._startup_diagnostic = startup_diagnostic
 
     @property
     def name(self) -> str:
@@ -55,12 +56,13 @@ class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
 
     async def execute(self, params: HealthCheckInput, context: NoteContext) -> HealthCheckOutput:
         del params, context  # Not used
-        settings = Settings.from_env()
-        status = self.override_status or HealthStatus.HEALTHY
+        status = (
+            HealthStatus.UNHEALTHY if self._startup_diagnostic is not None else HealthStatus.HEALTHY
+        )
         return HealthCheckOutput(
             status=status,
-            reason=self.override_reason,
-            version=settings.server.version,
+            startup_diagnostic=self._startup_diagnostic,
+            version=self._settings.server.version,
             pid=os.getpid(),
             platform=sys.platform,
             uptime_seconds=time.time() - START_TIME,
