@@ -91,9 +91,9 @@ Adapt test_shared_python's native lexical oracle to `name.isascii() and name.isi
 
 | Definition | Positive contract | Negative contract |
 |---|---|---|
-| Symbol | `^[A-Za-z_][A-Za-z0-9_]*(?![\\s\\S])` | Existing hard-keyword enum; soft keywords `match`, `case`, `type` remain valid |
-| DottedSymbol | `^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*(?![\\s\\S])` | Existing per-segment hard-keyword pattern |
-| FromImport.module | `^\\.*(?:[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)?(?![\\s\\S])`, minLength 1 | Existing per-segment hard-keyword pattern; no trailing module dot |
+| Symbol | `^[A-Za-z_][A-Za-z0-9_]*(?![\s\S])` | Existing hard-keyword enum; soft keywords `match`, `case`, `type` remain valid |
+| DottedSymbol | `^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?![\s\S])` | Existing per-segment hard-keyword pattern |
+| FromImport.module | `^\.*(?:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)?(?![\s\S])`, minLength 1 | Existing per-segment hard-keyword pattern; no trailing module dot |
 | ImportedName / aliases | Symbol | Star only as sole unaliased FromImport name |
 | ModelField.default_factory / Fixture.decorator | DottedSymbol | No calls, whitespace, Unicode segments or keywords |
 
@@ -106,7 +106,7 @@ The negative end assertion requires absolute end of input; final newlines/CR, su
 | InstanceParameter | `not: {const: self}` |
 | NonConstructorMethod | `not: {const: __init__}` only where a separate constructor exists |
 | ModelField.name | No leading `_`; exact reserved names `model_config`, `Config`, `Field`, `model_dump`, `model_dump_json`, `model_validate`, `model_validate_json`, `model_validate_strings`; prefixed variants such as model_dump_custom remain valid |
-| Plain class Signature.name | Exclude full dunder names with `^__.*__(?![\\s\\S])` |
+| Plain class Signature.name | Exclude full dunder names with `^__.*__(?![\s\S])` |
 | TestCase.name | Existing `^test_` plus Symbol |
 | PytestClassName | `^Test` plus Symbol |
 
