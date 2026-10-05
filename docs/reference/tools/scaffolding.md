@@ -70,6 +70,14 @@ Templates own generated separators and one terminal LF. Selected prose/code frag
 
 When a package input contract changes, rediscover its schema and migrate affected callers explicitly. The issue473 changed-context transition intentionally provides no legacy aliases. Native preflight acceptance is evidence for its configured checks; it does not certify arbitrary dependencies, semantic completeness or caller-authored code quality. Read the actual generated file before treating it as a finished deliverable.
 
+## Python structured identifier contract
+
+The delivered Python and Pytest packages admit ASCII-only structured Python identifiers: declaration, method, function, fixture, parameter and model-field names; imported symbols and aliases; module segments; and dotted fixture decorator or model-field `default_factory` names. These fields require a complete valid identifier spelling and retain their keyword, reserved-name and package-specific discovery restrictions. Relative-import prefixes and the separate star-import form keep their existing grammar. Inspect the selected resolved schema for the exact field contract.
+
+Unicode remains supported in prose and docstrings, literal/default/example values, logging text, markers and caller-authored raw bodies or type expressions. Paths and document link targets retain their existing contracts; this identifier restriction does not introduce another language's naming policy. Raw code and type expressions still need native syntax checks, and syntax acceptance does not establish dependency availability or runtime correctness.
+
+This input transition is an ASCII-only clean break. Rediscover affected schemas and explicitly choose ASCII names for caller contexts that supplied non-ASCII structured identifiers. The server provides no compatibility profile, Unicode fallback, normalization, transliteration or automatic rewrite. Refresh the server's immutable catalog through the supported restart operation after changing the installed suite; distinguish a stale connection's generation from the current suite sources.
+
 ## Related references
 
 - [Tools reference index](README.md)

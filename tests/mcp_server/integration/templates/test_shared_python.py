@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 import keyword
+from copy import deepcopy
 from pathlib import Path
 from shutil import copytree
 from types import MappingProxyType
@@ -22,6 +23,7 @@ from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
 from mcp_server.services.template_engine import TemplateEngine, register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
+from tests.mcp_server.fixtures.delivered_templates import load_delivered_template
 from tests.mcp_server.integration.adapters.test_typescript_syntax import (
     TypeScriptPackage,
     invoke,
@@ -256,8 +258,35 @@ def test_shared_schema_is_consumed_without_redeclaring_records(
     symbol_schema = TemplateContractLoader(suite).load_context_schema(schema_path)
     # Native lexical facts, not a duplicated regex oracle.
     validator = Draft202012Validator(thaw_json(symbol_schema))
-    for name in ("a²", "cafe\u0301", "plain_name", "class"):
-        assert validator.is_valid(name) == (name.isidentifier() and not keyword.iskeyword(name))
+    for name in (
+        "_",
+        "_private9",
+        "A9",
+        "plain_name",
+        "match",
+        "case",
+        "type",
+        "",
+        "9name",
+        "a-b",
+        "a.b",
+        "name ",
+        " name",
+        "name\n",
+        "name\r",
+        "name\nsuffix",
+        "a²",
+        "café",
+        "cafe\u0301",
+        "Ｆｏｏ",
+        "K",
+        "雪",
+        "𐐀",
+        *keyword.kwlist,
+    ):
+        assert validator.is_valid(name) == (
+            name.isascii() and name.isidentifier() and not keyword.iskeyword(name)
+        ), name
 
 
 @pytest.mark.parametrize("populated", [False, True])
@@ -512,3 +541,500 @@ def test_typescript_frame_preserves_native_imports_and_safe_documentation(
     provenance = ArtifactHeaderReader().read(output)
     assert provenance.status is HeaderReadStatus.RECOGNIZED
     assert provenance.provenance is not None and provenance.provenance.id == "custom.consumer"
+
+
+@pytest.mark.parametrize(
+    "definition, accepted, rejected",
+    [
+        (
+            "DottedSymbol",
+            ["module", "_pkg.mod_9", "match.case.type"],
+            [
+                "",
+                ".pkg",
+                "pkg.",
+                "pkg..mod",
+                "pkg.class",
+                "class.pkg",
+                "pkg.雪",
+                "café.pkg",
+                "pkg\n",
+                "pkg.mod\nsuffix",
+            ],
+        ),
+        (
+            "ImportedName",
+            [{"name": "_Name9", "alias": "local_9"}],
+            [{"name": "雪"}, {"name": "Item", "alias": "café"}, {"name": "class"}, {"name": "*"}],
+        ),
+        (
+            "FromImport",
+            [
+                {"kind": "from", "module": module, "names": [{"name": "Item", "alias": "Local9"}]}
+                for module in (".", "...", ".pkg", "..pkg.mod_9", "pkg.mod")
+            ]
+            + [{"kind": "from", "module": ".pkg", "names": [{"name": "*"}]}],
+            [
+                {"kind": "from", "module": module, "names": [{"name": "Item"}]}
+                for module in (
+                    "",
+                    ".pkg.",
+                    "pkg..mod",
+                    ".class.mod",
+                    "..pkg.class",
+                    ".雪",
+                    ".pkg\n",
+                )
+            ]
+            + [
+                {"kind": "from", "module": "pkg", "names": [{"name": "Item", "alias": "雪"}]},
+                {"kind": "from", "module": "pkg", "names": [{"name": "café"}]},
+                {"kind": "from", "module": "pkg", "names": [{"name": "*", "alias": "all_items"}]},
+                {"kind": "from", "module": "pkg", "names": [{"name": "*"}, {"name": "Item"}]},
+            ],
+        ),
+        (
+            "ImportStatement",
+            [{"kind": "import", "module": "_pkg.mod9", "alias": "_local9"}],
+            [
+                {"kind": "import", "module": ".relative"},
+                {"kind": "import", "module": "pkg.雪"},
+                {"kind": "import", "module": "pkg", "alias": "Ｆｏｏ"},
+                {"kind": "import", "module": "pkg.class"},
+            ],
+        ),
+        (
+            "ModelField",
+            [
+                {
+                    "name": name,
+                    "type": "list[雪]",
+                    "description": "café 雪",
+                    "default": {"雪": ["café", "🌍"]},
+                }
+                for name in ("value_9", "model_dump_custom", "ConfigDict", "BaseModel")
+            ]
+            + [
+                {
+                    "name": "value",
+                    "type": "object",
+                    "description": "café",
+                    "default_factory": "_pkg.factory9",
+                }
+            ],
+            [
+                {"name": name, "type": "str", "description": "Value"}
+                for name in (
+                    "_private",
+                    "model_config",
+                    "Config",
+                    "Field",
+                    "model_dump",
+                    "model_dump_json",
+                    "model_validate",
+                    "model_validate_json",
+                    "model_validate_strings",
+                    "value_雪",
+                    "Ｆｉｅｌｄ",
+                    "Conﬁg",
+                )
+            ]
+            + [
+                {"name": "value", "type": "object", "description": "Value", "default_factory": name}
+                for name in ("pkg.雪", "factory()", "pkg.class", ".factory", "factory\n")
+            ],
+        ),
+        (
+            "InstanceParameter",
+            [{"name": "self_9", "type": "雪", "default": "café"}],
+            [{"name": name, "type": "object"} for name in ("self", "ｓｅｌｆ", "雪", "value\n")],
+        ),
+        (
+            "Signature",
+            [
+                {
+                    "name": "read_9",
+                    "description": "café 雪",
+                    "async": False,
+                    "parameters": [{"name": "_value9", "type": "雪", "default": "🌍"}],
+                    "return_type": "list[雪]",
+                }
+            ],
+            [
+                {
+                    "name": name,
+                    "description": "Read",
+                    "async": False,
+                    "parameters": [],
+                    "return_type": "None",
+                }
+                for name in ("read_雪", "class", "read\n")
+            ]
+            + [
+                {
+                    "name": "read",
+                    "description": "Read",
+                    "async": False,
+                    "parameters": [{"name": "雪", "type": "object"}],
+                    "return_type": "None",
+                }
+            ],
+        ),
+        (
+            "NonConstructorMethod",
+            [
+                {
+                    "name": "__call__",
+                    "description": "café",
+                    "async": False,
+                    "parameters": [],
+                    "return_type": "str",
+                    "body": "雪 = 'café'\nreturn 雪",
+                }
+            ],
+            [
+                {
+                    "name": name,
+                    "description": "Read",
+                    "async": False,
+                    "parameters": [],
+                    "return_type": "None",
+                    "body": "pass",
+                }
+                for name in ("__init__", "_＿ｉｎｉｔ__", "read_雪")
+            ],
+        ),
+        (
+            "TestCase",
+            [
+                {
+                    "name": "test_value_9",
+                    "description": "café",
+                    "async": False,
+                    "parameters": [],
+                    "body": "雪 = '🌍'\nassert 雪 == '🌍'",
+                    "markers": ["pytest.mark.reason('café')"],
+                }
+            ],
+            [
+                {
+                    "name": name,
+                    "description": "Check",
+                    "async": False,
+                    "parameters": [],
+                    "body": "assert True",
+                }
+                for name in ("check_value", "test_雪", "test_value\n")
+            ],
+        ),
+        (
+            "PytestClassName",
+            ["Test", "Test_9", "Testcase"],
+            ["testCase", "Examples", "Test雪", "ＴｅｓｔCases", "Test\u0300\u0307Cases", "Test\n"],
+        ),
+        (
+            "Fixture",
+            [
+                {
+                    "name": "_value9",
+                    "description": "café",
+                    "async": False,
+                    "parameters": [],
+                    "return_type": "雪",
+                    "body": "return '🌍'",
+                    "decorator": "_pkg.fixture9",
+                }
+            ],
+            [
+                {
+                    "name": name,
+                    "description": "Value",
+                    "async": False,
+                    "parameters": [],
+                    "return_type": "str",
+                    "body": "return ''",
+                    "decorator": "pytest.fixture",
+                }
+                for name in ("雪", "value\n")
+            ]
+            + [
+                {
+                    "name": "value",
+                    "description": "Value",
+                    "async": False,
+                    "parameters": [],
+                    "return_type": "str",
+                    "body": "return ''",
+                    "decorator": name,
+                }
+                for name in ("pkg.雪", "pytest.class", "factory()")
+            ],
+        ),
+        ("Text", ["café 雪 🌍"], [""]),
+        ("Prose", ["", "café 雪 🌍"], []),
+        ("TypeText", ["list[雪]", "Annotated[str, 'café']"], [""]),
+        ("Body", ["雪 = '🌍'\nreturn 雪"], [" \n\t"]),
+        ("JSONScalar", ["café 雪 🌍", None, False, 0], [[]]),
+    ],
+)
+def test_shared_ascii_contracts(
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    definition: str,
+    accepted: list[JsonValue],
+    rejected: list[JsonValue],
+) -> None:
+    suite = tmp_path / "suite"
+    copytree(pytestconfig.rootpath / ".pgmcp/template_suite/shared", suite / "shared")
+    consumer = suite / "consumer"
+    consumer.mkdir()
+    schema_path = consumer / "context.schema.json"
+    schema_path.write_text(
+        json.dumps(
+            {
+                "$schema": DRAFT_2020_12,
+                "$ref": f"../shared/definitions/python.schema.json#/$defs/{definition}",
+            }
+        ),
+        encoding="utf-8",
+    )
+    schema = TemplateContractLoader(suite).load_context_schema(schema_path)
+    validator = Draft202012Validator(thaw_json(schema))
+    for value in accepted:
+        validator.validate(value)
+    for value in rejected:
+        assert not validator.is_valid(value), (definition, value)
+
+
+@pytest.mark.parametrize(
+    "template_id, context",
+    [
+        (
+            "python_class",
+            {
+                "class_name": "_Reader9",
+                "class_description": "café 雪",
+                "module_description": "🌍 café",
+                "bases": ["雪"],
+                "methods": [
+                    {
+                        "name": "_read9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [{"name": "_value9", "type": "雪", "default": "🌍"}],
+                        "return_type": "list[雪]",
+                    }
+                ],
+            },
+        ),
+        (
+            "python_protocol",
+            {
+                "class_name": "_Reader9",
+                "class_description": "café 雪",
+                "module_description": "🌍 café",
+                "bases": ["雪"],
+                "methods": [
+                    {
+                        "name": "_read9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [{"name": "_value9", "type": "雪", "default": "🌍"}],
+                        "return_type": "list[雪]",
+                    }
+                ],
+            },
+        ),
+        (
+            "python_adapter",
+            {
+                "class_name": "_Reader9",
+                "class_description": "café 雪",
+                "module_description": "🌍 café",
+                "methods": [
+                    {
+                        "name": "_read9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [{"name": "_value9", "type": "雪", "default": "🌍"}],
+                        "return_type": "str",
+                        "body": "雪 = '🌍'\nreturn 雪",
+                    }
+                ],
+            },
+        ),
+        (
+            "python_worker",
+            {
+                "class_name": "_Reader9",
+                "class_description": "café 雪",
+                "module_description": "🌍 café",
+                "logging": {"name": "café 雪"},
+                "operation": {
+                    "name": "_read9",
+                    "description": "café",
+                    "async": False,
+                    "parameters": [{"name": "_value9", "type": "雪", "default": "🌍"}],
+                    "return_type": "str",
+                    "body": "雪 = '🌍'\nreturn 雪",
+                },
+            },
+        ),
+        (
+            "python_pydantic_dto",
+            {
+                "class_name": "_Reader9",
+                "class_description": "café 雪",
+                "module_description": "🌍 café",
+                "fields": [
+                    {"name": "value_9", "type": "str", "description": "café 雪", "default": "🌍"}
+                ],
+                "examples": [{"value_9": "🌍", "雪": "café"}],
+            },
+        ),
+        (
+            "python_pydantic_config",
+            {
+                "frozen": True,
+                "examples": [{"value_9": "🌍", "雪": "café"}],
+                "class_name": "_Reader9",
+                "class_description": "café 雪",
+                "module_description": "🌍 café",
+                "fields": [
+                    {"name": "value_9", "type": "str", "description": "café 雪", "default": "🌍"}
+                ],
+            },
+        ),
+        (
+            "pytest_unit_test",
+            {
+                "class_name": "TestASCII9",
+                "description": "🌍 café 雪",
+                "cases": [
+                    {
+                        "name": "test_value9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [],
+                        "body": "雪 = '🌍'\nassert 雪 == '🌍'",
+                    }
+                ],
+                "fixtures": [
+                    {
+                        "name": "_value9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [],
+                        "return_type": "雪",
+                        "body": "return '🌍'",
+                        "decorator": "pytest.fixture",
+                    }
+                ],
+            },
+        ),
+        (
+            "pytest_integration_test",
+            {
+                "class_name": "TestASCII9",
+                "description": "🌍 café 雪",
+                "cases": [
+                    {
+                        "name": "test_value9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [],
+                        "body": "雪 = '🌍'\nassert 雪 == '🌍'",
+                    }
+                ],
+                "fixtures": [
+                    {
+                        "name": "_value9",
+                        "description": "café",
+                        "async": False,
+                        "parameters": [],
+                        "return_type": "雪",
+                        "body": "return '🌍'",
+                        "decorator": "pytest.fixture",
+                    }
+                ],
+            },
+        ),
+    ],
+)
+def test_shipped_python_ascii(
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    template_id: str,
+    context: dict[str, JsonValue],
+) -> None:
+    suite = pytestconfig.rootpath / ".pgmcp/template_suite"
+    delivered = load_delivered_template(
+        source_suite=suite,
+        source_package=suite / template_id,
+        config_root=pytestconfig.rootpath / ".pgmcp/config",
+        destination=tmp_path / "isolated suite",
+        template_id=template_id,
+    )
+    supplied = deepcopy(context)
+    supplied["imports"] = {
+        "project": [
+            {
+                "kind": "from",
+                "module": "..pkg.mod_9",
+                "names": [{"name": "Item9", "alias": "_Local9"}],
+            },
+        ]
+    }
+    before = deepcopy(supplied)
+    output = delivered.renderer.render(template_id, supplied, delivered.provenance)
+    tree = ast.parse(output)
+    compile(tree, "<ascii-contract>", "exec")
+    assert supplied == before
+    assert ast.get_docstring(tree, clean=False) == context.get(
+        "module_description", context.get("description")
+    )
+    assert "café" in output and "雪" in output and "🌍" in output
+    declaration = next(node for node in tree.body if isinstance(node, ast.ClassDef))
+    assert declaration.name == context["class_name"]
+    for spelling in ("café", "Ｆｏｏ", "Name\u0301", "雪", "𐐀", "Valid\n"):
+        with pytest.raises(ContextError):
+            delivered.renderer.render(
+                template_id, {**supplied, "class_name": spelling}, delivered.provenance
+            )
+    for statement in (
+        {"kind": "import", "module": "pkg.雪"},
+        {"kind": "import", "module": "pkg", "alias": "café"},
+        {"kind": "from", "module": ".pkg", "names": [{"name": "雪"}]},
+    ):
+        with pytest.raises(ContextError):
+            delivered.renderer.render(
+                template_id,
+                {**supplied, "imports": {"project": [statement]}},
+                delivered.provenance,
+            )
+
+
+@pytest.mark.parametrize(
+    "template_id",
+    [
+        "python_class",
+        "python_protocol",
+        "python_adapter",
+        "python_worker",
+        "python_pydantic_dto",
+        "python_pydantic_config",
+        "pytest_unit_test",
+        "pytest_integration_test",
+    ],
+)
+def test_shipped_python_ascii_schema_payload_is_bounded(
+    pytestconfig: pytest.Config,
+    template_id: str,
+) -> None:
+    suite = pytestconfig.rootpath / ".pgmcp/template_suite"
+    schema = TemplateContractLoader(suite).load_context_schema(
+        suite / template_id / "context.schema.json"
+    )
+    # Same JSON resource spelling as discovery; Python len counts Unicode codepoints.
+    payload = json.dumps(thaw_json(schema), ensure_ascii=False)
+    assert len(payload) < 25_000, (template_id, len(payload))
