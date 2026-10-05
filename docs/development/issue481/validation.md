@@ -2,50 +2,60 @@
 
 # Startup admission diagnostics and recovery — Validation (#481)
 
-**Status:** VALIDATION PARTIAL — live recovery demonstrated; acceptance alignment pending  
-**Version:** 0.2  
+**Status:** RECOVERY EVIDENCE COMPLETE — configured static gates not all passing  
+**Version:** 0.3  
 **Last Updated:** 2026-10-05
 
-## Scope
+## Scope and authority
 
-Evaluate the approved minimal recovery correction at implementation HEAD
-cc4a83c30d93961716aff61c6d7fc6859e80eccb, using one disposable real-CLI/proxy
-demonstration. No regression tests were added or executed. Validation stopped at a
-concrete unmet Design/Planning criterion; it did not modify production or reinterpret
-the acceptance contract. V481.1 remains incomplete.
+Evaluate the minimal recovery correction on bug/481-startup-admission-recovery at
+HEAD cfe4e75d3da0f1b7f54c20258a90be8686b5f4d3. Production and mechanical caller code
+did not change during Validation. No regression tests were added or executed.
 
 The owner instructed “Door naar de validation phase”; the normal transition succeeded
-(receipt 683889927e1d4f28bfa10059d963ba91). Independent QA had approved Planning 0.3;
-no independent Implementation verdict is claimed.
+(receipt 683889927e1d4f28bfa10059d963ba91). Independent QA approved Planning 0.3;
+no independent Implementation or Validation verdict is claimed.
 
-## Process evidence
+## Owner-approved acceptance refinement — 2026-10-05
 
-Invocation: .venv/Scripts/python.exe .pgmcp/temp/issue481_process_demo.py.
-The temporary driver used subprocess stdio and public MCP initialize, tools/list and
-tools/call boundaries. Children ran the changed branch's real mcp_server and
-mcp_server.core.proxy entrypoints. Only copied configuration, templates and
-installation.json were used; version checks and strict admission remained enabled.
-No GitHub calls or ordinary mutation tools were invoked.
+After the live demonstration, the owner instructed:
+“Ik ben het hiermee eens maak dit expliciet, zonder alle documentatie bij te werken.
+Daarna door naar de doc phase”.
 
-Captured at 2026-10-05T12:42:03.553244+00:00 in the disposable
-.pgmcp/temp/issue481_demo_9zlwavtq workspace.
+Binding acceptance for the limited recovery boundary is now:
 
-| Scenario | Observed result | Outcome |
-| --- | --- | --- |
-| Direct CLI valid baseline | Initialize, tools/list and healthy health response; 49 tools. Elapsed launch-to-health 7.639 s. | Observed |
-| Proxy valid baseline | Initialize and initialized notification, server_ready, 49 tools and healthy health response. Elapsed launch-to-health 8.507 s. | Observed |
-| Direct CLI F6 rejection, first launch | Only health_check/restart_server; unhealthy health query succeeded with the original diagnostic. Reported health PID 19440. | Observed |
-| Direct CLI F6 rejection, second launch | Fresh launch, same complete diagnostic and two recovery tools. Reported health PID 30588. | Observed |
-| Proxy F6 rejection | Successful initialize and server_ready; tools/list returned exactly the two recovery tools, without outputSchema. | Acceptance failure |
+- health_check exposes the original actionable diagnosis in its MCP text response,
+  including available exception type, code, message, parameters, template/field/line,
+  file path and nested cause.
+- The agent repairs the source externally, then explicitly calls restart_server.
+  Only newly admitted valid content enables the ordinary tools.
+- outputSchema, structuredContent and parity with the healthy server's interface or
+  performance are not required for this recovery surface.
+- Strict admission, the clean break, truthful transport readiness, the existing
+  initialization deadline and the approved no-regression-test verification remain.
 
-Timing includes tool discovery and health; it is not a bootstrap-only measurement or
-a performance guarantee. All five demonstration launcher processes exited with code 0
-during cleanup. Windows launcher PID and the child's reported os.getpid() are distinct
-identities; no equality between those values is asserted.
+This decision supersedes the contrary schema criterion in earlier Design/Planning
+and the original Validation finding. Research, Design and Planning remain historical
+documents at the owner's request. Stored D481.1.1/V481.1 descriptions record the same
+refinement. No production or typed-output framework change is needed for this decision.
 
-The F6 source change was confined to the copied shared document base: replace
-content.document_metadata.revisions | last with
-content.document_metadata.revisions[-1]. The actual public health response contained:
+## Owner-requested live recovery demonstration
+
+The owner explicitly requested a live fault, restart and health_check through the
+active registered proxy connection.
+
+| Step | Actual result |
+| --- | --- |
+| Baseline | healthy, reported server PID 28508; branch clean. |
+| F6 fault | Native safe_edit_file changed revisions \| last to revisions[-1] in the shared document base; receipt b977e4dbfd364d3380c4652169e8a5a4. |
+| Restart | Request accepted from PID 28508; receipt 7029f677a6a84fd0b70e773f597a366a. |
+| Recovery health | unhealthy, success=true, PID 12164; original diagnostic in the text response. |
+| External repair | safe_edit_file was unavailable (“Tool not found”). The exact expression was restored with a local editor. |
+| Recovery retry | restart_server succeeded from PID 12164; its receipt explicitly did not confirm admission success. |
+| Fresh health | healthy, PID 27016; receipt 26c6cd2dd38d41d1ad039b1f220ac86e. |
+| Cleanup | Original source restored and native Git status clean; receipt d3be5d5b1179433884bf99755f401967. |
+
+The actual public diagnostic was:
 
 ~~~json
 {
@@ -63,144 +73,121 @@ content.document_metadata.revisions[-1]. The actual public health response conta
 }
 ~~~
 
-The containing health DTO had success=true, status=unhealthy and isError=false in
-the MCP result. Parameters were an ordinary JSON object. This particular admission
-error had no cause/file_path; preservation of a non-null cause is not established by
-this capture.
+The health query succeeded while reporting unhealthy; the MCP result had isError=false.
+Parameters were an ordinary JSON object. This response enabled diagnosis, external
+repair and explicit retry without an output schema.
 
-## Original acceptance finding: absent public outputSchema
+## Disposable process demonstration
 
-Design requires diagnostic params to be an ordinary JSON object in serialized output
-and outputSchema. Planning explicitly requires capturing the actual advertised
-schema at the MCP boundary. The proxy's real tools/list response advertised these
-complete tool objects:
+Invocation: .venv/Scripts/python.exe .pgmcp/temp/issue481_process_demo.py.
+The disposable driver used public MCP stdio initialize, tools/list and tools/call.
+Real CLI/proxy children used copied configuration, templates and installation.json,
+with version checks and strict admission enabled. No ordinary mutation/GitHub tools
+were called. Controlled children exercised the proxy's public process_factory boundary
+for failure and race observations. No permanent test/probe framework is added.
 
-~~~json
-[
-  {
-    "name": "health_check",
-    "description": "Check server health status",
-    "inputSchema": {
-      "additionalProperties": false,
-      "description": "Input for HealthCheckTool.",
-      "properties": {},
-      "title": "HealthCheckInput",
-      "type": "object"
-    }
-  },
-  {
-    "name": "restart_server",
-    "description": "Restart MCP server to reload code changes",
-    "inputSchema": {
-      "additionalProperties": false,
-      "description": "Input for RestartServerTool.",
-      "properties": {
-        "reason": {
-          "default": "code changes",
-          "description": "Description of why restart is needed (for audit logging)",
-          "title": "Reason",
-          "type": "string"
-        }
-      },
-      "title": "RestartServerInput",
-      "type": "object"
-    }
-  }
-]
-~~~
+Initial capture: 2026-10-05T12:42:03.553244+00:00, issue481_demo_9zlwavtq.
+Continuation: 2026-10-05T13:22:25+00:00, issue481_demo_fmae5ajs.
+The continuation reused unchanged baseline evidence rather than repeating it.
 
-The driver stopped with KeyError('outputSchema') when reading the required field.
-The wire capture independently confirms absence; this is not merely a driver parsing
-failure or proof that a model's locally generated schema is invalid.
-
-Source trace: [MCPServer.setup_handlers](../../../mcp_server/server.py) publishes a
-schema only when the outer tool exposes output_model.
-[ToolErrorHandlerDecorator](../../../mcp_server/core/decorators/tool_error_handler_decorator.py)
-and [InputValidationDecorator](../../../mcp_server/core/decorators/input_validation_decorator.py)
-do not expose that metadata; [ITool](../../../mcp_server/core/interfaces/itool.py) does
-not declare it. The recovery composition wraps both core tools in those decorators.
-
-Do not fix this by blindly adding schema metadata: the installed MCP SDK 1.26.0
-lowlevel call handler validates structuredContent when outputSchema is advertised.
-The current server returns presentation content without structuredContent. An
-Implementation correction must reconcile both sides at the existing public boundary,
-or explicitly reopen the approved boundary decision if that requires broader work.
-Validation neither supplies such a correction nor waives the requirement.
-
-## Owner-requested live recovery demonstration
-
-The owner questioned the need for outputSchema parity and explicitly requested a
-live fault, restart and health_check. This later demonstration used the active
-registered CLI/proxy connection.
-
-| Step | Actual native result |
+| Scenario | Observed result |
 | --- | --- |
-| Baseline | healthy, reported server PID 28508; branch clean. |
-| Introduced F6 fault | Native safe_edit_file changed revisions \| last to revisions[-1] in the shared document base. Receipt b977e4dbfd364d3380c4652169e8a5a4. |
-| First restart | restart_server accepted the request from PID 28508. Receipt 7029f677a6a84fd0b70e773f597a366a. |
-| Recovery health | unhealthy, success=true, PID 12164; the text response contained the original diagnostic shown above, including ERR_CONFIG, template path, field and line 8. |
-| External repair | safe_edit_file returned “Tool not found: safe_edit_file”. The exact temporary expression was restored with a local editor, consistent with the limited recovery surface. |
-| Retry from recovery | restart_server returned success=true from PID 12164 and stated that its receipt did not confirm admission success. |
-| Fresh health | healthy, PID 27016. Receipt 26c6cd2dd38d41d1ad039b1f220ac86e. |
-| Cleanup | Source expression restored; native Git status clean. Receipt d3be5d5b1179433884bf99755f401967. |
+| Direct CLI valid baseline | Healthy and 49 tools; launch-to-health 7.639 s. |
+| Proxy valid baseline | Initialized, server_ready, healthy and 49 tools; launch-to-health 8.507 s. |
+| Direct CLI repeated F6 rejection | Two launches exposed only health_check/restart_server and the complete original diagnostic; health PIDs 19440 and 30588. |
+| Proxy rejected public boundary | Exactly two recovery tools; unhealthy PID 6580 with ordinary JSON diagnostic parameters. get_work_context rejected with isError=true. |
+| Invalid restart input | Unexpected property rejected; readable ValidationError DTO, validation details, input schema and isError=true. |
+| Proxy repeated rejection | Explicit restart created a fresh unhealthy child, health PID 20092, preserving the same diagnostic. |
+| Proxy corrected admission | External source correction then explicit restart; healthy PID 24312 and 49 ordinary tools. |
+| Direct CLI corrected relaunch | Healthy PID 19308 and 49 tools. |
+| Original exception cause | Unknown Jinja tag on line 47 retained outer template_syntax_invalid/ERR_CONFIG plus nested jinja2.exceptions.TemplateSyntaxError and “Encountered unknown tag 'issue481_invalid_tag'.” |
+| Early exit | Unavailable initialize and subsequent request, each ID answered once; final stderr without newline preserved. Elapsed 1.281 s. |
+| Error / malformed / wrong-ID / invalid-shape initialize | Truthful unavailable responses, each initialize/subsequent request ID answered once. Elapsed 1.253 / 1.260 / 1.234 / 1.431 s. |
+| Spawn failure | Generation 1, server_pid=null, unavailable responses; no fabricated child PID. Elapsed 1.233 s. |
+| Actual initialization timeout | initialize_timeout and ERR_SERVER_UNAVAILABLE; elapsed 31.138 s including launcher startup, against the unchanged 30 s handshake deadline. |
+| Pending request at child exit | ID hold answered once with unavailable; final buffered stderr retained. |
+| Restart overlap and duplicate markers | IDs initialize/restart/hold/during/after each answered once. Interrupted and during-restart requests received ERR_SERVER_UNAVAILABLE. One restart_completed event, generation 2, duration 912.180 ms. Late uncorrelated response discarded; undeliverable notification received no response. |
+| Startup lock ownership | Lock file remained and no recovery record was created. Public UpgradeLock.acquire/release successfully reacquired the same lock after shutdown. |
 
-The actual response let the agent diagnose the source, repair it externally and
-request restart through recovery; fresh health confirmed healthy admission. Missing
-outputSchema did not prevent these actions. The owner's proposed practical criterion
-is actionable diagnostic text, external repair and explicit retry, without parity
-with the healthy server. This demonstration supplies evidence for that refinement;
-alignment of the original Design/Planning criterion remains pending. No independent
-QA approval or completed Validation is claimed.
+All 12 continuation launcher processes exited 0 during cleanup. Initial five launchers
+also exited 0. Controlled child failures are separate from launcher exit status.
+Windows launcher PID and the child's health PID are distinct identities.
 
-## Static evidence and stopped work
+The driver's lock-file-deletion predicate initially reported false. This was an invalid
+probe assumption: [UpgradeLock](../../../mcp_server/services/template_activation.py)
+explicitly retains its inode and releases the OS lock. Successful reacquisition of the
+same lock and multiple fresh admitted starts resolve that observation; no production
+correction was needed.
 
-Current Git status contained only the Validation phase-state change and this report;
-no production/test Python changed during Validation. The main...HEAD inventory and
-working-tree status were refreshed (receipts e9b64a75bcbf4b6294324069ba6db628 and
-5794d691f4b4435fa1bb6f3be3308292). Markdown/workflow JSON were not sent to Python checks.
+Timing is an observation, not a performance guarantee. The valid startup measurements
+remain below the initialization budget. The capture's unavailable responses used
+JSON-RPC -32000 and data.code=ERR_SERVER_UNAVAILABLE with state, generation, server_pid
+and reason. No request replay was observed or required.
 
-This report's native Markdown edit preflight and targeted markdown_link_review passed
-(link receipt 195aa2c3c7eb4d5b97a944493743bccb).
+## Historical schema finding — superseded
 
-Fresh Implementation evidence remains applicable to unchanged sources:
+The initial tools/list capture advertised inputSchema but no outputSchema for either
+recovery tool. The original driver stopped at KeyError('outputSchema'). This absence
+remains factual but is no longer an acceptance blocker under the explicit owner decision.
 
-| Selection | Native outcomes | Receipt |
+[MCPServer.setup_handlers](../../../mcp_server/server.py) advertises output metadata
+only when exposed by the outer tool. The existing decorators do not expose that
+metadata; the installed MCP SDK validates structuredContent if outputSchema is
+advertised. Expanding those boundaries is outside the accepted practical correction.
+
+## Static evidence
+
+Refreshed native status and main...HEAD diff before final checks:
+c867ceeb964e4d6fb465a8ddad614203 and 2bc7477c888541a9a0ecd257f9c60e53.
+Only this report and stored deliverables were uncommitted. No Python evidence was
+invalidated. Markdown and workflow JSON were excluded from Python-target checks.
+
+Fresh Implementation evidence remains applicable:
+
+| Selection | Actual outcomes | Receipt |
 | --- | --- | --- |
-| Eight changed production Python files, python_review | Format, lint and Pyright passed; the initial Mypy finding was subsequently corrected. | 8cb36f91e44f475a98429947de126c20 |
+| Eight changed production Python files, python_review | Format, lint and Pyright passed; initial Mypy annotation finding later corrected. | 8cb36f91e44f475a98429947de126c20 |
 | Same eight production files, python_types | Passed after the protocol-version annotation correction. | ce1d75e87aaa471e9f3a7e9cc3a227ce |
 | Final changed proxy, python_review | Format, lint, Mypy and Pyright passed. | 62a77f25305a423d84a8d3454b15031e |
 | Four mechanical test callers, python_format/python_lint | Both passed; edit-content syntax preflight also passed. | 402ee81870c94747878eea615dbc80cb |
 
-The phase instruction says “Stop if implementation is incomplete or contradicts
-approved inputs; Validation does not redesign or patch.” Therefore the remainder
-was not executed after the public-schema failure:
+Required final calls ran once, with no explicit targets or caller arguments:
 
-- Proxy repeated rejection and corrected-source restart; corrected direct CLI relaunch.
-- Invalid restart input/error presentation and preservation of a non-null exception cause.
-- Early exit, invalid/error/wrong-ID initialize, actual 30-second timeout and request/restart races.
-- Final run_checks(scope="configured", checks=["python_format","python_lint","python_pyright"], timeout_seconds=600).
-- Separate run_checks(scope="configured", checks=["python_types"], timeout_seconds=600).
+| Native configured selection | Actual outcomes | Receipt |
+| --- | --- | --- |
+| python_format, python_lint, python_pyright; timeout_seconds=600 | Overall incomplete. Format unavailable: access denied (OS error 5), exit 3, 473 files already formatted. Lint failed: 130 T201 print findings in three historical archive examples, exit 1, plus the same access warning. Pyright passed: 188 files, zero errors/warnings, exit 0. | 68fabcfa68e54f07a3aaf7bb742838f9 |
+| Separate python_types; timeout_seconds=600 | Passed, configured production-scoped Mypy. | c2566b3cc9dc486ab3f6608de0cfa0da |
 
-No full-suite/regression execution is pending: the owner-approved strategy explicitly
-excludes it. The pending items above remain required for V481.1 after correction.
+All lint findings are in docs/development/archive/issue52/archive/examples/demo.py,
+docs/development/archive/issue72/mvp/demo.py and
+docs/development/archive/issue72/mvp/scaffold_demo.py. Those files are absent from the
+branch diff. They were not changed or suppressed. The native format access error does
+not identify its path; its required selection remains incomplete, not a pass.
+
+## Deliverable mapping and open work
+
+D481.1.1: original diagnosis, two-tool recovery, external repair, fresh admission and
+truthful receipt are demonstrated. D481.1.2: initialized live readiness, deadline,
+generation/request ownership, stderr draining and restart outcomes are demonstrated.
+D481.1.3: caller migration static evidence remains current.
+V481.1: process evidence is complete under the refined acceptance; all required static
+calls were made, but configured format/lint are not passing.
+
+No full-suite/regression execution is pending: the owner-approved strategy excludes it.
+Open work is the explicit disposition of the unrelated configured lint findings and
+unavailable format evidence before progressing. No all-green Validation result,
+independent GO, or readiness is asserted.
 
 ## Containment and review request
 
-The initial isolated demonstration left live configuration, templates,
-installation/renewal records and production sources untouched. The later explicitly
-owner-requested live demonstration temporarily changed one template expression and
-restored it before retry; the final native Git status was clean. Temporary children were stopped. The ephemeral
-driver, captures and copied workspaces are discarded after retaining these concise
-observations; no test/probe framework is committed.
+The isolated driver, captures and copied workspaces are removed after retaining these
+observations. Live configuration, installation/renewal records and production sources
+were untouched by the isolated runs. The authorized live fault was restored before
+retry. No workflow, adapter, check configuration or regression-test expansion is made.
 
-The first capture attempt hit the temporary driver's Windows stdout encoding; UTF-8
-was applied to that driver's output before the recorded attempt. It was not a
-production failure. The later missing-outputSchema failure remains unresolved.
-
-Review requested: align the original public-schema criterion with the owner's
-practical recovery objective and the live evidence. A schema implementation change
-is not presumed necessary for diagnosis, external repair and restart. No Validation PASS, independent GO or readiness
-is asserted.
+Review requested: assess the practical recovery evidence and the explicit configured
+gate limitations. Documentation is limited to the two operational references planned
+in DOC481.1; historical phase documents are not rewritten.
 
 ## Related Documents
 
@@ -213,5 +200,6 @@ is asserted.
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
-| 0.1 | 2026-10-05 | @imp validator | Record real CLI/proxy observations, the public-schema blocker and explicitly unexecuted acceptance work. |
-| 0.2 | 2026-10-05 | @imp validator | Record the owner-requested live fault, diagnosis, external repair and successful recovery restart; distinguish observed recovery from pending acceptance alignment. |
+| 0.1 | 2026-10-05 | @imp validator | Record initial process observations and the original schema blocker. |
+| 0.2 | 2026-10-05 | @imp validator | Record the owner-requested live diagnosis, repair and recovery restart. |
+| 0.3 | 2026-10-05 | @imp validator | Explicit owner acceptance refinement, remaining process observations and truthful final configured gate outcomes; retain historical phase documents. |

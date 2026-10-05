@@ -27,7 +27,7 @@
               "deliverables": [
                 {
                   "id": "D481.1.1",
-                  "description": "CLI captures recognized bootstrap failures losslessly; immutable diagnostic/health output, injected Settings and the independent recovery presenter expose complete diagnostics with the two existing recovery tools."
+                  "description": "CLI captures recognized bootstrap failures losslessly; immutable diagnostic/health output, injected Settings and the independent recovery presenter expose complete diagnostics with the two existing recovery tools. Owner acceptance refinement (2026-10-05): actionable health_check text plus external source repair and restart_server is sufficient; outputSchema, structuredContent and healthy-server interface/performance parity are not required."
                 },
                 {
                   "id": "D481.1.2",
@@ -46,7 +46,7 @@
           "deliverables": [
             {
               "id": "V481.1",
-              "description": "One concise validation record contains the isolated direct-CLI/proxy rejection, complete diagnostics, repeated rejection and corrected restart captures; exit/initialize-failure/timeout/race outcomes and timings; current Git-selected per-type target evidence and final scope=configured workspace static checks, retaining separate configured production Mypy; exact outcomes and any limitations, with no regression-test runs."
+              "description": "One concise validation record explicitly captures the owner-approved 2026-10-05 refinement: actionable diagnostic text, external source correction and explicit restart satisfy recovery; no outputSchema/structuredContent or healthy-server interface/performance parity is required. Record the authorized live recovery and isolated direct-CLI/proxy rejection, diagnostics, repeated rejection, corrected restart, exit/initialize-failure/timeout/race outcomes and timings. Retain current Git-selected per-type evidence and final scope=configured workspace static checks, including separate configured production Mypy, exact outcomes and limitations; no regression-test runs. The recorded owner decision supersedes contrary earlier schema criteria without rewriting historical phase documents."
             }
           ]
         },
