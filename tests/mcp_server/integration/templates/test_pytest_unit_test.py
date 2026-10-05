@@ -265,7 +265,6 @@ def test_class_async_fixture_and_case_content_remain_explicit(
 
 def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
     delivered_unit_test: DeliveredTemplate,
-    native_case: NativeCase,
 ) -> None:
     case: dict[str, JsonValue] = {
         "name": "test_value",
@@ -286,16 +285,6 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
     base: dict[str, JsonValue] = {"description": "Caller cases", "cases": [case]}
     noncollectable = "Test\u0307Cases"
     blocked_composition = "Test\u0300\u0307Cases"
-    for spelling, canonical, expected_code, token in (
-        (noncollectable, "TesṫCases", 5, b"no tests collected"),
-        (blocked_composition, blocked_composition, 0, b"test_value"),
-    ):
-        native_source = f"class {spelling}:\n    def test_value(self):\n        assert 2 + 3 == 5\n"
-        native_class = ast.parse(native_source).body[0]
-        assert isinstance(native_class, ast.ClassDef) and native_class.name == canonical
-        native_case.source.write_text(native_source, encoding="utf-8")
-        discovered = native(native_case, [str(native_case.source)], ["--collect-only"])
-        assert discovered.returncode == expected_code and token in discovered.stdout
     invalid: list[dict[str, JsonValue]] = [
         {"description": "Missing cases"},
         {**base, "cases": []},
@@ -305,6 +294,7 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
         {**base, "layer": "Tests"},
         {**base, "class_name": "Examples"},
         {**base, "class_name": noncollectable},
+        {**base, "class_name": blocked_composition},
         {**base, "class_name": None},
         {**base, "cases": [{**case, "name": "check_value"}]},
         {**base, "cases": [{**case, "body": " \n\t"}]},
@@ -331,7 +321,7 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
             )
     for content in (
         {**base, "fixtures": [], "markers": [], "imports": {}},
-        {**base, "class_name": blocked_composition},
+        {**base, "class_name": "TestCases"},
         {**base, "cases": [{**case, "parameters": [{"name": "self", "type": "object"}]}]},
     ):
         parse_tests(

@@ -330,6 +330,7 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
         {**base, "layer": "Tests"},
         {**base, "class_name": "Examples"},
         {**base, "class_name": noncollectable},
+        {**base, "class_name": blocked_composition},
         {**base, "class_name": None},
         {**base, "cases": [{**case, "name": "check_value"}]},
         {**base, "cases": [{**case, "body": " \n\t"}]},
@@ -356,7 +357,7 @@ def test_context_requires_real_cases_and_rejects_hidden_or_reserved_fields(
             )
     for content in (
         {**base, "fixtures": [], "markers": [], "imports": {}},
-        {**base, "class_name": blocked_composition},
+        {**base, "class_name": "TestCases"},
         {**base, "cases": [{**case, "parameters": [{"name": "self", "type": "object"}]}]},
     ):
         parse_tests(
