@@ -2,8 +2,8 @@
 
 # Startup admission diagnostics and recovery — Validation (#481)
 
-**Status:** RECOVERY EVIDENCE COMPLETE — configured static gates not all passing  
-**Version:** 0.3  
+**Status:** VALIDATION RECORDED — configured gate limitations accepted by owner  
+**Version:** 0.4  
 **Last Updated:** 2026-10-05
 
 ## Scope and authority
@@ -164,6 +164,24 @@ docs/development/archive/issue72/mvp/scaffold_demo.py. Those files are absent fr
 branch diff. They were not changed or suppressed. The native format access error does
 not identify its path; its required selection remains incomplete, not a pass.
 
+## Configured gate disposition — owner-approved exception
+
+The owner explicitly accepted continuation with the recorded configured format/lint
+limitations: “Ja dat mag”, while clarifying that no further Python code changes were
+approved. For #481 these limitations are accepted as an exception; neither archived
+examples nor check configuration are changed. The failed/unavailable native outcomes
+remain recorded above and are not recast as passes.
+
+No production or existing test Python changed after the owner's live fault/recovery
+demonstration. Native comparison from the pre-demonstration Validation commit
+2af9dfc908c9cd5ed2af607a5139bdc809289c9b to e58eed0379bca87e5d9efb18497fe8965392e88d
+contains only this report and .pgmcp/deliverables.json
+(receipt b7e019dee90b449c87a45e984a85b9f4); the worktree was clean
+(receipt 990042dc2e764603a5a9a548b4e71000).
+The disposable Python driver was adjusted for the refined schema criterion and
+remaining planned observations, then removed; it was never committed.
+The live template expression was restored before the successful recovery health check.
+
 ## Deliverable mapping and open work
 
 D481.1.1: original diagnosis, two-tool recovery, external repair, fresh admission and
@@ -174,8 +192,8 @@ V481.1: process evidence is complete under the refined acceptance; all required 
 calls were made, but configured format/lint are not passing.
 
 No full-suite/regression execution is pending: the owner-approved strategy excludes it.
-Open work is the explicit disposition of the unrelated configured lint findings and
-unavailable format evidence before progressing. No all-green Validation result,
+The owner accepted the recorded configured gate limitations for continuation.
+Documentation and independent review remain. No all-green Validation result,
 independent GO, or readiness is asserted.
 
 ## Containment and review request
@@ -203,3 +221,4 @@ in DOC481.1; historical phase documents are not rewritten.
 | 0.1 | 2026-10-05 | @imp validator | Record initial process observations and the original schema blocker. |
 | 0.2 | 2026-10-05 | @imp validator | Record the owner-requested live diagnosis, repair and recovery restart. |
 | 0.3 | 2026-10-05 | @imp validator | Explicit owner acceptance refinement, remaining process observations and truthful final configured gate outcomes; retain historical phase documents. |
+| 0.4 | 2026-10-05 | @imp validator | Record the owner's configured gate exception and verify no production/existing test changes since the live recovery demonstration. |
