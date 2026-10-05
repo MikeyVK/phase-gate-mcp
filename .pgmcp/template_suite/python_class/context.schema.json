@@ -37,9 +37,9 @@
           {
             "properties": {
               "name": {
-                "$comment": "Ordinary class signatures exclude native dunder methods; Unicode15.1 NFKC-equivalent underscores are included.",
+                "$comment": "Ordinary class signatures exclude ASCII dunder methods.",
                 "not": {
-                  "pattern": "^[_︳︴﹍﹎﹏＿]{2}.*[_︳︴﹍﹎﹏＿]{2}$(?![\\s\\S])"
+                  "pattern": "^__.*__(?![\\s\\S])"
                 }
               },
               "parameters": {

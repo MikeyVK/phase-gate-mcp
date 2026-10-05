@@ -895,6 +895,8 @@ def test_shared_ascii_contracts(
         (
             "python_pydantic_config",
             {
+                "frozen": True,
+                "examples": [{"value_9": "🌍", "雪": "café"}],
                 "class_name": "_Reader9",
                 "class_description": "café 雪",
                 "module_description": "🌍 café",

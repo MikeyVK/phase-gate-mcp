@@ -206,7 +206,7 @@ def test_class_async_fixture_and_case_content_remain_explicit(
     async_body = "observed = await opened.read()\nassert observed == 7"
     context: dict[str, JsonValue] = {
         "description": 'Explicit "async" declarations 😀\nsecond line',
-        "class_name": "ＴestExplicit",
+        "class_name": "TestExplicit",
         "imports": {
             "stdlib": [{"kind": "import", "module": "collections", "alias": "col"}],
             "third_party": [
