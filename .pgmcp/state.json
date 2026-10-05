@@ -3,7 +3,7 @@
   "branch": "bug/481-startup-admission-recovery",
   "issue_number": 481,
   "workflow_name": "bug",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -27,6 +27,14 @@
       "to_phase": "design",
       "timestamp": "2026-10-05T09:52:56.215035+00:00",
       "human_approval_message": "Owner selected the lightest variant of option A and explicitly instructed: 'Prima werk dit verder uit in design'. Approved per-boundary strategy recorded in Research: existing degraded diagnostics/restart, necessary proxy corrections, strict admission, clean break and no regression tests.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-10-05T10:23:12.702071+00:00",
+      "human_approval_message": "Owner: go voor planning. Independent @qa Beoordeel designplan returned GO for Design 0.1 / Research 0.2 at commit 6c97e366.",
       "forced": false,
       "skip_reason": null
     }

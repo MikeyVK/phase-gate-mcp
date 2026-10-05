@@ -16,7 +16,49 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-05T09:01:16.861928+00:00"
+      "created_at": "2026-10-05T09:01:16.861928+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "Complete minimal startup recovery",
+              "deliverables": [
+                {
+                  "id": "D481.1.1",
+                  "description": "CLI captures recognized bootstrap failures losslessly; immutable diagnostic/health output, injected Settings and the independent recovery presenter expose complete diagnostics with the two existing recovery tools."
+                },
+                {
+                  "id": "D481.1.2",
+                  "description": "Proxy drains generation-bound streams, completes a validated live initialize exchange within the deadline, logs truthful lifecycle outcomes and correlates unavailable responses exactly once without request replay."
+                },
+                {
+                  "id": "D481.1.3",
+                  "description": "All current health/degraded composition callers use the clean-break contracts; removed fields/parameters have no compatibility path; focused native static checks pass on final changed production Python files."
+                }
+              ],
+              "exit_criteria": "D481.1.1\u2013D481.1.3 implemented together; all current callers migrated, relevant source review completed and focused python_review passed on the final changed production files. Record the exact target list and receipts in the implementation hand-over. Behavioral acceptance remains pending Validation; no pytest/unittest/regression run or artificial RED commit."
+            }
+          ]
+        },
+        "validation": {
+          "deliverables": [
+            {
+              "id": "V481.1",
+              "description": "One concise validation record contains the isolated direct-CLI/proxy rejection, complete diagnostics, repeated rejection and corrected restart captures; exit/initialize-failure/timeout/race outcomes and timings; final branch static gates; exact outcomes and any limitations, with no regression-test runs."
+            }
+          ]
+        },
+        "documentation": {
+          "deliverables": [
+            {
+              "id": "DOC481.1",
+              "description": "Current health/restart and proxy references match the new diagnostic schema, recovery availability, truthful readiness/deadline, external retry/discovery limits and clean break; affected Markdown links pass."
+            }
+          ]
+        }
+      }
     }
   }
 }
