@@ -2,8 +2,8 @@
 
 # Startup admission diagnostics and recovery — Research (#481)
 
-**Status:** DRAFT — recovery strategy awaiting owner discussion  
-**Version:** 0.1  
+**Status:** RESEARCH COMPLETE — owner strategy approved  
+**Version:** 0.2  
 **Last Updated:** 2026-10-05
 
 ## Scope In
@@ -49,13 +49,12 @@ All viable options must preserve startup stderr from spawn through early exit, r
 | B. Proxy-owned recovery endpoint | Proxy itself answers diagnostic/retry requests when no child survives, then starts a corrected child. Source repair remains external. | Covers completely dead children, but puts MCP control/discovery and startup diagnostic interpretation into the forwarding proxy. More protocol/state ownership and a second response implementation. |
 | C. Recovery mode with in-session file repair | Diagnosis, bounded repair and retry are available over MCP even when the normal suite was rejected. | Most agent autonomy; requires a separately admitted write/repair contract and safe candidate validation/commit ownership. Materially broader than diagnosis/retry; must be explicitly authorized and cannot quietly weaken normal admission or add a sandbox/deployment scope. |
 
-A best fits a small, explicitly recoverable startup repair if external source correction is acceptable. This is a discussion recommendation, not a selected implementation. B is justified only if recovery must reside in the transport when no server can run; C requires an explicit additional write-scope decision.
+Owner decision on 2026-10-05: use the lightest variant of A. Reuse the existing degraded server for complete startup diagnostics and the existing restart_server operation; correct source externally. Apply only the necessary proxy stderr/readiness/request-failure corrections. ERR_CONFIG already matches the configuration code; the present defect is exception-class recognition and loss of structured details. No proxy-owned recovery endpoint or in-session repair service is selected.
 
 ## Questions
 
-- Choose recovery ownership: minimal server mode (A), proxy control (B), or authorize in-session repair scope (C).
-- Is correction in the external editor followed by MCP retry sufficient, or must MCP itself repair the source?
-- Confirm a one-off isolated process demonstration as practical verification without adding or running regression tests.
+- Design must make diagnostic preservation, truthful readiness, bounded request failures and explicit restart concrete within the approved minimal surface.
+- Verification uses a bounded one-off isolated process demonstration; no regression tests or artificial RED/GREEN cycle.
 
 ## References
 
@@ -72,12 +71,16 @@ A best fits a small, explicitly recoverable startup repair if external source co
 
 ## Approved Strategy
 
-| Boundary | Owner decision / remaining choice |
+| Boundary | Approved owner strategy (2026-10-05) |
 | --- | --- |
-| Changed startup/error/recovery contracts | Owner requires a clean break: no legacy routes, aliases, compatibility profile or bridge. |
-| Suite admission | Strict rejection remains binding; no invalid snapshot activation or silent last-known-good fallback. |
-| Recovery ownership and repair access | Pending discussion: A, B or C; whether external editing is sufficient or MCP must also repair files. Research remains open. |
-| Verification/process | Owner explicitly requests no regression tests. No regression tests were created or run. A bounded one-off isolated success/failure/recovery demonstration is proposed for later verification, subject to discussion; no artificial RED/GREEN cycle or persistent test framework. |
+| Startup diagnostics | Preserve message/code and all available package/template/field/line/cause details at the startup boundary; avoid a repository-wide exception rewrite. |
+| Recovery surface | Lightest A: existing degraded server exposes health diagnostics and existing restart_server; source correction is external. No proxy-owned MCP endpoint or in-session editor. |
+| CLI/proxy lifecycle | Correct stderr draining, initialize/liveness readiness and bounded unavailable responses; operational tools require valid admission. |
+| Changed contracts | Clean break: no legacy constructor/result route, aliases, compatibility profile or bridge. |
+| Suite admission | Strict rejection remains binding; no invalid or silent last-known-good snapshot activation and no renewal-record bypass. |
+| Verification/process | No regression-test additions or runs. One-off isolated success/failure/recovery demonstration; no persistent framework or artificial TDD cycle. |
+
+The owner explicitly requested Design after this discussion. Options B and C remain rejected alternatives, not implementation paths.
 
 ## Expected Results
 
@@ -88,3 +91,5 @@ A rejected suite yields accessible original diagnostics; ordinary tools do not r
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-05 | @imp researcher | Record current causal evidence and compare recovery ownership options. |
+| 0.2 | 2026-10-05 | @imp researcher | Record owner approval of the minimal A strategy and explicit request to proceed to Design. |
+
