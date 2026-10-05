@@ -197,5 +197,5 @@ Current health/restart and proxy references match the new diagnostic schema, rec
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-05 | @imp planner | Plan one implementation cycle and bounded validation/documentation after independent Design GO. |
-$1
-$2 2026-10-05 | @imp implementer | Correct the independently identified unsupported syntax selection: preserve native edit-content preflight, then run supported targeted format/lint gates. |
+| 0.2 | 2026-10-05 | @imp planner | Correct the QA P2 gate-selection blocker: current Git-selected targets per check type and final configured workspace checks. |
+| 0.3 | 2026-10-05 | @imp implementer | Correct the independently identified unsupported syntax selection: preserve native edit-content preflight, then run supported targeted format/lint gates. |
