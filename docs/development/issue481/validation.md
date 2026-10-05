@@ -2,8 +2,8 @@
 
 # Startup admission diagnostics and recovery — Validation (#481)
 
-**Status:** VALIDATION FAILED — public-schema acceptance blocker; review requested  
-**Version:** 0.1  
+**Status:** VALIDATION PARTIAL — live recovery demonstrated; acceptance alignment pending  
+**Version:** 0.2  
 **Last Updated:** 2026-10-05
 
 ## Scope
@@ -68,7 +68,7 @@ the MCP result. Parameters were an ordinary JSON object. This particular admissi
 error had no cause/file_path; preservation of a non-null cause is not established by
 this capture.
 
-## Blocking finding: absent public outputSchema
+## Original acceptance finding: absent public outputSchema
 
 Design requires diagnostic params to be an ordinary JSON object in serialized output
 and outputSchema. Planning explicitly requires capturing the actual advertised
@@ -127,6 +127,31 @@ Implementation correction must reconcile both sides at the existing public bound
 or explicitly reopen the approved boundary decision if that requires broader work.
 Validation neither supplies such a correction nor waives the requirement.
 
+## Owner-requested live recovery demonstration
+
+The owner questioned the need for outputSchema parity and explicitly requested a
+live fault, restart and health_check. This later demonstration used the active
+registered CLI/proxy connection.
+
+| Step | Actual native result |
+| --- | --- |
+| Baseline | healthy, reported server PID 28508; branch clean. |
+| Introduced F6 fault | Native safe_edit_file changed revisions \| last to revisions[-1] in the shared document base. Receipt b977e4dbfd364d3380c4652169e8a5a4. |
+| First restart | restart_server accepted the request from PID 28508. Receipt 7029f677a6a84fd0b70e773f597a366a. |
+| Recovery health | unhealthy, success=true, PID 12164; the text response contained the original diagnostic shown above, including ERR_CONFIG, template path, field and line 8. |
+| External repair | safe_edit_file returned “Tool not found: safe_edit_file”. The exact temporary expression was restored with a local editor, consistent with the limited recovery surface. |
+| Retry from recovery | restart_server returned success=true from PID 12164 and stated that its receipt did not confirm admission success. |
+| Fresh health | healthy, PID 27016. Receipt 26c6cd2dd38d41d1ad039b1f220ac86e. |
+| Cleanup | Source expression restored; native Git status clean. Receipt d3be5d5b1179433884bf99755f401967. |
+
+The actual response let the agent diagnose the source, repair it externally and
+request restart through recovery; fresh health confirmed healthy admission. Missing
+outputSchema did not prevent these actions. The owner's proposed practical criterion
+is actionable diagnostic text, external repair and explicit retry, without parity
+with the healthy server. This demonstration supplies evidence for that refinement;
+alignment of the original Design/Planning criterion remains pending. No independent
+QA approval or completed Validation is claimed.
+
 ## Static evidence and stopped work
 
 Current Git status contained only the Validation phase-state change and this report;
@@ -161,8 +186,10 @@ excludes it. The pending items above remain required for V481.1 after correction
 
 ## Containment and review request
 
-Live configuration, templates, installation/renewal records and production sources
-were untouched by the demonstration. Temporary children were stopped. The ephemeral
+The initial isolated demonstration left live configuration, templates,
+installation/renewal records and production sources untouched. The later explicitly
+owner-requested live demonstration temporarily changed one template expression and
+restored it before retry; the final native Git status was clean. Temporary children were stopped. The ephemeral
 driver, captures and copied workspaces are discarded after retaining these concise
 observations; no test/probe framework is committed.
 
@@ -170,8 +197,9 @@ The first capture attempt hit the temporary driver's Windows stdout encoding; UT
 was applied to that driver's output before the recorded attempt. It was not a
 production failure. The later missing-outputSchema failure remains unresolved.
 
-Review requested: confirm the public-boundary finding and route the concrete
-correction back to Implementation. No Validation PASS, independent GO or readiness
+Review requested: align the original public-schema criterion with the owner's
+practical recovery objective and the live evidence. A schema implementation change
+is not presumed necessary for diagnosis, external repair and restart. No Validation PASS, independent GO or readiness
 is asserted.
 
 ## Related Documents
@@ -186,3 +214,4 @@ is asserted.
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-05 | @imp validator | Record real CLI/proxy observations, the public-schema blocker and explicitly unexecuted acceptance work. |
+| 0.2 | 2026-10-05 | @imp validator | Record the owner-requested live fault, diagnosis, external repair and successful recovery restart; distinguish observed recovery from pending acceptance alignment. |
