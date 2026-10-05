@@ -3,7 +3,7 @@
 # Startup admission diagnostics and recovery — Planning (#481)
 
 **Status:** PLANNING DRAFT — review requested  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-05
 
 ## Purpose
@@ -41,7 +41,7 @@ Initial recovery/server health and transport readiness are separate outcomes. An
 | Phase | Evidence and timing |
 | --- | --- |
 | Planning | Scaffold preflight plus run_checks(scope='targets', targets=['docs/development/issue481/planning.md'], profile='markdown_link_review', timeout_seconds=300). Verify document/payload cycle IDs, descriptions and ordering via get_project_plan. |
-| Implementation | Select existing changed files from the current Git diff/status at the check moment. Production .py targets: run_checks(scope='targets', targets=<production Python selection>, profile='python_review', timeout_seconds=600). Mechanically changed test .py targets: scope='targets', checks=['python_syntax','python_format','python_lint']. No test Mypy gate or test execution. Record actual targets and receipts; no runtime acceptance claim yet. |
+| Implementation | Select existing changed files from the current Git diff/status at the check moment. Production .py targets: run_checks(scope='targets', targets=<production Python selection>, profile='python_review', timeout_seconds=600). Mechanically changed test .py targets: retain the passing syntax preflight from safe_edit_file/scaffold_artifact, then run_checks(scope='targets', targets=<mechanical test Python selection>, checks=['python_format','python_lint'], timeout_seconds=600). python_syntax is an edit-content preflight, not a supported run_checks selection. No test Mypy gate or test execution. Record actual targets and receipts; no runtime acceptance claim yet. |
 | Validation | Refresh the Git selection; rerun appropriate scope='targets' checks only for changed/invalidated production or mechanical-test Python evidence. At the end of Validation, run once: run_checks(scope='configured', checks=['python_format','python_lint','python_pyright'], timeout_seconds=600) and the separate run_checks(scope='configured', checks=['python_types'], timeout_seconds=600). These workspace-wide runs use native configured selection; Mypy retains its configured production scope. Add the single process demonstration above. No regression suite. |
 | Documentation | Native edit validation and run_checks(scope='targets', targets=<current Git-selected changed Markdown files needing fresh evidence>, profile='markdown_link_review', timeout_seconds=300). Include the two changed reference files; reuse valid prior document evidence. |
 | Ready | Inspect final status/diff and reuse fresh evidence; create no extra tests or checks merely to repeat a completed phase. |
@@ -127,7 +127,7 @@ All current health/degraded composition callers use the clean-break contracts; r
 
 #### Exit Criteria
 
-D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant source review completed and focused python_review passed on current Git-selected production .py targets, with syntax/format/lint evidence for mechanically changed test .py targets. Record exact per-check target lists and receipts in the implementation hand-over. Behavioral acceptance and final configured workspace checks remain pending Validation; no pytest/unittest/regression run or artificial RED commit.
+D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant source review completed and focused python_review passed on current Git-selected production .py targets, with passing edit-content syntax preflight and targeted run_checks format/lint evidence for mechanically changed test .py targets. Record exact per-check target lists and receipts in the implementation hand-over. Behavioral acceptance and final configured workspace checks remain pending Validation; no pytest/unittest/regression run or artificial RED commit.
 
 #### Dependencies
 
@@ -151,7 +151,7 @@ D481.1.1–D481.1.3 implemented together; all current callers migrated, relevant
 
 ##### Current caller parity and production quality
 
-**Method:** Repository search for removed health contracts; select existing changed paths using current Git diff/status. Run python_review with scope='targets' on production .py only; use scope='targets', checks=['python_syntax','python_format','python_lint'] on mechanically changed test .py only. Preserve native arguments, use timeout_seconds=600 and record the actual selected paths.
+**Method:** Repository search for removed health contracts; select existing changed paths using current Git diff/status. Run python_review with scope='targets' on production .py only; retain passing edit-content syntax preflight and run_checks(scope='targets', targets=<mechanical test Python selection>, checks=['python_format','python_lint'], timeout_seconds=600) on mechanically changed test .py only. Do not send python_syntax to run_checks; it accepts content only through native edit/scaffold preflight. Preserve native arguments, use timeout_seconds=600 and record the actual selected paths.
 
 **Expected Result:** No live legacy caller; production format/lint/types/pyright pass with native configured arguments; mechanical test callers have applicable syntax/format/lint evidence. Strict test Mypy is not made mandatory. No test execution or invented regression evidence.
 
@@ -197,4 +197,5 @@ Current health/restart and proxy references match the new diagnostic schema, rec
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-05 | @imp planner | Plan one implementation cycle and bounded validation/documentation after independent Design GO. |
-| 0.2 | 2026-10-05 | @imp planner | Correct the QA P2 gate-selection blocker: current Git-selected targets per check type and final configured workspace checks. |
+$1
+$2 2026-10-05 | @imp implementer | Correct the independently identified unsupported syntax selection: preserve native edit-content preflight, then run supported targeted format/lint gates. |
