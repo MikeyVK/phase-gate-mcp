@@ -3,7 +3,7 @@
 # Issue \#482 — Declarative branch preselection for selection checks
 
 **Status:** Prepared for independent Design → Planning review  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-06
 
 ## Purpose
@@ -108,7 +108,7 @@ The adapter declares which standardized policy it requires; the workspace author
 
 ## Test Design
 
-Design adds or runs no tests and approves no new permanent regression harness. Existing authored fixtures and consumer setups invalidated by the clean break must be adapted coherently; that is caller migration, not authorization for broad regression execution. Planning must define the smallest evidence for the obligations below, preferably a disposable observable selection/process demonstration plus targeted schema/code gates. Native preservation can reuse valid Research evidence where the changed surface does not invalidate it; no configured full-suite run is implied by this Design.
+Design adds or runs no tests and approves no new permanent regression harness. Existing authored fixtures and consumer setups invalidated by the clean break must be adapted coherently. Planning defines proportional targeted evidence per cycle and reuses fresh results until invalidated. A disposable observable selection/process demonstration may close a material evidence gap; it does not replace required workflow verification. The active refactor contract retains its single full native-configured test run, run_tests(scope='configured'), at Validation together with the phase-owned gates. This Design grants no #482 exception to those requirements.
 
 ## Contracts
 
@@ -302,7 +302,7 @@ Represent them without a request; preserve attempted/native distinction and vali
 
 ## Planning Consequences
 
-Planning must inventory coupled callers and define a bounded coherent implementation, document active reference updates and select proportional evidence per file type. Keep Python checks on appropriate Python targets, Markdown on document checks, and honor phase-owned workspace verification. It must not revive native resolution, add adapter flags/entrypoint changes, launch broad regression runs or invent a second policy source.
+Planning must inventory coupled callers and define a bounded coherent implementation, document active reference updates and select proportional evidence per file type. Keep Python checks on appropriate Python targets and Markdown on document checks. Reserve the active refactor contract's single full native-configured test run and branch/workspace gates for Validation; reuse valid evidence and add focused demonstrations only for material gaps. Do not revive native resolution, add adapter flags/entrypoint changes, invent a second policy source or add a permanent regression harness.
 
 ## Related Documents
 
@@ -317,3 +317,4 @@ Planning must inventory coupled callers and define a bounded coherent implementa
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-06 | @imp designer | Define policy ownership, exact matching, no-applicable results and coherent clean-break migration within the approved Research strategy. |
+| 0.2 | 2026-10-06 | @imp designer | Address independent QA P2: retain the refactor contract's required Validation test run while keeping Design test-free and evidence proportional. |
