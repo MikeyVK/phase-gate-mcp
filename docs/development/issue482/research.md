@@ -2,8 +2,8 @@
 
 # Issue 482 — Configured branch targets research
 
-**Status:** Prepared for independent Research → Design review  
-**Version:** 0.14  
+**Status:** Owner strategy clarification recorded; independent consistency review requested  
+**Version:** 0.15  
 **Last Updated:** 2026-10-06
 
 ## Scope In
@@ -172,7 +172,7 @@ Primary sources: [loaders](https://github.com/lycheeverse/lychee/blob/lychee-v0.
 
 ## Approved Strategy
 
-The owner closed the research discussion after endorsing the public capability-metadata route and confirming the role/scope distinction. This records strategy approval, not QA approval or permission to start a later phase.
+The owner closed the research discussion after endorsing the public capability-metadata route and confirming the role/scope distinction. On 2026-10-06, after Design review, the owner explicitly confirmed the binding #482 strategy: clean break, no compatibility or legacy routes, no extra regression tests for old behavior, and bounded tests aimed at behavior rather than content. This records the human strategy decision, not QA approval or permission to start a later phase.
 
 | Affected boundary | Approved strategy / preservation |
 | --- | --- |
@@ -180,12 +180,12 @@ The owner closed the research discussion after endorsing the public capability-m
 | Branch behavior | Preselect each check's Git candidates only for branch. This intentionally replaces exact native configured-discovery equivalence. |
 | Native tool boundary | Preserve command construction, native configuration precedence, guards and source transport after preselection. No intent-specific flags or resolver invocation. |
 | Other scopes/roles | Preserve configured/workspace/explicit-target, content, test and fix meanings. No new Pytest branch scope. |
-| Metadata consumers | Extend the public selection-check capability declaration and migrate affected bundled declarations coherently. Explicit policy, no implicit allow-all or parallel legacy filter. Exact schema/version/admission mechanics belong to Design. |
+| Metadata consumers | Clean break: extend the public selection-check declaration and update affected bundled declarations and active consumers coherently. Remove obsolete paths and assumptions; no compatibility layer, aliases, optional legacy admission, implicit allow-all or parallel legacy filter. Exact schema/version/admission mechanics belong to Design. |
 | Adapter request consumers | Preserve the current request/response wire where no-applicable work is determined before invocation. No universal intent field or receiving-entrypoint rewrite is required by filtering itself. |
 | Deliberate file/directory inputs | Preserve explicit descendants beside directories; do not replace directories with generic scans. |
 | Public result | No applicable work is distinct from native PASS, incomplete execution and configured discovery. Define the row/aggregate contract in Design; do not fabricate native facts. |
 | Native Ruff scope correction | Keep the owner-authorized cache/archive exclusions and reuse passing configured evidence. No global force-exclude. |
-| Verification scope | No tests added/run in Research and no new permanent harness approved. Later evidence must prove the approved behavior proportionally. |
+| Verification scope | No extra regression tests for old behavior, no new permanent harness, and no content/snapshot tests that pin documents, policy lists or implementation shape. Prefer existing relevant behavioral coverage; adapt invalidated callers and replace/remove obsolete expectations. New focused cases require a concrete gap in the intended public behavior. Planning must bound the evidence and justify each scenario. The existing workflow-required single configured suite at Validation remains; it does not authorize additional regression coverage or repeated broad runs. No tests are added/run in Research or Design. |
 
 ## Expected Results
 
@@ -252,3 +252,4 @@ Existing [selection tests](../../../tests/mcp_server/unit/execution/test_check_s
 | 0.12 | 2026-10-06 | @imp researcher | Distinguish server-side technical feasibility from policy ownership; verify examined native-knowledge isolation and retain adapter-side preselection as a boundary-preserving alternative with unchanged native calls. |
 | 0.13 | 2026-10-06 | @imp researcher | Trace existing interpreted capability metadata and establish include/exclude path-pattern data as the minimal common branch-filter candidate, with package/workspace placement and matching semantics explicit. |
 | 0.14 | 2026-10-06 | @imp researcher | Consolidate Research into one current strategy and bounded evidence; confirm generic capability filtering, unchanged native calls and Pytest exclusion for independent QA. |
+| 0.15 | 2026-10-06 | @imp designer | Record the owner's explicit #482 clean-break decision and bounded behavioral-test policy after Design review; no compatibility, legacy or extra old-behavior regression coverage. |

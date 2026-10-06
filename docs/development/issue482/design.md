@@ -3,7 +3,7 @@
 # Issue \#482 — Declarative branch preselection for selection checks
 
 **Status:** Prepared for independent Design → Planning review  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-06
 
 ## Purpose
@@ -39,7 +39,7 @@ The branch selector currently offers every changed file to every selected check.
 - No adapter IDs, language roots, native suffix/default lists or native configuration interpretation in generic production logic.
 - One authoritative policy value location; frozen strict metadata; ConfigLoader remains the sole configuration reader.
 - Filtering examines only supplied Git candidates; no filesystem enumeration, native probe, subprocess or additional source transport.
-- Keep evidence proportional and reuse valid Research evidence. Design introduces no production/test changes or test execution.
+- Keep evidence bounded and aimed at observable behavior; add no extra regression tests for old behavior, no content snapshots and no permanent test harness. Reuse valid evidence. Design introduces no production/test changes or test execution.
 
 ## Options
 
@@ -108,7 +108,18 @@ The adapter declares which standardized policy it requires; the workspace author
 
 ## Test Design
 
-Design adds or runs no tests and approves no new permanent regression harness. Existing authored fixtures and consumer setups invalidated by the clean break must be adapted coherently. Planning defines proportional targeted evidence per cycle and reuses fresh results until invalidated. A disposable observable selection/process demonstration may close a material evidence gap; it does not replace required workflow verification. The active refactor contract retains its single full native-configured test run, run_tests(scope='configured'), at Validation together with the phase-owned gates. This Design grants no #482 exception to those requirements.
+The owner explicitly confirmed the #482 strategy on 2026-10-06: clean break, no compatibility or legacy routes, no extra regression tests for old behavior, and a bounded test scope aimed at behavior rather than content. This decision is authoritative in Research's Approved Strategy.
+
+| Test boundary | Binding rule |
+| --- | --- |
+| What evidence proves | Public behavior: policy admission/refusal, actual selected targets, whether an adapter is invoked, deliberate descendant retention, and factual result/aggregate outcomes. Relevant request/result fields may be asserted when they prove that behavior. |
+| What not to add | Old-route characterization/regression tests; compatibility scenarios; document-text assertions; full YAML/manifest/JSON/schema snapshots; package-version assertions; tests that merely repeat authored policy lists or implementation structure. |
+| Existing tests/callers | Reuse valuable behavioral coverage. Adapt invalidated fixtures/callers to the new contract; replace or remove obsolete expectations instead of keeping old behavior alive. Mechanical fixture migration creates no obligation for extra tests. |
+| Size control | Planning inventories existing relevant coverage and groups gaps into policy/admission, routing/explicit targeting, and no-applicable aggregation. Use a small shared scenario set; no per-adapter/per-suffix/config-entry matrix or duplicate cases at multiple layers. Every proposed new case must identify an uncovered behavioral risk and why an existing case cannot cover it. |
+| New tests | Add or adapt only the smallest case needed for a concrete gap in the intended behavior. No new permanent harness, speculative coverage or blanket regression expansion. A disposable demonstration is allowed for a material gap. |
+| Runs | No tests in Research or Design. Focused evidence belongs to the approved cycles. Retain the active refactor contract's single full native-configured run_tests(scope='configured') at Validation and its phase gates; reuse fresh results until invalidated, with no extra broad runs solely because documents or fixtures changed. |
+
+The existing required suite is execution of existing coverage, not authorization to add regression tests for old behavior. A disposable demonstration does not replace required workflow verification.
 
 ## Contracts
 
@@ -212,7 +223,7 @@ Presentation retains the current aggregate template and adds reason={reason} to 
 
 The public metadata extension is mandatory for selection capabilities. Missing-policy compatibility, implicit allow-all and legacy selector aliases are excluded. The four affected bundled packages (Ruff, Mypy, Pyright, Lychee) migrate to package version 2.0.0 because their required public declarations change; native dependency pins and role contract_version=1 remain unchanged. Their existing native files/entrypoints are preservation surfaces. Content-only packages, Pytest and fix-role capability declarations acquire no selection-policy field.
 
-Migrate existing strict-schema consumers and authored fixtures/builders that construct selection capabilities, ChecksConfig, CheckSelectionPlan or aggregate outputs. Remove directory-covering expectations for explicit targeting; replace calls-field consumers coherently rather than maintaining a parallel alias. Installed-distribution/configuration evidence must still show the same manifest and workspace policy values are shipped and read through the existing catalog/loader paths.
+Migrate existing strict-schema consumers and authored fixtures/builders that construct selection capabilities, ChecksConfig, CheckSelectionPlan or aggregate outputs. Remove directory-covering expectations for explicit targeting; replace calls-field consumers coherently rather than maintaining a parallel alias. Remove or replace tests that preserve obsolete behavior. Installed-distribution evidence concerns successful admission and policy-driven selection through the existing catalog/loader paths; do not add tests that merely snapshot package/configuration contents.
 
 Active execution-adapter and quality-tool references must document required policy references, the pattern language, branch-only behavior and no-applicable outcomes in Documentation. Historical issue artifacts remain context. Planning must enumerate actual impacted consumers before editing, without expanding into native-adapter repair.
 
@@ -252,7 +263,7 @@ Apply the admitted metadata/configuration/selector/result contract as one cohere
 
 ### Mixed branch and deterministic matching
 
-**Method:** Use one isolated demonstration with root/nested Python, stub, notebook, pyproject.toml, production/test Python, Markdown, archive/cache candidates and a third unrelated file type.
+**Method:** Reuse applicable behavioral coverage or one small shared mixed-candidate demonstration proving anchored/root/nested matching, inclusion/exclusion and different check subsets. Use representative paths; do not build a case for every tool, native extension or authored configuration entry.
 
 **Expected Result:** Each capability receives exactly its declared subset in stable order; production roots and Ruff exclusions differ intentionally.
 
@@ -270,7 +281,7 @@ Apply the admitted metadata/configuration/selector/result contract as one cohere
 
 ### Packaging and active consumers
 
-**Method:** Inspect installed-distribution manifest/configuration contracts and actual affected consumer inventory; use focused applicable gates under the eventual approved plan.
+**Method:** Inspect the actual affected consumer inventory and reuse installed-distribution admission/selection evidence. Use focused applicable gates under the approved plan; do not introduce package-version, file-content or policy-list snapshots.
 
 **Expected Result:** Required metadata, policy values and new aggregate schema remain coherent without compatibility shims.
 
@@ -302,7 +313,7 @@ Represent them without a request; preserve attempted/native distinction and vali
 
 ## Planning Consequences
 
-Planning must inventory coupled callers and define a bounded coherent implementation, document active reference updates and select proportional evidence per file type. Keep Python checks on appropriate Python targets and Markdown on document checks. Reserve the active refactor contract's single full native-configured test run and branch/workspace gates for Validation; reuse valid evidence and add focused demonstrations only for material gaps. Do not revive native resolution, add adapter flags/entrypoint changes, invent a second policy source or add a permanent regression harness.
+Planning must inventory coupled callers and existing relevant behavioral coverage. Bound evidence to the three behavioral groups in Test Design, name the concrete risk each scenario covers, and justify any net-new test or additional run. Prefer adapting existing tests over adding files/cases; remove obsolete old-behavior expectations. No compatibility/legacy route, extra old-behavior regression tests, content snapshots, per-tool/suffix matrices or permanent harness. Keep Python checks on appropriate Python targets and Markdown on document checks. Reserve the active refactor contract's single full native-configured test run and branch/workspace gates for Validation; reuse valid evidence. Do not revive native resolution, add adapter flags/entrypoint changes or invent a second policy source.
 
 ## Related Documents
 
@@ -318,3 +329,4 @@ Planning must inventory coupled callers and define a bounded coherent implementa
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-06 | @imp designer | Define policy ownership, exact matching, no-applicable results and coherent clean-break migration within the approved Research strategy. |
 | 0.2 | 2026-10-06 | @imp designer | Address independent QA P2: retain the refactor contract's required Validation test run while keeping Design test-free and evidence proportional. |
+| 0.3 | 2026-10-06 | @imp designer | Apply the owner's explicit clean-break and bounded behavioral-test decision; exclude extra old-behavior regression/content tests and require a justified minimal evidence inventory. |
