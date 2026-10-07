@@ -74,6 +74,7 @@ def _write_config(case: ActivationCase) -> None:
         {
             "adapters.yaml": b"trusted_adapter_ids: []\n",
             "checks.yaml": (
+                b'configured_targets: {fixture: {include: ["**"], exclude: []}}\n'
                 b"checks:\n"
                 b"  syntax:\n"
                 b"    adapter_id: python_syntax\n"
@@ -94,7 +95,8 @@ def _write_config(case: ActivationCase) -> None:
                 b"roles:\n  check:\n    contract_version: 1\n"
                 b"    entrypoint: {executable: unavailable_native, args: []}\n"
                 b"    capabilities:\n"
-                b"      syntax: {inputs: [content, selection], requires_file: false}\n"
+                b"      syntax: {inputs: [content, selection], requires_file: false, "
+                b"configured_targets: fixture}\n"
             ),
             "check.py": (
                 b"raise RuntimeError('activation admission must not execute native tools')\n"

@@ -32,7 +32,7 @@ roles:
       executable: pwsh
       args: ["-File", {package_file: check.ps1}, "", "a b"]
     capabilities:
-      syntax: {inputs: [content, selection], requires_file: false}
+      syntax: {inputs: [content, selection], requires_file: false, configured_targets: fixture}
   test:
     contract_version: 1
     entrypoint: {executable: missing_program, args: []}
@@ -102,7 +102,7 @@ def test_real_loader_preserves_descriptors_and_catalog_identity(tmp_path: Path) 
         ('args: ["-File", {package_file: check.ps1}, "", "a b"]', "args: [42]"),
         ("requires_file: false", "requires_file: null"),
         (
-            "inputs: [content, selection], requires_file: false",
+            "inputs: [content, selection], requires_file: false, configured_targets: fixture",
             "inputs: [selection], requires_file: false",
         ),
         ("capabilities: {suite: {}}", "capabilities: {suite: {options_schema: x}}"),

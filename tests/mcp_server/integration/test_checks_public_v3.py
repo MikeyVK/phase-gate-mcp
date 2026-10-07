@@ -17,6 +17,7 @@ from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
 from mcp_server.core.decorators.input_validation_decorator import InputValidationDecorator
 from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHandlerDecorator
+from mcp_server.core.interfaces.git import BranchChanges, IBranchChangeReader
 from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.execution.check_selection import CheckSelector
 from mcp_server.managers.enforcement_runner import EnforcementRunner
@@ -32,7 +33,7 @@ from mcp_server.tools.check_tools import RunChecksTool
 from tests.mcp_server.integration.test_scaffold_public_v3 import Composition, invoke
 from tests.mcp_server.unit.execution.test_check_selection import configured_checks
 from tests.mcp_server.unit.execution.test_check_selection import selector as build_selector
-from tests.mcp_server.unit.execution.test_check_service import RecordingRuntime
+from tests.mcp_server.unit.execution.test_check_service import EmptyBranch, RecordingRuntime
 from tests.mcp_server.unit.execution.test_check_service import compose as build_checks
 
 
@@ -43,15 +44,23 @@ def compose(
     *,
     config_override: ChecksConfig | None = None,
     selector_override: CheckSelector | None = None,
+    branch: IBranchChangeReader | None = None,
+    filtered_checks: frozenset[str] = frozenset(),
 ) -> tuple[Composition, RecordingRuntime]:
-    executor, selector, runtime = build_checks(root, outcomes)
+    executor, selector, runtime = build_checks(
+        root, outcomes, branch=branch, filtered_checks=filtered_checks
+    )
     names = tuple(f"check_{index}" for index in range(len(outcomes)))
     config = ChecksConfig.model_validate(
         {
+            "configured_targets": {
+                "fixture": {"include": ["**"], "exclude": []},
+                "filtered": {"include": ["**/*.never"], "exclude": []},
+            },
             "checks": {
                 name: {
                     "adapter_id": "fixture",
-                    "capability": "check",
+                    "capability": "filtered" if name in filtered_checks else "check",
                     "timeout_seconds": index + 3,
                     "default_args": [name],
                 }
@@ -87,7 +96,9 @@ def compose(
                 {
                     "field": "results",
                     "heading": "Checks",
-                    "item_template": "{check_id}: {status}; args_source={args_source}",
+                    "item_template": (
+                        "{check_id}: {status}; reason={reason}; args_source={args_source}"
+                    ),
                 }
             ],
             "enum_cases": [
@@ -261,7 +272,9 @@ async def test_early_operation_refusals_retain_exact_details_without_invocation(
 ) -> None:
     config = configured_checks(default_profile=None if kind == "no-default" else "default")
     if kind == "no-checks":
-        config = ChecksConfig(checks=(), profiles=(), profiles_by_extension=(), run_checks={})
+        config = ChecksConfig(
+            configured_targets=(), checks=(), profiles=(), profiles_by_extension=(), run_checks={}
+        )
     arguments: dict[str, JsonValue] = {"scope": "configured"}
     if kind == "selection":
         arguments.update(checks=["first"], args={"second": []})
@@ -308,3 +321,74 @@ async def test_early_operation_refusals_retain_exact_details_without_invocation(
     invalid["error_details"] = {"unexpected": True}
     with pytest.raises(ValidationError):
         RunChecksOutput.model_validate_json(json.dumps(invalid))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("outcomes", "filtered", "expected", "reasons", "calls"),
+    [
+        (("passed",), frozenset({"check_0"}), "not_applicable", ("not_applicable",), 0),
+        (("passed", "passed"), frozenset({"check_1"}), "passed", (None, "not_applicable"), 1),
+        (("failed", "passed"), frozenset({"check_1"}), "failed", (None, "not_applicable"), 1),
+        (
+            ("not_executed", "passed"),
+            frozenset({"check_1"}),
+            "incomplete",
+            ("not_applicable", "not_applicable"),
+            1,
+        ),
+        (
+            ("invalid_request", "passed", "passed"),
+            frozenset({"check_1"}),
+            "incomplete",
+            ("invalid_request", "not_applicable", "not_started"),
+            1,
+        ),
+    ],
+)
+async def test_branch_no_applicable_outcomes(
+    tmp_path: Path,
+    pytestconfig: pytest.Config,
+    outcomes: tuple[str, ...],
+    filtered: frozenset[str],
+    expected: str,
+    reasons: tuple[str | None, ...],
+    calls: int,
+) -> None:
+    (tmp_path / "source.py").write_text("candidate", encoding="utf-8")
+
+    class ChangedBranch(EmptyBranch):
+        def get_branch_changes(self, parent: str) -> BranchChanges:
+            return BranchChanges(current_paths=("source.py",), removed_paths=())
+
+    composition, runtime = compose(
+        tmp_path,
+        pytestconfig,
+        outcomes,
+        branch=ChangedBranch(),
+        filtered_checks=filtered,
+    )
+    result = await run(
+        composition,
+        {
+            "scope": "branch",
+            "args": {"check_0": []},
+            "timeout_seconds": 11,
+        },
+    )
+    assert result.run_status == expected
+    assert result.success is (outcomes[0] != "invalid_request")
+    assert tuple(row.reason for row in result.results) == reasons
+    assert len(runtime.requests) == calls
+    assert result.results[0].args_source == "caller" and result.results[0].effective_args == ()
+    for row in result.results:
+        if row.check_id in filtered:
+            assert row.status == "not_executed" and row.reason == "not_applicable"
+            assert row.adapter is None and row.capture is None and row.external_tools is None
+            assert row.message is None and row.evidence is None and row.coverage is None
+            assert row.termination_problem is None and row.request_rejection is None
+            assert row.required_targets == ()
+    if calls:
+        assert runtime.requests[0][0].targets == (str(tmp_path / "source.py"),)
+        assert runtime.requests[0][1] == 11
+        assert result.results[0].adapter is not None and result.results[0].capture is not None

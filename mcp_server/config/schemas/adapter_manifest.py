@@ -23,6 +23,7 @@ AdapterId = Annotated[
     str, StringConstraints(strict=True, pattern=re.compile(r"^[a-z][a-z0-9_]{0,63}$(?![\s\S])"))
 ]
 CapabilityId = AdapterId
+ConfiguredTargetSetId = AdapterId
 AdapterVersion = Annotated[
     str,
     StringConstraints(
@@ -103,6 +104,7 @@ class CheckCapability(_Declaration):
         tuple[Literal["content", "selection"], ...], BeforeValidator(_array), Field(min_length=1)
     ]
     requires_file: bool | None = None
+    configured_targets: ConfiguredTargetSetId | None = None
 
     @model_validator(mode="after")
     def validate_inputs(self) -> Self:
@@ -113,6 +115,11 @@ class CheckCapability(_Declaration):
                 raise ValueError("content_requires_file_declaration")
         elif "requires_file" in self.model_fields_set:
             raise ValueError("selection_forbids_requires_file")
+        if "selection" in self.inputs:
+            if self.configured_targets is None:
+                raise ValueError("selection_requires_configured_targets")
+        elif "configured_targets" in self.model_fields_set:
+            raise ValueError("content_forbids_configured_targets")
         return self
 
 

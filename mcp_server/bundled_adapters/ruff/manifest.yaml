@@ -1,5 +1,5 @@
 adapter_id: ruff
-version: 1.0.0
+version: 2.0.0
 files:
   - check.py
   - fix.py
@@ -13,9 +13,11 @@ roles:
         - package_file: check.py
     capabilities:
       format:
+        configured_targets: python_format_sources
         inputs:
           - selection
       lint:
+        configured_targets: python_lint_sources
         inputs:
           - selection
   fix:

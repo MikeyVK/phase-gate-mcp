@@ -25,6 +25,7 @@ from mcp_server.config.schemas.checks_config import CheckId, ChecksConfig, Profi
 from mcp_server.core.interfaces.execution import (
     AdapterBinding,
     CheckCatalogReader,
+    ConfiguredTargetFilter,
     ResolvedScopePath,
     ScopePaths,
 )
@@ -176,10 +177,21 @@ class SelectedCheckCall:
 
 
 @dataclass(frozen=True)
+class NotApplicableCheck:
+    """A preselected obligation without any request or native invocation."""
+
+    check_id: str
+    binding: AdapterBinding[CheckCapability]
+    effective_args: tuple[str, ...]
+    args_source: ArgsSource
+    timeout_seconds: int
+
+
+@dataclass(frozen=True)
 class CheckSelectionPlan:
     scope: ResolvedCheckScope
     selected_check_ids: tuple[str, ...]
-    calls: tuple[SelectedCheckCall, ...]
+    checks: tuple[SelectedCheckCall | NotApplicableCheck, ...]
     selected_profile: ProfileId | None = None
 
     @property
@@ -247,15 +259,6 @@ class FileScopePaths:
         return ResolvedScopePath(path=candidate, exists=exists)
 
 
-def _collapse_targets(paths: tuple[Path, ...]) -> tuple[Path, ...]:
-    """Keep covering directory targets and remove duplicates without filesystem traversal."""
-    selected: list[Path] = []
-    for path in sorted(set(paths), key=lambda value: (len(value.parts), str(value))):
-        if not any(path.is_relative_to(parent) for parent in selected):
-            selected.append(path)
-    return tuple(sorted(selected, key=str))
-
-
 class ScopeResolver:
     """Resolve caller intent using separately injected filesystem and Git readers."""
 
@@ -283,7 +286,7 @@ class ScopeResolver:
                         "Requested target does not exist.",
                     )
                 paths.append(resolved.path)
-            return ResolvedCheckScope(request.scope, _collapse_targets(tuple(paths)), (), False)
+            return ResolvedCheckScope(request.scope, tuple(sorted(set(paths), key=str)), (), False)
 
         branch = self._git.get_current_branch()
         parent = self._parents.get_parent_branch(branch)
@@ -303,7 +306,7 @@ class ScopeResolver:
                     "missing",
                     "Requested branch path does not exist.",
                 )
-        targets = _collapse_targets(tuple(current))
+        targets = tuple(sorted(set(current), key=str))
         removed_targets = tuple(
             sorted(PureWindowsPath(_relative_path(relative)).as_posix() for relative in removed)
         )
@@ -314,11 +317,16 @@ class CheckSelector:
     """Resolve complete configured obligations before creating any runnable calls."""
 
     def __init__(
-        self, config: ChecksConfig, catalog: CheckCatalogReader, scopes: ScopeResolver
+        self,
+        config: ChecksConfig,
+        catalog: CheckCatalogReader,
+        scopes: ScopeResolver,
+        configured_targets: ConfiguredTargetFilter,
     ) -> None:
         self._config = config
         self._catalog = catalog
         self._scopes = scopes
+        self._configured_targets = configured_targets
 
     def select(self, request: CheckSelectionRequest) -> CheckSelectionPlan:
         configured = dict(self._config.checks)
@@ -354,31 +362,45 @@ class CheckSelector:
                 raise CheckSelectionError(CheckSelectionFailureReason.UNSELECTED_ARGS, recipient)
 
         scope = self._scopes.resolve(request)
-        calls: list[SelectedCheckCall] = []
+        planned: list[SelectedCheckCall | NotApplicableCheck] = []
+        policies = dict(self._config.configured_targets)
         if not scope.empty_selection:
             for check_id in selected:
                 declaration = configured[check_id]
                 binding = bindings[check_id]
-                calls.append(
+                args = overrides.get(check_id, declaration.default_args)
+                args_source: ArgsSource = "caller" if check_id in overrides else "configured"
+                timeout = (
+                    request.timeout_seconds
+                    if request.timeout_seconds is not None
+                    else declaration.timeout_seconds
+                )
+                targets = scope.targets
+                if scope.scope == "branch":
+                    reference = binding.capability.configured_targets
+                    assert reference is not None
+                    targets = self._configured_targets.select(targets, policy=policies[reference])
+                    if not targets:
+                        planned.append(
+                            NotApplicableCheck(check_id, binding, args, args_source, timeout)
+                        )
+                        continue
+                planned.append(
                     SelectedCheckCall(
                         check_id=check_id,
                         binding=binding,
                         request=SelectionCheckRequest(
                             operation=binding.capability_id,
-                            targets=tuple(str(path) for path in scope.targets),
-                            args=overrides.get(check_id, declaration.default_args),
+                            targets=tuple(str(path) for path in targets),
+                            args=args,
                         ),
-                        timeout_seconds=(
-                            request.timeout_seconds
-                            if request.timeout_seconds is not None
-                            else declaration.timeout_seconds
-                        ),
-                        args_source="caller" if check_id in overrides else "configured",
+                        timeout_seconds=timeout,
+                        args_source=args_source,
                     )
                 )
         return CheckSelectionPlan(
             scope=scope,
             selected_check_ids=selected,
-            calls=tuple(calls),
+            checks=tuple(planned),
             selected_profile=selected_profile,
         )

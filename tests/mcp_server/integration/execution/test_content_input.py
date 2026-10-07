@@ -212,7 +212,10 @@ def test_repeated_concurrent_and_colliding_allocations_never_share_or_adopt(tmp_
 def test_admission_failure_creates_no_scratch(tmp_path: Path) -> None:
     root = resolve_temporary_paths(tmp_path).validation_root
     preparer = ContentInputPreparer(FileContentScratch(root, fresh_id=lambda: uuid4().hex))
-    selection = replace(binding(False), capability=CheckCapability(inputs=("selection",)))
+    selection = replace(
+        binding(False),
+        capability=CheckCapability(inputs=("selection",), configured_targets="fixture"),
+    )
     with pytest.raises(ValueError):
         preparer.prepare(selection, target_path=str(tmp_path / "item.py"), content="", args=())
     with pytest.raises(ValidationError):
