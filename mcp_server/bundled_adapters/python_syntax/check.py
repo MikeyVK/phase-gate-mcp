@@ -99,7 +99,7 @@ def _run(request: object) -> tuple[dict[str, object], int]:
     try:
         ast.parse(content, filename=target_path)
     except SyntaxError as exc:
-        source_line = (exc.text or "").rstrip("\r\n")
+        source_line = "".join(content.splitlines()[(exc.lineno or 0) - 1 : exc.lineno or 0])
         evidence = (
             f"filename: {target_path}\n"
             f"line {exc.lineno or 0}, column {exc.offset or 0}\n"

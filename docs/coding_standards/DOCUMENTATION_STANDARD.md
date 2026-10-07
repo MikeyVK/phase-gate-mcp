@@ -77,6 +77,7 @@ or approved document. Native syntax/style acceptance does not prove semantic qua
 ## Evidence And Traceability
 
 - Prefer concrete evidence over general statements: cite specific files, symbols, behaviors, interfaces, flows, logs, or references where possible.
+- For tool-run claims in committed documents and hand-overs, record the relevant invocation/scope and observed outcome, or link to durable evidence containing those facts. Transient cache URIs and run IDs may supplement that evidence, but must not be its sole basis.
 - Treat external findings as evidence, not as decisions.
 - Separate observed facts, assumptions, open questions, and chosen decisions clearly.
 - If an external claim cannot be traced to a source, do not present it as established fact.
