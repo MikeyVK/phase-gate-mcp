@@ -3,7 +3,7 @@
   "branch": "chore/472-audit-public-tool-behavior",
   "issue_number": 472,
   "workflow_name": "chore",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -41,6 +41,14 @@
       "to_phase": "documentation",
       "timestamp": "2026-10-07T18:13:34.327480+00:00",
       "human_approval_message": "Human: only one compact durable validation report, push and finish via Ready; no additional tests, evidence artifacts or repairs. Independent QA Beoordeel designplan reviewed commit 7d1905b and returned GO for Validation \u2192 Documentation and Ready within these accepted limits. Validation remains PARTIAL.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-10-07T18:13:52.606493+00:00",
+      "human_approval_message": "Human approved one compact validation report, push and close out via Ready with no further tests, evidence artifacts or repairs. Independent QA Beoordeel designplan returned GO on 7d1905b for Documentation and Ready; no additional documentation needed. PARTIAL verification limits remain explicit; #485 wording alignment belongs to Coordination.",
       "forced": false,
       "skip_reason": null
     }
