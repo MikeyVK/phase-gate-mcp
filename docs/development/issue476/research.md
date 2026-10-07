@@ -2,8 +2,8 @@
 
 # Issue 476 — Schema-to-template consumption research
 
-**Status:** DRAFT — approved strategy and bounded package audit; independent review pending  
-**Version:** 0.3  
+**Status:** DRAFT — package audit reviewed; documentation-integration supplement pending review  
+**Version:** 0.4  
 **Last Updated:** 2026-10-07
 
 ## Purpose
@@ -12,7 +12,7 @@ Establish schema-to-output coherence through a bounded review of the delivered p
 
 ## Scope In
 
-Prepared context schemas, the admitted Jinja graph, caller content and reachable render consumers; current package fixtures, authoring and startup/renewal admission boundaries.
+Prepared context schemas, the admitted Jinja graph, caller content and reachable render consumers; current package fixtures, authoring and startup/renewal admission boundaries; active template documentation, its reading routes and distribution boundary.
 
 ## Scope Out
 
@@ -27,7 +27,8 @@ Template admission rejects undeclared static Jinja reads but does not prove that
 - Define consumption beyond a syntactic reference.
 - Identify schema/Jinja constructs that can be resolved generically and cases that must remain uncertain.
 - Compare authoring diagnostics, behavior-supported conformance and startup rejection with explicit consumer impact; capture the selected release-time review boundary.
-- Preserve current undeclared-read rejection; obtain a boundary-specific human strategy before Design.
+- Preserve current undeclared-read rejection; capture boundary-specific human strategy before progression.
+- Establish coherent, discoverable and durable integration of the approved package-development/release procedure across the active documentation cluster.
 
 ## Background
 
@@ -162,6 +163,32 @@ Representative existing behavior assertions are in [shared documents](../../../t
 
 No defect repair is proposed from these findings. Explicit normalization, sorted/deduplicated imports, empty collections and fixed package choices can make distinct inputs produce equal bytes; that is not an ignored schema declaration. [text_block](../../../mcp_server/services/template_engine.py) removes blank edge lines while retaining meaningful interiors. The release review must assess declared meaning, not demand injectivity. Runtime validity of arbitrary caller-authored expressions and exhaustive combinations remains outside this source-audit claim.
 
+### Active template instructions and documentation integration — 2026-10-07
+
+The owner accepted the lighter Research → Documentation → Ready route, conditional on first investigating the existing documentation as a whole. Acceptance must concern the integrated reading route and claims, not merely a newly appended section. This supplement is read-only source investigation; no current guidance, manifest, runtime code or template was changed.
+
+| Surface inspected | Current role / reading route | Finding |
+| --- | --- | --- |
+| [Template reference index](../../reference/README.md), [manual index](../../manuals/README.md) | Direct users/contributors to the library, tool and identity guides | The existing navigation already leads to template-specific guidance; no always-on instruction copy is needed |
+| [Template Library Usage](../../reference/TEMPLATE_LIBRARY_USAGE.md) | Separate use/refinement from extension; extension explicitly directs maintainers to the maintenance guide | Suitable entry for a clear development/release signpost, without repeating the procedure |
+| [Schema and Template Maintenance](../schema-template-maintenance.md) | Own package extension, real filters, suite loading and provenance boundaries | Logical single authority for the procedure; currently lacks an evidence-backed development/release sequence |
+| [Scaffolding reference](../../reference/tools/scaffolding.md), [editing reference](../../reference/tools/editing.md), [Code Style](../../coding_standards/CODE_STYLE.md), [scaffolding diagram](../../manuals/architectural_diagrams/09_scaffolding_subsystem.md) | Define input shape, runtime output checks and caller-owned content; distinguish valid basis from task completion | Consistent with release-time semantic review; preserve these contracts and avoid recopying tool schemas or field inventories |
+| [Identity reference](../../reference/template_metadata_format.md), [configuration reference](../../reference/config-loading-architecture.md) | Manifest identity/schema authority, authored versions, computed source identity and immutable catalog | Provenance identifies generation sources but is not approval or proof; release evidence must identify the reviewed sources separately |
+| [Release-assets guide](../../reference/release-assets-procedure.md), [manifest](../../../.pgmcp/config/release_manifest.yaml), [asset builder](../../../scripts/build_package.py), [init CLI](../../../mcp_server/cli.py) | Manifest-selected sources are copied to assets, included by [package-data](../../../pyproject.toml), then copied into a fresh server root | Confirmed gap: docs/reference is selected but docs/development/schema-template-maintenance.md is not. Three links from the shipped Library/Identity guides target that omitted guide |
+| [Workspace upgrade](../../setup/workspace-upgrade.md), [bootstrap](../../setup/agentic-bootstrap.md), [renewal composition](../../../mcp_server/cli_renewal.py) | Owner-led suite activation/restart; bootstrap copies assembled assets and renewal composes suite operations | Do not imply that template renewal refreshes every installed documentation file. Release/preparation and activation are distinct |
+| [Agent Instructions Model](../../reference/copilot-agent-instructions-model.md), host imp profiles and contracts.yaml | Topic work follows active docs; authoritative host copies and dynamic phase instructions have separate ownership | No template-release procedure currently competes with a host-specific copy. Keep one topic authority and existing navigation; do not multiply agent/phase instructions |
+| [Historical vision reference](../../reference/mcp_vision_reference.md) | Explicitly labels old registry/metadata examples HISTORICAL ARCHITECTURE CONTEXT and routes operational readers to current sources | Old examples are context, not competing authoring instructions; no historical rewrite is required |
+
+The distribution finding follows declared mappings and the builder's ordinary file/directory copy path; no wheel was built, package installed or upgrade run. Source-link examples and historical design references are not asserted to be self-contained in installed docs. The essential procedure and topic-to-topic reading route must be available in the delivered material.
+
+| Integration seam | Cost / impact |
+| --- | --- |
+| Keep the maintenance guide at its current path and explicitly include that one active file in release assets — recommended | Preserves existing links and one authority; a narrow documentation asset mapping uses the existing copy mechanism, with no whole development/archive tree |
+| Move the guide into the already shipped reference tree | Avoids a new mapping, but changes the public guide location and requires redirect/removal decisions plus link migration |
+| Put the procedure only in Library Usage or copy it into agent/contracts surfaces | Library-only addition leaves the referenced maintenance guide unavailable; replicated rules create split ownership and reader burden |
+
+The smallest complete integration surface is the maintenance guide, its Library Usage entry, and the explicit delivery mapping with matching release-assets documentation. These are candidate documentation/distribution seams, not a production implementation plan. Final review must assess existing and new text together: ordinary use → development/maintenance → evidence and independent review → source-bound release claim → owner-led activation. It must also verify that substantive uncertainty limits the claim, shared changes reach dependent packages, fresh evidence is reused appropriately, and no exhaustive semantic guarantee or tool-coordinated release is invented.
+
 ### Strategy comparison and selected direction
 
 | Strategy | Consumer / compatibility impact | Cost, risk and limitation |
@@ -176,7 +203,7 @@ The audit covers all 19 delivered packages and relevant nested fields. Shared re
 
 ## Questions
 
-- How should the eventual release procedure retain the review's scope, findings and limitations with minimal maintenance? Exact integration belongs to Design.
+- Documentation must integrate the approved minimal procedure with existing reading routes and source-bound release claims. The maintenance guide is omitted from the current release mapping; the narrow inclusion seam is recommended over relocation or duplicated instructions.
 
 ## References
 
@@ -195,13 +222,14 @@ Human approval on 2026-10-07: "Ja deze route spreekt me aan." The owner explicit
 | Admission, startup, renewal and each scaffold call | Preserve current schema validation and undeclared-read checks. Add no reverse-consumption gate to startup or individual uses | Package coherence is reviewed before release; serving and usage retain existing behavior |
 | Package authoring and release assurance | Perform a bounded LLM-assisted contract audit of the 19 delivered packages, including effective shared and nested consumers; retain traceable findings and honest uncertainty | Contextual semantic review fits agentic authoring; a reviewed release promise is bounded by evidence, not an exhaustive theorem |
 | Evidence and tests | Reuse relevant existing behavior evidence. Use focused tool/render demonstrations only for material unresolved cases; no new regression tests for old behavior, duplicate annotations or per-field coverage matrix | Evidence supports declared behavior while keeping maintenance and test volume controlled |
-| Production mechanism and instructions | No new analyzer, public MCP tool or instruction proliferation is approved. Exact minimal release integration remains a Design question after findings | Keep tool knowledge and authored contracts in their existing boundaries |
+| Production mechanism and instructions | No new analyzer, public MCP tool or instruction proliferation is approved. Integrate the approved minimum procedure into the existing topic documentation as a coherent whole | Keep tool knowledge and authored contracts in their existing boundaries |
+| Issue closeout and documentation | Human accepted Research → Documentation → Ready, skipping separate Design/Planning/Implementation/Validation for the remaining documentary work, after targeted documentation investigation. Keep one durable authority with discoverable reading and delivery routes | Explicit exceptional progression; no runtime changes or broad runtime evidence justified by document editing |
 
 ## Expected Results
 
 A compact durable audit records package coverage, effective consumption evidence for relevant root and nested fields, demonstrated defects separately from uncertainty, and remaining limitations. LLM inference is a reviewed claim, not automatic proof; whole-object forwarding and mere syntactic references do not establish all child consumers. Existing schema compositions and Jinja scope/call semantics remain authoritative. No current V3 shipped silently ignored field has yet been established. The 79 naive candidates are source-accounted, not a completed package-conformance review.
 
-Research proceeds to independent QA after the bounded audit and findings are recorded. Demonstrated defects are presented to the owner before repair Design. The eventual release promise must identify what was reviewed and proven and must not imply that every valid input combination or opaque function was exhaustively verified.
+Independent QA in 'Beoordeel designplan' gave GO for Research → Design on commit 03a64ab5047d2289cab218ac1ad34e48f1f2dc9f after checking the package audit, history and strategy. The owner subsequently accepted the lighter documentary closeout subject to this integration research. Its supplement and final integrated guidance require independent review; the prior GO is not approval of unreviewed documentation changes. Demonstrated defects are presented to the owner before repair Design. The release promise must identify what was reviewed and proven and must not imply that every valid input combination or opaque function was exhaustively verified. Completion additionally requires a coherent use/development/release reading route, one durable procedure authority, declared delivery of that authority, and an honest distinction between source/declaration inspection and actual build/runtime results.
 
 ## Evidence
 
@@ -274,3 +302,4 @@ Observe actual supplied package behavior through opaque-location fixtures
 | 0.1 | 2026-10-07 | @imp researcher | Map existing admission, semantic consumption limits and strategy alternatives. |
 | 0.2 | 2026-10-07 | @imp researcher | Reconcile historical explicit contracts, pipeline migration and installed V2 evidence; suspend the preliminary strategy recommendation. |
 | 0.3 | 2026-10-07 | @imp researcher | Capture human-approved release-assurance boundaries and source audit of all 19 delivered packages and effective nested consumers. |
+| 0.4 | 2026-10-07 | @imp researcher | Investigate active template instruction routes and distribution gap; capture approved lighter closeout and whole-documentation acceptance boundary. |
