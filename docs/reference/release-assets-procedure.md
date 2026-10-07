@@ -3,8 +3,8 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.0.0  
-**Last Updated:** 2026-07-08
+**Version:** 1.1  
+**Last Updated:** 2026-10-07
 
 ---
 
@@ -85,6 +85,8 @@ assets:
     target: "docs/manuals"
   - source: "docs/reference"
     target: "docs/reference"
+  - source: "docs/development/schema-template-maintenance.md"
+    target: "docs/development/schema-template-maintenance.md"
   - source: "docs/setup"
     target: "docs/setup"
   - source: "CHANGELOG.md"
@@ -94,6 +96,8 @@ assets:
   - source: "LICENSE"
     target: "LICENSE"
 ```
+
+The single active maintenance guide is included at its existing documentation path so the template library and identity guides retain a delivered reading route. This mapping does not include the development archive or issue reports. Before distributing new or changed template packages, follow its [development and release review](../development/schema-template-maintenance.md#develop-and-release-a-package); asset assembly does not itself establish semantic conformance.
 
 The repository manifest is the source of truth for package asset mappings. Keep
 consumer copies of host instructions synchronized with their declared direct-copy
@@ -179,3 +183,4 @@ part of this procedure.
 |---------|------|--------|---------|
 | 0.1 | 2026-07-05 | Agent | Initial draft |
 | 1.0.0 | 2026-07-08 | Agent | Document build automation, manifest paths, and schema matching implementation #420 |
+| 1.1 | 2026-10-07 | @imp documenter | Include the active template maintenance guide as one asset and connect package review to distribution without changing activation behavior. |

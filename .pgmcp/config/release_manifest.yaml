@@ -12,6 +12,8 @@ assets:
     target: "docs/manuals"
   - source: "docs/reference"
     target: "docs/reference"
+  - source: "docs/development/schema-template-maintenance.md"
+    target: "docs/development/schema-template-maintenance.md"
   - source: "docs/setup"
     target: "docs/setup"
   - source: "CHANGELOG.md"
@@ -20,3 +22,4 @@ assets:
     target: "docs/README.md"
   - source: "LICENSE"
     target: "LICENSE"
+

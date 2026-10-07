@@ -1,7 +1,7 @@
 # Template Library Usage
 
 **Status:** DEFINITIVE  
-**Last Updated:** 2026-10-04
+**Last Updated:** 2026-10-07
 
 Use the active template suite to discover a suitable artifact package, inspect its caller schema, create a valid starting point, and refine the result for its intended use. The runtime catalog and resolved package schema own exact IDs, purposes, fields, and package identity; this guide intentionally contains no copied inventory.
 
@@ -19,7 +19,7 @@ The [context migration and output responsibilities](tools/scaffolding.md#context
 
 ## Extend or maintain a package
 
-Use the runtime catalog to find the package purpose and `scaffold_schema` to read its resolved input contract; do not copy package IDs or field tables into another guide. A concrete package owns its manifest identity and purpose, caller schema, release version, policy, and root template. The resolved template graph may use shared bases, patterns, and definitions. Follow [Scaffold Schema and Template Maintenance](../development/schema-template-maintenance.md) for maintenance decisions.
+Use the runtime catalog to find the package purpose and `scaffold_schema` to read its resolved input contract; do not copy package IDs or field tables into another guide. A concrete package owns its manifest identity and purpose, caller schema, release version, policy, and root template. The resolved template graph may use shared bases, patterns, and definitions. For a new package, maintenance or release preparation, follow the [development and release procedure](../development/schema-template-maintenance.md#develop-and-release-a-package) in Scaffold Schema and Template Maintenance. It owns the contract review, behavior evidence, independent review and source-bound release claim; ordinary artifact use follows the discovery and refinement route above.
 
 First adapt an admitted package's schema and template graph when they can express the required behavior. A requirement for a generic engine capability, such as a new schema dialect, graph rule, rendering feature, or output-profile behavior, needs a generic implementation change. Package-specific facts belong to the package and must not become hardcoded server branches.
 
@@ -36,5 +36,6 @@ See [Template Package Identity and Artifact Provenance](template_metadata_format
 - [Scaffolding Tools](tools/scaffolding.md) — current public scaffold and schema behavior.
 - [Editing Tools](tools/editing.md) — safe refinement and validation policy.
 - [Discovery and Admin Tools](tools/discovery.md) — restart behavior.
-- [Scaffold Schema and Template Maintenance](../development/schema-template-maintenance.md) — package extension and maintenance.
+- [Scaffold Schema and Template Maintenance](../development/schema-template-maintenance.md) — package extension, maintenance and evidence-backed release preparation.
 - [Template Package Identity and Artifact Provenance](template_metadata_format.md) — persisted artifact provenance.
+
