@@ -22,6 +22,7 @@ from mcp_server.services.edit_construction import (
 def checks() -> ChecksConfig:
     return ChecksConfig.model_validate(
         {
+            "configured_targets": {},
             "checks": {
                 "syntax": {
                     "adapter_id": "syntax",

@@ -97,7 +97,12 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["tests/mcp_server/validation_fixtures"]
+extend-exclude = [
+    "tests/mcp_server/validation_fixtures",
+    "docs/development/archive",
+    ".pytest_cache*",
+    "__pycache__",
+]
 
 [tool.ruff.lint]
 # Native Ruff settings shared by editor and adapter consumers.

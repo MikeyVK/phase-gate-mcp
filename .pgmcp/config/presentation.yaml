@@ -589,7 +589,7 @@ tools:
     collections:
       - field: results
         heading: "Checks"
-        item_template: "{check_id}: {status}; args_source={args_source}"
+        item_template: "{check_id}: {status}; reason={reason}; args_source={args_source}"
     enum_cases:
       - field: error_code
         cases:

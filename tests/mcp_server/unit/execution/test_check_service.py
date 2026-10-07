@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import TypeVar
 
@@ -19,7 +20,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterPackageIdentity,
     ScratchPreparationError,
 )
-from mcp_server.core.interfaces.git import BranchChanges
+from mcp_server.core.interfaces.git import BranchChanges, IBranchChangeReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.execution.catalog import AdapterCatalog
 from mcp_server.execution.check_selection import (
@@ -29,6 +30,7 @@ from mcp_server.execution.check_selection import (
     ScopeResolver,
 )
 from mcp_server.execution.check_service import CheckService, ContentPreparationError
+from mcp_server.execution.configured_targets import ConfiguredTargetMatcher
 from mcp_server.execution.content_input import ContentInputPreparer, FileContentScratch
 from mcp_server.execution.models import (
     AdapterCallFailure,
@@ -139,15 +141,21 @@ def compose(
     file_content: bool = False,
     write_bytes: Callable[[Path, bytes], int] = Path.write_bytes,
     profile_id: str = "renamed",
+    branch: IBranchChangeReader | None = None,
+    filtered_checks: frozenset[str] = frozenset(),
     remove_tree: Callable[[Path], None] = shutil.rmtree,
 ) -> tuple[CheckService, CheckSelector, RecordingRuntime]:
     names = tuple(f"check_{index}" for index in range(len(outcomes)))
     config = ChecksConfig.model_validate(
         {
+            "configured_targets": {
+                "fixture": {"include": ["**"], "exclude": []},
+                "filtered": {"include": ["**/*.never"], "exclude": []},
+            },
             "checks": {
                 name: {
                     "adapter_id": "fixture",
-                    "capability": "check",
+                    "capability": "filtered" if name in filtered_checks else "check",
                     "timeout_seconds": index + 3,
                     "default_args": [name],
                 }
@@ -163,16 +171,30 @@ def compose(
         "check",
         1,
         AdapterLaunch(None, ()),
-        CheckCapability(inputs=("content", "selection"), requires_file=file_content),
+        CheckCapability(
+            inputs=("content", "selection"),
+            requires_file=file_content,
+            configured_targets="fixture",
+        ),
     )
-    catalog = AdapterCatalog(checks=(binding,), tests=(), fixes=())
+    filtered = replace(
+        binding,
+        capability_id="filtered",
+        capability=CheckCapability(inputs=("selection",), configured_targets="filtered"),
+    )
+    catalog = AdapterCatalog(checks=(binding, filtered), tests=(), fixes=())
     runtime = RecordingRuntime(outcomes)
     scratch = FileContentScratch(
         root / "scratch", fresh_id=lambda: "one", write_bytes=write_bytes, remove_tree=remove_tree
     )
     service = CheckService(config, catalog, runtime, ContentInputPreparer(scratch), root)
     selector = CheckSelector(
-        config, catalog, ScopeResolver(FileScopePaths(root), EmptyBranch(), EmptyBranch())
+        config,
+        catalog,
+        ScopeResolver(
+            FileScopePaths(root), branch if branch is not None else EmptyBranch(), EmptyBranch()
+        ),
+        ConfiguredTargetMatcher(root),
     )
     return service, selector, runtime
 

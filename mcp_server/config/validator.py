@@ -67,6 +67,14 @@ class ConfigValidator:
             check_id: catalog.get_check(binding.adapter_id, binding.capability)
             for check_id, binding in config.checks
         }
+        policies = dict(config.configured_targets)
+        for check_id, binding in checks.items():
+            if "selection" in binding.capability.inputs:
+                reference = binding.capability.configured_targets
+                if reference not in policies:
+                    raise ConfigError(
+                        f"configured_targets_reference_unknown: {check_id}/{reference}"
+                    )
         profiles = dict(config.profiles)
         content_profiles = template_profiles | frozenset(
             profile_id for _, profile_id in config.profiles_by_extension

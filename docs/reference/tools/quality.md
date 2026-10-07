@@ -30,6 +30,20 @@ replaces that binding's configured defaults for the call. `timeout_seconds` over
 the configured timeout when supplied. Omit unused optional fields rather than passing
 null.
 
+| Scope | Targets supplied to selection-capable checks |
+|---|---|
+| `configured` | Empty target vector; native configured discovery retains its meaning. |
+| `workspace` | The canonical workspace root; native discovery and exclusions apply. |
+| `targets` | Resolved explicit paths, including separately supplied directory descendants; only exact canonical duplicates are removed. |
+| `branch` | Existing Git-selected branch candidates, filtered separately for each check by its declared `configured_targets` policy. |
+
+Branch filtering is a PGMCP preselection over workspace-authored include/exclude values.
+It does not read or override native settings, scan candidates recursively or add native
+intent flags. The other scopes bypass this preselection; native options keep their normal
+semantics. Policy syntax and required declaration migration are documented in
+[server configuration](../server-configuration.md#branch-check-target-policies) and
+[the adapter contract](../execution-adapters.md#selection-capability-declarations-and-branch-policies).
+
 Example using a currently configured profile and target:
 `{"scope":"targets","targets":["mcp_server/tools/check_tools.py"],"profile":"python_review"}`
 
@@ -39,6 +53,19 @@ operation `error_code` with typed details. Each result records the selected chec
 status, native evidence, adapter identity, and bounded process capture as applicable.
 `run_status` describes check outcomes; it is distinct from operation success and must
 be reviewed alongside result rows.
+
+A nonempty branch can yield no applicable targets for one or more selected checks.
+Those rows report `status="not_executed", reason="not_applicable"`, with no adapter
+invocation, identity, capture or native evidence. They are neutral when other checks
+complete: a positive result can make the run `passed`, a negative result `failed`,
+and incomplete work keeps it `incomplete`. If every selected check is prefiltered
+out, `run_status="not_applicable"`; this does not claim a check passed. A globally
+empty Git selection remains `empty_selection` with no result rows.
+
+An attempted adapter/native refusal also reports its factual reason and invocation
+data, but remains incomplete; it is not a neutral preselection row. After an execution
+stop, later applicable checks stay `not_started`, while already planned empty
+subsets remain `not_applicable`.
 
 ## `run_tests`
 

@@ -66,6 +66,8 @@ def project_selection_check(row: CheckExecution[SelectionCheckResponse]) -> Sele
     capture = None
     termination = None
     observed = row.invocation
+    if observed is None and row.not_executed == "not_applicable":
+        reason, message = "not_applicable", None
     if observed is not None:
         if row.binding.contract_version != 1:
             raise ValueError("selection_check_contract_version_invalid")

@@ -1,5 +1,5 @@
 adapter_id: lychee
-version: 1.0.0
+version: 2.0.0
 files:
   - check.py
   - dependencies.json
@@ -12,6 +12,7 @@ roles:
         - package_file: check.py
     capabilities:
       links:
+        configured_targets: markdown_sources
         inputs:
           - content
           - selection

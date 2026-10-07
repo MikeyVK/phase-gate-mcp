@@ -20,6 +20,7 @@ from mcp_server.config.schemas.checks_config import (
     CheckProfile,
     ChecksConfig,
     ConfiguredCheck,
+    ConfiguredTargets,
     RunChecksDefaults,
 )
 from mcp_server.core.exceptions import ConfigError, ExecutionError
@@ -42,7 +43,9 @@ from mcp_server.execution.check_selection import (
     CheckSelector,
     FileScopePaths,
     ScopeResolver,
+    SelectedCheckCall,
 )
+from mcp_server.execution.configured_targets import ConfiguredTargetMatcher
 from mcp_server.execution.protocol import (
     AdapterExecutionContext,
     AdapterRequestContract,
@@ -78,6 +81,10 @@ class KnownParent:
 
 def configured_checks(*, default_profile: str | None = "default") -> ChecksConfig:
     return ChecksConfig(
+        configured_targets=(
+            ("fixture", ConfiguredTargets(include=("**",), exclude=())),
+            ("second", ConfiguredTargets(include=("**",), exclude=())),
+        ),
         checks=tuple(
             (
                 name,
@@ -90,7 +97,7 @@ def configured_checks(*, default_profile: str | None = "default") -> ChecksConfi
             )
             for name, capability, timeout, args in (
                 ("first", "check", 3, ("--default",)),
-                ("second", "check", 7, ("--second",)),
+                ("second", "second", 7, ("--second",)),
                 ("content", "content", 3, ()),
             )
         ),
@@ -119,7 +126,20 @@ def selector(
     launch = AdapterLaunch(None, ())
     catalog = AdapterCatalog(
         checks=(
-            AdapterBinding(identity, "check", 1, launch, CheckCapability(inputs=("selection",))),
+            AdapterBinding(
+                identity,
+                "check",
+                1,
+                launch,
+                CheckCapability(inputs=("selection",), configured_targets="fixture"),
+            ),
+            AdapterBinding(
+                identity,
+                "second",
+                1,
+                launch,
+                CheckCapability(inputs=("selection",), configured_targets="second"),
+            ),
             AdapterBinding(
                 identity,
                 "content",
@@ -141,6 +161,7 @@ def selector(
             branch if branch is not None else EmptyBranch(),
             KnownParent(parent),
         ),
+        ConfiguredTargetMatcher(root),
     )
 
 
@@ -151,14 +172,14 @@ def test_configured_empty_targets_still_plan_checks_but_empty_branch_has_no_call
     configured = planner.select(CheckSelectionRequest(scope="configured"))
     assert not configured.empty_selection
     assert configured.selected_check_ids == ("first",)
-    assert len(configured.calls) == 1
-    assert configured.calls[0].request.targets == ()
-    assert configured.calls[0].request.args == ("--default",)
+    assert len(configured.checks) == 1
+    assert configured.checks[0].request.targets == ()
+    assert configured.checks[0].request.args == ("--default",)
 
     branch = planner.select(CheckSelectionRequest(scope="branch"))
     assert branch.empty_selection
     assert branch.selected_check_ids == ("first",)
-    assert branch.calls == ()
+    assert branch.checks == ()
     assert branch.removed_targets == ()
 
 
@@ -172,9 +193,9 @@ def test_profile_and_caller_order_determine_calls_with_binding_defaults(tmp_path
         plan = planner.select(request)
         assert plan.selected_check_ids == ("second", "first")
         assert plan.selected_profile == ("reverse" if request.profile else None)
-        assert tuple(call.check_id for call in plan.calls) == ("second", "first")
-        assert tuple(call.request.args for call in plan.calls) == (("--second",), ("--default",))
-        assert tuple(call.timeout_seconds for call in plan.calls) == (7, 3)
+        assert tuple(call.check_id for call in plan.checks) == ("second", "first")
+        assert tuple(call.request.args for call in plan.checks) == (("--second",), ("--default",))
+        assert tuple(call.timeout_seconds for call in plan.checks) == (7, 3)
         assert planner.select(request) == plan
     default_changed = selector(tmp_path, config=configured_checks(default_profile="reverse"))
     default_plan = default_changed.select(CheckSelectionRequest(scope="configured"))
@@ -206,12 +227,12 @@ def test_addressed_arguments_replace_without_rewriting_or_broadcast(
         }
     )
     plan = selector(tmp_path).select(request)
-    second, first = plan.calls
+    second, first = plan.checks
     assert first.request.args == expected
     assert first.args_source == source
     assert second.request.args == ("--second",)
     assert second.args_source == "configured"
-    assert tuple(call.timeout_seconds for call in plan.calls) == (11, 11)
+    assert tuple(call.timeout_seconds for call in plan.checks) == (11, 11)
 
 
 @pytest.mark.parametrize(
@@ -259,7 +280,11 @@ def test_invalid_selection_is_rejected_before_git_resolution(
 def test_missing_defaults_bindings_and_role_catalog_are_not_empty_success(tmp_path: Path) -> None:
     request = CheckSelectionRequest(scope="branch")
     no_checks = ChecksConfig(
-        checks=(), profiles=(), profiles_by_extension=(), run_checks=RunChecksDefaults()
+        configured_targets=(),
+        checks=(),
+        profiles=(),
+        profiles_by_extension=(),
+        run_checks=RunChecksDefaults(),
     )
     for config, reason in (
         (no_checks, CheckSelectionFailureReason.NO_CONFIGURED_CHECKS),
@@ -275,7 +300,7 @@ def test_missing_defaults_bindings_and_role_catalog_are_not_empty_success(tmp_pa
         selector(tmp_path, branch=UnreadableBranch(), include_catalog=False).select(request)
 
 
-def test_explicit_targets_are_canonical_language_agnostic_and_directory_covering(
+def test_explicit_targets_preserve_descendants(
     tmp_path: Path,
 ) -> None:
     directory = tmp_path / "nested"
@@ -284,17 +309,25 @@ def test_explicit_targets_are_canonical_language_agnostic_and_directory_covering
     loose = tmp_path / "readme.md"
     loose.write_text("content", encoding="utf-8")
     spelling = r"nested\data.json" if os.name == "nt" else "nested/data.json"
-    planner = selector(tmp_path)
+    config = configured_checks().model_copy(
+        update={
+            "configured_targets": (
+                ("fixture", ConfiguredTargets(include=("**/*.py",), exclude=("nested/**",))),
+                ("second", ConfiguredTargets(include=("**",), exclude=())),
+            )
+        }
+    )
+    planner = selector(tmp_path, config=config)
     plan = planner.select(
         CheckSelectionRequest(
             scope="targets", targets=("readme.md", spelling, "nested", "readme.md")
         )
     )
-    assert plan.scope.targets == tuple(sorted((directory, loose), key=str))
-    assert plan.calls[0].request.targets == tuple(str(path) for path in plan.scope.targets)
+    assert plan.scope.targets == tuple(sorted((directory, directory / "data.json", loose), key=str))
+    assert plan.checks[0].request.targets == tuple(str(path) for path in plan.scope.targets)
     workspace = planner.select(CheckSelectionRequest(scope="workspace"))
     assert workspace.scope.targets == (tmp_path,)
-    assert workspace.calls[0].request.targets == (str(tmp_path),)
+    assert workspace.checks[0].request.targets == (str(tmp_path),)
 
 
 def test_missing_escape_and_equivalent_workspace_targets_are_rejected(
@@ -448,7 +481,7 @@ def test_deleted_only_branch_has_evidence_without_runnable_calls(
     try:
         plan = selector(tmp_path, branch=adapter).select(CheckSelectionRequest(scope="branch"))
         assert plan.empty_selection
-        assert plan.calls == ()
+        assert plan.checks == ()
         assert plan.removed_targets == ("deleted.ts",)
     finally:
         adapter.repo.close()
@@ -500,7 +533,7 @@ def test_native_selection_request_matches_published_wire_contract(
         plan = planner.select(CheckSelectionRequest.model_validate({"scope": scope}))
         payload = json.loads(
             AdapterRequestContract(SelectionCheckWireRequest).encode(
-                plan.calls[0].request,
+                plan.checks[0].request,
                 AdapterExecutionContext(scratch_directory=str(tmp_path / "invocations")),
             )
         )
@@ -522,7 +555,7 @@ def test_deleted_file_replaced_by_directory_does_not_expand_branch_targets(
         plan = selector(tmp_path, branch=adapter).select(CheckSelectionRequest(scope="branch"))
         assert plan.scope.targets == (selected,)
         assert plan.removed_targets == ("deleted.ts",)
-        assert plan.calls[0].request.targets == (str(selected),)
+        assert plan.checks[0].request.targets == (str(selected),)
     finally:
         adapter.repo.close()
 
@@ -542,3 +575,91 @@ def test_missing_current_path_is_not_reported_as_git_deletion(tmp_path: Path) ->
     assert caught.value.target == "disappeared.md"
     assert caught.value.scope_reason == "missing"
     assert caught.value.message
+
+
+def test_branch_configured_targets_and_explicit_intent(tmp_path: Path) -> None:
+    names = (
+        "mod0.py",
+        "mcp_server/mod1.py",
+        "mcp_server/deep/mod2.py",
+        "mcp_server/deep/module.py",
+        "mcp_server/cache/mod3.py",
+        "mcp_server/MOD4.PY",
+        "literal/雪.txt",
+        "literal/star雪.txt",
+        "literal/star/deep.txt",
+        "elsewhere/mod5.py",
+    )
+    for name in names:
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("candidate", encoding="utf-8")
+
+    class MixedBranch(EmptyBranch):
+        def get_branch_changes(self, parent: str) -> BranchChanges:
+            return BranchChanges(current_paths=tuple(reversed(names)), removed_paths=())
+
+    config = configured_checks().model_copy(
+        update={
+            "configured_targets": (
+                (
+                    "fixture",
+                    ConfiguredTargets(
+                        include=("**/mod?.py", "literal/?.txt", "literal/star*.txt"),
+                        exclude=("**/cache/**",),
+                    ),
+                ),
+                (
+                    "second",
+                    ConfiguredTargets(
+                        include=("mcp_server/**/*.py",),
+                        exclude=("**/cache/**",),
+                    ),
+                ),
+            )
+        }
+    )
+    planner = selector(tmp_path, config=config, branch=MixedBranch())
+    branch = planner.select(
+        CheckSelectionRequest(
+            scope="branch",
+            checks=("first", "second"),
+            args=(("first", ("", "--literal")),),
+            timeout_seconds=13,
+        )
+    )
+    first, second = branch.checks
+    assert isinstance(first, SelectedCheckCall) and isinstance(second, SelectedCheckCall)
+    expected_first = tuple(
+        sorted(
+            (
+                "mod0.py",
+                "mcp_server/mod1.py",
+                "mcp_server/deep/mod2.py",
+                "literal/雪.txt",
+                "literal/star雪.txt",
+                "elsewhere/mod5.py",
+            )
+        )
+    )
+    expected_second = tuple(
+        sorted(
+            (
+                "mcp_server/mod1.py",
+                "mcp_server/deep/mod2.py",
+                "mcp_server/deep/module.py",
+            )
+        )
+    )
+    assert first.request.targets == tuple(str(tmp_path / name) for name in expected_first)
+    assert second.request.targets == tuple(str(tmp_path / name) for name in expected_second)
+    explicit = planner.select(
+        CheckSelectionRequest(
+            scope="targets",
+            targets=expected_first,
+            checks=("first",),
+            args=(("first", ("", "--literal")),),
+            timeout_seconds=13,
+        )
+    )
+    assert explicit.checks == (first,)

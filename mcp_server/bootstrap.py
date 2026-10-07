@@ -62,6 +62,7 @@ from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_selection import CheckSelector, FileScopePaths, ScopeResolver
 from mcp_server.execution.check_service import CheckService
+from mcp_server.execution.configured_targets import ConfiguredTargetMatcher
 from mcp_server.execution.content_input import ContentInputPreparer, FileContentScratch
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager
 from mcp_server.execution.invocation_scratch import FileInvocationScratch
@@ -586,8 +587,9 @@ class ServerBootstrapper:
                 content=ContentInputPreparer(scratch),
                 workspace_root=workspace_root,
             )
+            scope_paths = FileScopePaths(workspace_root)
             scope_resolver = ScopeResolver(
-                paths=FileScopePaths(workspace_root),
+                paths=scope_paths,
                 git=GitAdapter(repo_path=str(workspace_root)),
                 parents=BranchStateParentReader(
                     state_reader=managers.state_repository,
@@ -598,6 +600,7 @@ class ServerBootstrapper:
                 config=checks_config,
                 catalog=adapter_catalog,
                 scopes=scope_resolver,
+                configured_targets=ConfiguredTargetMatcher(scope_paths.workspace_root),
             )
             check_operation = CheckOperation(selector=check_selector, executor=check_service)
 

@@ -27,7 +27,11 @@ from mcp_server.core.interfaces.execution import (
 from mcp_server.execution.catalog import AdapterCatalog
 from tests.mcp_server.fixtures.suite_roots import write_package_tree
 
-VALID_CHECKS = """checks:
+VALID_CHECKS = """configured_targets:
+  fixture:
+    include: ["**"]
+    exclude: []
+checks:
   first:
     adapter_id: fixture
     capability: dual
@@ -77,7 +81,11 @@ def catalog() -> AdapterCatalog:
                 "dual",
                 1,
                 launch,
-                CheckCapability(inputs=("content", "selection"), requires_file=False),
+                CheckCapability(
+                    inputs=("content", "selection"),
+                    requires_file=False,
+                    configured_targets="fixture",
+                ),
             ),
             AdapterBinding(
                 identity,
@@ -91,7 +99,7 @@ def catalog() -> AdapterCatalog:
                 "selection",
                 1,
                 launch,
-                CheckCapability(inputs=("selection",)),
+                CheckCapability(inputs=("selection",), configured_targets="fixture"),
             ),
         ),
         tests=(AdapterBinding(identity, "test_only", 1, launch, NativeTestCapability()),),
@@ -172,7 +180,8 @@ def test_empty_config_is_explicit_and_missing_file_never_loads_legacy_quality(
 ) -> None:
     config = load_text(
         tmp_path / "empty",
-        "checks: {}\nprofiles: {}\nprofiles_by_extension: {}\nrun_checks: {}\n",
+        "configured_targets: {}\nchecks: {}\nprofiles: {}\n"
+        "profiles_by_extension: {}\nrun_checks: {}\n",
     )
     assert config.checks == config.profiles == config.profiles_by_extension == ()
     assert config.run_checks.default_profile is None
@@ -252,3 +261,41 @@ def test_extension_lookup_is_longest_case_insensitive_and_requires_a_filename_st
     for filename, profile in expected.items():
         assert normal.profile_for_filename(filename) == profile
         assert reverse.profile_for_filename(filename) == profile
+
+
+@pytest.mark.parametrize(
+    "fault", ["missing_declaration", "malformed_pattern", "unresolved_outside_default"]
+)
+def test_configured_targets_admission(tmp_path: Path, fault: str) -> None:
+    if fault == "missing_declaration":
+        with pytest.raises(ValidationError, match="selection_requires_configured_targets"):
+            CheckCapability(inputs=("selection",))
+    elif fault == "malformed_pattern":
+        with pytest.raises(ConfigError, match="configured_target_pattern_invalid"):
+            load_text(tmp_path / "config", VALID_CHECKS.replace('["**"]', '["source/a**.py"]'))
+    else:
+        config = load_text(
+            tmp_path / "config",
+            VALID_CHECKS.replace("capability: content", "capability: selection"),
+        )
+        current = catalog()
+        unresolved = tuple(
+            binding
+            if binding.capability_id != "selection"
+            else AdapterBinding(
+                binding.identity,
+                binding.capability_id,
+                binding.contract_version,
+                binding.launch,
+                CheckCapability(inputs=("selection",), configured_targets="unknown"),
+            )
+            for binding in current.checks
+        )
+        with pytest.raises(
+            ConfigError, match="configured_targets_reference_unknown: second/unknown"
+        ):
+            ConfigValidator().validate_checks_config(
+                config,
+                AdapterCatalog(checks=unresolved, tests=current.tests, fixes=current.fixes),
+                template_profiles=frozenset(),
+            )

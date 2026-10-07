@@ -11,8 +11,8 @@ from typing import Annotated, Generic, Literal, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, GetPydanticSchema
 from pydantic_core import core_schema
 
-from mcp_server.config.schemas.template_suite import TemplateId
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
+from mcp_server.schemas.template_identity import TemplateId
 
 TOutput_co = TypeVar("TOutput_co", bound=BaseModel, covariant=True)
 

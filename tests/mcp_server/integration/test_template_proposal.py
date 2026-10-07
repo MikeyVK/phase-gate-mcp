@@ -62,6 +62,7 @@ def _write_config(
         {
             "adapters.yaml": b"trusted_adapter_ids: []\n",
             "checks.yaml": (
+                'configured_targets: {fixture: {include: ["**"], exclude: []}}\n'
                 "checks:\n"
                 "  syntax:\n"
                 f"    adapter_id: {adapter_id}\n"
@@ -83,7 +84,8 @@ def _write_config(
                 b"roles:\n  check:\n    contract_version: 1\n"
                 b"    entrypoint: {executable: unavailable_native, args: []}\n"
                 b"    capabilities:\n"
-                b"      syntax: {inputs: [content, selection], requires_file: false}\n"
+                b"      syntax: {inputs: [content, selection], requires_file: false, "
+                b"configured_targets: fixture}\n"
             ),
             "check.py": b"raise RuntimeError('admission must not execute native tools')\n",
         },

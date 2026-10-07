@@ -1,5 +1,5 @@
 adapter_id: mypy
-version: "1.0.0"
+version: "2.0.0"
 files:
   - check.py
   - requirements.txt
@@ -12,5 +12,6 @@ roles:
         - package_file: check.py
     capabilities:
       types:
+        configured_targets: python_production_sources
         inputs:
           - selection

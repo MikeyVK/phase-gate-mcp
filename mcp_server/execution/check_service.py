@@ -11,7 +11,12 @@ from pydantic import BaseModel
 from mcp_server.config.schemas.adapter_manifest import CheckCapability
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.core.interfaces.execution import AdapterBinding, CheckCatalogReader
-from mcp_server.execution.check_selection import ArgsSource, CheckSelectionPlan, ResolvedCheckScope
+from mcp_server.execution.check_selection import (
+    ArgsSource,
+    CheckSelectionPlan,
+    NotApplicableCheck,
+    ResolvedCheckScope,
+)
 from mcp_server.execution.content_input import (
     CleanupProblem,
     ContentInputPreparer,
@@ -39,7 +44,7 @@ from mcp_server.execution.protocol import (
 TRequest = TypeVar("TRequest", bound=BaseModel)
 TCheck = TypeVar("TCheck", ContentCheckResponse, SelectionCheckResponse)
 StopReason = Literal["adapter_request_rejected", "operation_interrupted", "termination_unconfirmed"]
-SelectionStatus = Literal["passed", "failed", "incomplete", "empty_selection"]
+SelectionStatus = Literal["passed", "failed", "incomplete", "empty_selection", "not_applicable"]
 
 
 @dataclass(frozen=True)
@@ -52,7 +57,7 @@ class CheckExecution(Generic[TCheck]):
     args_source: ArgsSource
     timeout_seconds: int
     invocation: InvocationCompleted[TCheck] | InvocationFailed | InvocationCancelled | None
-    not_executed: Literal["not_started"] | None
+    not_executed: Literal["not_started", "not_applicable"] | None
 
 
 @dataclass(frozen=True)
@@ -112,8 +117,12 @@ def _selection_status(
 ) -> SelectionStatus:
     negative = False
     incomplete = False
+    attempted = False
     for row in results:
         invocation = row.invocation
+        if invocation is None and row.not_executed == "not_applicable":
+            continue
+        attempted = True
         if not isinstance(invocation, InvocationCompleted):
             incomplete = True
             continue
@@ -127,7 +136,7 @@ def _selection_status(
             negative = True
     if incomplete:
         return "incomplete"
-    return "failed" if negative else "passed"
+    return "failed" if negative else "passed" if attempted else "not_applicable"
 
 
 class CheckService:
@@ -170,11 +179,24 @@ class CheckService:
         """Execute already-resolved obligations; an empty branch never launches discovery."""
         if plan.empty_selection:
             return SelectionExecution(plan.scope, (), "empty_selection", None)
-        if not plan.calls:
+        if not plan.checks:
             raise ValueError("nonempty_check_obligations_required")
         rows: list[CheckExecution[SelectionCheckResponse]] = []
         stop: StopReason | None = None
-        for call in plan.calls:
+        for call in plan.checks:
+            if isinstance(call, NotApplicableCheck):
+                rows.append(
+                    CheckExecution(
+                        check_id=call.check_id,
+                        binding=call.binding,
+                        effective_args=call.effective_args,
+                        args_source=call.args_source,
+                        timeout_seconds=call.timeout_seconds,
+                        invocation=None,
+                        not_executed="not_applicable",
+                    )
+                )
+                continue
             invocation = None
             if stop is None:
                 invocation = await self._invoke(

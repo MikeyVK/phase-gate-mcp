@@ -94,7 +94,7 @@ roles:
       executable: node
       args: [{package_file: adapter.cjs}, "", "a b; literal"]
     capabilities:
-      echo: {inputs: [content, selection], requires_file: false}
+      echo: {inputs: [content, selection], requires_file: false, configured_targets: fixture}
   test:
     contract_version: 1
     entrypoint:

@@ -46,6 +46,7 @@ def operation(
     checks, _, runtime = compose(root, outcomes)
     config = ChecksConfig.model_validate(
         {
+            "configured_targets": {"fixture": {"include": ["**"], "exclude": []}},
             "checks": {
                 "syntax": {
                     "adapter_id": "fixture",

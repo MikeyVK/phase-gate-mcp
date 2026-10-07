@@ -14,6 +14,15 @@ from mcp_server.config.schemas.adapter_manifest import (
     FixCapability,
     TestCapability,
 )
+from mcp_server.config.schemas.checks_config import ConfiguredTargets
+
+
+class ConfiguredTargetFilter(Protocol):
+    """Select declared branch candidates without native tool or filesystem discovery."""
+
+    def select(
+        self, targets: tuple[Path, ...], *, policy: ConfiguredTargets
+    ) -> tuple[Path, ...]: ...
 
 
 @dataclass(frozen=True)

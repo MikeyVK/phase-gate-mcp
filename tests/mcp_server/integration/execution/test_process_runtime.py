@@ -24,6 +24,7 @@ from mcp_server.execution.check_selection import (
     ScopeResolver,
 )
 from mcp_server.execution.check_service import CheckService
+from mcp_server.execution.configured_targets import ConfiguredTargetMatcher
 from mcp_server.execution.content_input import ContentInputPreparer, FileContentScratch
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager, FixSelectionRequest
 from mcp_server.execution.invocation_scratch import FileInvocationScratch
@@ -509,6 +510,7 @@ def real_check_service(
     }
     config = ChecksConfig.model_validate(
         {
+            "configured_targets": {"fixture": {"include": ["**"], "exclude": []}},
             "checks": {"first": declaration, "second": {**declaration, "default_args": ["passed"]}},
             "profiles": {"fixture": {"checks": ["first", "second"]}},
             "profiles_by_extension": {},
@@ -528,6 +530,7 @@ def real_check_service(
         config,
         fixture.catalog,
         ScopeResolver(FileScopePaths(fixture.workspace), EmptyBranch(), EmptyBranch()),
+        ConfiguredTargetMatcher(fixture.workspace),
     )
     return service, CheckOperation(selector=selector, executor=service)
 

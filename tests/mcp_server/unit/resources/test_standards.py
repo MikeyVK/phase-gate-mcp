@@ -12,6 +12,10 @@ def resource() -> StandardsResource:
     """Inject a small validated policy snapshot with active and inactive entries."""
     checks = ChecksConfig.model_validate(
         {
+            "configured_targets": {
+                "python_lint_sources": {"include": ["**/*.py"], "exclude": []},
+                "python_format_sources": {"include": ["**/*.py"], "exclude": []},
+            },
             "checks": {
                 "lint": {
                     "adapter_id": "ruff",

@@ -4,8 +4,8 @@
 
 
 **Status:** DEFINITIVE
-**Version:** 1.0
-**Last Updated:** 2026-05-11
+**Version:** 1.2
+**Last Updated:** 2026-10-07
 
 **Source:** [mcp_server/config/settings.py](../../mcp_server/config/settings.py)
 **Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py) (12 tests)
@@ -153,6 +153,63 @@ the complete structured result through `pgmcp://cache/runs/{run_id}`. The
 passes, numbered gates, or a coverage score. There is no `quality.yaml` authority or
 QA artifact-log location in this configuration contract.
 
+### Branch-check target policies
+
+`checks.yaml` requires a `configured_targets` map. Each named set has a nonempty
+`include` list and a required `exclude` list (which may be empty). Selection-capable
+adapter check declarations name one set through their required `configured_targets`
+reference. A content-only workspace can declare an empty map; content-only capabilities
+must omit the reference. Mixed content/selection capabilities require it. At startup,
+the server resolves every configured selection binding's reference, including bindings
+outside the default profile; no fallback policy or native-config import is supplied.
+
+Example fragments for the bundled production type-check policy:
+
+```yaml
+# checks.yaml: workspace-owned values
+configured_targets:
+  python_production_sources:
+    include: ["mcp_server/**/*.py", "mcp_server/**/*.pyi"]
+    exclude: ["**/__pycache__/**", "**/.pytest_cache*/**"]
+```
+
+```yaml
+# mypy/manifest.yaml: reusable check-capability declaration
+roles:
+  check:
+    capabilities:
+      types:
+        inputs: [selection]
+        configured_targets: python_production_sources
+```
+
+Patterns match the complete workspace-relative POSIX path, case-sensitively on every
+host. Ordinary characters, Unicode and whitespace are literal. `*` matches zero or
+more characters within one component, `?` exactly one, and `**` matches zero or more
+whole components. Any include must match and any matching exclude wins. Duplicate or
+empty patterns, absolute paths, backslashes, empty/dot/parent components, character
+classes/braces and embedded `**` are rejected. The filter preserves resolved candidate
+order and does not enumerate the filesystem. Uniqueness is checked within each list;
+control characters are rejected.
+
+Only `run_checks(scope="branch")` applies these values to each check's Git candidates.
+Configured/workspace/explicit targets and content requests retain their existing
+meanings, as do test and fix operations. Native tools still interpret their own
+configuration and arguments; these policies neither synchronize native defaults nor
+override native exclusions. Owners maintain the branch policy appropriate to each
+check. See [selection and no-applicable outcomes](tools/quality.md#run_checks).
+
+This is a clean break: old selection declarations must add the required reference and
+workspaces must declare the map before admission. Ruff, Mypy, Pyright and Lychee bundled
+packages are 2.0.0; their native pins and role wire contract remain unchanged. There is
+no automatic legacy migration. Policies and package declarations are admitted at
+startup; restart after changing them.
+
+Sources: [ChecksConfig](../../mcp_server/config/schemas/checks_config.py),
+[CheckCapability](../../mcp_server/config/schemas/adapter_manifest.py),
+[startup reference validation](../../mcp_server/config/validator.py) and
+[generic matcher](../../mcp_server/execution/configured_targets.py).
+
 ---
 
 ## Usage Examples
@@ -210,3 +267,4 @@ Resulting paths:
 |---------|------|--------|---------|
 | 1.1 | 2026-07-20 | Agent | Document PGMCP_BYPASS_VERSION_CHECK and bypass_version_check fields |
 | 1.0 | 2026-05-11 | Agent | Initial draft |
+| 1.2 | 2026-10-07 | @imp documenter | Document required branch-policy declarations, matching semantics, scope boundaries and clean-break admission. |

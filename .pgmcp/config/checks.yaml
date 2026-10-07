@@ -1,3 +1,20 @@
+configured_targets:
+  python_format_sources:
+    include: ["**/*.py", "**/*.pyi", "**/*.ipynb"]
+    exclude: &ruff_exclusions
+      - "tests/mcp_server/validation_fixtures/**"
+      - "docs/development/archive/**"
+      - "**/.pytest_cache*/**"
+      - "**/__pycache__/**"
+  python_lint_sources:
+    include: ["**/*.py", "**/*.pyi", "**/*.ipynb", "**/pyproject.toml"]
+    exclude: *ruff_exclusions
+  python_production_sources:
+    include: ["mcp_server/**/*.py", "mcp_server/**/*.pyi"]
+    exclude: ["**/__pycache__/**", "**/.pytest_cache*/**"]
+  markdown_sources:
+    include: ["**/*.md"]
+    exclude: []
 checks:
   python_syntax:
     adapter_id: python_syntax

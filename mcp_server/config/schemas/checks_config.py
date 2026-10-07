@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Annotated
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -17,7 +19,11 @@ from pydantic import (
     model_validator,
 )
 
-from mcp_server.config.schemas.adapter_manifest import AdapterId, CapabilityId
+from mcp_server.config.schemas.adapter_manifest import (
+    AdapterId,
+    CapabilityId,
+    ConfiguredTargetSetId,
+)
 
 CheckId = AdapterId
 ProfileId = AdapterId
@@ -64,6 +70,39 @@ class _ChecksBase(BaseModel):
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
 
 
+def _pattern(value: str) -> str:
+    parts = value.split("/")
+    if (
+        not value
+        or value.startswith("/")
+        or re.match(r"^[A-Za-z]:", value)
+        or any(char in value for char in "[]{}\\\\")
+        or any(ord(char) < 32 or 127 <= ord(char) < 160 for char in value)
+        or any(part in {"", ".", ".."} or ("**" in part and part != "**") for part in parts)
+    ):
+        raise ValueError("configured_target_pattern_invalid")
+    return value
+
+
+TargetPattern = Annotated[StrictStr, AfterValidator(_pattern)]
+TargetPatterns = Annotated[tuple[TargetPattern, ...], BeforeValidator(_sequence)]
+
+
+class ConfiguredTargets(_ChecksBase):
+    """Authored branch candidate policy, independent of native configuration."""
+
+    include: Annotated[TargetPatterns, Field(min_length=1)]
+    exclude: TargetPatterns
+
+    @model_validator(mode="after")
+    def validate_unique_patterns(self) -> ConfiguredTargets:
+        if len(set(self.include)) != len(self.include) or len(set(self.exclude)) != len(
+            self.exclude
+        ):
+            raise ValueError("duplicate_configured_target_pattern")
+        return self
+
+
 class ConfiguredCheck(_ChecksBase):
     adapter_id: AdapterId
     capability: CapabilityId
@@ -92,12 +131,22 @@ class RunChecksDefaults(_ChecksBase):
 
 
 class ChecksConfig(_ChecksBase):
+    configured_targets: Annotated[
+        tuple[tuple[ConfiguredTargetSetId, ConfiguredTargets], ...],
+        BeforeValidator(_mapping_items),
+    ]
     checks: Annotated[tuple[tuple[CheckId, ConfiguredCheck], ...], BeforeValidator(_mapping_items)]
     profiles: Annotated[tuple[tuple[ProfileId, CheckProfile], ...], BeforeValidator(_mapping_items)]
     profiles_by_extension: Annotated[
         tuple[tuple[ExtensionKey, ProfileId], ...], BeforeValidator(_mapping_items)
     ]
     run_checks: RunChecksDefaults
+
+    @field_serializer("configured_targets")
+    def serialize_configured_targets(
+        self, value: tuple[tuple[ConfiguredTargetSetId, ConfiguredTargets], ...]
+    ) -> dict[str, ConfiguredTargets]:
+        return dict(value)
 
     @field_serializer("checks")
     def serialize_checks(
@@ -119,6 +168,8 @@ class ChecksConfig(_ChecksBase):
 
     @model_validator(mode="after")
     def validate_references(self) -> ChecksConfig:
+        if len(dict(self.configured_targets)) != len(self.configured_targets):
+            raise ValueError("duplicate_configured_target_set")
         checks = dict(self.checks)
         profiles = dict(self.profiles)
         extension_profiles = dict(self.profiles_by_extension)

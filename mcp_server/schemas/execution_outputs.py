@@ -137,6 +137,17 @@ class SelectionCheckResult(_ExecutionOutputModel):
                     or self.termination_problem is not None
                 ):
                     raise ValueError("invalid_request_selection_facts_invalid")
+            elif self.reason == "not_applicable" and not attempted:
+                if (
+                    self.message is not None
+                    or self.evidence is not None
+                    or self.external_tools is not None
+                    or self.request_rejection is not None
+                    or self.coverage is not None
+                    or self.required_targets
+                    or self.termination_problem is not None
+                ):
+                    raise ValueError("preselected_not_applicable_facts_invalid")
             elif self.reason in {"scope_restricted", "not_applicable"}:
                 if (
                     not attempted
@@ -227,7 +238,9 @@ class RunChecksOutput(_ExecutionOutputModel):
     """Operational run-check result with ordered selection evidence."""
 
     success: StrictBool
-    run_status: Literal["passed", "failed", "incomplete", "empty_selection"] | None
+    run_status: (
+        Literal["passed", "failed", "incomplete", "empty_selection", "not_applicable"] | None
+    )
     requested_scope: CheckScope
     requested_targets: tuple[WorkspaceRelativePath, ...]
     selected_profile: ProfileId | None
@@ -316,13 +329,24 @@ class RunChecksOutput(_ExecutionOutputModel):
             raise ValueError("interrupted_rows_require_operation_error")
 
         if self.results:
-            statuses = tuple(row.status for row in self.results)
+            preselected = tuple(
+                row
+                for row in self.results
+                if row.status == "not_executed"
+                and row.reason == "not_applicable"
+                and row.adapter is None
+            )
+            if preselected and self.requested_scope != "branch":
+                raise ValueError("preselected_not_applicable_requires_branch_scope")
+            statuses = tuple(row.status for row in self.results if row not in preselected)
             expected_status = (
                 "incomplete"
                 if any(status in {"unavailable", "not_executed"} for status in statuses)
                 else "failed"
                 if "failed" in statuses
                 else "passed"
+                if statuses
+                else "not_applicable"
             )
             if self.run_status != expected_status:
                 raise ValueError("run_status_does_not_match_results")
