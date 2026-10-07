@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "branch": "refactor/476-schema-template-consumption",
+  "issue_number": 476,
+  "workflow_name": "refactor",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "refactor: Research schema-to-template consumption analysis",
+  "parent_branch": "main",
+  "created_at": "2026-10-07T19:48:16.542635+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
