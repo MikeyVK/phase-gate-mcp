@@ -3,7 +3,7 @@
 # Issue 476 — Schema-to-template consumption research
 
 **Status:** DRAFT — boundary strategy pending human approval  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-07
 
 ## Purpose
@@ -20,7 +20,7 @@ Production changes, a new public MCP tool, compatibility bridges, template-ID/fi
 
 ## Problem Statement
 
-Template admission rejects undeclared static Jinja reads but does not prove that every admitted caller field influences the artifact. No shipped silently ignored field has been demonstrated by this investigation. D-VAL-08 explicitly deferred both the mechanism and enforcement decision from #460.
+Template admission rejects undeclared static Jinja reads but does not prove that every admitted caller field influences the artifact. No current V3 shipped silently ignored field has been demonstrated by this investigation. D-VAL-08 explicitly deferred both the mechanism and enforcement decision from #460.
 
 ## Goals
 
@@ -90,11 +90,36 @@ All 79 have source consumers through inheritance or finite computed keys. Callin
 
 Representative render probes can provide positive witnesses but cannot prove all optional values, legal branches or opaque functions. Jinja's Meta API provides possible context lookups across execution paths, not semantic output dependence. Imports and includes have different context defaults. Draft 2020-12 composition and conditional applicators preserve distinct validation scopes; the current resolver already retains these.
 
+### Historical contract investigation — human clarification 2026-10-07
+
+The owner's recollection is supported: explicit contracts were introduced because Jinja introspection could not reliably serve as the input-contract authority. The first investigation omitted this history. Its authoring-diagnostics recommendation is suspended pending reconciliation of the intended guarantee; the earlier A/B/C question is not an approval.
+
+| Stage | Established decision / evidence | Guarantee boundary |
+| --- | --- | --- |
+| [#52 introspection research](../archive/issue52/archive/jinja2_introspection_research.md) — 2025-12-30 | Static AST cannot determine exact output, condition outcomes or dynamic references; proposed source metadata, pattern checks and representative rendering | Explicit output structure/rules, not exhaustive field influence |
+| [#135 Pydantic-first Research](../archive/issue135/research-pydantic-v2.md) and [strategy](../archive/issue135/SCAFFOLDING_STRATEGY.md) — February 2026 | Stop guessing requiredness from Jinja/default filters; explicit schemas validate before rendering, Jinja owns presentation | Authored input rules replace inferred input rules |
+| [#286 three-layer contract](../archive/issue286/research.md#7-the-three-layer-ssot-model-is-confirmed-in-code-but-absent-from-all-reference-documentation) — June 2026 | Context owns caller input; RenderContext adds system lifecycle; Jinja owns output structure | Responsibility separation; does not itself enforce reverse consumption |
+| [#260 asset trinity](../archive/issue260/findings.md#f11--template-workspace-initiative-future-issue), [#349 Research](../archive/issue349/research.md) and [Design](../archive/issue349/design.md) — workspace transition, July 2026 | Schemas + Jinja + artifacts.yaml remain a joint unit. Python Context/RenderContext classes are replaced with declarative schemas and dynamic Pydantic models; lifecycle enrichment remains | The declarative successor called effectively V3 changed representation, not the intended validation/rendering responsibilities |
+| [#460 invariant and migration](../issue460/research.md#core-invariants) | Package-local JSON Schema owns input; separate provenance owns system data; selected Jinja owns rendering; policy selects output checks; one immutable catalog binds them | Input acceptance/exposure remain explicit. Generic reverse consumption was expressly deferred as D-VAL-08 |
+
+Template-pipeline V1/V2/V3 labels and the installed PGMCP package version are different axes. Pydantic-first V2 introduced the explicit runtime contract; it did not remove it. The installed S1mpleTrader PGMCP 2.0.0 already uses the later dynamic YAML-model implementation. Current V3 continues schema-first acceptance; its AST linkage check does not infer requiredness or field types.
+
+Historical success promises were stronger than the evidence established. #135's strategy claimed that model-valid input guarantees rendering success. Its [Design §6.3](../archive/issue135/design-pydantic-v2-architecture.md#63-cycle-4-parity-test-scope-re-baseline-2026-02-17) later narrowed parity to smoke, documented skipped V2 default-value syntax failures and retained semantic-parity risk. #286 documented schema-valid nonempty string methods failing because Jinja expected records, despite the three-layer model; its planning notes that the full fixture omitted methods. These are historical defects, not findings against current V3.
+
+Read-only verification of the installed V2 at C:/1Voudig/99_Programming/ST confirmed:
+- managers/artifact_manager.py builds dynamic Pydantic input and RenderContext models, enriches lifecycle data, then calls scaffolding with skip_validation=True because schema validation already occurred (line 665). This bypasses inferred input validation; it does not bypass all later output checks.
+- scaffolding/template_introspector.py:188 unions context-variable names across the inheritance chain and classifies required/optional inputs. It has no all-declared-fields-to-output check.
+- templates/config/pr.yaml:56 declares tracking_state. Searching the installed template suite for tracking_state found that YAML declaration only; the PR rendering body has no consumer. [#460's original Problem Statement](../issue460/research.md#problem-statement) records this same ignored field. The current PR package removes that field.
+
+No V2 tool was invoked, no installation was changed, and no historical test result was rerun. Source reading confirms that a silently ignored schema field existed before current V3; a universal reverse guarantee cannot therefore be assumed from the old architecture. The source lookup is reproducible with rg -n tracking_state over the installed templates directory, selecting *.yaml and *.jinja2.
+
+Research consequence: preserve the original schema-first principle and integrated package ownership. Decide whether #476 needs clearer package-conformance evidence, or a new bounded authoring capability with a demonstrated consumer. Reintroducing Jinja-derived acceptance schemas is outside scope. Restoring old Python RenderContext classes does not automatically solve missing output consumption. No automatic analyzer or startup-blocking policy is approved.
+
 ### Strategy alternatives — decision still open
 
 | Strategy | Consumer / compatibility impact | Cost, risk and limitation |
 | --- | --- | --- |
-| A. Bounded authoring diagnostics plus existing behavior evidence — recommended | Preserve public schemas, rendering, current admission and renewal acceptance; new consumption reports do not reject startup | Moderate bounded analysis; explicit uncertainty prevents availability failures. Exact integration and diagnostic contract belong to Design |
+| A. Bounded authoring diagnostics plus existing behavior evidence — preliminary proposal | Preserve public schemas, rendering, current admission and renewal acceptance; new consumption reports do not reject startup | Moderate bounded analysis; explicit uncertainty prevents availability failures. Exact integration and diagnostic contract belong to Design |
 | B. Test-supported package conformance only | Preserve admission; rely on package-owner behavior cases and reviewed traces | Lowest runtime impact; per-package effort grows with fields/branches and misses future drift without an automatic signal |
 | C. Reverse startup rejection | Changes which otherwise admitted suites can start or activate | Highest blast radius; must first establish sound rejection rules and actual analyzer false-positive evidence. Uncertainty cannot silently become rejection |
 
@@ -115,11 +140,11 @@ No strategy is approved by opening this issue or by earlier approvals for #460/#
 
 ## Approved Strategy
 
-PENDING human decision. Proposed per-boundary policy under A: (1) preserve public caller schemas and artifact rendering without compatibility aliases or migration; (2) preserve existing admission/renewal rejection rules without reverse startup blocking; (3) add bounded generic consumption diagnostics whose absence/uncertainty are findings, not proof of a defect; (4) reuse existing behavioral evidence and add only bounded tests for genuinely new analysis behavior if implemented. Do not advance to Design or ask independent QA to authorize progression until the human decision is captured.
+PENDING human decision after historical-contract reconciliation; the earlier recommendation for A is suspended. If A is subsequently selected, proposed per-boundary policy: (1) preserve public caller schemas and artifact rendering without compatibility aliases or migration; (2) preserve existing admission/renewal rejection rules without reverse startup blocking; (3) add bounded generic consumption diagnostics whose absence/uncertainty are findings, not proof of a defect; (4) reuse existing behavioral evidence and add only bounded tests for genuinely new analysis behavior if implemented. Do not advance to Design or ask independent QA to authorize progression until the human decision is captured.
 
 ## Expected Results
 
-Research closes when a human strategy is explicit for the four boundaries above and independent QA assesses the evidence. Any later mechanism must distinguish observed, absent and uncertain use; identify affected instance paths and source locations; retain schema compositions and Jinja scope/call context; avoid blanket child consumption; preserve undeclared-read rejection; and separate actual package defects from analysis limitations. No shipped silently ignored field is currently established. The 79 naive candidates are source-accounted, not a complete conformance pass. Actual AST-analyzer false-positive measurements remain unavailable until a bounded mechanism exists.
+Research closes when a human strategy is explicit for the four boundaries above and independent QA assesses the evidence. Any later mechanism must distinguish observed, absent and uncertain use; identify affected instance paths and source locations; retain schema compositions and Jinja scope/call context; avoid blanket child consumption; preserve undeclared-read rejection; and separate actual package defects from analysis limitations. No current V3 shipped silently ignored field is currently established. The 79 naive candidates are source-accounted, not a complete conformance pass. Actual AST-analyzer false-positive measurements remain unavailable until a bounded mechanism exists.
 
 ## Evidence
 
@@ -186,3 +211,5 @@ Observe actual supplied package behavior through opaque-location fixtures
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-07 | @imp researcher | Map existing admission, semantic consumption limits and strategy alternatives. |
+| 0.2 | 2026-10-07 | @imp researcher | Reconcile historical explicit contracts, pipeline migration and installed V2 evidence; suspend the preliminary strategy recommendation. |
+
