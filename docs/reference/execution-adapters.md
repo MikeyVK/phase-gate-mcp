@@ -3,8 +3,8 @@
 # Native Adapter Execution Contract
 
 **Status:** Current
-**Version:** 1.0
-**Last Updated:** 2026-10-02
+**Version:** 1.1
+**Last Updated:** 2026-10-07
 
 
 ## Purpose
@@ -73,6 +73,20 @@ The internal contract remains identity 1 (check_v1/test_v1/fix_v1). It is one di
 
 
 
+
+### Selection-capability declarations and branch policies
+
+Every selection-capable check declares a required `configured_targets` reference in its manifest. The named include/exclude policy lives in the workspace's `checks.yaml`; reusable packages carry no workspace paths. Content-only checks must omit this field, while mixed content/selection checks require it. Startup validates references for every configured selection binding, including bindings outside the default profile. There is no implicit policy or compatibility fallback.
+
+Only `run_checks(scope="branch")` uses these policies. PGMCP resolves the Git candidates once, applies each selected check's policy through a tool-independent injected filter and supplies that subset as ordinary selection targets. It does not read native configuration, infer tool defaults, scan directories or send scope/intent/policy fields to the adapter. Native arguments, discovery, exclusions, role guards and protocol identity 1 retain their normal meanings.
+
+Explicit target scope preserves both a directory and a separately supplied descendant; exact canonical duplicates are removed. The PGMCP branch policy does not prefilter configured, workspace, explicit-target or content requests. Pytest and fix-role declarations have no check-selection policy field.
+
+When a nonempty branch yields no applicable targets for a selected check, PGMCP reports `status="not_executed", reason="not_applicable"` without allocating or calling an adapter. Its result has no native evidence, adapter identity or process capture. This differs from an attempted native refusal, which retains invocation facts and makes the run incomplete. See [check outcomes](tools/quality.md) and [policy syntax](server-configuration.md#branch-check-target-policies).
+
+Ruff, Mypy, Pyright and Lychee bundled package declarations are version 2.0.0 for this required metadata change. Their native tool pins, entrypoints and role `contract_version: 1` are unchanged. External selection packages must supply the new declaration before admission; PGMCP performs no automatic legacy migration.
+
+**Sources:** [Capability declarations](../../mcp_server/config/schemas/adapter_manifest.py), [reference validation](../../mcp_server/config/validator.py), [selection](../../mcp_server/execution/check_selection.py), [filter](../../mcp_server/execution/configured_targets.py).
 
 ### Invocation directory lifecycle
 
