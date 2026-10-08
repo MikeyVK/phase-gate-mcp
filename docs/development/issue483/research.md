@@ -285,8 +285,6 @@ The seven destinations in destination-probes.md and its existing parenthesis tar
 | 0.1 | 2026-10-08 | @imp researcher | Reproduce F1 on the current adapter; establish delimiter and parenthesis causes, bounded consumers and strategy options. |
 | 0.2 | 2026-10-08 | @imp researcher | Establish the explicit historical custom-checker decision; suspend the recommendation pending the owner's adapter responsibility decision. |
 | 0.3 | 2026-10-08 | @imp researcher | Prove pinned Lychee link and proposed-content feasibility; record native verdict/fragment differences, the owner's template-owned H1 direction and pending rollout decisions. |
-
 | 0.4 | 2026-10-08 | @imp researcher | Record the separate artifact-edit structure gap and existing issue121 candidate without broadening link-check work. |
-
 | 0.5 | 2026-10-08 | @imp researcher | Record clean-break replacement of the complete owned checker, template-owned H1 and bounded behavioral test requirements. |
 
