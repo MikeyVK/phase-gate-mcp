@@ -105,7 +105,10 @@ async def test_scaffold_native_link_policy(
     target = root / "docs" / "guide.md"
     neighbor = target.with_name("neighbor (source).md")
     neighbor_before = neighbor.read_bytes()
-    links = "## Existing\n\n[Neighbor](<neighbor (source).md#existing>)\n[Self](<guide.md#existing>)\n[TOC](<#existing>)\n"
+    links = (
+        "## Existing\n\n[Neighbor](<neighbor (source).md#existing>)\n"
+        "[Self](<guide.md#existing>)\n[TOC](<#existing>)\n"
+    )
     links += "[Reference][one]\n\n[one]: <neighbor (source).md#existing>\n"
     if broken:
         links += "[Missing](<missing.md>)\n[Missing anchor](<#absent>)\n"

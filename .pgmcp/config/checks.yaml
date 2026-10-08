@@ -21,16 +21,6 @@ checks:
     capability: syntax
     timeout_seconds: 30
     default_args: []
-  markdown_document:
-    adapter_id: markdown_preflight
-    capability: document
-    timeout_seconds: 30
-    default_args: []
-  markdown_body:
-    adapter_id: markdown_preflight
-    capability: body
-    timeout_seconds: 30
-    default_args: []
   typescript_syntax:
     adapter_id: typescript_syntax
     capability: syntax
@@ -71,10 +61,6 @@ profiles:
     checks: ["python_syntax"]
   typescript_preflight:
     checks: ["typescript_syntax"]
-  markdown_document:
-    checks: ["markdown_document"]
-  markdown_body:
-    checks: ["markdown_body"]
   commit_preflight:
     checks: ["commit_message"]
   python_review:
@@ -84,6 +70,6 @@ profiles:
 profiles_by_extension:
   ".py": python_preflight
   ".ts": typescript_preflight
-  ".md": markdown_body
+  ".md": markdown_link_review
 run_checks:
   default_profile: python_review
