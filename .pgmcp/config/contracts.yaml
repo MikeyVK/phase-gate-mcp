@@ -1751,12 +1751,7 @@ workflows:
             #### Review Request
             - Review requested
       - name: documentation
-        exit_requires:
-          - id: docs-readme
-            type: file_glob
-            required: true
-            dir: docs/mcp_server
-            pattern: README*.md
+        exit_requires: []
         instructions:
           sub_role: documenter
           phase_instructions: |

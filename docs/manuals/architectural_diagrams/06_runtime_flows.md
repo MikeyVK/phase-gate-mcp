@@ -3,8 +3,8 @@
 # Runtime Flows
 
 **Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-03-13
+**Version:** 1.1
+**Last Updated:** 2026-10-08
 
 ---
 
@@ -126,11 +126,11 @@ The `new PhaseStateEngine(...)` on line 2 is the third instantiation route (see 
 
 ## Related Documentation
 
-- **[docs/mcp_server/architectural_diagrams/02_workflow_state_subsystem.md][related-1]**
-- **[docs/mcp_server/architectural_diagrams/04_enforcement_layer.md][related-2]**
+- **[docs/manuals/architectural_diagrams/02_workflow_state_subsystem.md][related-1]**
+- **[docs/manuals/architectural_diagrams/04_enforcement_layer.md][related-2]**
 
-[related-1]: docs/mcp_server/architectural_diagrams/02_workflow_state_subsystem.md
-[related-2]: docs/mcp_server/architectural_diagrams/04_enforcement_layer.md
+[related-1]: 02_workflow_state_subsystem.md
+[related-2]: 04_enforcement_layer.md
 
 ---
 
@@ -139,3 +139,4 @@ The `new PhaseStateEngine(...)` on line 2 is the third instantiation route (see 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-03-13 | Agent | Initial draft |
+| 1.1 | 2026-10-08 | @imp documenter | Correct related-document destinations without changing diagram content (#471). |

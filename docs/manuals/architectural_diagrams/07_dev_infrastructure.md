@@ -3,8 +3,8 @@
 # Dev Infrastructure
 
 **Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-03-13
+**Version:** 1.2
+**Last Updated:** 2026-10-08
 
 ---
 
@@ -94,11 +94,11 @@ make the boundary explicit in the project structure.
 
 ## Related Documentation
 
-- **[docs/mcp_server/architectural_diagrams/00_system_context.md][related-1]**
+- **[docs/manuals/architectural_diagrams/00_system_context.md][related-1]**
 - **[docs/reference/proxy_restart.md][related-2]**
 
-[related-1]: docs/mcp_server/architectural_diagrams/00_system_context.md
-[related-2]: docs/reference/proxy_restart.md
+[related-1]: 00_system_context.md
+[related-2]: ../../reference/proxy_restart.md
 
 ---
 
@@ -108,3 +108,4 @@ make the boundary explicit in the project structure.
 |---------|------|--------|---------|
 | 1.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ path for proxy_restart.md |
 | 1.0 | 2026-03-13 | Agent | Initial draft |
+| 1.2 | 2026-10-08 | @imp documenter | Correct related-document destinations without changing diagram content (#471). |
