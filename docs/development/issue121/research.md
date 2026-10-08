@@ -2,13 +2,13 @@
 
 # Issue 121 — Minimal structure-preserving artifact edit review
 
-**Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.9  
+**Status:** Research concluded — implementation deferred by owner  
+**Version:** 1.0  
 **Last Updated:** 2026-10-08
 
 ## Purpose
 
-Present the least heavy architecturally clean response to the structure-preservation finding consolidated from issue483.
+Record the investigation of proportionate protection against loss of template-defined structure and the owner's decision on 2026-10-08 to defer implementation. Available runtime/model routes have not demonstrated enough benefit to justify their integration, execution and maintenance complexity. The exploratory options below remain research evidence; the Approved Strategy supersedes their provisional recommendations.
 
 ## Scope In
 
@@ -173,10 +173,7 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 
 ## Questions
 
-- Can a small schema/Jinja-derived text specification deliver useful protection at acceptable authoring and maintenance cost? Compare known text matching with the cost of deriving mandatory/editable boundaries; do not use format parsers.
-- Should checks enforce a selected current package contract or require availability of the exact generation source? How should missing/mismatching source be handled?
-- Does report retain its existing semantics or must structural failure also block report writes?
-- Compare the owner-proposed single-call LLM score gate with exact text-contract work: reference context, native tool overhead, model/threshold calibration, latency/input-token cost and schema-plus-source remediation. Establish only a small feasibility witness before recommending Design.
+No further discovery or model trial is requested. Source association, preservation semantics, enforcement/report policy and judge quality/cost remain deferred questions to reconsider only if the owner reopens implementation. This research closure does not resolve them by assumption.
 
 ## References
 
@@ -241,19 +238,23 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 
 ## Approved Strategy
 
-Pending owner decision. The owner requires a tooling solution covering all template-generated artifact formats and rejects instruction-only review or Markdown-only coverage as sufficient. The least-heavy/no-new-architecture constraint remains binding.
+Owner decision, 2026-10-08: conclude the research and park issue121. Feasible runtime, local-model and harness-backed routes exist, but their current complexity does not justify implementation. No Design, Planning or Implementation progression is requested.
 
-| Boundary | Candidate to assess | Approval state |
-| --- | --- | --- |
-| Public edit/scaffold and validation policies | Reuse existing contentcheck/no-write machinery; stronger report protection requires an explicit decision. | Pending |
-| Native checker and adapter ownership | Entirely language/type-agnostic text checking from schema/Jinja-derived requirements; no format parsers or template-specific predicates. Only unconditional mandatory main structure is in the candidate scope. | Constraints specified by owner; implementation investment and concrete mechanism/strategy pending |
-| Package preservation semantics | Explicit source-associated requirements versus contextual interpretation of original Jinja; do not silently infer permanent structure from generated literals. | Pending |
-| Source identity and older/manual artifacts | Decide current-contract versus exact original-source acceptance and unavailable/mismatching source behavior. No guessed association, automatic restamping or compatibility emulation. | Pending |
-| Behavioral proof | Small cross-format permitted/damaged edit and persistence coverage; reuse useful tests, avoid full-text/wording matrices. | Pending |
+| Boundary | Approved decision |
+| --- | --- |
+| Public edit/scaffold and validation policies | Preserve supported behavior. Add no structural write blocker, mode, score threshold or changed enforce/report semantics. |
+| Native checker, adapter and generic server | Defer the checker and all model/provider, local-runtime, harness-orchestration and MCP-sampling integration. Add no template- or format-specific knowledge. |
+| Template contracts and source identity | Preserve existing packages, schemas and provenance behavior. Add no output-preservation dialect, source registry, migration, compatibility bridge or automatic restamping. |
+| Verification | No new tests, model trials or regression matrix for deferred implementation. Preserve this research's concrete observations and their limits. |
+| Agent workflow and active instructions | Accept a targeted agent scan during Validation or Documentation as the proportionate current working approach. This decision does not introduce a mandatory gate, duplicate instructions or require edits across active docs/contracts/agent files. |
+
+A useful targeted scan compares relevant changed artifacts of the same family with their corresponding template sources, checking mandatory main structure and consistency while permitting authored content and intentional departures. Return concrete missing, misplaced or inconsistent structural elements with file locations. Assess actual matching template/version context; a same-looking family or retained marker alone is not proof. Review feedback supports the responsible agent's corrections and disclosure of uncertainty; it is not exact conformance certification or runtime enforcement.
+
+Revisit tooling only if repeated concrete structural failures, review burden or a substantially simpler supported integration changes the effort/reward balance. Keep this issue and its research as the existing tracking point rather than creating another issue for the same concern.
 
 ## Expected Results
 
-A selected checker must permit intended code/document development and identify loss of required structure across the applicable template-generated formats. Exact regeneration, source compatibility and preservation of declared obligations must not be conflated. Evidence must identify the actual source/contract association, check scope and native outcome. Enforcement/report semantics and missing-source behavior remain pending; no new tool postconditions are implemented here.
+The research and owner decision are durable and implementation is deferred. A requested phase scan can provide focused feedback on the required main structure and unity of similar artifacts without new tooling. No runtime no-write guarantee, model-backed compliance result or completed implementation is claimed. The branch remains at Research; Ready and merge completion are not inferred from parking the issue.
 
 ## Evidence
 
@@ -319,3 +320,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.7 | 2026-10-08 | @imp researcher | Assess Jev pricing, measured latency, typed scoring, input limits and existing evaluator options; recommend a bounded feasibility witness. |
 | 0.8 | 2026-10-08 | @imp researcher | Measure issue460 artifact sizes and narrow the Jev recommendation to bounded inputs; keep full-text size and preprocessing costs explicit. |
 | 0.9 | 2026-10-08 | @imp researcher | Compare local long-context inference, headless harness judging and MCP sampling; distinguish existing checker reuse from a new client callback boundary. |
+| 1.0 | 2026-10-08 | Owner decision recorded by @imp researcher | Conclude research, defer runtime enforcement and retain a targeted phase scan as the proportionate current approach. |
