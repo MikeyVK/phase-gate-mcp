@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "471": {
+      "issue_title": "docs: Establish and repair the active documentation link baseline",
+      "workflow_name": "docs",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "planning",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-08T13:37:51.881808+00:00"
+    }
+  }
+}
