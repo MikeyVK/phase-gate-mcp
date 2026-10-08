@@ -16,7 +16,57 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-08T06:11:38.526752+00:00"
+      "created_at": "2026-10-08T06:11:38.526752+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "Replace owned Markdown preflight with native Lychee",
+              "deliverables": [
+                {
+                  "id": "D483.1.1",
+                  "description": "Durable native Markdown mutation behavior coverage through scaffold and safe edit, with bounded valid/enforce, invalid/enforce and invalid/report cases and existing native snapshot coverage reused."
+                },
+                {
+                  "id": "D483.1.2",
+                  "description": "Complete clean-break removal of markdown_preflight and obsolete bindings/profiles, with all nine Markdown output policies and .md routing using the existing native markdown_link_review profile."
+                },
+                {
+                  "id": "D483.1.3",
+                  "description": "Retired package-only tests and fixture coupling removed, valuable renderer/profile behavior retained, affected tests and scoped Python gates passing without compatibility or old-behavior coverage."
+                }
+              ],
+              "exit_criteria": "Six central native consumer cases pass; affected template/profile tests and selected native snapshot/dependency/lifecycle evidence pass; applicable gates pass on Git-selected changed Python files; all active Markdown routes use the delivered native binding; no compatibility path or new runtime H1 check; reviewed cleanup is complete."
+            }
+          ]
+        },
+        "validation": {
+          "deliverables": [
+            {
+              "id": "V483.1",
+              "description": "Compact durable Validation evidence: focused changed behavior, complete configured checks and full configured native test suite; exceptions/blockers explicit.",
+              "validates": {
+                "type": "file_exists",
+                "file": "docs/development/issue483/validation.md"
+              }
+            }
+          ]
+        },
+        "documentation": {
+          "deliverables": [
+            {
+              "id": "DOC483.1",
+              "description": "Active scaffold/edit references state native local-link/anchor validation and prerequisite; current issue source references remain valid and structural follow-up is indexed.",
+              "validates": {
+                "type": "file_exists",
+                "file": "docs/reference/tools/editing.md"
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
