@@ -3,7 +3,7 @@
 # Issue 483 — Native Markdown link validation
 
 **Status:** Design — review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -135,7 +135,8 @@ Template render or edit proposal → configured profile selection → CheckServi
 | passed | Persist the admitted proposal | Persist the admitted proposal |
 | failed link/anchor | No write; retain diagnostics | Persist with failed validation facts |
 | unavailable dependency/version | No write; retain inability | Existing documented write route with unavailable facts |
-| Preparation, transport, timeout/cancellation or unsafe process stopping | Existing operational blocker; no fabricated pass | Existing operational blocker; report does not bypass it |
+| Invocation failure (including transport/timeout) without unconfirmed termination | No write; unavailable facts remain visible | Existing write route with unavailable facts; no separate operational blocker |
+| Input preparation failure, request rejection, cancellation or unconfirmed termination | Existing blocker; no write | Existing blocker; report does not bypass it |
 | Cleanup problem | Existing separate housekeeping facts; no invented result | Same existing housekeeping contract |
 
 Do not turn a missing native prerequisite into a link error or add an H1 failure. Existing collision/race protections and post-write reporting remain unchanged.
@@ -218,3 +219,4 @@ Plan one bounded migration rather than a native parser project. Keep consumer/co
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp designer | Define complete native link-check migration and bounded behavioral evidence within the approved clean break. |
+| 0.2 | 2026-10-08 | @imp designer | Correct the report contract for invocation failures without unconfirmed termination after independent QA finding. |
