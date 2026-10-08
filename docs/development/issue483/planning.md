@@ -3,7 +3,7 @@
 # Issue 483 — Native Markdown migration plan
 
 **Status:** Planning — review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -131,7 +131,7 @@ Six central native consumer cases pass; affected template/profile tests and sele
 #### Stop Conditions
 
 - Native prerequisite/version unavailable, operational test interruption or a test setup failure: stop and report incomplete evidence rather than claim RED/GREEN.
-- Proposed-content/base/self mapping contradicts Research, or generic runtime changes appear required: stop and reopen the design question; do not silently broaden.
+- Proposed-content/base/self mapping contradicts Research, or changes to the existing Lychee adapter, generic runtime or DTO/API contracts appear required: stop and explicitly reopen the design question with the owner; do not add ad-hoc functionality.
 - Actual native link failures in unrelated active docs: report and route to #471, do not weaken flags or repair unrelated scope.
 - Any need for compat/legacy or restored H1 checking: human re-decision required.
 
@@ -172,3 +172,4 @@ Active scaffold/edit references state native local-link/anchor validation and pr
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp planner | Plan one coherent native-check migration with focused behavior evidence and mandatory complete Validation runs. |
+| 0.2 | 2026-10-08 | @imp planner | Make the owner's stop boundary explicit for existing adapter, generic runtime and DTO/API changes. |
