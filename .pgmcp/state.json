@@ -3,7 +3,7 @@
   "branch": "bug/483-markdown-angle-destination-parsing",
   "issue_number": 483,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "issue_title": "bug: Correct Markdown preflight angle-destination parsing",
   "parent_branch": "main",
   "created_at": "2026-10-08T06:11:38.536490+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-08T07:39:09.320456+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
