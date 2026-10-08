@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -83,6 +83,18 @@ A bounded source-associated contentcheck with explicit preservation requirements
 
 If automatic interpretation of the original Jinja source is essential, a source-aware LLM checker is another research option. It would offer contextual judgments rather than deterministic structural proof and adds model invocation, repeatability and operational availability questions. No such implementation has been selected or demonstrated here.
 
+### Agnostic checker boundary required by the owner
+
+The owner further narrows the candidate to unconditional required main structure and explicitly excludes template-specific structural/content knowledge from the checker itself, not only from the adapter/server. A checker must consume requirements as parsed data from a schema and/or concrete template; adding a special Research, revision-history or code-package predicate in its implementation is not acceptable.
+
+Format grammar knowledge is distinct from template knowledge. A generic parser can recognize actual headings, tables or language declarations. Which nodes are required, their labels, relationships and admitted editable content must come from package data. A new template or changed mandatory heading must not require a checker-code edit.
+
+The existing context.schema.json describes input. In Research, required goals is an array of text; the source separately invokes sections.heading('Goals') and sections.bullets(content.goals). The schema does not describe a Markdown heading, and a checker may not guess that field-name-to-heading mapping. Likewise, Jinja required blocks demand an override during rendering, not preservation of a named output region after editing.
+
+A candidate generic mechanism is to parse proposed content into structural data and validate the relevant structure using a package-supplied output schema or explicit schema/template mapping, with existing schema validation machinery. This would keep all template-specific requirements in data. It is not yet a selected interface, a new rule dialect or a proven automatic derivation mechanism. Parsing, mapping and source identity must be small and explicit; the input schema must not silently become an output contract.
+
+The decisive remaining feasibility question is whether the installed source/schema can supply the mandatory output mapping within a narrow supported subset, or needs a minimal declarative addition beside/in those sources. Excluding conditionals reduces scope but does not remove macro/filter transformations or distinguish editable placeholders from permanent literals. No universal automatic inference guarantee is established. Text anchors alone also cannot prove parsed structure: a heading inside a code block or a declaration inside a string must not satisfy a structural requirement.
+
 ### Existing enforcement boundary
 
 Under enforce, a selected required contentcheck failure prevents persistence. Existing report permits failed checks to be written while retaining failure facts; making structural failure block report is a separate owner decision. Missing association, unavailable source/config and unavailable execution cannot be presented as successful template conformance.
@@ -137,6 +149,9 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 - [jinja-reverse extraction implementation](<https://github.com/gabihodoroaga/jinja-reverse/blob/master/reverse.py>)
 - [Copier update and stored-answer lifecycle](<https://copier.readthedocs.io/en/stable/updating/>)
 - [Genji generation and escaping](<https://pypi.org/project/genji/>)
+- [JSON Schema required properties](<https://json-schema.org/understanding-json-schema/reference/object#required-properties>)
+- [Jinja required blocks mean rendering overrides](<https://jinja.palletsprojects.com/en/stable/templates/#required-blocks>)
+- [Current Research input schema](<../../../.pgmcp/template_suite/research/context.schema.json>)
 - [Python class scaffold and intentional stubs](<../../../.pgmcp/template_suite/python_class/template.jinja2>)
 - [TypeScript DTO scaffold and conditional structure](<../../../.pgmcp/template_suite/typescript_dto/template.jinja2>)
 
@@ -147,7 +162,7 @@ Pending owner decision. The owner requires a tooling solution covering all templ
 | Boundary | Candidate to assess | Approval state |
 | --- | --- | --- |
 | Public edit/scaffold and validation policies | Reuse existing contentcheck/no-write machinery; stronger report protection requires an explicit decision. | Pending |
-| Native checker and adapter ownership | Check all applicable artifact formats in the substantive tool; keep invocation/results in a thin adapter. No complete off-the-shelf original-Jinja checker has been verified. | Pending |
+| Native checker and adapter ownership | Cover applicable generated formats through a generic checker consuming schema/template requirements as data; no template-specific predicates in checker, adapter or server. Restrict the proposed check to unconditional mandatory main structure. | Checker-agnostic and required-main-structure constraints specified by owner; concrete mechanism/strategy pending |
 | Package preservation semantics | Explicit source-associated requirements versus contextual interpretation of original Jinja; do not silently infer permanent structure from generated literals. | Pending |
 | Source identity and older/manual artifacts | Decide current-contract versus exact original-source acceptance and unavailable/mismatching source behavior. No guessed association, automatic restamping or compatibility emulation. | Pending |
 | Behavioral proof | Small cross-format permitted/damaged edit and persistence coverage; reuse useful tests, avoid full-text/wording matrices. | Pending |
@@ -214,3 +229,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.1 | 2026-10-08 | @imp researcher | Establish current edit boundaries, reproduce structural gaps and compare minimal source-aware review with runtime alternatives. |
 | 0.2 | 2026-10-08 | @imp researcher | Replace the rejected instruction-only recommendation with a bounded contentcheck candidate; expose native-rule, policy/admission and enforce/report decisions. |
 | 0.3 | 2026-10-08 | @imp researcher | Require all generated artifact formats; assess existing Jinja-related tools and distinguish exact rendering, source matching and permitted-edit obligations. |
+| 0.4 | 2026-10-08 | @imp researcher | Limit the candidate to required main structure and require an agnostic checker consuming schema/template requirements as data; identify the missing input-to-output mapping. |
