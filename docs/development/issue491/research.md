@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -231,6 +231,16 @@ QA assessed the inventory as sufficient for owner discussion, with the P3 additi
 
 Inventory closure requires every new codec/result consumer or scope literal discovered later to be assigned to one of these entries before Design/implementation changes. Syntax-only and semantic changes have different impact: changing combined spelling affects exact message assertions; separating decoded cycle/subphase also affects the E2E assertions and typed/fallback result constructors. Existing useful behavior coverage is the starting point; mocked/passive consumers do not justify blanket test rewrites.
 
+### Caution and bounded dependency cleanup
+
+The owner asks for caution about changing encoder/decoder cycle/subphase agreements and proposes removing unused injections. This is a direction for strategy discussion, not authorization of a new scope grammar or production patch during Research.
+
+The material decisions are distinct: persisted historical commit scopes remain evidence inputs; changing decoded c1_green to separate values changes a tested result contract; omitted subphase currently bypasses the workflow commit_type_map and falls back to the workphase hint (or chore); complete cycle identity must survive before Git-backed deletion protection can rely on it. Preserve supported scope spellings where possible and address cycle-only information loss proportionally; no global notation rewrite is justified by the current evidence alone.
+
+The verified narrow cleanup surface is three production files: remove the unused ScopeDecoder constructor parameter/import/stored field from PhaseStateEngine, remove the unused CommitPhaseDetector parameter/import/stored field from WorkflowStatusResolver, and remove the corresponding construction/injection from bootstrap. Four shared/direct test files carry the affected injection setup: test_support.py, test_workflow_status_resolver.py, test_consumers_c4.py and test_c260_c2_state_root_injection.py. The 28 helper caller files do not all require edits when helpers retain their used contract. This cleanup can preserve runtime behavior and needs no ignored constructor parameters, legacy aliases or compatibility bridge.
+
+Removing those injections does not imply deleting ScopeDecoder, which has real E2E/direct test consumers. The wrapper's retention/removal is a separate choice: it has direct behavior tests but no current production callers; do not silently broaden injection cleanup into module deletion or speculative future wiring. The scope consumer register describes the current source until an approved implementation changes it.
+
 ### Existing evidence and proportional test surface
 
 | Existing coverage | Value to retain | Material gap / coupling |
@@ -371,3 +381,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 0.5 | 2026-10-08 | @imp researcher | Trace the TDD origin and withdraw mandatory-subphase/rejection recommendations; assess independent lossless cycle/subphase representation and bounded reader impact. |
 | 0.6 | 2026-10-08 | @imp researcher | Inventory active codec/writer/reader consumers, test behavior, passive injections and every shared-helper caller before representation strategy selection. |
 | 0.7 | 2026-10-08 | @imp researcher | Resolve independent QA's P3 missing direct mock-injection consumer and close an exhaustive decoder/detector keyword-injection crosscheck. |
+| 0.8 | 2026-10-08 | @imp researcher | Record owner caution, concrete historical/result/type-policy constraints and narrowly verified unused-injection cleanup boundaries. |
