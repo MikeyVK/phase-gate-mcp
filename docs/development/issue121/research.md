@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.6  
+**Version:** 0.7  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -111,7 +111,21 @@ The smallest useful assessment is one model request per applicable edit with bou
 
 ScaffoldSchemaTool currently returns purpose, identity and the complete resolved input schema. It does not expose the full Jinja graph or an output-preservation contract. A generic repair instruction can require scaffold_schema plus inspection of the matching template sources; schema-only remediation must not be advertised as complete. A minimal source attachment or schema-description improvement is an alternative to assess, not a preselected API addition.
 
-The effort/reward advantage is avoiding exact inverse rendering and a new output-contract dialect. Remaining costs are the native runtime/provider setup, reference-context transport, per-edit latency/input tokens and a tiny calibration exercise. The cheapest model cannot be assumed adequate: use a few known good/damaged text examples, permitted code implementation and repeated judgments to check useful separation before selecting model/threshold. Reuse existing probes rather than creating a broad regression matrix. No model, provider, threshold, live judging outcome or cost estimate has been established.
+The effort/reward advantage is avoiding exact inverse rendering and a new output-contract dialect. Remaining costs are the native runtime/provider setup, reference-context transport, per-edit latency/input tokens and a tiny calibration exercise. The cheapest model cannot be assumed adequate: use a few known good/damaged text examples, permitted code implementation and repeated judgments to check useful separation before selecting model/threshold. Reuse existing probes rather than creating a broad regression matrix. No model, provider, threshold or live judging outcome has been selected. The Jev candidate below adds published pricing and independent latency evidence.
+
+### Jev feasibility candidate
+
+Jev from TypeSafe AI is a typed decision model rather than a generative chat judge. Its Score primitive accepts an ordered rubric of 2–10 described levels and returns a typed score, probabilities and confidence. The raw score ranges from zero to the last level index; normalize in code if using a 0–1 threshold. Confidence describes the answer distribution and is not the structural-compliance score or a correctness guarantee.
+
+As checked on 2026-10-08, jev-1.13.0 costs USD 0.042 per million input tokens; output is free. Calculated request costs at 5k/10k/20k total input tokens are USD 0.00021/0.00042/0.00084, respectively. These are pricing scenarios, not measured pgmcp payload sizes. For a single question, the applicable limit is 32k tokens for state plus that question, despite the separate 64k aggregate request limit. Pin the version rather than jev-latest when calibrating a threshold.
+
+A September 2026 independent evaluation measured mean client-side latency of 0.36 seconds across 346,009 requests at 32-way concurrency, averaging 630 input tokens. Its rubric-scoring requests averaged 727 tokens. This supports investigating a fast route, not promising that latency for complete artifact/schema/Jinja inputs. The study found weaker results for generated-text quality judgments and application-dependent binary thresholds; neither an arbitrary threshold nor general benchmark success proves our preservation criterion.
+
+The vendor documents weaker results with multiple reasoning hops, distracting long input and adversarial instructions inside state. Inferring output obligations through schema, inheritance, macros and filters is the principal feasibility risk. Supply only the relevant admitted source graph as reference data without silently discarding dependencies or artifact text; do not solve a weak result by introducing a template-specific parser or predicate.
+
+The official Python SDK provides typed synchronous/asynchronous API calls. DeepEval already offers JevEval with one request, normalized scores and threshold handling, so an existing evaluator route must be compared with the dependency weight of direct SDK use. Neither is installed or integrated here. A direct SDK route still needs a native checker entry point and a thin pgmcp adapter; placing provider or template logic in generic server orchestration is not justified. Original-source association and enforce/report decisions remain the existing unresolved boundaries.
+
+Recommendation: make Jev the first small feasibility candidate, using existing damaged/allowed Markdown probes plus a permitted code implementation and a damaged mandatory code structure. Repeat a few judgments, recording model/rubric, score separation, actual input tokens and client-side latency. This is a bounded exploratory witness, not a new regression suite or template inventory. Reject the investment if distinguishing these cases requires elaborate preprocessing or a new output-contract dialect. No live Jev call, dependency installation, provider selection or implementation approval is recorded.
 
 ### Existing enforcement boundary
 
@@ -171,6 +185,12 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 - [Promptfoo evaluation of supplied outputs](<https://www.promptfoo.dev/docs/configuration/expected-outputs/#running-assertions-directly-on-outputs>)
 - [Existing factual check decisions and native JSON evidence](<../../../mcp_server/execution/models.py>)
 - [Current scaffold_schema output](<../../../mcp_server/tools/template_schema_tool.py>)
+- [TypeSafe model versions, pricing and context limits](<https://docs.typesafe.ai/models>)
+- [Jev Score rubric and response semantics](<https://docs.typesafe.ai/primitives/score>)
+- [Jev documented limitations](<https://docs.typesafe.ai/model-jaggedness/jev-1.13>)
+- [Official TypeSafe Python SDK](<https://docs.typesafe.ai/sdk/python>)
+- [Existing DeepEval Jev evaluator](<https://deepeval.com/docs/metrics-jev-eval>)
+- [Independent Jev evaluation, rubric results and measured latency](<https://arxiv.org/html/2609.37647v1>)
 - [JSON Schema required properties](<https://json-schema.org/understanding-json-schema/reference/object#required-properties>)
 - [Jinja required blocks mean rendering overrides](<https://jinja.palletsprojects.com/en/stable/templates/#required-blocks>)
 - [Current Research input schema](<../../../.pgmcp/template_suite/research/context.schema.json>)
@@ -254,3 +274,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.4 | 2026-10-08 | @imp researcher | Limit the candidate to required main structure and require an agnostic checker consuming schema/template requirements as data; identify the missing input-to-output mapping. |
 | 0.5 | 2026-10-08 | @imp researcher | Require text-level language/type agnosticism; supersede format-parser proposals and separate matching cost from Jinja mapping cost with explicit reward and stop criteria. |
 | 0.6 | 2026-10-08 | @imp researcher | Assess the owner-proposed single-call LLM score gate, existing grader tooling/check reuse and the limits of schema-only remediation. |
+| 0.7 | 2026-10-08 | @imp researcher | Assess Jev pricing, measured latency, typed scoring, input limits and existing evaluator options; recommend a bounded feasibility witness. |
