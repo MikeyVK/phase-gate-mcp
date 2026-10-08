@@ -2,8 +2,8 @@
 
 # Issue 483 — Markdown angle-destination parsing
 
-**Status:** Research — strategy decision pending  
-**Version:** 0.3  
+**Status:** Research — clean-break direction recorded  
+**Version:** 0.5  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -12,7 +12,7 @@ Establish direct failure evidence and a proportional strategy before Design.
 
 ## Scope In
 
-Valid angle-enclosed inline destinations, intended-parent resolution, existing missing-file warnings and their affected body/document consumers.
+Clean-break replacement of the owned Markdown preflight checker by the delivered native Lychee route for affected scaffold/edit consumers; correct destinations, intended-parent/proposed-content resolution and honest native decisions. Historical warning/H1 behavior is evidence, not a preservation requirement.
 
 ## Scope Out
 
@@ -26,7 +26,7 @@ Markdown preflight interprets valid link-destination delimiters as filesystem da
 
 - Reproduce the issue473 F1 request and compare an ordinary existing link with a genuinely missing angle-enclosed target.
 - Distinguish extraction defects from persistence, status, filesystem and external-link behavior.
-- Propose bounded compatibility and evidence choices without designing or implementing the fix.
+- Establish explicit clean-break ownership and proportionate behavioral evidence boundaries without designing or implementing the fix.
 
 ## Background
 
@@ -102,9 +102,19 @@ The owner clarified during this investigation that H1 structure belongs to a val
 
 Markdownlint MD041 was inspected as a possible native heading check before that clarification; it is not selected. No extra heading adapter, retained H1 regex, library or per-use structural gate is proposed. No template/schema defect is established or repaired by this source reading.
 
-Conclusion: Lychee can own the link-checking role using already delivered adapter/content infrastructure. It does not implement the old H1 gate, whose responsibility the owner places at the template/package boundary. Native adoption must still explicitly decide fragment breadth and the change from warning-only missing links to honest native negative checks. Avoid repairing the old parser if this native direction is selected; adding another regex solely for H1 would preserve the questioned custom-checker responsibility.
+Conclusion: Lychee can own the link-checking role using already delivered adapter/content infrastructure. The subsequent owner decision requires a clean break: retire the complete owned checker, put generated H1 responsibility at the template/package boundary, and use honest native results. The explicit native baseline proposed for Design is the current configured offline/local-fragment invocation. No custom parser repair or retained H1 checker is part of that direction.
 
 Sources: [Lychee capability and input declarations](../../../mcp_server/bundled_adapters/lychee/manifest.yaml), [native transport and verdict mapping](../../../mcp_server/bundled_adapters/lychee/check.py), [dependency pin](../../../mcp_server/bundled_adapters/lychee/dependencies.json), [current content executor](../../../mcp_server/execution/check_service.py), [proposed-content preparation](../../../mcp_server/execution/content_input.py), [pinned native documentation](https://github.com/lycheeverse/lychee/blob/lychee-v0.24.2/README.md), [MD041 source reviewed but not selected](https://github.com/DavidAnson/markdownlint/blob/v0.41.1/doc/md041.md), [document heading source](../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2), [suite conformance procedure](../schema-template-maintenance.md#develop-and-release-a-package).
+
+### Deferred finding — preserve template structure during artifact edits
+
+The owner reports agents frequently replacing complete scaffolded artifacts and losing deliberately authored template structure. Source inspection establishes the permitted mechanism, not the frequency or a measured inventory of past losses: safe_edit_file selects configured checks from explicit template_id, existing header metadata or extension, constructs proposed text, and validates that text before writing. It does not compare the edited artifact with a template-owned structural contract. Passing checks or retained provenance therefore do not prove preservation of required sections, metadata or their roles. The old H1 check also does not establish that broader guarantee; adopting Lychee does not create this existing gap.
+
+Record this separately from issue483's link-check replacement. Candidate follow-up: research preservation of package-defined artifact structure during edits, beginning with concrete before/after examples and a distinction between required structure, optional sections and freely authored content. Compare a minimal editing/review rule with template-aware editing or an explicit artifact contract before selecting enforcement. Prefer targeted edits for bounded content changes, but do not equate operation size with conformance or impose a blanket rewrite ban. Do not infer a complete output contract from Jinja introspection, freeze all rendered text, or add runtime validation in this issue.
+
+Existing [issue121](https://github.com/MikeyVK/phase-gate-mcp/issues/121) explicitly includes edit-time preservation of template-defined structure and is a candidate for scope reconciliation by Coordination. Its historical introspection-based proposal is not accepted architecture or an approved solution for this finding. [Issue470](https://github.com/MikeyVK/phase-gate-mcp/issues/470) concerns text/newline semantics, change identity and race protection; it does not cover this structural guarantee. No new issue, instruction expansion, template change or structural checker is created here.
+
+Sources: [safe-edit validation contract](../../reference/tools/editing.md#validation-and-result), [edit execution](../../../mcp_server/services/edit_operation.py), [existing drafting rule](../../coding_standards/DOCUMENTATION_STANDARD.md#drafting-workflow).
 
 ### Strategy choices
 
@@ -118,8 +128,7 @@ Changing templates to avoid valid syntax or silencing link diagnostics would hid
 
 ## Questions
 
-- Confirm rollout strategy: replace owned link checking with existing Lychee and preserve native failed results plus enforce/report meanings?
-- Decide fragment breadth: adopt the current configured native anchor checks, or select the native file-only alternative. No rollout/policy decision is approved.
+Design must make the replacement bindings and affected consumer contracts explicit. The proposed native baseline is the existing markdown_links configuration (--offline, --cache=false, --include-fragments), including local anchors and honest negative outcomes; no warning-only or old fragment-skip emulation. Do not silently choose a different native policy. Artifact structure preservation remains a separate deferred finding.
 
 ## References
 
@@ -129,11 +138,23 @@ Changing templates to avoid valid syntax or silencing link diagnostics would hid
 
 ## Approved Strategy
 
-The owner prefers existing tools and explicitly approved investigating Lychee as replacement on 2026-10-08. The owner's further clarification places H1 responsibility in the valid template/package contract; retain no custom H1 parser and introduce no separate heading checker for this purpose. Rollout decisions remain pending for Lychee selection and native fragment/negative-result policy. Standing requirements apply: clean break, no legacy/compatibility layer, controlled behavioral coverage and no extra tests of old behavior. No custom-parser repair, hidden downgrade of native failures, new dependency installation or exact old-policy emulation is approved. Resolve the remaining native policy boundaries before Design.
+On 2026-10-08 the owner agreed with the native replacement direction, explicitly required a clean break for owned links/H1 checks, and required proportionate behavioral coverage. The bounded strategy is:
+
+| Boundary | Approved constraint and replacement direction |
+| --- | --- |
+| Owned checker package | Remove markdown_preflight as a complete package rather than retain an empty protocol shell, repair its parser or leave a compatibility wrapper. Links and H1 are its only substantive checks. Use the already delivered Lychee adapter for links. |
+| Generated document structure | H1 belongs to the template/package conformance procedure. Retain no H1 regex or new heading tool to emulate the removed gate. Edited artifact structure is deferred separately. |
+| Consumers and configuration | Move active Markdown consumers to the native link-check contract; retire obsolete checker identities instead of aliases/fallbacks. Preserve the public mutation policy meanings: enforce rejects native negative checks before writing; report exposes the negative outcome through its documented write route. Native availability is required for an enforced check. |
+| Native policy | The proposed baseline is the existing configured offline, cache-disabled, local-fragment-checking Lychee invocation. No fabricated pass for excluded links, warning downgrade or custom old-policy emulation. Design must state that baseline explicitly. |
+| Tests | Delete tests whose sole subject is the removed package/behavior and migrate still-useful callers. Reuse or adapt existing behavioral coverage before adding a small number of missing cases. No tests asserting old-warning/H1 compatibility, absence of old source strings, full template snapshots or authored section wording. |
+
+The request for clarification of complete removal versus partial extraction is answered by the package's actual responsibilities: after removing links and H1 it has no check to perform. No production, config, template or test modification is made in Research.
 
 ## Expected Results
 
-An existing angle-enclosed destination resolves without a false warning; a truly missing one remains a warning at the correct source line and real path. Complete angle destinations preserve spaces and parentheses before filesystem resolution. Existing fragment-only/external classification applies after syntax separation, while file fragments retain the existing file-existence-only meaning. The original repair proposal preserved body/document H1 rules, exit/status semantics and supplied content. No exhaustive grammar claim or blanket old-behavior regression matrix. These are the original correction boundaries, not approval to retain custom checking. The owner's subsequent H1 clarification supersedes automatic H1 preservation: template conformance owns document structure. Native fragment and negative-result policy still require an explicit decision.
+Existing valid angle, space/parenthesis and reference destinations are accepted through native link checking. Missing local files and, under the proposed current native settings, absent local anchors produce honest negative outcomes. Proposed content is resolved from the intended destination, including self-links before the target exists; validation does not mutate the source. Enforce blocks a failing/unavailable required check before persistence; report retains the native negative facts with its documented write behavior. H1 is no longer a runtime precondition. Package generation/release conformance owns that responsibility.
+
+Evidence scope is behavioral: a compact valid/invalid native witness plus the changed scaffold and safe-edit integration paths, including no-write on failure, intended-parent/self resolution, scratch isolation/cleanup and unavailable-native handling where affected and not already covered. Check existing tests first and exercise shared behavior without multiplying the full matrix across every template package. Assert observable decisions, relevant diagnostics and persistence/isolation facts; do not assert complete Markdown text, template headings/wording, config file spellings or deletion inventories. Fixture content needed to exercise link behavior is appropriate; testing authored document content as an invariant is not. No exhaustive native grammar suite or old-behavior regression matrix.
 
 ## Evidence
 
@@ -264,4 +285,8 @@ The seven destinations in destination-probes.md and its existing parenthesis tar
 | 0.1 | 2026-10-08 | @imp researcher | Reproduce F1 on the current adapter; establish delimiter and parenthesis causes, bounded consumers and strategy options. |
 | 0.2 | 2026-10-08 | @imp researcher | Establish the explicit historical custom-checker decision; suspend the recommendation pending the owner's adapter responsibility decision. |
 | 0.3 | 2026-10-08 | @imp researcher | Prove pinned Lychee link and proposed-content feasibility; record native verdict/fragment differences, the owner's template-owned H1 direction and pending rollout decisions. |
+
+| 0.4 | 2026-10-08 | @imp researcher | Record the separate artifact-edit structure gap and existing issue121 candidate without broadening link-check work. |
+
+| 0.5 | 2026-10-08 | @imp researcher | Record clean-break replacement of the complete owned checker, template-owned H1 and bounded behavioral test requirements. |
 
