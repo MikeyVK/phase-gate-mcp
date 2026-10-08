@@ -1,4 +1,4 @@
-"""Exercise Generic Document behavior through public template and native Markdown seams."""
+"""Exercise Generic Document behavior through public template."""
 
 from __future__ import annotations
 
@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,16 +26,11 @@ def generic_document(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTe
     )
     selected = delivered.catalog.get("generic_doc")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
-def test_minimal_generic_document_is_renderable_and_native_markdown_valid(
+def test_minimal_generic_document_is_renderable(
     generic_document: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Document basis",
@@ -72,10 +59,6 @@ def test_minimal_generic_document_is_renderable_and_native_markdown_valid(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "generic_doc"
-
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "generic.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not (tmp_path / "generic.md").exists()
 
 
 def test_generic_document_preserves_authored_order_and_record_state(

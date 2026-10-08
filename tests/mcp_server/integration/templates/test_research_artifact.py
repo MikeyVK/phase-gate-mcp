@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,14 +26,11 @@ def research(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:
     )
     selected = delivered.catalog.get("research")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
 def test_minimal_research_is_a_valid_initial_basis_without_invented_completion(
-    research: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path
+    research: DeliveredTemplate,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Investigate behavior",
@@ -66,14 +55,10 @@ def test_minimal_research_is_a_valid_initial_basis_without_invented_completion(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "research"
-    target = tmp_path / "research.md"
-    code, response = invoke(markdown_package, tmp_path, request(target, output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not target.exists()
 
 
 def test_all_research_carriers_keep_authored_strategy_evidence_and_distinct_links(
-    research: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path
+    research: DeliveredTemplate,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary research",
@@ -158,8 +143,6 @@ def test_all_research_carriers_keep_authored_strategy_evidence_and_distinct_link
     ):
         assert heading in output
     assert "Empty consumer prose" in output
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
 
 
 def test_explicit_empty_sections_remain_visible_without_placeholders(

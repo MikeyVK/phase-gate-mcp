@@ -215,8 +215,8 @@ Exact original context replayed at the same directory depth. success=true, writt
 
 PR scaffold destination-probes.md used changes containing the first five table links and deferred_work=[]. safe_edit_file(validation=enforce) replaced the fragment-only line with itself plus angle space/parentheses and angle external links. Final native warning lines are 7,9,11,13,15,17; the ordinary existing line 5 has no warning. The parenthesis warning captured <destination (probe, demonstrating truncation independently of stripping. Actual probe input destinations and outcomes are recorded in the table.
 
-- [Markdown preflight adapter](<../../../mcp_server/bundled_adapters/markdown_preflight/check.py>)
-- [Existing process conformance tests](<../../../tests/mcp_server/integration/adapters/test_markdown_preflight.py>)
+- [Markdown preflight adapter](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/mcp_server/bundled_adapters/markdown_preflight/check.py>)
+- [Existing process conformance tests](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/tests/mcp_server/integration/adapters/test_markdown_preflight.py>)
 
 **Invocation:** scaffold_artifact(artifact_type="pr", file_name="destination (probe).md", target_path=".pgmcp/temp/issue483", force_target=true, context={"changes":"Disposable existing target for the angle-destination parenthesis witness.","deferred_work":[]}, validation="enforce"); scaffold_artifact and safe_edit_file for destination-probes.md at that same directory with the table destinations.
 
@@ -272,8 +272,8 @@ The seven destinations in destination-probes.md and its existing parenthesis tar
 
 ## Related Documents
 
-- [Markdown preflight adapter](<../../../mcp_server/bundled_adapters/markdown_preflight/check.py>)
-- [Existing process conformance tests](<../../../tests/mcp_server/integration/adapters/test_markdown_preflight.py>)
+- [Markdown preflight adapter](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/mcp_server/bundled_adapters/markdown_preflight/check.py>)
+- [Existing process conformance tests](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/tests/mcp_server/integration/adapters/test_markdown_preflight.py>)
 - [Shipped link macro](<../../../.pgmcp/template_suite/shared/templates/patterns/markdown/links.jinja2>)
 - [Generic content execution](<../../../mcp_server/execution/check_service.py>)
 - [Public adapter contract](<../../reference/execution-adapters.md>)

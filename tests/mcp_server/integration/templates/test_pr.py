@@ -1,4 +1,4 @@
-"""Exercise PR body behavior through public template and native Markdown seams."""
+"""Exercise PR body behavior through public template."""
 
 from __future__ import annotations
 
@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,16 +26,11 @@ def pull_request(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTempla
     )
     selected = delivered.catalog.get("pr")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_body",
-    )
     return delivered
 
 
 def test_minimal_pr_keeps_saved_header_and_explicit_none_declaration(
     pull_request: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {"changes": "", "deferred_work": []}
     before = deepcopy(context)
@@ -56,13 +43,6 @@ def test_minimal_pr_keeps_saved_header_and_explicit_none_declaration(
     body_lines = output.splitlines()[1:]
     assert any(line.strip() and not line.startswith("#") for line in body_lines)
     assert not any(line.startswith("- [") for line in body_lines)
-    code, response = invoke(
-        markdown_package,
-        tmp_path,
-        {**request(tmp_path / "pr.md", output), "operation": "body"},
-    )
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not (tmp_path / "pr.md").exists()
 
 
 def test_pr_preserves_changes_deferred_groups_check_states_and_issue_identity(

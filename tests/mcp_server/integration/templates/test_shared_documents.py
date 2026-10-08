@@ -16,16 +16,7 @@ from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
 from tests.mcp_server.integration.templates.test_shared_python import render
-
-__all__ = ["markdown_package"]
-
 
 DOCUMENT = (
     '{% extends "shared/templates/bases/tier2_markdown_document.jinja2" %}\n'
@@ -77,7 +68,7 @@ def render_records(tmp_path: Path, repo: Path, template: str, content: dict[str,
 
 
 def test_common_document_fields_preserve_absent_empty_and_populated_content(
-    tmp_path: Path, pytestconfig: pytest.Config, markdown_package: MarkdownPackage
+    tmp_path: Path, pytestconfig: pytest.Config
 ) -> None:
     repo = pytestconfig.rootpath
     minimal = render(
@@ -164,12 +155,10 @@ def test_common_document_fields_preserve_absent_empty_and_populated_content(
     header = ArtifactHeaderReader().read(populated)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "custom.consumer"
-    code, result = invoke(markdown_package, tmp_path, request(tmp_path / "document.md", populated))
-    assert code == 0 and result["decision"] == {"status": "passed"}
 
 
 def test_markdown_and_text_tracking_keep_body_only_structure(
-    tmp_path: Path, pytestconfig: pytest.Config, markdown_package: MarkdownPackage
+    tmp_path: Path, pytestconfig: pytest.Config
 ) -> None:
     repo = pytestconfig.rootpath
     output = render(
@@ -184,15 +173,6 @@ def test_markdown_and_text_tracking_keep_body_only_structure(
     assert "\n# " not in output and "Version History" not in output
     assert "[Reference][related-1]" in output
     assert output.count("[related-1]: <own-file.md#Exact-Section>") == 1
-    code, result = invoke(
-        markdown_package,
-        tmp_path,
-        {
-            **request(tmp_path / "body.md", output),
-            "operation": "body",
-        },
-    )
-    assert code == 0 and result["decision"] == {"status": "passed"}
     text = render(
         tmp_path,
         repo,

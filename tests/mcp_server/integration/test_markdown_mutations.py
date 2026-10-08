@@ -170,6 +170,18 @@ async def test_scaffold_native_link_policy(
     if broken:
         assert observation.evidence is not None
         assert observation.evidence.format == "json"
+        report = thaw_json(observation.evidence.data)
+        assert isinstance(report, dict) and report["errors"] == 2
+        error_map = report["error_map"]
+        assert isinstance(error_map, dict)
+        urls: set[str] = set()
+        for entries in error_map.values():
+            assert isinstance(entries, list)
+            for entry in entries:
+                assert isinstance(entry, dict) and isinstance(entry["url"], str)
+                urls.add(entry["url"])
+        assert any(url.endswith("/missing.md") for url in urls)
+        assert any(url.endswith("#absent") for url in urls)
     assert neighbor.read_bytes() == neighbor_before
     assert not list((root / "snapshots").iterdir())
     assert not list((root / "invocations").iterdir())
@@ -207,7 +219,10 @@ async def test_edit_native_link_policy(
     target = root / "docs" / "guide.md"
     neighbor = target.with_name("neighbor (source).md")
     neighbor_before = neighbor.read_bytes()
-    links = "## Existing\n\n[Neighbor](<neighbor (source).md#existing>)\n[Self](<guide.md#existing>)\n[TOC](<#existing>)\n"
+    links = (
+        "## Existing\n\n[Neighbor](<neighbor (source).md#existing>)\n"
+        "[Self](<guide.md#existing>)\n[TOC](<#existing>)\n"
+    )
     links += "[Reference][one]\n\n[one]: <neighbor (source).md#existing>\n"
     if broken:
         links += "[Missing](<missing.md>)\n[Missing anchor](<#absent>)\n"
@@ -253,6 +268,18 @@ async def test_edit_native_link_policy(
     if broken:
         assert observation.evidence is not None
         assert observation.evidence.format == "json"
+        report = thaw_json(observation.evidence.data)
+        assert isinstance(report, dict) and report["errors"] == 2
+        error_map = report["error_map"]
+        assert isinstance(error_map, dict)
+        urls: set[str] = set()
+        for entries in error_map.values():
+            assert isinstance(entries, list)
+            for entry in entries:
+                assert isinstance(entry, dict) and isinstance(entry["url"], str)
+                urls.add(entry["url"])
+        assert any(url.endswith("/missing.md") for url in urls)
+        assert any(url.endswith("#absent") for url in urls)
     assert neighbor.read_bytes() == neighbor_before
     assert not list((root / "snapshots").iterdir())
     assert not list((root / "invocations").iterdir())

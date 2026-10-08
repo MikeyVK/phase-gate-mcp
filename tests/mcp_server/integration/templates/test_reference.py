@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,16 +26,11 @@ def reference(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:
     )
     selected = delivered.catalog.get("reference")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
 def test_minimal_reference_accepts_required_source_and_empty_api(
     reference: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Reference basis",
@@ -70,15 +57,10 @@ def test_minimal_reference_accepts_required_source_and_empty_api(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "reference"
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "reference.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not (tmp_path / "reference.md").exists()
 
 
 def test_reference_preserves_grouping_links_and_safe_native_code_rendering(
     reference: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     signature = chr(96) + "read(value: str)" + chr(96)
     example_code = "const value = reader.read(input);\n" + chr(96) * 3 + "\ninside"
@@ -193,8 +175,6 @@ def test_reference_preserves_grouping_links_and_safe_native_code_rendering(
     for reference_id, target in expected_definitions.items():
         assert output.count(f"[{reference_id}]") == 2
         assert output.count(f"[{reference_id}]: <{target}>") == 1
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
 
 
 def test_reference_distinguishes_absent_and_explicit_empty_optional_values(
