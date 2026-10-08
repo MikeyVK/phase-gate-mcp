@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "483": {
+      "issue_title": "bug: Correct Markdown preflight angle-destination parsing",
+      "workflow_name": "bug",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-08T06:11:38.526752+00:00"
+    }
+  }
+}
