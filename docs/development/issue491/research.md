@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -72,7 +72,25 @@ cycle_number is both lookup identity and execution order. PhaseStateEngine reads
 | Nested validation specs | Align planning admission with the existing executor's supported shapes. | Deferring the mismatch keeps an admitted unusable planning rule; requires explicit exclusion rather than a false holistic-completion claim. |
 | Compatibility / verification | Clean break for corrected semantics, no bridge/alias for silently ignored inputs; preserve supported create/update/readback behavior. Adapt valuable behavior tests. | Preserving ignored inputs needs an explicit compatibility promise with low functional value. No new tests for the purpose of preserving obsolete behavior. |
 
-The strategy table records the options originally presented. The owner subsequently confirmed complete-block mutation plus common result validation and derived totals; see Approved Strategy for the accepted directions and remaining collection/lifecycle decisions.
+The strategy table records the options originally presented. The owner subsequently defined total as the desired whole-plan size after save/update, with complete-block mutation and common result validation. Git-backed deletion protection is a tentative exploration; see Approved Strategy and the evidence below.
+
+### Tentative Git-backed deletion protection
+
+The owner requires completed cycles to remain non-deletable, but does not assume a reliable completed status. The proposed evidence boundary is narrower: an execution commit attributable to this issue and cycle would protect the cycle from deletion, even while work is ongoing. This is exploration, not an approved implementation or a proof of completion.
+
+| Evidence / boundary | Observed fact or unresolved requirement |
+|---|---|
+| Existing commit trace | GitCommitTool requires cycle_number in a configured cycle-based phase. GitManager formats type(scope): message (#issue); ScopeEncoder emits, for example, P_IMPLEMENTATION_SP_C1_GREEN. Local history includes 631b32f0 with this scope and issue #483. |
+| Missing trace without subphase | ScopeEncoder.generate_scope returns P_PHASE immediately when sub_phase is None, ignoring a supplied cycle_number. Commit admission permits this case. Absence of a cycle marker is therefore not currently proof that no cycle execution commit exists. |
+| Existing decoder | ScopeDecoder detects phase and a composite sub_phase such as c1_green; PhaseDetectionResult has no cycle_number field. A trustworthy cycle query is not already provided by this decoder. |
+| Existing history reader | GitAdapter.get_recent_commits returns a limited list of subject strings (default five), without commit identities or an issue-branch history boundary. It is insufficient for an exhaustive deletion decision. |
+| Trace meaning | A commit merely listing a future cycle in planning is not execution evidence. Evidence must belong to the relevant issue/cycle and the issue's execution history; inherited C1 commits from other issues must not protect this issue's C1. Exact reachable-history and branch-basis semantics remain to be chosen. |
+| Revert and exceptional repair | Reverting changes does not erase the execution commit from reachable history, so the proposed protection remains. Removing/replacing history is exceptional repair outside this issue; no normal-workflow bypass is proposed. Reflogs, dangling objects and unrelated refs are not assumed to define the guard. |
+| Deletion versus edit | Evidence-based non-deletion does not itself freeze a cycle's name, criteria or deliverables, nor prove completion. Renumbering/replacement must not silently reinterpret an evidenced cycle identity. |
+| State coherence | A no-commit conclusion cannot permit leaving current_cycle, last_cycle or lifecycle references outside the resulting plan. Handling such references is an additional boundary, not evidence of completed work. |
+| Failure and existing histories | Unavailable/incomplete history or ambiguous attribution cannot establish safe deletion. Policy for these cases, and existing commits without cycle markers, requires an explicit decision; no guessed attribution or compatibility bridge is approved. |
+
+Candidate seam: a narrow injected read-only execution-evidence boundary at the planning command, with Git access owned by the existing Git layer and shared identity/encoding conventions. Pure planning models remain free of Git/state IO. Correcting trace completeness and defining exhaustive evidence would add a bounded Git-contract surface; this cost must be weighed before adopting the route. No new completion registry or general audit architecture is implied.
 
 ### Existing evidence and proportional test surface
 
@@ -88,21 +106,23 @@ No tests were added or run in this Research pass. No production/configuration/ag
 
 ## Questions
 
-- What is the exact complete replacement unit, and does a supplied cycles collection replace all planned cycles rather than merge by number?
-- Which structural changes to not-started work are allowed, and which active/entered/historical references must block a smaller candidate?
-- What are the omission/null rules for complete optional blocks, and is caller-supplied total absent or treated only as a consistency assertion of the derived count?
+- Confirm the exact complete-block replacement unit and omission/null rules, including phase-deliverable blocks. total now means the desired whole-plan size, not the number of supplied update entries.
+- Decide whether execution commits define non-deletable cycles; define attributable history, missing/ambiguous evidence and existing histories without cycle markers.
+- Define active/entered/historical reference protection when shrinking the plan, independently of a completed status; reject supplied entries outside total or give them another explicit meaning.
 - Confirm compatibility policy per affected boundary and explicitly include or defer the admitted file_glob shape mismatch.
 
 ## Approved Strategy
 
 Owner direction on 2026-10-08 confirms:
 - Preserve the #229 distinction: write-once initial save and an explicit later mutation operation.
-- Mutations provide complete blocks so their internal context is coherent; nested partial-field patching is not the requested route. The exact replacement unit (deliverable, cycle, cycles collection or full plan) is not yet settled.
-- Both save and update must apply one common complete-result validation before persistence and derive the cycle count from the validated sequence. A smaller candidate must never leave stored cycles outside its declared range.
+- Mutations provide complete blocks so their internal context is coherent; nested partial-field patching is not the requested route. Remaining block/omission details still need an explicit contract.
+- For both save and update, total means the desired total number of cycles in the whole plan after the operation. It does not mean the number of supplied update blocks. Unprovided existing cycles within 1..total remain; supplied complete cycle blocks replace their corresponding blocks; existing cycles above total are removal candidates, subject to protection.
+- Both operations apply one common complete-result validation before persistence: the final cycle sequence must be exactly C1..Ctotal, with complete valid blocks and no gaps/duplicates. Count validation uses the resulting plan; it never manufactures missing cycles.
+- Completed cycles must never be deleted. The owner tentatively proposes execution commits as evidence for non-deletion, while acknowledging that such evidence does not identify completion. This evidence mechanism is not yet approved.
 
 Current save checks a caller-supplied total against list length; it does not currently derive that input. The existing creation schema is therefore an evidence input to reconcile, not assumed flawless: the admitted file_glob/executor mismatch and identity uniqueness still require resolution.
 
-Pending owner decisions: whether supplying a cycles collection replaces that collection or retains append-only cycle merge; permission to remove/reorder not-started work; protection of active/entered/historical cycle references; exact complete-block omission semantics and compatibility policy. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
+Pending owner decisions: the Git-backed protection route and its attribution/completeness/failure policy; protection of active/entered/historical cycle references; remaining complete-block omission/null semantics, out-of-range supplied entries, nested validation alignment and boundary-specific compatibility policy. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
 
 ## Expected Results
 
@@ -187,6 +207,10 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 - [Existing gate executor](<../../../mcp_server/managers/deliverable_checker.py>)
 - [Current cycle lifecycle](<../../../mcp_server/managers/phase_state_engine.py>)
 - [Issue gate selection](<../../../mcp_server/managers/phase_contract_resolver.py>)
+- [Commit admission and lifecycle guard](<../../../mcp_server/tools/git_tools.py>)
+- [Commit scope encoding](<../../../mcp_server/core/scope_encoder.py>)
+- [Current scope decoding](<../../../mcp_server/core/phase_detection.py>)
+- [Existing Git history access](<../../../mcp_server/adapters/git_adapter.py>)
 
 ## Version History
 
@@ -194,3 +218,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp researcher | Record source-confirmed creation/update/readback gaps, historical rationale, affected consumers and unapproved boundary options. |
 | 0.2 | 2026-10-08 | @imp researcher | Capture owner-confirmed complete-block mutation and shared result validation/count derivation; keep collection replacement and lifecycle protection explicit open decisions. |
+| 0.3 | 2026-10-08 | @imp researcher | Refine total to desired whole-plan size and record tentative Git-backed non-deletion protection, observed trace limitations and unresolved evidence/state boundaries. |
