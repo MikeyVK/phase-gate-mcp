@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -12,11 +12,11 @@ Present the least heavy architecturally clean response to the structure-preserva
 
 ## Scope In
 
-Current edit/profile/provenance boundaries, representative Markdown edits, package-owned structural requirements, existing instruction ownership, options and strategy decisions.
+Current edit/profile/provenance boundaries, all template-generated artifact formats, original Jinja source association, existing checker feasibility, package-owned preservation requirements, options and strategy decisions.
 
 ## Scope Out
 
-Implementing safeguards before approval, new editing APIs, Jinja/AST output-contract inference, generic undo, universal rewrite restrictions, text/newline policy changes, implementation sequencing and a new architecture.
+Implementing safeguards before approval, new editing APIs, designing a universal Jinja/AST output-contract framework, generic undo, universal rewrite restrictions, text/newline policy changes, implementation sequencing and a new architecture.
 
 ## Problem Statement
 
@@ -44,49 +44,65 @@ Issue121 now consolidates the deferred finding from #483. The historical revisio
 | EnforcementDecorator | Pre/post actions receive tool parameters; they do not share the operation's constructed proposal and checked original snapshot. | A decorator would duplicate proposal construction/reads or need another integration boundary. Post-write checks cannot provide the requested pre-write protection. |
 | TemplatePolicy / suite identity | Strict policy currently admits only output_profile and persistence. Extra private generation sources must be reachable from the admitted generation graph. policy.yaml is excluded from generation identity but included in operational component state. | Adding an arbitrary rules file is not automatically safe/admitted. A small generic policy extension carrying opaque native checkconfig is a candidate; do not smuggle output rules into the input context schema or whitelist a tool-specific filename in generic code. |
 
-### Smallest useful contract
+### Cross-format requirement and original Jinja source
 
-Begin with the demonstrated Markdown artifact concern. A selected package declares only the structural requirements that must survive a content edit: material required sections/roles, authored document metadata where applicable, and a valid revision-table block where applicable. Optional sections and free prose remain unconstrained unless a package explicitly needs a conditional requirement. A broken history row parsed as a paragraph outside the table must fail a history-block requirement; merely requiring any table or running a blank-lines-around-tables style rule is insufficient.
+The owner explicitly requires tooling for all template-generated content, including code, rather than a Markdown-only safeguard. The previous Markdownlint recommendation is therefore insufficient as the issue-wide solution. Existing pre-write contentcheck execution is reusable; the missing capability is a checker that distinguishes permitted development from loss of required template structure.
 
-This is output conformance against an explicit current contract, not reconstruction of the original Jinja context or proof of semantic completeness. Generation implements the package contract; independent package review must check the template, declared requirements and representative outputs together. Code stubs and tracking bodies have different purposes; do not apply a full-document rule indiscriminately or promise every code package is covered.
+Jinja renders text from source, environment and caller context. Its documented Meta API exposes referenced variables/templates, not a post-generation preservation contract; dynamic references can be unresolved statically. Inspection of the installed python_class template gives a concrete counterexample to exact equality: methods are generated with raise NotImplementedError and an empty class can contain pass. Replacing these with working implementation is expected development, although the placeholder is literal template output. The TypeScript DTO also builds conditional declarations and assignments through macros, loops and filters. The original renderer alone does not declare which emitted elements must remain invariant after generation.
 
-### Proportionate options after owner clarification
+There are three distinct guarantees:
 
-| Option | Benefit | Cost / limitation |
+| Check | Required information | Limit |
 | --- | --- | --- |
-| Instruction-only review | Contextual semantic review remains useful. | Owner explicitly rejected this as the sufficient solution. It cannot supply a tool write block. |
-| Forbid rewrites or add section/range APIs | Restricts or simplifies certain edits. | Does not prevent small structural damage and impedes legitimate changes. Existing bounded operations already exist. |
-| Compare original/proposed structure in a new mode/check | Can preserve an existing structural baseline without a declared full output contract. | Needs both immutable snapshots, which current check transport lacks. Baseline can already be invalid; intentional optional/structural changes need a separate policy. Broad structure freezing is not justified. |
-| Small package-owned output contract check in existing profile (recommended) | Reuses contentcheck execution, factual diagnostics and enforce/report persistence. Rules live outside generic edit code. | New adapter/native rule support, bounded contract configuration and potentially a small policy/admission extension. Several pgmcp-specific predicates remain our responsibility; no off-the-shelf complete template-conformance guarantee has been established. |
-| General output-contract/introspection framework | Broader potential coverage. | New dialect/resolution/version/interpretation machinery and much larger proof burden. Excluded from the owner's least-heavy direction. |
+| Exact regenerated output comparison | Original source graph, renderer environment/custom filters, original context and reproducible generation | Rejects legitimate changes to generated placeholders and authored content. It is suitable only for intentionally immutable outputs. |
+| Match some possible render of the original template | A supported inverse/render-language analysis and suitable context constraints | Does not establish required post-edit semantics. Flexible content slots admit many outputs; literal generated placeholders can still be intended to change. |
+| Preserve declared artifact obligations | Explicit required/optional/conditional/editable semantics associated with the source package | Can admit development and reject structural damage, but these semantics must be supplied rather than inferred as a universal Jinja guarantee. |
 
-### Native checker candidate, not a selected implementation
+Canonical id/pv/pf/sf metadata is generation provenance. It does not store the original context or provide an archived source registry. Selecting the current installed package by ID does not prove that its graph is the original graph. Source mismatch or unavailability must remain visible; a current-contract policy and historical-source conformance are separate choices.
 
-Official markdownlint documentation supports configurable custom rules over parsed tokens and diagnostics with locations. markdownlint-cli2 documents stdin input, explicit config/configPointer, custom rule modules, formatters and noInlineConfig. This is a credible host for a small shared native rule implementation with package-authored parameters: parsing/lint execution belongs to the existing tool, our predicates describe the limited artifact contract, and the pgmcp adapter only translates invocation/results. Plain default markdownlint does not establish those requirements. MD058 checks blank lines around a table, not completeness of a revision-history section.
+### Existing tool investigation
 
-A package-specific binding/profile can supply the applicable native config using existing configured arguments; this avoids reading original files again in an adapter or selecting rules from proposed provenance. One optional opaque native-checkconfig section in existing package policy is a storage candidate, not an approved field/interface. Existing policy storage already has operational component identity; its generation provenance is a different identity. A separate operational asset declaration is another candidate but costs more admission work. Do not claim either is already implemented.
+This is a documentation/source feasibility assessment, not a native execution witness. No drop-in checker for the complete installed Jinja suite and permitted post-generation edits has been established. That is a bounded research finding, not proof that no such tool exists anywhere.
 
-No native structure checker is installed/proven here. Node/npm are discoverable; markdownlint-cli2 was not found. Observed upstream main metadata declares CLI2 0.23.3 with Node >=22 and markdownlint 0.41.1, but this is not a chosen release pin. Before Research closes for a concrete tool selection, resolve the pin/runtime/distribution, rule-config storage/admission, config discovery/override/inline suppression, structured diagnostic transport and a small actual native behavioral witness. A direct library runner is an alternative if the CLI's configuration hierarchy cannot be constrained cleanly; compare its maintenance cost rather than inventing a bypass.
+| Tool / API | Verified purpose | Fit for the requested check |
+| --- | --- | --- |
+| Jinja Meta API | Inspect variables and referenced templates in the source AST. | No documented output-conformance or editable-region semantics. Reusing this alone would reopen the earlier introspection problem. |
+| jinja2schema | Infer expected input-context types and a JSON Schema for input. | Validates a different boundary; does not validate edited emitted artifacts. |
+| TTP | Extract structured data from text using authored parsing templates and matching expressions. | Cross-format text parsing is possible, but its templates are a separate matching language. Existing Jinja inheritance/macros/filters are not directly a TTP validation contract. Extraction success alone is not full-content acceptance. |
+| jinja-reverse | Build derived templates by extracting block contents from samples. Source uses regex for simple block syntax and treats surrounding text literally. | Does not execute the installed Jinja graph or return a complete conformance verdict. No-match samples can still produce an extends-only output; loops/expressions/filters and edited code semantics are not covered. |
+| Copier | Regenerate versioned Jinja projects from stored answers and merge template updates with user changes. | Useful for update management, not a pre-write structural acceptance check. Requires source/answer lifecycle absent from current provenance. |
+| Markdownlint custom rules | Apply owned predicates to parsed Markdown. | Possible format-specific implementation component only. Neither all-artifact coverage nor direct original-Jinja validation. |
 
-### Enforced behavior and scope
+Genji was also checked: it extends Jinja rendering with LLM generation calls and format escaping, rather than checking an independently edited artifact against its source. It is not a solution to this acceptance boundary.
 
-Under enforce, a selected structural obligation returning failed leaves the original untouched (or a scaffold target absent). Diagnostics must identify the violated requirement and relevant location. Unavailable checker/config cannot be fabricated as passed. Optional-section removal and free prose changes should pass when the contract admits them; a full rewrite may pass when it preserves conformance.
+### Proportionate direction, still pending
 
-Existing report explicitly permits negative check results to be written, retaining failure facts and independent operational stop conditions. Reusing this route is not an unbypassable guard. If the owner requires structural damage to block even report, that is a separate mutation-policy strategy decision; do not silently tighten report or add a hidden mode. Missing/unknown/manual association stays factual; do not claim a package check ran based solely on .md extension. Older markers select current installed obligations under the current selector, not a historical schema: changed acceptance needs explicit strategy approval, without compatibility emulation or provenance restamping.
+Keep generic edit/scaffold orchestration responsible for constructing, validating and conditionally persisting content. Keep adapter code responsible for invocation/result translation. Template-specific preservation meaning belongs with the template package; substantive checking belongs in a checker/native extension.
+
+A bounded source-associated contentcheck with explicit preservation requirements remains a feasible direction to investigate across formats. Existing parsers can help assess particular artifact structures, but a thin adapter cannot manufacture a complete Jinja conformance guarantee. A shared text check can verify declared anchors/regions, while semantic code/document constraints may require format-aware inspection. This distinction must be resolved before selecting a tool or proposing a rule language. Neither a universal output-contract framework nor a new generator is approved.
+
+If automatic interpretation of the original Jinja source is essential, a source-aware LLM checker is another research option. It would offer contextual judgments rather than deterministic structural proof and adds model invocation, repeatability and operational availability questions. No such implementation has been selected or demonstrated here.
+
+### Existing enforcement boundary
+
+Under enforce, a selected required contentcheck failure prevents persistence. Existing report permits failed checks to be written while retaining failure facts; making structural failure block report is a separate owner decision. Missing association, unavailable source/config and unavailable execution cannot be presented as successful template conformance.
+
+The current check transport contains proposed content/its scratch file, target_path, configured args and execution context. It does not carry original text, historical source graph or original render context. Fixed source/config references can potentially be supplied through existing configured args; automatic source-bound resolution needs an explicit ownership and identity decision. Preserve factual guarantees rather than claiming all required inputs already exist.
 
 ### Blast radius and evidence
 
-The recommended boundary is a new contentcheck adapter/native rule and narrow package checkconfig/policy/profile work, preserving generic edit/scaffold orchestration and existing adapter wire DTOs. A small generic metadata/admission change may be needed; no template names, Markdown predicates or native-specific rule schema should enter generic Python. Scope and test size must follow the actual chosen contract, not an exhaustive package matrix.
+No implementation strategy is approved. The existing pre-write executor offers a small integration boundary, but cross-format checker selection, preservation semantics and source association remain open. Any package metadata extension must stay generic/opaque to server orchestration; no package names, language predicates or native-specific rule schemas belong in generic Python.
 
-Existing check/mutation tests retain enforce/report/unavailable behavior. Reuse them and add/adapt only missing native contract and public consumer cases: broken history and required metadata fail/no-write, optional/free refinement and conforming rewrite pass, and rule applicability/config identity where materially changed. No full-text snapshots, prose/heading inventories asserted as repository content, or regressions against retired #483 behavior. The probes below establish the current gap, not execution success of the proposed checker.
+Behavioral evidence should distinguish permitted edits from structural damage and verify actual persistence/results. Reuse meaningful existing consumer/enforcement tests and add only missing coverage for the selected behavior; no full-text snapshots, wording inventories or retired checker regressions. The Markdown probes below establish a real gap but cannot establish cross-format coverage or candidate-checker success.
 
-Reviewed existing standards, template generation/shared bases, identity/distribution, active references and agent instruction model remain binding. #483's checker replacement, #476's release review, #470's newline/span/race work and #491's planning-data contracts remain separate; the new check must respect those boundaries.
+#483's link checker replacement, #476's package release review, #470's text/newline/span/race work and #491's planning-data contracts remain separate.
 
 ## Questions
 
-- Is the preferred boundary a limited package-owned structurecheck through the existing enforce/report route, or must protection also block report writes?
-- Which artifact requirements form the initial contract: shared full-document metadata/history plus material package-required sections, with tracking/code/manual files covered only when a matching contract is selected?
-- Resolve native pin/runtime, native-config isolation, packagepolicy storage/admission and a small live feasibility witness before claiming a concrete implementation route is ready for Design.
+- Can a small explicit preservation contract satisfy the requirement, or must the checker interpret original Jinja source directly? What constitutes permitted development for code and documents?
+- Should checks enforce a selected current package contract or require availability of the exact generation source? How should missing/mismatching source be handled?
+- Does report retain its existing semantics or must structural failure also block report writes?
+- After these semantics are chosen, establish a pinned native implementation and a small cross-format feasibility witness before recommending Design.
 
 ## References
 
@@ -115,22 +131,30 @@ Reviewed existing standards, template generation/shared bases, identity/distribu
 - [Markdownlint CLI2 configuration and input](<https://github.com/DavidAnson/markdownlint-cli2>)
 - [Built-in Markdownlint rules](<https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>)
 - [Observed CLI2 main metadata, not a selected release](<https://raw.githubusercontent.com/DavidAnson/markdownlint-cli2/main/package.json>)
+- [Jinja Meta API and renderer context](<https://jinja.palletsprojects.com/en/stable/api/#the-meta-api>)
+- [jinja2schema input-context purpose](<https://jinja2schema.readthedocs.io/en/latest/>)
+- [TTP matching-template language](<https://ttp.readthedocs.io/en/latest/Writing%20templates/>)
+- [jinja-reverse extraction implementation](<https://github.com/gabihodoroaga/jinja-reverse/blob/master/reverse.py>)
+- [Copier update and stored-answer lifecycle](<https://copier.readthedocs.io/en/stable/updating/>)
+- [Genji generation and escaping](<https://pypi.org/project/genji/>)
+- [Python class scaffold and intentional stubs](<../../../.pgmcp/template_suite/python_class/template.jinja2>)
+- [TypeScript DTO scaffold and conditional structure](<../../../.pgmcp/template_suite/typescript_dto/template.jinja2>)
 
 ## Approved Strategy
 
-Pending owner decision. The owner now explicitly requires a tooling solution (enforcement, mode or check) and rejects instruction-only review as sufficient. The least-heavy/no-new-architecture constraint remains binding.
+Pending owner decision. The owner requires a tooling solution covering all template-generated artifact formats and rejects instruction-only review or Markdown-only coverage as sufficient. The least-heavy/no-new-architecture constraint remains binding.
 
-| Boundary | Recommended candidate strategy | Approval state |
+| Boundary | Candidate to assess | Approval state |
 | --- | --- | --- |
-| Public edit/scaffold and validation policies | Preserve existing contentcheck/no-write machinery and wire DTOs. Preserve report unless the owner separately requires a stronger guard. | Pending |
-| Native checker and adapter ownership | Use an existing Markdown parser/lint engine with small owned contract rules; adapter translates only. Choose and pin the concrete native implementation after the feasibility questions are resolved. | Pending |
-| Package structure requirements/config | Declare a limited current output contract with the package; use the existing profile selection. A small generic policy/native-checkconfig extension may be required. No input-schema repurposing or tool-specific generic code. | Pending |
-| Installed/older/manual artifacts | Current selected contract is not historical conformance. No guessed association, automatic metadata migration, provenance restamping or compatibility emulation. Changed enforce acceptance and uncovered artifacts must be explicit. | Pending |
-| Behavioral proof | Small native contract/consumer coverage, existing meaningful tests reused; no universal Jinja contract, wording matrix or restored old checker regressions. | Pending |
+| Public edit/scaffold and validation policies | Reuse existing contentcheck/no-write machinery; stronger report protection requires an explicit decision. | Pending |
+| Native checker and adapter ownership | Check all applicable artifact formats in the substantive tool; keep invocation/results in a thin adapter. No complete off-the-shelf original-Jinja checker has been verified. | Pending |
+| Package preservation semantics | Explicit source-associated requirements versus contextual interpretation of original Jinja; do not silently infer permanent structure from generated literals. | Pending |
+| Source identity and older/manual artifacts | Decide current-contract versus exact original-source acceptance and unavailable/mismatching source behavior. No guessed association, automatic restamping or compatibility emulation. | Pending |
+| Behavioral proof | Small cross-format permitted/damaged edit and persistence coverage; reuse useful tests, avoid full-text/wording matrices. | Pending |
 
 ## Expected Results
 
-Proposed acceptance for the bounded check: malformed required history and missing required metadata are reported as failed and block persistence under enforce; optional/free refinements and a conforming rewrite are allowed. Rule association comes from the selected obligation/config, not newly written provenance. Evidence identifies source/config scope and native outcome; unavailable execution is explicit. report keeps its current behavior unless a stronger policy is explicitly approved. These are candidate outcomes, not implemented tool postconditions.
+A selected checker must permit intended code/document development and identify loss of required structure across the applicable template-generated formats. Exact regeneration, source compatibility and preservation of declared obligations must not be conflated. Evidence must identify the actual source/contract association, check scope and native outcome. Enforcement/report semantics and missing-source behavior remain pending; no new tool postconditions are implemented here.
 
 ## Evidence
 
@@ -189,3 +213,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp researcher | Establish current edit boundaries, reproduce structural gaps and compare minimal source-aware review with runtime alternatives. |
 | 0.2 | 2026-10-08 | @imp researcher | Replace the rejected instruction-only recommendation with a bounded contentcheck candidate; expose native-rule, policy/admission and enforce/report decisions. |
+| 0.3 | 2026-10-08 | @imp researcher | Require all generated artifact formats; assess existing Jinja-related tools and distinguish exact rendering, source matching and permitted-edit obligations. |
