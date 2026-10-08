@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -72,7 +72,7 @@ cycle_number is both lookup identity and execution order. PhaseStateEngine reads
 | Nested validation specs | Align planning admission with the existing executor's supported shapes. | Deferring the mismatch keeps an admitted unusable planning rule; requires explicit exclusion rather than a false holistic-completion claim. |
 | Compatibility / verification | Clean break for corrected semantics, no bridge/alias for silently ignored inputs; preserve supported create/update/readback behavior. Adapt valuable behavior tests. | Preserving ignored inputs needs an explicit compatibility promise with low functional value. No new tests for the purpose of preserving obsolete behavior. |
 
-Recommended discussion direction: repair the existing save/update route and shared validity boundary before considering richer re-planning features. The field, lifecycle and compatibility choices above are not approved by this recommendation.
+The strategy table records the options originally presented. The owner subsequently confirmed complete-block mutation plus common result validation and derived totals; see Approved Strategy for the accepted directions and remaining collection/lifecycle decisions.
 
 ### Existing evidence and proportional test surface
 
@@ -88,14 +88,21 @@ No tests were added or run in this Research pass. No production/configuration/ag
 
 ## Questions
 
-- Which update intent is required: complete deliverable replacement by id, or partial field patching; what must explicit null and empty collections mean?
-- Should supplied total be a checked assertion or disappear from writable input; what identity/duplicate/order guarantees must hold?
-- Do delete/renumber/reorder of not-started work belong in #491, and how are active/completed/reopened cycles protected using actual lifecycle evidence?
-- Approve clean break versus compatibility per affected input/storage/readback/lifecycle boundary, and explicitly include or defer the admitted file_glob shape mismatch.
+- What is the exact complete replacement unit, and does a supplied cycles collection replace all planned cycles rather than merge by number?
+- Which structural changes to not-started work are allowed, and which active/entered/historical references must block a smaller candidate?
+- What are the omission/null rules for complete optional blocks, and is caller-supplied total absent or treated only as a consistency assertion of the derived count?
+- Confirm compatibility policy per affected boundary and explicitly include or defer the admitted file_glob shape mismatch.
 
 ## Approved Strategy
 
-Pending owner discussion. No boundary strategy is recorded as approved by the initial Research GO. Research remains open; Design and implementation must not start until the owner choices are explicit.
+Owner direction on 2026-10-08 confirms:
+- Preserve the #229 distinction: write-once initial save and an explicit later mutation operation.
+- Mutations provide complete blocks so their internal context is coherent; nested partial-field patching is not the requested route. The exact replacement unit (deliverable, cycle, cycles collection or full plan) is not yet settled.
+- Both save and update must apply one common complete-result validation before persistence and derive the cycle count from the validated sequence. A smaller candidate must never leave stored cycles outside its declared range.
+
+Current save checks a caller-supplied total against list length; it does not currently derive that input. The existing creation schema is therefore an evidence input to reconcile, not assumed flawless: the admitted file_glob/executor mismatch and identity uniqueness still require resolution.
+
+Pending owner decisions: whether supplying a cycles collection replaces that collection or retains append-only cycle merge; permission to remove/reorder not-started work; protection of active/entered/historical cycle references; exact complete-block omission semantics and compatibility policy. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
 
 ## Expected Results
 
@@ -186,3 +193,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp researcher | Record source-confirmed creation/update/readback gaps, historical rationale, affected consumers and unapproved boundary options. |
+| 0.2 | 2026-10-08 | @imp researcher | Capture owner-confirmed complete-block mutation and shared result validation/count derivation; keep collection replacement and lifecycle protection explicit open decisions. |
