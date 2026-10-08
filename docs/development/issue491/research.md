@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -106,13 +106,24 @@ cycle_number identifies the planning/execution cycle; sub_phase identifies the k
 | Intentional old encoding | test_cycle_number_without_subphase_ignored explicitly expects P_IMPLEMENTATION when cycle_number=1 and no subphase is supplied. This is existing documented behavior, not an untested accidental branch. The new trace promise would require an explicit clean-break decision. |
 | Side effects | GitCommitTool performs its cycle-required check before record_sub_phase, staging and commit. The equivalent subphase admission belongs before these mutations. current_sub_phase is recorded by the commit command and cleared at phase/cycle transitions; it is not a separate enforced execution mode. |
 
-Bounded option for owner review: require an explicit permitted sub_phase whenever the resolved workflow phase is cycle-based, alongside its existing cycle_number requirement. Use the workflow contract for policy and the catalog for supported encoding; no phase-name special case, new policy flag, automatic reuse of an old subphase or invented RED commit is necessary. Reject invalid/missing values with permitted choices before state/Git mutation, regardless of commit_type overrides.
+The earlier proposed mandatory-subphase route is withdrawn as the recommendation. The owner correctly challenged its premise: a cycle is not a subphase, and requiring one merely to preserve a cycle marker would impose workflow behavior to accommodate an encoding limitation.
 
-A separate small encoding invariant can reject cycle_number without sub_phase for any direct ScopeEncoder/GitManager caller, rather than silently dropping the number. This guards loss of explicitly supplied information without teaching the encoder about active workflow state. It is optional additional boundary hardening to decide explicitly, not a second workflow policy or a new scope format.
+Historical origin is source-confirmed: #138 described cycle_number as optional multi-cycle TDD metadata and used P_TDD_SP_C1_RED; the initial encoder commit c13fdeff7caab97aeb0cd41542568c56068efb1f (2026-02-15) already returned a phase-only scope before inspecting cycle_number when sub_phase was absent. #146 then strengthened cycle admission around TDD subphases using that format. This explains the implementation history, not a necessary dependency between cycle identity and subphase.
 
-The route keeps existing Cn/subphase commit spelling and phase-only commits for non-cycle-based phases. It requires no new completion status, subphase-transition tool or automatic RED/GREEN/REFACTOR sequence enforcement. A valid label identifies attributed work; it does not prove tests ran or the named work is complete. Historical commits are unchanged, so forward enforcement alone does not solve ambiguous old history.
+Current state already models current_cycle and current_sub_phase independently. WorkflowStatusResolver reads those distinct fields directly from state; commit decoding is not its current status source. Conversely, ScopeDecoder has no typed cycle field and returns c1_green as a composite sub_phase for P_IMPLEMENTATION_SP_C1_GREEN. Thus both encoding and any reader used for future Git evidence must distinguish cycle identity from subphase without inferring that one requires the other.
 
-Proportional verification would adapt the existing runtime cycle-admission behavior coverage for explicit/auto-detected phases, no-side-effect rejection, valid configured combinations and the non-cycle-based counterpart. If the encoder invariant is selected, replace the existing ignored-number expectation with the new behavior contract; do not retain the retired behavior through a compatibility layer or add content-mirroring tests.
+| Independent semantic combination | Required meaning, subject to active workflow admission |
+|---|---|
+| Phase only | Preserve phase identity; no cycle or subphase asserted. |
+| Phase + cycle | Preserve the explicit cycle identity even when subphase is absent. |
+| Phase + subphase | Preserve the configured subphase; do not infer a cycle from labels such as planning subphase c1. |
+| Phase + cycle + subphase | Preserve both distinct values. |
+
+Revised bounded direction for owner review: retain the existing runtime requirement for cycle_number in cycle-based phases and remove the encoder's loss of cycle identity when sub_phase is omitted. Keep subphase validation when supplied; a future subphase requirement would need its own workflow-policy rationale, not Git trace retention. No new execution mode, forced RED/GREEN/REFACTOR sequence, completion registry or extra config flag is implied.
+
+Two bounded representation choices remain: extend the current spelling with an unambiguous cycle-only form while leaving combined spelling unchanged, or adopt one uniform spelling with separate cycle and subphase components. The latter has a broader encoder/decoder/doc/test impact; the former minimizes changed combined scopes. Exact syntax, clean-break/migration policy and reader shape are Design inputs only after boundary-specific owner approval. Existing historical Git evidence is a separate concern: future lossless scopes cannot recover omitted cycle identity from old commits.
+
+The earlier optional encoder rejection for cycle_number without sub_phase is also withdrawn as a preferred solution: it rejects a semantically valid combination instead of representing it. Public input DTOs and state field meanings need not be coupled or redesigned to fix this boundary. Existing behavioral tests that expect information loss would be adapted to the new contract, with proportional encoding/decoding and command admission coverage; no old-behavior compatibility tests or content-mirroring coverage are proposed.
 
 ### Existing evidence and proportional test surface
 
@@ -129,7 +140,7 @@ No tests were added or run in this Research pass. No production/configuration/ag
 ## Questions
 
 - Confirm the exact complete-block replacement unit and omission/null rules, including phase-deliverable blocks. total now means the desired whole-plan size, not the number of supplied update entries.
-- Decide whether execution commits define non-deletable cycles; define attributable history, missing/ambiguous evidence and existing histories without cycle markers. Decide the proposed cycle-based subphase requirement and optional lossless-encoding guard as an explicit commit-contract change.
+- Decide whether execution commits define non-deletable cycles; define attributable history, missing/ambiguous evidence and existing histories without cycle markers. Decide lossless independent cycle/subphase representation and its encoder/reader strategy. Mandatory subphase solely for Git trace retention is no longer recommended.
 - Define active/entered/historical reference protection when shrinking the plan, independently of a completed status; reject supplied entries outside total or give them another explicit meaning.
 - Confirm compatibility policy per affected boundary and explicitly include or defer the admitted file_glob shape mismatch.
 
@@ -238,6 +249,9 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 - [Workphase catalog](<../../../.pgmcp/config/workphases.yaml>)
 - [Encoder behavior evidence](<../../../tests/mcp_server/core/test_scope_encoder.py>)
 - [Commit-tool behavior evidence](<../../../tests/mcp_server/unit/tools/test_git_tools.py>)
+- [#138 original scope contract](<../archive/issue138/design.md>)
+- [#146 TDD cycle admission research](<../archive/issue146/research.md>)
+- [Current state-derived workflow status](<../../../mcp_server/managers/workflow_status_resolver.py>)
 
 ## Version History
 
@@ -247,3 +261,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 0.2 | 2026-10-08 | @imp researcher | Capture owner-confirmed complete-block mutation and shared result validation/count derivation; keep collection replacement and lifecycle protection explicit open decisions. |
 | 0.3 | 2026-10-08 | @imp researcher | Refine total to desired whole-plan size and record tentative Git-backed non-deletion protection, observed trace limitations and unresolved evidence/state boundaries. |
 | 0.4 | 2026-10-08 | @imp researcher | Map intentional subphase/cycle encoding, runtime/config policy boundaries and bounded enforcement options without approving or implementing them. |
+| 0.5 | 2026-10-08 | @imp researcher | Trace the TDD origin and withdraw mandatory-subphase/rejection recommendations; assess independent lossless cycle/subphase representation and bounded reader impact. |
