@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -75,25 +75,27 @@ This is a documentation/source feasibility assessment, not a native execution wi
 
 Genji was also checked: it extends Jinja rendering with LLM generation calls and format escaping, rather than checking an independently edited artifact against its source. It is not a solution to this acceptance boundary.
 
-### Proportionate direction, still pending
+### Language- and artifact-type-agnostic boundary
 
-Keep generic edit/scaffold orchestration responsible for constructing, validating and conditionally persisting content. Keep adapter code responsible for invocation/result translation. Template-specific preservation meaning belongs with the template package; substantive checking belongs in a checker/native extension.
+The owner requires the checker to work entirely at the text/Jinja level, without Markdown/Python/TypeScript parsers or artifact-specific semantic node types. The earlier format-parser candidate is superseded. The candidate scope remains unconditional required main structure, not all emitted text or conditional generation behavior. Whether any implementation is worth its cost remains undecided.
 
-A bounded source-associated contentcheck with explicit preservation requirements remains a feasible direction to investigate across formats. Existing parsers can help assess particular artifact structures, but a thin adapter cannot manufacture a complete Jinja conformance guarantee. A shared text check can verify declared anchors/regions, while semantic code/document constraints may require format-aware inspection. This distinction must be resolved before selecting a tool or proposing a rule language. Neither a universal output-contract framework nor a new generator is approved.
+The checker may understand generic text relationships: required fragments, their relative order, line/start/end boundaries, contiguous regions and explicitly editable gaps. It must obtain concrete text and obligations from parsed schema/template data, never from built-in template names, headings, class conventions or revision-history rules. Relative placement is meaningful; absolute line numbers would shift during ordinary authored edits. This is a text-preservation guarantee, not language syntax or semantic correctness.
 
-If automatic interpretation of the original Jinja source is essential, a source-aware LLM checker is another research option. It would offer contextual judgments rather than deterministic structural proof and adds model invocation, repeatability and operational availability questions. No such implementation has been selected or demonstrated here.
+The current context schema describes generation input. It does not define mandatory output fragments or post-generation editable regions. Jinja required blocks require template overrides during rendering, not immutable output. The installed renderer returns only a string; it does not return a map distinguishing mandatory scaffolding from editable emitted content. Shared document/code bases compose captured blocks through text_block/select/join, and macro output is further transformed. Simply excluding conditionals therefore does not make source-to-output ownership or permanent-literal selection automatic.
 
-### Agnostic checker boundary required by the owner
+A generic matcher for a known sequence of required fragments with editable gaps is the lower-cost component. Producing a reliable source-bound matching specification is the uncertain/high-cost component. Viable bounded research candidates are a minimal explicit text-level declaration in the template/schema, or narrowly supported extraction from actual Jinja definitions. Neither a new annotation dialect nor a generation-tracing/inverse-rendering framework is approved. Any derivation must state its supported subset and report unsupported or ambiguous definitions explicitly.
 
-The owner further narrows the candidate to unconditional required main structure and explicitly excludes template-specific structural/content knowledge from the checker itself, not only from the adapter/server. A checker must consume requirements as parsed data from a schema and/or concrete template; adding a special Research, revision-history or code-package predicate in its implementation is not acceptable.
+### Effort versus demonstrated reward
 
-Format grammar knowledge is distinct from template knowledge. A generic parser can recognize actual headings, tables or language declarations. Which nodes are required, their labels, relationships and admitted editable content must come from package data. A new template or changed mandatory heading must not require a checker-code edit.
+| Candidate | Potential reward | Cost and material limit |
+| --- | --- | --- |
+| Required text fragments and relative order | Detect broad removal/reordering of deliberately required scaffolding while permitting edits in gaps. | Comparatively small matching logic once obligations exist. A duplicate fragment in free text can create ambiguity; presence/order alone can still admit the demonstrated split revision table. |
+| Declared text regions and boundary/continuity obligations | May protect a specific relation that simple anchors miss, without knowing the artifact language. | More precise declarations and template maintenance; effectiveness against the actual example must be demonstrated without introducing artifact-specific rules. |
+| Automatic mandatory/editable output derivation across general Jinja | Potentially avoid manual mapping for many templates. | Inheritance, macros, string construction, filters and transformations increase proof and maintenance burden. No existing renderer capability supplies this guarantee; least-heavy feasibility is unproven. |
 
-The existing context.schema.json describes input. In Research, required goals is an array of text; the source separately invokes sections.heading('Goals') and sections.bullets(content.goals). The schema does not describe a Markdown heading, and a checker may not guess that field-name-to-heading mapping. Likewise, Jinja required blocks demand an override during rendering, not preservation of a named output region after editing.
+Do not equate a language-agnostic matcher with a low-effort end-to-end solution. The demonstrated benefit is one structural defect plus qualitative reports of template-discarding rewrites; no failure-rate or time-saving estimate is established.
 
-A candidate generic mechanism is to parse proposed content into structural data and validate the relevant structure using a package-supplied output schema or explicit schema/template mapping, with existing schema validation machinery. This would keep all template-specific requirements in data. It is not yet a selected interface, a new rule dialect or a proven automatic derivation mechanism. Parsing, mapping and source identity must be small and explicit; the input schema must not silently become an output contract.
-
-The decisive remaining feasibility question is whether the installed source/schema can supply the mandatory output mapping within a narrow supported subset, or needs a minimal declarative addition beside/in those sources. Excluding conditionals reduces scope but does not remove macro/filter transformations or distinguish editable placeholders from permanent literals. No universal automatic inference guarantee is established. Text anchors alone also cannot prove parsed structure: a heading inside a code block or a declaration inside a string must not satisfy a structural requirement.
+A further feasibility investigation should be bounded to one small text model and representative existing document/code source graphs. It must distinguish loss/reordering of required text from permitted authored development, disclose whether it actually catches the historical split-table example, and identify the required package annotations/source association work. Stop if useful coverage requires format parsers, template-specific checker predicates, general Jinja introspection/trace infrastructure, or a large second specification of the templates. Deferring runtime protection remains a valid outcome if the useful subset does not justify its lifecycle cost.
 
 ### Existing enforcement boundary
 
@@ -111,7 +113,7 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 
 ## Questions
 
-- Can a small explicit preservation contract satisfy the requirement, or must the checker interpret original Jinja source directly? What constitutes permitted development for code and documents?
+- Can a small schema/Jinja-derived text specification deliver useful protection at acceptable authoring and maintenance cost? Compare known text matching with the cost of deriving mandatory/editable boundaries; do not use format parsers.
 - Should checks enforce a selected current package contract or require availability of the exact generation source? How should missing/mismatching source be handled?
 - Does report retain its existing semantics or must structural failure also block report writes?
 - After these semantics are chosen, establish a pinned native implementation and a small cross-format feasibility witness before recommending Design.
@@ -162,7 +164,7 @@ Pending owner decision. The owner requires a tooling solution covering all templ
 | Boundary | Candidate to assess | Approval state |
 | --- | --- | --- |
 | Public edit/scaffold and validation policies | Reuse existing contentcheck/no-write machinery; stronger report protection requires an explicit decision. | Pending |
-| Native checker and adapter ownership | Cover applicable generated formats through a generic checker consuming schema/template requirements as data; no template-specific predicates in checker, adapter or server. Restrict the proposed check to unconditional mandatory main structure. | Checker-agnostic and required-main-structure constraints specified by owner; concrete mechanism/strategy pending |
+| Native checker and adapter ownership | Entirely language/type-agnostic text checking from schema/Jinja-derived requirements; no format parsers or template-specific predicates. Only unconditional mandatory main structure is in the candidate scope. | Constraints specified by owner; implementation investment and concrete mechanism/strategy pending |
 | Package preservation semantics | Explicit source-associated requirements versus contextual interpretation of original Jinja; do not silently infer permanent structure from generated literals. | Pending |
 | Source identity and older/manual artifacts | Decide current-contract versus exact original-source acceptance and unavailable/mismatching source behavior. No guessed association, automatic restamping or compatibility emulation. | Pending |
 | Behavioral proof | Small cross-format permitted/damaged edit and persistence coverage; reuse useful tests, avoid full-text/wording matrices. | Pending |
@@ -230,3 +232,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.2 | 2026-10-08 | @imp researcher | Replace the rejected instruction-only recommendation with a bounded contentcheck candidate; expose native-rule, policy/admission and enforce/report decisions. |
 | 0.3 | 2026-10-08 | @imp researcher | Require all generated artifact formats; assess existing Jinja-related tools and distinguish exact rendering, source matching and permitted-edit obligations. |
 | 0.4 | 2026-10-08 | @imp researcher | Limit the candidate to required main structure and require an agnostic checker consuming schema/template requirements as data; identify the missing input-to-output mapping. |
+| 0.5 | 2026-10-08 | @imp researcher | Require text-level language/type agnosticism; supersede format-parser proposals and separate matching cost from Jinja mapping cost with explicit reward and stop criteria. |
