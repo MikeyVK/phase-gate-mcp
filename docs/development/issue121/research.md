@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.8  
+**Version:** 0.9  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -140,6 +140,23 @@ Recommendation revised: Jev is a bounded-input candidate, not the proposed defau
 
 If a bounded Jev probe is still useful, reuse existing damaged/allowed examples and one permitted/damaged code pair. Record actual input tokens, repeated score separation and client-side latency. Do not build a broad regression suite or complicated preprocessing to force the candidate to fit. No live Jev call, dependency installation, provider selection or implementation approval is recorded.
 
+### Local model and harness-backed judging routes
+
+Local inference is feasible without a remote judging provider. Ollama supports JSON-schema-constrained responses, and Qwen's official Qwen3.5-4B card declares a native 262,144-token context. Ollama distributes a 4B variant with a 256K model window. This makes the issue460 text volumes plausible input candidates, not proven fast or reliable judgments. Model window, allocated runtime context, hardware memory, input processing time and long-context judgment quality are separate constraints. Ollama's default allocation can be far below the model window and increasing context requires additional memory. Pin model/runtime and reject incomplete input rather than accepting truncation.
+
+| Route | Existing support | Integration boundary and limitation |
+| --- | --- | --- |
+| Local model service | Ollama structured output; published small long-context model | External native checker calls a configured local service. Additional runtime/model installation and hardware measurement; no per-request remote token charge, but computation has cost. |
+| Headless harness session | Codex exec accepts piped input, final JSON Schema, model override and saved CLI authentication; Antigravity SDK documents typed output | External native checker invokes the selected existing harness interface. Separate bounded session, not a callback to this chat; startup, subscription/API usage and input processing must be measured. |
+| Active client's model via MCP sampling | MCP sampling standard; VS Code documents model/subscription access | Requires client capability, permission and a request-scoped callback from server to client. Model preferences are hints; client selects the model. This is not supported by the current adapter wire. |
+| Producer asks a subagent before editing | Harness delegation can provide a review | Advisory unless the actual write tool enforces a result for the exact proposal. A prompt alone does not establish a no-write guarantee. |
+
+Read-only discovery found codex.exe on PATH; neither ollama nor lms was found there. No runtime was installed, model downloaded or judging session started. Current pgmcp server dispatch has no sampling callback; content requests contain text/file, target_path, args and scratch execution context. The adapter process receives one request over stdin, then stdin closes; it returns the check response on stdout. Calling the active client's model therefore needs an explicit new callback boundary, not adapter access to an existing session API.
+
+Codex and Antigravity document MCP integration, but the inspected pages do not establish MCP sampling support in those clients. Antigravity's SDK route documents API-key setup, so it must not be advertised as reusing IDE subscription access. Codex exec documents saved-auth reuse; that does not guarantee free, inexpensive or low-latency execution. Host delegation tools available to the producer are not automatically exposed to an external checker.
+
+Least-heavy investigation for this workspace: a single external checker using an existing headless Codex session, returning a bounded typed judgment through a thin adapter and existing enforce policy. Keep the judge isolated from mutation tools and recursive pgmcp calls; a read-only filesystem sandbox alone does not establish tool isolation. Judge the complete proposal against coherent schema/source references, with no inherited producer conversation or repair loop. Local inference remains an alternative if on-device operation or measured recurring cost warrants runtime setup. Do not implement a cross-harness orchestrator or sampling bridge before a small large-artifact feasibility witness justifies that cost. Source association, model/threshold adequacy and report policy remain unresolved; no strategy is approved.
+
 ### Existing enforcement boundary
 
 Under enforce, a selected required contentcheck failure prevents persistence. Existing report permits failed checks to be written while retaining failure facts; making structural failure block report is a separate owner decision. Missing association, unavailable source/config and unavailable execution cannot be presented as successful template conformance.
@@ -204,6 +221,18 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 - [Official TypeSafe Python SDK](<https://docs.typesafe.ai/sdk/python>)
 - [Existing DeepEval Jev evaluator](<https://deepeval.com/docs/metrics-jev-eval>)
 - [Independent Jev evaluation, rubric results and measured latency](<https://arxiv.org/html/2609.37647v1>)
+- [Ollama structured outputs](<https://docs.ollama.com/capabilities/structured-outputs>)
+- [Ollama runtime context and memory](<https://docs.ollama.com/context-length>)
+- [Official Qwen3.5-4B model card](<https://huggingface.co/Qwen/Qwen3.5-4B>)
+- [Ollama Qwen3.5 distribution](<https://ollama.com/library/qwen3.5>)
+- [Codex non-interactive structured judging and saved authentication](<https://learn.chatgpt.com/docs/non-interactive-mode>)
+- [MCP sampling and capability/model selection](<https://modelcontextprotocol.io/specification/2025-11-25/client/sampling>)
+- [VS Code documented sampling support](<https://code.visualstudio.com/blogs/2025/06/12/full-mcp-spec-support>)
+- [Antigravity SDK authentication and harness support](<https://www.antigravity.google/docs/sdk/overview/>)
+- [Antigravity typed output](<https://www.antigravity.google/docs/sdk/structured-output>)
+- [Existing server dispatch](<../../../mcp_server/server.py>)
+- [Current adapter process transport](<../../../mcp_server/execution/process_runtime.py>)
+- [Current adapter wire](<../../../mcp_server/execution/protocol.py>)
 - [JSON Schema required properties](<https://json-schema.org/understanding-json-schema/reference/object#required-properties>)
 - [Jinja required blocks mean rendering overrides](<https://jinja.palletsprojects.com/en/stable/templates/#required-blocks>)
 - [Current Research input schema](<../../../.pgmcp/template_suite/research/context.schema.json>)
@@ -289,3 +318,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.6 | 2026-10-08 | @imp researcher | Assess the owner-proposed single-call LLM score gate, existing grader tooling/check reuse and the limits of schema-only remediation. |
 | 0.7 | 2026-10-08 | @imp researcher | Assess Jev pricing, measured latency, typed scoring, input limits and existing evaluator options; recommend a bounded feasibility witness. |
 | 0.8 | 2026-10-08 | @imp researcher | Measure issue460 artifact sizes and narrow the Jev recommendation to bounded inputs; keep full-text size and preprocessing costs explicit. |
+| 0.9 | 2026-10-08 | @imp researcher | Compare local long-context inference, headless harness judging and MCP sampling; distinguish existing checker reuse from a new client callback boundary. |
