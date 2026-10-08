@@ -3,7 +3,7 @@
   "branch": "bug/483-markdown-angle-destination-parsing",
   "issue_number": 483,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -59,6 +59,14 @@
       "to_phase": "documentation",
       "timestamp": "2026-10-08T09:52:49.977942+00:00",
       "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-10-08T10:06:18.212197+00:00",
+      "human_approval_message": "Rond issue af via ready en geef end-issue prompt aan coordination",
       "forced": false,
       "skip_reason": null
     }
