@@ -3,7 +3,7 @@
 # Issue 483 — Markdown angle-destination parsing
 
 **Status:** Research — strategy decision pending  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -68,18 +68,29 @@ CommonMark separates outer <…> delimiters from the URI, allows spaces/parenthe
 | Docs/agents/enforcement | No current instruction or policy requires changing to fix parsing; historical #473 evidence remains unchanged |
 | Distribution | Adapter source is bundled; source fingerprint changes after repair and consumers need the normal package activation/restart route |
 
+### Check ownership — owner clarification
+
+The owner questioned why an adapter interprets link structure. markdown_preflight has no independent Markdown tool behind it: its Python check.py implements H1 detection, destination extraction, file existence observations and protocol adaptation together. Python is the runtime, not a delegated Markdown validator. In contrast, the Lychee adapter invokes the independently provisioned native link checker; python_syntax delegates grammar parsing to the standard-library ast API.
+
+This placement was explicit in human-approved issue460 DI-05 §7.20 A–C and implementation cycle CY019: extract the old MarkdownValidator's bounded observations into an isolated package, preserve warning/status behavior, and keep stronger Lychee checks separate. It conforms to that specific accepted design; this is not evidence of an unapproved recent expansion. The package rule in DI-05 §6 admits one cohesive tool/implementation, not exclusively a wrapper around a separately installed executable.
+
+Nevertheless, retaining our own checker is an architectural strategy choice and creates parser maintenance responsibility. The earlier option A recommendation assumed that choice without making it explicit. Its recommendation is suspended. A stricter adapter-only translation boundary would require an explicit native-check strategy and investigation of the intended checks and pre-mutation/status behavior; moving the same regex to another file would not delegate ownership to a native tool.
+
+Sources: [original Markdown decision](../issue460/design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking), [package ownership choice](../issue460/design-execution-adapters.md#w-adapter-01--what-belongs-in-one-package), [CY019](../issue460/planning-execution.md#cy019). Historical documents are evidence, not new issue483 approval.
+
 ### Strategy choices
 
 | Option | Cost / risk / impact |
 | --- | --- |
-| A — Bounded correction inside the existing stdlib adapter (recommended) | Correct demonstrated angle extraction and target classification; preserve bare-link behavior, missing-target warnings and body/document decisions; no new dependency, compatibility branch or generic-tool knowledge |
-| B — Replace preflight extraction with a complete Markdown parser | New dependency/contract and substantially broader interpretation changes; greater validation and maintenance cost than the evidenced defect justifies |
+| A — Bounded correction of the existing custom checker (recommendation suspended) | Correct demonstrated angle extraction and target classification; preserve bare-link behavior, missing-target warnings and body/document decisions; no new dependency, compatibility branch or generic-tool knowledge |
+| B — Delegate parsing to a complete Markdown library | Still an owned checker/policy, with new dependency and broader interpretation; not the same as an adapter translating an independent tool |
+| C — Delegate the intended checks to independent native tools | Aligns with a translation-only adapter boundary; matching or deliberately changing the current H1, content and warning/status contract requires further targeted research; no tool equivalence is established |
 
 Changing templates to avoid valid syntax or silencing link diagnostics would hide the defect and contradict the issue. No historical attribution or general parser-compliance guarantee is made.
 
 ## Questions
 
-- Owner confirmation of option A and its explicit package/protocol/template/test boundaries is required before Design.
+- Decide the ownership boundary first: retain an explicitly owned custom preflight checker, or research a native-tool route before choosing the fix. No option is approved.
 
 ## References
 
@@ -89,11 +100,11 @@ Changing templates to avoid valid syntax or silencing link diagnostics would hid
 
 ## Approved Strategy
 
-Pending explicit owner decision on option A versus a broader parser change. The owner's standing requirements apply: clean break, no legacy/compatibility layer, controlled behavioral coverage and no extra tests of old behavior. Proposed affected-boundary decisions: correct angle parsing inside the package; preserve public request/response and warning semantics; preserve templates/caller destinations; retain stdlib-only operation; reuse existing public-process tests with only missing changed-behavior evidence. Do not enter Design before the owner confirms this issue-specific scope.
+Pending owner decision after the adapter/checker responsibility was explicitly challenged. The owner's standing requirements apply: clean break, no legacy/compatibility layer, controlled behavioral coverage and no extra tests of old behavior. Do not assume retention of a custom Markdown checker, a new dependency, native-tool equivalence or preservation/change of check policy as approved. The demonstrated parser defect and original bounded expected results remain evidence; the ownership strategy must be decided before Design.
 
 ## Expected Results
 
-An existing angle-enclosed destination resolves without a false warning; a truly missing one remains a warning at the correct source line and real path. Complete angle destinations preserve spaces and parentheses before filesystem resolution. Existing fragment-only/external classification applies after syntax separation, while file fragments retain the existing file-existence-only meaning. Body/document H1 rules, exit/status semantics and supplied content are preserved. No exhaustive grammar claim or blanket old-behavior regression matrix.
+An existing angle-enclosed destination resolves without a false warning; a truly missing one remains a warning at the correct source line and real path. Complete angle destinations preserve spaces and parentheses before filesystem resolution. Existing fragment-only/external classification applies after syntax separation, while file fragments retain the existing file-existence-only meaning. Body/document H1 rules, exit/status semantics and supplied content are preserved. No exhaustive grammar claim or blanket old-behavior regression matrix. These are the original correction boundaries, not approval to retain custom checking; a different native policy needs an explicit scope/strategy decision.
 
 ## Evidence
 
@@ -185,3 +196,5 @@ Configured offline Lychee check passed on the exact replay output. This establis
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp researcher | Reproduce F1 on the current adapter; establish delimiter and parenthesis causes, bounded consumers and strategy options. |
+| 0.2 | 2026-10-08 | @imp researcher | Establish the explicit historical custom-checker decision; suspend the recommendation pending the owner's adapter responsibility decision. |
+
