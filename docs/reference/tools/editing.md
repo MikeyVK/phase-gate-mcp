@@ -43,6 +43,8 @@ The operation selects check obligations using an explicit `template_id` when sup
 
 The result records the attempted operation, write/content-change facts, selected validation profile and check results, plus structured failure details where applicable. Read the cached complete result when you need full diagnostics or the generated diff; use the bounded presented response for routine outcomes. Check configuration defines applicable adapter checks and native execution evidence.
 
+For the delivered Markdown policies and the `.md` extension route, the existing Lychee adapter checks local links and heading fragments against the proposed edit before writing, using the edited file's intended path as the resolution base. Self-links resolve against the proposed content. See [Markdown validation](scaffolding.md#markdown-validation) for native availability, offline scope and the template package's structural responsibility. A successful link check does not establish that a full rewrite preserves the template's H1 or document structure.
+
 ## Related references
 
 - [Scaffolding and schema discovery](scaffolding.md)
