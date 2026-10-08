@@ -3,7 +3,7 @@
 # Issue 483 — Native Markdown migration plan
 
 **Status:** Planning — review requested  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -21,7 +21,7 @@ Compatibility/legacy, old-warning/H1 regression tests, runtime structure validat
 ## Prerequisites
 
 - Independent Design → Planning GO on 9a0f789ba9236a065f2126e16f8a6d9250347bb4.
-- Research Approved Strategy and Design v0.2, including safely-ended invocation failures under existing report semantics.
+- Research Approved Strategy and Design v0.3, including safely-ended invocation failures under existing report semantics and the explicit required branch Validation gate.
 
 ## Summary
 
@@ -49,7 +49,7 @@ Record precise facts and obtain explicit disposition if blocking; do not change 
 
 ## Milestones
 
-- Validation: use Git to select actual applicable changed files for per-type gates; reuse fresh implementation evidence. Always run run_checks(scope="configured", timeout_seconds=600) for the workspace-wide configured checks and run_tests(scope="configured", tests=["python_tests"], timeout_seconds=1200) for the full native-configured suite with unchanged native args. Respect the documented 1800-second client window. Do not split, shorten or omit the full suite because the change is small or tests are mechanical.
+- Validation: use Git to select actual applicable changed files for per-type gates; reuse fresh implementation evidence. Always run the required run_checks(scope="branch", profile="python_review", timeout_seconds=600), using existing per-check configured-target filtering and unchanged native arguments. Also run run_checks(scope="configured", timeout_seconds=600) for the planned additional workspace-wide configured checks; this supplements and does not replace the branch gate. Run run_tests(scope="configured", tests=["python_tests"], timeout_seconds=1200) for the full native-configured suite with unchanged native args. Respect the documented 1800-second client window. Do not split, shorten or omit the full suite because the change is small or tests are mechanical.
 - V483.1: scaffold one compact validation.md recording exact relevant invocation/scope/outcome, native version, changed behavior, full-run totals, warnings and limitations. Run IDs are supplemental. Any required gate failure remains a blocker unless explicitly resolved or accepted by the human; do not carry old #481 exceptions into this issue.
 - DOC483.1: targeted additions in docs/reference/tools/scaffolding.md and editing.md describing Lychee local links/anchors/native availability and no runtime H1 requirement. Link the existing package maintenance procedure for generated structure; no new instruction layers. Run only affected document checks.
 - Independent QA at implementation/Validation/Documentation gates follows current phase instructions; producer reports facts without self GO. Ready prepares/submits PR and pushes all approved work, then hands Coordination the exact evidence, residual/deferred tracking and end-issue merge request; no producer merge.
@@ -141,7 +141,7 @@ Six central native consumer cases pass; affected template/profile tests and sele
 
 #### V483.1
 
-Compact durable Validation evidence: focused changed behavior, complete configured checks and full configured native test suite; exceptions/blockers explicit.
+Compact durable Validation evidence: focused changed behavior, required branch-scoped gates, additional workspace configured checks and full configured native test suite; exceptions/blockers explicit.
 
 **Validates:**
 
@@ -163,7 +163,7 @@ Active scaffold/edit references state native local-link/anchor validation and pr
 
 ## Related Documents
 
-- [Approved Design v0.2](<design.md>)
+- [Design v0.3](<design.md>)
 - [Research and deferred structure finding](<research.md>)
 - [Execution budgets](<../../setup/README.md#option-c-codex-setup>)
 
@@ -173,3 +173,4 @@ Active scaffold/edit references state native local-link/anchor validation and pr
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp planner | Plan one coherent native-check migration with focused behavior evidence and mandatory complete Validation runs. |
 | 0.2 | 2026-10-08 | @imp planner | Make the owner's stop boundary explicit for existing adapter, generic runtime and DTO/API changes. |
+| 0.3 | 2026-10-08 | @imp planner | Restore mandatory branch gates and mirror the Validation obligation in the stored deliverable. |

@@ -46,7 +46,7 @@
           "deliverables": [
             {
               "id": "V483.1",
-              "description": "Compact durable Validation evidence: focused changed behavior, complete configured checks and full configured native test suite; exceptions/blockers explicit.",
+              "description": "Compact durable Validation evidence: focused changed behavior, required branch-scoped gates, additional workspace configured checks and full configured native test suite; exceptions/blockers explicit.",
               "validates": {
                 "type": "file_exists",
                 "file": "docs/development/issue483/validation.md"

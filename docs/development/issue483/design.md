@@ -3,7 +3,7 @@
 # Issue 483 — Native Markdown link validation
 
 **Status:** Design — review requested  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -169,7 +169,7 @@ The package removal and all active consumer references form one coherent change.
 
 ### Integration and workspace acceptance
 
-**Method:** Planning selects changed Python files with Git for applicable targeted checks, Markdown for documentchecks; final Validation uses scope=configured checks and the required complete configured test suite with adequate timeout. Do not pass mixed branch files blindly to Python checks.
+**Method:** Planning selects changed Python files with Git for applicable targeted checks, Markdown for documentchecks. Final Validation runs the required run_checks(scope="branch", profile="python_review", timeout_seconds=600), with the existing per-check configured-target filtering and unchanged native arguments. It also runs the planned additional scope="configured" workspace checks and required complete configured test suite with adequate timeout. The configured run supplements rather than replaces the branch gate.
 
 **Expected Result:** Required runs complete and results are recorded honestly, including existing warnings or operational limits.
 
@@ -220,3 +220,4 @@ Plan one bounded migration rather than a native parser project. Keep consumer/co
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-08 | @imp designer | Define complete native link-check migration and bounded behavioral evidence within the approved clean break. |
 | 0.2 | 2026-10-08 | @imp designer | Correct the report contract for invocation failures without unconfirmed termination after independent QA finding. |
+| 0.3 | 2026-10-08 | @imp planner | Restore the explicit mandatory branch Validation gate; configured workspace checks remain additional evidence. |
