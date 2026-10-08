@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,16 +26,11 @@ def validation_report(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredT
     )
     selected = delivered.catalog.get("validation_report")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
 def test_minimal_validation_report_is_authored_without_invented_outcome(
     validation_report: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Validation basis",
@@ -71,15 +58,10 @@ def test_minimal_validation_report_is_authored_without_invented_outcome(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "validation_report"
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "validation.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not (tmp_path / "validation.md").exists()
 
 
 def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings(
     validation_report: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary validation",
@@ -192,8 +174,6 @@ def test_validation_report_preserves_all_authored_carriers_and_workflow_meanings
     assert f"#{int(issue_number)}" in output and "#42.0" not in output
     assert output.index("Preserve accepted calls") < output.index("Review containment")
     assert output.count("\n# ") == 1
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
 
 
 def test_validation_report_explicit_empty_sections_remain_visible(

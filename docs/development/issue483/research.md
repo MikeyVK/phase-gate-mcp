@@ -1,0 +1,290 @@
+<!-- pgmcp:v1 id=research pv=1.0.0 pf=lgBwxWMfTAmNNg_O sf=5--KpGf2wHUv2qAj -->
+
+# Issue 483 — Markdown angle-destination parsing
+
+**Status:** Research — clean-break direction recorded  
+**Version:** 0.5  
+**Last Updated:** 2026-10-08
+
+## Purpose
+
+Establish direct failure evidence and a proportional strategy before Design.
+
+## Scope In
+
+Clean-break replacement of the owned Markdown preflight checker by the delivered native Lychee route for affected scaffold/edit consumers; correct destinations, intended-parent/proposed-content resolution and honest native decisions. Historical warning/H1 behavior is evidence, not a preservation requirement.
+
+## Scope Out
+
+Production fixes, implementation sequencing, template workarounds, check weakening, full Markdown grammar redesign, cache tooling and unrelated documentation baseline repairs.
+
+## Problem Statement
+
+Markdown preflight interprets valid link-destination delimiters as filesystem data. An existing shipped schema link is falsely reported missing; a closing parenthesis inside an angle-enclosed target also prematurely terminates extraction.
+
+## Goals
+
+- Reproduce the issue473 F1 request and compare an ordinary existing link with a genuinely missing angle-enclosed target.
+- Distinguish extraction defects from persistence, status, filesystem and external-link behavior.
+- Establish explicit clean-break ownership and proportionate behavioral evidence boundaries without designing or implementing the fix.
+
+## Background
+
+Issue #483 follows #473 F1. The original PR request was replayed unchanged except target_path=.pgmcp/temp/issue483 (the same three-level depth). Additional witnesses were selected from the observed extraction and prefix-classification code. Disposable scaffolds remain in the existing ignored .pgmcp/temp area; no production or test source changed.
+
+## Findings
+
+### Observed versus expected
+
+Fresh public scaffold and edit calls on 2026-10-08 use markdown_preflight 1.0.0, fingerprint v0NjYjqP55u7eH7r, Python 3.13.7 and configured args=[].
+
+| Destination in an inline link | Observed | Expected within existing preflight semantics |
+| --- | --- | --- |
+| Ordinary existing ../../../.pgmcp/template_suite/pr/context.schema.json | No warning | No warning |
+| Same existing path enclosed in <…> | Broken-link warning retaining delimiters | Resolve the existing file |
+| Missing angle-enclosed issue483-does-not-exist.json | Warning for a delimiter-contaminated path | Warning for the actual missing file |
+| Existing angle-enclosed path with #properties | False warning: leading < remains after fragment removal | Resolve file; no new anchor-existence check |
+| Angle-enclosed #probe only | False filesystem warning for < | Retain fragment-only skip behavior |
+| Existing angle-enclosed destination (probe).md | Captured path truncates at first ); false warning | Preserve spaces and parentheses inside the destination |
+| Angle-enclosed https://example.invalid/issue483 | False filesystem warning | Retain external-scheme skip; no network check |
+
+The target schema and disposable destination (probe).md exist; issue483-does-not-exist.json does not. All scaffold/edit operations persisted and returned validation_status=passed; native rows contain warnings, exit 0 and untruncated capture. The exact replay also passed independent configured offline markdown_links. These are diagnostic correctness defects, not failed persistence or an unreported negative native exit.
+
+### Causal evidence
+
+_LINK_PATTERN takes every character until the first ) as the destination. _check_links uses that capture directly for scheme/fragment classification and filesystem resolution. Thus syntax delimiters become path data, an inner ) truncates an angle-enclosed target, and prefix checks run before separating syntax from target identity. The trace uses the intended document parent, not a wrong working directory or missing shipped target.
+
+CommonMark separates outer <…> delimiters from the URI, allows spaces/parentheses within that form and specifies escape semantics. This research establishes the listed ordinary angle cases; it does not claim a complete Markdown parser. Source inspection shows broader limitations (reference links, titles, escaping/entities, nested labels and code context); none is promoted to an implementation requirement without bounded defect evidence.
+
+### Blast radius and boundaries
+
+| Surface | Impact and ownership |
+| --- | --- |
+| Production | markdown_preflight package extraction/resolution; shared by body and document operations |
+| Call paths | scaffold_operation and edit_operation pass intended target_path and proposed content through CheckService; no generic-runtime correction evidenced |
+| Config/protocol | Existing content-only capability, check/v1 request/response, args and warning/status semantics; no selection-policy change |
+| Templates/callers | Shared link macro deliberately emits valid angle-enclosed destinations; preserve caller strings and generated bytes |
+| Tests | Existing real-process adapter fixture reaches the public CLI boundary; examined cases cover bare paths, fragment/scheme skips, body/document status and unchanged source bytes, but no angle-enclosed destination |
+| Docs/agents/enforcement | No current instruction or policy requires changing to fix parsing; historical #473 evidence remains unchanged |
+| Distribution | Adapter source is bundled; source fingerprint changes after repair and consumers need the normal package activation/restart route |
+
+### Check ownership — owner clarification
+
+The owner questioned why an adapter interprets link structure. markdown_preflight has no independent Markdown tool behind it: its Python check.py implements H1 detection, destination extraction, file existence observations and protocol adaptation together. Python is the runtime, not a delegated Markdown validator. In contrast, the Lychee adapter invokes the independently provisioned native link checker; python_syntax delegates grammar parsing to the standard-library ast API.
+
+This placement was explicit in human-approved issue460 DI-05 §7.20 A–C and implementation cycle CY019: extract the old MarkdownValidator's bounded observations into an isolated package, preserve warning/status behavior, and keep stronger Lychee checks separate. It conforms to that specific accepted design; this is not evidence of an unapproved recent expansion. The package rule in DI-05 §6 admits one cohesive tool/implementation, not exclusively a wrapper around a separately installed executable.
+
+Nevertheless, retaining our own checker is an architectural strategy choice and creates parser maintenance responsibility. The earlier option A recommendation assumed that choice without making it explicit. Its recommendation is suspended. A stricter adapter-only translation boundary would require an explicit native-check strategy and investigation of the intended checks and pre-mutation/status behavior; moving the same regex to another file would not delegate ownership to a native tool.
+
+Sources: [original Markdown decision](../issue460/design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking), [package ownership choice](../issue460/design-execution-adapters.md#w-adapter-01--what-belongs-in-one-package), [CY019](../issue460/planning-execution.md#cy019). Historical documents are evidence, not new issue483 approval.
+
+### Native replacement feasibility — Lychee 0.24.2
+
+The owner explicitly prefers existing tools over owned check implementations and authorized this investigation. That approves research of a native route, not a silent rollout or check-policy change.
+
+The delivered Lychee package (adapter 2.0.0) already declares links with content and selection inputs, requires_file=true, and exact native dependency 0.24.2. CheckService and ContentInputPreparer already prepare run-owned proposed content while retaining the intended target. The adapter delegates resolution through native --base-url and an exact self-URL --remap. Fresh existing process tests prove the native/content-adapter route for a still-absent intended file; no active scaffold profile was changed, so a newly Lychee-selected scaffold/safe-edit end-to-end run is not claimed.
+
+| Responsibility | Evidence and consequence |
+| --- | --- |
+| Valid angle syntax, spaces and parentheses | Native check on the recorded destination-probes accepts the existing targets without the custom false positives |
+| Truly missing local target | Native failed result reports the real file URI and line; outer delimiters do not become path data |
+| Local fragment | Current configured --include-fragments detects the absent probe anchor; a focused native --include-fragments=none control leaves only the missing-file error |
+| Proposed content and self/neighbor references | Two existing native/adapter cases passed; correct self/TOC/neighbor links accepted, missing files/anchors rejected; intended target stayed absent and source bytes unchanged |
+| Reference-style links | Fresh valid-scope witness includes a shipped reference-style related-doc link; native extraction accepts it |
+| External, email and PGMCP schemes | Valid-scope witness reports these three excluded under the actual offline/default settings, without fabricated filesystem warnings or a pass claim for excluded links |
+| Mandatory H1 | Not supplied by Lychee. The valid-scope witness has H2 headings and no H1, yet passes. The owner clarified that document structure belongs to the valid template/package contract; do not add a heading tool merely to emulate the old runtime gate |
+| Warning and persistence policy | Lychee link failure stays failed. Existing enforce blocks a negative check; report permits its documented write route while exposing the native negative outcome |
+| Dependencies and operational cost | Existing exact Lychee prerequisite is already provisioned. Adoption would make that prerequisite and the existing scratch/native launch route part of ordinary Markdown mutations; no startup availability check, installer or benchmark was added |
+
+Configured native settings are --offline, --cache=false, --include-fragments. The tagged 0.24.2 upstream documentation confirms local-only offline operation and native fragment controls. Current website documentation was checked but is not substituted for the pinned version.
+
+The owner clarified during this investigation that H1 structure belongs to a valid Jinja template's responsibility. Current full-document packages implement this: the shared tier2_markdown_document base emits sections.heading(content.title, 1), the shared heading macro emits the selected heading level, and the Research caller schema requires title. The tier1 document contract requires the heading block. Package schema/render/release conformance owns the structural promise, under the existing suite maintenance procedure; mere Jinja compilation or schema validity alone is not a universal rendered-behavior guarantee. Arbitrary later text edits are not template renders, so removing the H1 gate also removes that automatic check during safe edit; document requirements and review remain applicable.
+
+Markdownlint MD041 was inspected as a possible native heading check before that clarification; it is not selected. No extra heading adapter, retained H1 regex, library or per-use structural gate is proposed. No template/schema defect is established or repaired by this source reading.
+
+Conclusion: Lychee can own the link-checking role using already delivered adapter/content infrastructure. The subsequent owner decision requires a clean break: retire the complete owned checker, put generated H1 responsibility at the template/package boundary, and use honest native results. The explicit native baseline proposed for Design is the current configured offline/local-fragment invocation. No custom parser repair or retained H1 checker is part of that direction.
+
+Sources: [Lychee capability and input declarations](../../../mcp_server/bundled_adapters/lychee/manifest.yaml), [native transport and verdict mapping](../../../mcp_server/bundled_adapters/lychee/check.py), [dependency pin](../../../mcp_server/bundled_adapters/lychee/dependencies.json), [current content executor](../../../mcp_server/execution/check_service.py), [proposed-content preparation](../../../mcp_server/execution/content_input.py), [pinned native documentation](https://github.com/lycheeverse/lychee/blob/lychee-v0.24.2/README.md), [MD041 source reviewed but not selected](https://github.com/DavidAnson/markdownlint/blob/v0.41.1/doc/md041.md), [document heading source](../../../.pgmcp/template_suite/shared/templates/bases/tier2_markdown_document.jinja2), [suite conformance procedure](../schema-template-maintenance.md#develop-and-release-a-package).
+
+### Deferred finding — preserve template structure during artifact edits
+
+The owner reports agents frequently replacing complete scaffolded artifacts and losing deliberately authored template structure. Source inspection establishes the permitted mechanism, not the frequency or a measured inventory of past losses: safe_edit_file selects configured checks from explicit template_id, existing header metadata or extension, constructs proposed text, and validates that text before writing. It does not compare the edited artifact with a template-owned structural contract. Passing checks or retained provenance therefore do not prove preservation of required sections, metadata or their roles. The old H1 check also does not establish that broader guarantee; adopting Lychee does not create this existing gap.
+
+Record this separately from issue483's link-check replacement. Candidate follow-up: research preservation of package-defined artifact structure during edits, beginning with concrete before/after examples and a distinction between required structure, optional sections and freely authored content. Compare a minimal editing/review rule with template-aware editing or an explicit artifact contract before selecting enforcement. Prefer targeted edits for bounded content changes, but do not equate operation size with conformance or impose a blanket rewrite ban. Do not infer a complete output contract from Jinja introspection, freeze all rendered text, or add runtime validation in this issue.
+
+Existing [issue121](https://github.com/MikeyVK/phase-gate-mcp/issues/121) explicitly includes edit-time preservation of template-defined structure and is a candidate for scope reconciliation by Coordination. Its historical introspection-based proposal is not accepted architecture or an approved solution for this finding. [Issue470](https://github.com/MikeyVK/phase-gate-mcp/issues/470) concerns text/newline semantics, change identity and race protection; it does not cover this structural guarantee. No new issue, instruction expansion, template change or structural checker is created here.
+
+Sources: [safe-edit validation contract](../../reference/tools/editing.md#validation-and-result), [edit execution](../../../mcp_server/services/edit_operation.py), [existing drafting rule](../../coding_standards/DOCUMENTATION_STANDARD.md#drafting-workflow).
+
+### Strategy choices
+
+| Option | Cost / risk / impact |
+| --- | --- |
+| A — Bounded correction of the existing custom checker (recommendation suspended) | Correct demonstrated angle extraction and target classification; preserve bare-link behavior, missing-target warnings and body/document decisions; no new dependency, compatibility branch or generic-tool knowledge |
+| B — Delegate parsing to a complete Markdown library | Still an owned checker/policy, with new dependency and broader interpretation; not the same as an adapter translating an independent tool |
+| C — Use existing Lychee for links; template/package contract owns H1 (recommended direction after feasibility research and owner clarification) | Current native/content infrastructure is viable; retain honest native negative results and select fragment policy explicitly. No extra H1 checker or emulation of the old custom behavior |
+
+Changing templates to avoid valid syntax or silencing link diagnostics would hide the defect and contradict the issue. No historical attribution or general parser-compliance guarantee is made.
+
+## Questions
+
+Design must make the replacement bindings and affected consumer contracts explicit. The proposed native baseline is the existing markdown_links configuration (--offline, --cache=false, --include-fragments), including local anchors and honest negative outcomes; no warning-only or old fragment-skip emulation. Do not silently choose a different native policy. Artifact structure preservation remains a separate deferred finding.
+
+## References
+
+- [Issue 473 F1](<../issue473/tool-practice-findings.md#f1--markdown-preflight-misreads-angle-bracket-destinations>)
+- [Original exact request](<../issue473/first-output-evidence.md#c1prrepresentativemd>)
+- [CommonMark link destination semantics](<https://spec.commonmark.org/0.31.2/#link-destination>)
+
+## Approved Strategy
+
+On 2026-10-08 the owner agreed with the native replacement direction, explicitly required a clean break for owned links/H1 checks, and required proportionate behavioral coverage. The bounded strategy is:
+
+| Boundary | Approved constraint and replacement direction |
+| --- | --- |
+| Owned checker package | Remove markdown_preflight as a complete package rather than retain an empty protocol shell, repair its parser or leave a compatibility wrapper. Links and H1 are its only substantive checks. Use the already delivered Lychee adapter for links. |
+| Generated document structure | H1 belongs to the template/package conformance procedure. Retain no H1 regex or new heading tool to emulate the removed gate. Edited artifact structure is deferred separately. |
+| Consumers and configuration | Move active Markdown consumers to the native link-check contract; retire obsolete checker identities instead of aliases/fallbacks. Preserve the public mutation policy meanings: enforce rejects native negative checks before writing; report exposes the negative outcome through its documented write route. Native availability is required for an enforced check. |
+| Native policy | The proposed baseline is the existing configured offline, cache-disabled, local-fragment-checking Lychee invocation. No fabricated pass for excluded links, warning downgrade or custom old-policy emulation. Design must state that baseline explicitly. |
+| Tests | Delete tests whose sole subject is the removed package/behavior and migrate still-useful callers. Reuse or adapt existing behavioral coverage before adding a small number of missing cases. No tests asserting old-warning/H1 compatibility, absence of old source strings, full template snapshots or authored section wording. |
+
+The request for clarification of complete removal versus partial extraction is answered by the package's actual responsibilities: after removing links and H1 it has no check to perform. No production, config, template or test modification is made in Research.
+
+## Expected Results
+
+Existing valid angle, space/parenthesis and reference destinations are accepted through native link checking. Missing local files and, under the proposed current native settings, absent local anchors produce honest negative outcomes. Proposed content is resolved from the intended destination, including self-links before the target exists; validation does not mutate the source. Enforce blocks a failing/unavailable required check before persistence; report retains the native negative facts with its documented write behavior. H1 is no longer a runtime precondition. Package generation/release conformance owns that responsibility.
+
+Evidence scope is behavioral: a compact valid/invalid native witness plus the changed scaffold and safe-edit integration paths, including no-write on failure, intended-parent/self resolution, scratch isolation/cleanup and unavailable-native handling where affected and not already covered. Check existing tests first and exercise shared behavior without multiplying the full matrix across every template package. Assert observable decisions, relevant diagnostics and persistence/isolation facts; do not assert complete Markdown text, template headings/wording, config file spellings or deletion inventories. Fixture content needed to exercise link behavior is appropriate; testing authored document content as an invariant is not. No exhaustive native grammar suite or old-behavior regression matrix.
+
+## Evidence
+
+### Original F1 remains reproducible through public tooling
+
+Exact original context replayed at the same directory depth. success=true, written=true, validation_status=passed, profile_id=markdown_body. Native row: one warning at line 32 for <../../../.pgmcp/template_suite/pr/context.schema.json>, exit 0. Test-Path confirmed the intended schema exists; readback retains valid angle-link bytes.
+
+- [Issue 473 F1](<../issue473/tool-practice-findings.md#f1--markdown-preflight-misreads-angle-bracket-destinations>)
+- [Original exact request](<../issue473/first-output-evidence.md#c1prrepresentativemd>)
+- [Shipped link macro](<../../../.pgmcp/template_suite/shared/templates/patterns/markdown/links.jinja2>)
+
+**Invocation:**
+
+```json
+{
+  "artifact_type": "pr",
+  "file_name": "c1.pr.representative.md",
+  "target_path": ".pgmcp/temp/issue483",
+  "force_target": true,
+  "context": {
+    "summary": "First-call template output is easier to review.",
+    "changes": "Render each shipped concrete package with minimal and populated valid contexts.",
+    "testing": "Inspect both generated forms for Python formatting and Markdown presentation.",
+    "checklist": [
+      {
+        "text": "Confirm supplied values are preserved.",
+        "checked": true
+      },
+      {
+        "text": "Review rendered whitespace.",
+        "checked": false
+      }
+    ],
+    "breaking_changes": "None.",
+    "deferred_work": [
+      {
+        "description": "Review markdown layout",
+        "rationale": "The generated body should be readable in a pull request.",
+        "references": [
+          {
+            "label": "PR template schema",
+            "target": "../../../.pgmcp/template_suite/pr/context.schema.json"
+          }
+        ]
+      }
+    ],
+    "closes": [
+      473
+    ]
+  },
+  "validation": "enforce"
+}
+```
+
+**Observed Result:** False positive confirmed. Supplemental receipt 0c06ab803f41480d8345f5f161aa20e2; the invocation and factual outcome here remain durable without cache access.
+
+### Bounded controls distinguish delimiter leakage and premature termination
+
+PR scaffold destination-probes.md used changes containing the first five table links and deferred_work=[]. safe_edit_file(validation=enforce) replaced the fragment-only line with itself plus angle space/parentheses and angle external links. Final native warning lines are 7,9,11,13,15,17; the ordinary existing line 5 has no warning. The parenthesis warning captured <destination (probe, demonstrating truncation independently of stripping. Actual probe input destinations and outcomes are recorded in the table.
+
+- [Markdown preflight adapter](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/mcp_server/bundled_adapters/markdown_preflight/check.py>)
+- [Existing process conformance tests](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/tests/mcp_server/integration/adapters/test_markdown_preflight.py>)
+
+**Invocation:** scaffold_artifact(artifact_type="pr", file_name="destination (probe).md", target_path=".pgmcp/temp/issue483", force_target=true, context={"changes":"Disposable existing target for the angle-destination parenthesis witness.","deferred_work":[]}, validation="enforce"); scaffold_artifact and safe_edit_file for destination-probes.md at that same directory with the table destinations.
+
+**Observed Result:** All writes and preflight decisions passed with warnings. Targets verified existing/missing. No pytest run at that initial reproduction step or production fix. Supplemental final receipt a758f45f4ce5421e8149bec6e5c46061.
+
+### Independent native link check accepts the original valid example
+
+Configured offline Lychee check passed on the exact replay output. This establishes acceptance of that example, not universal agreement across parsers or every control case.
+
+- [Original exact request](<../issue473/first-output-evidence.md#c1prrepresentativemd>)
+- [Check bindings](<../../../.pgmcp/config/checks.yaml>)
+
+**Invocation:** run_checks(scope="targets", targets=[".pgmcp/temp/issue483/c1.pr.representative.md"], checks=["markdown_links"], timeout_seconds=120)
+
+**Observed Result:** passed; args_source=configured. Supplemental receipt f78cae569b774f38b1f587ad149cf9f4.
+
+### Fresh Lychee feasibility evidence
+
+All native checks below used the actual pinned Lychee 0.24.2 and adapter 2.0.0. Active configs, production and test sources remained unchanged.
+
+| Invocation | Actual outcome |
+| --- | --- |
+| run_checks(scope="targets", targets=[".pgmcp/temp/issue483/destination-probes.md"], checks=["markdown_links"], timeout_seconds=120) | Native failed: total 7, successful 4, errors 2, excluded 1. Errors are only the true missing JSON file (line 9) and absent own probe anchor (line 13). External HTTPS excluded. Receipt 4cefd6f9e880478d8f0258b8541dd264 |
+| Same run_checks selection with args={"markdown_links":["--offline","--cache=false","--include-fragments=none"]} | Native failed: total 7, successful 5, errors 1, excluded 1. Only the true missing file remains. Receipt 75a44dbe4cb14bd589d38758a783757f |
+| run_tests(scope="targets", targets=["tests/mcp_server/integration/adapters/test_lychee.py"], tests=["python_tests"], args={"python_tests":["-k","test_native_self_toc_and_neighbor_snapshot"]}, timeout_seconds=180) | 2 passed, 9 pre-existing Pydantic schema-name warnings, native exit 0. Both valid/invalid snapshot cases assert absent intended target and unchanged bytes; native and adapter outcomes agree. Receipt 9a75a33aee434fff8eea5fb4e2998dfc |
+| run_checks(scope="targets", targets=[".pgmcp/temp/issue483/lychee-valid-scope.md"], checks=["markdown_links"], timeout_seconds=120) | Native passed: total 7, unique 6, successful 4, errors 0, excluded 3 (HTTPS, mailto, pgmcp). Witness has no H1. Receipt 6b267435d61d4ad0a4265ec31546cddc |
+
+The first test request incorrectly supplied a pytest ::node selector in targets; scope resolution reported missing and not_executed before any adapter invocation. The corrected invocation above supplies the real file and selects cases through native -k. No additional test sources or unrelated suite runs were added.
+
+The valid-scope document was scaffolded with the following complete request:
+
+```json
+{
+  "artifact_type": "pr",
+  "file_name": "lychee-valid-scope.md",
+  "target_path": ".pgmcp/temp/issue483",
+  "force_target": true,
+  "validation": "enforce",
+  "context": {
+    "changes": "## Existing\n\n[Local angle](<../../../.pgmcp/template_suite/pr/context.schema.json>)\n\n[Space and parentheses](<destination (probe).md>)\n\n[Own anchor](<#existing>)\n\n[PGMCP resource](<pgmcp://cache/runs/issue483-deliberately-not-present>)\n\n[Email](<mailto:issue483@example.invalid>)\n\n[External](<https://example.invalid/issue483>)",
+    "deferred_work": [],
+    "related_docs": [
+      {
+        "label": "Existing schema via reference syntax",
+        "target": "../../../.pgmcp/template_suite/pr/context.schema.json"
+      }
+    ]
+  }
+}
+```
+
+The seven destinations in destination-probes.md and its existing parenthesis target are recorded in the original reproduction above. Negative probe verdicts are expected defect witnesses, not unresolved failures of production changes. This evidence proves bounded tool/adapter feasibility; no configured pre-mutation consumer swap or universal grammar conformance was executed.
+
+## Related Documents
+
+- [Markdown preflight adapter](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/mcp_server/bundled_adapters/markdown_preflight/check.py>)
+- [Existing process conformance tests](<https://github.com/MikeyVK/phase-gate-mcp/blob/507533be54f997849351da81b58185fd58b48ebf/tests/mcp_server/integration/adapters/test_markdown_preflight.py>)
+- [Shipped link macro](<../../../.pgmcp/template_suite/shared/templates/patterns/markdown/links.jinja2>)
+- [Generic content execution](<../../../mcp_server/execution/check_service.py>)
+- [Public adapter contract](<../../reference/execution-adapters.md>)
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 0.1 | 2026-10-08 | @imp researcher | Reproduce F1 on the current adapter; establish delimiter and parenthesis causes, bounded consumers and strategy options. |
+| 0.2 | 2026-10-08 | @imp researcher | Establish the explicit historical custom-checker decision; suspend the recommendation pending the owner's adapter responsibility decision. |
+| 0.3 | 2026-10-08 | @imp researcher | Prove pinned Lychee link and proposed-content feasibility; record native verdict/fragment differences, the owner's template-owned H1 direction and pending rollout decisions. |
+| 0.4 | 2026-10-08 | @imp researcher | Record the separate artifact-edit structure gap and existing issue121 candidate without broadening link-check work. |
+| 0.5 | 2026-10-08 | @imp researcher | Record clean-break replacement of the complete owned checker, template-owned H1 and bounded behavioral test requirements. |
+

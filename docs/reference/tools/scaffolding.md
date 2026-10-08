@@ -62,6 +62,16 @@ The result reports the selected template identity, package version/fingerprint, 
 
 Every newly scaffolded artifact carries the compact `pgmcp:v1` provenance record on its first physical line. The record is not an alternate schema or package registry. Package manifests, context schema and policy own their respective facts; artifact-location config selects default destinations. Use [editing.md](editing.md) for changes to an existing file.
 
+## Markdown validation
+
+The delivered Markdown template policies and the `.md` extension route select `markdown_link_review`, whose `markdown_links` check uses the existing Lychee adapter. The [workspace binding](../../../.pgmcp/config/checks.yaml) uses `--offline`, `--cache=false` and `--include-fragments`: native Lychee checks local link destinations and heading fragments without making external network requests.
+
+Checks run against the proposed Markdown before persistence, at the intended output path. Relative links resolve from that path's parent directory; self-links and table-of-contents fragments resolve against the proposed content, including when the output file does not yet exist. A failed required link check blocks an `enforce` write. `report` retains the observed outcomes and remains subject to the operation's independent stop conditions.
+
+The native executable must satisfy the adapter's [dependency declaration](../../../mcp_server/bundled_adapters/lychee/dependencies.json). Missing or mismatched native dependencies are reported as unavailable, not passed; see [Execution Adapters](../execution-adapters.md) for prerequisite ownership and result semantics.
+
+Generated H1 headings and document structure belong to the template package. There is no runtime H1 presence/count or template-structure check. Native link acceptance therefore does not certify structural conformance. Use the existing [package development and release procedure](../../development/schema-template-maintenance.md#develop-and-release-a-package) to review rendering, representative artifacts and the supported structural claim.
+
 ## Context migration and output responsibilities
 
 Full-document packages require authored document_metadata with explicit status and a nonempty revision list, including minimal contexts. The visible header and final Version History table use those supplied facts; the technical first-line provenance remains a separate generation-source record. Issue, PR and Commit bodies retain their own publication contracts. See the [Documentation Standard](../../coding_standards/DOCUMENTATION_STANDARD.md#scaffolded-document-metadata-and-whitespace).

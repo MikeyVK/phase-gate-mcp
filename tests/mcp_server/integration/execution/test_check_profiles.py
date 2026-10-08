@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -16,13 +17,21 @@ from mcp_server.execution.content_input import ContentInputPreparer, FileContent
 from mcp_server.execution.invocation_scratch import FileInvocationScratch
 from mcp_server.execution.models import ContentRoleResponse, InvocationCompleted
 from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
+from tests.mcp_server.integration.adapters.test_lychee import LycheeRuntime, lychee_runtime
+
+__all__ = ["lychee_runtime"]
 
 
 @pytest.mark.asyncio
 async def test_renamed_recomposed_profile_uses_declared_native_capabilities(
     tmp_path: Path,
     pytestconfig: pytest.Config,
+    lychee_runtime: LycheeRuntime,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv(
+        "PATH", str(lychee_runtime.executable.parent) + os.pathsep + os.environ.get("PATH", "")
+    )
     loader = ConfigLoader(
         pytestconfig.rootpath / ".pgmcp/config", pytestconfig.rootpath / ".pgmcp/templates"
     )
@@ -36,11 +45,8 @@ async def test_renamed_recomposed_profile_uses_declared_native_capabilities(
         windows=sys.platform == "win32",
     ).load()
     initial = loader.load_checks_config()
-    assert len(initial.checks) == 10
-    assert initial.run_checks.default_profile == "python_review"
-    assert initial.profile_for_filename("body.MD") == "markdown_body"
     data = initial.model_dump(mode="json")
-    data["profiles"]["owner_named"] = {"checks": ["markdown_body", "python_syntax"]}
+    data["profiles"]["owner_named"] = {"checks": ["markdown_links", "python_syntax"]}
     data["profiles_by_extension"][".custom"] = "owner_named"
     config = ChecksConfig.model_validate(data)
     assert config.profile_for_filename("candidate.custom") == "owner_named"
@@ -56,7 +62,7 @@ async def test_renamed_recomposed_profile_uses_declared_native_capabilities(
     target = tmp_path / "candidate.custom"
     for content, expected in (("value = 1\n", "passed"), ("value = (\n", "failed")):
         result = await service.run_content("owner_named", target_path=str(target), content=content)
-        assert [row.check_id for row in result.results] == ["markdown_body", "python_syntax"]
+        assert [row.check_id for row in result.results] == ["markdown_links", "python_syntax"]
         assert result.stop_reason is None
         outcomes = [row.invocation for row in result.results]
         statuses: list[str] = []

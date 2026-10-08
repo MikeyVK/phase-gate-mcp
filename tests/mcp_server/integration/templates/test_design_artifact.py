@@ -1,4 +1,4 @@
-"""Verify the delivered Design package through authored content and native Markdown checks."""
+"""Verify the delivered Design package through authored content."""
 
 from __future__ import annotations
 
@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,15 +26,10 @@ def design(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:
     )
     selected = delivered.catalog.get("design")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
-def test_initial_design_does_not_require_or_invent_a_decision(
-    design: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path
-) -> None:
+def test_initial_design_does_not_require_or_invent_a_decision(design: DeliveredTemplate) -> None:
     context: dict[str, JsonValue] = {
         "title": "Design the boundary",
         "document_metadata": {
@@ -67,14 +54,10 @@ def test_initial_design_does_not_require_or_invent_a_decision(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "design"
-    target = tmp_path / "design.md"
-    code, response = invoke(markdown_package, tmp_path, request(target, output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not target.exists()
 
 
 def test_design_preserves_ordered_options_contracts_and_planned_evidence(
-    design: DeliveredTemplate, markdown_package: MarkdownPackage, tmp_path: Path
+    design: DeliveredTemplate,
 ) -> None:
     options: list[JsonValue] = [
         {"name": f"Candidate {index}", "description": f"Authored option {index}."}
@@ -211,8 +194,6 @@ def test_design_preserves_ordered_options_contracts_and_planned_evidence(
         rendered = design.renderer.render("design", absent, design.provenance)
         assert rendered.split() != output.split()
     assert output.count("\n# ") == 1
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
 
 
 def test_design_explicit_empty_sections_remain_visible(design: DeliveredTemplate) -> None:

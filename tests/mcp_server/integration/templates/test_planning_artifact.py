@@ -13,15 +13,7 @@ from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
 from tests.mcp_server.test_support import load_contracts_config, make_project_manager
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -36,16 +28,11 @@ def planning(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:
     )
     selected = delivered.catalog.get("planning")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
 def test_initial_planning_does_not_invent_work_or_completion(
     planning: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Plan the boundary",
@@ -70,16 +57,10 @@ def test_initial_planning_does_not_invent_work_or_completion(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "planning"
-    target = tmp_path / "planning.md"
-    code, response = invoke(markdown_package, tmp_path, request(target, output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not target.exists()
 
 
 def test_refined_plan_retains_authored_ownership_scope_and_evidence_requirements(
     planning: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Bounded plan",
@@ -196,8 +177,6 @@ def test_refined_plan_retains_authored_ownership_scope_and_evidence_requirements
     assert (
         planning.renderer.render("planning", absent, planning.provenance).split() != output.split()
     )
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "refined.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
 
 
 def test_empty_planning_sections_and_work_unit_capacities_are_visible(

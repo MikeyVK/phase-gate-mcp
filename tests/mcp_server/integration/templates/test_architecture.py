@@ -12,14 +12,6 @@ from pydantic import JsonValue
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.integration.adapters.test_markdown_preflight import (
-    MarkdownPackage,
-    invoke,
-    markdown_package,
-    request,
-)
-
-__all__ = ["markdown_package"]
 
 
 @pytest.fixture
@@ -34,16 +26,11 @@ def architecture(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTempla
     )
     selected = delivered.catalog.get("architecture")
     assert selected.policy.persistence == "workspace"
-    assert dict(delivered.checks.profiles)[selected.policy.output_profile].checks == (
-        "markdown_document",
-    )
     return delivered
 
 
 def test_minimal_architecture_is_a_valid_initial_basis_without_sources(
     architecture: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Architecture basis",
@@ -67,17 +54,10 @@ def test_minimal_architecture_is_a_valid_initial_basis_without_sources(
     header = ArtifactHeaderReader().read(output)
     assert header.status is HeaderReadStatus.RECOGNIZED
     assert header.provenance is not None and header.provenance.id == "architecture"
-    code, response = invoke(
-        markdown_package, tmp_path, request(tmp_path / "architecture.md", output)
-    )
-    assert code == 0 and response["decision"] == {"status": "passed"}
-    assert not (tmp_path / "architecture.md").exists()
 
 
 def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
     architecture: DeliveredTemplate,
-    markdown_package: MarkdownPackage,
-    tmp_path: Path,
 ) -> None:
     context: dict[str, JsonValue] = {
         "title": "Boundary architecture",
@@ -172,8 +152,6 @@ def test_architecture_preserves_ordered_concepts_diagrams_decisions_and_links(
         "architecture", without_decisions, architecture.provenance
     )
     assert "Keep the public seam" in undecided and undecided.split() != output.split()
-    code, response = invoke(markdown_package, tmp_path, request(tmp_path / "populated.md", output))
-    assert code == 0 and response["decision"] == {"status": "passed"}
 
 
 def test_architecture_explicit_empty_common_and_concept_capacities_remain_visible(

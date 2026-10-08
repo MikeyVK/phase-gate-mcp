@@ -130,15 +130,16 @@ def test_native_self_toc_and_neighbor_snapshot(
     runtime = lychee_runtime
     target = runtime.workspace / "docs" / "guide.md"
     target.parent.mkdir()
-    neighbor = target.with_name("neighbor.md")
+    neighbor = target.with_name("neighbor (source).md")
     neighbor.write_text("# Neighbor\n\n## Existing\n", encoding="utf-8")
     scratch = tmp_path / "validation" / "fresh invocation" / target.name
     scratch.parent.mkdir(parents=True)
-    content = "# Guide\n\n## Existing\n\n[TOC](#existing)\n"
-    content += "[Self](guide.md#existing)\n[Neighbor](neighbor.md#existing)\n"
+    content = "# Guide\n\n## Existing\n\n[TOC](<#existing>)\n"
+    content += "[Self](<guide.md#existing>)\n[Neighbor](<neighbor (source).md#existing>)\n"
+    content += "[Reference][one]\n\n[one]: <neighbor (source).md#existing>\n"
     if broken:
-        content += "[Bad TOC](#absent)\n[Bad self](guide.md#absent)\n"
-        content += "[Bad neighbor](neighbor.md#absent)\n[Missing](missing.md)\n"
+        content += "[Bad TOC](<#absent>)\n[Bad self](<guide.md#absent>)\n"
+        content += "[Bad neighbor](<neighbor (source).md#absent>)\n[Missing](<missing.md>)\n"
     scratch.write_text(content, encoding="utf-8")
     logical_url = target.as_uri()
     remap = "^" + re.escape(logical_url) + "(#.*)?$ " + scratch.as_uri() + "$1"
