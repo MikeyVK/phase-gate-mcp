@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 0.9  
+**Version:** 1.0  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -12,7 +12,7 @@ Establish the evidenced contract gaps and owner decisions needed for a bounded r
 
 ## Scope In
 
-save_planning_deliverables/update_planning_deliverables input admission, persisted effects, merged-plan validity, identity/order, lifecycle ownership, nested validation specs and complete public readback; relevant existing tests and historical rationale.
+save_planning_deliverables/update_planning_deliverables input admission, persisted effects, merged-plan validity, identity/order, lifecycle ownership, nested validation specs and complete public readback; relevant existing tests and historical rationale. Supporting scope includes the shared lossless encoder/decoder contract, unused state/status decoder injection cleanup and the inaccurate record_sub_phase timing docstring.
 
 ## Scope Out
 
@@ -72,11 +72,11 @@ cycle_number is both lookup identity and execution order. PhaseStateEngine reads
 | Nested validation specs | Align planning admission with the existing executor's supported shapes. | Deferring the mismatch keeps an admitted unusable planning rule; requires explicit exclusion rather than a false holistic-completion claim. |
 | Compatibility / verification | Clean break for corrected semantics, no bridge/alias for silently ignored inputs; preserve supported create/update/readback behavior. Adapt valuable behavior tests. | Preserving ignored inputs needs an explicit compatibility promise with low functional value. No new tests for the purpose of preserving obsolete behavior. |
 
-The strategy table records the options originally presented. The owner subsequently defined total as the desired whole-plan size after save/update, with complete-block mutation and common result validation. Git-backed deletion protection is a tentative exploration; see Approved Strategy and the evidence below.
+The strategy table records the options originally presented. The owner subsequently defined total as the desired whole-plan size after save/update, with complete-block mutation and common result validation. Git-backed deletion protection was initially a tentative exploration. The owner now includes reliable decoded implementation-cycle evidence in scope; see Approved Strategy and the remaining evidence boundaries below.
 
-### Tentative Git-backed deletion protection
+### Git-backed cycle protection — direction and remaining boundaries
 
-The owner requires completed cycles to remain non-deletable, but does not assume a reliable completed status. The proposed evidence boundary is narrower: an execution commit attributable to this issue and cycle would protect the cycle from deletion, even while work is ongoing. This is exploration, not an approved implementation or a proof of completion.
+The owner requires completed cycles to remain non-deletable, but does not assume a reliable completed status. The selected evidence direction is narrower: an implementation execution commit attributable to this issue and cycle protects the cycle from deletion, even while work is ongoing. The owner includes supporting codec corrections and dependency cleanup in scope to make this derivation reliable. Evidence of execution is not proof of completion; precise history access, attribution and failure policy remain to be defined.
 
 | Evidence / boundary | Observed fact or unresolved requirement |
 |---|---|
@@ -84,7 +84,7 @@ The owner requires completed cycles to remain non-deletable, but does not assume
 | Missing trace without subphase | ScopeEncoder.generate_scope returns P_PHASE immediately when sub_phase is None, ignoring a supplied cycle_number. Commit admission permits this case. Absence of a cycle marker is therefore not currently proof that no cycle execution commit exists. |
 | Existing decoder | ScopeDecoder detects phase and a composite sub_phase such as c1_green; PhaseDetectionResult has no cycle_number field. A trustworthy cycle query is not already provided by this decoder. |
 | Existing history reader | GitAdapter.get_recent_commits returns a limited list of subject strings (default five), without commit identities or an issue-branch history boundary. It is insufficient for an exhaustive deletion decision. |
-| Trace meaning | A commit merely listing a future cycle in planning is not execution evidence. Evidence must belong to the relevant issue/cycle and the issue's execution history; inherited C1 commits from other issues must not protect this issue's C1. Exact reachable-history and branch-basis semantics remain to be chosen. |
+| Trace meaning and workphase | A commit merely listing a future cycle in planning is not execution evidence. The decoded workphase is an active filter: only implementation-cycle commits may mark this issue's cycle as historical/protected. Require a distinct decoded cycle_number, not a subphase label such as c2. Evidence must also belong to the relevant issue and execution history; inherited C1 commits from other issues must not protect this issue's C1. Exact reachable-history and branch-basis semantics remain to be chosen. |
 | Revert and exceptional repair | Reverting changes does not erase the execution commit from reachable history, so the proposed protection remains. Removing/replacing history is exceptional repair outside this issue; no normal-workflow bypass is proposed. Reflogs, dangling objects and unrelated refs are not assumed to define the guard. |
 | Deletion versus edit | Evidence-based non-deletion does not itself freeze a cycle's name, criteria or deliverables, nor prove completion. Renumbering/replacement must not silently reinterpret an evidenced cycle identity. |
 | State coherence | A no-commit conclusion cannot permit leaving current_cycle, last_cycle or lifecycle references outside the resulting plan. Handling such references is an additional boundary, not evidence of completed work. |
@@ -233,13 +233,23 @@ Inventory closure requires every new codec/result consumer or scope literal disc
 
 ### Caution and bounded dependency cleanup
 
-The owner asks for caution about changing encoder/decoder cycle/subphase agreements and proposes removing unused injections. This is a direction for strategy discussion, not authorization of a new scope grammar or production patch during Research.
+The owner asks for caution about changing encoder/decoder cycle/subphase agreements and now explicitly includes the shared lossless codec contract and removal of unused state/status injections in #491's supporting scope. This authorizes their inclusion in the subsequent design/implementation, not a production patch during Research or a specific new scope spelling.
 
 The material decisions are distinct: changing decoded c1_green to separate values changes a tested result contract; omitted subphase currently bypasses the workflow commit_type_map and falls back to the workphase hint (or chore); complete cycle identity must survive before Git-backed deletion protection can rely on it. The owner excludes closed issues and historical commits from migration requirements and accepts manual updates in all other workspaces. Evaluate scope spellings for clarity and bounded consumer cost rather than historical compatibility; no broader notation rewrite is approved merely by that exclusion.
 
 The verified narrow cleanup surface is three production files: remove the unused ScopeDecoder constructor parameter/import/stored field from PhaseStateEngine, remove the unused CommitPhaseDetector parameter/import/stored field from WorkflowStatusResolver, and remove the corresponding construction/injection from bootstrap. Four shared/direct test files carry the affected injection setup: test_support.py, test_workflow_status_resolver.py, test_consumers_c4.py and test_c260_c2_state_root_injection.py. The 28 helper caller files do not all require edits when helpers retain their used contract. This cleanup can preserve runtime behavior and needs no ignored constructor parameters, legacy aliases or compatibility bridge.
 
 Removing those injections does not imply deleting ScopeDecoder, which has real E2E/direct test consumers. The wrapper's retention/removal is a separate choice: it has direct behavior tests but no current production callers; do not silently broaden injection cleanup into module deletion or speculative future wiring. The scope consumer register describes the current source until an approved implementation changes it.
+
+### Planning spans cycles and phase deliverables
+
+CyclePlanningModel admits four independent optional blocks: cycles, design, validation and documentation. The cycles block alone has total and numbered cycles; each cycle has its own deliverables and exit_criteria. The other three blocks each contain a deliverables list without cycle numbers or a cycle total. The project envelope also carries issue/workflow metadata; deliverables.json is not an implementation-only artifact.
+
+PhaseContractResolver selects the cycles list when the active workflow phase is configured cycle_based and a cycle number is supplied; otherwise it selects the phase-named block. The current cycle-based contracts are implementation in feature/bug/hotfix/refactor; chore implementation is not cycle-based. There is one shared cycles block rather than a separate numbered-cycle plan per workphase. Supporting multiple independently numbered cycle-based phases is not implied or added by this issue.
+
+Save and update act on the issue's whole planning_deliverables aggregate, not only the active phase. The owner-approved total/range/non-deletion rules apply to the cycles block. A cycle-only update leaves the phase blocks unchanged. A phase-only update has no cycle-range/removal intent; the supplied blocks are incorporated before common whole-result validation. Current phase lists merge by deliverable ID, just as cycle deliverable lists do; that current merge behavior must not be confused with the requested complete-block mutation.
+
+Bounded proposal, still requiring owner agreement: apply the same complete-block rule to a supplied phase block, replacing that phase's full deliverables list and retaining unprovided phase blocks. This allows deliberate removal within the supplied list without nested patch semantics. Do not extend cycle total or Git-backed cycle protection to phase deliverables. Omission, explicit null, empty-list meaning and any separate phase-deliverable protection remain explicit boundary choices.
 
 ### Owner-confirmed state and codec boundary
 
@@ -249,7 +259,7 @@ State.json remains the single source of truth for current branch workflow state.
 
 Owner-approved codec invariant: encoder and decoder use the same configured vocabulary and reproduce the same distinct phase, optional cycle number and optional subphase. For every admitted combination, decoding the generated scope must return those values, including absence, without conflating cycle with subphase or dropping cycle identity. A cycle does not require a subphase. The commit type, subject and issue attribution are separate full-commit concerns; this invariant does not imply that a scope decoder alone establishes trustworthy issue/cycle evidence.
 
-The owner confirms that closed issues and historical commits do not require compatibility. Other workspaces will be upgraded and manually adjusted where necessary. The codec boundary therefore needs no old-format fallback or legacy composite-subphase result. Exact spelling, typed result shape and any shared configuration seam belong to Design; choosing them must use the completed consumer register. Git-backed deletion protection and exhaustive issue-attributed history access remain separate, unresolved strategy decisions.
+The owner confirms that closed issues and historical commits do not require compatibility. Other workspaces will be upgraded and manually adjusted where necessary. The codec boundary therefore needs no old-format fallback or legacy composite-subphase result. Exact spelling, typed result shape and any shared configuration seam belong to Design; choosing them must use the completed consumer register. The owner now includes reliable implementation-cycle evidence in scope, with decoded workphase as an active filter. Exhaustive issue-attributed history access and failure policy remain unresolved boundaries; the scope round-trip contract alone does not settle them.
 
 ### Existing evidence and proportional test surface
 
@@ -267,7 +277,7 @@ No tests were added or run in this Research pass. No production/configuration/ag
 
 - Confirm the exact complete-block replacement unit and omission/null rules, including phase-deliverable blocks. total now means the desired whole-plan size, not the number of supplied update entries.
 - Use the completed scope consumer register to shape the approved lossless codec contract; refresh it if any affected consumer changes.
-- Decide whether execution commits define non-deletable cycles; define attributable history and missing/ambiguous relevant evidence. The shared lossless codec contract and exclusion of historical compatibility are approved; exact representation/result shape remain Design questions. Mandatory subphase solely for Git trace retention is no longer recommended.
+- Define attributable history and missing/ambiguous relevant evidence for the selected implementation-cycle non-deletion direction. The decoded workphase must qualify the evidence, and cycle_number must be a separate value. The shared lossless codec contract and exclusion of historical compatibility are approved; exact representation/result shape remain Design questions. Mandatory subphase solely for Git trace retention is no longer recommended.
 - Define active/entered/historical reference protection when shrinking the plan, independently of a completed status; reject supplied entries outside total or give them another explicit meaning.
 - Confirm remaining planning-input compatibility policy per affected boundary and explicitly include or defer the admitted file_glob shape mismatch. Codec/history migration policy is already explicit.
 
@@ -278,14 +288,15 @@ Owner direction on 2026-10-08 confirms:
 - Mutations provide complete blocks so their internal context is coherent; nested partial-field patching is not the requested route. Remaining block/omission details still need an explicit contract.
 - For both save and update, total means the desired total number of cycles in the whole plan after the operation. It does not mean the number of supplied update blocks. Unprovided existing cycles within 1..total remain; supplied complete cycle blocks replace their corresponding blocks; existing cycles above total are removal candidates, subject to protection.
 - Both operations apply one common complete-result validation before persistence: the final cycle sequence must be exactly C1..Ctotal, with complete valid blocks and no gaps/duplicates. Count validation uses the resulting plan; it never manufactures missing cycles.
-- Completed cycles must never be deleted. The owner tentatively proposes execution commits as evidence for non-deletion, while acknowledging that such evidence does not identify completion. This evidence mechanism is not yet approved.
+- Completed cycles must never be deleted. Use attributable implementation execution commits as the selected evidence direction for non-deletion, without claiming those commits prove completion. The decoded workphase is part of qualification; commits from other phases or composite/subphase-only labels cannot mark an implementation cycle as historical. Exact history attribution, completeness and failure handling remain open.
+- Supporting scope explicitly includes correcting the record_sub_phase docstring to match its pre-commit write/rollback behavior, removing unused decoder/detector injections from state/status consumers and defining/correcting the shared encoder/decoder scope contract. These changes serve reliable cycle derivation from commit scopes; no unrelated cleanup or status reconstruction is included.
 - Current branch workflow state remains owned by state.json. Commit decoding is not a status resolver; the proposed new use is reading commit execution metadata for cycle evidence.
 - Encoder/decoder boundary: use the same configured vocabulary and preserve distinct phase, optional cycle and optional subphase in a lossless round trip for all admitted combinations. No required subphase is introduced merely to retain a cycle. Exact scope spelling and typed result shape remain Design work.
 - Codec/history migration boundary: no support or migration guarantee for closed issues and historical commits. The owner is the sole current server user and accepts upgrading and manually adjusting other workspaces. No old-format fallback or legacy result compatibility layer is required.
 
 Current save checks a caller-supplied total against list length; it does not currently derive that input. The existing creation schema is therefore an evidence input to reconcile, not assumed flawless: the admitted file_glob/executor mismatch and identity uniqueness still require resolution.
 
-Pending owner decisions: the Git-backed protection route and its attribution/completeness/failure policy; protection of active/entered cycle references in the current issue; remaining complete-block omission/null semantics, out-of-range supplied entries, nested validation alignment and compatibility policy for the remaining planning boundaries. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
+Pending owner decisions: the selected Git-backed protection direction's attribution/completeness/failure policy; protection of active/entered cycle references in the current issue; exact complete-block semantics for phase deliverables, omission/null semantics, out-of-range supplied entries, nested validation alignment and compatibility policy for the remaining planning boundaries. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
 
 ## Expected Results
 
@@ -396,3 +407,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 0.7 | 2026-10-08 | @imp researcher | Resolve independent QA's P3 missing direct mock-injection consumer and close an exhaustive decoder/detector keyword-injection crosscheck. |
 | 0.8 | 2026-10-08 | @imp researcher | Record owner caution, concrete historical/result/type-policy constraints and narrowly verified unused-injection cleanup boundaries. |
 | 0.9 | 2026-10-08 | @imp researcher | Capture state.json ownership, the owner-approved lossless shared codec contract and explicit exclusion of historical compatibility; retain unresolved evidence and planning decisions. |
+| 1.0 | 2026-10-08 | @imp researcher | Include approved codec/injection/docstring support and workphase-qualified cycle evidence; distinguish cycle planning from phase-deliverable blocks and their still-open replacement semantics. |
