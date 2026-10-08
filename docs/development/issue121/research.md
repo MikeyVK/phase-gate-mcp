@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.5  
+**Version:** 0.6  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -97,6 +97,22 @@ Do not equate a language-agnostic matcher with a low-effort end-to-end solution.
 
 A further feasibility investigation should be bounded to one small text model and representative existing document/code source graphs. It must distinguish loss/reordering of required text from permitted authored development, disclose whether it actually catches the historical split-table example, and identify the required package annotations/source association work. Stop if useful coverage requires format parsers, template-specific checker predicates, general Jinja introspection/trace infrastructure, or a large second specification of the templates. Deferring runtime protection remains a valid outcome if the useful subset does not justify its lifecycle cost.
 
+### Owner-proposed LLM score gate
+
+The owner proposes a single inexpensive LLM assessment of template compliance, a configured threshold that rejects low-scoring writes, and a generic instruction for the calling agent to review the edit against scaffold_schema for the selected template. Precise comparison and pinpoint findings are intentionally unnecessary. This is a new probabilistic candidate, not approval to implement or contact a provider.
+
+The candidate judge consumes proposed complete text, the selected resolved input schema, relevant admitted Jinja source graph and one generic rubric for preservation of mandatory main structure while permitting authored edits. Template-specific knowledge remains supplied reference data; no format parser or package-specific predicate is required. Model scores are judgments, not measured compliance percentages or calibrated probabilities.
+
+Promptfoo already documents llm-rubric grading, configurable providers, numeric scores, threshold decisions and standalone evaluation of supplied outputs. Its explicit pass field also affects acceptance when present; a score-only policy must be configured deliberately. This is a credible existing native-tool candidate for a thin adapter, not an installed/proven pgmcp route. Compare pinned runtime/adapter overhead with a small provider-backed runner before choosing; there is no existing LLM provider integration in the inspected mcp_server, workspace config or project dependencies.
+
+Existing contentcheck decisions and NativeEvidence can carry failed/passed/unavailable, a generic failure message and native JSON score/model/threshold facts. Existing enforce blocks failed checks before writing; extending the common check DTO merely to add a first-class score is not established as necessary. Sources must be bound to the selected package rather than inferred from proposed provenance. Configured source references may use the existing args boundary, but coherent graph/schema association remains unresolved.
+
+The smallest useful assessment is one model request per applicable edit with bounded output and no agent tools or self-repair loop. Threshold comparison is deterministic code over a validated numeric result. Artifact/template contents are assessment data, not instructions; the rubric must not accept instructions embedded in them. Missing source, malformed result, context overflow and provider timeout are unavailable assessment, not invented high scores. If all such writes must block even report, existing mutation policy needs an explicit strategy change; enforce-only integration reuses current behavior.
+
+ScaffoldSchemaTool currently returns purpose, identity and the complete resolved input schema. It does not expose the full Jinja graph or an output-preservation contract. A generic repair instruction can require scaffold_schema plus inspection of the matching template sources; schema-only remediation must not be advertised as complete. A minimal source attachment or schema-description improvement is an alternative to assess, not a preselected API addition.
+
+The effort/reward advantage is avoiding exact inverse rendering and a new output-contract dialect. Remaining costs are the native runtime/provider setup, reference-context transport, per-edit latency/input tokens and a tiny calibration exercise. The cheapest model cannot be assumed adequate: use a few known good/damaged text examples, permitted code implementation and repeated judgments to check useful separation before selecting model/threshold. Reuse existing probes rather than creating a broad regression matrix. No model, provider, threshold, live judging outcome or cost estimate has been established.
+
 ### Existing enforcement boundary
 
 Under enforce, a selected required contentcheck failure prevents persistence. Existing report permits failed checks to be written while retaining failure facts; making structural failure block report is a separate owner decision. Missing association, unavailable source/config and unavailable execution cannot be presented as successful template conformance.
@@ -116,7 +132,7 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 - Can a small schema/Jinja-derived text specification deliver useful protection at acceptable authoring and maintenance cost? Compare known text matching with the cost of deriving mandatory/editable boundaries; do not use format parsers.
 - Should checks enforce a selected current package contract or require availability of the exact generation source? How should missing/mismatching source be handled?
 - Does report retain its existing semantics or must structural failure also block report writes?
-- After these semantics are chosen, establish a pinned native implementation and a small cross-format feasibility witness before recommending Design.
+- Compare the owner-proposed single-call LLM score gate with exact text-contract work: reference context, native tool overhead, model/threshold calibration, latency/input-token cost and schema-plus-source remediation. Establish only a small feasibility witness before recommending Design.
 
 ## References
 
@@ -151,6 +167,10 @@ Behavioral evidence should distinguish permitted edits from structural damage an
 - [jinja-reverse extraction implementation](<https://github.com/gabihodoroaga/jinja-reverse/blob/master/reverse.py>)
 - [Copier update and stored-answer lifecycle](<https://copier.readthedocs.io/en/stable/updating/>)
 - [Genji generation and escaping](<https://pypi.org/project/genji/>)
+- [Promptfoo LLM rubric and threshold semantics](<https://www.promptfoo.dev/docs/configuration/expected-outputs/model-graded/llm-rubric/>)
+- [Promptfoo evaluation of supplied outputs](<https://www.promptfoo.dev/docs/configuration/expected-outputs/#running-assertions-directly-on-outputs>)
+- [Existing factual check decisions and native JSON evidence](<../../../mcp_server/execution/models.py>)
+- [Current scaffold_schema output](<../../../mcp_server/tools/template_schema_tool.py>)
 - [JSON Schema required properties](<https://json-schema.org/understanding-json-schema/reference/object#required-properties>)
 - [Jinja required blocks mean rendering overrides](<https://jinja.palletsprojects.com/en/stable/templates/#required-blocks>)
 - [Current Research input schema](<../../../.pgmcp/template_suite/research/context.schema.json>)
@@ -233,3 +253,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.3 | 2026-10-08 | @imp researcher | Require all generated artifact formats; assess existing Jinja-related tools and distinguish exact rendering, source matching and permitted-edit obligations. |
 | 0.4 | 2026-10-08 | @imp researcher | Limit the candidate to required main structure and require an agnostic checker consuming schema/template requirements as data; identify the missing input-to-output mapping. |
 | 0.5 | 2026-10-08 | @imp researcher | Require text-level language/type agnosticism; supersede format-parser proposals and separate matching cost from Jinja mapping cost with explicit reward and stop criteria. |
+| 0.6 | 2026-10-08 | @imp researcher | Assess the owner-proposed single-call LLM score gate, existing grader tooling/check reuse and the limits of schema-only remediation. |
