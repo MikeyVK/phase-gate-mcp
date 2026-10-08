@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 0.5  
+**Version:** 0.6  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -125,6 +125,107 @@ Two bounded representation choices remain: extend the current spelling with an u
 
 The earlier optional encoder rejection for cycle_number without sub_phase is also withdrawn as a preferred solution: it rejects a semantically valid combination instead of representing it. Public input DTOs and state field meanings need not be coupled or redesigned to fix this boundary. Existing behavioral tests that expect information loss would be adapted to the new contract, with proportional encoding/decoding and command admission coverage; no old-behavior compatibility tests or content-mirroring coverage are proposed.
 
+### Scope consumer register — required before selecting the route
+
+Owner prerequisite: fully inventory active code and test consumers before choosing independent scope representation. This register is tied to source revision 6dc9930448ddc37741730d083854766902253e42; later production/test changes require refreshing it. No encoding strategy is approved merely because this inventory exists.
+
+**Audit method and completeness boundary.** Start with `git ls-files -- '*.py'`: 475 tracked Python files, of which all 469 under mcp_server/, tests/ and scripts/ were parsed with Python ast. The other six are historical examples under docs/development/archive/issue52 or issue72. Inspect Import/ImportFrom aliases, constructor and method Call nodes for ScopeEncoder, ScopeDecoder, PhaseDetectionResult, CommitPhaseDetector, generate_scope, detect_phase, detect_from_commit, commit_with_scope and prepare_submission. Cross-check with `rg -n 'ScopeEncoder|ScopeDecoder|PhaseDetectionResult|CommitPhaseDetector|generate_scope|detect_phase|detect_from_commit|commit_with_scope|prepare_submission|raw_scope' mcp_server tests -g '*.py'`, scope literals, result constructors, private injected fields, get_recent_commits/iter_commits/message readers, exports and dynamic scope references. Separately enumerate shared helper calls and search tracked active Markdown/config/template/JS files.
+
+Observed: zero active Python parse errors, zero tracked active text read errors, no alternate scope parser, no alias/dynamic scope call missed by the literal cross-check, and no scope exports in mcp_server/core/__init__.py or schemas/__init__.py. The initial filesystem-wide rg encountered an inaccessible generated .pytest_cache_ci directory; the tracked-file audit does not depend on that cache and git_status reported no untracked workspace files. These are source-inventory results, not executed tests or proof of a future implementation. Repository-external callers and historical Git messages remain a separate compatibility/evidence decision.
+
+#### Active code, transport and policy boundaries
+
+| Entry point / file | Role | Dependency and impact |
+|---|---|---|
+| [mcp_server/core/scope_encoder.py](<../../../mcp_server/core/scope_encoder.py>) — ScopeEncoder.generate_scope | Definition / writer | Encodes phase/subphase/cycle; missing-subphase information loss is the changed contract. |
+| [mcp_server/managers/git_manager.py](<../../../mcp_server/managers/git_manager.py>) — commit_with_scope; prepare_submission | Direct encoder caller; internal indirect writer | Two encoder calls are validation/normal formatting within the same command. prepare_submission generates a phase-only Ready neutralization commit; do not accidentally require a cycle there. |
+| [mcp_server/tools/git_tools.py](<../../../mcp_server/tools/git_tools.py>) — GitCommitTool.execute; GitCommitInput; guard/type callbacks | Public indirect writer / policy | Passes phase, cycle and subphase independently. Runtime phase/cycle policy and input admission are separate from scope spelling. |
+| [mcp_server/tools/pr_tools.py](<../../../mcp_server/tools/pr_tools.py>) — SubmitPRTool.execute | Indirect writer | Calls prepare_submission, which may commit before PR creation. Its phase-only scope is a material preservation case. |
+| [mcp_server/adapters/git_adapter.py](<../../../mcp_server/adapters/git_adapter.py>) — commit; get_recent_commits | Opaque transport / history reader | Persists the supplied message and returns subject strings. Does not parse phase/cycle/subphase; no hidden alternate scope grammar found. |
+| [mcp_server/core/phase_detection.py](<../../../mcp_server/core/phase_detection.py>) — ScopeDecoder; PhaseDetectionResult | Definition / reader / result shape | Owns the only repository scope regex parser. Six-field TypedDict currently returns composite c1_green as sub_phase; all success/unknown result constructors belong here. |
+| [mcp_server/core/commit_phase_detector.py](<../../../mcp_server/core/commit_phase_detector.py>) — CommitPhaseDetector.detect_from_commit | Only direct production decoder invocation | Constructs ScopeDecoder and returns its result; has its own unknown-result constructor requiring coordination if the result shape changes. |
+| [mcp_server/bootstrap.py](<../../../mcp_server/bootstrap.py>) — manager/tool construction | Composition | Creates/injects ScopeDecoder, CommitPhaseDetector and commit command guards. Imports do not establish a live parsing consumer. |
+| [mcp_server/managers/phase_state_engine.py](<../../../mcp_server/managers/phase_state_engine.py>) — constructor; _scope_decoder | Passive injection | Stores the decoder at line 105; no invocation/reference beyond declaration/assignment in this module. Cycle execution itself uses plan/state. |
+| [mcp_server/managers/workflow_status_resolver.py](<../../../mcp_server/managers/workflow_status_resolver.py>) — constructor; resolve_current; _detector | Passive injection / state reader | Stores the detector but never calls it. resolve_current uses state exclusively; no active status fallback from commit scope. |
+| [mcp_server/managers/project_manager.py](<../../../mcp_server/managers/project_manager.py>) — get_project_plan | State-status consumer, not decoder consumer | Uses WorkflowStatusResolver and its state-derived DTO, not PhaseDetectionResult. An old test comment naming ScopeDecoder does not change that route. |
+| [mcp_server/tools/discovery_tools.py](<../../../mcp_server/tools/discovery_tools.py>) — GetWorkContextTool.execute | State-status consumer, not decoder consumer | Reports state-derived phase/subphase/cycle; does not read commit messages. |
+| [mcp_server/schemas/tool_outputs.py](<../../../mcp_server/schemas/tool_outputs.py>) — GitCommitOutput; WorkContextOutput | Public DTO / presentation boundary | Cycle and subphase are already separate fields. No encoded-scope field or PhaseDetectionResult is exposed here. |
+| [mcp_server/core/interfaces/git.py](<../../../mcp_server/core/interfaces/git.py>) — IGitContextReader.get_recent_commits | Read-only transport contract | Exposes subject strings, not a scope parse result. No cycle-attribution query exists. |
+| [mcp_server/managers/phase_contract_resolver.py](<../../../mcp_server/managers/phase_contract_resolver.py>) — is_cycle_based_phase; resolve_commit_type | Sibling policy consumer | Reads configured cycle policy and supplied subphase, never an encoded/decoded scope. |
+| [mcp_server/config/schemas/workphases.py](<../../../mcp_server/config/schemas/workphases.py>) — WorkphasesConfig / PhaseDefinition | Encoder/decoder config input | Injected phase catalog and subphase whitelist; no cycle encoding grammar in config. |
+| [mcp_server/config/schemas/contracts_config.py](<../../../mcp_server/config/schemas/contracts_config.py>) — WorkflowPhaseEntry | Runtime policy input | Workflow-specific cycle_based/subphases/map; does not consume scope text. |
+
+The producer chain is GitCommitTool.execute → GitManager.commit_with_scope → ScopeEncoder.generate_scope → GitAdapter.commit. The second writer chain is SubmitPRTool.execute → GitManager.prepare_submission → commit_with_scope. The decoder chain is CommitPhaseDetector.detect_from_commit → ScopeDecoder.detect_phase, but the current production composition only injects this wrapper into a state-only resolver: no normal production caller invokes detect_from_commit. The decoder remains directly exercised by tests and is a potential future Git-evidence reader. Passive injection must not be presented as active parsing, and cleanup of these passive dependencies is not implied by this issue.
+
+#### Test and fixture consumers
+
+| File | Actual role | Impact / preservation boundary |
+|---|---|---|
+| [tests/mcp_server/core/test_scope_encoder.py](<../../../tests/mcp_server/core/test_scope_encoder.py>) | Direct encoder behavior | Exact combined-scope expectation and deliberate ignored-cycle-without-subphase expectation; adapt affected behavior rather than preserve information loss. |
+| [tests/mcp_server/core/test_phase_detection.py](<../../../tests/mcp_server/core/test_phase_detection.py>) | Direct decoder / TypedDict | Phase-only/subphase grammar, six-field typed fixture and unknown fallback. Result-shape changes invalidate fixture construction even when existing asserts do not fail. |
+| [tests/mcp_server/integration/test_workflow_cycle_e2e.py](<../../../tests/mcp_server/integration/test_workflow_cycle_e2e.py>) | Real encoder → Git → decoder | Explicitly expects sub_phase=c1_red/c1_green/c1_refactor. This is a real semantic consumer, not merely a scope string fixture. |
+| [tests/mcp_server/unit/managers/test_workflow_status_resolver.py](<../../../tests/mcp_server/unit/managers/test_workflow_status_resolver.py>) | Mixed wrapper and state-only tests | TestCommitPhaseDetector calls the wrapper directly. Resolver tests inject it but use state; commit-string fixtures there are not live decoder calls. |
+| [tests/mcp_server/unit/managers/test_git_manager.py](<../../../tests/mcp_server/unit/managers/test_git_manager.py>) | Real encoder through manager; PR preparation | Checks full message forms, cycle scope, type override, issue suffix and prepare_submission. Several phase-only preservation cases. |
+| [tests/mcp_server/managers/test_git_manager_config.py](<../../../tests/mcp_server/managers/test_git_manager_config.py>) | Real encoder through manager | Configuration-backed phase/subphase validation and message expectations. |
+| [tests/mcp_server/unit/managers/test_git_manager_no_file_open.py](<../../../tests/mcp_server/unit/managers/test_git_manager_no_file_open.py>) | Real encoder through manager | No-IO boundary plus exact combined C1/C2 scope expectations; syntax changes can affect these otherwise unrelated invariants. |
+| [tests/mcp_server/unit/managers/test_git_manager_skip_paths.py](<../../../tests/mcp_server/unit/managers/test_git_manager_skip_paths.py>) | Real encoder through manager / transport | Calls cycle commits while asserting skip-path forwarding; no independent decoder. |
+| [tests/mcp_server/unit/integration/test_git.py](<../../../tests/mcp_server/unit/integration/test_git.py>) | Real encoder through manager | Exact cycle-scoped message expectation. |
+| [tests/mcp_server/unit/tools/test_git_tools.py](<../../../tests/mcp_server/unit/tools/test_git_tools.py>) | Mixed real manager and mocked manager | Most tests assert parameter forwarding/policy; test_git_commit_integration_workflow_phases uses a real manager/encoder and asserts a complete cycle-scoped message. |
+| [tests/mcp_server/test_support.py](<../../../tests/mcp_server/test_support.py>) | Shared passive constructors | make_project_manager creates the detector; make_phase_state_engine creates the decoder. Full caller register below. |
+| [tests/mcp_server/unit/tools/test_discovery_tools.py](<../../../tests/mcp_server/unit/tools/test_discovery_tools.py>) | State-only consumer / old scope fixtures | Commit-shaped strings are provided to fake Git context; phase/cycle/subphase come from state. No actual decoder invocation. |
+| [tests/mcp_server/unit/managers/test_project_manager.py](<../../../tests/mcp_server/unit/managers/test_project_manager.py>) | State-only consumer / stale documentation | Old ScopeDecoder wording is a comment; the current behavior follows injected state-status resolver. |
+| [tests/mcp_server/unit/integration/test_all_tools.py](<../../../tests/mcp_server/unit/integration/test_all_tools.py>) | Mocked commit command | make_git_commit_tool and commit_with_scope.assert_called_once_with verify forwarded values, not encoded scope spelling. |
+| [tests/mcp_server/unit/managers/test_enforcement_runner_unit.py](<../../../tests/mcp_server/unit/managers/test_enforcement_runner_unit.py>) | Mocked commit command / notes | NoteContext wiring; does not execute an encoder or decode scope. |
+| [tests/mcp_server/unit/tools/test_submit_pr_tool.py](<../../../tests/mcp_server/unit/tools/test_submit_pr_tool.py>) | Mocked PR preparation | Asserts delegation to prepare_submission and no direct tool call to commit_with_scope. |
+| [tests/mcp_server/integration/test_submit_pr_atomic_flow.py](<../../../tests/mcp_server/integration/test_submit_pr_atomic_flow.py>) | Mocked PR transaction | Uses mocked prepare_submission results/failures; no hidden encoder assertion despite integration path/name. |
+| [tests/mcp_server/unit/adapters/test_git_adapter.py](<../../../tests/mcp_server/unit/adapters/test_git_adapter.py>) | Opaque Git primitives | prepare_submission mention documents raw operations; no scope grammar consumption. |
+| [tests/mcp_server/unit/adapters/test_git_adapter_neutralize_to_base.py](<../../../tests/mcp_server/unit/adapters/test_git_adapter_neutralize_to_base.py>) | Opaque phase-only message fixture | Ready message is supplied directly; no encoding/decoding call. |
+| [tests/mcp_server/unit/test_c260_c2_state_root_injection.py](<../../../tests/mcp_server/unit/test_c260_c2_state_root_injection.py>) | Adjacent phase/cycle guard | Uses build_phase_guard; injected state/contract behavior, not scope parsing. |
+| [tests/mcp_server/integration/templates/test_commit_artifact.py](<../../../tests/mcp_server/integration/templates/test_commit_artifact.py>) | Parallel generic commit-template route | Caller-authored scope, independent of ScopeEncoder/ScopeDecoder. |
+| [tests/mcp_server/integration/adapters/test_commitlint.py](<../../../tests/mcp_server/integration/adapters/test_commitlint.py>) | Parallel native commit check | Configured commitlint behavior, independent of pgmcp phase/cycle decoding. |
+| [tests/mcp_server/integration/test_installed_distribution_v3.py](<../../../tests/mcp_server/integration/test_installed_distribution_v3.py>) | Distribution / generic commit route | Packaging/install surface for configured commit check; not another workflow scope parser. |
+
+#### Complete shared-helper caller register
+
+The AST audit found 28 files and 246 direct calls to make_project_manager, make_phase_state_engine or make_git_commit_tool, including helper-to-helper calls. Counts identify construction coupling, not test count or decode executions. The first two construct passive detector/decoder dependencies as described above; the third creates a mocked-manager commit tool. These callers do not automatically need edits when only scope representation changes.
+
+| Caller file | Observed helper calls |
+|---|---|
+| [tests/mcp_server/integration/templates/test_planning_artifact.py](<../../../tests/mcp_server/integration/templates/test_planning_artifact.py>) | make_project_manager: 2 call(s) |
+| [tests/mcp_server/integration/test_context_loaded_enforcement.py](<../../../tests/mcp_server/integration/test_context_loaded_enforcement.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/integration/test_issue39_cross_machine.py](<../../../tests/mcp_server/integration/test_issue39_cross_machine.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/integration/test_project_plan_readback.py](<../../../tests/mcp_server/integration/test_project_plan_readback.py>) | make_project_manager: 1 call(s) |
+| [tests/mcp_server/integration/test_target_startup.py](<../../../tests/mcp_server/integration/test_target_startup.py>) | make_project_manager: 1 call(s) |
+| [tests/mcp_server/integration/test_workflow_cycle_e2e.py](<../../../tests/mcp_server/integration/test_workflow_cycle_e2e.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/test_support.py](<../../../tests/mcp_server/test_support.py>) | make_project_manager: 1 call(s) |
+| [tests/mcp_server/unit/integration/test_all_tools.py](<../../../tests/mcp_server/unit/integration/test_all_tools.py>) | make_git_commit_tool: 3 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine.py>) | make_project_manager: 33 call(s); make_phase_state_engine: 31 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_c1.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_c1.py>) | make_project_manager: 1 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_c2.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_c2.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 3 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_c3.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_c3.py>) | make_project_manager: 3 call(s); make_phase_state_engine: 3 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_c3_issue257.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_c3_issue257.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 2 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_c4_issue257.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_c4_issue257.py>) | make_project_manager: 2 call(s); make_phase_state_engine: 2 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_parent_branch.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_parent_branch.py>) | make_project_manager: 3 call(s); make_phase_state_engine: 3 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_persistence.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_persistence.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/unit/managers/test_phase_state_engine_workflow.py](<../../../tests/mcp_server/unit/managers/test_phase_state_engine_workflow.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/unit/managers/test_project_manager.py](<../../../tests/mcp_server/unit/managers/test_project_manager.py>) | make_project_manager: 13 call(s) |
+| [tests/mcp_server/unit/managers/test_state_repository.py](<../../../tests/mcp_server/unit/managers/test_state_repository.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/unit/test_server.py](<../../../tests/mcp_server/unit/test_server.py>) | make_project_manager: 2 call(s); make_phase_state_engine: 2 call(s) |
+| [tests/mcp_server/unit/tools/test_c7_tool_conflict_handling.py](<../../../tests/mcp_server/unit/tools/test_c7_tool_conflict_handling.py>) | make_phase_state_engine: 1 call(s); make_project_manager: 4 call(s) |
+| [tests/mcp_server/unit/tools/test_cycle_tools.py](<../../../tests/mcp_server/unit/tools/test_cycle_tools.py>) | make_project_manager: 3 call(s); make_phase_state_engine: 3 call(s) |
+| [tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py](<../../../tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py>) | make_project_manager: 20 call(s); make_phase_state_engine: 20 call(s) |
+| [tests/mcp_server/unit/tools/test_discovery_tools.py](<../../../tests/mcp_server/unit/tools/test_discovery_tools.py>) | make_project_manager: 4 call(s); make_phase_state_engine: 4 call(s) |
+| [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](<../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py>) | make_project_manager: 15 call(s); make_phase_state_engine: 10 call(s) |
+| [tests/mcp_server/unit/tools/test_initialize_project_tool.py](<../../../tests/mcp_server/unit/tools/test_initialize_project_tool.py>) | make_project_manager: 1 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/unit/tools/test_project_tools.py](<../../../tests/mcp_server/unit/tools/test_project_tools.py>) | make_project_manager: 30 call(s); make_phase_state_engine: 1 call(s) |
+| [tests/mcp_server/unit/tools/test_transition_phase_tool.py](<../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py>) | make_project_manager: 2 call(s); make_phase_state_engine: 2 call(s) |
+
+#### Other active surfaces and closure
+
+The commit template ([schema](<../../../.pgmcp/template_suite/commit/context.schema.json>), [renderer](<../../../.pgmcp/template_suite/commit/template.jinja2>)) accepts a caller-owned generic scope and does not call either codec. [checks.yaml](<../../../.pgmcp/config/checks.yaml>) routes commit_preflight to commitlint; [commitlint.config.cjs](<../../../commitlint.config.cjs>) configures nonempty type/subject without a pgmcp scope grammar. Workphases/config and active [Git reference](<../../reference/tools/git.md>), [GitHub reference](<../../reference/tools/github.md>), [enforcement diagram](<../../manuals/architectural_diagrams/04_enforcement_layer.md>) and [runtime diagram](<../../manuals/architectural_diagrams/06_runtime_flows.md>) contain scope descriptions/examples. Active .agents/.github instructions and scripts/build_package.py contain no additional codec/parser consumer; no tracked .github/workflows scope rule was found. Historical docs are rationale, not migration targets.
+
+Inventory closure requires every new codec/result consumer or scope literal discovered later to be assigned to one of these entries before Design/implementation changes. Syntax-only and semantic changes have different impact: changing combined spelling affects exact message assertions; separating decoded cycle/subphase also affects the E2E assertions and typed/fallback result constructors. Existing useful behavior coverage is the starting point; mocked/passive consumers do not justify blanket test rewrites.
+
 ### Existing evidence and proportional test surface
 
 | Existing coverage | Value to retain | Material gap / coupling |
@@ -140,6 +241,7 @@ No tests were added or run in this Research pass. No production/configuration/ag
 ## Questions
 
 - Confirm the exact complete-block replacement unit and omission/null rules, including phase-deliverable blocks. total now means the desired whole-plan size, not the number of supplied update entries.
+- Review the complete scope consumer register before approving an encoding/decoding route; refresh the register if any affected consumer changes.
 - Decide whether execution commits define non-deletable cycles; define attributable history, missing/ambiguous evidence and existing histories without cycle markers. Decide lossless independent cycle/subphase representation and its encoder/reader strategy. Mandatory subphase solely for Git trace retention is no longer recommended.
 - Define active/entered/historical reference protection when shrinking the plan, independently of a completed status; reject supplied entries outside total or give them another explicit meaning.
 - Confirm compatibility policy per affected boundary and explicitly include or defer the admitted file_glob shape mismatch.
@@ -262,3 +364,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 0.3 | 2026-10-08 | @imp researcher | Refine total to desired whole-plan size and record tentative Git-backed non-deletion protection, observed trace limitations and unresolved evidence/state boundaries. |
 | 0.4 | 2026-10-08 | @imp researcher | Map intentional subphase/cycle encoding, runtime/config policy boundaries and bounded enforcement options without approving or implementing them. |
 | 0.5 | 2026-10-08 | @imp researcher | Trace the TDD origin and withdraw mandatory-subphase/rejection recommendations; assess independent lossless cycle/subphase representation and bounded reader impact. |
+| 0.6 | 2026-10-08 | @imp researcher | Inventory active codec/writer/reader consumers, test behavior, passive injections and every shared-helper caller before representation strategy selection. |
