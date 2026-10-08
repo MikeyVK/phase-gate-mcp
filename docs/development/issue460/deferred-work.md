@@ -3,8 +3,8 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED existing deferrals; runtime adapter byte-provenance candidate closed without deferral  
-**Version:** 1.24  
-**Last Updated:** 2026-10-01  
+**Version:** 1.25  
+**Last Updated:** 2026-10-08  
 **Originating Issue:** 460
 
 ## Purpose
@@ -33,7 +33,7 @@ This is the complete follow-up index for the reopened #460 PR. The fifteen entri
 | D-VAL-07 | [False-PASS semantics](#d-val-07--check-completion-and-false-pass-semantics) | Separate issue for help/version/early-exit handling and genuine check completion |
 | D-VAL-08 | [Reverse template consumption](#d-val-08--generic-schematemplate-consumption-analysis) | Research static feasibility, uncertain cases, actual package defects and diagnostics-versus-blocking policy |
 
-**Ready index verification:** The focused native link review found 55 successful links, two excluded external URLs, and nine missing historical local source targets in the body of this register (`pgmcp://cache/runs/2e19fa12a6c746729c058c2f72480c84`). No new index link appears in the error map. The nine negative outcomes remain visible under D-VAL-03; this register is not described as link-clean.
+**Ready index verification (historical #460):** The focused native link review found 55 successful links, two excluded external URLs, and nine missing historical local source targets in this register (`pgmcp://cache/runs/2e19fa12a6c746729c058c2f72480c84`). No new index link appeared in its error map. #471 pins those nine citations to their original source snapshot; the current selected baseline and offline limits are recorded in [Maintenance — Broken Link Check](../MAINTENANCE_SCRIPTS.md#broken-link-check). This repair does not retroactively change the original negative observation.
 
 **Separate general backlog candidate:** the worktree-marker parsing observation in `git_list_branches` is outside the #460-affected route audit because its parser was not changed by this refactor. Coordination should independently triage the evidence linked in D-VAL-04; do not attribute it to #460 without a regression trace.
 
@@ -68,9 +68,9 @@ now owns validation=enforce/report alignment, retirement of mode/verify_only and
 of aliases or replacement dry-run APIs. DI-04 owns this work in issue 460. Independent
 QA is requested on the delta. No separate removal issue is required by this notice.
 
-The mode already exists in [SafeEditInput and execution](../../../mcp_server/tools/safe_edit_tool.py):
+The mode already exists in [SafeEditInput and execution](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/tools/safe_edit_tool.py):
 it validates proposed content without writing the target. The
-[unit test](../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py) checks that no
+[unit test](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/tests/mcp_server/unit/tools/test_safe_edit_tool.py) checks that no
 writer call occurs, and the [public reference](../../reference/tools/editing.md) exposes
 the mode. Repository inspection found implementation, tests and documentation, but no
 concrete non-test invocation in the inspected source/configuration/instruction roots.
@@ -97,8 +97,8 @@ OS security boundaries; admitted code is not necessarily technically confined.
 | Source | Observed behavior | Consequence / uncertainty |
 |---|---|---|
 | [ServerProxy](../../../mcp_server/core/proxy.py), `_spawn_server_in_context` | Ordinary subprocess.Popen; startup copies the environment | The inspected launcher establishes no OS filesystem/network sandbox; an external deployment could still impose one |
-| [QAManager](../../../mcp_server/managers/qa_manager.py), gate subprocess invocation | subprocess.run with timeout, output capture and cwd, no restricted environment argument at this call | Lifecycle controls are not access restrictions; host permissions and inherited environment require review |
-| [PytestRunner](../../../mcp_server/managers/pytest_runner.py), `_execute` | Copies os.environ and adjusts virtual-environment/PATH settings | Dependency isolation is not security isolation; actual credential exposure was not investigated |
+| [QAManager](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/managers/qa_manager.py), gate subprocess invocation | subprocess.run with timeout, output capture and cwd, no restricted environment argument at this call | Lifecycle controls are not access restrictions; host permissions and inherited environment require review |
+| [PytestRunner](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/managers/pytest_runner.py), `_execute` | Copies os.environ and adjusts virtual-environment/PATH settings | Dependency isolation is not security isolation; actual credential exposure was not investigated |
 | [FilesystemAdapter](../../../mcp_server/adapters/filesystem.py), `resolve_path` | Resolves paths, then compares string startswith against the root | Only protects calls routed through this adapter; lexical prefixes do not prove path-component containment, including sibling names sharing a prefix. Prioritize focused correctness evidence; no public exploit path was exercised |
 
 Absolute paths identify locations, not permissions. Relative paths cannot prevent a
@@ -325,11 +325,11 @@ The suite is therefore comparatively strong in Pydantic, MCP, pytest, and named 
 
 The gaps are not merely hypothetical language features. Current PGMCP production or test code already contains:
 
-- top-level procedural functions in [cli.py](../../../mcp_server/cli.py), [error_handling.py](../../../mcp_server/core/error_handling.py), and [version_hash.py](../../../mcp_server/scaffolding/version_hash.py);
-- standard-library dataclasses in [bootstrap.py](../../../mcp_server/bootstrap.py) and [scaffold_result.py](../../../mcp_server/scaffolders/scaffold_result.py);
-- `Enum`, `StrEnum`, and `IntEnum` types in [tool_outputs.py](../../../mcp_server/schemas/tool_outputs.py), [artifact_registry_config.py](../../../mcp_server/config/schemas/artifact_registry_config.py), and [pytest_runner.py](../../../mcp_server/managers/pytest_runner.py);
+- top-level procedural functions in [cli.py](../../../mcp_server/cli.py), [error_handling.py](../../../mcp_server/core/error_handling.py), and [version_hash.py](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/scaffolding/version_hash.py);
+- standard-library dataclasses in [bootstrap.py](../../../mcp_server/bootstrap.py) and [scaffold_result.py](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/scaffolders/scaffold_result.py);
+- `Enum`, `StrEnum`, and `IntEnum` types in [tool_outputs.py](../../../mcp_server/schemas/tool_outputs.py), [artifact_registry_config.py](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/config/schemas/artifact_registry_config.py), and [pytest_runner.py](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/managers/pytest_runner.py);
 - exception hierarchies in [exceptions.py](../../../mcp_server/core/exceptions.py);
-- abstract base classes in [base_scaffolder.py](../../../mcp_server/scaffolders/base_scaffolder.py) and [resources/base.py](../../../mcp_server/resources/base.py);
+- abstract base classes in [base_scaffolder.py](https://github.com/MikeyVK/phase-gate-mcp/blob/79759183272e28ddbc68b9b1023168a63bd79cbb/mcp_server/scaffolders/base_scaffolder.py) and [resources/base.py](../../../mcp_server/resources/base.py);
 - `TypedDict` shapes in [phase_detection.py](../../../mcp_server/core/phase_detection.py);
 - package initializers throughout the source tree;
 - reusable pytest fixtures and helpers under [tests/mcp_server/fixtures](../../../tests/mcp_server/fixtures).
@@ -447,6 +447,7 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.25 | 2026-10-08 | Pin nine historical source citations to their original commit and link D-VAL-03 to #471's current native baseline; preserve original negative evidence. |
 | 1.24 | 2026-10-01 | Add complete Ready coordination index of fifteen deferred workstreams, separate general backlog observation, and explicit non-deferred boundaries |
 | 1.23 | 2026-10-01 | Record owner-deferred generic reverse schema/template consumption research as D-VAL-08; retain explicit uncertainty and no reverse PASS claim |
 | 1.22 | 2026-10-01 | Record owner-deferred separate adapter write-effects and false-PASS follow-ups as D-VAL-06 and D-VAL-07 |
@@ -509,12 +510,13 @@ Coordination should link its new issue to D-VAL-02, the [CY110 completion eviden
 ## Deferred Work Notice: Active Documentation Lychee Baseline
 
 **Decision:** explicitly deferred outside issue #460 by the human owner on 2026-09-27.
-**Future owner:** coordination, to create and triage a separate PGMCP issue; no follow-up issue has yet been created.
-**Suggested issue title:** Establish a Lychee baseline for all active workspace documentation.
+**Follow-up owner:** coordination; [issue #471](https://github.com/MikeyVK/phase-gate-mcp/issues/471) owns the active-documentation baseline.
 
-The authoritative finding is **D-VAL-03** in [Validation — Deferred Work](validation.md#d-val-03--establish-and-remediate-the-active-documentation-link-baseline). Lychee 0.24.2 now runs through the explicit `markdown_link_review` profile on this host; the focused validation-report probe passed with 37 local successes, 39 excluded links and zero errors (`pgmcp://cache/runs/24b4fd0f7dfe41ac80a05bc87b4d745b`). A bounded two-document profile run then found nine missing local file targets in this deferred-work register, with exact target URLs and source lines (`pgmcp://cache/runs/bdd03cb6353245bbbfcf8ee06e367e52`). It failed as expected for those concrete links and is not a baseline for all active documentation. Its offline setting does not verify external URLs, and each host that uses the optional profile must provision the declared native prerequisite.
+The originating finding is **D-VAL-03** in [Validation — Deferred Work](validation.md#d-val-03--establish-and-remediate-the-active-documentation-link-baseline). At #460 Validation, Lychee 0.24.2's offline profile passed the focused validation-report probe with 37 local successes, 39 excluded links and zero errors; a bounded two-document run then found nine missing local source citations in this register. That negative historical evidence remains valid for the original document and was not an active-workspace baseline.
 
-The future issue must define the active-documentation inventory, run bounded native checks, classify and repair local-path and fragment failures, document justified exclusions, and prove the final selected inventory. It must decide separately whether a workflow or CI gate should require this profile. Coordinate any large-selection limitations with D-VAL-01; do not change the generic adapter contracts or silently replace the lightweight Markdown preflight. Coordination should link the new issue to D-VAL-03 and the approved [Markdown/Lychee Design boundary](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking).
+#471 defines the 112-target inventory, correct source/deployment reading bases, local repairs, exclusions and reproducible native calls in [Maintenance — Broken Link Check](../MAINTENANCE_SCRIPTS.md#broken-link-check). The nine historical citations now point to verified immutable commit `79759183272e28ddbc68b9b1023168a63bd79cbb`; they preserve the original sources rather than redirecting historical claims to V3 implementations. Offline results do not certify external HTTP availability.
+
+The existing native Markdown preflight from #483 and generic adapter contracts remain unchanged. #471 adds no CI requirement or phase gate and does not reopen D-VAL-01 output-volume work. The originating [Markdown/Lychee Design boundary](design-execution-adapters.md#c-markdown-preservation-versus-stronger-link-checking) remains historical context.
 
 ## Deferred Work Notice: Issue-460-Affected Public-Route Behavior
 

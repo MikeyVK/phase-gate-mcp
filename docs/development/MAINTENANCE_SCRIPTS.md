@@ -1,7 +1,8 @@
 # docs/reference/MAINTENANCE_SCRIPTS.md
 
 **Status:** APPROVED  
-**Last Updated:** November 2025
+**Version:** 1.1  
+**Last Updated:** 2026-10-08
 
 ---
 
@@ -12,7 +13,7 @@ Ready-to-use PowerShell scripts for documentation maintenance tasks. Run these d
 ## Scope
 
 **In scope:** PowerShell scripts for doc auditing, duplicate detection, orphan finding  
-**Out of scope:** Content writing → see [AI_DOC_PROMPTS.md](templates/AI_DOC_PROMPTS.md)
+**Out of scope:** Content authoring and general modernization of historical maintenance examples.
 
 ---
 
@@ -92,44 +93,79 @@ $allDocs | Where-Object { $_ -notin $linkedDocs }
 
 ## Broken Link Check
 
-Find markdown links pointing to non-existent files:
+Use PGMCP's native `markdown_link_review` profile for the selected active documentation. Lychee 0.24.2 (adapter 2.0.0) checks local destinations and fragments with `--offline --cache=false --include-fragments`. Offline success does not certify external HTTP availability.
+
+### Inventory and reading bases
+
+Run this read-only selection from the workspace root; normalize separators before grouping. Pass the resulting arrays as explicit tool targets.
 
 ```powershell
-# Check all markdown links in docs/
-$broken = @()
-Get-ChildItem docs -Recurse -Filter "*.md" | ForEach-Object {
-    $file = $_
-    $dir = $file.DirectoryName
-    $content = Get-Content $file.FullName -Raw
-    
-    # Find all markdown links: [text](path.md) or [text](path.md#anchor)
-    $links = [regex]::Matches($content, '\[([^\]]+)\]\(([^)]+\.md)(#[^)]*)?\)')
-    
-    foreach ($link in $links) {
-        $linkPath = $link.Groups[2].Value
-        # Skip URLs
-        if ($linkPath -match '^https?://') { continue }
-        
-        # Resolve relative path
-        $targetPath = Join-Path $dir $linkPath | Resolve-Path -ErrorAction SilentlyContinue
-        
-        if (-not $targetPath -or -not (Test-Path $targetPath)) {
-            $broken += [PSCustomObject]@{
-                Source = $file.FullName -replace [regex]::Escape((Get-Location).Path + "\"), ""
-                BrokenLink = $linkPath
-                Line = ($content.Substring(0, $link.Index) -split "`n").Count
-            }
-        }
-    }
-}
-
-if ($broken.Count -eq 0) {
-    Write-Host "No broken links found!" -ForegroundColor Green
-} else {
-    Write-Host "Found $($broken.Count) broken links:" -ForegroundColor Red
-    $broken | Format-Table -AutoSize
-}
+$normal = @('README.md', 'CHANGELOG.md', 'AGENTS.md',
+    'docs/development/schema-template-maintenance.md',
+    'docs/development/MAINTENANCE_SCRIPTS.md',
+    'docs/development/issue460/deferred-work.md',
+    'mcp_server/resources/cache_reading.md') + @(
+    rg --files docs/setup docs/reference docs/manuals docs/coding_standards -g '*.md'
+)
+$normal = @($normal -replace '\\', '/' |
+    Where-Object { $_ -ne 'docs/reference/migration_v2.0.md' } | Sort-Object -Unique)
+$instructions = @(rg --files --hidden docs/agents .agents .github -g '*.md' -g '!**/archive/**')
+$instructions = @($instructions -replace '\\', '/' | Sort-Object -Unique)
+$rootCopies = @($instructions | Where-Object {
+    $_ -match '^(docs/agents/(codex|antigravity|vscode/copilot)|\.agents)/AGENTS\.md$'
+})
+$roles = @($instructions | Where-Object { $_ -match '^docs/agents/(codex|antigravity)/rules/' })
+$workflows = @($instructions | Where-Object { $_ -match '^docs/agents/(codex|antigravity)/workflows/' })
+$vscodeAgents = @($instructions | Where-Object { $_ -match '^docs/agents/vscode/copilot/\.github/agents/' })
+$contextual = @($rootCopies) + @($roles) + @($workflows) + @($vscodeAgents)
+$natural = @($instructions | Where-Object { $_ -notin $contextual })
+# Build each table entry's file URI from the actual workspace root:
+$rootBase = ([uri](Join-Path (Get-Location).Path 'AGENTS.md')).AbsoluteUri
 ```
+
+| Targets | Files at the 2026-10-08 baseline | Reading base |
+|---|---:|---|
+| `$normal` | 56 | Each document's own path |
+| `$natural` | 31 | Each source/runtime file's own path |
+| `$rootCopies` | 4 | Workspace-root `AGENTS.md` |
+| `$roles` | 7 | Workspace `.agents/rules/imp.agent.md` |
+| `$workflows` | 11 | Workspace `.agents/workflows/go.md` |
+| `$vscodeAgents` | 3 | Workspace `.github/agents/imp.agent.md` |
+
+These are 112 distinct input files. Sources stored under `docs/agents` can contain paths intended for their deployment location; the existing native selection-check `--base-url` supplies that reading base. Its filename anchors the containing directory for these references. The [release procedure](../reference/release-assets-procedure.md) and [bootstrap layout](../setup/agentic-bootstrap.md) own deployment. This does not change mutation preflight behavior or certify a separately installed Antigravity host.
+
+Historical issue artifacts, `docs/development/archive`, archived prompts, the explicitly HISTORICAL `migration_v2.0.md`, implementation-adjacent legacy notes, generated assets, caches and temporary files are outside the input inventory. Archived files remain valid destinations. The active #460 deferred register is explicitly included. Check new issue-local artifacts separately; do not blanket-exclude an instruction family.
+
+### Native calls and observed outcome
+
+For `$normal` and `$natural`, call:
+
+```python
+run_checks(scope="targets", targets=<selected array>,
+           profile="markdown_link_review", timeout_seconds=120)
+```
+
+For each of the other four arrays, call the same native check with its table entry converted to a workspace-root-derived file URI:
+
+```python
+run_checks(scope="targets", targets=<selected array>, checks=["markdown_links"],
+           args={"markdown_links": ["--offline", "--cache=false",
+                 "--include-fragments", "--base-url", <reading-base file URI>]},
+           timeout_seconds=120)
+```
+
+The 2026-10-08 survey found 21 missing local link occurrences in six documents: nine ordinary path errors, three obsolete maintenance references and nine historical source citations. #471 repairs the paths, removes the unsupported references and pins the historical citations to verified commit `79759183272e28ddbc68b9b1023168a63bd79cbb`. No fragment failures were observed. The pinned source paths were verified in the local Git tree; HTTP reachability is outside the offline claim.
+
+| Group | Successful occurrences | Excluded occurrences | Errors / timeouts | Native exit |
+|---|---:|---:|---|---:|
+| Normal documentation | 525 | 16 | 0 / 0 | 0 |
+| Natural instruction bases | 45 | 0 | 0 / 0 | 0 |
+| Root-base AGENTS copies | 44 | 0 | 0 / 0 | 0 |
+| Role sources | 25 | 0 | 0 / 0 | 0 |
+| Workflow sources | 17 | 0 | 0 / 0 | 0 |
+| VS Code agent sources | 12 | 0 | 0 / 0 | 0 |
+
+The final normal-group check and reused, unchanged instruction checks all completed without capture truncation: 668 successful occurrences, 16 exclusions and zero errors/timeouts across 112 files. The 16 offline exclusions are external URLs: nine historical source citations, the #471 issue link, two specification links and four CHANGELOG links. All 24 Codex/VS Code source/runtime pairs were byte-equivalent. Run IDs may supplement these recorded invocations and outcomes, not replace them. This baseline adds no CI obligation, test coverage claim or new gate.
 
 ---
 
@@ -175,8 +211,8 @@ git merge --no-ff docs/emergency-cleanup
 
 ## Related Documentation
 
-- [DOCUMENTATION_MAINTENANCE.md](../DOCUMENTATION_MAINTENANCE.md) - Meta-rules + maintenance schedule
-- [GIT_WORKFLOW.md](../coding_standards/GIT_WORKFLOW.md) - Branch/commit patterns
+- [Quality tool reference](../reference/tools/quality.md) - Native check selection and invocation
+- [Documentation Standard](../coding_standards/DOCUMENTATION_STANDARD.md) - Documentation and durable evidence rules
 
 ---
 
@@ -185,6 +221,7 @@ git merge --no-ff docs/emergency-cleanup
 | Version | Date | Changes |
 |---------|------|---------|  
 | 1.0 | 2025-11-27 | Initial creation, extracted from DOCUMENTATION_MAINTENANCE.md |
+| 1.1 | 2026-10-08 | Replace regex link example with the native active-documentation baseline and remove unavailable references (#471). |
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      LINK DEFINITIONS

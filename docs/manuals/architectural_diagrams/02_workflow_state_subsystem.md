@@ -3,8 +3,8 @@
 # Workflow State Subsystem
 
 **Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-03-13
+**Version:** 1.1
+**Last Updated:** 2026-10-08
 
 ---
 
@@ -94,13 +94,13 @@ Red nodes indicate code that violates OCP, DRY, or DIP and should be refactored.
 
 ## Related Documentation
 
-- **[docs/mcp_server/architectural_diagrams/01_module_decomposition.md][related-1]**
-- **[docs/mcp_server/architectural_diagrams/03_tool_layer.md][related-2]**
-- **[docs/development/issue257/GAP_ANALYSE_ISSUE257.md][related-3]**
+- **[docs/manuals/architectural_diagrams/01_module_decomposition.md][related-1]**
+- **[docs/manuals/architectural_diagrams/03_tool_layer.md][related-2]**
+- **[docs/development/archive/issue257/GAP_ANALYSE_ISSUE257.md][related-3]**
 
-[related-1]: docs/mcp_server/architectural_diagrams/01_module_decomposition.md
-[related-2]: docs/mcp_server/architectural_diagrams/03_tool_layer.md
-[related-3]: docs/development/issue257/GAP_ANALYSE_ISSUE257.md
+[related-1]: 01_module_decomposition.md
+[related-2]: 03_tool_layer.md
+[related-3]: ../../development/archive/issue257/GAP_ANALYSE_ISSUE257.md
 
 ---
 
@@ -109,3 +109,4 @@ Red nodes indicate code that violates OCP, DRY, or DIP and should be refactored.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-03-13 | Agent | Initial draft |
+| 1.1 | 2026-10-08 | @imp documenter | Correct related-document destinations without changing diagram content (#471). |

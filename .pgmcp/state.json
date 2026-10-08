@@ -3,7 +3,7 @@
   "branch": "docs/471-active-documentation-link-baseline",
   "issue_number": 471,
   "workflow_name": "docs",
-  "current_phase": "planning",
+  "current_phase": "documentation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -17,7 +17,16 @@
   "issue_title": "docs: Establish and repair the active documentation link baseline",
   "parent_branch": "main",
   "created_at": "2026-10-08T13:37:51.890891+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "planning",
+      "to_phase": "documentation",
+      "timestamp": "2026-10-08T14:18:26.394284+00:00",
+      "human_approval_message": "Helemaal goed repareer volgens je voorstel. Independent QA GO on bd2da6c3bec3919f7d320d8941d330d0796c65dc.",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

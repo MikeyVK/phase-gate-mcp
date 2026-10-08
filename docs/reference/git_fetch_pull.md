@@ -11,8 +11,8 @@ Type: Tool Reference
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 **Status:** DRAFT
-**Version:** 0.1
-**Last Updated:** 2026-01-07
+**Version:** 0.2
+**Last Updated:** 2026-10-08
 
 ---
 
@@ -158,8 +158,8 @@ Typical error categories:
 ## Related Documentation
 
 - [docs/reference/mcp/MCP_TOOLS.md](MCP_TOOLS.md) - High-level MCP tools overview
-- [docs/development/issue94/research.md](../../development/issue94/research.md) - Issue #94 research
-- [docs/development/issue94/planning.md](../../development/issue94/planning.md) - Issue #94 planning
+- [docs/development/archive/issue94/research.md](../development/archive/issue94/research.md) - Issue #94 research
+- [docs/development/archive/issue94/planning.md](../development/archive/issue94/planning.md) - Issue #94 planning
 
 ---
 
@@ -168,3 +168,4 @@ Typical error categories:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 0.1 | 2026-01-07 | GitHub Copilot | Initial creation |
+| 0.2 | 2026-10-08 | @imp documenter | Correct archived #94 research and planning destinations (#471). |
