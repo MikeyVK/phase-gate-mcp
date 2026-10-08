@@ -3,7 +3,7 @@
 # Issue 121 — Minimal structure-preserving artifact edit review
 
 **Status:** Draft — tool-enforced strategy pending  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-08
 
 ## Purpose
@@ -125,7 +125,20 @@ The vendor documents weaker results with multiple reasoning hops, distracting lo
 
 The official Python SDK provides typed synchronous/asynchronous API calls. DeepEval already offers JevEval with one request, normalized scores and threshold handling, so an existing evaluator route must be compared with the dependency weight of direct SDK use. Neither is installed or integrated here. A direct SDK route still needs a native checker entry point and a thin pgmcp adapter; placing provider or template logic in generic server orchestration is not justified. Original-source association and enforce/report decisions remain the existing unresolved boundaries.
 
-Recommendation: make Jev the first small feasibility candidate, using existing damaged/allowed Markdown probes plus a permitted code implementation and a damaged mandatory code structure. Repeat a few judgments, recording model/rubric, score separation, actual input tokens and client-side latency. This is a bounded exploratory witness, not a new regression suite or template inventory. Reject the investment if distinguishing these cases requires elaborate preprocessing or a new output-contract dialect. No live Jev call, dependency installation, provider selection or implementation approval is recorded.
+The owner challenges whole-artifact feasibility using issue460. Local read-only measurements on 2026-10-08 establish:
+
+| Existing artifact | Characters | Whitespace-separated words | Illustrative tokens at 4 / 3 characters per token |
+| --- | ---: | ---: | ---: |
+| [Issue460 Research](<../issue460/research.md>) | 102,674 | 13,240 | 25,669 / 34,225 |
+| [Issue460 detailed findings](<../issue460/research-findings.md>) | 254,283 | 32,464 | 63,571 / 84,761 |
+
+These are measured character/word counts and illustrative token conversions, not Jev token counts or statistically established bounds. No local Jev tokenizer is available. Count reproduction: read the complete UTF-8 file; count characters and whitespace-separated words; divide characters by four or three only for the stated estimates. The six reachable literal-import/extends Jinja sources in the current Research package total 12,079 characters; its root schema adds 2,741 before external schema definitions, rubric and request framing. These current sources illustrate additional input volume and are not claimed to be the exact historical generation graph of issue460.
+
+Even the optimistic four-character estimate puts primary Research plus those source inputs at approximately 29,374 tokens before the remaining input. The detailed findings alone plausibly exceed Jev's 32k state-plus-question limit by a wide margin. The primary document is therefore borderline rather than proven to fit or exceed; the larger artifact demonstrates a material size constraint for a general whole-artifact route.
+
+Recommendation revised: Jev is a bounded-input candidate, not the proposed default for every template-generated artifact. Establish supported payload size before score calibration. A judge with a sufficiently larger context window may preserve the one-call/full-text approach with less integration complexity than chunking or compression, but no provider/model is selected. Silent truncation, checking only the edit diff, or combining independent chunk scores does not establish preservation across the complete artifact. Summarization introduces another model/selection step whose structure-loss risk must be assessed; format-specific extraction would violate the required agnosticism.
+
+If a bounded Jev probe is still useful, reuse existing damaged/allowed examples and one permitted/damaged code pair. Record actual input tokens, repeated score separation and client-side latency. Do not build a broad regression suite or complicated preprocessing to force the candidate to fit. No live Jev call, dependency installation, provider selection or implementation approval is recorded.
 
 ### Existing enforcement boundary
 
@@ -275,3 +288,4 @@ Keep one shared procedure, reference it minimally, and distinguish required, opt
 | 0.5 | 2026-10-08 | @imp researcher | Require text-level language/type agnosticism; supersede format-parser proposals and separate matching cost from Jinja mapping cost with explicit reward and stop criteria. |
 | 0.6 | 2026-10-08 | @imp researcher | Assess the owner-proposed single-call LLM score gate, existing grader tooling/check reuse and the limits of schema-only remediation. |
 | 0.7 | 2026-10-08 | @imp researcher | Assess Jev pricing, measured latency, typed scoring, input limits and existing evaluator options; recommend a bounded feasibility witness. |
+| 0.8 | 2026-10-08 | @imp researcher | Measure issue460 artifact sizes and narrow the Jev recommendation to bounded inputs; keep full-text size and preprocessing costs explicit. |
