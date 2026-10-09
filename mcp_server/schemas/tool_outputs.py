@@ -443,6 +443,7 @@ class PhaseTransitionOutput(GateTransitionOutput):
 
     from_phase: str
     to_phase: str
+    error_code: str | None = None
 
 
 class ForcePhaseTransitionOutput(PhaseTransitionOutput):

@@ -557,6 +557,7 @@ tools:
     template_success: "Milestone #{number}: {title} [{state}]."
   transition_phase:
     category: mutation
+    template_failure: "Phase transition rejected: {error_code}. {error_message}"
     max_items: 20
     template_success: "Transitioned '{from_phase}' → '{to_phase}' on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     collections:
@@ -567,6 +568,7 @@ tools:
       - "context_reset"
   force_phase_transition:
     category: mutation
+    template_failure: "Forced phase transition rejected: {error_code}. {error_message}"
     max_items: 20
     template_success: |
       Force-transitioned '{from_phase}' → '{to_phase}' on branch '{branch}'.
@@ -630,3 +632,4 @@ tools:
     category: mutation
     template_success: "Edited {path}; written={written}; validation={validation_status}."
     template_failure: "Edit {path} failed: {error_code}."
+

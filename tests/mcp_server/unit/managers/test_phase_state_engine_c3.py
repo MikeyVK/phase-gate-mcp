@@ -210,21 +210,35 @@ class TestForceTransitionSkippedGateWarning:
 
         assert "skipped_gates" in caplog.text
 
-    def test_force_transition_logs_warning_for_skipped_entry_expects(
+    def test_force_transition_reports_skipped_gate_with_valid_entry_plan(
         self,
         engine_with_gates: PhaseStateEngine,
         project_manager_with_gates: ProjectManager,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        """force_transition logs warning when to_phase has entry_expects (GAP-03).
-
-        Forcing research → implementation bypasses the implementation entry expects check.
-        Warning must mention skipped_gates.
-        """
+        """Force reports skipped exit gates while retaining complete entry-plan validity."""
         project_manager_with_gates.initialize_project(
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
+        )
+        project_manager_with_gates.save_planning_deliverables(
+            229,
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "Begin work",
+                                "deliverables": [
+                                    {"deliverable_name": "Result", "description": "Useful result"}
+                                ],
+                                "exit_criteria": "Behavior demonstrated",
+                            }
+                        ]
+                    }
+                }
+            ),
         )
         engine_with_gates.initialize_branch(
             branch="feature/229-c3b",

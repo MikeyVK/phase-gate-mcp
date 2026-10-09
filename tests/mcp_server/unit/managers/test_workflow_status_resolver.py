@@ -171,11 +171,9 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
-            commit_phase_detector=detector,
         )
 
     def test_resolve_current_returns_dto(self) -> None:
@@ -243,11 +241,9 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
-            commit_phase_detector=detector,
         )
         with pytest.raises(StateNotFoundError):
             resolver.resolve_current()
@@ -340,11 +336,9 @@ class TestWorkflowStatusResolverInversion:
                 parent_branch="main",
             )
         )
-        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
-            commit_phase_detector=detector,
         )
 
     def _make_resolver_no_state(
@@ -358,11 +352,9 @@ class TestWorkflowStatusResolverInversion:
         git_reader.get_recent_commits.return_value = commits or []
         state_repo = InMemoryStateRepository()
         # no save Ã¢â€ â€™ state absent
-        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
-            commit_phase_detector=detector,
         )
 
     def test_resolve_uses_state_when_present_despite_high_confidence_commit(self) -> None:
@@ -401,11 +393,9 @@ class TestWorkflowStatusResolverInversion:
         git_reader.get_current_branch.return_value = "feature/298-other"
         git_reader.get_recent_commits.return_value = []
         validated_reader = BranchValidatedStateReader(_WrongBranchReader())
-        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=validated_reader,
-            commit_phase_detector=detector,
         )
         with pytest.raises(StateBranchMismatchError):
             resolver.resolve_current()

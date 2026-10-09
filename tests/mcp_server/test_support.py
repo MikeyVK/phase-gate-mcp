@@ -25,6 +25,7 @@ from mcp_server.config.settings import Settings as RealSettings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces import GateReport
 from mcp_server.core.interfaces.git import ICycleEvidenceReader
+from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
@@ -292,7 +293,6 @@ def make_project_manager(
         _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
     )
     if workflow_status_resolver is None:
-        from mcp_server.core.commit_phase_detector import CommitPhaseDetector  # noqa: PLC0415
         from mcp_server.managers.workflow_status_resolver import (  # noqa: PLC0415
             WorkflowStatusResolver,
         )
@@ -302,11 +302,9 @@ def make_project_manager(
         _state_reader = FileStateRepository(
             state_file=workspace_path / get_default_server_root() / "state.json"
         )
-        _detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(workphases_config)))
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=_git_reader,
             state_reader=_state_reader,
-            commit_phase_detector=_detector,
         )
     return ProjectManager(
         workspace_root=workspace_root,
@@ -323,9 +321,8 @@ def make_project_manager(
 
 def make_phase_state_engine(
     workspace_root: Path | str,
-    project_manager: ProjectManager | None = None,
+    project_manager: IProjectPlanReader | None = None,
     state_repository: object | None = None,
-    scope_decoder: object | None = None,
     workflow_gate_runner: object | None = None,
     workflow_state_mutator: object | None = None,
     context_loaded_writer: object | None = None,
@@ -334,20 +331,12 @@ def make_phase_state_engine(
     workspace_path = Path(workspace_root)
     manager = project_manager or make_project_manager(workspace_root)
     git_config = cast(GitConfig, _load_config(workspace_root, "git.yaml", "load_git_config"))
-    workphases_config = _load_config(
-        workspace_root,
-        "workphases.yaml",
-        "load_workphases_config",
-    )
     contracts_config = cast(
         ContractsConfig,
         _load_config(workspace_root, "contracts.yaml", "load_contracts_config"),
     )
     resolved_state_repository = state_repository or FileStateRepository(
         state_file=workspace_path / get_default_server_root() / "state.json"
-    )
-    resolved_scope_decoder = scope_decoder or ScopeDecoder(
-        ScopeContract(cast(WorkphasesConfig, workphases_config))
     )
     resolved_workflow_gate_runner = workflow_gate_runner or _NopGateRunner(contracts_config)
     if workflow_state_mutator is None:
@@ -362,7 +351,6 @@ def make_phase_state_engine(
         git_config=git_config,
         contracts_config=contracts_config,
         state_repository=resolved_state_repository,
-        scope_decoder=resolved_scope_decoder,
         workflow_gate_runner=resolved_workflow_gate_runner,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
         server_root=workspace_path / get_default_server_root(),

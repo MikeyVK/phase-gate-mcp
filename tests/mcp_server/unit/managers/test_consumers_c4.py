@@ -37,6 +37,7 @@ from mcp_server.config.schemas.contracts_config import (
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.state_repository import BranchState
 from mcp_server.tools.issue_tools import CreateIssueTool
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -94,7 +95,12 @@ class TestPhaseStateEngineTransitionC4:
         git_config = MagicMock(spec=GitConfig)
         project_manager = MagicMock()
         state_repository = MagicMock()
-        scope_decoder = MagicMock()
+        state_repository.load.return_value = BranchState(
+            branch="feature/1-test",
+            issue_number=1,
+            current_phase="research",
+            workflow_name="feature",
+        )
         workflow_gate_runner = MagicMock()
         workflow_gate_runner.enforce_phase_exit = MagicMock(return_value=None)
         workflow_state_mutator = MagicMock()
@@ -105,33 +111,18 @@ class TestPhaseStateEngineTransitionC4:
             git_config=git_config,
             contracts_config=contracts,
             state_repository=state_repository,
-            scope_decoder=scope_decoder,
             workflow_gate_runner=workflow_gate_runner,
             workflow_state_mutator=workflow_state_mutator,
             server_root=tmp_path / get_default_server_root(),
         )
 
     def test_validate_transition_value_error_propagates(self, tmp_path: Path) -> None:
-        """ValueError from contracts_config.validate_transition must propagate to caller."""
-        contracts = _minimal_contracts()
-        engine = self._build_engine(tmp_path, contracts)
-
-        mock_contracts = MagicMock(spec=ContractsConfig)
-        mock_contracts.validate_transition.side_effect = ValueError("invalid transition")
-        # test-only: inject mock to verify validate_transition error propagation
-        engine._contracts_config = mock_contracts  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
-
-        state = MagicMock()
-        state.branch = "feature/1-test"
-        state.current_phase = "research"
-        state.workflow_name = "feature"
-        state.issue_number = 1
-        state.current_cycle = None
-        # test-only: configure state repository mock for transition path
-        engine._state_repository.load.return_value = state  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
-
-        with pytest.raises(ValueError, match="invalid transition"):
-            engine.transition("feature/1-test", to_phase="design")
+        """Configured sequence rejection propagates through the public transition."""
+        engine = self._build_engine(tmp_path, _minimal_contracts())
+        before = engine.get_state("feature/1-test")
+        with pytest.raises(ValueError, match="Invalid transition"):
+            engine.transition("feature/1-test", to_phase="ready")
+        assert engine.get_state("feature/1-test") == before
 
 
 # ---------------------------------------------------------------------------

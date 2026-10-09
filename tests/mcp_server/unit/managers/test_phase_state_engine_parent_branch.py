@@ -267,244 +267,72 @@ class TestTddCycleTrackingFields:
 
 
 class TestCycleValidationLogic:
-    """Test TDD cycle validation helpers.
-
-    Issue #146 Cycle 2: Validation logic for cycle transitions.
-    """
+    """Cycle admission is observed through complete public transitions."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
-        """Create temporary workspace.
-
-        Args:
-            tmp_path: Pytest tmp_path fixture
-
-        Returns:
-            Path to temporary workspace root
-        """
-        return tmp_path
-
-    @pytest.fixture
-    def project_manager(self, workspace_root: Path) -> ProjectManager:
-        """Create ProjectManager instance.
-
-        Args:
-            workspace_root: Path to workspace root
-
-        Returns:
-            ProjectManager instance
-        """
-        return make_project_manager(workspace_root)
-
-    @pytest.fixture
-    def engine(self, workspace_root: Path, project_manager: ProjectManager) -> PhaseStateEngine:
-        """Create PhaseStateEngine instance.
-
-        Args:
-            workspace_root: Path to workspace root
-            project_manager: ProjectManager instance
-
-        Returns:
-            PhaseStateEngine instance
-        """
-        return make_phase_state_engine(
-            workspace_root,
-            project_manager=project_manager,
-            state_repository=InMemoryStateRepository(),
-        )
-
-    def test_validate_cycle_number_range_rejects_zero(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
-    ) -> None:
-        """Test cycle number validation rejects zero.
-
-        Issue #146 Cycle 2: cycle_number must be in range [1..total].
-        """
-        # Setup - create project with 4 cycles
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": f"Cycle {i}",
-                            "deliverables": [
-                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
-                            ],
-                            "exit_criteria": f"Criteria {i}",
-                        }
-                        for i in range(1, 5)
-                    ],
+    def planned_engine(self, tmp_path: Path) -> tuple[PhaseStateEngine, str]:
+        manager = make_project_manager(tmp_path)
+        manager.initialize_project(146, "Cycle validation", "feature")
+        manager.save_planning_deliverables(
+            146,
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": f"Cycle {number}",
+                                "deliverables": [
+                                    {
+                                        "deliverable_name": "Result",
+                                        "description": f"Result {number}",
+                                    }
+                                ],
+                                "exit_criteria": "Behavior demonstrated",
+                            }
+                            for number in range(1, 5)
+                        ]
+                    }
                 }
-            }
+            ),
         )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
+        engine = make_phase_state_engine(
+            tmp_path, project_manager=manager, state_repository=InMemoryStateRepository()
+        )
+        branch = "feature/146-cycle-validation"
+        engine.initialize_branch(branch, 146, "implementation")
+        return engine, branch
 
-        # Act & Assert - cycle_number 0 should raise
-        with pytest.raises(ValueError, match="cycle_number must be in range \\[1\\.\\.4\\]"):
-            engine._validate_cycle_number_range(  # pyright: ignore[reportPrivateUsage]  # Legacy helper-contract coverage.
-                cycle_number=0,
-                issue_number=146,
-            )
-
-    def test_validate_cycle_number_range_rejects_negative(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
+    @pytest.mark.parametrize("cycle_number", [0, -1, 5])
+    def test_invalid_cycle_range_preserves_state(
+        self, planned_engine: tuple[PhaseStateEngine, str], cycle_number: int
     ) -> None:
-        """Test cycle number validation rejects negative numbers.
-
-        Issue #146 Cycle 2: cycle_number must be positive.
-        """
-        # Setup
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": f"Cycle {i}",
-                            "deliverables": [
-                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
-                            ],
-                            "exit_criteria": f"Criteria {i}",
-                        }
-                        for i in range(1, 5)
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        # Act & Assert - negative cycle_number should raise
-        with pytest.raises(ValueError, match="cycle_number must be in range \\[1\\.\\.4\\]"):
-            engine._validate_cycle_number_range(  # pyright: ignore[reportPrivateUsage]  # Legacy helper-contract coverage.
-                cycle_number=-1,
-                issue_number=146,
+        engine, branch = planned_engine
+        state = engine.get_state(branch)
+        with pytest.raises(ValueError, match="cycle_number must be in range"):
+            engine.force_cycle_transition(
+                branch, cycle_number, "Investigated selection", "Owner approved"
             )
+        assert engine.get_state(branch) == state
 
-    def test_validate_cycle_number_range_rejects_exceeds_total(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
+    def test_valid_cycle_range_is_available_through_public_progression(
+        self, planned_engine: tuple[PhaseStateEngine, str]
     ) -> None:
-        """Test cycle number validation rejects numbers exceeding total.
+        engine, branch = planned_engine
+        for number in range(1, 5):
+            result = engine.transition_cycle(branch, number)
+            assert result["to_cycle"] == number
+            assert result["total_cycles"] == 4
+            assert engine.get_state(branch).current_cycle == number
 
-        Issue #146 Cycle 2: cycle_number must not exceed total planned cycles.
-        """
-        # Setup
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
+    def test_missing_plan_rejects_cycle_transition_without_mutation(self, tmp_path: Path) -> None:
+        manager = make_project_manager(tmp_path)
+        manager.initialize_project(147, "No planning yet", "bug")
+        engine = make_phase_state_engine(
+            tmp_path, project_manager=manager, state_repository=InMemoryStateRepository()
         )
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": f"Cycle {i}",
-                            "deliverables": [
-                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
-                            ],
-                            "exit_criteria": f"Criteria {i}",
-                        }
-                        for i in range(1, 5)
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        # Act & Assert - cycle_number 5 (> 4) should raise
-        with pytest.raises(ValueError, match="cycle_number must be in range \\[1\\.\\.4\\]"):
-            engine._validate_cycle_number_range(  # pyright: ignore[reportPrivateUsage]  # Legacy helper-contract coverage.
-                cycle_number=5,
-                issue_number=146,
-            )
-
-    def test_validate_cycle_number_range_accepts_valid_range(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
-    ) -> None:
-        """Test cycle number validation accepts valid range [1..total].
-
-        Issue #146 Cycle 2: Valid cycle numbers should pass without error.
-        """
-        # Setup
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": f"Cycle {i}",
-                            "deliverables": [
-                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
-                            ],
-                            "exit_criteria": f"Criteria {i}",
-                        }
-                        for i in range(1, 5)
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        # Act & Assert - all valid cycle numbers should pass
-        for cycle_num in [1, 2, 3, 4]:
-            engine._validate_cycle_number_range(  # pyright: ignore[reportPrivateUsage]  # Legacy helper-contract coverage.
-                cycle_number=cycle_num,
-                issue_number=146,
-            )
-
-    def test_validate_planning_deliverables_exist_raises_if_missing(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
-    ) -> None:
-        """Test validation raises if planning_deliverables not found.
-
-        Issue #146 Cycle 2: Cannot transition cycles without planning deliverables.
-        """
-        # Setup - project WITHOUT planning deliverables
-        project_manager.initialize_project(
-            issue_number=147, issue_title="No Planning", workflow_name="bug"
-        )
-
-        # Act & Assert - should raise descriptive error
-        with pytest.raises(ValueError, match="Planning deliverables not found for issue 147"):
-            engine._validate_planning_deliverables_exist(  # pyright: ignore[reportPrivateUsage]  # Legacy helper-contract coverage.
-                issue_number=147,
-            )
-
-    def test_validate_planning_deliverables_exist_passes_if_present(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
-    ) -> None:
-        """Test validation passes if planning_deliverables exist.
-
-        Issue #146 Cycle 2: Should not raise if deliverables are present.
-        """
-        # Setup - project WITH planning deliverables
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": f"Cycle {i}",
-                            "deliverables": [
-                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
-                            ],
-                            "exit_criteria": f"Criteria {i}",
-                        }
-                        for i in range(1, 5)
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        # Act & Assert - should not raise
-        engine._validate_planning_deliverables_exist(  # pyright: ignore[reportPrivateUsage]  # Legacy helper-contract coverage.
-            issue_number=146,
-        )
+        branch = "bug/147-no-plan"
+        engine.initialize_branch(branch, 147, "implementation")
+        state = engine.get_state(branch)
+        with pytest.raises(ValueError, match="planning_deliverables_missing"):
+            engine.transition_cycle(branch, 1)
+        assert engine.get_state(branch) == state

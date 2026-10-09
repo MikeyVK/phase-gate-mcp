@@ -17,6 +17,8 @@ with audit trail.
     - Persist state to state.json
 """
 
+from __future__ import annotations
+
 # Standard library
 import json
 import logging
@@ -37,8 +39,7 @@ from mcp_server.core.interfaces import (
     IWorkflowGateRunner,
     IWorkflowStateMutator,
 )
-from mcp_server.core.phase_detection import ScopeDecoder
-from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.managers.state_repository import (
     BranchState,
     StateAlreadyExistsError,
@@ -46,11 +47,12 @@ from mcp_server.managers.state_repository import (
 )
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.schemas import ContractsConfig, GitConfig
+from mcp_server.schemas.deliverables import StoredPlanningModel
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class TransitionRecord:
     """Phase transition record for audit trail.
 
@@ -68,6 +70,15 @@ class TransitionRecord:
 
     # Optional fields
     skip_reason: str | None = None
+    resume_cycle: str | None = None
+
+
+class PhaseEntryError(ValueError):
+    """Structured admission failure before a phase-state mutation."""
+
+    def __init__(self, error_code: str) -> None:
+        super().__init__(error_code)
+        self.error_code = error_code
 
 
 class PhaseStateEngine:
@@ -80,16 +91,15 @@ class PhaseStateEngine:
     def __init__(
         self,
         workspace_root: Path | str,
-        project_manager: ProjectManager,
+        project_manager: IProjectPlanReader,
         git_config: GitConfig,
         contracts_config: ContractsConfig,
         state_repository: IStateRepository,
-        scope_decoder: ScopeDecoder,
         workflow_gate_runner: IWorkflowGateRunner,
         server_root: Path,
         workflow_state_mutator: IWorkflowStateMutator | None = None,
         state_reconstructor: object | None = None,
-        context_loaded_writer: "IContextLoadedWriter | None" = None,
+        context_loaded_writer: IContextLoadedWriter | None = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
         del state_reconstructor  # Retained for the public constructor contract.
@@ -102,7 +112,6 @@ class PhaseStateEngine:
         self._contracts_config = contracts_config
         self._git_config = git_config
         self._state_repository = state_repository
-        self._scope_decoder = scope_decoder
         self._workflow_gate_runner = workflow_gate_runner
         if workflow_state_mutator is None:
             workflow_state_mutator = WorkflowStateMutator(state_repository=state_repository)
@@ -114,6 +123,27 @@ class PhaseStateEngine:
         """Reset context-loaded flag after a state-changing transition."""
         if self._context_loaded_writer is not None:
             self._context_loaded_writer.set_context_loaded(branch, value=False)
+
+    def validate_branch_initialization(self, branch: str) -> None:
+        """Reject existing same-branch state without project or workflow mutations."""
+        # Guard: refuse to overwrite an existing BranchState for this branch
+        try:
+            loaded = self._state_repository.load(branch)
+            if loaded.branch == branch:
+                raise StateAlreadyExistsError(
+                    f"Branch '{branch}' already has an initialized state "
+                    f"(phase: {loaded.current_phase}). "
+                    "Call initialize_project only once per branch."
+                )
+        except (
+            FileNotFoundError,
+            KeyError,
+            OSError,
+            json.JSONDecodeError,
+            ValidationError,
+            StateNotFoundError,
+        ):
+            pass
 
     def initialize_branch(
         self, branch: str, issue_number: int, initial_phase: str, parent_branch: str | None = None
@@ -134,25 +164,7 @@ class PhaseStateEngine:
         Raises:
             ValueError: If project not initialized
         """
-        # Get project plan to cache workflow_name
-        # Guard: refuse to overwrite an existing BranchState for this branch
-        try:
-            loaded = self._state_repository.load(branch)
-            if loaded.branch == branch:
-                raise StateAlreadyExistsError(
-                    f"Branch '{branch}' already has an initialized state "
-                    f"(phase: {loaded.current_phase}). "
-                    "Call initialize_project only once per branch."
-                )
-        except (
-            FileNotFoundError,
-            KeyError,
-            OSError,
-            json.JSONDecodeError,
-            ValidationError,
-            StateNotFoundError,
-        ):
-            pass
+        self.validate_branch_initialization(branch)
 
         project = self.project_manager.get_project_plan(issue_number)
         if not project:
@@ -200,51 +212,28 @@ class PhaseStateEngine:
         branch: str,
         to_phase: str,
         human_approval_message: str | None = None,
+        *,
+        resume_cycle: str | None = None,
     ) -> dict[str, Any]:
-        """Execute strict sequential phase transition."""
+        """Validate a sequential phase entry before one composed state mutation."""
         state = self.get_state(branch)
-        workflow_name = state.workflow_name
-        from_phase = state.current_phase
-        self._contracts_config.validate_transition(workflow_name, from_phase, to_phase)
-
-        issue_number = state.issue_number
-        if issue_number is None:
-            raise ValueError(f"Branch '{branch}' has no issue_number in state")
-
+        self._validate_transition_entry(state, to_phase, resume_cycle, forced=False)
+        resolved_approval = self._resolve_approval(human_approval_message, required=False)
         self._workflow_gate_runner.enforce_phase_exit(
-            workflow_name=workflow_name,
-            phase=from_phase,
+            workflow_name=state.workflow_name,
+            phase=state.current_phase,
             cycle_number=state.current_cycle,
         )
-
-        if self._is_cycle_based_phase(workflow_name, from_phase):
-            self.on_exit_cycle_based_phase(branch)
-            state = self.get_state(branch)
-
-        resolved_approval = self._resolve_approval(human_approval_message, required=False)
-
         transition = TransitionRecord(
-            from_phase=from_phase,
+            from_phase=state.current_phase,
             to_phase=to_phase,
             timestamp=datetime.now(UTC).isoformat(),
             human_approval_message=resolved_approval,
             forced=False,
+            resume_cycle=resume_cycle,
         )
-
-        self._workflow_state_mutator.apply(
-            branch,
-            lambda _s: _s.with_updates(
-                current_phase=to_phase,
-                transitions=[*_s.transitions, self._transition_to_dict(transition)],
-                current_sub_phase=None,
-            ),
-        )
-        self._reset_context_loaded(branch)
-
-        if self._is_cycle_based_phase(workflow_name, to_phase):
-            self.on_enter_cycle_based_phase(branch, issue_number)
-
-        return {"success": True, "from_phase": from_phase, "to_phase": to_phase}
+        self._apply_phase_transition(branch, state, transition)
+        return {"success": True, "from_phase": state.current_phase, "to_phase": to_phase}
 
     def force_transition(
         self,
@@ -252,72 +241,125 @@ class PhaseStateEngine:
         to_phase: str,
         skip_reason: str,
         human_approval_message: str | None = None,
+        *,
+        resume_cycle: str | None = None,
     ) -> dict[str, Any]:
-        """Execute forced non-sequential phase transition."""
+        """Skip exit gates, while retaining phase, plan and cycle-entry validity."""
+        if not skip_reason or not skip_reason.strip():
+            raise PhaseEntryError("phase_skip_reason_required")
+        resolved_approval = self._resolve_approval(human_approval_message, required=True)
         state = self.get_state(branch)
-        from_phase = state.current_phase
-        workflow_name = state.workflow_name
-        issue_number = state.issue_number
-        if issue_number is None:
-            raise ValueError(f"Branch '{branch}' has no issue_number in state")
-
+        self._validate_transition_entry(state, to_phase, resume_cycle, forced=True)
         report = self._workflow_gate_runner.inspect_phase_exit(
-            workflow_name=workflow_name,
-            phase=from_phase,
+            workflow_name=state.workflow_name,
+            phase=state.current_phase,
             cycle_number=state.current_cycle,
         )
         skipped_gates = list(report.blocking)
-        passing_gates = list(report.passing)
-        report_payload = self._gate_report_to_payload(report)
-
         if skipped_gates:
             logger.warning(
                 "force_transition skipped_gates=%s (from=%s, to=%s, skip_reason=%r)",
                 skipped_gates,
-                from_phase,
+                state.current_phase,
                 to_phase,
                 skip_reason,
             )
-
-        if self._is_cycle_based_phase(workflow_name, from_phase):
-            self.on_exit_cycle_based_phase(branch)
-            state = self.get_state(branch)
-
-        resolved_approval = self._resolve_approval(human_approval_message, required=True)
-
         transition = TransitionRecord(
-            from_phase=from_phase,
+            from_phase=state.current_phase,
             to_phase=to_phase,
             timestamp=datetime.now(UTC).isoformat(),
             human_approval_message=resolved_approval,
             forced=True,
             skip_reason=skip_reason,
+            resume_cycle=resume_cycle,
         )
-
-        self._workflow_state_mutator.apply(
-            branch,
-            lambda _s: _s.with_updates(
-                current_phase=to_phase,
-                transitions=[*_s.transitions, self._transition_to_dict(transition)],
-                skip_reason=skip_reason,
-                current_sub_phase=None,
-            ),
-        )
-        self._reset_context_loaded(branch)
-
-        if self._is_cycle_based_phase(workflow_name, to_phase):
-            self.on_enter_cycle_based_phase(branch, issue_number)
-
+        self._apply_phase_transition(branch, state, transition)
         return {
             "success": True,
-            "from_phase": from_phase,
+            "from_phase": state.current_phase,
             "to_phase": to_phase,
             "forced": True,
             "skip_reason": skip_reason,
             "skipped_gates": skipped_gates,
-            "passing_gates": passing_gates,
-            "gate_report": report_payload,
+            "passing_gates": list(report.passing),
+            "gate_report": self._gate_report_to_payload(report),
         }
+
+    def _validate_transition_entry(
+        self, state: BranchState, to_phase: str, resume_cycle: str | None, *, forced: bool
+    ) -> int | None:
+        self._require_issue_number(state.branch, state)
+        workflow = self._contracts_config.workflows.get(state.workflow_name)
+        if workflow is None:
+            raise PhaseEntryError("phase_workflow_invalid")
+        workflow.get_phase(state.current_phase)
+        try:
+            target = workflow.get_phase(to_phase)
+        except ValueError as exc:
+            raise PhaseEntryError("phase_target_invalid") from exc
+        if not forced:
+            self._contracts_config.validate_transition(
+                state.workflow_name, state.current_phase, to_phase
+            )
+        if not target.cycle_based:
+            if resume_cycle is not None:
+                raise PhaseEntryError("cycle_resume_not_allowed")
+            return None
+        issue_number = self._require_issue_number(state.branch, state)
+        planning = self._get_planning(issue_number)
+        if planning.cycles is None:
+            raise PhaseEntryError("planning_cycles_required")
+        prior_work = state.current_cycle is not None or bool(state.cycle_history)
+        if prior_work and resume_cycle is None:
+            raise PhaseEntryError("cycle_resume_required")
+        selected_ref = resume_cycle if resume_cycle is not None else "C_1"
+        selected = next(
+            (cycle for cycle in planning.cycles.cycles if cycle.cycle_id == selected_ref), None
+        )
+        if selected is None or (not prior_work and selected.cycle_number != 1):
+            raise PhaseEntryError("cycle_resume_invalid")
+        return selected.cycle_number
+
+    def _apply_phase_transition(
+        self, branch: str, initial: BranchState, transition: TransitionRecord
+    ) -> None:
+        def compose(fresh: BranchState) -> BranchState:
+            if (
+                fresh.branch != branch
+                or fresh.issue_number != initial.issue_number
+                or fresh.workflow_name != initial.workflow_name
+                or fresh.current_phase != initial.current_phase
+                or fresh.current_cycle != initial.current_cycle
+            ):
+                raise PhaseEntryError("phase_transition_state_changed")
+            selected_cycle = self._validate_transition_entry(
+                fresh, transition.to_phase, transition.resume_cycle, forced=transition.forced
+            )
+            last_cycle = fresh.last_cycle
+            if (
+                self._contracts_config.workflows[fresh.workflow_name]
+                .get_phase(fresh.current_phase)
+                .cycle_based
+                and fresh.current_cycle is not None
+            ):
+                last_cycle = fresh.current_cycle
+            current_cycle = fresh.current_cycle
+            if selected_cycle is not None:
+                current_cycle = selected_cycle
+                last_cycle = None
+            updates: dict[str, Any] = {
+                "current_phase": transition.to_phase,
+                "current_cycle": current_cycle,
+                "last_cycle": last_cycle,
+                "current_sub_phase": None,
+                "transitions": [*fresh.transitions, self._transition_to_dict(transition)],
+            }
+            if transition.forced:
+                updates["skip_reason"] = transition.skip_reason
+            return fresh.with_updates(**updates)
+
+        self._workflow_state_mutator.apply(branch, compose)
+        self._reset_context_loaded(branch)
 
     def transition_cycle(
         self,
@@ -508,16 +550,23 @@ class PhaseStateEngine:
             raise ValueError(f"Branch '{branch}' has no issue_number in state")
         return issue_number
 
-    def _get_cycles(self, issue_number: int) -> tuple[list[dict[str, Any]], int]:
-        """Return planned cycles and total count for one issue."""
-        self._validate_planning_deliverables_exist(issue_number)
+    def _get_planning(self, issue_number: int) -> StoredPlanningModel:
         plan = self.project_manager.get_project_plan(issue_number)
-        assert plan is not None
-        planning_deliverables = plan["planning_deliverables"]
-        cycles_data = planning_deliverables.get("cycles", {})
-        cycles = cycles_data.get("cycles", [])
-        total_cycles = cycles_data.get("total", 0)
-        return cycles, total_cycles
+        if plan is None or "planning_deliverables" not in plan:
+            raise PhaseEntryError("planning_deliverables_missing")
+        try:
+            return StoredPlanningModel.model_validate(plan["planning_deliverables"])
+        except ValidationError as exc:
+            raise PhaseEntryError("planning_deliverables_invalid") from exc
+
+    def _get_cycles(self, issue_number: int) -> tuple[list[dict[str, Any]], int]:
+        """Return validated current cycles and their stored derived total."""
+        planning = self._get_planning(issue_number)
+        if planning.cycles is None:
+            raise PhaseEntryError("planning_cycles_required")
+        return [
+            cycle.model_dump(exclude_none=True) for cycle in planning.cycles.cycles
+        ], planning.cycles.total
 
     def _is_cycle_based_phase(
         self,
@@ -619,27 +668,11 @@ class PhaseStateEngine:
             msg = f"cycle_number must be in range [1..{total_cycles}], got {cycle_number}"
             raise ValueError(msg)
 
-    def _validate_planning_deliverables_exist(self, issue_number: int) -> None:
-        """Validate that planning deliverables exist for issue.
-
-        Args:
-            issue_number: GitHub issue number
-
-        Raises:
-            ValueError: If planning deliverables not found
-
-        Issue #146 Cycle 2: Existence check before cycle transitions.
-        """
-        plan = self.project_manager.get_project_plan(issue_number)
-        if not plan or "planning_deliverables" not in plan:
-            msg = f"Planning deliverables not found for issue {issue_number}"
-            raise ValueError(msg)
-
     def record_sub_phase(self, branch: str, sub_phase: str | None) -> None:
         """Persist the current TDD sub_phase (red/green/refactor/None) to state.
 
-        Called by GitCommitTool after every successful commit. Always-write:
-        even None is written explicitly to clear any previously stored value.
+        Registered by GitCommitTool before a commit and rolled back if it fails.
+        Even None is written explicitly to clear a previously stored value.
         """
         self._workflow_state_mutator.apply(
             branch, lambda s: s.with_updates(current_sub_phase=sub_phase)
@@ -654,7 +687,7 @@ class PhaseStateEngine:
         Returns:
             dict representation
         """
-        return {
+        payload = {
             "from_phase": transition.from_phase,
             "to_phase": transition.to_phase,
             "timestamp": transition.timestamp,
@@ -662,56 +695,13 @@ class PhaseStateEngine:
             "forced": transition.forced,
             "skip_reason": transition.skip_reason,
         }
+        if transition.resume_cycle is not None:
+            payload["resume_cycle"] = transition.resume_cycle
+        return payload
 
     def _workspace_root_path(self) -> Path:
         """Return the workspace root derived from the tracked state file location."""
         return self._workspace_root
-
-    def on_enter_cycle_based_phase(self, branch: str, issue_number: int) -> None:
-        """Hook called when entering implementation phase.
-
-        Auto-initializes TDD cycle 1 in branch state. Planning deliverables
-        are validated at planning exit (on_exit_planning_phase) â€” not here.
-
-        Args:
-            branch: Branch name
-            issue_number: GitHub issue number
-        """
-
-        def _enter_lambda(_s: BranchState) -> BranchState:
-            if _s.current_cycle is None:
-                return _s.with_updates(
-                    current_cycle=1,
-                    last_cycle=0,
-                    cycle_history=[*_s.cycle_history],
-                )
-            return _s
-
-        self._workflow_state_mutator.apply(branch, _enter_lambda)
-
-        logger.info(f"Entered implementation phase for issue {issue_number} on branch {branch}")
-
-    def on_exit_cycle_based_phase(self, branch: str) -> None:
-        """Hook called when exiting implementation phase.
-
-        Preserves last_cycle and current_cycle across detours.
-        Logs warning if not all cycles completed.
-
-        Args:
-            branch: Branch name
-        """
-
-        def _exit_lambda(_s: BranchState) -> BranchState:
-            if _s.current_cycle is not None:
-                logger.info(
-                    "Exited implementation phase at cycle %s on branch %s",
-                    _s.current_cycle,
-                    branch,
-                )
-                return _s.with_updates(last_cycle=_s.current_cycle)
-            return _s
-
-        self._workflow_state_mutator.apply(branch, _exit_lambda)
 
     def _resolve_approval(
         self,

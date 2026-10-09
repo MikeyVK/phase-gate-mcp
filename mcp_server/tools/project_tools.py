@@ -1,7 +1,7 @@
 """Project management tools for MCP server.
 
 Phase 0.5: Project initialization with workflow selection.
-Issue #39: Atomic initialization of deliverables.json + state.json.
+Issue #39: Project and branch-state initialization.
 Issue #79: Parent branch tracking with auto-detection.
 Issue #229 Cycle 4: SavePlanningDeliverablesTool with Layer 2 validates schema validation.
 """
@@ -72,10 +72,10 @@ class InitializeProjectInput(BaseModel):
 
 
 class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectOutput]):
-    """Tool for initializing projects with atomic state management.
+    """Initialize project metadata and branch state after same-branch admission.
 
-    Phase 0.5: Human selects workflow_name → generates project phase plan.
-    Issue #39 Mode 1: Atomic initialization of deliverables.json + state.json.
+    Project and state writes remain separate; this guard prevents overwriting
+    an already initialized branch before project persistence starts.
     """
 
     output_model: ClassVar[type[BaseModel]] = InitializeProjectOutput
@@ -215,9 +215,9 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         params: InitializeProjectInput,
         context: NoteContext,  # noqa: ANN401, ARG002
     ) -> InitializeProjectOutput:
-        """Execute project initialization with atomic state creation.
+        """Admit the branch, then initialize project metadata and branch state.
 
-        Issue #39: Creates both deliverables.json AND state.json atomically.
+        Project and state are persisted separately.
         Issue #79: Auto-detects parent_branch if not provided.
 
         Args:
@@ -230,6 +230,10 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
             # Step 0: Get current branch once and reuse
             with anyio.fail_after(5):
                 branch = await anyio.to_thread.run_sync(self.git_manager.get_current_branch)
+
+            await anyio.to_thread.run_sync(
+                lambda: self.state_engine.validate_branch_initialization(branch)
+            )
 
             # Step 1: Determine parent_branch
             parent_branch = params.parent_branch
@@ -262,7 +266,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
             # Step 3: Determine first phase from workflow
             first_phase = result["required_phases"][0]
 
-            # Step 5: Initialize branch state atomically
+            # Step 5: Initialize branch state
             with anyio.fail_after(10):
                 await anyio.to_thread.run_sync(
                     lambda: self.state_engine.initialize_branch(

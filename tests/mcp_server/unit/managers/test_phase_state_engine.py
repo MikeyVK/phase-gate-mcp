@@ -1,6 +1,4 @@
-"""Tests for PhaseStateEngine implementation-phase lifecycle hooks.
-
-Issue #146 Cycle 4: implementation phase lifecycle hooks.
+"""Public phase entry, cycle resumption and state mutation behavior.
 
 @layer: Tests (Unit)
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.phase_state_engine
@@ -9,20 +7,22 @@ Issue #146 Cycle 4: implementation phase lifecycle hooks.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.core.interfaces import IContextLoadedWriter
-from mcp_server.managers.phase_state_engine import PhaseStateEngine
+from mcp_server.managers.phase_state_engine import PhaseEntryError, PhaseStateEngine
 from mcp_server.managers.state_repository import (
     BranchState,
     FileStateRepository,
     InMemoryStateRepository,
     StateBranchMismatchError,
 )
-from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.deliverables import SavePlanningModel, StoredPlanningModel
 from tests.mcp_server.test_support import (
     get_default_server_root,
     make_phase_state_engine,
@@ -30,11 +30,8 @@ from tests.mcp_server.test_support import (
 )
 
 
-class TestTDDPhaseHooks:
-    """Tests for implementation phase entry/exit hooks.
-
-    Issue #146 Cycle 4: on_enter_implementation_phase and on_exit_implementation_phase.
-    """
+class TestCyclePhaseEntry:
+    """Current-plan selection occurs before phase, pointer or audit writes."""
 
     @pytest.fixture()
     def setup_project(self, tmp_path: Path) -> tuple[Path, int]:
@@ -96,136 +93,221 @@ class TestTDDPhaseHooks:
 
         return workspace_root, issue_number
 
-    def test_on_enter_implementation_phase_initializes_cycle_1(
-        self, setup_project: tuple[Path, int]
+    class PlanReader:
+        """Supply only the existing read-only plan interface."""
+
+        def __init__(self, plan: Mapping[str, Any]) -> None:
+            self.plan = plan
+
+        def get_project_plan(self, issue_number: int) -> Mapping[str, Any] | None:
+            assert issue_number == 146
+            return self.plan
+
+    def entry_engine(
+        self,
+        setup_project: tuple[Path, int],
+        *,
+        current_phase: str = "planning",
+        current_cycle: int | None = None,
+        cycle_history: list[dict[str, Any]] | None = None,
+    ) -> tuple[PhaseStateEngine, FileStateRepository, str, MagicMock, PlanReader]:
+        workspace, issue_number = setup_project
+        plan = make_project_manager(workspace).get_project_plan(issue_number)
+        assert plan is not None
+        reader = self.PlanReader(plan)
+        repository = FileStateRepository(
+            state_file=workspace / get_default_server_root() / "state.json"
+        )
+        branch = "feature/146-entry"
+        repository.save(
+            BranchState(
+                branch=branch,
+                issue_number=issue_number,
+                workflow_name="feature",
+                current_phase=current_phase,
+                current_cycle=current_cycle,
+                last_cycle=3,
+                current_sub_phase="green",
+                cycle_history=cycle_history or [],
+            )
+        )
+        writer = MagicMock(spec=IContextLoadedWriter)
+        engine = make_phase_state_engine(
+            workspace,
+            project_manager=reader,
+            state_repository=repository,
+            context_loaded_writer=writer,
+        )
+        return engine, repository, branch, writer, reader
+
+    @pytest.mark.parametrize("forced", [False, True])
+    def test_first_entry_selects_c1_with_a_read_only_plan_provider(
+        self, setup_project: tuple[Path, int], forced: bool
     ) -> None:
-        """Test that entering implementation phase auto-initializes cycle 1."""
-        # Arrange
-        workspace_root, issue_number = setup_project
-        branch = "feature/146-tdd-cycle-tracking"
-
-        project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(
-            workspace_root,
-            project_manager=project_manager,
-            state_repository=InMemoryStateRepository(),
-        )
-
-        # Initialize branch in design phase (one step before implementation)
-        state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="design"
-        )
-
-        # Verify no TDD cycle yet
-        state = state_engine.get_state(branch)
-        assert state.current_cycle is None
-
-        # Act
-        state_engine.on_enter_cycle_based_phase(branch, issue_number)
-
-        # Assert
-        state = state_engine.get_state(branch)
+        engine, repository, branch, writer, _reader = self.entry_engine(setup_project)
+        if forced:
+            engine.force_transition(
+                branch, "implementation", "Begin work", "Owner approved", resume_cycle="C_1"
+            )
+        else:
+            engine.transition(branch, "implementation")
+        state = repository.load(branch)
+        assert state.current_phase == "implementation"
         assert state.current_cycle == 1
-        assert state.last_cycle == 0
+        assert state.last_cycle is None
+        assert state.current_sub_phase is None
+        assert state.cycle_history == []
+        if forced:
+            assert state.transitions[-1]["resume_cycle"] == "C_1"
+        writer.set_context_loaded.assert_called_once_with(branch, value=False)
 
-    def test_on_enter_implementation_phase_does_not_block_without_planning_deliverables(
-        self, tmp_path: Path
+    @pytest.mark.parametrize("forced", [False, True])
+    def test_reentry_selects_the_current_plan_after_an_active_cycle_was_removed(
+        self, setup_project: tuple[Path, int], forced: bool
     ) -> None:
-        """Test that entering implementation phase does NOT block on missing planning deliverables.
-
-        GAP-02 fix (Issue #229 C2): the planning-deliverables check was moved to
-        on_exit_planning_phase. TDD entry must no longer enforce this contract.
-        """
-        # Arrange
-        workspace_root = tmp_path
-        issue_number = 146
-        branch = "feature/146-tdd-cycle-tracking"
-
-        project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(
-            workspace_root,
-            project_manager=project_manager,
-            state_repository=InMemoryStateRepository(),
+        history = [{"cycle_number": 4, "name": "Previous work"}]
+        engine, repository, branch, writer, reader = self.entry_engine(
+            setup_project, current_cycle=4, cycle_history=history
         )
-
-        # Initialize project WITHOUT planning deliverables
-        project_manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="TDD Cycle Tracking",
-            workflow_name="feature",
-        )
-
-        state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="design"
-        )
-
-        # Act & Assert â€” must NOT raise; gate lives at planning exit now
-        state_engine.on_enter_cycle_based_phase(branch, issue_number)
-        state = state_engine.get_state(branch)
-        assert state.current_cycle == 1
-
-    def test_on_exit_implementation_phase_preserves_last_cycle(
-        self, setup_project: tuple[Path, int]
-    ) -> None:
-        """Test that exiting implementation phase preserves last_cycle."""
-        # Arrange
-        workspace_root, issue_number = setup_project
-        branch = "feature/146-tdd-cycle-tracking"
-
-        project_manager = make_project_manager(workspace_root)
-        state_repository = InMemoryStateRepository()
-        state_engine = make_phase_state_engine(
-            workspace_root,
-            project_manager=project_manager,
-            state_repository=state_repository,
-        )
-
-        # Initialize in implementation phase at cycle 3
-        state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="implementation"
-        )
-        state = state_engine.get_state(branch)
-        state_repository.save(state.with_updates(current_cycle=3))
-
-        # Act
-        state_engine.on_exit_cycle_based_phase(branch)
-
-        # Assert
-        state = state_engine.get_state(branch)
-        assert state.last_cycle == 3
-        assert state.current_cycle == 3
-
-    def test_on_exit_implementation_phase_validates_completion(
-        self, setup_project: tuple[Path, int]
-    ) -> None:
-        """Test that exiting implementation phase validates all cycles completed."""
-        # Arrange
-        workspace_root, issue_number = setup_project
-        branch = "feature/146-tdd-cycle-tracking"
-
-        project_manager = make_project_manager(workspace_root)
-        state_repository = InMemoryStateRepository()
-        state_engine = make_phase_state_engine(
-            workspace_root,
-            project_manager=project_manager,
-            state_repository=state_repository,
-        )
-
-        # Initialize in implementation phase at cycle 2 (not completed)
-        state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="implementation"
-        )
-        state = state_engine.get_state(branch)
-        state_repository.save(state.with_updates(current_cycle=2))
-
-        # Act
-        # Design decision: Allow exit with warning (logs but doesn't block)
-        state_engine.on_exit_cycle_based_phase(branch)
-
-        # Assert
-        state = state_engine.get_state(branch)
-        assert state.last_cycle == 2
+        current = StoredPlanningModel.model_validate(reader.plan["planning_deliverables"])
+        assert current.cycles is not None
+        compacted = current.model_dump(exclude_none=True)
+        compacted["cycles"]["cycles"] = compacted["cycles"]["cycles"][:2]
+        compacted["cycles"]["total"] = 2
+        StoredPlanningModel.model_validate(compacted)
+        reader.plan = {**reader.plan, "planning_deliverables": compacted}
+        if forced:
+            engine.force_transition(
+                branch,
+                "implementation",
+                "Resume changed plan",
+                "Owner approved",
+                resume_cycle="C_2",
+            )
+        else:
+            engine.transition(branch, "implementation", resume_cycle="C_2")
+        state = repository.load(branch)
         assert state.current_cycle == 2
+        assert state.last_cycle is None
+        assert state.current_sub_phase is None
+        assert state.cycle_history == history
+        assert state.transitions[-1]["resume_cycle"] == "C_2"
+        writer.set_context_loaded.assert_called_once_with(branch, value=False)
+
+    @pytest.mark.parametrize("forced", [False, True])
+    @pytest.mark.parametrize(
+        ("current_phase", "current_cycle", "to_phase", "resume", "error"),
+        [
+            ("planning", 4, "implementation", None, "cycle_resume_required"),
+            ("planning", 4, "implementation", "C_9", "cycle_resume_invalid"),
+            ("planning", None, "implementation", "C_2", "cycle_resume_invalid"),
+            ("implementation", 2, "validation", "C_1", "cycle_resume_not_allowed"),
+            ("planning", 4, "unconfigured", None, "phase_target_invalid"),
+        ],
+    )
+    def test_invalid_selection_preserves_state_bytes_history_and_context(
+        self,
+        setup_project: tuple[Path, int],
+        forced: bool,
+        current_phase: str,
+        current_cycle: int | None,
+        to_phase: str,
+        resume: str | None,
+        error: str,
+    ) -> None:
+        engine, repository, branch, writer, _reader = self.entry_engine(
+            setup_project, current_phase=current_phase, current_cycle=current_cycle
+        )
+        before = engine.state_path.read_bytes()
+        state = repository.load(branch)
+        with pytest.raises(PhaseEntryError, match=error) as exc:
+            if forced:
+                engine.force_transition(
+                    branch, to_phase, "Investigated", "Owner approved", resume_cycle=resume
+                )
+            else:
+                engine.transition(branch, to_phase, resume_cycle=resume)
+        assert exc.value.error_code == error
+        assert repository.load(branch) == state
+        assert engine.state_path.read_bytes() == before
+        writer.set_context_loaded.assert_not_called()
+
+    def test_prior_history_requires_selection_when_current_cycle_is_absent(
+        self, setup_project: tuple[Path, int]
+    ) -> None:
+        engine, repository, branch, writer, _reader = self.entry_engine(
+            setup_project, cycle_history=[{"cycle_number": 1}]
+        )
+        state = repository.load(branch)
+        with pytest.raises(PhaseEntryError, match="cycle_resume_required"):
+            engine.transition(branch, "implementation")
+        assert repository.load(branch) == state
+        writer.set_context_loaded.assert_not_called()
+
+    @pytest.mark.parametrize("forced", [False, True])
+    def test_invalid_complete_plan_cannot_be_bypassed_by_force(
+        self, setup_project: tuple[Path, int], forced: bool
+    ) -> None:
+        engine, repository, branch, writer, reader = self.entry_engine(setup_project)
+        raw = dict(reader.plan["planning_deliverables"])
+        raw["cycles"] = {"total": 0, "cycles": []}
+        reader.plan = {**reader.plan, "planning_deliverables": raw}
+        state = repository.load(branch)
+        before = engine.state_path.read_bytes()
+        with pytest.raises(PhaseEntryError, match="planning_deliverables_invalid"):
+            if forced:
+                engine.force_transition(branch, "implementation", "Begin", "Owner approved")
+            else:
+                engine.transition(branch, "implementation")
+        assert repository.load(branch) == state
+        assert engine.state_path.read_bytes() == before
+        writer.set_context_loaded.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("change", "error"),
+        [("plan", "cycle_resume_invalid"), ("state", "phase_transition_state_changed")],
+    )
+    def test_entry_revalidates_plan_and_state_inside_the_fresh_state_callback(
+        self, setup_project: tuple[Path, int], change: str, error: str
+    ) -> None:
+        engine, repository, branch, writer, reader = self.entry_engine(
+            setup_project, current_cycle=4
+        )
+        original = repository.load(branch)
+        workspace, _issue_number = setup_project
+
+        class ChangedPlanMutator:
+            def apply(
+                self, selected_branch: str, mutate: Callable[[BranchState], BranchState]
+            ) -> None:
+                fresh = repository.load(selected_branch)
+                if change == "plan":
+                    current = StoredPlanningModel.model_validate(
+                        reader.plan["planning_deliverables"]
+                    )
+                    assert current.cycles is not None
+                    compacted = current.model_dump(exclude_none=True)
+                    compacted["cycles"]["cycles"] = compacted["cycles"]["cycles"][:1]
+                    compacted["cycles"]["total"] = 1
+                    reader.plan = {**reader.plan, "planning_deliverables": compacted}
+                else:
+                    fresh = fresh.with_updates(current_phase="research")
+                updated = mutate(fresh)
+                repository.save(updated)
+
+        engine = make_phase_state_engine(
+            workspace,
+            project_manager=reader,
+            state_repository=repository,
+            workflow_state_mutator=ChangedPlanMutator(),
+            context_loaded_writer=writer,
+        )
+        before = engine.state_path.read_bytes()
+        with pytest.raises(PhaseEntryError, match=error):
+            engine.transition(branch, "implementation", resume_cycle="C_2")
+        assert repository.load(branch) == original
+        assert engine.state_path.read_bytes() == before
+        writer.set_context_loaded.assert_not_called()
 
 
 class TestPhaseStateEngineCleanBreak:
@@ -399,13 +481,10 @@ class TestTransitionHooksWiring:
             "current_cycle should be preserved after exiting implementation phase"
         )
 
-    def test_force_reentry_to_implementation_preserves_active_cycle(
+    def test_force_reentry_resumes_selected_current_plan_cycle(
         self, setup_project: tuple[Path, int]
     ) -> None:
-        """Implementation detour re-entry preserves the active cycle.
-
-        Re-entry after a planning detour must not reset the cycle to 1.
-        """
+        """Explicit re-entry selects an existing cycle from the current plan."""
         workspace_root, issue_number = setup_project
         branch = "feature/999-detour-reentry"
 
@@ -425,7 +504,7 @@ class TestTransitionHooksWiring:
 
         state_engine.force_transition(
             branch=branch,
-            to_phase="planning",
+            to_phase="design",
             skip_reason="Test detour to planning",
             human_approval_message="Test approved on 2026-06-04",
         )
@@ -433,13 +512,14 @@ class TestTransitionHooksWiring:
             branch=branch,
             to_phase="implementation",
             skip_reason="Test re-entry to implementation",
+            resume_cycle="C_1",
             human_approval_message="Test approved on 2026-06-04",
         )
 
         state = state_engine.get_state(branch)
         assert state.current_phase == "implementation"
-        assert state.current_cycle == 2, "current_cycle should remain on the active detour cycle"
-        assert state.last_cycle == 2
+        assert state.current_cycle == 1
+        assert state.last_cycle is None
 
 
 class TestPhaseStateEngineMutatorRoutingC6:
@@ -536,76 +616,6 @@ class TestPhaseStateEngineMutatorRoutingC6:
         engine.transition(branch="feature/231-test", to_phase="design")
 
         assert "feature/231-test" in mutator.apply_calls
-
-    def test_on_enter_implementation_phase_routes_through_mutator(self, tmp_path: Path) -> None:
-        """on_enter_implementation_phase() calls mutator.apply().
-
-        RED: fails until GREEN routes implementation hooks through mutator.
-        """
-        project_manager = make_project_manager(tmp_path)
-        project_manager.initialize_project(
-            issue_number=231,
-            issue_title="State Split",
-            workflow_name="feature",
-        )
-        repo = InMemoryStateRepository()
-        mutator = self._TrackingMutator(repo)
-        engine = make_phase_state_engine(
-            tmp_path,
-            project_manager=project_manager,
-            state_repository=repo,
-            workflow_state_mutator=mutator,
-        )
-        seed = BranchState(
-            branch="feature/231-test",
-            issue_number=231,
-            workflow_name="feature",
-            current_phase="implementation",
-        )
-        repo.save(seed)
-        mutator.apply_calls.clear()
-
-        engine.on_enter_cycle_based_phase("feature/231-test", 231)
-
-        assert "feature/231-test" in mutator.apply_calls
-
-    def test_on_exit_implementation_phase_routes_through_mutator(self, tmp_path: Path) -> None:
-        """on_exit_implementation_phase() calls mutator.apply().
-
-        RED: fails until GREEN routes implementation hooks through mutator.
-        """
-        project_manager = make_project_manager(tmp_path)
-        project_manager.initialize_project(
-            issue_number=231,
-            issue_title="State Split",
-            workflow_name="feature",
-        )
-        repo = InMemoryStateRepository()
-        mutator = self._TrackingMutator(repo)
-        engine = make_phase_state_engine(
-            tmp_path,
-            project_manager=project_manager,
-            state_repository=repo,
-            workflow_state_mutator=mutator,
-        )
-        seed = BranchState(
-            branch="feature/231-test",
-            issue_number=231,
-            workflow_name="feature",
-            current_phase="implementation",
-            current_cycle=1,
-        )
-        repo.save(seed)
-        mutator.apply_calls.clear()
-
-        engine.on_exit_cycle_based_phase("feature/231-test")
-
-        assert "feature/231-test" in mutator.apply_calls
-
-
-# ---------------------------------------------------------------------------
-# C4 RED — PhaseStateEngine.record_sub_phase() + clearing (issue #298)
-# ---------------------------------------------------------------------------
 
 
 class TestPhaseStateEngineRecordSubPhase:
@@ -725,13 +735,6 @@ class TestPhaseStateEngineRecordSubPhase:
         )
         engine.transition_cycle(branch=branch, to_cycle=2)
         assert repo.load(branch).current_sub_phase is None
-
-    def test_on_exit_cycle_based_phase_does_not_touch_sub_phase(self, tmp_path: Path) -> None:
-        """on_exit_cycle_based_phase() must not modify current_sub_phase."""
-        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="green")
-        engine.on_exit_cycle_based_phase(branch)
-        # sub_phase must remain unchanged (hook owns only cycle tracking)
-        assert repo.load(branch).current_sub_phase == "green"
 
 
 class TestContextLoadedWriterReset:
@@ -1571,6 +1574,7 @@ class TestHumanApprovalMessageMigration:
         assert state.transitions[0]["human_approval"] == "Approved"
         assert state.cycle_history[0]["human_approval"] == "Approved"
 
+
 def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> None:
     """Missing approval must not change exit pointers, audit or loaded context."""
     branch = "refactor/491-entry"
@@ -1579,15 +1583,22 @@ def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> 
     state_file = tmp_path / get_default_server_root() / "state.json"
     repository = FileStateRepository(state_file=state_file)
     initial = BranchState(
-        branch=branch, issue_number=491, workflow_name="refactor",
-        current_phase="implementation", current_cycle=2, last_cycle=1,
-        current_sub_phase="green", cycle_history=[{"cycle_number": 2}],
+        branch=branch,
+        issue_number=491,
+        workflow_name="refactor",
+        current_phase="implementation",
+        current_cycle=2,
+        last_cycle=1,
+        current_sub_phase="green",
+        cycle_history=[{"cycle_number": 2}],
     )
     repository.save(initial)
     before = state_file.read_bytes()
     writer = MagicMock(spec=IContextLoadedWriter)
     engine = make_phase_state_engine(
-        tmp_path, project_manager=manager, state_repository=repository,
+        tmp_path,
+        project_manager=manager,
+        state_repository=repository,
         context_loaded_writer=writer,
     )
     with pytest.raises(ValueError, match="human_approval_message"):

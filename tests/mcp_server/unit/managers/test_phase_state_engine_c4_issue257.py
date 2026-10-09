@@ -190,7 +190,7 @@ def _create_cycle_engine(
         issue_number=issue_number,
         initial_phase="implementation",
     )
-    engine.on_enter_cycle_based_phase(branch, issue_number)
+    repository.save(engine.get_state(branch).with_updates(current_cycle=1, last_cycle=None))
     return engine, branch
 
 

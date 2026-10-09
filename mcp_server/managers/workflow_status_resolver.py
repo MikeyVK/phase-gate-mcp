@@ -11,7 +11,6 @@ from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 
 if TYPE_CHECKING:
-    from mcp_server.core.commit_phase_detector import CommitPhaseDetector
     from mcp_server.core.interfaces import IGitContextReader, IStateReader
 
 logger = logging.getLogger(__name__)
@@ -29,11 +28,9 @@ class WorkflowStatusResolver:
         self,
         git_context_reader: IGitContextReader,
         state_reader: IStateReader,
-        commit_phase_detector: CommitPhaseDetector,
     ) -> None:
         self._git = git_context_reader
         self._state = state_reader
-        self._detector = commit_phase_detector
 
     def resolve_current(self) -> WorkflowStatusDTO:
         """Resolve workflow status for the current branch from state.json.

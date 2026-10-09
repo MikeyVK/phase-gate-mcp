@@ -17,8 +17,11 @@ from pydantic import ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.tools.phase_tools import (
+    ForcePhaseTransitionInput,
+    ForcePhaseTransitionTool,
     TransitionPhaseInput,
     TransitionPhaseTool,
 )
@@ -102,37 +105,49 @@ class TestTransitionPhaseTool:
         assert result.to_phase == feature_phases[1]
 
     @pytest.mark.asyncio
-    async def test_chore_workflow_enforces_its_configured_sequence(
+    @pytest.mark.parametrize(
+        ("workflow", "initial", "next_phase", "skipped_phase"),
+        [
+            ("chore", "research", "implementation", "documentation"),
+            ("hotfix", "implementation", "validation", "ready"),
+        ],
+    )
+    async def test_compact_workflow_enforces_its_configured_sequence(
         self,
         tool: TransitionPhaseTool,
         project_manager: ProjectManager,
         phase_engine: PhaseStateEngine,
+        workflow: str,
+        initial: str,
+        next_phase: str,
+        skipped_phase: str,
     ) -> None:
-        """Chore permits the next phase and rejects skipping a configured phase."""
+        """Compact workflows permit the next phase and rejects skipping a configured phase."""
         project_manager.initialize_project(
             issue_number=446,
-            issue_title="Add chore workflow",
-            workflow_name="chore",
+            issue_title="Compact workflow",
+            workflow_name=workflow,
         )
-        branch = "chore/446-add-workflow"
+        branch = f"{workflow}/446-compact-workflow"
         phase_engine.initialize_branch(
             branch=branch,
             issue_number=446,
-            initial_phase="research",
+            initial_phase=initial,
         )
 
         next_result = await tool.execute(
-            TransitionPhaseInput(branch=branch, to_phase="implementation"),
+            TransitionPhaseInput(branch=branch, to_phase=next_phase),
             NoteContext(),
         )
         skipped_result = await tool.execute(
-            TransitionPhaseInput(branch=branch, to_phase="documentation"),
+            TransitionPhaseInput(branch=branch, to_phase=skipped_phase),
             NoteContext(),
         )
 
         assert next_result.success is True
-        assert next_result.from_phase == "research"
-        assert next_result.to_phase == "implementation"
+        assert next_result.from_phase == initial
+        assert next_result.to_phase == next_phase
+        assert phase_engine.get_state(branch).current_cycle is None
         assert skipped_result.success is False
         assert skipped_result.error_message is not None
         assert "Invalid transition" in skipped_result.error_message
@@ -272,3 +287,76 @@ class TestTransitionPhaseTool:
                 to_phase="design",
                 human_approval_message=False,  # type: ignore
             )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("forced", [False, True])
+async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, forced: bool) -> None:
+    """Both public tools carry selection and structured rejection without writes."""
+    manager = make_project_manager(tmp_path)
+    manager.initialize_project(491, "Cycle selection", "feature")
+    manager.save_planning_deliverables(
+        491,
+        SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": name,
+                            "deliverables": [
+                                {
+                                    "deliverable_name": "Behavior",
+                                    "description": "Prove the selected behavior",
+                                }
+                            ],
+                            "exit_criteria": "Focused behavior is proven",
+                        }
+                        for name in ("First", "Second")
+                    ]
+                }
+            }
+        ),
+    )
+    engine = make_phase_state_engine(tmp_path, project_manager=manager)
+    branch = "feature/491-selection"
+    engine.initialize_branch(branch, 491, "planning")
+    engine.transition(branch, "implementation")
+    engine.transition_cycle(branch, 2)
+    engine.force_transition(branch, "planning", "Revise the plan", "Owner approval")
+    before = engine.get_state(branch)
+    tool_kwargs = {
+        "workspace_root": tmp_path,
+        "project_manager": manager,
+        "state_engine": engine,
+        "server_root": tmp_path,
+    }
+    tool = ForcePhaseTransitionTool(**tool_kwargs) if forced else TransitionPhaseTool(**tool_kwargs)
+    for selection, expected in (
+        (None, "cycle_resume_required"),
+        ("C_3", "cycle_resume_invalid"),
+        ("C_2", None),
+    ):
+        if forced:
+            params = ForcePhaseTransitionInput(
+                branch=branch,
+                to_phase="implementation",
+                resume_cycle=selection,
+                skip_reason="Resume selected work",
+                human_approval_message="Owner approval",
+            )
+        else:
+            params = TransitionPhaseInput(
+                branch=branch, to_phase="implementation", resume_cycle=selection
+            )
+        result = await tool.execute(params, NoteContext())
+        assert result.error_code == expected
+        assert result.success is (expected is None)
+        state = engine.get_state(branch)
+        if expected is not None:
+            assert state == before
+        else:
+            assert state.current_cycle == 2
+            assert state.last_cycle is None
+            assert state.current_sub_phase is None
+            assert state.cycle_history == before.cycle_history
+            assert state.transitions[-1]["resume_cycle"] == "C_2"

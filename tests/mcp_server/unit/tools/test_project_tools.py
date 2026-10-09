@@ -76,6 +76,39 @@ class TestInitializeProjectToolParentBranch:
         )
 
     @pytest.mark.asyncio
+    async def test_reinitialization_rejects_before_project_and_state_writes(
+        self, tool: InitializeProjectTool, workspace_root: Path
+    ) -> None:
+        """An initialized branch retains both files when initialization is rejected."""
+        branch = "feature/491-guard"
+        with patch.object(tool.git_manager, "get_current_branch", return_value=branch):
+            first = await tool.execute(
+                InitializeProjectInput(
+                    issue_number=491,
+                    issue_title="Original",
+                    workflow_name="feature",
+                    parent_branch="main",
+                ),
+                NoteContext(),
+            )
+            assert first.success
+            plan_path = workspace_root / ".pgmcp" / "deliverables.json"
+            before_plan = plan_path.read_bytes()
+            before_state = tool.state_engine.get_state(branch)
+            rejected = await tool.execute(
+                InitializeProjectInput(
+                    issue_number=491,
+                    issue_title="Changed",
+                    workflow_name="bug",
+                    parent_branch="main",
+                ),
+                NoteContext(),
+            )
+        assert not rejected.success
+        assert plan_path.read_bytes() == before_plan
+        assert tool.state_engine.get_state(branch) == before_state
+
+    @pytest.mark.asyncio
     async def test_initialize_with_explicit_parent_branch(
         self, tool: InitializeProjectTool
     ) -> None:
