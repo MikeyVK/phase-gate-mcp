@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.12  
+**Version:** 1.13  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -372,9 +372,11 @@ No representation is selected in this clarification. The approval is to repair c
 
 Historical recovery is now traceable to [#460 Validation](../issue460/validation.md), QA re-entry on 2026-10-01: PR #463 was closed without merge, the same branch was reinitialized, then its pre-PR state and deliverables were restored from `325195aff49e0c4e989dfb3aa65355c8d29f30d7`, followed by a recorded Ready-to-Validation transition. The restored state retained 112 cycle-history entries, 39 prior phase transitions and last_cycle=113. A read-only git show confirmed this commit exists and is a 2026-09-30 Ready commit. This establishes that initialize_project was part of the owner's remembered repair, after PR closure; it did not itself remove the PR lock. No current-branch recovery was executed. Historical chat searches found normal initialization and workflow restart episodes, but the committed Validation account is the decisive durable source for this recovery sequence.
 
-The current initialization defect is a separate rejection scenario: valid state and saved planning already exist for branch X; initialize_project first replaces the project entry with fresh metadata, dropping planning_deliverables; initialize_branch then sees branch X's state and raises StateAlreadyExistsError. The caller receives failure while the prior state survives and prior planning can already be lost. The #335 guard was deliberately added in commit `6d41c6cafef5801d401d07c6242256b4925ec6e4` on 2026-05-13 to protect state; [#335 Research](../archive/issue335/research.md) does not protect the earlier project write. Proposed bounded correction: perform the existing rejection precondition before project persistence, retaining the successful fresh/recovery path. This is a producer proposal pending strategy confirmation, not a new broad recovery API or silently approved PR exemption.
+The current initialization defect is a separate rejection scenario: valid state and saved planning already exist for branch X; initialize_project first replaces the project entry with fresh metadata, dropping planning_deliverables; initialize_branch then sees branch X's state and raises StateAlreadyExistsError. The caller receives failure while the prior state survives and prior planning can already be lost. The #335 guard was deliberately added in commit `6d41c6cafef5801d401d07c6242256b4925ec6e4` on 2026-05-13 to protect state; [#335 Research](../archive/issue335/research.md) does not protect the earlier project write. Owner-approved bounded correction (2026-10-09): perform the existing rejection precondition before project persistence, retaining the successful fresh/recovery path. This approval does not add a broad recovery API or an exemption from the open-PR guard.
 
 Producer proposal for resumption, requested by the owner and not yet approved:
+
+The concrete caller difference is one explicit selection on the existing phase-transition call. After a complete-block planning update, the caller reads the current plan and uses its server-generated cycle identifiers. For example, an illustrative new `resume_cycle="C_2"` argument on transition_phase would request entry at the current C_2; the same selection would apply to a forced re-entry. This field does not exist today, and its exact name/type remains a Design choice. No separate start/resume tool or manual state edit is proposed. First entry still starts C_1 without requiring that argument; re-entry without a required selection would return actionable feedback before mutation.
 - Planning-content mutation only rewrites the validated plan and server-owned numbering. It does not choose execution progress or write workflow state. State remains owned by PhaseStateEngine.
 - First entry into the configured cycle-based phase retains the normal C_1 start. Re-entry with prior cycle state requires an explicit existing cycle from the current plan, selected by the caller after reading the update/readback results. This is a bounded extension to the existing normal/forced phase-transition inputs; exact field name/reference spelling belongs to Design, and the current tools do not already expose it.
 - Validate the selected cycle and complete plan before any phase/state mutation. Missing/invalid resumption selection rejects the transition with state unchanged, even if a phase transition is forced. Commit protection remains a planning-mutation rule; commit existence must not be interpreted as completion when choosing where to resume.
@@ -397,7 +399,7 @@ No tests were added or run in this Research pass. No production/configuration/ag
 
 ## Questions
 
-- Confirm the bounded initialization correction: perform the existing same-branch state rejection before project persistence while retaining startup and the verified #460 repair route. No PR-unlock API or blanket reinitialization ban is proposed.
+- The bounded initialization correction is approved: perform the existing same-branch state rejection before project persistence while retaining startup and the verified #460 repair route. No PR-unlock API or blanket reinitialization ban is included.
 - Decide the explicit cycle-resumption proposal: first configured cycle-phase entry at C_1, later re-entry requires a caller-selected existing cycle before mutation, current_cycle set accordingly and last_cycle cleared without rewriting historical events. This is a bounded public phase-input/entry extension, not already implemented behavior.
 - Choose one split or combined glob contract. Repair is approved, its representation is not; compare complete active config/checker/schema/test impact and keep the selected clean break.
 
@@ -432,7 +434,7 @@ Owner direction on 2026-10-08 and 2026-10-09 confirms:
 
 Current save checks a caller-supplied total against list length; changing total to server-derived output requires an explicit input/storage/readback distinction. The existing creation schema is an evidence input to reconcile, not assumed flawless: the file_glob/executor mismatch has an approved repair direction and local reference consistency remains a resulting-plan invariant.
 
-Pending owner decisions: bounded initialization rejection-before-write repair while retaining the verified post-PR recovery path; explicit cycle resumption through existing phase-entry tools; split versus combined glob representation. Non-cycle compact workflows, Planning-only content admission, whole-block intent, issue-qualified HEAD evidence and clean-break/behavior-focused verification are selected. Exact interfaces belong to Design. Research remains open; no Design transition is requested.
+Pending owner decisions: explicit cycle resumption through existing phase-entry tools; split versus combined glob representation. The initialization rejection-before-write repair is approved, retaining the verified post-PR recovery path. Non-cycle compact workflows, Planning-only content admission, whole-block intent, issue-qualified HEAD evidence and clean-break/behavior-focused verification are selected. Exact interfaces belong to Design. Research remains open; no Design transition is requested.
 
 ## Expected Results
 
@@ -556,3 +558,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.10 | 2026-10-09 | @imp researcher | Approve whole-block intent, issue-filtered HEAD history, nested glob repair and planning clean break; verify existing phase enforcement and expose hotfix/chore, bootstrap and preserved-state policy limits. |
 | 1.11 | 2026-10-09 | @imp researcher | Reassess compact workflow cycles, withdraw blanket reinitialization rejection, distinguish recovery from PR unlock, explain concrete cycle resumption cases and reopen the split/combined glob representation choice. |
 | 1.12 | 2026-10-09 | @imp researcher | Approve non-cycle Hotfix scope, verify #460's close/reinitialize/Git-restore recovery, clarify rejection-after-write and propose explicit cycle selection on re-entry without planning/state coupling. |
+| 1.13 | 2026-10-09 | @imp researcher | Approve initialization rejection before persistence and illustrate the caller's explicit cycle selection on the existing phase-transition boundary; resumption remains pending owner approval. |
