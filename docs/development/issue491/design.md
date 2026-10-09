@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation, whole-block mutation and cycle resumption
 
 **Status:** DRAFT — independent Design review requested  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -22,6 +22,7 @@ Compatibility aliases or migration tools; completion tracking; a general mutatio
 
 - Independent Research GO on 4206b4827a6635cedaed54d9c14240396266fe86; owner approved Design on 2026-10-09.
 - Research v1.15 resolves the P3 stale intermediate wording. Approved Strategy is authoritative; earlier options are historical.
+- Initial Design QA returned NOGO on 4d8fb3d3cf90ad4827a7c8d870132a1f45151f72 for two P2 dependency-contract gaps. Version 1.1 explicitly closes the read-only plan dependency and retained wrapper construction; targeted independent re-review remains required.
 
 ## Problem Statement
 
@@ -130,7 +131,7 @@ Prevents the current phase-write-before-entry-validation failure without introdu
 | GitAdapter | Capture local branch/HEAD and read issue-prefiltered reachable commit metadata | Native Git/GitPython only; no phase/cycle interpretation |
 | GitManager | Qualify metadata by issue and shared scope grammar, return completeness and protected cycles | GitConfig, ScopeEncoder/ScopeDecoder and existing adapter |
 | ScopeContract | Define and validate the one scope grammar over injected phase/subphase vocabulary | WorkphasesConfig value; no IO |
-| PhaseStateEngine | Validate entry and atomically change execution state through existing mutator | Current plan query and configured cycle_based policy |
+| PhaseStateEngine | Validate entry and atomically change execution state through existing mutator | Existing IProjectPlanReader, state mutator and configured cycle_based policy |
 | Tools / presenter | Admit DTOs, invoke commands, query stored results and present structured diagnostics | Existing tool factory, enforcement and presentation configuration |
 | ConfigLoader / bootstrap | Validate configuration and wire instances once | Existing composition root |
 
@@ -449,6 +450,18 @@ class ScopeDecoder:
     def detect_phase(self, commit_message: str | None) -> PhaseDetectionResult: ...
 ```
 
+The retained wrapper has this complete constructor/query contract:
+
+```python
+class CommitPhaseDetector:
+    def __init__(self, decoder: ScopeDecoder) -> None: ...
+    def detect_from_commit(self, commit_message: str | None) -> PhaseDetectionResult: ...
+```
+
+The decoder is required and injected; no workphases_config/config_root constructor route, ConfigLoader dependency or per-query decoder construction remains. detect_from_commit delegates to that same decoder and returns its frozen result unchanged. Missing/empty input produces the decoder's structured unknown result (phase/cycle/subphase absent, source/confidence unknown and diagnostic error_code); malformed/unscoped input likewise delegates to the shared unknown contract. Valid input returns the decoded configured fields. Configuration admission happens before construction, not through a swallowed load failure during a query.
+
+Production bootstrap removes its unused wrapper instance rather than relocating it into state/status. The actual retained wrapper callers are its direct behavior tests in test_workflow_status_resolver.py: construct the existing ScopeContract and ScopeDecoder in fixture setup and inject the decoder into CommitPhaseDetector. Passive resolver fixtures remove their unused detector setup rather than constructing a replacement detector. test_support.py removes the wrapper creation used only for the eliminated resolver injection. No new wrapper service, loader, interface layer or changes to all 28 helper caller files are needed.
+
 A successful decode reproduces the canonical configured phase, distinct cycle and subphase including absence. Unknown/malformed input returns a structured unknown result with no guessed cycle/phase; user-facing recovery text belongs to presentation. Update the directly affected typed result fixtures, wrapper unknown construction and real E2E consumers. Keep CommitPhaseDetector as its separately tested wrapper; remove only its unused injection/construction in WorkflowStatusResolver/bootstrap. Do not reinject the decoder into state/status for the new evidence use.
 
 GitManager normalizes the caller's first-line title before appending one canonical (#issue_number). Remove only standalone matching #N or (#N) references for the structured issue, trim their separator whitespace, preserve different issue numbers/larger numeric references and preserve the message body. Shared GitConfig helpers define matching/attribution. GitAdapter treats the final message as opaque. Scope encoding and issue attribution remain distinct contracts.
@@ -486,6 +499,10 @@ class PhaseStateEngine:
 | Forced entry | May skip exit gates with existing approval/reason, but cannot skip target membership, plan validity or selection checks |
 
 Re-entry does not depend on detecting a plan revision. Requiring a selection whenever prior cycle state exists avoids adding revision tracking to determine whether a changed plan invalidated a pointer. Entered/active state does not block planning mutations.
+
+PhaseStateEngine's required constructor parameter is explicitly `project_manager: IProjectPlanReader`, using the existing interface from core/interfaces/project_plan.py. Its stored dependency has that same narrow type and exposes only get_project_plan; remove the concrete ProjectManager import from the engine. ProjectManager remains the structural concrete provider at bootstrap, passed through the existing project_manager keyword. No new adapter or parameter alias is introduced.
+
+make_phase_state_engine changes its optional provider annotation to IProjectPlanReader and passes the supplied reader through without requiring write methods. Existing helpers may still construct a real ProjectManager when no provider is supplied; direct engine constructors use the same narrow contract. Adapt one existing phase-entry behavior fixture to a stub offering only get_project_plan, observing the public transition result/state rather than asserting source text or private dependency attributes. The helper keyword remains unchanged, so constructor narrowing does not require mechanical edits to its unaffected callers.
 
 PhaseStateEngine uses the current-plan query only; ProjectManager does not call back into it. Resolve target membership, approval, entry plan/selection and normal exit-gate requirements before the first state mutation. Apply exit-pointer effects, target phase, selected cycle, subphase reset and transition audit in one existing WorkflowStateMutator.apply call. Its fresh-state callback revalidates transition assumptions before returning the new BranchState. Reset loaded context only after a successful state mutation.
 
@@ -582,6 +599,7 @@ Clean break applies to public planning DTOs, stored/readback shape and scope/res
 | Git/codec | Shared syntax, frozen decoded result and local complete-history method; retain bounded recent-commit display helper |
 | State transition composition | Replace separate phase/entry/exit writes with one existing mutator command after validation; adapt direct hook tests to phase APIs |
 | Unused injection setup | Remove state/status decoder/detector setup in bootstrap, test_support.py, test_workflow_status_resolver.py, test_consumers_c4.py and test_c260_c2_state_root_injection.py |
+| Read-only plan and retained wrapper | Narrow engine/helper provider annotations to existing IProjectPlanReader; retain the existing provider keyword/wiring. Inject ScopeDecoder into actual CommitPhaseDetector test constructors; remove its loader/per-call construction |
 | Config/docs | Narrow enforcement, Hotfix, commit examples, planning/phase reference and presentation updates; no repeated instruction policy across unrelated files |
 
 Other workspaces are updated manually as approved. Active source/templates/examples used by planning calls must use the new DTO and identifier convention. Historical closed-issue artifacts and commits remain unchanged. A complete actual changed-file inventory belongs to Implementation review; Research's inventory bounds discovery and avoids a speculative broad rewrite.
@@ -661,6 +679,8 @@ Planning must choose proportional slices around the actual dependency seams (val
 - [Project tools](<../../../mcp_server/tools/project_tools.py>)
 - [Phase tools](<../../../mcp_server/tools/phase_tools.py>)
 - [PhaseStateEngine](<../../../mcp_server/managers/phase_state_engine.py>)
+- [Existing read-only project plan interface](<../../../mcp_server/core/interfaces/project_plan.py>)
+- [Retained commit decoder wrapper](<../../../mcp_server/core/commit_phase_detector.py>)
 - [WorkflowStateMutator](<../../../mcp_server/managers/workflow_state_mutator.py>)
 - [ScopeEncoder](<../../../mcp_server/core/scope_encoder.py>)
 - [ScopeDecoder](<../../../mcp_server/core/phase_detection.py>)
@@ -684,3 +704,4 @@ Planning must choose proportional slices around the actual dependency seams (val
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-09 | @imp designer | Define the approved clean-break planning, Git evidence, codec, initialization and explicit cycle-resumption contracts. |
+| 1.1 | 2026-10-09 | @imp designer | Resolve both independent QA P2 contract gaps: explicit existing read-only plan dependency and injected retained decoder-wrapper constructor/query cutover. |
