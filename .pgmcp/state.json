@@ -3,7 +3,7 @@
   "branch": "refactor/491-planning-mutation-contracts",
   "issue_number": 491,
   "workflow_name": "refactor",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -27,6 +27,14 @@
       "to_phase": "design",
       "timestamp": "2026-10-09T19:02:32.095829+00:00",
       "human_approval_message": "Owner: Go voor design, fix wel onderstaande p3 blocker. Independent QA GO on 4206b482; stale Research passages corrected in the preceding Research commit.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-10-09T19:44:57.106363+00:00",
+      "human_approval_message": "Owner: Go for Planning after independent Design GO on e35987036ce1c46714b97b9d970685dc2f71ec65.",
       "forced": false,
       "skip_reason": null
     }

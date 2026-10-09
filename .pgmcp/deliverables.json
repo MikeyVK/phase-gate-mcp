@@ -16,7 +16,87 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-08T16:57:25.616825+00:00"
+      "created_at": "2026-10-08T16:57:25.616825+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 3,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "Shared scope and local execution evidence",
+              "deliverables": [
+                {
+                  "id": "D_1.1",
+                  "description": "Shared lossless scope contract \u2014 One configured grammar round-trips independent phase/cycle/subphase, immutable results and unknown outcomes; retained CommitPhaseDetector receives its decoder. Direct Git wiring and actual constructor consumers use that contract."
+                },
+                {
+                  "id": "D_1.2",
+                  "description": "Captured-HEAD cycle evidence \u2014 Existing GitAdapter/GitManager implement the narrow read-only evidence contract with complete ancestry, exact issue/configured execution-phase qualification, completeness reasons and retained positives; matching issue markers are normalized in the title only."
+                }
+              ],
+              "exit_criteria": "Shared codec and actual Git evidence behavior pass focused tests and applicable Python gates; native bootstrap loads and a cycle-bearing implementation commit is produced with the new codec. No duplicate grammar, query-time decoder/config loading or recent-commit cutoff remains in the evidence route."
+            },
+            {
+              "cycle_number": 2,
+              "name": "Complete planning command and consumer cutover",
+              "deliverables": [
+                {
+                  "id": "D_2.1",
+                  "description": "Complete-block planning commands \u2014 Write-once creation and five explicit operation variants compose a validated complete result; generated names/references/totals persist and read back; fresh evidence protection/force retry and NoteContext facts follow Design."
+                },
+                {
+                  "id": "D_2.2",
+                  "description": "Planning consumers and admission \u2014 Tools, outputs, resolver, task/discovery/cycle-name readers, enforcement and presentation consume one stored shape. Only Planning admits public save/update. dir/pattern validation reaches the unchanged checker."
+                },
+                {
+                  "id": "D_2.3",
+                  "description": "Fixture and workspace format cutover \u2014 Actual helpers/callers and planning-template operational projections use the new contract; remove obsolete partial-merge expectations. Mechanically translate this issue's existing plan without changing its cycles, obligations, order, counts or envelope; restart and verify full readback."
+                }
+              ],
+              "exit_criteria": "Save/update/readback, protection/force, public admission and glob route pass focused behavior tests and applicable gates. All actual stored-model consumers and relevant fixtures use the new shape. This issue's native plan still describes these same three cycles and nine deliverables after its single explicit format adjustment; no compatibility route or state-pointer write was added."
+            },
+            {
+              "cycle_number": 3,
+              "name": "Explicit phase re-entry and safe initialization",
+              "deliverables": [
+                {
+                  "id": "D_3.1",
+                  "description": "Explicit cycle entry and initialization guard \u2014 Normal/forced transitions validate plan, selection and approval before one composed state mutation; first entry C_1 and explicit re-entry reset current/last/subphase as designed. Initialization rejects existing same-branch state before project writes."
+                },
+                {
+                  "id": "D_3.2",
+                  "description": "Configured cycle policy and dependency cleanup \u2014 Zero/one cycle-based phase, compact non-cycle Hotfix, retained Chore, surgical instructions, existing read-only plan constructor, passive decoder/detector cleanup and corrected subphase-timing docstring complete the approved boundaries."
+                }
+              ],
+              "exit_criteria": "Public normal/forced re-entry, rejection-before-write initialization, configured zero/one phase policy and compact-workflow behavior pass focused tests and applicable gates. Bootstrap and direct helpers use narrow dependencies; passive injections and independent state-writing hooks are gone. Implementation hand-over maps all seven execution deliverables and complete cleanup before independent QA."
+            }
+          ]
+        },
+        "validation": {
+          "deliverables": [
+            {
+              "id": "D_1",
+              "description": "Validation report \u2014 Durable mapping of all execution deliverables/cleanup, exact configured full-suite and required gate outcomes, public behavior evidence and material limitations.",
+              "validates": {
+                "type": "file_exists",
+                "file": "docs/development/issue491/validation.md"
+              }
+            }
+          ]
+        },
+        "documentation": {
+          "deliverables": [
+            {
+              "id": "D_1",
+              "description": "Active reference reconciliation \u2014 Update the smallest complete project/Git/phase/config/template reference surface to validated behavior and record reviewed-but-unchanged material.",
+              "validates": {
+                "type": "file_exists",
+                "file": "docs/reference/tools/project.md"
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
