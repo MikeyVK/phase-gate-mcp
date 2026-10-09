@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.6  
+**Version:** 1.7  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -285,6 +285,8 @@ The owner requires server-generated cycle/deliverable identifiers to be persiste
 
 The owner deliberately simplifies the error policy on 2026-10-09 instead of requiring a taxonomy of hypothetical failures. Read deeply enough through commits on the active branch to establish the relevant evidence; the last-five-subject helper is insufficient and must not be the protection query. Keep the already agreed issue/workphase/cycle qualification.
 
+The owner explicitly requires the read to start at the active branch HEAD. Capture the branch and its head SHA, then query from that exact commit backwards; do not search all refs or unrelated branch tips. This is local history reading, not a network git fetch. Starting at HEAD alone still includes inherited ancestry. Producer proposal for the lower boundary: exclude the branch basis derived from its configured parent and read the complete basis..head range without max-count, retaining issue/workphase/cycle qualification. This range restriction is a proposal to settle, not silently approved by the HEAD-start requirement.
+
 If reliable derivation cannot be completed, reject update/mutation by default. This supersedes the producer's earlier proposal to allow some update kinds based on whether their effect needed Git evidence. A force flag in the update input explicitly permits bypassing that uncertainty rejection. Every invocation, including force=true, must attempt commit derivation again. If that attempt succeeds, apply normal commit protection; only if the attempt still fails may force permit writing despite the uncertainty. This is not an inference that missing evidence means no commits.
 
 The intervening process is agent-human or agent-agent investigation using tools to diagnose why derivation failed. If that investigation justifies the mutation, the caller may use force; alternatively, continue rejecting the normal update and carry out an agreed manual repair with safe_edit_file. Manual repair is outside the guarded update path, not a hidden tool fallback. No new confirmation workflow or large failure-classification subsystem is requested.
@@ -475,3 +477,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.4 | 2026-10-09 | @imp researcher | Confirm local deliverable references, commit-only cycle protection and cause-sensitive evidence handling; exclude active/entered-state immutability. |
 | 1.5 | 2026-10-09 | @imp researcher | Replace uncertainty taxonomy with complete active-branch evidence, default rejection and explicit force after investigation; retain manual repair as an external alternative. |
 | 1.6 | 2026-10-09 | @imp researcher | Require a fresh evidence attempt under force, demonstrate local complete-history reading and explicitly inventory the runtime IO/protection scope extension and limits. |
+| 1.7 | 2026-10-09 | @imp researcher | Make the active-branch HEAD start explicit and separate it from the proposed branch-basis stop boundary; local reads require no network fetch. |
