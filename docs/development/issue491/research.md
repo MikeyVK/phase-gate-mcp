@@ -3,8 +3,8 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.0  
-**Last Updated:** 2026-10-08
+**Version:** 1.1  
+**Last Updated:** 2026-10-09
 
 ## Purpose
 
@@ -251,6 +251,14 @@ Save and update act on the issue's whole planning_deliverables aggregate, not on
 
 Bounded proposal, still requiring owner agreement: apply the same complete-block rule to a supplied phase block, replacing that phase's full deliverables list and retaining unprovided phase blocks. This allows deliberate removal within the supplied list without nested patch semantics. Do not extend cycle total or Git-backed cycle protection to phase deliverables. Omission, explicit null, empty-list meaning and any separate phase-deliverable protection remain explicit boundary choices.
 
+### Approved single-cycle-phase configuration limit
+
+On 2026-10-09 the owner includes a bounded behavioral repair: each workflow may configure at most one cycle_based workphase. Zero remains valid. Reject a workflow with multiple such phases at the existing WorkflowEntry configuration-validation boundary; report the conflicting phase entries rather than sharing one plan/state position across them. This is a clean restriction of an unsafe admitted combination, with no compatibility bridge or workphase-specific cycle storage. The current workspace contracts already satisfy it.
+
+The limit concerns multiplicity, not a hardcoded phase name: a workflow with Design as its sole cycle-based phase remains admissible. Current workspace workflows use Implementation as the sole cycle-based phase. Runtime phase ownership stays configuration-driven; this repair does not introduce independently numbered cycles per workphase.
+
+Daily agent guidance and runtime admission have separate roles. GetWorkContextTool returns the active workflow phase's phase_instructions from contracts.yaml. These instructions direct cycle planning/execution, focused evidence, subphase-labelled commits and when to request a cycle transition. The structured cycle_based field determines whether tooling enables cycle progression, selects cycle deliverables and requires a cycle number for commits. Instructions are interpreted by the agent, not parsed as executable guards; instruction/config coherence must remain explicit. The new cardinality constraint belongs to the structured configuration model, not repeated prose checks.
+
 ### Owner-confirmed state and codec boundary
 
 The owner identifies the unused decoder injections as remnants of the earlier attempt to derive workflow position from commits. This explanation is consistent with the verified current-source boundary: workflow status comes from state.json and neither PhaseStateEngine nor WorkflowStatusResolver invokes its injected decoding dependency. This records the owner's migration rationale, not an additional historical-source audit.
@@ -290,6 +298,7 @@ Owner direction on 2026-10-08 confirms:
 - Both operations apply one common complete-result validation before persistence: the final cycle sequence must be exactly C1..Ctotal, with complete valid blocks and no gaps/duplicates. Count validation uses the resulting plan; it never manufactures missing cycles.
 - Completed cycles must never be deleted. Use attributable implementation execution commits as the selected evidence direction for non-deletion, without claiming those commits prove completion. The decoded workphase is part of qualification; commits from other phases or composite/subphase-only labels cannot mark an implementation cycle as historical. Exact history attribution, completeness and failure handling remain open.
 - Supporting scope explicitly includes correcting the record_sub_phase docstring to match its pre-commit write/rollback behavior, removing unused decoder/detector injections from state/status consumers and defining/correcting the shared encoder/decoder scope contract. These changes serve reliable cycle derivation from commit scopes; no unrelated cleanup or status reconstruction is included.
+- Workflow configuration boundary (owner-approved 2026-10-09): permit zero or one cycle_based workphase per workflow and reject multiple entries in the existing configuration model. Preserve configuration-driven phase identity; no phase-name hardcoding, compatibility bridge or per-workphase cycle architecture. Current contracts remain valid.
 - Current branch workflow state remains owned by state.json. Commit decoding is not a status resolver; the proposed new use is reading commit execution metadata for cycle evidence.
 - Encoder/decoder boundary: use the same configured vocabulary and preserve distinct phase, optional cycle and optional subphase in a lossless round trip for all admitted combinations. No required subphase is introduced merely to retain a cycle. Exact scope spelling and typed result shape remain Design work.
 - Codec/history migration boundary: no support or migration guarantee for closed issues and historical commits. The owner is the sole current server user and accepts upgrading and manually adjusting other workspaces. No old-format fallback or legacy result compatibility layer is required.
@@ -408,3 +417,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 0.8 | 2026-10-08 | @imp researcher | Record owner caution, concrete historical/result/type-policy constraints and narrowly verified unused-injection cleanup boundaries. |
 | 0.9 | 2026-10-08 | @imp researcher | Capture state.json ownership, the owner-approved lossless shared codec contract and explicit exclusion of historical compatibility; retain unresolved evidence and planning decisions. |
 | 1.0 | 2026-10-08 | @imp researcher | Include approved codec/injection/docstring support and workphase-qualified cycle evidence; distinguish cycle planning from phase-deliverable blocks and their still-open replacement semantics. |
+| 1.1 | 2026-10-09 | @imp researcher | Record approved zero-or-one cycle-based workphase invariant and distinguish agent phase guidance from structured runtime admission. |
