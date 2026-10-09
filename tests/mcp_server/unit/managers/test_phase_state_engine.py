@@ -1570,3 +1570,28 @@ class TestHumanApprovalMessageMigration:
         assert len(state.transitions) == 1
         assert state.transitions[0]["human_approval"] == "Approved"
         assert state.cycle_history[0]["human_approval"] == "Approved"
+
+def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> None:
+    """Missing approval must not change exit pointers, audit or loaded context."""
+    branch = "refactor/491-entry"
+    manager = make_project_manager(tmp_path)
+    manager.initialize_project(491, "Explicit entry", "refactor")
+    state_file = tmp_path / get_default_server_root() / "state.json"
+    repository = FileStateRepository(state_file=state_file)
+    initial = BranchState(
+        branch=branch, issue_number=491, workflow_name="refactor",
+        current_phase="implementation", current_cycle=2, last_cycle=1,
+        current_sub_phase="green", cycle_history=[{"cycle_number": 2}],
+    )
+    repository.save(initial)
+    before = state_file.read_bytes()
+    writer = MagicMock(spec=IContextLoadedWriter)
+    engine = make_phase_state_engine(
+        tmp_path, project_manager=manager, state_repository=repository,
+        context_loaded_writer=writer,
+    )
+    with pytest.raises(ValueError, match="human_approval_message"):
+        engine.force_transition(branch, "planning", skip_reason="Plan repair")
+    assert repository.load(branch) == initial
+    assert state_file.read_bytes() == before
+    writer.set_context_loaded.assert_not_called()

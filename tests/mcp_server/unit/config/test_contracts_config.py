@@ -107,6 +107,8 @@ class TestWorkflowPhaseEntry:
         assert entry.name == "research"
         assert entry.cycle_based is True
         assert entry.subphases == ["explore", "consolidate"]
+        workflow = WorkflowEntry(phases=[entry, _wpe("ready")])
+        assert workflow.get_phase("research") == entry
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +127,16 @@ class TestWorkflowEntry:
         entry = WorkflowEntry(phases=phases)
         with pytest.raises((ValidationError, TypeError)):
             entry.phases = []  # type: ignore[misc]
+
+    def test_multiple_cycle_phases_are_rejected_with_conflicting_names(self) -> None:
+        """One saved cycle sequence has one configured execution owner."""
+        with pytest.raises(ValidationError, match="cycle_based") as exc_info:
+            WorkflowEntry(phases=[
+                _wpe("compose", cycle_based=True, commit_type_map={"build": "feat"}),
+                _wpe("review", cycle_based=True, commit_type_map={"inspect": "test"}),
+                _wpe("ready"),
+            ])
+        assert "compose" in str(exc_info.value) and "review" in str(exc_info.value)
 
     def test_phases_min_length_one(self) -> None:
         with pytest.raises(ValidationError):
@@ -289,3 +301,4 @@ class TestWorkflowPhaseEntryInstructions:
         """
         with pytest.raises(ValidationError):
             WorkflowPhaseEntry(name="research")
+
