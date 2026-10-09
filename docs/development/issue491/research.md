@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -72,7 +72,7 @@ cycle_number is both lookup identity and execution order. PhaseStateEngine reads
 | Nested validation specs | Align planning admission with the existing executor's supported shapes. | Deferring the mismatch keeps an admitted unusable planning rule; requires explicit exclusion rather than a false holistic-completion claim. |
 | Compatibility / verification | Clean break for corrected semantics, no bridge/alias for silently ignored inputs; preserve supported create/update/readback behavior. Adapt valuable behavior tests. | Preserving ignored inputs needs an explicit compatibility promise with low functional value. No new tests for the purpose of preserving obsolete behavior. |
 
-The strategy table records the options originally presented. The owner subsequently defined total as the desired whole-plan size after save/update, with complete-block mutation and common result validation. Git-backed deletion protection was initially a tentative exploration. The owner now includes reliable decoded implementation-cycle evidence in scope; see Approved Strategy and the remaining evidence boundaries below.
+The strategy table records the options originally presented. The owner initially defined supplied total as the desired whole-plan size after save/update. The subsequent 2026-10-09 discussion supersedes that input direction: total is computed from the valid resulting plan and returned/persisted, not supplied as a deletion signal. Complete-block mutation and common result validation remain. Git-backed deletion protection was initially a tentative exploration. The owner now includes reliable decoded implementation-cycle evidence in scope; see Approved Strategy and the remaining evidence boundaries below.
 
 ### Git-backed cycle protection — direction and remaining boundaries
 
@@ -269,6 +269,18 @@ Owner-approved codec invariant: encoder and decoder use the same configured voca
 
 The owner confirms that closed issues and historical commits do not require compatibility. Other workspaces will be upgraded and manually adjusted where necessary. The codec boundary therefore needs no old-format fallback or legacy composite-subphase result. Exact spelling, typed result shape and any shared configuration seam belong to Design; choosing them must use the completed consumer register. The owner now includes reliable implementation-cycle evidence in scope, with decoded workphase as an active filter. Exhaustive issue-attributed history access and failure policy remain unresolved boundaries; the scope round-trip contract alone does not settle them.
 
+### Latest owner direction — explicit operations, derived numbering and typed references
+
+The detailed illustrative update JSON Schema was not approved. The owner explicitly returns to incremental Research discussion of data and behavior before selecting exact DTO/operation shapes. Do not treat required nullable fields, set/append spellings, missing-target policy or the illustrative ValidationSpec union as approved merely because they appeared in that proposal.
+
+The owner requires explicit removal intent for both phase blocks and cycles. A lower total must not implicitly delete cycles. Total is derived after composing and validating the complete result, persisted for project readback and included in the response. Initial save uses list order for server-owned cycle numbering; later mutations must unambiguously identify affected existing cycles, with the exact request form still open.
+
+Deletion may compact the numbering of unexecuted surviving cycles while retaining relative order. Reject the entire mutation if either a removed cycle has relevant execution commits or an evidenced surviving cycle would change number. The owner explicitly accepts this edge case: C_1 and C_3 have commits, so deleting uncommitted C_2 is rejected because C_3 would become C_2. Unworked cycles after the highest commit-protected cycle may compact subject to independent state-reference validity. This does not add a completed status. Handling references to a current/last uncommitted cycle remains open.
+
+Public names are cycle_name and deliverable_name, replacing the existing cycle name and deliverable id vocabulary. The server supplies numeric references in save results and readback; names express intent, while numbers provide references. Owner convention: C_<cycle number> for a cycle, and D_<cycle number>.<deliverable number> for a deliverable belonging to that cycle, for example C_2 and D_2.1. This prevents deliverables from appearing to be subcycles. Commit scope must preserve the distinct workphase/cycle facts through the shared codec rather than relying on free-text subject references.
+
+Exact persisted/response fields, whether numbered display labels are separate from raw names, and phase-deliverable references are still open. A phase deliverable has no parent cycle; D_<number> within explicit phase context is a producer proposal, not an owner-approved global identity scheme. Deliverable reference stability on whole-block replacement/compaction also remains to be decided. Prefer clear public field names over speculative token savings; no tokenizer measurement or new performance claim is made.
+
 ### Existing evidence and proportional test surface
 
 | Existing coverage | Value to retain | Material gap / coupling |
@@ -283,19 +295,22 @@ No tests were added or run in this Research pass. No production/configuration/ag
 
 ## Questions
 
-- Confirm the exact complete-block replacement unit and omission/null rules, including phase-deliverable blocks. total now means the desired whole-plan size, not the number of supplied update entries.
+- Complete the incremental data discussion: exact complete-block and explicit removal semantics for phase/cycle updates, omitted/empty/null meanings and target identification. total is now derived from the valid final plan, not caller input.
 - Use the completed scope consumer register to shape the approved lossless codec contract; refresh it if any affected consumer changes.
 - Define attributable history and missing/ambiguous relevant evidence for the selected implementation-cycle non-deletion direction. The decoded workphase must qualify the evidence, and cycle_number must be a separate value. The shared lossless codec contract and exclusion of historical compatibility are approved; exact representation/result shape remain Design questions. Mandatory subphase solely for Git trace retention is no longer recommended.
-- Define active/entered/historical reference protection when shrinking the plan, independently of a completed status; reject supplied entries outside total or give them another explicit meaning.
+- Define state-reference handling for removed or shifted uncommitted cycles. The owner-approved commit protection forbids deleting or renumbering any evidenced cycle; unprotected survivors may compact. Settle deliverable numbering/stability and phase-scoped references separately.
 - Confirm remaining planning-input compatibility policy per affected boundary and explicitly include or defer the admitted file_glob shape mismatch. Codec/history migration policy is already explicit.
 
 ## Approved Strategy
 
-Owner direction on 2026-10-08 confirms:
+Owner direction on 2026-10-08 and 2026-10-09 confirms:
 - Preserve the #229 distinction: write-once initial save and an explicit later mutation operation.
 - Mutations provide complete blocks so their internal context is coherent; nested partial-field patching is not the requested route. Remaining block/omission details still need an explicit contract.
-- For both save and update, total means the desired total number of cycles in the whole plan after the operation. It does not mean the number of supplied update blocks. Unprovided existing cycles within 1..total remain; supplied complete cycle blocks replace their corresponding blocks; existing cycles above total are removal candidates, subject to protection.
-- Both operations apply one common complete-result validation before persistence: the final cycle sequence must be exactly C1..Ctotal, with complete valid blocks and no gaps/duplicates. Count validation uses the resulting plan; it never manufactures missing cycles.
+- total is server-derived from the valid resulting plan, persisted and returned for consultation. It is not required caller input and does not trigger deletion. This supersedes the earlier supplied desired-total/removal-above-range direction. Explicit removal intent is required for both phase blocks and cycles; exact request forms remain open.
+- For the first save, the ordered cycle list determines server-assigned cycle numbers. Agent-supplied cycle numbers are unnecessary there. Targeting existing cycles in updates remains an explicit boundary to finish.
+- Both operations apply one common complete-result validation before persistence: the final cycle sequence must be complete and a contiguous 1-based sequence, with valid complete blocks and no duplicate identities. Derived total reflects that validated result; missing cycle content is never manufactured.
+- Deletion may compact the numbering of unworked survivors, retaining their relative order. Reject deletion of a commit-evidenced cycle and any mutation that renumbers an evidenced survivor. C_1/C_3 evidenced with C_2 unworked therefore cannot permit deleting C_2. State coherence remains an additional requirement.
+- Naming/reference boundary: use cycle_name and deliverable_name for meaningful public names. The server supplies numerical references. Use C_<number> for cycles and D_<cycle number>.<deliverable number> for their deliverables; do not present deliverables as subcycles. Exact response/storage shape and phase-deliverable convention remain open.
 - Completed cycles must never be deleted. Use attributable implementation execution commits as the selected evidence direction for non-deletion, without claiming those commits prove completion. The decoded workphase is part of qualification; commits from other phases or composite/subphase-only labels cannot mark an implementation cycle as historical. Exact history attribution, completeness and failure handling remain open.
 - Supporting scope explicitly includes correcting the record_sub_phase docstring to match its pre-commit write/rollback behavior, removing unused decoder/detector injections from state/status consumers and defining/correcting the shared encoder/decoder scope contract. These changes serve reliable cycle derivation from commit scopes; no unrelated cleanup or status reconstruction is included.
 - Workflow configuration boundary (owner-approved 2026-10-09): permit zero or one cycle_based workphase per workflow and reject multiple entries in the existing configuration model. Preserve configuration-driven phase identity; no phase-name hardcoding, compatibility bridge or per-workphase cycle architecture. Current contracts remain valid.
@@ -303,9 +318,9 @@ Owner direction on 2026-10-08 confirms:
 - Encoder/decoder boundary: use the same configured vocabulary and preserve distinct phase, optional cycle and optional subphase in a lossless round trip for all admitted combinations. No required subphase is introduced merely to retain a cycle. Exact scope spelling and typed result shape remain Design work.
 - Codec/history migration boundary: no support or migration guarantee for closed issues and historical commits. The owner is the sole current server user and accepts upgrading and manually adjusting other workspaces. No old-format fallback or legacy result compatibility layer is required.
 
-Current save checks a caller-supplied total against list length; it does not currently derive that input. The existing creation schema is therefore an evidence input to reconcile, not assumed flawless: the admitted file_glob/executor mismatch and identity uniqueness still require resolution.
+Current save checks a caller-supplied total against list length; changing total to server-derived output requires an explicit input/storage/readback distinction. The existing creation schema is an evidence input to reconcile, not assumed flawless: the admitted file_glob/executor mismatch and identity uniqueness still require resolution.
 
-Pending owner decisions: the selected Git-backed protection direction's attribution/completeness/failure policy; protection of active/entered cycle references in the current issue; exact complete-block semantics for phase deliverables, omission/null semantics, out-of-range supplied entries, nested validation alignment and compatibility policy for the remaining planning boundaries. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
+Pending owner decisions: the selected Git-backed protection direction's attribution/completeness/failure policy; state-reference handling for removed/compacted unworked cycles; precise update targeting and phase complete-block/omission/empty/null semantics; deliverable reference stability and phase-deliverable identifiers; nested validation alignment and compatibility policy for the remaining planning boundaries. The illustrative detailed schema is not an approved Design. These remain product/strategy choices, not an approved implementation. Research remains open; no Design transition is requested.
 
 ## Expected Results
 
@@ -418,3 +433,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 0.9 | 2026-10-08 | @imp researcher | Capture state.json ownership, the owner-approved lossless shared codec contract and explicit exclusion of historical compatibility; retain unresolved evidence and planning decisions. |
 | 1.0 | 2026-10-08 | @imp researcher | Include approved codec/injection/docstring support and workphase-qualified cycle evidence; distinguish cycle planning from phase-deliverable blocks and their still-open replacement semantics. |
 | 1.1 | 2026-10-09 | @imp researcher | Record approved zero-or-one cycle-based workphase invariant and distinguish agent phase guidance from structured runtime admission. |
+| 1.2 | 2026-10-09 | @imp researcher | Reconcile explicit removal, derived total/server numbering, protected compaction and typed cycle/deliverable references; distinguish owner directions from the unapproved illustrative schema. |
