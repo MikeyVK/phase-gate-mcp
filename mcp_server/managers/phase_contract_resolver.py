@@ -195,7 +195,7 @@ class PhaseContractResolver:
             if isinstance(matching_cycle, dict):
                 deliverables = matching_cycle.get("deliverables", [])
         else:
-            phase_data = planning_deliverables.get(phase, {})
+            phase_data = planning_deliverables.get("phases", {}).get(phase, {})
             if isinstance(phase_data, dict):
                 deliverables = phase_data.get("deliverables", [])
 
@@ -207,7 +207,7 @@ class PhaseContractResolver:
             if not isinstance(validates, dict):
                 continue
             issue_check_payload = {
-                "id": str(deliverable.get("id", "issue-check")),
+                "id": str(deliverable.get("deliverable_id", "issue-check")),
                 "required": False,
                 **validates,
             }

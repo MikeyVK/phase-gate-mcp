@@ -21,6 +21,7 @@ from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -196,25 +197,28 @@ class TestCycleTools:
         )
         project_manager.save_planning_deliverables(
             257,
-            {
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "One",
-                            "deliverables": [{"id": "D1.1", "description": "cycle-1"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "Two",
-                            "deliverables": [{"id": "D2.1", "description": "cycle-2"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "One",
+                                "deliverables": [
+                                    {"deliverable_name": "D1.1", "description": "cycle-1"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "Two",
+                                "deliverables": [
+                                    {"deliverable_name": "D2.1", "description": "cycle-2"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         state_engine = make_phase_state_engine(
             tmp_path,
@@ -383,25 +387,28 @@ class TestCycleTools:
         )
         project_manager.save_planning_deliverables(
             257,
-            {
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "One",
-                            "deliverables": [{"id": "D1.1", "description": "cycle-1"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "Two",
-                            "deliverables": [{"id": "D2.1", "description": "cycle-2"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "One",
+                                "deliverables": [
+                                    {"deliverable_name": "D1.1", "description": "cycle-1"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "Two",
+                                "deliverables": [
+                                    {"deliverable_name": "D2.1", "description": "cycle-2"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         state_engine = make_phase_state_engine(
             tmp_path,

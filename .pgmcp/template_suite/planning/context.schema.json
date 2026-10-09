@@ -81,8 +81,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "type",
-        "file"
+        "type"
       ],
       "properties": {
         "type": {
@@ -108,9 +107,72 @@
             "string",
             "null"
           ]
+        },
+        "dir": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "file_glob"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "dir",
+              "pattern"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "file"
+                  ]
+                },
+                {
+                  "required": [
+                    "text"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "file"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "dir"
+                  ]
+                },
+                {
+                  "required": [
+                    "pattern"
+                  ]
+                }
+              ]
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -130,6 +192,18 @@
               "text": {
                 "type": "string"
               }
+            },
+            "not": {
+              "required": [
+                "path"
+              ]
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "text"
+              ]
             }
           }
         },
@@ -149,6 +223,18 @@
               "path": {
                 "type": "string"
               }
+            },
+            "not": {
+              "required": [
+                "text"
+              ]
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "path"
+              ]
             }
           }
         }

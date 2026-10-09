@@ -20,7 +20,19 @@ from mcp_server.managers.deliverable_checker import (
     DeliverableChecker,
     DeliverableCheckError,
 )
-from tests.mcp_server.test_support import get_default_server_root
+from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
+from mcp_server.schemas.deliverables import (
+    CycleInput,
+    CyclesInput,
+    DeliverableInput,
+    SavePlanningModel,
+    ValidatesModel,
+)
+from tests.mcp_server.test_support import (
+    get_default_server_root,
+    load_contracts_config,
+    make_project_manager,
+)
 
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
@@ -286,23 +298,54 @@ class TestDeliverableChecker:
                 },
             )
 
-    def test_deliverable_checker_file_glob_pattern_in_subdir_passes(
-        self, checker: DeliverableChecker, tmp_path: Path
+    def test_saved_file_glob_reaches_resolver_and_actual_checker(
+        self, legacy_suite_workspace: Path
     ) -> None:
-        """file_glob resolves dir relative to workspace_root and matches recursively.
-
-        Issue #229 C2 re-run — GAP-05: dir + pattern together locate the file.
-        """
-        nested = tmp_path / "mcp_server" / "managers"
+        """Admitted dir/pattern survives persistence and executes without translation."""
+        nested = legacy_suite_workspace / "src" / "nested"
         nested.mkdir(parents=True)
-        (nested / "deliverable_checker.py").write_text("# module\n")
-
-        # Must not raise — file matches *.py in mcp_server/managers
-        checker.check(
-            "D2.5",
-            {
-                "type": "file_glob",
-                "dir": "mcp_server/managers",
-                "pattern": "deliverable_*.py",
-            },
+        target = nested / "reader.py"
+        target.write_text("# module\n", encoding="utf-8")
+        manager = make_project_manager(legacy_suite_workspace)
+        manager.initialize_project(229, "Saved glob", "feature")
+        manager.save_planning_deliverables(
+            229,
+            SavePlanningModel(
+                cycles=CyclesInput(
+                    cycles=[
+                        CycleInput(
+                            cycle_name="Reader",
+                            deliverables=[
+                                DeliverableInput(
+                                    deliverable_name="Reader source",
+                                    description="Reader source exists",
+                                    validates=ValidatesModel(
+                                        type="file_glob", dir="src", pattern="**/reader.py"
+                                    ),
+                                )
+                            ],
+                            exit_criteria="Reader source present",
+                        ),
+                    ]
+                )
+            ),
         )
+        plan = manager.get_project_plan(229)
+        assert plan is not None
+        resolver = PhaseContractResolver(
+            PhaseConfigContext(
+                workphases=ConfigLoader(
+                    legacy_suite_workspace / get_default_server_root() / "config"
+                ).load_workphases_config(),
+                contracts=load_contracts_config(legacy_suite_workspace),
+                planning_deliverables=plan["planning_deliverables"],
+            )
+        )
+        checks = resolver.resolve_cycle_exit("feature", "implementation", 1)
+        check = next(check for check in checks if check.id == "D_1.1")
+        specification = check.model_dump(exclude={"id", "required"}, exclude_none=True)
+        checker = DeliverableChecker(legacy_suite_workspace)
+        checker.check(check.id, specification)
+        target.unlink()
+        with pytest.raises(DeliverableCheckError, match="D_1.1"):
+            checker.check(check.id, specification)

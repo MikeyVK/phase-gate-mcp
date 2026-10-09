@@ -19,6 +19,7 @@ from __future__ import annotations
 
 # Standard library
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,12 +34,30 @@ from mcp_server.core.exceptions import (
 )
 
 # Project modules
-from mcp_server.core.interfaces.git import ICycleEvidenceReader
+from mcp_server.core.interfaces.git import CycleEvidence, ICycleEvidenceReader
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.managers.state_version_validator import StateVersionValidator
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
-from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.deliverables import (
+    AppendCycle,
+    CycleInput,
+    DeliverableInput,
+    PhaseBlockInput,
+    PlanningMutationError,
+    PlanningOperation,
+    RemoveCycle,
+    RemovePhase,
+    ReplaceCycle,
+    SavePlanningModel,
+    SetPhase,
+    StoredCycle,
+    StoredCycles,
+    StoredDeliverable,
+    StoredPhaseBlock,
+    StoredPlanningModel,
+)
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 if TYPE_CHECKING:
@@ -213,178 +232,251 @@ class ProjectManager:
         return self._contracts_config.get_phases(workflow_name)
 
     def save_planning_deliverables(
-        self, issue_number: int, planning_deliverables: dict[str, Any]
+        self, issue_number: int, planning_deliverables: SavePlanningModel
     ) -> None:
-        """Save planning deliverables to deliverables.json.
-
-        Args:
-            issue_number: GitHub issue number
-            planning_deliverables: Planning deliverables dict (cycles, validation, etc.)
-
-        Raises:
-            ValueError: If project not found, deliverables already exist, or schema invalid.
-        """
-        if not self.deliverables_file.exists():
-            msg = f"Project {issue_number} not found - initialize_project must be called first"
-            raise ValueError(msg)
-
-        # Load existing projects
-        try:
-            projects = self._read_projects()
-        except (PlanningVersionMismatchError, StateCorruptedError):
-            self._state_version_validator.backup_file(self.deliverables_file)
-            raise
-
-        # Check project exists
-        if str(issue_number) not in projects:
-            msg = f"Project {issue_number} not found - initialize_project must be called first"
-            raise ValueError(msg)
-
-        project = projects[str(issue_number)]
-
-        # Guard: Check if planning_deliverables already exist
+        """Validate and persist one complete initial plan, once."""
+        projects, project, snapshot = self._planning_project(issue_number)
         if "planning_deliverables" in project:
-            msg = (
-                f"Planning deliverables already exist for issue {issue_number}. "
-                "Cannot overwrite existing deliverables."
-            )
-            raise ValueError(msg)
-
-        # Determine if cycle-based validation is required
-        workflow_name = project.get("workflow_name")
-        workflow = self._contracts_config.workflows.get(workflow_name)
-        is_cycle_based = False
-        if workflow:
-            is_cycle_based = any(phase.cycle_based for phase in workflow.phases)
-
+            raise PlanningMutationError("planning_already_saved")
         try:
-            model = SavePlanningModel.model_validate(planning_deliverables, strict=True)
-        except ValidationError as e:
-            raise ValueError(f"Invalid planning deliverables schema: {e}") from e
-
-        if is_cycle_based and model.cycles is None:
-            raise ValueError(
-                "planning_deliverables must contain 'cycles' key for cycle-based workflows"
-            )
-
-        # Save to projects
-        project["planning_deliverables"] = planning_deliverables
-
-        # Write to file
-        self._write_deliverables(projects)
+            authoring = SavePlanningModel.model_validate(planning_deliverables)
+            cycles = authoring.cycles.cycles if authoring.cycles is not None else []
+            candidate = self._number_plan(cycles, authoring.phases)
+        except ValidationError as exc:
+            raise PlanningMutationError("planning_input_invalid") from exc
+        self._validate_planning(project, candidate)
+        self._persist_planning(projects, project, candidate, snapshot)
 
     def update_planning_deliverables(
-        self, issue_number: int, planning_deliverables: dict[str, Any]
+        self,
+        issue_number: int,
+        operations: Sequence[PlanningOperation],
+        *,
+        context: NoteContext,
+        force: bool = False,
     ) -> None:
-        """Merge incoming planning deliverables into existing ones.
+        """Resolve complete operations against one snapshot and protect execution identities."""
+        projects, project, snapshot = self._planning_project(issue_number)
+        if "planning_deliverables" not in project:
+            raise PlanningMutationError("planning_missing")
+        current = self._stored_plan(project)
+        if not operations or type(force) is not bool:
+            raise PlanningMutationError("planning_input_invalid")
+        candidate, survivor_positions = self._compose_plan(current, operations)
+        execution_phase = self._validate_planning(project, candidate)
+        evidence = self._cycle_evidence_reader.read_cycle_evidence(issue_number, execution_phase)
+        try:
+            if evidence.reason_code in {"branch_issue_mismatch", "git_snapshot_changed"}:
+                raise PlanningMutationError("planning_identity_conflict")
+            for protected in evidence.protected_cycle_numbers:
+                if survivor_positions.get(protected) != protected:
+                    raise PlanningMutationError("planning_cycle_protected")
+            if evidence.status == "unavailable" and not force:
+                raise PlanningMutationError("planning_evidence_unavailable")
+            self._persist_planning(projects, project, candidate, snapshot)
+        except PlanningMutationError:
+            context.produce(self._evidence_note(evidence, overridden=False))
+            raise
+        context.produce(
+            self._evidence_note(evidence, overridden=force and evidence.status == "unavailable")
+        )
 
-        Args:
-            issue_number: GitHub issue number
-            planning_deliverables: Partial or full planning deliverables to merge in.
-
-        Raises:
-            ValueError: If project not found or planning_deliverables not yet initialised.
-        """
+    def _planning_project(self, issue_number: int) -> tuple[dict[str, Any], dict[str, Any], bytes]:
         if not self.deliverables_file.exists():
-            msg = f"Project {issue_number} not found - initialize_project must be called first"
-            raise ValueError(msg)
-
+            raise PlanningMutationError("planning_project_missing")
+        snapshot = self.deliverables_file.read_bytes()
         try:
             projects = self._read_projects()
         except (PlanningVersionMismatchError, StateCorruptedError):
             self._state_version_validator.backup_file(self.deliverables_file)
             raise
+        if self.deliverables_file.read_bytes() != snapshot:
+            raise PlanningMutationError("planning_snapshot_conflict")
+        project = projects.get(str(issue_number))
+        if project is None:
+            raise PlanningMutationError("planning_project_missing")
+        if not isinstance(project, dict):
+            raise PlanningMutationError("planning_stored_invalid")
+        return projects, project, snapshot
 
-        if str(issue_number) not in projects:
-            msg = f"Project {issue_number} not found - initialize_project must be called first"
-            raise ValueError(msg)
-
-        project = projects[str(issue_number)]
-
-        if "planning_deliverables" not in project:
-            msg = (
-                f"No planning deliverables found for issue {issue_number}. "
-                "Call save_planning_deliverables first before updating."
-            )
-            raise ValueError(msg)
-
+    def _stored_plan(self, project: dict[str, Any]) -> StoredPlanningModel:
         try:
-            UpdatePlanningModel.model_validate(planning_deliverables, strict=True)
-        except ValidationError as e:
-            raise ValueError(f"Invalid planning deliverables schema: {e}") from e
+            model = StoredPlanningModel.model_validate(project["planning_deliverables"])
+        except (KeyError, ValidationError) as exc:
+            raise PlanningMutationError("planning_stored_invalid") from exc
+        self._validate_planning(project, model)
+        return model
 
-        existing_pd = project["planning_deliverables"]
-        incoming_tc = planning_deliverables.get("cycles", {})
-        incoming_cycles = incoming_tc.get("cycles", [])
+    def _validate_planning(self, project: dict[str, Any], model: StoredPlanningModel) -> str | None:
+        workflow_name = project.get("workflow_name")
+        if not isinstance(workflow_name, str):
+            raise PlanningMutationError("planning_workflow_invalid")
+        workflow = self._contracts_config.workflows.get(workflow_name)
+        if workflow is None:
+            raise PlanningMutationError("planning_workflow_invalid")
+        execution_phases = [phase.name for phase in workflow.phases if phase.cycle_based]
+        if len(execution_phases) > 1:
+            raise PlanningMutationError("planning_workflow_invalid")
+        execution_phase = execution_phases[0] if execution_phases else None
+        phases = project.get("required_phases")
+        if not isinstance(phases, list) or any(not isinstance(phase, str) for phase in phases):
+            raise PlanningMutationError("planning_stored_invalid")
+        if any(phase not in phases or phase == execution_phase for phase in model.phases):
+            raise PlanningMutationError("planning_phase_invalid")
+        if execution_phase is not None and model.cycles is None:
+            raise PlanningMutationError("planning_cycles_required")
+        if execution_phase is None and model.cycles is not None:
+            raise PlanningMutationError("planning_cycles_forbidden")
+        return execution_phase
 
-        # If incoming has cycles, merge them
-        if incoming_tc:
-            existing_tc = existing_pd.setdefault("cycles", {})
-            existing_cycles_list: list[dict[str, Any]] = existing_tc.setdefault("cycles", [])
+    @staticmethod
+    def _number_plan(
+        cycles: Sequence[CycleInput], phases: dict[str, PhaseBlockInput]
+    ) -> StoredPlanningModel:
+        numbered = [
+            StoredCycle(
+                cycle_id=f"C_{number}",
+                cycle_number=number,
+                cycle_name=cycle.cycle_name,
+                deliverables=ProjectManager._number_deliverables(
+                    cycle.deliverables, f"D_{number}."
+                ),
+                exit_criteria=cycle.exit_criteria,
+            )
+            for number, cycle in enumerate(cycles, 1)
+        ]
+        return StoredPlanningModel(
+            cycles=StoredCycles(total=len(numbered), cycles=numbered) if numbered else None,
+            phases={
+                phase: StoredPhaseBlock(
+                    deliverables=ProjectManager._number_deliverables(block.deliverables, "D_")
+                )
+                for phase, block in phases.items()
+            },
+        )
 
-            # Build lookup: cycle_number → index in existing_cycles_list
-            existing_cycle_index: dict[int, int] = {
-                c["cycle_number"]: i for i, c in enumerate(existing_cycles_list)
-            }
+    @staticmethod
+    def _number_deliverables(
+        deliverables: Sequence[DeliverableInput], prefix: str
+    ) -> list[StoredDeliverable]:
+        return [
+            StoredDeliverable(
+                deliverable_id=f"{prefix}{index}",
+                deliverable_name=deliverable.deliverable_name,
+                description=deliverable.description,
+                validates=deliverable.validates,
+            )
+            for index, deliverable in enumerate(deliverables, 1)
+        ]
 
-            for incoming_cycle in incoming_cycles:
-                cn: int = incoming_cycle["cycle_number"]
-                if cn not in existing_cycle_index:
-                    # New cycle → append
-                    existing_cycles_list.append(incoming_cycle)
-                    existing_cycle_index[cn] = len(existing_cycles_list) - 1
-                else:
-                    # Existing cycle → merge deliverables by id + overwrite exit_criteria
-                    target_cycle = existing_cycles_list[existing_cycle_index[cn]]
-                    if "exit_criteria" in incoming_cycle:
-                        target_cycle["exit_criteria"] = incoming_cycle["exit_criteria"]
-                    existing_deliverables: list[dict[str, Any]] = target_cycle.setdefault(
-                        "deliverables", []
+    @staticmethod
+    def _author_cycle(cycle: StoredCycle) -> CycleInput:
+        return CycleInput(
+            cycle_name=cycle.cycle_name,
+            deliverables=[
+                DeliverableInput(
+                    deliverable_name=deliverable.deliverable_name,
+                    description=deliverable.description,
+                    validates=deliverable.validates,
+                )
+                for deliverable in cycle.deliverables
+            ],
+            exit_criteria=cycle.exit_criteria,
+        )
+
+    @staticmethod
+    def _compose_plan(
+        current: StoredPlanningModel, operations: Sequence[PlanningOperation]
+    ) -> tuple[StoredPlanningModel, dict[int, int]]:
+        original = current.cycles.cycles if current.cycles is not None else []
+        cycle_ids = {cycle.cycle_id for cycle in original}
+        replacements: dict[str, CycleInput] = {}
+        removals: set[str] = set()
+        appends: list[CycleInput] = []
+        targets: set[tuple[str, str]] = set()
+        phases = {
+            phase: PhaseBlockInput(
+                deliverables=[
+                    DeliverableInput(
+                        deliverable_name=deliverable.deliverable_name,
+                        description=deliverable.description,
+                        validates=deliverable.validates,
                     )
-                    existing_deliv_index: dict[str, int] = {
-                        d["id"]: i for i, d in enumerate(existing_deliverables)
-                    }
-                    for incoming_deliv in incoming_cycle.get("deliverables", []):
-                        d_id: str = incoming_deliv["id"]
-                        if d_id in existing_deliv_index:
-                            # Overwrite in place
-                            existing_deliverables[existing_deliv_index[d_id]] = incoming_deliv
-                        else:
-                            # Append new deliverable
-                            existing_deliverables.append(incoming_deliv)
-                            existing_deliv_index[d_id] = len(existing_deliverables) - 1
-
-            # Update total to reflect highest cycle number seen
-            if existing_cycles_list:
-                highest_cn = max(c["cycle_number"] for c in existing_cycles_list)
-                existing_tc["total"] = max(existing_tc.get("total", 0), highest_cn)
-
-        # Merge per-phase keys (design, validation, documentation)
-        _phase_keys = {"design", "validation", "documentation"}
-        for incoming_phase in _phase_keys:
-            if incoming_phase not in planning_deliverables:
+                    for deliverable in block.deliverables
+                ]
+            )
+            for phase, block in current.phases.items()
+        }
+        for operation in operations:
+            if isinstance(operation, AppendCycle):
+                appends.append(operation.cycle)
                 continue
-            incoming_phase_data: dict[str, Any] = planning_deliverables[incoming_phase]
-            if incoming_phase not in existing_pd:
-                # Phase key absent → set from incoming
-                existing_pd[incoming_phase] = incoming_phase_data
+            if isinstance(operation, (ReplaceCycle, RemoveCycle)):
+                target = ("cycle", operation.cycle_id)
+                if operation.cycle_id not in cycle_ids:
+                    raise PlanningMutationError("planning_target_missing")
+                if target in targets:
+                    raise PlanningMutationError("planning_duplicate_target")
+                targets.add(target)
+                if isinstance(operation, ReplaceCycle):
+                    replacements[operation.cycle_id] = operation.cycle
+                else:
+                    removals.add(operation.cycle_id)
+            elif isinstance(operation, (SetPhase, RemovePhase)):
+                target = ("phase", operation.phase)
+                if target in targets:
+                    raise PlanningMutationError("planning_duplicate_target")
+                targets.add(target)
+                if isinstance(operation, SetPhase):
+                    phases[operation.phase] = operation.block
+                elif operation.phase not in current.phases:
+                    raise PlanningMutationError("planning_target_missing")
+                else:
+                    del phases[operation.phase]
             else:
-                # Phase key present → merge deliverables by id
-                existing_phase_delivs: list[dict[str, Any]] = existing_pd[
-                    incoming_phase
-                ].setdefault("deliverables", [])
-                existing_phase_deliv_index: dict[str, int] = {
-                    d["id"]: i for i, d in enumerate(existing_phase_delivs)
-                }
-                for incoming_deliv in incoming_phase_data.get("deliverables", []):
-                    d_id = incoming_deliv["id"]
-                    if d_id in existing_phase_deliv_index:
-                        existing_phase_delivs[existing_phase_deliv_index[d_id]] = incoming_deliv
-                    else:
-                        existing_phase_delivs.append(incoming_deliv)
-                        existing_phase_deliv_index[d_id] = len(existing_phase_delivs) - 1
+                raise PlanningMutationError("planning_input_invalid")
+        survivors = [cycle for cycle in original if cycle.cycle_id not in removals]
+        survivor_positions = {
+            cycle.cycle_number: position for position, cycle in enumerate(survivors, 1)
+        }
+        cycles = [
+            replacements.get(cycle.cycle_id) or ProjectManager._author_cycle(cycle)
+            for cycle in survivors
+        ]
+        cycles.extend(appends)
+        try:
+            candidate = ProjectManager._number_plan(cycles, phases)
+        except ValidationError as exc:
+            raise PlanningMutationError("planning_result_empty") from exc
+        return candidate, survivor_positions
 
+    def _persist_planning(
+        self,
+        projects: dict[str, Any],
+        project: dict[str, Any],
+        candidate: StoredPlanningModel,
+        snapshot: bytes,
+    ) -> None:
+        if self.deliverables_file.read_bytes() != snapshot:
+            raise PlanningMutationError("planning_snapshot_conflict")
+        project["planning_deliverables"] = candidate.model_dump(exclude_none=True)
         self._write_deliverables(projects)
+
+    @staticmethod
+    def _evidence_note(evidence: CycleEvidence, *, overridden: bool) -> Note:
+        return Note(
+            key="planning_cycle_evidence",
+            params={
+                "status": evidence.status,
+                "branch": evidence.branch,
+                "head_sha": evidence.head_sha,
+                "execution_phase": evidence.execution_phase,
+                "protected_cycle_numbers": list(evidence.protected_cycle_numbers),
+                "reason_code": evidence.reason_code,
+                "diagnostic_commit_sha": evidence.diagnostic_commit_sha,
+                "evidence_overridden": overridden,
+            },
+        )
 
     def get_project_plan(self, issue_number: int) -> dict[str, Any] | None:
         """Get stored project plan with current phase detection.
@@ -407,6 +499,9 @@ class ProjectManager:
 
         if plan is None:
             return None
+
+        if "planning_deliverables" in plan:
+            self._stored_plan(plan)
 
         # Use WorkflowStatusResolver to detect current phase (Issue #231 C4)
         try:

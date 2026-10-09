@@ -34,16 +34,26 @@ import pytest
 
 # Project modules
 from mcp_server.config.loader import ConfigLoader
+from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import ToolExecution
 from mcp_server.managers.enforcement_runner import (
     EnforcementContext,
     EnforcementRunner,
 )
+from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.schemas.deliverables import RemovePhase, SavePlanningModel
 from mcp_server.tools.git_tools import GitCommitTool
 from mcp_server.tools.pr_tools import SubmitPRTool
+from mcp_server.tools.project_tools import (
+    SavePlanningDeliverablesInput,
+    SavePlanningDeliverablesTool,
+    UpdatePlanningDeliverablesInput,
+    UpdatePlanningDeliverablesTool,
+)
 from tests.mcp_server.test_support import get_default_server_root
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
@@ -137,3 +147,68 @@ class TestReadyPhaseEnforcement:
             enforcement_ctx=ctx,
             note_context=note_context,
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase,allowed", [("planning", True), ("design", False)])
+@pytest.mark.parametrize("update", [False, True])
+async def test_planning_commands_use_configured_phase_admission(
+    tmp_path: Path, phase: str, allowed: bool, update: bool
+) -> None:
+    """The existing decorator admits Planning and blocks commands before other phases."""
+    _write_state(tmp_path, phase)
+    runner = _make_runner(tmp_path)
+    manager = MagicMock(spec=ProjectManager)
+    manager.get_project_plan.return_value = {
+        "planning_deliverables": {
+            "phases": {
+                "validation": {
+                    "deliverables": [
+                        {
+                            "deliverable_id": "D_1",
+                            "deliverable_name": "Evidence",
+                            "description": "Record verification",
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    if update:
+        result = await EnforcementDecorator(
+            UpdatePlanningDeliverablesTool(manager), runner, tmp_path
+        ).execute(
+            UpdatePlanningDeliverablesInput(
+                issue_number=283,
+                operations=[RemovePhase(op="remove_phase", phase="validation")],
+            ),
+            NoteContext(),
+        )
+        command = manager.update_planning_deliverables
+    else:
+        result = await EnforcementDecorator(
+            SavePlanningDeliverablesTool(manager), runner, tmp_path
+        ).execute(
+            SavePlanningDeliverablesInput(
+                issue_number=283,
+                planning_deliverables=SavePlanningModel.model_validate(
+                    {
+                        "phases": {
+                            "validation": {
+                                "deliverables": [
+                                    {
+                                        "deliverable_name": "Evidence",
+                                        "description": "Record verification",
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ),
+            ),
+            NoteContext(),
+        )
+        command = manager.save_planning_deliverables
+    operation = result.operation if isinstance(result, ToolExecution) else result
+    assert operation.success is allowed
+    assert command.call_count == int(allowed)

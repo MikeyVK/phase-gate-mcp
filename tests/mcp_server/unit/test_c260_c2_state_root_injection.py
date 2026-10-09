@@ -148,6 +148,7 @@ class TestProjectManagerStateRoot:
             server_root=state_root,
             contracts_config=MagicMock(),
             workflow_status_resolver=MagicMock(),
+            cycle_evidence_reader=MagicMock(),
         )
 
     def test_deliverables_file_uses_injected_state_root(self, tmp_path: Path) -> None:

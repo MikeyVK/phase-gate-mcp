@@ -44,11 +44,8 @@ class ValidatesModel(PlanningValue):
             "absent_text": {"file", "text"},
             "key_path": {"file", "path"},
         }[self.type]
-        supplied = {
-            name for name in ("file", "text", "path", "dir", "pattern")
-            if getattr(self, name) is not None
-        }
-        if supplied != required:
+        supplied = self.model_fields_set - {"type"}
+        if supplied != required or any(getattr(self, name) is None for name in required):
             raise ValueError("planning_validation_fields_invalid")
         return self
 

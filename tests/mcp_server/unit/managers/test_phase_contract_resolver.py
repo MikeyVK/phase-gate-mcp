@@ -73,11 +73,11 @@ workflows:
           green: feat
           refactor: refactor
         exit_requires:
-          - id: required-design-doc
+          - id: D_1.2
             type: file_exists
             required: true
             file: docs/development/issue257/design.md
-          - id: design-doc
+          - id: D_1.1
             type: file_exists
             required: false
             file: docs/development/issue257/design-original.md
@@ -126,10 +126,13 @@ workflows:
                     "total": 1,
                     "cycles": [
                         {
+                            "cycle_id": "C_1",
                             "cycle_number": 1,
+                            "cycle_name": "Contract checks",
                             "deliverables": [
                                 {
-                                    "id": "design-doc",
+                                    "deliverable_id": "D_1.1",
+                                    "deliverable_name": "D_1.1 contract",
                                     "description": "Override recommended config gate",
                                     "validates": {
                                         "type": "file_exists",
@@ -137,7 +140,8 @@ workflows:
                                     },
                                 },
                                 {
-                                    "id": "required-design-doc",
+                                    "deliverable_id": "D_1.2",
+                                    "deliverable_name": "D_1.2 contract",
                                     "description": "Attempt to override required config gate",
                                     "validates": {
                                         "type": "file_exists",
@@ -145,7 +149,8 @@ workflows:
                                     },
                                 },
                                 {
-                                    "id": "issue-extra",
+                                    "deliverable_id": "D_1.3",
+                                    "deliverable_name": "D_1.3 contract",
                                     "description": "Add new issue-specific recommended gate",
                                     "validates": {
                                         "type": "contains_text",
@@ -157,7 +162,8 @@ workflows:
                             "exit_criteria": "Cycle 1 contract checks are valid",
                         }
                     ],
-                }
+                },
+                "phases": {},
             }
         }
     }
@@ -317,10 +323,10 @@ class TestPhaseContractResolver:
         checks = resolver.resolve_phase_exit("feature", "implementation", cycle_number=1)
 
         assert [check.id for check in checks] == [
-            "required-design-doc",
+            "D_1.2",
             "c1-red-test",
-            "design-doc",
-            "issue-extra",
+            "D_1.1",
+            "D_1.3",
         ]
 
     def test_resolve_phase_exit_returns_only_exit_requires_when_no_cycle_number(
@@ -332,8 +338,8 @@ class TestPhaseContractResolver:
         checks = resolver.resolve_phase_exit("feature", "implementation")
 
         ids = [check.id for check in checks]
-        assert "required-design-doc" in ids
-        assert "design-doc" in ids
+        assert "D_1.2" in ids
+        assert "D_1.1" in ids
         assert "c1-red-test" not in ids
 
     def test_resolve_cycle_exit_returns_only_cycle_exit_requires(
@@ -362,5 +368,5 @@ class TestPhaseContractResolver:
         checks = resolver.resolve_cycle_exit("feature", "implementation", cycle_number=1)
 
         required_ids = {check.id for check in checks if check.required}
-        assert "required-design-doc" not in required_ids
+        assert "D_1.2" not in required_ids
         assert "c1-red-test" in required_ids

@@ -15,6 +15,7 @@ from mcp_server.core.interfaces import GateReport, GateViolation
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
     get_default_server_root,
     make_phase_config_context,
@@ -149,37 +150,34 @@ def _create_cycle_engine(
     )
     project_manager.save_planning_deliverables(
         issue_number,
-        {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Gate API",
-                        "deliverables": [{"id": "D1", "description": "c1"}],
-                        "exit_criteria": "gate runner ready",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Gate wiring",
-                        "deliverables": [{"id": "D2", "description": "c2"}],
-                        "exit_criteria": "phase transitions delegated",
-                    },
-                    {
-                        "cycle_number": 3,
-                        "name": "State recovery",
-                        "deliverables": [{"id": "D3", "description": "c3"}],
-                        "exit_criteria": "get_state is pure",
-                    },
-                    {
-                        "cycle_number": 4,
-                        "name": "Cycle orchestration",
-                        "deliverables": [{"id": "D4", "description": "c4"}],
-                        "exit_criteria": "cycle tools are thin",
-                    },
-                ],
+        SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Gate API",
+                            "deliverables": [{"deliverable_name": "D1", "description": "c1"}],
+                            "exit_criteria": "gate runner ready",
+                        },
+                        {
+                            "cycle_name": "Gate wiring",
+                            "deliverables": [{"deliverable_name": "D2", "description": "c2"}],
+                            "exit_criteria": "phase transitions delegated",
+                        },
+                        {
+                            "cycle_name": "State recovery",
+                            "deliverables": [{"deliverable_name": "D3", "description": "c3"}],
+                            "exit_criteria": "get_state is pure",
+                        },
+                        {
+                            "cycle_name": "Cycle orchestration",
+                            "deliverables": [{"deliverable_name": "D4", "description": "c4"}],
+                            "exit_criteria": "cycle tools are thin",
+                        },
+                    ],
+                }
             }
-        },
+        ),
     )
     engine = make_phase_state_engine(
         workspace_root,
@@ -285,25 +283,24 @@ def _create_config_driven_cycle_engine(
     )
     project_manager.save_planning_deliverables(
         issue_number,
-        {
-            "cycles": {
-                "total": 2,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Cycle 1",
-                        "deliverables": [{"id": "D1", "description": "c1"}],
-                        "exit_criteria": "first cycle ready",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Cycle 2",
-                        "deliverables": [{"id": "D2", "description": "c2"}],
-                        "exit_criteria": "second cycle ready",
-                    },
-                ],
+        SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Cycle 1",
+                            "deliverables": [{"deliverable_name": "D1", "description": "c1"}],
+                            "exit_criteria": "first cycle ready",
+                        },
+                        {
+                            "cycle_name": "Cycle 2",
+                            "deliverables": [{"deliverable_name": "D2", "description": "c2"}],
+                            "exit_criteria": "second cycle ready",
+                        },
+                    ],
+                }
             }
-        },
+        ),
     )
     gate_runner = ConfigAwareCycleGateRunner(
         PhaseContractResolver(make_phase_config_context(workspace_root, issue_number=issue_number))

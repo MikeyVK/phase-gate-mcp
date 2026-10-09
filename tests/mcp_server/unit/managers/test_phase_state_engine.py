@@ -22,6 +22,7 @@ from mcp_server.managers.state_repository import (
     InMemoryStateRepository,
     StateBranchMismatchError,
 )
+from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
     get_default_server_root,
     make_phase_state_engine,
@@ -51,40 +52,44 @@ class TestTDDPhaseHooks:
         )
 
         # Save planning deliverables (4 cycles)
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Schema & Storage",
-                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
-                        "exit_criteria": "Tests pass",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Validation Logic",
-                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
-                        "exit_criteria": "All scenarios covered",
-                    },
-                    {
-                        "cycle_number": 3,
-                        "name": "Discovery Tools",
-                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
-                        "exit_criteria": "Tools return cycle info",
-                    },
-                    {
-                        "cycle_number": 4,
-                        "name": "Transition Tools",
-                        "deliverables": [
-                            {"id": "D4.1", "description": "transition_cycle"},
-                            {"id": "D4.2", "description": "force_cycle_transition"},
-                        ],
-                        "exit_criteria": "All transitions working",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Schema & Storage",
+                            "deliverables": [{"deliverable_name": "D1.1", "description": "Schema"}],
+                            "exit_criteria": "Tests pass",
+                        },
+                        {
+                            "cycle_name": "Validation Logic",
+                            "deliverables": [
+                                {"deliverable_name": "D2.1", "description": "Validators"}
+                            ],
+                            "exit_criteria": "All scenarios covered",
+                        },
+                        {
+                            "cycle_name": "Discovery Tools",
+                            "deliverables": [
+                                {"deliverable_name": "D3.1", "description": "get_work_context"}
+                            ],
+                            "exit_criteria": "Tools return cycle info",
+                        },
+                        {
+                            "cycle_name": "Transition Tools",
+                            "deliverables": [
+                                {"deliverable_name": "D4.1", "description": "transition_cycle"},
+                                {
+                                    "deliverable_name": "D4.2",
+                                    "description": "force_cycle_transition",
+                                },
+                            ],
+                            "exit_criteria": "All transitions working",
+                        },
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(
             issue_number=issue_number, planning_deliverables=planning_deliverables
         )
@@ -311,19 +316,19 @@ class TestTransitionHooksWiring:
         )
         project_manager.save_planning_deliverables(
             issue_number=issue_number,
-            planning_deliverables={
-                "cycles": {
-                    "total": 1,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "Basic",
-                            "deliverables": [{"id": "D1.1", "description": "A"}],
-                            "exit_criteria": "pass",
-                        }
-                    ],
+            planning_deliverables=SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "Basic",
+                                "deliverables": [{"deliverable_name": "D1.1", "description": "A"}],
+                                "exit_criteria": "pass",
+                            }
+                        ],
+                    }
                 }
-            },
+            ),
         )
         return workspace_root, issue_number
 
@@ -680,25 +685,28 @@ class TestPhaseStateEngineRecordSubPhase:
         )
         project_manager.save_planning_deliverables(
             issue_number=298,
-            planning_deliverables={
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "C1",
-                            "deliverables": [{"id": "D1.1", "description": "deliverable-a"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "C2",
-                            "deliverables": [{"id": "D2.1", "description": "deliverable-b"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            planning_deliverables=SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "C1",
+                                "deliverables": [
+                                    {"deliverable_name": "D1.1", "description": "deliverable-a"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "C2",
+                                "deliverables": [
+                                    {"deliverable_name": "D2.1", "description": "deliverable-b"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         repo = InMemoryStateRepository()
         engine = make_phase_state_engine(
@@ -781,25 +789,24 @@ class TestContextLoadedWriterReset:
         )
         pm.save_planning_deliverables(
             issue_number=issue_number,
-            planning_deliverables={
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "A",
-                            "deliverables": [{"id": "D1.1", "description": "x"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "B",
-                            "deliverables": [{"id": "D2.1", "description": "y"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            planning_deliverables=SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "A",
+                                "deliverables": [{"deliverable_name": "D1.1", "description": "x"}],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "B",
+                                "deliverables": [{"deliverable_name": "D2.1", "description": "y"}],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         return tmp_path, issue_number
 
@@ -998,25 +1005,24 @@ class TestPhaseStateFreshSLambdaC1:
         )
         pm.save_planning_deliverables(
             issue_number=292,
-            planning_deliverables={
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "C1",
-                            "deliverables": [{"id": "D1.1", "description": "D1"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "C2",
-                            "deliverables": [{"id": "D2.1", "description": "D2"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            planning_deliverables=SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "C1",
+                                "deliverables": [{"deliverable_name": "D1.1", "description": "D1"}],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "C2",
+                                "deliverables": [{"deliverable_name": "D2.1", "description": "D2"}],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         return tmp_path, 292
 
@@ -1418,23 +1424,24 @@ class TestHumanApprovalMessageMigration:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
         pm.initialize_project(430, "Test issue", "feature")
-        planning_deliverables = {
-            "cycles": {
-                "total": 2,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "deliverables": [{"id": "D1", "description": "D1"}],
-                        "exit_criteria": "Criteria 1",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "deliverables": [{"id": "D2", "description": "D2"}],
-                        "exit_criteria": "Criteria 2",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Cycle 1",
+                            "deliverables": [{"deliverable_name": "D1", "description": "D1"}],
+                            "exit_criteria": "Criteria 1",
+                        },
+                        {
+                            "cycle_name": "Cycle 2",
+                            "deliverables": [{"deliverable_name": "D2", "description": "D2"}],
+                            "exit_criteria": "Criteria 2",
+                        },
+                    ],
+                }
             }
-        }
+        )
         pm.save_planning_deliverables(430, planning_deliverables)
 
         branch = "feature/430-test"
@@ -1477,23 +1484,24 @@ class TestHumanApprovalMessageMigration:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
         pm.initialize_project(430, "Test issue", "feature")
-        planning_deliverables = {
-            "cycles": {
-                "total": 2,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "deliverables": [{"id": "D1", "description": "D1"}],
-                        "exit_criteria": "Criteria 1",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "deliverables": [{"id": "D2", "description": "D2"}],
-                        "exit_criteria": "Criteria 2",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Cycle 1",
+                            "deliverables": [{"deliverable_name": "D1", "description": "D1"}],
+                            "exit_criteria": "Criteria 1",
+                        },
+                        {
+                            "cycle_name": "Cycle 2",
+                            "deliverables": [{"deliverable_name": "D2", "description": "D2"}],
+                            "exit_criteria": "Criteria 2",
+                        },
+                    ],
+                }
             }
-        }
+        )
         pm.save_planning_deliverables(430, planning_deliverables)
 
         branch = "feature/430-test"

@@ -157,6 +157,7 @@ class TestProjectManagerPhaseDelegationC4:
             workspace_root=tmp_path,
             contracts_config=contracts,
             workflow_status_resolver=MagicMock(),
+            cycle_evidence_reader=MagicMock(),
             server_root=tmp_path / get_default_server_root(),
         )
 

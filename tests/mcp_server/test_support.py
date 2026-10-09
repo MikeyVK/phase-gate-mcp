@@ -24,10 +24,10 @@ from mcp_server.config.loader import (
 from mcp_server.config.settings import Settings as RealSettings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces import GateReport
+from mcp_server.core.interfaces.git import ICycleEvidenceReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
-from mcp_server.core.interfaces.git import ICycleEvidenceReader
 from mcp_server.core.scope_contract import ScopeContract
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader

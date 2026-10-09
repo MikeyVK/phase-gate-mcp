@@ -125,6 +125,10 @@ global:
 
     templates:
 
+      info:
+
+        planning_cycle_evidence: "Cycle evidence: {status}; HEAD={head_sha}; reason={reason_code}; protected={protected_cycle_numbers}; evidence_overridden={evidence_overridden}"
+
       suggestions:
 
         allowed_bases_suggestion: "Allowed bases: {bases}"
@@ -325,20 +329,22 @@ tools:
             item_template: "  - {id}: {title} [{status}]"
   save_planning_deliverables:
     category: planning
+    template_failure: "Planning command failed: {error_code}; {error_message}"
     max_items: 10
     template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
     collections:
       - field: cycles
         heading: "Cycles:"
-        item_template: "- Cycle {cycle_number}: {deliverables_count} deliverables"
+        item_template: "- {cycle_id} — {cycle_name}: {deliverables_count} deliverables"
   update_planning_deliverables:
     category: planning
+    template_failure: "Planning command failed: {error_code}; {error_message}"
     max_items: 10
     template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
     collections:
       - field: cycles
         heading: "Cycles:"
-        item_template: "- Cycle {cycle_number}: {deliverables_count} deliverables"
+        item_template: "- {cycle_id} — {cycle_name}: {deliverables_count} deliverables"
   git_list_branches:
     category: query
     max_items: 20

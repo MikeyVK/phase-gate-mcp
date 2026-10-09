@@ -28,73 +28,99 @@ from pydantic import AnyUrl
 import mcp_server
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.interfaces.git import CycleEvidence
+from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.deliverables import (
+    CycleInput,
+    CyclesInput,
+    DeliverableInput,
+    PhaseBlockInput,
+    ReplaceCycle,
+    SavePlanningModel,
+    ValidatesModel,
+)
 from mcp_server.server import MCPServer
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
 from tests.mcp_server.test_support import make_project_manager
 
 
-def _planning_payload(cycle_count: int) -> dict[str, Any]:
-    """Create distinct ordered values so omissions and swaps are observable."""
-    return {
-        "cycles": {
-            "total": cycle_count,
-            "cycles": [
-                {
-                    "cycle_number": number,
-                    "name": f"Cycle {number}: preserve boundary",
-                    "deliverables": [
-                        {
-                            "id": f"C{number}.D1",
-                            "description": f"Implement bounded surface {number}",
-                            "validates": {"type": "file_exists", "file": f"src/c{number}.py"},
-                        },
-                        {
-                            "id": f"C{number}.D2",
-                            "description": f"Independent evidence for {number}",
-                            "validates": {
-                                "type": "contains_text",
-                                "file": f"evidence/c{number}.md",
-                                "text": f"Retained behavior {number}",
-                            },
-                        },
+class _CompleteEvidence:
+    """Explicitly isolate planning mutations from the checkout's real Git."""
+
+    def read_cycle_evidence(self, issue_number: int, execution_phase: str | None) -> CycleEvidence:
+        return CycleEvidence(
+            status="complete",
+            branch=f"feature/{issue_number}-test",
+            head_sha="test-head",
+            execution_phase=execution_phase,
+            protected_cycle_numbers=(),
+        )
+
+
+def _planning_payload(cycle_count: int) -> SavePlanningModel:
+    """Distinct authored values make omissions and swaps observable."""
+    return SavePlanningModel(
+        cycles=CyclesInput(
+            cycles=[
+                CycleInput(
+                    cycle_name=f"Cycle {number}: preserve boundary",
+                    deliverables=[
+                        DeliverableInput(
+                            deliverable_name="Implementation",
+                            description=f"Implement bounded surface {number}",
+                            validates=ValidatesModel(type="file_exists", file=f"src/c{number}.py"),
+                        ),
+                        DeliverableInput(
+                            deliverable_name="Evidence",
+                            description=f"Independent evidence for {number}",
+                            validates=ValidatesModel(
+                                type="contains_text",
+                                file=f"evidence/c{number}.md",
+                                text=f"Retained behavior {number}",
+                            ),
+                        ),
                     ],
-                    "exit_criteria": f"Cycle {number}: explicit stop/go; preserve newline.\nDone.",
-                }
+                    exit_criteria=f"Cycle {number}: explicit stop/go; preserve newline.\nDone.",
+                )
                 for number in range(1, cycle_count + 1)
-            ],
-        },
-        "design": {
-            "deliverables": [
-                {
-                    "id": "DESIGN.1",
-                    "description": "Contract inventory",
-                    "validates": {"type": "file_glob", "file": "docs/design/*.md"},
-                }
             ]
+        ),
+        phases={
+            "design": PhaseBlockInput(
+                deliverables=[
+                    DeliverableInput(
+                        deliverable_name="Inventory",
+                        description="Contract inventory",
+                        validates=ValidatesModel(
+                            type="file_glob", dir="docs/design", pattern="*.md"
+                        ),
+                    )
+                ]
+            ),
+            "validation": PhaseBlockInput(
+                deliverables=[
+                    DeliverableInput(
+                        deliverable_name="Review",
+                        description="No unresolved blocker",
+                        validates=ValidatesModel(
+                            type="absent_text", file="review.md", text="OPEN BLOCKER"
+                        ),
+                    )
+                ]
+            ),
+            "documentation": PhaseBlockInput(
+                deliverables=[
+                    DeliverableInput(
+                        deliverable_name="Schema",
+                        description="Document final schema",
+                        validates=ValidatesModel(
+                            type="key_path", file="contract.json", path="version"
+                        ),
+                    )
+                ]
+            ),
         },
-        "validation": {
-            "deliverables": [
-                {
-                    "id": "VALIDATE.1",
-                    "description": "No unresolved blocker",
-                    "validates": {
-                        "type": "absent_text",
-                        "file": "review.md",
-                        "text": "OPEN BLOCKER",
-                    },
-                }
-            ]
-        },
-        "documentation": {
-            "deliverables": [
-                {
-                    "id": "DOC.1",
-                    "description": "Document final schema",
-                    "validates": {"type": "key_path", "file": "contract.json", "path": "version"},
-                }
-            ]
-        },
-    }
+    )
 
 
 async def _call_plan(server: MCPServer) -> str:
@@ -181,10 +207,20 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     (legacy_suite_roots.server / "installation.json").write_text(
         json.dumps({"pgmcp_version": settings.server.version}), encoding="utf-8"
     )
-    manager = make_project_manager(legacy_suite_roots.workspace)
+    manager = make_project_manager(
+        legacy_suite_roots.workspace, cycle_evidence_reader=_CompleteEvidence()
+    )
     manager.initialize_project(53, "Planning readback", "feature")
-    expected = _planning_payload(cycle_count)
-    manager.save_planning_deliverables(53, expected)
+    authored = _planning_payload(cycle_count)
+    manager.save_planning_deliverables(53, authored)
+    saved = manager.get_project_plan(53)
+    assert saved is not None
+    expected = saved["planning_deliverables"]
+    assert expected["cycles"]["cycles"][0]["cycle_id"] == "C_1"
+    assert (
+        expected["cycles"]["cycles"][-1]["deliverables"][-1]["deliverable_id"]
+        == f"D_{cycle_count}.2"
+    )
 
     server = ServerBootstrapper(settings).bootstrap_target()
     old_uri = await _call_plan(server)
@@ -193,9 +229,18 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     assert await _read_windowed_plan(server, old_uri) == first
     assert [phase["name"] for phase in first["phases"]] == manager.get_phases("feature")
 
-    revised_cycle = {**expected["cycles"]["cycles"][0], "exit_criteria": "Revised stop/go proof"}
-    manager.update_planning_deliverables(53, {"cycles": {"cycles": [revised_cycle]}})
-    expected["cycles"]["cycles"][0] = revised_cycle
+    assert authored.cycles is not None
+    revised_cycle = authored.cycles.cycles[0].model_copy(
+        update={"exit_criteria": "Revised stop/go proof"}
+    )
+    manager.update_planning_deliverables(
+        53,
+        [ReplaceCycle(op="replace_cycle", cycle_id="C_1", cycle=revised_cycle)],
+        context=NoteContext(),
+    )
+    revised = manager.get_project_plan(53)
+    assert revised is not None
+    expected = revised["planning_deliverables"]
 
     restarted = ServerBootstrapper(settings).bootstrap_target()
     with pytest.raises(ValueError, match="No cached data found"):

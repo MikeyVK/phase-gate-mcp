@@ -10,6 +10,7 @@ from jsonschema.exceptions import ValidationError as ContextError
 from pydantic import JsonValue
 
 from mcp_server.core.interfaces.artifact_header_reader import HeaderReadStatus
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
@@ -254,16 +255,32 @@ def test_empty_planning_sections_and_work_unit_capacities_are_visible(
     assert "##### D1\n" in unit_section
 
 
+def _operational_deliverables(authored: JsonValue) -> list[JsonValue]:
+    """Project author-facing IDs into meaningful input names, never numeric references."""
+    assert isinstance(authored, list)
+    projected: list[JsonValue] = []
+    for item in authored:
+        assert isinstance(item, dict)
+        result: dict[str, JsonValue] = {
+            "deliverable_name": item["id"],
+            "description": item["description"],
+        }
+        if item.get("validates") is not None:
+            result["validates"] = item["validates"]
+        projected.append(result)
+    return projected
+
+
 def test_explicit_projection_survives_actual_planning_save_and_readback(
     planning: DeliveredTemplate,
     legacy_suite_roots: SuiteRoots,
 ) -> None:
     specifications: list[JsonValue] = [
-        {"type": "file_exists", "file": "src/reader.py", "text": None, "path": None},
-        {"type": "file_glob", "file": "src/*.py"},
-        {"type": "contains_text", "file": "proof.md", "text": "Retained behavior", "path": None},
-        {"type": "absent_text", "file": "proof.md", "text": "", "path": None},
-        {"type": "key_path", "file": "contract.json", "path": "version", "text": None},
+        {"type": "file_exists", "file": "src/reader.py"},
+        {"type": "file_glob", "dir": "src", "pattern": "*.py"},
+        {"type": "contains_text", "file": "proof.md", "text": "Retained behavior"},
+        {"type": "absent_text", "file": "proof.md", "text": ""},
+        {"type": "key_path", "file": "contract.json", "path": "version"},
     ]
     deliverables: list[JsonValue] = [
         {"id": f"D{index}", "description": f"Deliverable {index}", "validates": spec}
@@ -281,7 +298,6 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
         "deliverables": deliverables[3:],
         "exit_criteria": "Consumer preserved and bridge retired.",
     }
-    cycles: list[JsonValue] = [first_cycle, second_cycle]
     work_units: list[JsonValue] = [
         {"id": "WU-A", "goal": "Expose reader", "owner": "Reader owner", **first_cycle},
         {"id": "WU-B", "goal": "Preserve consumer", "dependencies": ["WU-A"], **second_cycle},
@@ -328,12 +344,25 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
         for key in ("name", "exit_criteria"):
             value = cycle[key]
             assert isinstance(value, str) and value in output
-    payload: dict[str, JsonValue] = {
-        "cycles": {"total": 2, "cycles": cycles},
-        "design": {"deliverables": phase_design},
-        "validation": {"deliverables": phase_validation},
-        "documentation": {"deliverables": phase_docs},
-    }
+    payload = SavePlanningModel.model_validate(
+        {
+            "cycles": {
+                "cycles": [
+                    {
+                        "cycle_name": cycle["name"],
+                        "deliverables": _operational_deliverables(cycle["deliverables"]),
+                        "exit_criteria": cycle["exit_criteria"],
+                    }
+                    for cycle in (first_cycle, second_cycle)
+                ]
+            },
+            "phases": {
+                "design": {"deliverables": _operational_deliverables(phase_design)},
+                "validation": {"deliverables": _operational_deliverables(phase_validation)},
+                "documentation": {"deliverables": _operational_deliverables(phase_docs)},
+            },
+        }
+    )
     contracts = load_contracts_config(legacy_suite_roots.workspace)
     workflow = next(
         name
@@ -345,11 +374,25 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
     manager.save_planning_deliverables(71, payload)
     reader = make_project_manager(legacy_suite_roots.workspace, contracts_config=contracts)
     restored = reader.get_project_plan(71)
-    assert restored is not None and restored["planning_deliverables"] == payload
+    assert restored is not None
+    stored = restored["planning_deliverables"]
+    assert stored["cycles"]["total"] == 2
+    assert [cycle["cycle_name"] for cycle in stored["cycles"]["cycles"]] == [
+        first_cycle["name"],
+        second_cycle["name"],
+    ]
+    assert stored["cycles"]["cycles"][0]["deliverables"][0]["deliverable_id"] == "D_1.1"
+    assert stored["phases"]["design"]["deliverables"][0]["deliverable_id"] == "D_1"
+    assert stored["cycles"]["cycles"][0]["deliverables"][1]["validates"] == {
+        "type": "file_glob",
+        "dir": "src",
+        "pattern": "*.py",
+    }
+    assert reader.get_project_plan(71) == restored
     assert context == before
 
 
-def test_planning_rejects_legacy_and_invalid_operational_shapes(
+def test_planning_rejects_invalid_authoring_shapes(
     planning: DeliveredTemplate,
 ) -> None:
     unit: dict[str, JsonValue] = {
@@ -392,9 +435,6 @@ def test_planning_rejects_legacy_and_invalid_operational_shapes(
             "work_units": [],
         },
         {**base, "summary": ""},
-        {**base, "cycles": []},
-        {**base, "success_criteria": []},
-        {**base, "work_units": [{**unit, "success_criteria": "Old exit"}]},
         {**base, "work_units": [{**unit, "deliverables": []}]},
         {**base, "work_units": [{**unit, "cycle_number": 0}]},
         {**base, "work_units": [{**unit, "cycle_number": True}]},
@@ -409,9 +449,9 @@ def test_planning_rejects_legacy_and_invalid_operational_shapes(
     ]
     bad_specs: list[JsonValue] = [
         {"type": "file_exists"},
-        {"type": "file_glob", "file": None},
+        {"type": "file_glob", "dir": "src", "pattern": None},
         {"type": "contains_text", "file": "proof.md"},
-        {"type": "absent_text", "file": "proof.md", "text": None},
+        {"type": "absent_text", "file": "proof.md"},
         {"type": "key_path", "file": "contract.json"},
         {"type": "expression", "file": "contract.json"},
         {"type": "file_exists", "file": "source.py", "command": "inferred"},

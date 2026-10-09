@@ -432,7 +432,8 @@ class UpdatePlanningDeliverablesInput(BaseModel):
         ),
     )
     force: bool = Field(
-        default=False, strict=True,
+        default=False,
+        strict=True,
         description=(
             "Retry local Git evidence and accept continued uncertainty after investigation. "
             "Known commit-protected deletion/renumbering and invalid planning remain forbidden."
@@ -462,7 +463,9 @@ def _planning_input_schema(model: type[BaseModel], manager: ProjectManager) -> d
     return schema
 
 
-def _planning_response(manager: IProjectPlanReader, issue_number: int) -> PlanningDeliverablesOutput:
+def _planning_response(
+    manager: IProjectPlanReader, issue_number: int
+) -> PlanningDeliverablesOutput:
     """Assemble one successful command response from the persisted complete plan."""
     plan = manager.get_project_plan(issue_number)
     if plan is None or plan.get("planning_deliverables") is None:
@@ -496,13 +499,19 @@ def _planning_failure(
 ) -> PlanningDeliverablesOutput:
     """Keep rejected commands and failed post-write readback distinct."""
     code = (
-        "planning_readback_failed" if persisted
-        else error.error_code if isinstance(error, PlanningMutationError)
+        "planning_readback_failed"
+        if persisted
+        else error.error_code
+        if isinstance(error, PlanningMutationError)
         else "planning_command_failed"
     )
     return PlanningDeliverablesOutput(
-        success=False, issue_number=issue_number, error_code=code,
-        error_message=str(error), total_cycles=0, total_deliverables=0,
+        success=False,
+        issue_number=issue_number,
+        error_code=code,
+        error_message=str(error),
+        total_cycles=0,
+        total_deliverables=0,
     )
 
 
@@ -525,7 +534,8 @@ class SavePlanningDeliverablesTool(
     def description(self) -> str:
         return (
             "Create the complete initial plan once. Supply cycle/deliverable names and ordered "
-            "complete blocks; the server stores C_n, D_n.m and phase-local D_n references and totals."
+            "complete blocks; the server stores C_n, D_n.m and phase-local D_n references "
+            "and totals."
         )
 
     @property
@@ -590,8 +600,10 @@ class UpdatePlanningDeliverablesTool(
         persisted = False
         try:
             self._manager.update_planning_deliverables(
-                issue_number=params.issue_number, operations=params.operations,
-                context=context, force=params.force,
+                issue_number=params.issue_number,
+                operations=params.operations,
+                context=context,
+                force=params.force,
             )
             persisted = True
             return _planning_response(self._manager, params.issue_number)

@@ -41,6 +41,18 @@ enforcement:
     actions:
       - type: check_pr_status
   - event_source: tool
+    tool: save_planning_deliverables
+    timing: pre
+    actions:
+      - type: check_phase_readiness
+        policy: planning
+  - event_source: tool
+    tool: update_planning_deliverables
+    timing: pre
+    actions:
+      - type: check_phase_readiness
+        policy: planning
+  - event_source: tool
     tool: submit_pr
     timing: pre
     actions:

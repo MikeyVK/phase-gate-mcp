@@ -20,6 +20,7 @@ from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.scope_contract import ScopeContract
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.managers.git_manager import GitManager
+from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
     get_default_server_root,
     make_phase_state_engine,
@@ -258,19 +259,21 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     # Save planning deliverables (required by implementation-cycle hooks, Issue #146)
     pm.save_planning_deliverables(
         999,
-        {
-            "cycles": {
-                "total": 1,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "End-to-end TDD cycle",
-                        "deliverables": [{"id": "D1", "description": "test_workflow_cycle_e2e"}],
-                        "exit_criteria": "E2E test passes",
-                    }
-                ],
+        SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "End-to-end TDD cycle",
+                            "deliverables": [
+                                {"deliverable_name": "D1", "description": "test_workflow_cycle_e2e"}
+                            ],
+                            "exit_criteria": "E2E test passes",
+                        }
+                    ],
+                }
             }
-        },
+        ),
     )
 
     # Transition to IMPLEMENTATION

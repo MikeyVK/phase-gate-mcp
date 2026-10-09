@@ -17,6 +17,7 @@ import pytest
 
 from mcp_server.managers.project_manager import ProjectInitOptions
 from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
     make_phase_state_engine,
     make_project_manager,
@@ -323,19 +324,22 @@ class TestCycleValidationLogic:
         project_manager.initialize_project(
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": i,
-                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
-                        "exit_criteria": f"Criteria {i}",
-                    }
-                    for i in range(1, 5)
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": f"Cycle {i}",
+                            "deliverables": [
+                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
+                            ],
+                            "exit_criteria": f"Criteria {i}",
+                        }
+                        for i in range(1, 5)
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Act & Assert - cycle_number 0 should raise
@@ -356,19 +360,22 @@ class TestCycleValidationLogic:
         project_manager.initialize_project(
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": i,
-                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
-                        "exit_criteria": f"Criteria {i}",
-                    }
-                    for i in range(1, 5)
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": f"Cycle {i}",
+                            "deliverables": [
+                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
+                            ],
+                            "exit_criteria": f"Criteria {i}",
+                        }
+                        for i in range(1, 5)
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Act & Assert - negative cycle_number should raise
@@ -389,19 +396,22 @@ class TestCycleValidationLogic:
         project_manager.initialize_project(
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": i,
-                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
-                        "exit_criteria": f"Criteria {i}",
-                    }
-                    for i in range(1, 5)
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": f"Cycle {i}",
+                            "deliverables": [
+                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
+                            ],
+                            "exit_criteria": f"Criteria {i}",
+                        }
+                        for i in range(1, 5)
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Act & Assert - cycle_number 5 (> 4) should raise
@@ -422,19 +432,22 @@ class TestCycleValidationLogic:
         project_manager.initialize_project(
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": i,
-                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
-                        "exit_criteria": f"Criteria {i}",
-                    }
-                    for i in range(1, 5)
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": f"Cycle {i}",
+                            "deliverables": [
+                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
+                            ],
+                            "exit_criteria": f"Criteria {i}",
+                        }
+                        for i in range(1, 5)
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Act & Assert - all valid cycle numbers should pass
@@ -473,19 +486,22 @@ class TestCycleValidationLogic:
         project_manager.initialize_project(
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": i,
-                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
-                        "exit_criteria": f"Criteria {i}",
-                    }
-                    for i in range(1, 5)
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": f"Cycle {i}",
+                            "deliverables": [
+                                {"deliverable_name": f"D{i}", "description": f"Deliverable {i}"}
+                            ],
+                            "exit_criteria": f"Criteria {i}",
+                        }
+                        for i in range(1, 5)
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Act & Assert - should not raise

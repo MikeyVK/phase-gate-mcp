@@ -1,28 +1,29 @@
-"""Tests for InitializeProjectTool with parent_branch tracking.
-
-Issue #79: Tests for parent_branch in InitializeProjectTool.
-- Accepts explicit parent_branch parameter
-- Auto-detects parent_branch from git reflog (best effort)
-- Handles auto-detection failure gracefully
-
-Issue #229 Cycle 4: SavePlanningDeliverablesTool (D4.1/D4.2/D4.3/GAP-04/GAP-06).
-Issue #229 Cycle 5: UpdatePlanningDeliverablesTool (D5.1/D5.2/D5.3/GAP-09).
-Issue #229 Cycle 7: Per-phase deliverables schema in save_planning_deliverables (D7.1).
-Issue #229 Cycle 8: update_planning_deliverables per-phase merge + exit_criteria
-  (D8.1/D8.2/D8.3/GAP-12/GAP-15).
+"""Public project tools and complete planning command/readback behavior.
 
 @layer: Tests (Unit)
-@dependencies: [pytest, pathlib, mcp_server.tools.project_tools]
 """
 
-import json
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
 
+from mcp_server.core.interfaces.git import CycleEvidence
 from mcp_server.core.operation_notes import Note, NoteContext
+from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.deliverables import (
+    AppendCycle,
+    CycleInput,
+    CyclesInput,
+    DeliverableInput,
+    PhaseBlockInput,
+    RemoveCycle,
+    RemovePhase,
+    ReplaceCycle,
+    SavePlanningModel,
+    SetPhase,
+)
 from mcp_server.tools.project_tools import (
     GetProjectPlanInput,
     GetProjectPlanTool,
@@ -34,7 +35,6 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesTool,
 )
 from tests.mcp_server.test_support import (
-    get_default_server_root,
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
@@ -277,7 +277,7 @@ class TestGetProjectPlanTool:
     @pytest.mark.asyncio
     async def test_get_plan_returns_complete_stored_planning(self) -> None:
         """The read-only dependency preserves D1/D2, order and exit criteria."""
-        payload = _minimal_deliverables()
+        payload = _stored_deliverables()
         manager = _GetProjectPlanManagerStub(
             plan={"workflow_name": "feature", "planning_deliverables": payload}
         )
@@ -315,704 +315,290 @@ class TestGetProjectPlanTool:
         assert result.planning_deliverables is None
 
 
-def _minimal_deliverables(validates: dict | None = None) -> dict:
-    """Return a minimal valid planning_deliverables dict with one cycle.
+def _minimal_deliverables() -> SavePlanningModel:
+    """One complete authored cycle; references are server-owned."""
+    return SavePlanningModel(
+        cycles=CyclesInput(cycles=[_cycle("First", "Initial public boundary")]),
+    )
 
-    If *validates* is given it is attached to the single deliverable entry,
-    allowing L2 validation to be exercised.
-    """
-    deliverable: dict = {"id": "D1.1", "description": "placeholder"}
-    if validates is not None:
-        deliverable["validates"] = validates
+
+def _cycle(name: str, description: str) -> CycleInput:
+    return CycleInput(
+        cycle_name=name,
+        deliverables=[DeliverableInput(deliverable_name=name, description=description)],
+        exit_criteria=f"{name} verified",
+    )
+
+
+def _stored_deliverables() -> dict[str, object]:
+    """A complete stored value for the read-only dependency."""
     return {
         "cycles": {
             "total": 1,
             "cycles": [
                 {
+                    "cycle_id": "C_1",
                     "cycle_number": 1,
-                    "deliverables": [deliverable],
-                    "exit_criteria": "Tests pass",
+                    "cycle_name": "First",
+                    "deliverables": [
+                        {
+                            "deliverable_id": "D_1.1",
+                            "deliverable_name": "First",
+                            "description": "Initial public boundary",
+                        }
+                    ],
+                    "exit_criteria": "First verified",
                 }
             ],
-        }
+        },
+        "phases": {},
     }
 
 
-class TestSavePlanningDeliverablesTool:
-    """Tests for SavePlanningDeliverablesTool.
+class _CompleteEvidence:
+    """Supply explicit complete execution evidence to planning update tests."""
 
-    Issue #229 Cycle 4 (GAP-04 + GAP-06):
-    - D4.1: tool defined in project_tools.py
-    - D4.2: tool registered in server.py (integration test, see test_server_tool_registration.py)
-    - D4.3: Layer 2 validates-entry schema validation before persisting
-    """
-
-    @pytest.fixture()
-    def tool(self, legacy_suite_workspace: Path) -> SavePlanningDeliverablesTool:
-        return SavePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
-
-    @pytest.fixture()
-    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
-        """Initialize a project so save_planning_deliverables can run."""
-        pm = make_project_manager(legacy_suite_workspace)
-        pm.initialize_project(
-            issue_number=229,
-            issue_title="Phase deliverables enforcement",
-            workflow_name="feature",
+    def read_cycle_evidence(self, issue_number: int, execution_phase: str | None) -> CycleEvidence:
+        return CycleEvidence(
+            status="complete",
+            branch=f"feature/{issue_number}-test",
+            head_sha="test-head",
+            execution_phase=execution_phase,
+            protected_cycle_numbers=(),
         )
-        return legacy_suite_workspace, 229
 
-    # ------------------------------------------------------------------
-    # D4.1: basic persistence
-    # ------------------------------------------------------------------
 
-    @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_persists_to_projects_json(
-        self, initialized: tuple[Path, int]
+@pytest.fixture
+def planning_manager(legacy_suite_workspace: Path) -> ProjectManager:
+    manager = make_project_manager(
+        legacy_suite_workspace, cycle_evidence_reader=_CompleteEvidence()
+    )
+    manager.initialize_project(229, "Planning commands", "feature")
+    return manager
+
+
+class TestPlanningCommands:
+    """Public command results expose the complete, actually persisted plan."""
+
+    @pytest.mark.asyncio
+    async def test_save_numbers_names_and_returns_complete_plan(
+        self, planning_manager: ProjectManager
     ) -> None:
-        """Happy path: valid payload is written to deliverables.json. (D4.1)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool_with_root = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool_with_root.execute(
+        result = await SavePlanningDeliverablesTool(manager=planning_manager).execute(
             SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables=_minimal_deliverables(),
+                issue_number=229, planning_deliverables=_minimal_deliverables()
             ),
             NoteContext(),
         )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        pm = make_project_manager(workspace_root)
-        plan = pm.get_project_plan(issue_number)
+        assert result.total_cycles == 1 and result.total_deliverables == 1
+        assert result.planning_deliverables is not None
+        cycle = result.planning_deliverables.cycles
+        assert cycle is not None
+        assert cycle.cycles[0].cycle_id == "C_1"
+        assert cycle.cycles[0].deliverables[0].deliverable_id == "D_1.1"
+        assert cycle.cycles[0].cycle_name == "First"
+        assert result.cycles[0].cycle_id == "C_1"
+        assert result.cycles[0].cycle_name == "First"
+        plan = planning_manager.get_project_plan(229)
         assert plan is not None
-        assert "planning_deliverables" in plan
+        assert (
+            result.planning_deliverables.model_dump(exclude_none=True)
+            == plan["planning_deliverables"]
+        )
 
-    @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_rejects_duplicate(
-        self, initialized: tuple[Path, int]
+    @pytest.mark.asyncio
+    async def test_duplicate_save_returns_failure_without_a_successful_plan(
+        self, planning_manager: ProjectManager
     ) -> None:
-        """Duplicate call is rejected with clear error."""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        tool = SavePlanningDeliverablesTool(manager=planning_manager)
         params = SavePlanningDeliverablesInput(
-            issue_number=issue_number,
-            planning_deliverables=_minimal_deliverables(),
+            issue_number=229, planning_deliverables=_minimal_deliverables()
         )
-        await tool.execute(params, NoteContext())  # First call succeeds
-        result = await tool.execute(params, NoteContext())  # Second call must fail
+        assert (await tool.execute(params, NoteContext())).success
+        before = planning_manager.get_project_plan(229)
+        result = await tool.execute(params, NoteContext())
+        assert not result.success and result.error_code is not None
+        assert result.planning_deliverables is None
+        assert result.total_cycles == 0 and result.total_deliverables == 0
+        assert planning_manager.get_project_plan(229) == before
 
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert not result.success
-        assert result.error_message is not None
-        assert "already exist" in result.error_message.lower()
-
-    @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_rejects_missing_cycles(
-        self, initialized: tuple[Path, int]
+    @pytest.mark.asyncio
+    async def test_append_and_replace_return_preserved_and_replaced_blocks(
+        self, planning_manager: ProjectManager
     ) -> None:
-        """Payload without cycles key is rejected."""
-        _workspace_root, issue_number = initialized
+        planning_manager.save_planning_deliverables(229, _minimal_deliverables())
+        tool = UpdatePlanningDeliverablesTool(manager=planning_manager)
+        result = await tool.execute(
+            UpdatePlanningDeliverablesInput(
+                issue_number=229,
+                operations=[
+                    ReplaceCycle(
+                        op="replace_cycle", cycle_id="C_1", cycle=_cycle("Revised", "Replacement")
+                    ),
+                    AppendCycle(op="append_cycle", cycle=_cycle("Second", "New boundary")),
+                ],
+            ),
+            NoteContext(),
+        )
+        assert result.success and result.total_cycles == 2 and result.total_deliverables == 2
+        assert result.planning_deliverables is not None
+        cycles = result.planning_deliverables.cycles
+        assert cycles is not None
+        assert [cycle.cycle_name for cycle in cycles.cycles] == ["Revised", "Second"]
+        assert [cycle.cycle_id for cycle in cycles.cycles] == ["C_1", "C_2"]
+        assert [cycle.deliverables[0].deliverable_id for cycle in cycles.cycles] == [
+            "D_1.1",
+            "D_2.1",
+        ]
+        assert cycles.cycles[0].exit_criteria == "Revised verified"
 
-        with pytest.raises(ValidationError) as exc_info:
-            SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={"notes": "forgot the cycles key"},
-            )
-        assert "notes" in str(exc_info.value)
-
-    # ------------------------------------------------------------------
-    # D4.3: Layer 2 validates-entry schema validation
-    # ------------------------------------------------------------------
-
-    @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_rejects_unknown_validates_type(
-        self, initialized: tuple[Path, int]
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("phase", ["design", "validation", "documentation"])
+    async def test_set_phase_replaces_complete_block_and_retains_cycles(
+        self, planning_manager: ProjectManager, phase: str
     ) -> None:
-        """validates entry with unknown type is rejected before persisting. (D4.3)"""
-        _workspace_root, issue_number = initialized
+        original = PhaseBlockInput(
+            deliverables=[
+                DeliverableInput(deliverable_name="Original", description="Original block")
+            ]
+        )
+        planning_manager.save_planning_deliverables(
+            229, SavePlanningModel(cycles=_minimal_deliverables().cycles, phases={phase: original})
+        )
+        replacement = PhaseBlockInput(
+            deliverables=[
+                DeliverableInput(deliverable_name="Replacement", description="Replacement block")
+            ]
+        )
+        result = await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
+            UpdatePlanningDeliverablesInput(
+                issue_number=229,
+                operations=[SetPhase(op="set_phase", phase=phase, block=replacement)],
+            ),
+            NoteContext(),
+        )
+        assert result.success and result.total_deliverables == 2
+        assert result.planning_deliverables is not None
+        block = result.planning_deliverables.phases[phase]
+        assert len(block.deliverables) == 1
+        assert block.deliverables[0].deliverable_name == "Replacement"
+        assert block.deliverables[0].deliverable_id == "D_1"
+        cycles = result.planning_deliverables.cycles
+        assert cycles is not None and cycles.cycles[0].cycle_name == "First"
 
-        with pytest.raises(ValidationError) as exc_info:
-            SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables=_minimal_deliverables(
-                    validates={"type": "does_not_exist", "file": "x.py"}
+    @pytest.mark.asyncio
+    async def test_remove_phase_and_cycle_are_explicit_and_compact_references(
+        self, planning_manager: ProjectManager
+    ) -> None:
+        planning_manager.save_planning_deliverables(
+            229,
+            SavePlanningModel(
+                cycles=CyclesInput(
+                    cycles=[_cycle("First", "First block"), _cycle("Second", "Second block")]
                 ),
-            )
-        assert "does_not_exist" in str(exc_info.value)
-
-    @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_rejects_validates_missing_required_field(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """validates entry missing required field (text for contains_text) is rejected. (D4.3)"""
-        _workspace_root, issue_number = initialized
-
-        with pytest.raises(ValidationError) as exc_info:
-            SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables=_minimal_deliverables(
-                    validates={"type": "contains_text", "file": "x.py"}  # missing 'text'
-                ),
-            )
-        assert "contains_text" in str(exc_info.value)
-        assert "text" in str(exc_info.value)
-
-    @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_error_lists_available_types_and_fields(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """Error on unknown type lists all valid types and their required fields. (D4.3)"""
-        _workspace_root, issue_number = initialized
-
-        with pytest.raises(ValidationError) as exc_info:
-            SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables=_minimal_deliverables(validates={"type": "wrong_type"}),
-            )
-        text = str(exc_info.value)
-        for valid_type in ("file_exists", "file_glob", "contains_text", "absent_text", "key_path"):
-            assert valid_type in text
-
-
-class TestUpdatePlanningDeliverablesTool:
-    """Tests for UpdatePlanningDeliverablesTool.
-
-    Issue #229 Cycle 5 (GAP-09):
-    - D5.1: tool defined in project_tools.py
-    - D5.2: update_planning_deliverables in project_manager.py
-    - D5.3: tool registered in server.py
-    """
-
-    @pytest.fixture()
-    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
-        """Create workspace with initial planning deliverables already saved."""
-        issue_number = 229
-        manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="Phase deliverables enforcement",
-            workflow_name="feature",
-        )
-        manager.save_planning_deliverables(
-            issue_number=issue_number,
-            planning_deliverables=_minimal_deliverables(),
-        )
-        return legacy_suite_workspace, issue_number
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_tool_appends_new_cycle(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """Sending a new cycle_number appends it to cycles.cycles. (D5.1)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "cycles": {
-                        "total": 2,
-                        "cycles": [
-                            {
-                                "cycle_number": 2,
-                                "deliverables": [{"id": "D2.1", "description": "new cycle"}],
-                                "exit_criteria": "Tests pass",
-                            }
-                        ],
-                    }
+                phases={
+                    "design": PhaseBlockInput(
+                        deliverables=[
+                            DeliverableInput(deliverable_name="Design", description="Design block")
+                        ]
+                    )
                 },
             ),
-            NoteContext(),
         )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        manager = make_project_manager(workspace_root)
-        _raw = json.loads(manager.deliverables_file.read_text())
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        cycles = data["planning_deliverables"]["cycles"]["cycles"]
-        assert len(cycles) == 2  # original C1 + new C2
-        assert cycles[1]["cycle_number"] == 2
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_tool_merges_deliverable_by_id(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """New deliverable id in existing cycle is appended. (D5.1)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
+        result = await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
             UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "cycles": {
-                        "total": 1,
-                        "cycles": [
-                            {
-                                "cycle_number": 1,
-                                "deliverables": [
-                                    {"id": "D1.2", "description": "second deliverable"}
-                                ],
-                                "exit_criteria": "Tests pass",
-                            }
-                        ],
-                    }
-                },
+                issue_number=229,
+                operations=[
+                    RemoveCycle(op="remove_cycle", cycle_id="C_1"),
+                    RemovePhase(op="remove_phase", phase="design"),
+                ],
             ),
             NoteContext(),
         )
+        assert result.success and result.total_cycles == 1 and result.total_deliverables == 1
+        assert result.planning_deliverables is not None
+        assert result.planning_deliverables.phases == {}
+        cycles = result.planning_deliverables.cycles
+        assert cycles is not None
+        assert cycles.cycles[0].cycle_id == "C_1"
+        assert cycles.cycles[0].cycle_name == "Second"
+        assert cycles.cycles[0].deliverables[0].deliverable_id == "D_1.1"
 
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        manager = make_project_manager(workspace_root)
-        _raw = json.loads(manager.deliverables_file.read_text())
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
-        ids = [d["id"] for d in cycle1["deliverables"]]
-        assert "D1.1" in ids  # original preserved
-        assert "D1.2" in ids  # new one appended
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_tool_updates_existing_deliverable_by_id(
-        self, initialized: tuple[Path, int]
+    @pytest.mark.asyncio
+    async def test_update_before_save_returns_failure_and_no_plan(
+        self, planning_manager: ProjectManager
     ) -> None:
-        """Existing deliverable id in existing cycle is overwritten. (D5.1)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
+        result = await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
             UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "cycles": {
-                        "total": 1,
-                        "cycles": [
-                            {
-                                "cycle_number": 1,
-                                "deliverables": [
-                                    {"id": "D1.1", "description": "updated description"}
-                                ],
-                                "exit_criteria": "Tests pass",
-                            }
-                        ],
-                    }
-                },
+                issue_number=229,
+                operations=[AppendCycle(op="append_cycle", cycle=_cycle("First", "First block"))],
             ),
             NoteContext(),
         )
+        assert not result.success and result.error_code is not None
+        assert result.planning_deliverables is None and result.total_cycles == 0
 
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        manager = make_project_manager(workspace_root)
-        _raw = json.loads(manager.deliverables_file.read_text())
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
-        d1_1 = next(d for d in cycle1["deliverables"] if d["id"] == "D1.1")
-        assert d1_1["description"] == "updated description"
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_tool_rejects_before_initial_save(
-        self, legacy_suite_workspace: Path
+    @pytest.mark.asyncio
+    async def test_unknown_configured_phase_rejects_without_changing_plan(
+        self, planning_manager: ProjectManager
     ) -> None:
-        """Returns error when called before save_planning_deliverables. (D5.1)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        issue_number = 229
-        manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="Phase deliverables enforcement",
-            workflow_name="feature",
-        )
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
-
-        result = await tool.execute(
+        planning_manager.save_planning_deliverables(229, _minimal_deliverables())
+        before = planning_manager.get_project_plan(229)
+        result = await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
             UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables=_minimal_deliverables(),
+                issue_number=229,
+                operations=[
+                    SetPhase(
+                        op="set_phase",
+                        phase="unknown_phase",
+                        block=PhaseBlockInput(
+                            deliverables=[
+                                DeliverableInput(
+                                    deliverable_name="Invalid", description="Unknown phase"
+                                )
+                            ]
+                        ),
+                    )
+                ],
             ),
             NoteContext(),
         )
+        assert not result.success and result.error_code is not None
+        assert planning_manager.get_project_plan(229) == before
 
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert not result.success
-        assert result.error_message is not None
-        assert "save_planning_deliverables" in result.error_message
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_tool_validates_validates_entry_schema(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """Invalid validates entry is rejected before persisting. (D5.1)"""
-        _workspace_root, issue_number = initialized
-
-        with pytest.raises(ValidationError) as exc_info:
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables=_minimal_deliverables(validates={"type": "unknown_type"}),
-            )
-        text = str(exc_info.value)
-        for valid_type in ("file_exists", "file_glob", "contains_text", "absent_text", "key_path"):
-            assert valid_type in text
-
-
-class TestPlanningDeliverablesPhaseSchema:
-    """Tests for per-phase deliverables schema in save_planning_deliverables.
-
-    Issue #229 Cycle 7 (GAP-11):
-    - D7.1: save_planning_deliverables accepts phase keys alongside cycles
-    """
-
-    @pytest.fixture()
-    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
-        """Initialize a project (no deliverables yet)."""
-        issue_number = 229
-        manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="Phase deliverables schema test",
-            workflow_name="feature",
-        )
-        return legacy_suite_workspace, issue_number
-
-    @pytest.mark.asyncio()
-    @pytest.mark.asyncio()
-    async def test_save_accepts_design_phase_key(self, initialized: tuple[Path, int]) -> None:
-        """save_planning_deliverables accepts design phase key alongside cycles. (D7.1)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
-            SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    **_minimal_deliverables(),
-                    "design": {
-                        "deliverables": [{"id": "D-design-1", "description": "Design doc created"}]
+    @pytest.mark.parametrize(
+        "validates",
+        [
+            {"type": "does_not_exist", "file": "x.py"},
+            {"type": "contains_text", "file": "x.py"},
+            {"type": "file_glob", "dir": "src", "pattern": ""},
+        ],
+    )
+    def test_invalid_rule_is_rejected_at_request_admission(self, validates: dict[str, str]) -> None:
+        with pytest.raises(ValidationError):
+            SavePlanningDeliverablesInput.model_validate(
+                {
+                    "issue_number": 229,
+                    "planning_deliverables": {
+                        "cycles": {
+                            "cycles": [
+                                {
+                                    "cycle_name": "Invalid rule",
+                                    "exit_criteria": "Not persisted",
+                                    "deliverables": [
+                                        {
+                                            "deliverable_name": "Rule",
+                                            "description": "Rule admission",
+                                            "validates": validates,
+                                        }
+                                    ],
+                                }
+                            ]
+                        }
                     },
-                },
-            ),
-            NoteContext(),
-        )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        assert data["planning_deliverables"]["design"]["deliverables"][0]["id"] == "D-design-1"
-
-    @pytest.mark.asyncio()
-    async def test_save_rejects_unknown_phase_key(self, initialized: tuple[Path, int]) -> None:
-        """save_planning_deliverables rejects unrecognised phase keys. (D7.1)"""
-        _workspace_root, issue_number = initialized
-
-        with pytest.raises(ValidationError) as exc_info:
-            SavePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    **_minimal_deliverables(),
-                    "unknown_phase": {"deliverables": []},
-                },
+                }
             )
-        assert "unknown_phase" in str(exc_info.value)
-
-
-class TestUpdatePlanningDeliverablesPerPhase:
-    """Tests for per-phase merge in update_planning_deliverables.
-
-    Issue #229 Cycle 8 (GAP-12 + GAP-15):
-    - D8.1: update merges design/validation/documentation keys
-    - D8.2: per-phase deliverables merged by id
-    - D8.3: exit_criteria on existing cycle overwritten when provided
-    """
-
-    @pytest.fixture()
-    def initialized(self, legacy_suite_workspace: Path) -> tuple[Path, int]:
-        """Initialize a project with cycles + design phase deliverables."""
-        issue_number = 229
-        manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="Phase deliverables update test",
-            workflow_name="feature",
-        )
-        manager.save_planning_deliverables(
-            issue_number=issue_number,
-            planning_deliverables={
-                **_minimal_deliverables(),
-                "design": {
-                    "deliverables": [{"id": "Des1", "description": "original design deliverable"}]
-                },
-            },
-        )
-        return legacy_suite_workspace, issue_number
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_merges_design_key(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """update_planning_deliverables with design key updates deliverables.json. (D8.1/GAP-15)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "design": {
-                        "deliverables": [{"id": "Des2", "description": "new design deliverable"}]
-                    }
-                },
-            ),
-            NoteContext(),
-        )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        design_ids = [d["id"] for d in data["planning_deliverables"]["design"]["deliverables"]]
-        assert "Des1" in design_ids  # original preserved
-        assert "Des2" in design_ids  # new one appended (D8.1)
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_merges_validation_key(
-        self, legacy_suite_workspace: Path
-    ) -> None:
-        """update_planning_deliverables with validation key updates deliverables.json.
-
-        (D8.1/GAP-15)
-        """
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        issue_number = 229
-        manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="Validation phase test",
-            workflow_name="feature",
-        )
-        manager.save_planning_deliverables(
-            issue_number=issue_number,
-            planning_deliverables={
-                **_minimal_deliverables(),
-                "validation": {
-                    "deliverables": [
-                        {"id": "Val1", "description": "original validation deliverable"}
-                    ]
-                },
-            },
-        )
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "validation": {
-                        "deliverables": [
-                            {"id": "Val2", "description": "new validation deliverable"}
-                        ]
-                    }
-                },
-            ),
-            NoteContext(),
-        )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (legacy_suite_workspace / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        val_ids = [d["id"] for d in data["planning_deliverables"]["validation"]["deliverables"]]
-        assert "Val1" in val_ids
-        assert "Val2" in val_ids
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_merges_documentation_key(
-        self, legacy_suite_workspace: Path
-    ) -> None:
-        """update_planning_deliverables with documentation key updates deliverables.json.
-
-        (D8.1/GAP-15)
-        """
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        issue_number = 229
-        manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(
-            issue_number=issue_number,
-            issue_title="Documentation phase test",
-            workflow_name="feature",
-        )
-        manager.save_planning_deliverables(
-            issue_number=issue_number,
-            planning_deliverables={
-                **_minimal_deliverables(),
-                "documentation": {
-                    "deliverables": [{"id": "Doc1", "description": "original doc deliverable"}]
-                },
-            },
-        )
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(legacy_suite_workspace))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "documentation": {
-                        "deliverables": [{"id": "Doc2", "description": "new doc deliverable"}]
-                    }
-                },
-            ),
-            NoteContext(),
-        )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (legacy_suite_workspace / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        doc_ids = [d["id"] for d in data["planning_deliverables"]["documentation"]["deliverables"]]
-        assert "Doc1" in doc_ids
-        assert "Doc2" in doc_ids
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_per_phase_merge_by_id(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """Existing per-phase deliverable id updated in place; new id appended. (D8.2)"""
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "design": {
-                        "deliverables": [
-                            {"id": "Des1", "description": "updated description"},
-                            {"id": "Des2", "description": "brand new"},
-                        ]
-                    }
-                },
-            ),
-            NoteContext(),
-        )
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        deliverables = data["planning_deliverables"]["design"]["deliverables"]
-        by_id = {d["id"]: d for d in deliverables}
-        assert by_id["Des1"]["description"] == "updated description"  # overwritten (D8.2)
-        assert "Des2" in by_id  # appended
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_updates_exit_criteria_on_existing_cycle(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """exit_criteria on existing cycle overwritten when provided in update. (D8.3/GAP-12)"""
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "cycles": {
-                        "cycles": [
-                            {
-                                "cycle_number": 1,
-                                "deliverables": [],
-                                "exit_criteria": "Updated exit criteria",
-                            }
-                        ]
-                    }
-                },
-            ),
-            NoteContext(),
-        )
-
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
-        assert cycle1["exit_criteria"] == "Updated exit criteria"  # (D8.3)
-
-    @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_cycles_backward_compat(
-        self, initialized: tuple[Path, int]
-    ) -> None:
-        """cycles merge behaviour unchanged after per-phase support added.
-        (D8.1 backward compat)"""
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
-
-        result = await tool.execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=issue_number,
-                planning_deliverables={
-                    "cycles": {
-                        "cycles": [
-                            {
-                                "cycle_number": 2,
-                                "deliverables": [{"id": "D2.1", "description": "new cycle"}],
-                                "exit_criteria": "Tests pass",
-                            }
-                        ]
-                    }
-                },
-            ),
-            NoteContext(),
-        )
-
-        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
-
-        assert isinstance(result, PlanningDeliverablesOutput)
-        assert result.success
-        _raw = json.loads(
-            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )
-        data = _raw.get("projects", _raw)[str(issue_number)]
-        cycles = data["planning_deliverables"]["cycles"]["cycles"]
-        assert len(cycles) == 2  # original C1 + new C2 appended
-        assert cycles[0]["cycle_number"] == 1  # original C1 untouched
-        assert cycles[1]["cycle_number"] == 2  # C2 appended
 
 
 class TestProjectManagerWorkflowStatusResolverC4:

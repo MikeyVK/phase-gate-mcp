@@ -598,7 +598,7 @@ class PhaseStateEngine:
         )
         if cycle_details is None:
             return "Unknown"
-        name = cycle_details.get("name")
+        name = cycle_details.get("cycle_name")
         return name if isinstance(name, str) and name else "Unknown"
 
     def _validate_cycle_number_range(self, cycle_number: int, issue_number: int) -> None:

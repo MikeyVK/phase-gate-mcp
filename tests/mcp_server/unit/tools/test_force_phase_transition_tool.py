@@ -19,6 +19,7 @@ from mcp_server.core.interfaces import GateReport
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionInput,
@@ -451,18 +452,21 @@ phases:
             # Inject planning_deliverables so gate would have PASSED
             pm.save_planning_deliverables(
                 42,
-                {
-                    "cycles": {
-                        "total": 1,
-                        "cycles": [
-                            {
-                                "cycle_number": 1,
-                                "deliverables": [{"id": "D1", "description": "D1"}],
-                                "exit_criteria": "c",
-                            }
-                        ],
+                SavePlanningModel.model_validate(
+                    {
+                        "cycles": {
+                            "cycles": [
+                                {
+                                    "cycle_name": "Cycle 1",
+                                    "deliverables": [
+                                        {"deliverable_name": "D1", "description": "D1"}
+                                    ],
+                                    "exit_criteria": "c",
+                                }
+                            ],
+                        }
                     }
-                },
+                ),
             )
 
         return tmp_path, branch
