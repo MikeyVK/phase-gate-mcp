@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.7  
+**Version:** 1.8  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -317,6 +317,13 @@ Material remaining risks: branch-basis semantics and issue attribution must be e
 
 Stored targets already identify blocks: a generated C_n/current cycle number identifies a cycle; the configured phase key identifies its phase block. Names convey meaning and need not serve as unique technical lookup keys. Remaining update discussion concerns the explicit operation form, not inventing a new target identity.
 
+### Issue-qualified commit lookup and duplicate title markers
+
+- The existing writer already appends the structured issue as ` (#N)`: [GitManager.commit_with_scope](../../../mcp_server/managers/git_manager.py). [GitCommitTool](../../../mcp_server/tools/git_tools.py) derives that issue from workflow state or branch conventions and forwards the caller's message unchanged. No duplicate-marker normalization exists. Active Research instructions in [contracts.yaml](../../../.pgmcp/config/contracts.yaml) explicitly request `message='Research findings (#N)'`, creating a reproducible double-suffix path. Read-only local inspection at HEAD `aafe9432c0fb5d96e4863702088b8d3df5455237` confirmed recent titles end in `(#491) (#491)`; producer messages also supplied the marker.
+- Git natively supports issue preselection: `git log HEAD --fixed-strings --grep="(#491)" --format="%H %s"` searches HEAD ancestry without a last-N cutoff. A bounded display-only probe with `-n 4` returned the four recent #491 titles; production evidence selection must omit that limit. Since grep searches the complete message, selected subjects still require exact issue-marker validation and scope decoding. Issue filtering may make a mandatory parent-basis dependency unnecessary; this remains a producer alternative, not an approved replacement of the history boundary.
+- Owner-proposed bounded repair: normalize occurrences of the matching structured issue number in the caller-supplied commit title, then append one canonical ` (#N)`. Preserve other issue references, larger numbers and the message body; do not rewrite existing commits. Exact admitted marker forms and title whitespace handling remain Design details. The existing GitManager title-assembly boundary owns this responsibility; GitAdapter remains an opaque Git transport and scope codecs retain only scope semantics.
+- Existing behavior coverage in [test_git_manager.py](../../../tests/mcp_server/unit/managers/test_git_manager.py) verifies suffix addition and the no-issue case, but not duplicate normalization. Any later repair should adapt that bounded behavior surface. No production, configuration or test changes or test runs were made during this investigation.
+
 ### Existing evidence and proportional test surface
 
 | Existing coverage | Value to retain | Material gap / coupling |
@@ -478,3 +485,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.5 | 2026-10-09 | @imp researcher | Replace uncertainty taxonomy with complete active-branch evidence, default rejection and explicit force after investigation; retain manual repair as an external alternative. |
 | 1.6 | 2026-10-09 | @imp researcher | Require a fresh evidence attempt under force, demonstrate local complete-history reading and explicitly inventory the runtime IO/protection scope extension and limits. |
 | 1.7 | 2026-10-09 | @imp researcher | Make the active-branch HEAD start explicit and separate it from the proposed branch-basis stop boundary; local reads require no network fetch. |
+| 1.8 | 2026-10-09 | @imp researcher | Trace duplicate issue markers to caller text plus automatic suffix injection; record native issue lookup and the owner-proposed bounded title normalization without implementing it. |
