@@ -57,6 +57,8 @@ from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
+from mcp_server.core.scope_contract import ScopeContract
+from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
@@ -773,15 +775,17 @@ class ServerBootstrapper:
         workspace_root = Path(self._settings.server.workspace_root)
         server_root = workspace_root / self._settings.server.server_root_dir
 
+        scope_contract = ScopeContract(configs.workphases_config)
+        scope_decoder = ScopeDecoder(scope_contract)
         git_manager = GitManager(
             git_config=configs.git_config,
             workphases_config=configs.workphases_config,
+            scope_encoder=ScopeEncoder(scope_contract),
+            scope_decoder=scope_decoder,
         )
         state_repository = FileStateRepository(state_file=server_root / "state.json")
         branch_validated_reader = BranchValidatedStateReader(inner=state_repository)
-        commit_phase_detector = CommitPhaseDetector(
-            workphases_config=configs.workphases_config,
-        )
+        commit_phase_detector = CommitPhaseDetector(decoder=scope_decoder)
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=git_manager,
             state_reader=branch_validated_reader,
@@ -815,9 +819,7 @@ class ServerBootstrapper:
             git_config=configs.git_config,
             contracts_config=configs.contracts_config,
             state_repository=state_repository,
-            scope_decoder=ScopeDecoder(
-                workphases_config=configs.workphases_config,
-            ),
+            scope_decoder=scope_decoder,
             workflow_gate_runner=workflow_gate_runner,
             context_loaded_writer=context_loaded_cache,
             server_root=server_root,

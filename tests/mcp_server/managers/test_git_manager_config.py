@@ -13,8 +13,7 @@ from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.git_manager import GitManager
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 
 class TestGitManagerConfigIntegration:
@@ -31,7 +30,7 @@ class TestGitManagerConfigIntegration:
         workphases_config = ConfigLoader(
             Path(f"{get_default_server_root()}/config")
         ).load_workphases_config()
-        self.manager = GitManager(
+        self.manager = make_git_manager(
             git_config=self.git_config,
             adapter=self.mock_adapter,
             workphases_config=workphases_config,

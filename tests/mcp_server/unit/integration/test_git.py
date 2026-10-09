@@ -15,8 +15,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.core.exceptions import PreflightError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.git_manager import GitManager
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 
 @pytest.fixture(name="mock_git_adapter")
@@ -33,7 +32,7 @@ def _git_config_fixture() -> GitConfig:
 def test_git_manager_create_branch_valid(mock_git_adapter: Mock, git_config: GitConfig) -> None:
     """Test creating a branch with explicit base on clean working directory."""
     mock_git_adapter.is_clean.return_value = True
-    manager = GitManager(git_config=git_config, adapter=mock_git_adapter)
+    manager = make_git_manager(git_config=git_config, adapter=mock_git_adapter)
 
     branch = manager.create_branch(123, "my-feature", "feature", "HEAD", NoteContext())
 
@@ -46,7 +45,7 @@ def test_git_manager_create_branch_epic_valid(
 ) -> None:
     """Test creating an epic branch with explicit base on clean working directory."""
     mock_git_adapter.is_clean.return_value = True
-    manager = GitManager(git_config=git_config, adapter=mock_git_adapter)
+    manager = make_git_manager(git_config=git_config, adapter=mock_git_adapter)
 
     branch = manager.create_branch(91, "test-suite-cleanup", "epic", "HEAD", NoteContext())
 
@@ -57,7 +56,7 @@ def test_git_manager_create_branch_epic_valid(
 def test_git_manager_create_branch_dirty(mock_git_adapter: Mock, git_config: GitConfig) -> None:
     """Test that creating branch fails on dirty working directory."""
     mock_git_adapter.is_clean.return_value = False
-    manager = GitManager(git_config=git_config, adapter=mock_git_adapter)
+    manager = make_git_manager(git_config=git_config, adapter=mock_git_adapter)
 
     with pytest.raises(PreflightError):
         manager.create_branch(123, "my-feature", "feature", "HEAD", NoteContext())
@@ -65,7 +64,7 @@ def test_git_manager_create_branch_dirty(mock_git_adapter: Mock, git_config: Git
 
 def test_git_manager_invalid_name(mock_git_adapter: Mock, git_config: GitConfig) -> None:
     """Test that invalid branch names are rejected."""
-    manager = GitManager(git_config=git_config, adapter=mock_git_adapter)
+    manager = make_git_manager(git_config=git_config, adapter=mock_git_adapter)
     with pytest.raises(ValidationError):
         manager.create_branch(123, "Invalid Name", "feature", "HEAD", NoteContext())
 
@@ -75,7 +74,7 @@ def test_git_manager_commit_tdd(mock_git_adapter: Mock, git_config: GitConfig) -
     workphases_config = ConfigLoader(
         Path(f"{get_default_server_root()}/config")
     ).load_workphases_config()
-    manager = GitManager(
+    manager = make_git_manager(
         git_config=git_config, adapter=mock_git_adapter, workphases_config=workphases_config
     )
     manager.commit_with_scope(
@@ -88,7 +87,7 @@ def test_git_manager_commit_tdd(mock_git_adapter: Mock, git_config: GitConfig) -
     )
 
     mock_git_adapter.commit.assert_called_with(
-        "test(P_IMPLEMENTATION_SP_C1_RED): Added test",
+        "test(P_IMPLEMENTATION_C1_SP_RED): Added test",
         files=None,
         skip_paths=frozenset(),
     )

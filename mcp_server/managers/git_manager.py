@@ -22,8 +22,13 @@ from typing import Any, Literal
 
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
+from mcp_server.core.interfaces.git import (
+    CommitHistoryUnavailableError,
+    CycleEvidence,
+)
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import Note, NoteContext
+from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.schemas import GitConfig, WorkphasesConfig
 
@@ -52,11 +57,16 @@ class GitManager:
         self,
         git_config: GitConfig,
         adapter: GitAdapter | None = None,
-        workphases_config: WorkphasesConfig | None = None,
+        *,
+        workphases_config: WorkphasesConfig,
+        scope_encoder: ScopeEncoder,
+        scope_decoder: ScopeDecoder,
     ) -> None:
         self.adapter = adapter or GitAdapter()
         self._git_config = git_config
         self._workphases_config = workphases_config
+        self._scope_encoder = scope_encoder
+        self._scope_decoder = scope_decoder
 
     @property
     def git_config(self) -> GitConfig:
@@ -217,33 +227,23 @@ class GitManager:
                 params={},
             )
 
-        if self._workphases_config is None:
-            raise RuntimeError(
-                "workphases_config is required for commit_with_scope. "
-                "Pass workphases_config= to GitManager constructor."
-            )
-
-        # If commit_type override provided, use it
+        scope = self._scope_encoder.generate_scope(workflow_phase, sub_phase, cycle_number)
         if commit_type is None:
-            phases = self._workphases_config.phases
-            phase_config = phases.get(workflow_phase.lower())
-
-            if phase_config is None:
-                # ScopeEncoder will raise ValueError with actionable message
-                encoder = ScopeEncoder(self._workphases_config)
-                encoder.generate_scope(workflow_phase, sub_phase, cycle_number)
-                # Should never reach here due to ValueError above
-                raise RuntimeError("Unexpected: phase validation failed silently")
-
+            phase_config = next(
+                definition
+                for name, definition in self._workphases_config.phases.items()
+                if name.casefold() == workflow_phase.casefold()
+            )
             commit_type = phase_config.commit_type_hint or "chore"
 
-        # Generate scope using ScopeEncoder (validates phase + subphase)
-        encoder = ScopeEncoder(self._workphases_config)
-        scope = encoder.generate_scope(workflow_phase, sub_phase, cycle_number)
-
-        # Format: type(scope): message (#NNN)
-        suffix = f" (#{issue_number})" if issue_number is not None else ""
-        full_message = f"{commit_type}({scope}): {message}{suffix}"
+        title, separator, body = message.partition("\n")
+        if title.endswith("\r"):
+            title = title.removesuffix("\r")
+            separator = "\r\n"
+        if issue_number is not None:
+            title = self._git_config.normalize_issue_title(title, issue_number)
+            title += f" {self._git_config.canonical_issue_marker(issue_number)}"
+        full_message = f"{commit_type}({scope}): {title}{separator}{body}"
         return self.adapter.commit(full_message, files=files, skip_paths=skip_paths)
 
     def restore(self, files: list[str], note_context: NoteContext, source: str = "HEAD") -> None:
@@ -653,3 +653,53 @@ class GitManager:
         Delegates to GitAdapter.is_ancestor. Raises ExecutionError on git error (status >=2).
         """
         return self.adapter.is_ancestor(sha)
+
+    def read_cycle_evidence(self, issue_number: int, execution_phase: str | None) -> CycleEvidence:
+        """Qualify current-branch metadata without reconstructing workflow state."""
+        try:
+            snapshot = self.adapter.read_issue_history(
+                self._git_config.canonical_issue_marker(issue_number)
+            )
+        except CommitHistoryUnavailableError as exc:
+            return CycleEvidence(
+                "unavailable",
+                exc.branch,
+                exc.head_sha,
+                execution_phase,
+                (),
+                reason_code=exc.reason_code,
+            )
+        if self._git_config.extract_issue_number(snapshot.branch) != issue_number:
+            return CycleEvidence(
+                "unavailable",
+                snapshot.branch,
+                snapshot.head_sha,
+                execution_phase,
+                (),
+                reason_code="branch_issue_mismatch",
+            )
+        protected: set[int] = set()
+        reason = "git_history_shallow" if snapshot.shallow else None
+        diagnostic: str | None = None
+        for record in snapshot.records:
+            if not self._git_config.subject_has_issue(record.subject, issue_number):
+                continue
+            decoded = self._scope_decoder.detect_phase(record.subject)
+            if decoded.workflow_phase is None:
+                reason = reason or "commit_scope_unavailable"
+                diagnostic = diagnostic or record.sha
+            elif decoded.workflow_phase == execution_phase:
+                if decoded.cycle_number is None:
+                    reason = reason or "execution_cycle_missing"
+                    diagnostic = diagnostic or record.sha
+                else:
+                    protected.add(decoded.cycle_number)
+        return CycleEvidence(
+            "unavailable" if reason else "complete",
+            snapshot.branch,
+            snapshot.head_sha,
+            execution_phase,
+            tuple(sorted(protected)),
+            reason_code=reason,
+            diagnostic_commit_sha=diagnostic,
+        )

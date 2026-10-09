@@ -15,7 +15,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.git_manager import BranchDeleteResult, GitManager, GitPushResult
+from mcp_server.managers.git_manager import BranchDeleteResult, GitPushResult
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas.tool_outputs import (
     CheckMergeOutput,
@@ -55,7 +55,7 @@ from mcp_server.tools.git_tools import (
     GitStatusInput,
     GitStatusTool,
 )
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 
 @pytest.fixture
@@ -568,7 +568,7 @@ async def test_git_commit_integration_workflow_phases() -> None:
     loader = ConfigLoader(config_root=Path(f"{get_default_server_root()}/config"))
     git_config = loader.load_git_config()
     workphases_config = loader.load_workphases_config()
-    manager = GitManager(
+    manager = make_git_manager(
         git_config=git_config,
         adapter=mock_adapter,
         workphases_config=workphases_config,
@@ -609,7 +609,7 @@ async def test_git_commit_integration_workflow_phases() -> None:
     assert result2.success is True
     assert result2.commit_hash == "integration123"
     mock_adapter.commit.assert_called_with(
-        "test(P_IMPLEMENTATION_SP_C1_RED): add failing test (#999)",
+        "test(P_IMPLEMENTATION_C1_SP_RED): add failing test (#999)",
         files=None,
         skip_paths=frozenset(),
     )
@@ -1594,7 +1594,7 @@ async def test_check_merge_manager_delegates_to_adapter() -> None:
     mock_git_config = MagicMock()
     mock_git_config.default_base_branch = "main"
 
-    real_manager = GitManager(git_config=mock_git_config, adapter=mock_adapter)
+    real_manager = make_git_manager(git_config=mock_git_config, adapter=mock_adapter)
     result = real_manager.is_ancestor("abc1234")
 
     assert result is True

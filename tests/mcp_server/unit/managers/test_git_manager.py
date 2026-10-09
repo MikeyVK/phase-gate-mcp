@@ -22,7 +22,7 @@ from mcp_server.core.operation_notes import Note, NoteContext
 
 # Module under test
 from mcp_server.managers.git_manager import GitManager, GitPushResult
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 _TEST_WORKPHASES = WorkphasesConfig(
     phases={
@@ -59,11 +59,11 @@ class TestGitManagerValidation:
     @pytest.fixture
     def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
         """Fixture for GitManager with mocked adapter."""
-        return GitManager(git_config=git_config, adapter=mock_adapter)
+        return make_git_manager(git_config=git_config, adapter=mock_adapter)
 
     def test_init_default(self) -> None:
         """Test initialization with default adapter."""
-        mgr = GitManager(
+        mgr = make_git_manager(
             git_config=ConfigLoader(Path(f"{get_default_server_root()}/config")).load_git_config()
         )
         assert mgr.adapter is not None
@@ -129,7 +129,7 @@ class TestGitManagerOperations:
     @pytest.fixture
     def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
         """Fixture for GitManager with mocked adapter."""
-        return GitManager(git_config=git_config, adapter=mock_adapter)
+        return make_git_manager(git_config=git_config, adapter=mock_adapter)
 
     def test_restore_success(self, manager: GitManager, mock_adapter: MagicMock) -> None:
         """Test restore operation."""
@@ -271,7 +271,7 @@ class TestGitManagerCreateBranch:
     @pytest.fixture
     def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
         """Fixture for GitManager with mocked adapter."""
-        return GitManager(git_config=git_config, adapter=mock_adapter)
+        return make_git_manager(git_config=git_config, adapter=mock_adapter)
 
     def test_create_branch_requires_base_branch_parameter(self, manager: GitManager) -> None:
         """RED: create_branch should require base_branch parameter (no default)."""
@@ -296,9 +296,9 @@ class TestGitManagerCommitWithScope:
         return MagicMock()
 
     @pytest.fixture
-    def manager(self, mock_adapter: MagicMock) -> GitManager:
+    def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
         """Fixture for GitManager with mocked adapter and test workphases."""
-        return GitManager(
+        return make_git_manager(
             git_config=git_config,
             adapter=mock_adapter,
             workphases_config=_TEST_WORKPHASES,
@@ -357,7 +357,7 @@ class TestGitManagerCommitWithScope:
 
         assert result == "ghi789"
         mock_adapter.commit.assert_called_once_with(
-            "feat(P_IMPLEMENTATION_SP_C1_GREEN): implement feature",
+            "feat(P_IMPLEMENTATION_C1_SP_GREEN): implement feature",
             files=None,
             skip_paths=frozenset(),
         )
@@ -427,7 +427,7 @@ class TestGitManagerCommitWithScope:
 
     def test_commit_with_scope_invalid_phase_raises_error(self, manager: GitManager) -> None:
         """Test that invalid phase raises ValueError with actionable message."""
-        with pytest.raises(ValueError, match="Unknown workflow phase"):
+        with pytest.raises(ValueError, match="scope_phase_unknown"):
             manager.commit_with_scope(
                 workflow_phase="invalid_phase",
                 message="test",
@@ -436,7 +436,7 @@ class TestGitManagerCommitWithScope:
 
     def test_commit_with_scope_invalid_subphase_raises_error(self, manager: GitManager) -> None:
         """Test that invalid subphase raises ValueError with actionable message."""
-        with pytest.raises(ValueError, match="Invalid sub_phase"):
+        with pytest.raises(ValueError, match="scope_subphase_unknown"):
             manager.commit_with_scope(
                 workflow_phase="implementation",
                 sub_phase="invalid_subphase",
@@ -494,7 +494,7 @@ class TestGitManagerCommitWithScope:
 class TestGitManagerPrepareSubmission:
     """Tests for GitManager.prepare_submission — Issue #295 Cycles 2 & 3.
 
-    All tests inject MagicMock(spec=GitAdapter) via GitManager(adapter=...) and
+    All tests inject MagicMock(spec=GitAdapter) via make_git_manager(adapter=...) and
     call prepare_submission() through the public GitManager API (§14).
     """
 
@@ -515,7 +515,7 @@ class TestGitManagerPrepareSubmission:
         workphases = ConfigLoader(
             Path(f"{get_default_server_root()}/config")
         ).load_workphases_config()
-        return GitManager(
+        return make_git_manager(
             git_config=git_config,
             adapter=mock_adapter,
             workphases_config=workphases,
@@ -770,7 +770,7 @@ class TestGitManagerRollbackPush:
         workphases = ConfigLoader(
             Path(f"{get_default_server_root()}/config")
         ).load_workphases_config()
-        return GitManager(
+        return make_git_manager(
             git_config=git_config,
             adapter=mock_adapter,
             workphases_config=workphases,
@@ -832,7 +832,7 @@ class TestGitManagerPush:
     @pytest.fixture
     def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
         """Fixture for GitManager with mocked adapter."""
-        return GitManager(git_config=git_config, adapter=mock_adapter)
+        return make_git_manager(git_config=git_config, adapter=mock_adapter)
 
     def test_push_new_upstream_created_when_no_prior_tracking(
         self, manager: GitManager, mock_adapter: MagicMock

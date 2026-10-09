@@ -17,6 +17,8 @@ from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.phase_detection import ScopeDecoder
+from mcp_server.core.scope_contract import ScopeContract
+from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.managers.git_manager import GitManager
 from tests.mcp_server.test_support import (
     get_default_server_root,
@@ -192,12 +194,15 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     ).load_workphases_config(
         config_path=git_repo / get_default_server_root() / "config" / "workphases.yaml"
     )
+    scope_contract = ScopeContract(_workphases_config)
     git_manager = GitManager(
+        scope_encoder=ScopeEncoder(scope_contract),
+        scope_decoder=ScopeDecoder(scope_contract),
         git_config=git_config,
         adapter=git_adapter,
         workphases_config=_workphases_config,
     )
-    decoder = ScopeDecoder(_workphases_config)
+    decoder = ScopeDecoder(scope_contract)
 
     # Phase 1: RESEARCH
     test_file = git_repo / "test.txt"
@@ -213,8 +218,8 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     # Validate commit scope detection
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "research"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "research"
+    assert result.source == "commit-scope"
 
     # Transition to DESIGN (required before planning in feature workflow)
     state_engine.transition(branch="feature/999-e2e-test", to_phase="design")
@@ -230,8 +235,8 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "design"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "design"
+    assert result.source == "commit-scope"
 
     # Transition to PLANNING
     state_engine.transition(branch="feature/999-e2e-test", to_phase="planning")
@@ -247,8 +252,8 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "planning"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "planning"
+    assert result.source == "commit-scope"
 
     # Save planning deliverables (required by implementation-cycle hooks, Issue #146)
     pm.save_planning_deliverables(
@@ -287,9 +292,10 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "implementation"
-    assert result["sub_phase"] == "c1_red"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "implementation"
+    assert result.sub_phase == "red"
+    assert result.cycle_number == 1
+    assert result.source == "commit-scope"
 
     # IMPLEMENTATION: GREEN
     test_file.write_text("green phase\n")
@@ -305,9 +311,10 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "implementation"
-    assert result["sub_phase"] == "c1_green"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "implementation"
+    assert result.sub_phase == "green"
+    assert result.cycle_number == 1
+    assert result.source == "commit-scope"
 
     # IMPLEMENTATION: REFACTOR
     test_file.write_text("refactor phase\n")
@@ -323,9 +330,10 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "implementation"
-    assert result["sub_phase"] == "c1_refactor"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "implementation"
+    assert result.sub_phase == "refactor"
+    assert result.cycle_number == 1
+    assert result.source == "commit-scope"
 
     # Transition to VALIDATION
     state_engine.transition(branch="feature/999-e2e-test", to_phase="validation")
@@ -341,8 +349,8 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "validation"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "validation"
+    assert result.source == "commit-scope"
 
     # Transition to DOCUMENTATION
     state_engine.transition(branch="feature/999-e2e-test", to_phase="documentation")
@@ -358,8 +366,8 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "documentation"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "documentation"
+    assert result.source == "commit-scope"
 
     # THEN: Full cycle complete, all phases detected correctly from commit-scope
     # Final validation: verify state.json has correct current_phase
@@ -369,5 +377,5 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     # Verify last commit scope detection
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0])
-    assert result["workflow_phase"] == "documentation"
-    assert result["source"] == "commit-scope"
+    assert result.workflow_phase == "documentation"
+    assert result.source == "commit-scope"

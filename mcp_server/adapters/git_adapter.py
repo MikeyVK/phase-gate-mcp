@@ -29,7 +29,13 @@ from git.remote import PushInfo
 from mcp_server.config.settings import Settings
 from mcp_server.core import logging as core_logging
 from mcp_server.core.exceptions import ExecutionError, MCPSystemError
-from mcp_server.core.interfaces.git import BranchBasisUnavailableError, BranchChanges
+from mcp_server.core.interfaces.git import (
+    BranchBasisUnavailableError,
+    BranchChanges,
+    CommitHistorySnapshot,
+    CommitHistoryUnavailableError,
+    CommitRecord,
+)
 
 _PUSH_ERROR_MASK: int = (
     PushInfo.ERROR | PushInfo.REJECTED | PushInfo.REMOTE_REJECTED | PushInfo.REMOTE_FAILURE
@@ -557,3 +563,37 @@ class GitAdapter:
             self.repo.git.push(remote, "--force-with-lease")
         except Exception as e:
             raise ExecutionError(f"Failed to force push with lease to {remote}: {e}") from e
+
+    def read_issue_history(self, marker: str) -> CommitHistorySnapshot:
+        """Read every parent reachable from captured HEAD with native issue preselection."""
+        branch: str | None = None
+        head_sha: str | None = None
+        try:
+            repository = self.repo
+            if repository.head.is_detached:
+                raise CommitHistoryUnavailableError("git_head_detached", "HEAD")
+            branch = repository.active_branch.name
+            head_sha = repository.head.commit.hexsha
+            shallow = repository.git.rev_parse("--is-shallow-repository").strip() == "true"
+            history = repository.git.log(
+                head_sha, "--fixed-strings", f"--grep={marker}", "--format=%H%x00%s"
+            )
+            records: list[CommitRecord] = []
+            for line in history.splitlines():
+                sha, separator, subject = line.partition("\x00")
+                if not separator or not sha:
+                    raise CommitHistoryUnavailableError("git_history_malformed", branch, head_sha)
+                records.append(CommitRecord(sha, subject))
+            if (
+                repository.head.is_detached
+                or repository.active_branch.name != branch
+                or repository.head.commit.hexsha != head_sha
+            ):
+                raise CommitHistoryUnavailableError("git_snapshot_changed", branch, head_sha)
+            return CommitHistorySnapshot(branch, head_sha, shallow, tuple(records))
+        except CommitHistoryUnavailableError:
+            raise
+        except (GitCommandError, MCPSystemError, ValueError, TypeError, OSError) as exc:
+            raise CommitHistoryUnavailableError(
+                "git_history_unavailable", branch, head_sha
+            ) from exc

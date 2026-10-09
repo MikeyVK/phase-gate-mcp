@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 
 def _make_manager() -> tuple[GitManager, MagicMock]:
@@ -26,7 +26,7 @@ def _make_manager() -> tuple[GitManager, MagicMock]:
     loader = ConfigLoader(Path(f"{get_default_server_root()}/config"))
     git_config = loader.load_git_config()
     workphases_config = loader.load_workphases_config()
-    manager = GitManager(
+    manager = make_git_manager(
         git_config=git_config, adapter=mock_adapter, workphases_config=workphases_config
     )
     return manager, mock_adapter

@@ -23,6 +23,7 @@ from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConf
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.schemas import GitConfig
+from tests.mcp_server.test_support import make_git_manager
 
 _TEST_WORKPHASES = WorkphasesConfig(
     phases={
@@ -39,7 +40,7 @@ _TEST_WORKPHASES = WorkphasesConfig(
 def _make_manager(mock_adapter: MagicMock) -> GitManager:
     """Build GitManager with injected WorkphasesConfig — no file I/O required."""
     git_config = MagicMock(spec=GitConfig)
-    return GitManager(
+    return make_git_manager(
         git_config=git_config,
         adapter=mock_adapter,
         workphases_config=_TEST_WORKPHASES,
@@ -86,7 +87,7 @@ class TestGitManagerNoFileOpen:
             mock_open.assert_not_called()
 
         mock_adapter.commit.assert_called_once_with(
-            "chore(P_IMPLEMENTATION_SP_C1_RED): add failing test",
+            "chore(P_IMPLEMENTATION_C1_SP_RED): add failing test",
             files=None,
             skip_paths=frozenset(),
         )
@@ -131,7 +132,7 @@ class TestGitManagerNoFileOpen:
 
         # implementation has commit_type_hint=None → falls back to "chore"
         mock_adapter.commit.assert_called_once_with(
-            "chore(P_IMPLEMENTATION_SP_C2_GREEN): implement feature",
+            "chore(P_IMPLEMENTATION_C2_SP_GREEN): implement feature",
             files=None,
             skip_paths=frozenset(),
         )

@@ -1,212 +1,54 @@
-# mcp_server/core/phase_detection.py
-# template=generic version=f35abd82 created=2026-02-15T06:38Z updated=2026-02-21T00:00Z
-"""Phase Detection Utilities.
+"""Deterministic commit-scope decoding through the shared configured grammar."""
 
-Provides deterministic workflow phase detection from commit-scope.
-NO type-heuristic guessing - unknown is acceptable outcome.
-
-@layer: Core
-@dependencies: [typing, re, mcp_server.config.schemas.workphases]
-@responsibilities:
-    - Define PhaseDetectionResult TypedDict schema
-    - Parse commit-scope (P_PHASE_SP_SUBPHASE format)
-    - Validate phases against WorkphasesConfig
-    - Return unknown with actionable error when detection fails
-"""
-
-# Standard library
-import logging
 import re
-from typing import Literal, TypedDict
+from dataclasses import dataclass
+from typing import Literal
 
-# Project modules
-from mcp_server.config.schemas.workphases import WorkphasesConfig
-
-logger = logging.getLogger(__name__)
+from mcp_server.core.scope_contract import ScopeContract
 
 
-class PhaseDetectionResult(TypedDict):
-    """
-    Result of phase detection with source tracking.
+@dataclass(frozen=True)
+class PhaseDetectionResult:
+    """Immutable configured scope interpretation or structured uncertainty."""
 
-    Fields:
-        workflow_phase: Phase name (e.g., "implementation", "research", "unknown")
-        sub_phase: Optional subphase identifier (e.g., "red", "c1", None)
-        source: Where the phase was detected from
-        confidence: Confidence level of detection
-        raw_scope: Original scope string from commit (if applicable)
-        error_message: Actionable recovery instructions when detection fails
-    """
-
-    workflow_phase: str
+    workflow_phase: str | None
+    cycle_number: int | None
     sub_phase: str | None
-    source: Literal["commit-scope", "state.json", "unknown"]
-    confidence: Literal["high", "medium", "unknown"]
+    source: Literal["commit-scope", "unknown"]
+    confidence: Literal["high", "unknown"]
     raw_scope: str | None
-    error_message: str | None
+    error_code: str | None
 
 
 class ScopeDecoder:
-    """
-    Decoder for workflow phase from commit-scope with deterministic precedence.
+    """Decode commit subjects without inferring phase from title or commit type."""
 
-    Precedence: commit-scope > unknown (NO type-heuristic guessing)
+    COMMIT_SCOPE_PATTERN = re.compile(r"^[a-z]+\(([^)]+)\)!?:", re.IGNORECASE)
 
-    Scope Format:
-        - P_PHASE: e.g., P_RESEARCH, P_TDD
-        - P_PHASE_SP_SUBPHASE: e.g., P_TDD_SP_RED, P_PLANNING_SP_C1
-    """
+    def __init__(self, contract: ScopeContract) -> None:
+        self._contract = contract
 
-    # Regex patterns for scope parsing
-    SCOPE_PATTERN_WITH_SUBPHASE = re.compile(r"^P_([A-Z]+)_SP_([A-Z0-9_]+)$", re.IGNORECASE)
-    SCOPE_PATTERN_PHASE_ONLY = re.compile(r"^P_([A-Z]+)$", re.IGNORECASE)
-    # Conventional Commits scope extraction
-    COMMIT_SCOPE_PATTERN = re.compile(r"^[a-z]+\(([^)]+)\):", re.IGNORECASE)
+    def detect_phase(self, commit_message: str | None) -> PhaseDetectionResult:
+        """Return decoded fields or an unknown result with a diagnostic code."""
+        if not commit_message:
+            return self._unknown("scope_input_missing")
+        match = self.COMMIT_SCOPE_PATTERN.match(commit_message)
+        if match is None:
+            return self._unknown("commit_scope_missing")
+        scope = match.group(1)
+        fields = self._contract.decode(scope)
+        if fields is None:
+            return self._unknown("commit_scope_invalid", scope)
+        return PhaseDetectionResult(
+            workflow_phase=fields.workflow_phase,
+            cycle_number=fields.cycle_number,
+            sub_phase=fields.sub_phase,
+            source="commit-scope",
+            confidence="high",
+            raw_scope=scope,
+            error_code=None,
+        )
 
-    def __init__(
-        self,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        """
-        Initialize ScopeDecoder with WorkphasesConfig.
-
-        Args:
-            workphases_config: Parsed WorkphasesConfig instance
-        """
-        self._workphases_config = workphases_config
-        self._valid_phases: set[str] | None = None
-
-    def detect_phase(
-        self,
-        commit_message: str | None,
-    ) -> PhaseDetectionResult:
-        """
-        Detect workflow phase from commit-scope.
-
-        Args:
-            commit_message: Commit message to parse (Conventional Commits format)
-
-        Returns:
-            PhaseDetectionResult with detected phase or unknown
-
-        Notes:
-            - Never raises exceptions (graceful degradation)
-            - Returns unknown with actionable error_message when detection fails
-            - NO type-heuristic guessing from commit type
-            - Validates phase names against workphases.yaml
-        """
-        if commit_message:
-            scope_result = self._parse_commit_scope(commit_message)
-            if scope_result:
-                return scope_result
-
-        return self._unknown_fallback()
-
-    def _parse_commit_scope(self, commit_message: str) -> PhaseDetectionResult | None:
-        """
-        Parse workflow phase from commit scope (Conventional Commits).
-
-        Format: type(P_PHASE_SP_SUBPHASE): message
-
-        Returns:
-            PhaseDetectionResult if scope matches pattern AND phase is valid, None otherwise
-
-        Notes:
-            - Validates phase against workphases.yaml
-            - Invalid phases are rejected (returns None for fallback)
-        """
-        # Extract scope from commit message
-        scope_match = self.COMMIT_SCOPE_PATTERN.match(commit_message)
-        if not scope_match:
-            return None
-
-        scope = scope_match.group(1)
-
-        # Try P_PHASE_SP_SUBPHASE format first
-        match_with_subphase = self.SCOPE_PATTERN_WITH_SUBPHASE.match(scope)
-        if match_with_subphase:
-            phase = match_with_subphase.group(1).lower()
-            subphase = match_with_subphase.group(2).lower()
-
-            # Validate phase against workphases.yaml
-            valid_phases = self._load_valid_phases()
-            if valid_phases and phase not in valid_phases:
-                logger.debug(
-                    f"Invalid phase '{phase}' in commit-scope '{scope}'. "
-                    f"Valid phases: {sorted(valid_phases)}"
-                )
-                return None
-
-            return {
-                "workflow_phase": phase,
-                "sub_phase": subphase,
-                "source": "commit-scope",
-                "confidence": "high",
-                "raw_scope": scope,
-                "error_message": None,
-            }
-
-        # Try P_PHASE format (no subphase)
-        match_phase_only = self.SCOPE_PATTERN_PHASE_ONLY.match(scope)
-        if match_phase_only:
-            phase = match_phase_only.group(1).lower()
-
-            # Validate phase against workphases.yaml
-            valid_phases = self._load_valid_phases()
-            if valid_phases and phase not in valid_phases:
-                logger.debug(
-                    f"Invalid phase '{phase}' in commit-scope '{scope}'. "
-                    f"Valid phases: {sorted(valid_phases)}"
-                )
-                return None
-
-            return {
-                "workflow_phase": phase,
-                "sub_phase": None,
-                "source": "commit-scope",
-                "confidence": "high",
-                "raw_scope": scope,
-                "error_message": None,
-            }
-
-        # Scope exists but doesn't match expected format
-        return None
-
-    def _load_valid_phases(self) -> set[str]:
-        """
-        Return valid phase names from the injected WorkphasesConfig.
-
-        Returns:
-            Set of valid phase names (lowercase)
-
-        Notes:
-            - Cached after first call
-        """
-        if self._valid_phases is not None:
-            return self._valid_phases
-
-        self._valid_phases = {name.lower() for name in self._workphases_config.phases}
-        logger.debug("Loaded %d valid phases from WorkphasesConfig", len(self._valid_phases))
-        return self._valid_phases
-
-    def _unknown_fallback(self) -> PhaseDetectionResult:
-        """
-        Return unknown phase with actionable error message.
-
-        Returns:
-            PhaseDetectionResult with workflow_phase="unknown"
-        """
-        return {
-            "workflow_phase": "unknown",
-            "sub_phase": None,
-            "source": "unknown",
-            "confidence": "unknown",
-            "raw_scope": None,
-            "error_message": (
-                "Phase detection failed. "
-                "Recovery: Run transition_phase(to_phase='<phase>') "
-                "or commit with scope 'type(P_PHASE): message'. "
-                "Valid phases: research, planning, design, implementation, integration, "
-                "documentation, coordination"
-            ),
-        }
+    @staticmethod
+    def _unknown(code: str, scope: str | None = None) -> PhaseDetectionResult:
+        return PhaseDetectionResult(None, None, None, "unknown", "unknown", scope, code)

@@ -12,6 +12,8 @@ from pydantic import ValidationError
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.interfaces import IGitContextReader
+from mcp_server.core.phase_detection import ScopeDecoder
+from mcp_server.core.scope_contract import ScopeContract
 from mcp_server.managers.state_repository import (
     BranchState,
     BranchValidatedStateReader,
@@ -112,10 +114,10 @@ class TestCommitPhaseDetector:
     """CommitPhaseDetector wraps ScopeDecoder (commit-scope-only, no state.json fallback)."""
 
     def test_detector_exists_and_detects_from_commit(self) -> None:
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
-        result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_GREEN): add dto")
-        assert result["workflow_phase"] == "implementation"
-        assert result["source"] == "commit-scope"
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
+        result = detector.detect_from_commit("feat(P_IMPLEMENTATION_C3_SP_GREEN): add dto")
+        assert result.workflow_phase == "implementation"
+        assert result.source == "commit-scope"
 
     def test_detector_never_reads_state_json(self, tmp_path: Path) -> None:
         state_dir = tmp_path / get_default_server_root()
@@ -123,22 +125,22 @@ class TestCommitPhaseDetector:
         (state_dir / "state.json").write_text(
             '{"branch": "main", "current_phase": "research", "workflow_name": "feature"}'
         )
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
-        result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_RED): add tests")
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
+        result = detector.detect_from_commit("feat(P_IMPLEMENTATION_C3_SP_RED): add tests")
         # Must read commit-scope, NOT state.json
-        assert result["source"] == "commit-scope"
-        assert result["workflow_phase"] == "implementation"
+        assert result.source == "commit-scope"
+        assert result.workflow_phase == "implementation"
 
     def test_detector_returns_unknown_for_missing_scope(self) -> None:
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         result = detector.detect_from_commit("chore: bump version")
-        assert result["workflow_phase"] == "unknown"
-        assert result["source"] == "unknown"
+        assert result.workflow_phase is None
+        assert result.source == "unknown"
 
     def test_detector_returns_unknown_for_none_commit(self) -> None:
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         result = detector.detect_from_commit(None)
-        assert result["workflow_phase"] == "unknown"
+        assert result.workflow_phase is None
 
 
 class TestWorkflowStatusResolver:
@@ -169,7 +171,7 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -241,7 +243,7 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -338,7 +340,7 @@ class TestWorkflowStatusResolverInversion:
                 parent_branch="main",
             )
         )
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -356,7 +358,7 @@ class TestWorkflowStatusResolverInversion:
         git_reader.get_recent_commits.return_value = commits or []
         state_repo = InMemoryStateRepository()
         # no save Ã¢â€ â€™ state absent
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -399,7 +401,7 @@ class TestWorkflowStatusResolverInversion:
         git_reader.get_current_branch.return_value = "feature/298-other"
         git_reader.get_recent_commits.return_value = []
         validated_reader = BranchValidatedStateReader(_WrongBranchReader())
-        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=validated_reader,

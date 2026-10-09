@@ -67,3 +67,54 @@ class IBranchParentReader(Protocol):
 
     def get_parent_branch(self, branch: str) -> str | None:
         raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class CommitRecord:
+    """Opaque identity and subject from local Git traversal."""
+
+    sha: str
+    subject: str
+
+
+@dataclass(frozen=True)
+class CommitHistorySnapshot:
+    """Issue-prefiltered metadata reachable from one captured branch HEAD."""
+
+    branch: str
+    head_sha: str
+    shallow: bool
+    records: tuple[CommitRecord, ...]
+
+
+class CommitHistoryUnavailableError(ExecutionError):
+    """Structured local history failure without inferred execution facts."""
+
+    def __init__(
+        self, reason_code: str, branch: str | None = None, head_sha: str | None = None
+    ) -> None:
+        super().__init__(reason_code)
+        self.reason_code = reason_code
+        self.branch = branch
+        self.head_sha = head_sha
+
+
+@dataclass(frozen=True)
+class CycleEvidence:
+    """Read-only execution evidence, including known positives under uncertainty."""
+
+    status: Literal["complete", "unavailable"]
+    branch: str | None
+    head_sha: str | None
+    execution_phase: str | None
+    protected_cycle_numbers: tuple[int, ...]
+    reason_code: str | None = None
+    diagnostic_commit_sha: str | None = None
+
+
+class ICycleEvidenceReader(Protocol):
+    """Expose execution evidence without Git or planning mutation commands."""
+
+    def read_cycle_evidence(
+        self, issue_number: int, execution_phase: str | None
+    ) -> CycleEvidence: ...

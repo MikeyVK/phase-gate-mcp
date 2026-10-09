@@ -27,6 +27,8 @@ from mcp_server.core.interfaces import GateReport
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
+from mcp_server.core.scope_contract import ScopeContract
+from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
@@ -50,6 +52,7 @@ from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
+    from mcp_server.adapters.git_adapter import GitAdapter
     from mcp_server.config.settings import Settings
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
     from mcp_server.server import MCPServer
@@ -227,13 +230,29 @@ def load_issue_tool_dependencies(workspace_root: Path | str | None = None) -> di
     }
 
 
-def make_git_manager(workspace_root: Path | str | None = None) -> GitManager:
-    """Build a GitManager with explicit GitConfig."""
-    git_config = cast(
-        GitConfig,
-        _load_config(workspace_root, "git.yaml", "load_git_config"),
+def make_git_manager(
+    workspace_root: Path | str | None = None,
+    *,
+    git_config: GitConfig | None = None,
+    adapter: GitAdapter | None = None,
+    workphases_config: WorkphasesConfig | None = None,
+) -> GitManager:
+    """Compose the actual GitManager dependencies for public behavior tests."""
+    resolved_git_config = git_config or cast(
+        GitConfig, _load_config(workspace_root, "git.yaml", "load_git_config")
     )
-    return GitManager(git_config=git_config)
+    resolved_workphases = workphases_config or cast(
+        WorkphasesConfig,
+        _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
+    )
+    contract = ScopeContract(resolved_workphases)
+    return GitManager(
+        git_config=resolved_git_config,
+        adapter=adapter,
+        workphases_config=resolved_workphases,
+        scope_encoder=ScopeEncoder(contract),
+        scope_decoder=ScopeDecoder(contract),
+    )
 
 
 def load_workflow_config(workspace_root: Path | str | None = None) -> WorkflowConfig:
@@ -280,7 +299,7 @@ def make_project_manager(
         _state_reader = FileStateRepository(
             state_file=workspace_path / get_default_server_root() / "state.json"
         )
-        _detector = CommitPhaseDetector(workphases_config=workphases_config)
+        _detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(workphases_config)))
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=_git_reader,
             state_reader=_state_reader,
@@ -322,7 +341,7 @@ def make_phase_state_engine(
         state_file=workspace_path / get_default_server_root() / "state.json"
     )
     resolved_scope_decoder = scope_decoder or ScopeDecoder(
-        workphases_config=cast(WorkphasesConfig, workphases_config)
+        ScopeContract(cast(WorkphasesConfig, workphases_config))
     )
     resolved_workflow_gate_runner = workflow_gate_runner or _NopGateRunner(contracts_config)
     if workflow_state_mutator is None:

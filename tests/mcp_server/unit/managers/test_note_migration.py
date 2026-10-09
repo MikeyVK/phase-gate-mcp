@@ -6,8 +6,7 @@ import pytest
 from mcp_server.config.schemas import GitConfig
 from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.operation_notes import Note, NoteContext
-from mcp_server.managers.git_manager import GitManager
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 
 @pytest.fixture
@@ -24,7 +23,7 @@ def test_git_manager_produces_generic_note_when_dirty(git_config: GitConfig) -> 
     """
     mock_adapter = MagicMock()
     mock_adapter.is_clean.return_value = False
-    manager = GitManager(git_config=git_config, adapter=mock_adapter)
+    manager = make_git_manager(git_config=git_config, adapter=mock_adapter)
     context = NoteContext()
 
     with pytest.raises(PreflightError):
