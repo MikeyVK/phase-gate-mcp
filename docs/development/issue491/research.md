@@ -2,8 +2,8 @@
 
 # Issue \#491 — Planning creation and mutation contracts
 
-**Status:** DRAFT — owner strategy approved; independent Research review pending  
-**Version:** 1.14  
+**Status:** REVIEWED — independent Research GO; owner approved Design  
+**Version:** 1.15  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -60,6 +60,8 @@ The two per-ID merge loops and save/update response assembly are duplicated. Can
 cycle_number is both lookup identity and execution order. PhaseStateEngine reads stored total for range checks and stores cycle number/name in entered history; PhaseContractResolver selects checks by cycle number and deliverable ID. Renumbering or reordering started cycles therefore changes the meaning of existing references. Git history preserves historical bytes, but does not itself prevent reinterpretation of active lifecycle references. Atomic file replacement protects against partial bytes, not an invalid merged plan or concurrent read/modify/write races.
 
 ### Strategy options for owner review
+
+Historical options and intermediate questions below record the Research discussion. Where a passage describes an undecided choice, [Approved Strategy](#approved-strategy) is the definitive current owner decision. Detailed interface spelling remains Design work.
 
 | Boundary | Narrow coherent option | Alternative and cost/risk |
 |---|---|---|
@@ -249,7 +251,7 @@ PhaseContractResolver selects the cycles list when the active workflow phase is 
 
 Save and update act on the issue's whole planning_deliverables aggregate, not only the active phase. The owner-approved total/range/non-deletion rules apply to the cycles block. A cycle-only update leaves the phase blocks unchanged. A phase-only update has no cycle-range/removal intent; the supplied blocks are incorporated before common whole-result validation. Current phase lists merge by deliverable ID, just as cycle deliverable lists do; that current merge behavior must not be confused with the requested complete-block mutation.
 
-Bounded proposal, still requiring owner agreement: apply the same complete-block rule to a supplied phase block, replacing that phase's full deliverables list and retaining unprovided phase blocks. This allows deliberate removal within the supplied list without nested patch semantics. Do not extend cycle total or Git-backed cycle protection to phase deliverables. Omission, explicit null, empty-list meaning and any separate phase-deliverable protection remain explicit boundary choices.
+Historical intermediate proposal, superseded by [Approved Strategy](#approved-strategy): whole phase blocks now follow the owner-approved replacement/addition and explicit-removal contract. Omission leaves a block unchanged; null is not deletion; a replacement must be complete and valid. Derived cycle totals and Git-backed cycle protection do not extend to phase deliverables.
 
 ### Approved single-cycle-phase configuration limit
 
@@ -267,7 +269,7 @@ State.json remains the single source of truth for current branch workflow state.
 
 Owner-approved codec invariant: encoder and decoder use the same configured vocabulary and reproduce the same distinct phase, optional cycle number and optional subphase. For every admitted combination, decoding the generated scope must return those values, including absence, without conflating cycle with subphase or dropping cycle identity. A cycle does not require a subphase. The commit type, subject and issue attribution are separate full-commit concerns; this invariant does not imply that a scope decoder alone establishes trustworthy issue/cycle evidence.
 
-The owner confirms that closed issues and historical commits do not require compatibility. Other workspaces will be upgraded and manually adjusted where necessary. The codec boundary therefore needs no old-format fallback or legacy composite-subphase result. Exact spelling, typed result shape and any shared configuration seam belong to Design; choosing them must use the completed consumer register. The owner now includes reliable implementation-cycle evidence in scope, with decoded workphase as an active filter. Exhaustive issue-attributed history access and failure policy remain unresolved boundaries; the scope round-trip contract alone does not settle them.
+The owner confirms that closed issues and historical commits do not require compatibility. Other workspaces will be upgraded and manually adjusted where necessary. The codec boundary therefore needs no old-format fallback or legacy composite-subphase result. Exact spelling, typed result shape and any shared configuration seam belong to Design; choosing them must use the completed consumer register. The owner includes reliable implementation-cycle evidence in scope, with decoded workphase as an active filter. The earlier unresolved history/failure statement is superseded by [Approved Strategy](#approved-strategy): complete captured-HEAD ancestry with issue-qualified execution metadata, rejection on unreliable evidence and a fresh retry before any force override.
 
 ### Latest owner direction — explicit operations, derived numbering and typed references
 
@@ -404,7 +406,7 @@ No tests were added or run in this Research pass. No production/configuration/ag
 - Explicit cycle resumption is approved: first configured cycle-phase entry at C_1, later re-entry requires a caller-selected existing cycle before mutation, current_cycle set accordingly and last_cycle cleared without rewriting historical events. This is a bounded public phase-input/entry extension, not already implemented behavior.
 - Split dir/pattern is approved as the sole file_glob contract. Correct planning admission to match the existing checker and configured phase checks; no combined-glob compatibility.
 
-Hotfix without Planning/cycle planning and the bounded contract/instruction changes are now owner-approved; Chore already matches this direction. Whole-block intent, server numbering/references, issue-qualified captured-HEAD evidence, force retry and clean-break/behavior-focused verification remain approved. Exact operation DTOs and codec/output spellings belong to Design. No owner strategy questions remain. Research awaits independent QA of the final strategy; detailed public DTOs and codec spelling remain Design work.
+Hotfix without Planning/cycle planning and the bounded contract/instruction changes are now owner-approved; Chore already matches this direction. Whole-block intent, server numbering/references, issue-qualified captured-HEAD evidence, force retry and clean-break/behavior-focused verification remain approved. Exact operation DTOs and codec/output spellings belong to Design. No owner strategy questions remain. Independent Research QA returned GO; detailed public DTOs and codec spelling remain Design work.
 
 ## Approved Strategy
 
@@ -437,7 +439,7 @@ Owner direction on 2026-10-08 and 2026-10-09 confirms:
 
 Current save checks a caller-supplied total against list length; changing total to server-derived output requires an explicit input/storage/readback distinction. The existing creation schema is an evidence input to reconcile, not assumed flawless: the file_glob/executor mismatch has an approved repair direction and local reference consistency remains a resulting-plan invariant.
 
-No owner strategy decisions remain pending. Split dir/pattern is the sole selected file_glob contract; explicit cycle resumption through the existing phase-entry tools is approved. The initialization rejection-before-write repair is approved, retaining the verified post-PR recovery path. Non-cycle compact workflows, Planning-only content admission, whole-block intent, issue-qualified HEAD evidence and clean-break/behavior-focused verification are selected. Exact interfaces belong to Design. Research awaits independent QA; no Design transition is performed.
+No owner strategy decisions remain pending. Split dir/pattern is the sole selected file_glob contract; explicit cycle resumption through the existing phase-entry tools is approved. The initialization rejection-before-write repair is approved, retaining the verified post-PR recovery path. Non-cycle compact workflows, Planning-only content admission, whole-block intent, issue-qualified HEAD evidence and clean-break/behavior-focused verification are selected. Exact interfaces belong to Design. Independent QA issued GO for Research to Design on commit 4206b4827a6635cedaed54d9c14240396266fe86, confirmed by the owner on 2026-10-09. No P0/P1/P2 blocker was found; the P3 stale-intermediate-text observation is corrected in v1.15. The owner explicitly authorizes Design; the phase transition is performed separately through tooling.
 
 ## Expected Results
 
@@ -563,3 +565,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.12 | 2026-10-09 | @imp researcher | Approve non-cycle Hotfix scope, verify #460's close/reinitialize/Git-restore recovery, clarify rejection-after-write and propose explicit cycle selection on re-entry without planning/state coupling. |
 | 1.13 | 2026-10-09 | @imp researcher | Approve initialization rejection before persistence and illustrate the caller's explicit cycle selection on the existing phase-transition boundary; resumption remains pending owner approval. |
 | 1.14 | 2026-10-09 | @imp researcher | Capture owner approval of explicit current-plan cycle selection on phase re-entry and split dir/pattern as the sole glob contract; close owner strategy questions for independent QA. |
+| 1.15 | 2026-10-09 | @imp researcher | Record independent Research GO and owner Design approval; mark stale phase-block and history/failure passages as superseded by Approved Strategy (P3). |
