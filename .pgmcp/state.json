@@ -3,7 +3,7 @@
   "branch": "refactor/491-planning-mutation-contracts",
   "issue_number": 491,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "issue_title": "refactor: Reconcile planning creation and mutation contracts",
   "parent_branch": "main",
   "created_at": "2026-10-08T16:57:25.629240+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-09T19:02:32.095829+00:00",
+      "human_approval_message": "Owner: Go voor design, fix wel onderstaande p3 blocker. Independent QA GO on 4206b482; stale Research passages corrected in the preceding Research commit.",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
