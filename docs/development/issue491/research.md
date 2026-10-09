@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -279,7 +279,7 @@ Deletion may compact the numbering of unexecuted surviving cycles while retainin
 
 Public names are cycle_name and deliverable_name, replacing the existing cycle name and deliverable id vocabulary. The server supplies numeric references in save results and readback; names express intent, while numbers provide references. Owner convention: C_<cycle number> for a cycle, and D_<cycle number>.<deliverable number> for a deliverable belonging to that cycle, for example C_2 and D_2.1. This prevents deliverables from appearing to be subcycles. Commit scope must preserve the distinct workphase/cycle facts through the shared codec rather than relying on free-text subject references.
 
-Exact persisted/response fields, whether numbered display labels are separate from raw names, and phase-deliverable references are still open. A phase deliverable has no parent cycle; D_<number> within explicit phase context is a producer proposal, not an owner-approved global identity scheme. Deliverable reference stability on whole-block replacement/compaction also remains to be decided. Prefer clear public field names over speculative token savings; no tokenizer measurement or new performance claim is made.
+The owner requires server-generated cycle/deliverable identifiers to be persisted in deliverables.json, so a direct file read supplies the same references as tool readback. Generate identifiers during save and relevant updates before persistence; project tools expose the stored values rather than inventing a separate identity. Numeric/reference consistency is a resulting-plan invariant, not an independently editable caller field. Exact field spelling and phase-deliverable references remain open. A phase deliverable has no parent cycle; D_<number> within explicit phase context is a producer proposal, not an owner-approved global identity scheme. Deliverable reference stability on whole-block replacement/compaction also remains to be decided. Prefer clear public field names over speculative token savings; no tokenizer measurement or new performance claim is made.
 
 ### Existing evidence and proportional test surface
 
@@ -310,7 +310,7 @@ Owner direction on 2026-10-08 and 2026-10-09 confirms:
 - For the first save, the ordered cycle list determines server-assigned cycle numbers. Agent-supplied cycle numbers are unnecessary there. Targeting existing cycles in updates remains an explicit boundary to finish.
 - Both operations apply one common complete-result validation before persistence: the final cycle sequence must be complete and a contiguous 1-based sequence, with valid complete blocks and no duplicate identities. Derived total reflects that validated result; missing cycle content is never manufactured.
 - Deletion may compact the numbering of unworked survivors, retaining their relative order. Reject deletion of a commit-evidenced cycle and any mutation that renumbers an evidenced survivor. C_1/C_3 evidenced with C_2 unworked therefore cannot permit deleting C_2. State coherence remains an additional requirement.
-- Naming/reference boundary: use cycle_name and deliverable_name for meaningful public names. The server supplies numerical references. Use C_<number> for cycles and D_<cycle number>.<deliverable number> for their deliverables; do not present deliverables as subcycles. Exact response/storage shape and phase-deliverable convention remain open.
+- Naming/reference boundary: use cycle_name and deliverable_name for meaningful public names. The server supplies numerical references. Use C_<number> for cycles and D_<cycle number>.<deliverable number> for their deliverables; do not present deliverables as subcycles. Persist these generated identifiers in deliverables.json so direct file reads and project tools yield the same references. Exact field spelling and phase-deliverable convention remain open.
 - Completed cycles must never be deleted. Use attributable implementation execution commits as the selected evidence direction for non-deletion, without claiming those commits prove completion. The decoded workphase is part of qualification; commits from other phases or composite/subphase-only labels cannot mark an implementation cycle as historical. Exact history attribution, completeness and failure handling remain open.
 - Supporting scope explicitly includes correcting the record_sub_phase docstring to match its pre-commit write/rollback behavior, removing unused decoder/detector injections from state/status consumers and defining/correcting the shared encoder/decoder scope contract. These changes serve reliable cycle derivation from commit scopes; no unrelated cleanup or status reconstruction is included.
 - Workflow configuration boundary (owner-approved 2026-10-09): permit zero or one cycle_based workphase per workflow and reject multiple entries in the existing configuration model. Preserve configuration-driven phase identity; no phase-name hardcoding, compatibility bridge or per-workphase cycle architecture. Current contracts remain valid.
@@ -434,3 +434,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.0 | 2026-10-08 | @imp researcher | Include approved codec/injection/docstring support and workphase-qualified cycle evidence; distinguish cycle planning from phase-deliverable blocks and their still-open replacement semantics. |
 | 1.1 | 2026-10-09 | @imp researcher | Record approved zero-or-one cycle-based workphase invariant and distinguish agent phase guidance from structured runtime admission. |
 | 1.2 | 2026-10-09 | @imp researcher | Reconcile explicit removal, derived total/server numbering, protected compaction and typed cycle/deliverable references; distinguish owner directions from the unapproved illustrative schema. |
+| 1.3 | 2026-10-09 | @imp researcher | Require generated cycle/deliverable identifiers in persistent planning, shared by direct file reads and project readback. |
