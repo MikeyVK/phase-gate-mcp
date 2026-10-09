@@ -33,11 +33,12 @@ from mcp_server.core.exceptions import (
 )
 
 # Project modules
+from mcp_server.core.interfaces.git import ICycleEvidenceReader
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.managers.state_version_validator import StateVersionValidator
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
-from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 if TYPE_CHECKING:
@@ -104,6 +105,7 @@ class ProjectManager:
         git_manager: GitManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
         *,
+        cycle_evidence_reader: ICycleEvidenceReader,
         workflow_status_resolver: WorkflowStatusResolver,
         server_root: Path,
         state_version_validator: StateVersionValidator | None = None,
@@ -111,6 +113,7 @@ class ProjectManager:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
         self._contracts_config = contracts_config
+        self._cycle_evidence_reader = cycle_evidence_reader
         self._git_manager = git_manager
         self._workphases_config = workphases_config
         self._workflow_status_resolver = workflow_status_resolver
@@ -255,7 +258,7 @@ class ProjectManager:
             is_cycle_based = any(phase.cycle_based for phase in workflow.phases)
 
         try:
-            model = CyclePlanningModel.model_validate(planning_deliverables, strict=True)
+            model = SavePlanningModel.model_validate(planning_deliverables, strict=True)
         except ValidationError as e:
             raise ValueError(f"Invalid planning deliverables schema: {e}") from e
 

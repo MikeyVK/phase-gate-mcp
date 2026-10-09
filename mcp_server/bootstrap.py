@@ -797,6 +797,7 @@ class ServerBootstrapper:
             git_manager=git_manager,
             workphases_config=configs.workphases_config,
             workflow_status_resolver=workflow_status_resolver,
+            cycle_evidence_reader=git_manager,
             server_root=server_root,
         )
         phase_contract_resolver = PhaseContractResolver(

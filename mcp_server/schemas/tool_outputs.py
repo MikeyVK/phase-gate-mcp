@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mcp_server.schemas.deliverables import CyclePlanningModel
+from mcp_server.schemas.deliverables import StoredPlanningModel
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 
 
@@ -123,12 +123,14 @@ class ProjectPlanOutput(BaseToolOutput):
     issue_number: int
     workflow_name: str
     phases: list[PhaseDTO] = Field(default_factory=list)
-    planning_deliverables: CyclePlanningModel | None = None
+    planning_deliverables: StoredPlanningModel | None = None
 
 
 class PlannedCycleSummary(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
+    cycle_id: str
     cycle_number: int
+    cycle_name: str
     deliverables_count: int
 
 
@@ -137,6 +139,8 @@ class PlanningDeliverablesOutput(BaseToolOutput):
     total_cycles: int
     total_deliverables: int
     cycles: list[PlannedCycleSummary] = Field(default_factory=list)
+    planning_deliverables: StoredPlanningModel | None = None
+    error_code: str | None = None
 
 
 class BranchPairOutput(BaseToolOutput):

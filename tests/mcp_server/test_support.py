@@ -27,6 +27,7 @@ from mcp_server.core.interfaces import GateReport
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
+from mcp_server.core.interfaces.git import ICycleEvidenceReader
 from mcp_server.core.scope_contract import ScopeContract
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
@@ -276,6 +277,8 @@ def make_project_manager(
     contracts_config: ContractsConfig | None = None,
     git_manager: GitManager | None = None,
     workflow_status_resolver: WorkflowStatusResolver | None = None,
+    *,
+    cycle_evidence_reader: ICycleEvidenceReader | None = None,
 ) -> ProjectManager:
     """Build a ProjectManager with explicit contracts config injection."""
     resolved_contracts_config = contracts_config or load_contracts_config(workspace_root)
@@ -311,6 +314,9 @@ def make_project_manager(
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
         workflow_status_resolver=workflow_status_resolver,
+        cycle_evidence_reader=(
+            cycle_evidence_reader or resolved_git_manager or make_git_manager(workspace_root)
+        ),
         server_root=Path(workspace_root) / get_default_server_root(),
     )
 

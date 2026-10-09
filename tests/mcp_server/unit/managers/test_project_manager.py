@@ -1001,3 +1001,25 @@ class TestProjectManagerVersioning:
                 },
             )
             assert mock_write.call_count == 1
+
+def test_save_derives_planning_names_and_references(legacy_suite_workspace: Path) -> None:
+    """A complete authoring plan acquires readable server-owned references."""
+    manager = make_project_manager(legacy_suite_workspace)
+    manager.initialize_project(491, "Planning contracts", "refactor")
+    manager.save_planning_deliverables(491, {
+        "cycles": {"cycles": [{
+            "cycle_name": "First work",
+            "deliverables": [{"deliverable_name": "Result", "description": "A useful result"}],
+            "exit_criteria": "Behavior demonstrated",
+        }]},
+        "phases": {"validation": {"deliverables": [
+            {"deliverable_name": "Report", "description": "Recorded evidence"}
+        ]}},
+    })
+    plan = manager.get_project_plan(491)
+    assert plan is not None
+    saved = plan["planning_deliverables"]
+    assert saved["cycles"]["total"] == 1
+    assert saved["cycles"]["cycles"][0]["cycle_id"] == "C_1"
+    assert saved["cycles"]["cycles"][0]["deliverables"][0]["deliverable_id"] == "D_1.1"
+    assert saved["phases"]["validation"]["deliverables"][0]["deliverable_id"] == "D_1"

@@ -24,7 +24,12 @@ from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.schemas import ContractsConfig
-from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
+from mcp_server.schemas.deliverables import (
+    PlanningMutationError,
+    PlanningOperation,
+    SavePlanningModel,
+    StoredPlanningModel,
+)
 from mcp_server.schemas.tool_outputs import (
     InitializeProjectOutput,
     PhaseDTO,
@@ -361,7 +366,7 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
 
                 stored_planning = plan.get("planning_deliverables")
                 planning = (
-                    CyclePlanningModel.model_validate(stored_planning, strict=True)
+                    StoredPlanningModel.model_validate(stored_planning, strict=True)
                     if stored_planning is not None
                     else None
                 )
@@ -404,31 +409,113 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
 
 
 class SavePlanningDeliverablesInput(BaseModel):
-    """Input for save_planning_deliverables tool."""
+    """Create the complete initial plan; names and order determine stored references."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
-    issue_number: int = Field(..., description="GitHub issue number")
-    planning_deliverables: CyclePlanningModel = Field(
-        ...,
+    issue_number: int = Field(gt=0, strict=True, description="GitHub issue number")
+    planning_deliverables: SavePlanningModel
+
+
+class UpdatePlanningDeliverablesInput(BaseModel):
+    """Mutate complete blocks by original-snapshot references; omission leaves blocks unchanged."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    issue_number: int = Field(gt=0, strict=True, description="GitHub issue number")
+    operations: list[PlanningOperation] = Field(
+        min_length=1,
         description=(
-            "Planning deliverables with cycles.total + cycles[]. "
-            "Each deliverable entry may include a 'validates' spec with type + required fields."
+            "Replace/remove original C_n cycles or named phase blocks explicitly. "
+            "Append cycles after surviving originals in request order. "
+            "All targets resolve before renumbering; duplicate targets reject the whole request."
         ),
+    )
+    force: bool = Field(
+        default=False, strict=True,
+        description=(
+            "Retry local Git evidence and accept continued uncertainty after investigation. "
+            "Known commit-protected deletion/renumbering and invalid planning remain forbidden."
+        ),
+    )
+
+
+def _planning_input_schema(model: type[BaseModel], manager: ProjectManager) -> dict[str, Any]:
+    """Expose the same configured phase vocabulary and omission semantics as admission."""
+    schema = resolve_schema_refs(model.model_json_schema())
+    properties = schema["properties"]
+    config = manager.workphases_config
+    phases = list(config.phases) if config is not None else []
+    if "planning_deliverables" in properties:
+        planning = properties["planning_deliverables"]["properties"]
+        cycles = planning["cycles"]
+        planning["cycles"] = next(
+            option for option in cycles["anyOf"] if option.get("type") != "null"
+        )
+        planning["phases"]["propertyNames"] = {"enum": phases}
+    if "operations" in properties:
+        variants = properties["operations"]["items"]["oneOf"]
+        for variant in variants:
+            phase = variant["properties"].get("phase")
+            if phase is not None:
+                phase["enum"] = phases
+    return schema
+
+
+def _planning_response(manager: IProjectPlanReader, issue_number: int) -> PlanningDeliverablesOutput:
+    """Assemble one successful command response from the persisted complete plan."""
+    plan = manager.get_project_plan(issue_number)
+    if plan is None or plan.get("planning_deliverables") is None:
+        raise ValueError("Planning deliverables unavailable after persistence")
+    planning = StoredPlanningModel.model_validate(plan["planning_deliverables"], strict=True)
+    cycles = planning.cycles.cycles if planning.cycles is not None else []
+    summaries = [
+        PlannedCycleSummary(
+            cycle_id=cycle.cycle_id,
+            cycle_number=cycle.cycle_number,
+            cycle_name=cycle.cycle_name,
+            deliverables_count=len(cycle.deliverables),
+        )
+        for cycle in cycles
+    ]
+    return PlanningDeliverablesOutput(
+        success=True,
+        issue_number=issue_number,
+        total_cycles=len(cycles),
+        total_deliverables=(
+            sum(len(cycle.deliverables) for cycle in cycles)
+            + sum(len(block.deliverables) for block in planning.phases.values())
+        ),
+        cycles=summaries,
+        planning_deliverables=planning,
+    )
+
+
+def _planning_failure(
+    issue_number: int, error: Exception, *, persisted: bool
+) -> PlanningDeliverablesOutput:
+    """Keep rejected commands and failed post-write readback distinct."""
+    code = (
+        "planning_readback_failed" if persisted
+        else error.error_code if isinstance(error, PlanningMutationError)
+        else "planning_command_failed"
+    )
+    return PlanningDeliverablesOutput(
+        success=False, issue_number=issue_number, error_code=code,
+        error_message=str(error), total_cycles=0, total_deliverables=0,
     )
 
 
 class SavePlanningDeliverablesTool(
     ICoreTool[SavePlanningDeliverablesInput, PlanningDeliverablesOutput]
 ):
-    """Tool to persist planning deliverables for an issue to deliverables.json.
-
-    Issue #229 Cycle 4 / Issue #390:
-    - Layer 1: MCP JSON Schema (Pydantic, automatic)
-    - Defer schema validation entirely to CyclePlanningModel.
-    """
+    """Create an initial complete plan once under configured Planning admission."""
 
     output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
+
+    def __init__(self, manager: ProjectManager, workspace_root: Path | str | None = None) -> None:
+        del workspace_root
+        self._manager = manager
 
     @property
     def name(self) -> str:
@@ -437,140 +524,44 @@ class SavePlanningDeliverablesTool(
     @property
     def description(self) -> str:
         return (
-            "Save cycle planning deliverables for an issue to deliverables.json. "
-            "Validates the schema before persisting."
+            "Create the complete initial plan once. Supply cycle/deliverable names and ordered "
+            "complete blocks; the server stores C_n, D_n.m and phase-local D_n references and totals."
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return SavePlanningDeliverablesInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model is None:
-            return {}
-        return resolve_schema_refs(self.args_model.model_json_schema())
-
-    def __init__(
-        self,
-        manager: ProjectManager,
-        workspace_root: Path | str | None = None,
-    ) -> None:
-        """Initialize tool with injected ProjectManager."""
-        del workspace_root
-        self._manager = manager
+        return _planning_input_schema(SavePlanningDeliverablesInput, self._manager)
 
     async def execute(
         self, params: SavePlanningDeliverablesInput, context: NoteContext
     ) -> PlanningDeliverablesOutput:
-        """Persist planning deliverables.
-
-        Args:
-            params: issue_number + planning_deliverables payload.
-            context: Call context
-        """
         del context
+        persisted = False
         try:
-            pd_dict = params.planning_deliverables.model_dump(exclude_none=True)
             self._manager.save_planning_deliverables(
                 issue_number=params.issue_number,
-                planning_deliverables=pd_dict,
+                planning_deliverables=params.planning_deliverables,
             )
-
-            # Load project plan to extract the complete planning_deliverables
-            plan = self._manager.get_project_plan(issue_number=params.issue_number)
-            if not plan or "planning_deliverables" not in plan:
-                return PlanningDeliverablesOutput(
-                    success=False,
-                    error_message="Planning deliverables not found after saving",
-                    issue_number=params.issue_number,
-                    total_cycles=0,
-                    total_deliverables=0,
-                    cycles=[],
-                )
-
-            pd = plan["planning_deliverables"]
-            cycles_data = pd.get("cycles", {}).get("cycles", [])
-            cycles_summaries = []
-            cycle_deliverables_count = 0
-            for c in cycles_data:
-                cycle_num = c.get("cycle_number", 0)
-                delivs_count = len(c.get("deliverables", []))
-                cycle_deliverables_count += delivs_count
-                cycles_summaries.append(
-                    PlannedCycleSummary(
-                        cycle_number=cycle_num,
-                        deliverables_count=delivs_count,
-                    )
-                )
-
-            phase_deliverables_count = 0
-            if self._manager.workphases_config is not None:
-                phase_keys = list(self._manager.workphases_config.phases.keys())
-            else:
-                phase_keys = [
-                    "research",
-                    "planning",
-                    "design",
-                    "implementation",
-                    "validation",
-                    "documentation",
-                    "ready",
-                    "coordination",
-                ]
-            for pk in phase_keys:
-                if pk in pd:
-                    phase_deliverables_count += len(pd[pk].get("deliverables", []))
-
-            total_deliverables = cycle_deliverables_count + phase_deliverables_count
-
-            return PlanningDeliverablesOutput(
-                success=True,
-                issue_number=params.issue_number,
-                total_cycles=len(cycles_summaries),
-                total_deliverables=total_deliverables,
-                cycles=cycles_summaries,
-            )
-        except Exception as e:
-            return PlanningDeliverablesOutput(
-                success=False,
-                error_message=str(e),
-                issue_number=params.issue_number,
-                total_cycles=0,
-                total_deliverables=0,
-                cycles=[],
-            )
-
-
-class UpdatePlanningDeliverablesInput(BaseModel):
-    """Input for update_planning_deliverables tool."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    issue_number: int = Field(..., description="GitHub issue number")
-    planning_deliverables: UpdatePlanningModel = Field(
-        ...,
-        description=(
-            "Partial or full planning deliverables to merge into the existing entry. "
-            "New cycles are appended; existing cycles have deliverables merged by id. "
-            "Deliverable entries may include a 'validates' spec with type + required fields."
-        ),
-    )
+            persisted = True
+            return _planning_response(self._manager, params.issue_number)
+        except Exception as error:
+            return _planning_failure(params.issue_number, error, persisted=persisted)
 
 
 class UpdatePlanningDeliverablesTool(
     ICoreTool[UpdatePlanningDeliverablesInput, PlanningDeliverablesOutput]
 ):
-    """Tool to merge-update planning deliverables for an issue in deliverables.json.
-
-    Issue #229 Cycle 5 / Issue #390:
-    - Requires save_planning_deliverables to have been called first.
-    - Merge strategy: new cycle -> append; existing cycle + new id -> append;
-      existing id -> overwrite.
-    - Defer schema validation entirely to UpdatePlanningModel.
-    """
+    """Apply explicit complete-block operations with fresh local execution evidence."""
 
     output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
+
+    def __init__(self, manager: ProjectManager, workspace_root: Path | str | None = None) -> None:
+        del workspace_root
+        self._manager = manager
 
     @property
     def name(self) -> str:
@@ -579,107 +570,30 @@ class UpdatePlanningDeliverablesTool(
     @property
     def description(self) -> str:
         return (
-            "Merge-update cycle planning deliverables for an issue in deliverables.json. "
-            "Must be preceded by save_planning_deliverables. "
-            "New cycles are appended; deliverables within existing cycles are merged by id."
+            "Mutate an existing plan using append_cycle, replace_cycle, remove_cycle, "
+            "set_phase or remove_phase. Targets refer to the original snapshot; complete "
+            "blocks replace their contents. The server derives references and totals, "
+            "protects committed cycle numbers, and retries evidence on every force call."
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return UpdatePlanningDeliverablesInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model is None:
-            return {}
-        return resolve_schema_refs(self.args_model.model_json_schema())
-
-    def __init__(
-        self,
-        manager: ProjectManager,
-        workspace_root: Path | str | None = None,
-    ) -> None:
-        """Initialize tool with injected ProjectManager."""
-        del workspace_root
-        self._manager = manager
+        return _planning_input_schema(UpdatePlanningDeliverablesInput, self._manager)
 
     async def execute(
         self, params: UpdatePlanningDeliverablesInput, context: NoteContext
     ) -> PlanningDeliverablesOutput:
-        """Merge planning deliverables.
-
-        Args:
-            params: issue_number + planning_deliverables payload.
-            context: Call context
-        """
-        del context
+        persisted = False
         try:
-            pd_dict = params.planning_deliverables.model_dump(exclude_none=True)
             self._manager.update_planning_deliverables(
-                issue_number=params.issue_number,
-                planning_deliverables=pd_dict,
+                issue_number=params.issue_number, operations=params.operations,
+                context=context, force=params.force,
             )
-
-            # Load project plan to extract the complete planning_deliverables
-            plan = self._manager.get_project_plan(issue_number=params.issue_number)
-            if not plan or "planning_deliverables" not in plan:
-                return PlanningDeliverablesOutput(
-                    success=False,
-                    error_message="Planning deliverables not found after updating",
-                    issue_number=params.issue_number,
-                    total_cycles=0,
-                    total_deliverables=0,
-                    cycles=[],
-                )
-
-            pd = plan["planning_deliverables"]
-            cycles_data = pd.get("cycles", {}).get("cycles", [])
-            cycles_summaries = []
-            cycle_deliverables_count = 0
-            for c in cycles_data:
-                cycle_num = c.get("cycle_number", 0)
-                delivs_count = len(c.get("deliverables", []))
-                cycle_deliverables_count += delivs_count
-                cycles_summaries.append(
-                    PlannedCycleSummary(
-                        cycle_number=cycle_num,
-                        deliverables_count=delivs_count,
-                    )
-                )
-
-            phase_deliverables_count = 0
-            if self._manager.workphases_config is not None:
-                phase_keys = list(self._manager.workphases_config.phases.keys())
-            else:
-                phase_keys = [
-                    "research",
-                    "planning",
-                    "design",
-                    "implementation",
-                    "validation",
-                    "documentation",
-                    "ready",
-                    "coordination",
-                ]
-            for pk in phase_keys:
-                if pk in pd:
-                    phase_deliverables_count += len(pd[pk].get("deliverables", []))
-
-            total_deliverables = cycle_deliverables_count + phase_deliverables_count
-
-            return PlanningDeliverablesOutput(
-                success=True,
-                issue_number=params.issue_number,
-                total_cycles=len(cycles_summaries),
-                total_deliverables=total_deliverables,
-                cycles=cycles_summaries,
-            )
-        except Exception as e:
-            return PlanningDeliverablesOutput(
-                success=False,
-                error_message=str(e),
-                issue_number=params.issue_number,
-                total_cycles=0,
-                total_deliverables=0,
-                cycles=[],
-            )
+            persisted = True
+            return _planning_response(self._manager, params.issue_number)
+        except Exception as error:
+            return _planning_failure(params.issue_number, error, persisted=persisted)

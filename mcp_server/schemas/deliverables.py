@@ -1,156 +1,210 @@
 # mcp_server/schemas/deliverables.py
-# template=schema version=74378193 created=2026-06-11T09:44:27Z updated=2026-06-11T09:44:27Z
-"""Deliverables validation schemas.
+"""Pure, frozen authoring values, explicit operations and stored planning references."""
 
-Defines Pydantic value objects for strict, frozen validation of planning
-deliverables at the server boundary (CQS-compliant, frozen=True).
-"""
+from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+
+PlanningText = Annotated[str, StringConstraints(strict=True, min_length=1, pattern=r"\S")]
+CycleRef = Annotated[str, Field(strict=True, pattern=r"^C_[1-9][0-9]*$")]
 
 
-class ValidatesModel(BaseModel):
-    """Pydantic model representing a validation rule spec."""
+class PlanningMutationError(ValueError):
+    """Structured planning command failure for the presentation boundary."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    def __init__(self, error_code: str) -> None:
+        super().__init__(error_code)
+        self.error_code = error_code
+
+
+class PlanningValue(BaseModel):
+    """Shared admission constraints without configuration or IO."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+
+class ValidatesModel(PlanningValue):
+    """Type-specific validation rule consumed by the existing checker."""
 
     type: Literal["file_exists", "file_glob", "contains_text", "absent_text", "key_path"]
-    file: str | None = Field(default=None, description="Target file path")
-    text: str | None = Field(default=None, description="Expected text content")
-    path: str | None = Field(default=None, description="Expected JSON key path")
+    file: str | None = None
+    text: str | None = None
+    path: str | None = None
+    dir: PlanningText | None = None
+    pattern: PlanningText | None = None
 
     @model_validator(mode="after")
-    def validate_required_fields(self) -> "ValidatesModel":
-        required_fields = {
-            "file_exists": ["file"],
-            "file_glob": ["file"],
-            "contains_text": ["file", "text"],
-            "absent_text": ["file", "text"],
-            "key_path": ["file", "path"],
+    def validate_rule_fields(self) -> Self:
+        required = {
+            "file_exists": {"file"},
+            "file_glob": {"dir", "pattern"},
+            "contains_text": {"file", "text"},
+            "absent_text": {"file", "text"},
+            "key_path": {"file", "path"},
+        }[self.type]
+        supplied = {
+            name for name in ("file", "text", "path", "dir", "pattern")
+            if getattr(self, name) is not None
         }
-        fields = required_fields.get(self.type, [])
-        for field in fields:
-            if getattr(self, field) is None:
-                raise ValueError(f"validates type '{self.type}' requires field '{field}'")
+        if supplied != required:
+            raise ValueError("planning_validation_fields_invalid")
         return self
 
 
-class DeliverableModel(BaseModel):
-    """Pydantic model representing a single deliverable."""
+class DeliverableInput(PlanningValue):
+    """One complete deliverable, without caller-generated references."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    id: str = Field(..., description="Unique deliverable ID, e.g., 'D1.1'")
-    description: str = Field(..., description="Human-readable description of the deliverable")
-    validates: ValidatesModel | None = Field(default=None, description="Optional validation spec")
+    deliverable_name: PlanningText
+    description: PlanningText
+    validates: ValidatesModel | None = None
 
 
-class CycleModel(BaseModel):
-    """Pydantic model representing a single cycle."""
+class CycleInput(PlanningValue):
+    """One complete authoring cycle; its position determines its reference."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    cycle_name: PlanningText
+    deliverables: list[DeliverableInput] = Field(min_length=1)
+    exit_criteria: PlanningText
 
-    cycle_number: int = Field(..., description="1-based cycle index")
-    name: str | None = Field(default=None, description="Optional cycle name")
-    deliverables: list[DeliverableModel] = Field(..., min_length=1, description="Deliverables list")
-    exit_criteria: str = Field(..., description="Non-empty exit criteria description")
+
+class PhaseBlockInput(PlanningValue):
+    """The complete deliverables of one configured non-cycle phase."""
+
+    deliverables: list[DeliverableInput] = Field(min_length=1)
+
+
+class CyclesInput(PlanningValue):
+    """An ordered, nonempty initial cycle collection."""
+
+    cycles: list[CycleInput] = Field(min_length=1)
+
+
+class SavePlanningModel(PlanningValue):
+    """Complete initial plan. Omission, rather than null, means no cycles."""
+
+    cycles: CyclesInput | None = None
+    phases: dict[str, PhaseBlockInput] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_explicit_null_cycles(cls, value: object) -> object:
+        if isinstance(value, dict) and "cycles" in value and value["cycles"] is None:
+            raise ValueError("planning_cycles_null")
+        return value
 
     @model_validator(mode="after")
-    def validate_exit_criteria(self) -> "CycleModel":
-        if not self.exit_criteria.strip():
-            raise ValueError("exit_criteria must be a non-empty string")
+    def validate_nonempty(self) -> Self:
+        if self.cycles is None and not self.phases:
+            raise ValueError("planning_result_empty")
         return self
 
 
-class PhaseCyclesModel(BaseModel):
-    """Pydantic model representing cycle list wrapper."""
+class AppendCycle(PlanningValue):
+    """Append one complete cycle after the original surviving cycles."""
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    op: Literal["append_cycle"]
+    cycle: CycleInput
 
-    total: int = Field(..., gt=0, description="Total number of cycles")
-    cycles: list[CycleModel] = Field(..., description="List of cycles")
+
+class ReplaceCycle(PlanningValue):
+    """Replace an existing original-snapshot cycle as one complete block."""
+
+    op: Literal["replace_cycle"]
+    cycle_id: CycleRef
+    cycle: CycleInput
+
+
+class RemoveCycle(PlanningValue):
+    """Explicitly remove an existing original-snapshot cycle."""
+
+    op: Literal["remove_cycle"]
+    cycle_id: CycleRef
+
+
+class SetPhase(PlanningValue):
+    """Create or replace the complete block for a configured phase."""
+
+    op: Literal["set_phase"]
+    phase: PlanningText
+    block: PhaseBlockInput
+
+
+class RemovePhase(PlanningValue):
+    """Explicitly remove an existing phase block."""
+
+    op: Literal["remove_phase"]
+    phase: PlanningText
+
+
+PlanningOperation = Annotated[
+    AppendCycle | ReplaceCycle | RemoveCycle | SetPhase | RemovePhase,
+    Field(discriminator="op"),
+]
+
+
+class StoredDeliverable(DeliverableInput):
+    """Authoring content with a server-derived reference within its block."""
+
+    deliverable_id: PlanningText
+
+
+class StoredCycle(PlanningValue):
+    """One current cycle with coherent numeric and readable references."""
+
+    cycle_id: CycleRef
+    cycle_number: int = Field(gt=0)
+    cycle_name: PlanningText
+    deliverables: list[StoredDeliverable] = Field(min_length=1)
+    exit_criteria: PlanningText
 
     @model_validator(mode="after")
-    def validate_cycles_total_and_sequential(self) -> "PhaseCyclesModel":
+    def validate_references(self) -> Self:
+        if self.cycle_id != f"C_{self.cycle_number}":
+            raise ValueError("planning_cycle_reference_invalid")
+        for index, deliverable in enumerate(self.deliverables, 1):
+            if deliverable.deliverable_id != f"D_{self.cycle_number}.{index}":
+                raise ValueError("planning_deliverable_reference_invalid")
+        return self
+
+
+class StoredCycles(PlanningValue):
+    """Contiguous current cycles and their derived total."""
+
+    total: int = Field(gt=0)
+    cycles: list[StoredCycle] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_sequence(self) -> Self:
         if self.total != len(self.cycles):
-            raise ValueError(f"total ({self.total}) must equal len(cycles) ({len(self.cycles)})")
-        for idx, cycle in enumerate(self.cycles):
-            expected = idx + 1
-            if cycle.cycle_number != expected:
-                raise ValueError(
-                    f"Cycle at index {idx} has cycle_number {cycle.cycle_number}, "
-                    f"expected {expected} (must be sequential 1-based)"
-                )
+            raise ValueError("planning_cycle_total_invalid")
+        if any(cycle.cycle_number != index for index, cycle in enumerate(self.cycles, 1)):
+            raise ValueError("planning_cycle_sequence_invalid")
         return self
 
 
-class PhaseDeliverablesModel(BaseModel):
-    """Pydantic model representing list of deliverables for a phase (design, etc.)."""
+class StoredPhaseBlock(PlanningValue):
+    """A phase block with local, ordered deliverable references."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    deliverables: list[DeliverableModel] = Field(..., description="List of deliverables")
-
-
-class CyclePlanningModel(BaseModel):
-    """Main model for save_planning_deliverables validation."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    cycles: PhaseCyclesModel | None = Field(default=None, description="TDD cycles plan")
-    design: PhaseDeliverablesModel | None = Field(default=None, description="Design deliverables")
-    validation: PhaseDeliverablesModel | None = Field(
-        default=None, description="Validation deliverables"
-    )
-    documentation: PhaseDeliverablesModel | None = Field(
-        default=None, description="Documentation deliverables"
-    )
-
-
-class UpdateCycleModel(BaseModel):
-    """Pydantic model representing a cycle update payload."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    cycle_number: int = Field(..., description="1-based cycle index")
-    name: str | None = Field(default=None, description="Optional cycle name")
-    deliverables: list[DeliverableModel] | None = Field(
-        default=None, description="Optional deliverables list to update"
-    )
-    exit_criteria: str | None = Field(
-        default=None, description="Optional exit criteria description to update"
-    )
+    deliverables: list[StoredDeliverable] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def validate_update_cycle_fields(self) -> "UpdateCycleModel":
-        if self.exit_criteria is not None and not self.exit_criteria.strip():
-            raise ValueError("exit_criteria must be a non-empty string")
+    def validate_references(self) -> Self:
+        for index, deliverable in enumerate(self.deliverables, 1):
+            if deliverable.deliverable_id != f"D_{index}":
+                raise ValueError("planning_deliverable_reference_invalid")
         return self
 
 
-class UpdateCyclesModel(BaseModel):
-    """Cycles wrapper model for update_planning_deliverables validation."""
+class StoredPlanningModel(PlanningValue):
+    """The sole persisted and queried nested planning representation."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    cycles: StoredCycles | None = None
+    phases: dict[str, StoredPhaseBlock] = Field(default_factory=dict)
 
-    total: int | None = Field(default=None, gt=0, description="Total number of cycles")
-    cycles: list[UpdateCycleModel] | None = Field(default=None, description="List of cycles")
-
-
-class UpdatePlanningModel(BaseModel):
-    """Permissive partial update model for update_planning_deliverables."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    cycles: UpdateCyclesModel | None = Field(default=None, description="TDD cycles plan update")
-    design: PhaseDeliverablesModel | None = Field(
-        default=None, description="Design deliverables update"
-    )
-    validation: PhaseDeliverablesModel | None = Field(
-        default=None, description="Validation deliverables update"
-    )
-    documentation: PhaseDeliverablesModel | None = Field(
-        default=None, description="Documentation deliverables update"
-    )
+    @model_validator(mode="after")
+    def validate_nonempty(self) -> Self:
+        if self.cycles is None and not self.phases:
+            raise ValueError("planning_result_empty")
+        return self
