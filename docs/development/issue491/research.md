@@ -3,7 +3,7 @@
 # Issue \#491 — Planning creation and mutation contracts
 
 **Status:** DRAFT — owner strategy discussion pending  
-**Version:** 1.5  
+**Version:** 1.6  
 **Last Updated:** 2026-10-09
 
 ## Purpose
@@ -12,7 +12,7 @@ Establish the evidenced contract gaps and owner decisions needed for a bounded r
 
 ## Scope In
 
-save_planning_deliverables/update_planning_deliverables input admission, persisted effects, merged-plan validity, identity/order, lifecycle ownership, nested validation specs and complete public readback; relevant existing tests and historical rationale. Supporting scope includes the shared lossless encoder/decoder contract, unused state/status decoder injection cleanup and the inaccurate record_sub_phase timing docstring.
+save_planning_deliverables/update_planning_deliverables input admission, persisted effects, merged-plan validity, identity/order, lifecycle ownership, nested validation specs and complete public readback; relevant existing tests and historical rationale. Supporting scope includes the shared lossless encoder/decoder contract, unused state/status decoder injection cleanup and the inaccurate record_sub_phase timing docstring. Explicit scope extension: add a complete active-branch commit-read capability in the existing Git layer, a narrowly injected execution-evidence consumer at the planning command, and the update force/retry contract with direct wiring, test/helper and reference changes. This is new runtime IO/protection behavior, not merely extending a search limit.
 
 ## Scope Out
 
@@ -285,11 +285,35 @@ The owner requires server-generated cycle/deliverable identifiers to be persiste
 
 The owner deliberately simplifies the error policy on 2026-10-09 instead of requiring a taxonomy of hypothetical failures. Read deeply enough through commits on the active branch to establish the relevant evidence; the last-five-subject helper is insufficient and must not be the protection query. Keep the already agreed issue/workphase/cycle qualification.
 
-If reliable derivation cannot be completed, reject update/mutation by default. This supersedes the producer's earlier proposal to allow some update kinds based on whether their effect needed Git evidence. A force flag in the update input explicitly permits bypassing that uncertainty rejection. It is not an automatic retry or an inference that missing evidence means no commits.
+If reliable derivation cannot be completed, reject update/mutation by default. This supersedes the producer's earlier proposal to allow some update kinds based on whether their effect needed Git evidence. A force flag in the update input explicitly permits bypassing that uncertainty rejection. Every invocation, including force=true, must attempt commit derivation again. If that attempt succeeds, apply normal commit protection; only if the attempt still fails may force permit writing despite the uncertainty. This is not an inference that missing evidence means no commits.
 
 The intervening process is agent-human or agent-agent investigation using tools to diagnose why derivation failed. If that investigation justifies the mutation, the caller may use force; alternatively, continue rejecting the normal update and carry out an agreed manual repair with safe_edit_file. Manual repair is outside the guarded update path, not a hidden tool fallback. No new confirmation workflow or large failure-classification subsystem is requested.
 
 Force concerns inability to establish evidence reliably. Confirmed commit-backed deletion/renumbering protection and complete-result schema validity remain binding; force must not discard already established positive protection or manufacture a valid plan. The forced result should identify the override and unresolved evidence problem rather than report a normal reliable-evidence result. Exact force field and output shape belong to Design.
+
+### Explicit history-read extension — feasibility and impact
+
+The owner requires evidence and impact analysis before treating a complete history reader as feasible within #491. On snapshot c84b407b1f1ecfc3335b2cd07587af34c50165c5, two read-only exploratory probes returned 4,337 commit subjects reachable from HEAD, with 15 commits in main..HEAD and the same 15 current-issue subjects. The checkout is not shallow. Native git log HEAD --format=%H%x09%s completed with exit 0 in 315 ms. A batch log call through the existing GitAdapter.repo.git and installed GitPython 3.1.45 returned the same counts in 159 ms. The existing get_recent_commits() returned only five subjects.
+
+Execution examples at positions 26–28 belong to #483: d6f64173ba944449be4c5854185cfb3c503004cf, 631b32f08a92ec751fae95190ebc17eca0dfc9dd and 4a899fd8269fbe48e97632cfba2edb169db25789. This proves that a last-five selection misses real execution scopes and that inherited execution cycles must not protect #491. All 15 #491 commits at this snapshot are Research; no positive #491 implementation protection was demonstrated.
+
+These probes establish local read feasibility using an existing dependency. They are one-checkout observations, not a latency guarantee, production evidence-query implementation, or end-to-end protection test. The Python probe used -B and made no production/test changes; no native test suite was run. The application import emitted an existing Pydantic field-shadow warning unrelated to history retrieval; no repair was attempted.
+
+Durable reproduction route: inspect snapshot HEAD identity, run git rev-parse --is-shallow-repository, read git log HEAD --format=%H%x09%s without a max-count, compare git log main..HEAD --format=%H%x09%s, and locate the three subjects above. The installed-library probe instantiated GitAdapter with the repository path and used its existing Repo.git.log batch capability; get_recent_commits() remained unchanged.
+
+| Boundary / entry point | Required impact / architectural limit |
+|---|---|
+| Git IO: [GitAdapter](<../../../mcp_server/adapters/git_adapter.py>) and [Git interfaces](<../../../mcp_server/core/interfaces/git.py>) | Introduce a narrow complete-history read contract returning commit identity/subject and sufficient branch-basis metadata. Keep Git traversal/commands in the adapter. The current last-N subject contract is insufficient; no large numeric cap may stand in for completeness. |
+| Evidence interpretation: shared scope codecs and workflow/issue conventions | Decode workphase and distinct cycle, qualify issue ownership and produce protected cycle evidence. Configure phase vocabulary; no phase-name hardcoding or heuristic cycle attribution. Exact reader/result shape belongs to Design. |
+| Planning command: [ProjectManager](<../../../mcp_server/managers/project_manager.py>) / [public update tool](<../../../mcp_server/tools/project_tools.py>) | Consume injected read-only evidence before persistence. Add explicit force with a fresh query on every call. Pure planning models retain structural validation and no Git/state IO. |
+| Wiring: [bootstrap](<../../../mcp_server/bootstrap.py>) and [shared test support](<../../../tests/mcp_server/test_support.py>) | Construct/inject only the new evidence dependency and directly invalidated fixtures. Do not restore unused status-decoding injections. Avoid a ProjectManager/PhaseStateEngine dependency cycle. |
+| Existing last-N consumers | GitManager forwards get_recent_commits; the real cycle E2E reads latest commits, and manager/discovery tests use the old helper/mocks. They do not need a blanket migration: use a distinct complete-history capability for protection and retain focused current-helper behavior. |
+| Behavioral evidence | Prove evidence beyond five commits, exclusion of inherited/other-issue work, and protection against deletion/renumbering. Prove force invokes the reader again: recovered success uses ordinary protection; repeated failure with force may write. Adapt valuable existing tests; no historical-compatibility suite or per-Git-error test explosion. |
+| References / producer artifacts | Update directly affected planning/Git references and #491 artifacts. No new public history tool, external service, dependency, persistent evidence cache, generic audit framework or broad agent/phase-instruction rewrite is required. |
+
+Material remaining risks: branch-basis semantics and issue attribution must be explicit; a query must be tied to a known HEAD and errors must not become an empty success. This measurement does not settle simultaneous history changes or atomic coordination of planning with state-reference mapping. Preserve those limits for Design without developing a new event-sourcing/transaction architecture in Research.
+
+Stored targets already identify blocks: a generated C_n/current cycle number identifies a cycle; the configured phase key identifies its phase block. Names convey meaning and need not serve as unique technical lookup keys. Remaining update discussion concerns the explicit operation form, not inventing a new target identity.
 
 ### Existing evidence and proportional test surface
 
@@ -305,7 +329,7 @@ No tests were added or run in this Research pass. No production/configuration/ag
 
 ## Questions
 
-- Complete the incremental data discussion: exact complete-block and explicit removal semantics for phase/cycle updates, omitted/empty/null meanings and target identification. total is now derived from the valid final plan, not caller input.
+- Complete the incremental data discussion: explicit whole-block operation form and omitted/empty/null meanings. Existing stored cycle references and phase keys already identify targets; no new identity mechanism is needed. total is derived from the valid final plan, not caller input.
 - Use the completed scope consumer register to shape the approved lossless codec contract; refresh it if any affected consumer changes.
 - Use active-branch history without a last-N cutoff and qualify evidence by issue/workphase/cycle. The default rejection on unreliable derivation and explicit force escape after investigation are owner-approved; exact read-only Git boundary, codec representation and output shape belong to Design. Mandatory subphase solely for Git trace retention is no longer recommended.
 - Define state-reference mapping/reset for removed or shifted uncommitted cycles without adding an active/entered-state mutation block. The owner-approved commit protection forbids deleting or renumbering any evidenced cycle; unprotected survivors may compact. Finalize locally scoped deliverable numbering on whole-block replacement.
@@ -323,7 +347,7 @@ Owner direction on 2026-10-08 and 2026-10-09 confirms:
 - Naming/reference boundary: use cycle_name and deliverable_name for meaningful public names. The server supplies numerical references. Use C_<number> for cycles and D_<cycle number>.<deliverable number> for their deliverables; do not present deliverables as subcycles. Persist these generated identifiers in deliverables.json so direct file reads and project tools yield the same references. Exact field spelling and phase-deliverable convention remain open.
 - Completed cycles must never be deleted. Use attributable implementation execution commits as the selected evidence direction for non-deletion, without claiming those commits prove completion. The decoded workphase is part of qualification; commits from other phases or composite/subphase-only labels cannot mark an implementation cycle as historical. Read active-branch history without a last-N cutoff; exact query/interface is Design work.
 - Protection boundary: active, entered or previously touched cycle state does not independently block mutations of deliverables.json. Commit evidence is the protection criterion.
-- Evidence failure boundary: reject update/mutation when reliable commit derivation fails. Allow an explicit force flag to override that uncertainty block after agent-human or agent-agent investigation justifies proceeding. Alternatively retain rejection and perform an agreed manual safe_edit_file repair. This supersedes the earlier cause/effect-based producer proposal. Force does not bypass known commit protection or complete-plan validity; no hypothetical failure taxonomy or automatic fallback is required.
+- Evidence failure boundary: reject update/mutation when reliable commit derivation fails. Allow an explicit force flag to override that uncertainty block after agent-human or agent-agent investigation justifies proceeding. Every force=true invocation still attempts derivation; if successful, ordinary protection applies; if it still fails, force may permit the write. Alternatively retain rejection and perform an agreed manual safe_edit_file repair. This supersedes the earlier cause/effect-based producer proposal. Force does not bypass known commit protection or complete-plan validity; no hypothetical failure taxonomy or skipped evidence attempt is permitted.
 - Deliverable reference boundary: identifiers are local to the enclosing phase/cycle. Identical local IDs across different blocks are allowed; no global disambiguation registry is required. Parent context supplies the distinction, with names for human interpretation. Mutations still replace whole phase/cycle blocks, and numbering remains server-owned.
 - Supporting scope explicitly includes correcting the record_sub_phase docstring to match its pre-commit write/rollback behavior, removing unused decoder/detector injections from state/status consumers and defining/correcting the shared encoder/decoder scope contract. These changes serve reliable cycle derivation from commit scopes; no unrelated cleanup or status reconstruction is included.
 - Workflow configuration boundary (owner-approved 2026-10-09): permit zero or one cycle_based workphase per workflow and reject multiple entries in the existing configuration model. Preserve configuration-driven phase identity; no phase-name hardcoding, compatibility bridge or per-workphase cycle architecture. Current contracts remain valid.
@@ -450,3 +474,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.3 | 2026-10-09 | @imp researcher | Require generated cycle/deliverable identifiers in persistent planning, shared by direct file reads and project readback. |
 | 1.4 | 2026-10-09 | @imp researcher | Confirm local deliverable references, commit-only cycle protection and cause-sensitive evidence handling; exclude active/entered-state immutability. |
 | 1.5 | 2026-10-09 | @imp researcher | Replace uncertainty taxonomy with complete active-branch evidence, default rejection and explicit force after investigation; retain manual repair as an external alternative. |
+| 1.6 | 2026-10-09 | @imp researcher | Require a fresh evidence attempt under force, demonstrate local complete-history reading and explicitly inventory the runtime IO/protection scope extension and limits. |
