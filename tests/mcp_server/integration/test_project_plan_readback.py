@@ -23,11 +23,13 @@ from mcp.types import (
     TextContent,
     TextResourceContents,
 )
+from git import Actor, Repo
 from pydantic import AnyUrl
 
 import mcp_server
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.interfaces import GateViolation
 from mcp_server.core.interfaces.git import CycleEvidence
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.deliverables import (
@@ -37,6 +39,7 @@ from mcp_server.schemas.deliverables import (
     PhaseBlockInput,
     ReplaceCycle,
     SavePlanningModel,
+    SetPhase,
     ValidatesModel,
 )
 from mcp_server.server import MCPServer
@@ -250,3 +253,112 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     second = await _read_windowed_plan(restarted, new_uri)
     assert second["planning_deliverables"] == expected
     assert second["phases"] == first["phases"]
+
+@pytest.mark.parametrize("boundary", ["cycle", "phase"])
+@pytest.mark.parametrize("forced", [False, True])
+def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_update(
+    legacy_suite_roots: SuiteRoots, boundary: str, forced: bool
+) -> None:
+    """Saved and revised rules govern real normal/forced transitions without a restart."""
+    workspace = legacy_suite_roots.workspace
+    repo = Repo.init(workspace)
+    actor = Actor("Gate Test", "gate@example.com")
+    root = repo.index.commit("chore: isolated gate workspace", author=actor, committer=actor)
+    branch = "feature/229-gate"
+    repo.create_head(branch, root).checkout()
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=legacy_suite_roots.server.name,
+            config_root=str(legacy_suite_roots.config),
+            template_root=str(legacy_suite_roots.templates),
+        )
+    )
+    bootstrapper = ServerBootstrapper(settings)
+    graph = bootstrapper._build_manager_graph(bootstrapper._build_config_layer())
+    manager = graph.project_manager
+    engine = graph.phase_state_engine
+    reader = DeliverableInput(
+        deliverable_name="Reader source",
+        description="Reader source exists",
+        validates=ValidatesModel(type="file_glob", dir="src", pattern="**/reader.py"),
+    )
+    first_cycle = CycleInput(
+        cycle_name="Reader", deliverables=[reader], exit_criteria="Reader source present"
+    )
+    manager.initialize_project(229, "Saved gate glob", "feature")
+    manager.save_planning_deliverables(
+        229,
+        SavePlanningModel(
+            cycles=CyclesInput(
+                cycles=[
+                    first_cycle,
+                    first_cycle.model_copy(update={"cycle_name": "Follow-up"}),
+                ]
+            ),
+            phases={"validation": PhaseBlockInput(deliverables=[reader])},
+        ),
+    )
+    docs = workspace / "docs" / "development" / "issue229"
+    docs.mkdir(parents=True)
+    (docs / "validation.md").write_text("# Validation\n", encoding="utf-8")
+    engine.initialize_branch(
+        branch, 229, initial_phase="implementation" if boundary == "cycle" else "validation"
+    )
+    initial = engine.get_state(branch)
+    graph.state_repository.save(initial.with_updates(current_cycle=1, last_cycle=0))
+    initial = engine.get_state(branch)
+    check_id = "D_1.1" if boundary == "cycle" else "D_1"
+
+    def advance() -> dict[str, Any]:
+        if boundary == "cycle":
+            return engine.transition_cycle(branch, to_cycle=2)
+        return engine.transition(branch, to_phase="documentation")
+
+    with pytest.raises(GateViolation) as rejected:
+        advance()
+    assert check_id in rejected.value.report.blocking
+    assert engine.get_state(branch) == initial
+
+    nested = workspace / "src" / "nested"
+    nested.mkdir(parents=True)
+    (nested / "reader.py").write_text("# original reader\n", encoding="utf-8")
+    revised = reader.model_copy(
+        update={"validates": ValidatesModel(type="file_glob", dir="src", pattern="**/revised.py")}
+    )
+    operation = (
+        ReplaceCycle(
+            op="replace_cycle",
+            cycle_id="C_1",
+            cycle=first_cycle.model_copy(update={"deliverables": [revised]}),
+        )
+        if boundary == "cycle"
+        else SetPhase(
+            op="set_phase", phase="validation", block=PhaseBlockInput(deliverables=[revised])
+        )
+    )
+    manager.update_planning_deliverables(229, [operation], context=NoteContext())
+    with pytest.raises(GateViolation) as refreshed:
+        advance()
+    assert check_id in refreshed.value.report.blocking
+    assert engine.get_state(branch) == initial
+
+    if forced:
+        if boundary == "cycle":
+            result = engine.force_cycle_transition(
+                branch, to_cycle=2, skip_reason="Inspect current rule", human_approval_message="Owner approved"
+            )
+        else:
+            result = engine.force_transition(
+                branch, to_phase="documentation", skip_reason="Inspect current rule", human_approval_message="Owner approved"
+            )
+        assert check_id in result["skipped_gates"]
+    else:
+        (nested / "revised.py").write_text("# revised reader\n", encoding="utf-8")
+        result = advance()
+    assert result["success"] is True
+    advanced = engine.get_state(branch)
+    if boundary == "cycle":
+        assert advanced.current_cycle == 2
+    else:
+        assert advanced.current_phase == "documentation"
