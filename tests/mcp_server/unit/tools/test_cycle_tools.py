@@ -781,18 +781,15 @@ class TestForceCycleToolFormatting:
 
         from mcp_server.tools.cycle_tools import ForceCycleTransitionInput  # noqa: PLC0415
 
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForceCycleTransitionInput(
-                to_cycle=2,
-                skip_reason="Valid reason",
-                human_approval_message=True,  # type: ignore
-            )
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForceCycleTransitionInput(
-                to_cycle=2,
-                skip_reason="Valid reason",
-                human_approval_message=False,  # type: ignore
-            )
+        for approval in (True, False):
+            with pytest.raises(ValidationError, match="human_approval_message"):
+                ForceCycleTransitionInput.model_validate(
+                    {
+                        "to_cycle": 2,
+                        "skip_reason": "Valid reason",
+                        "human_approval_message": approval,
+                    }
+                )
 
     def test_force_cycle_transition_input_rejects_empty_approval_and_reason(self) -> None:
         """Reject empty/whitespace approval/reason (C_CYCLE_TOOLS.3)."""

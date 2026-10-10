@@ -3,9 +3,9 @@
   "branch": "refactor/491-planning-mutation-contracts",
   "issue_number": 491,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": 3,
-  "last_cycle": 3,
+  "last_cycle": null,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -30,7 +30,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Return to the existing final cycle for the seven test-only suppressions identified by independent Validation QA; preserve production behavior and rerun affected evidence.",
   "issue_title": "refactor: Reconcile planning creation and mutation contracts",
   "parent_branch": "main",
   "created_at": "2026-10-08T16:57:25.629240+00:00",
@@ -66,8 +66,17 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-10T08:18:20.460723+00:00",
+      "human_approval_message": "Owner instruction: Lees verdict repareer gericht, vraag opnieuw herbeoordeling aan en monitor het antwoord om bij go verder te kunnen gaan met validation.",
+      "forced": true,
+      "skip_reason": "Return to the existing final cycle for the seven test-only suppressions identified by independent Validation QA; preserve production behavior and rerun affected evidence.",
+      "resume_cycle": "C_3"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "refactor"
 }

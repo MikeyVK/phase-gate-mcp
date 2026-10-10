@@ -1348,7 +1348,7 @@ class TestHumanApprovalMessageMigration:
             engine.transition(
                 branch=branch,
                 to_phase="planning",
-                human_approval="Orientation fallback approved",  # type: ignore
+                **dict[str, Any](human_approval="Orientation fallback approved"),
             )
 
     def test_force_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
@@ -1420,7 +1420,7 @@ class TestHumanApprovalMessageMigration:
                 branch=branch,
                 to_phase="planning",
                 skip_reason="Skip planning",
-                human_approval="Orientation fallback approved",  # type: ignore
+                **dict[str, Any](human_approval="Orientation fallback approved"),
             )
 
     def test_force_cycle_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
@@ -1532,7 +1532,7 @@ class TestHumanApprovalMessageMigration:
                 branch=branch,
                 to_cycle=2,
                 skip_reason="Force test",
-                human_approval="Cycle transition fallback approved",  # type: ignore
+                **dict[str, Any](human_approval="Cycle transition fallback approved"),
             )
 
     def test_load_legacy_state_with_human_approval(self, tmp_path: Path) -> None:
