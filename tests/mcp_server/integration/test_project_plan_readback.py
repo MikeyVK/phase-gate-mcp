@@ -27,11 +27,11 @@ from mcp.types import (
 from pydantic import AnyUrl
 
 import mcp_server
-from mcp_server.bootstrap import ConfigLayer, ManagerGraph, ServerBootstrapper
+from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
-from mcp_server.core.interfaces import GateViolation
 from mcp_server.core.interfaces.git import CycleEvidence
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.managers.state_repository import BranchState, FileStateRepository
 from mcp_server.schemas.deliverables import (
     CycleInput,
     CyclesInput,
@@ -45,16 +45,6 @@ from mcp_server.schemas.deliverables import (
 from mcp_server.server import MCPServer
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
 from tests.mcp_server.test_support import make_project_manager
-
-
-class _GateBootstrapper(ServerBootstrapper):
-    """Capture actual manager composition while exercising public startup."""
-
-    graph: ManagerGraph
-
-    def _build_manager_graph(self, configs: ConfigLayer) -> ManagerGraph:
-        self.graph = super()._build_manager_graph(configs)
-        return self.graph
 
 
 class _CompleteEvidence:
@@ -265,9 +255,10 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     assert second["phases"] == first["phases"]
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("boundary", ["cycle", "phase"])
 @pytest.mark.parametrize("forced", [False, True])
-def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_update(
+async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_update(
     legacy_suite_roots: SuiteRoots, boundary: str, forced: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Saved and revised rules govern real normal/forced transitions without a restart."""
@@ -291,11 +282,9 @@ def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_update(
             bypass_version_check=True,
         )
     )
-    bootstrapper = _GateBootstrapper(settings)
-    bootstrapper.bootstrap_target()
-    graph = bootstrapper.graph
-    manager = graph.project_manager
-    engine = graph.phase_state_engine
+    server = ServerBootstrapper(settings).bootstrap_target()
+    manager = make_project_manager(workspace, cycle_evidence_reader=_CompleteEvidence())
+    repository = FileStateRepository(legacy_suite_roots.server / "state.json")
     reader = DeliverableInput(
         deliverable_name="Reader source",
         description="Reader source exists",
@@ -320,23 +309,49 @@ def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_update(
     docs = workspace / "docs" / "development" / "issue229"
     docs.mkdir(parents=True)
     (docs / "validation.md").write_text("# Validation\n", encoding="utf-8")
-    engine.initialize_branch(
-        branch, 229, initial_phase="implementation" if boundary == "cycle" else "validation"
+    initial = BranchState(
+        branch=branch,
+        issue_number=229,
+        workflow_name="feature",
+        current_phase="implementation" if boundary == "cycle" else "validation",
+        current_cycle=1,
+        last_cycle=0,
+        required_phases=manager.get_phases("feature"),
     )
-    initial = engine.get_state(branch)
-    graph.state_repository.save(initial.with_updates(current_cycle=1, last_cycle=0))
-    initial = engine.get_state(branch)
+    repository.save(initial)
+    context_response = await server.server.request_handlers[CallToolRequest](
+        CallToolRequest(params=CallToolRequestParams(name="get_work_context", arguments={}))
+    )
+    assert isinstance(context_response.root, CallToolResult)
+    assert not context_response.root.isError
     check_id = "D_1.1" if boundary == "cycle" else "D_1"
 
-    def advance() -> dict[str, Any]:
-        if boundary == "cycle":
-            return engine.transition_cycle(branch, to_cycle=2)
-        return engine.transition(branch, to_phase="documentation")
+    async def advance(force: bool = False) -> dict[str, Any]:
+        arguments: dict[str, Any] = (
+            {"to_cycle": 2, "issue_number": 229}
+            if boundary == "cycle"
+            else {"branch": branch, "to_phase": "documentation"}
+        )
+        name = "transition_cycle" if boundary == "cycle" else "transition_phase"
+        if force:
+            name = "force_cycle_transition" if boundary == "cycle" else "force_phase_transition"
+            arguments.update(
+                skip_reason="Inspect current rule", human_approval_message="Owner approved"
+            )
+        response = await server.server.request_handlers[CallToolRequest](
+            CallToolRequest(params=CallToolRequestParams(name=name, arguments=arguments))
+        )
+        call_result = response.root
+        assert isinstance(call_result, CallToolResult)
+        text = "\n".join(part.text for part in call_result.content if isinstance(part, TextContent))
+        match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
+        assert match is not None
+        return await _read_resource(server, match.group())
 
-    with pytest.raises(GateViolation) as rejected:
-        advance()
-    assert check_id in rejected.value.report.blocking
-    assert engine.get_state(branch) == initial
+    rejected = await advance()
+    assert rejected["success"] is False
+    assert check_id in rejected["error_message"]
+    assert repository.load(branch) == initial
 
     nested = workspace / "src" / "nested"
     nested.mkdir(parents=True)
@@ -356,32 +371,19 @@ def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_update(
         )
     )
     manager.update_planning_deliverables(229, [operation], context=NoteContext())
-    with pytest.raises(GateViolation) as refreshed:
-        advance()
-    assert check_id in refreshed.value.report.blocking
-    assert engine.get_state(branch) == initial
+    refreshed = await advance()
+    assert refreshed["success"] is False
+    assert check_id in refreshed["error_message"]
+    assert repository.load(branch) == initial
 
     if forced:
-        if boundary == "cycle":
-            result = engine.force_cycle_transition(
-                branch,
-                to_cycle=2,
-                skip_reason="Inspect current rule",
-                human_approval_message="Owner approved",
-            )
-        else:
-            result = engine.force_transition(
-                branch,
-                to_phase="documentation",
-                skip_reason="Inspect current rule",
-                human_approval_message="Owner approved",
-            )
+        result = await advance(force=True)
         assert check_id in result["skipped_gates"]
     else:
         (nested / "revised.py").write_text("# revised reader\n", encoding="utf-8")
-        result = advance()
+        result = await advance()
     assert result["success"] is True
-    advanced = engine.get_state(branch)
+    advanced = repository.load(branch)
     if boundary == "cycle":
         assert advanced.current_cycle == 2
     else:

@@ -596,17 +596,13 @@ phases:
 
     def test_force_phase_transition_input_rejects_boolean_approval(self) -> None:
         """Reject boolean input for human_approval_message (C_PHASE_TOOLS.2)."""
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForcePhaseTransitionInput(
-                branch="feature/42-test",
-                to_phase="design",
-                skip_reason="Valid reason",
-                human_approval_message=True,  # type: ignore
-            )
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForcePhaseTransitionInput(
-                branch="feature/42-test",
-                to_phase="design",
-                skip_reason="Valid reason",
-                human_approval_message=False,  # type: ignore
-            )
+        for approval in (True, False):
+            with pytest.raises(ValidationError, match="human_approval_message"):
+                ForcePhaseTransitionInput.model_validate(
+                    {
+                        "branch": "feature/42-test",
+                        "to_phase": "design",
+                        "skip_reason": "Valid reason",
+                        "human_approval_message": approval,
+                    }
+                )
