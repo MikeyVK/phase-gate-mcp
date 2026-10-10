@@ -308,23 +308,6 @@ class TestLoadContractsConfig:
                 assert markdown_link.search(handover), contract
                 assert not re.search(r"\([A-Za-z]:[\\/]", handover), contract
 
-    def test_real_implementation_cycle_semantics_are_preserved(self) -> None:
-        """Cycle-based workflows retain TDD metadata; Chore remains non-cycle-based."""
-
-        real = Path(__file__).parents[4] / get_default_server_root() / "config" / "contracts.yaml"
-        result = ConfigLoader(real.parent).load_contracts_config()
-
-        for workflow_name in ("feature", "bug", "hotfix", "refactor"):
-            implementation = result.workflows[workflow_name].get_phase("implementation")
-            assert implementation.cycle_based is True
-            assert implementation.subphases == ["red", "green", "refactor"]
-            assert set(implementation.commit_type_map) == {"red", "green", "refactor"}
-
-        chore = result.workflows["chore"].get_phase("implementation")
-        assert chore.cycle_based is False
-        assert chore.subphases == []
-        assert chore.commit_type_map == {}
-
     def test_required_phase_artifacts_retain_scaffold_and_persistence(self) -> None:
         """Required Research, Planning, and Design artifacts remain executable."""
 

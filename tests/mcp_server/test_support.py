@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from collections.abc import Callable
 from functools import partial
@@ -35,6 +34,7 @@ from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackag
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
     PhaseConfigContext,
+    PhaseContractResolver,
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -102,8 +102,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_phase_exit(
@@ -111,8 +113,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def enforce_cycle_exit(
@@ -120,8 +124,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_cycle_exit(
@@ -129,8 +135,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
 
@@ -360,18 +368,8 @@ def make_phase_state_engine(
 
 def make_phase_config_context(
     workspace_root: Path | str,
-    issue_number: int | None = None,
 ) -> PhaseConfigContext:
-    """Build a PhaseConfigContext explicitly from config and optional deliverables."""
-    planning_deliverables = None
-    workspace_path = Path(workspace_root)
-    deliverables_path = workspace_path / get_default_server_root() / "deliverables.json"
-    if issue_number is not None and deliverables_path.exists():
-        data = json.loads(deliverables_path.read_text(encoding="utf-8-sig"))
-        issue_data = data.get(str(issue_number), {})
-        candidate = issue_data.get("planning_deliverables")
-        if isinstance(candidate, dict):
-            planning_deliverables = candidate
+    """Build a PhaseConfigContext explicitly from workflow configuration."""
     return PhaseConfigContext(
         workphases=_load_config(
             workspace_root,
@@ -386,8 +384,21 @@ def make_phase_config_context(
                 "load_contracts_config",
             ),
         ),
-        planning_deliverables=planning_deliverables,
     )
+
+
+def make_phase_contract_resolver(
+    workspace_root: Path | str,
+    *,
+    project_plan_reader: IProjectPlanReader | None = None,
+) -> PhaseContractResolver:
+    """Compose a resolver with the actual plan reader unless a unit double is supplied."""
+    reader = (
+        project_plan_reader
+        if project_plan_reader is not None
+        else make_project_manager(workspace_root)
+    )
+    return PhaseContractResolver(make_phase_config_context(workspace_root), reader)
 
 
 def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine:

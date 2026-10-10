@@ -220,6 +220,7 @@ class PhaseStateEngine:
         self._validate_transition_entry(state, to_phase, resume_cycle, forced=False)
         resolved_approval = self._resolve_approval(human_approval_message, required=False)
         self._workflow_gate_runner.enforce_phase_exit(
+            issue_number=self._require_issue_number(branch, state),
             workflow_name=state.workflow_name,
             phase=state.current_phase,
             cycle_number=state.current_cycle,
@@ -251,6 +252,7 @@ class PhaseStateEngine:
         state = self.get_state(branch)
         self._validate_transition_entry(state, to_phase, resume_cycle, forced=True)
         report = self._workflow_gate_runner.inspect_phase_exit(
+            issue_number=self._require_issue_number(branch, state),
             workflow_name=state.workflow_name,
             phase=state.current_phase,
             cycle_number=state.current_cycle,
@@ -383,6 +385,7 @@ class PhaseStateEngine:
 
         if state.current_cycle is not None:
             runner.enforce_cycle_exit(
+                issue_number=issue_number,
                 workflow_name=state.workflow_name,
                 phase=state.current_phase,
                 cycle_number=state.current_cycle,
@@ -445,6 +448,7 @@ class PhaseStateEngine:
         report: GateReport
         if state.current_cycle is not None:
             report = runner.inspect_cycle_exit(
+                issue_number=issue_number,
                 workflow_name=state.workflow_name,
                 phase=state.current_phase,
                 cycle_number=state.current_cycle,

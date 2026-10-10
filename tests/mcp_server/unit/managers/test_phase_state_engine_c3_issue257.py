@@ -78,8 +78,10 @@ class PassingGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_phase_exit(
@@ -87,8 +89,10 @@ class PassingGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
 
@@ -100,8 +104,10 @@ class ReportingGateRunner(PassingGateRunner):
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport(
             passing=("design-doc",),
             blocking=("planning-doc",),

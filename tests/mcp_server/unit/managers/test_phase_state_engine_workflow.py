@@ -191,12 +191,12 @@ class TestPhaseStateEngineTransitions:
             human_approval_message="Next phase",
         )
 
-        # Forced transition
+        # Forced transition into a phase without a planning prerequisite.
         phase_engine.force_transition(
             branch="feature/47-test",
-            to_phase=feature_phases[3],
-            skip_reason="Design already done",
-            human_approval_message="Force skip design",
+            to_phase=feature_phases[2],
+            skip_reason="Planning needs revision",
+            human_approval_message="Force planning entry",
         )
 
         # Check transition history
@@ -208,7 +208,7 @@ class TestPhaseStateEngineTransitions:
 
         # Second transition (forced)
         assert transitions[1]["forced"] is True
-        assert transitions[1]["skip_reason"] == "Design already done"
+        assert transitions[1]["skip_reason"] == "Planning needs revision"
 
     def test_phase_state_engine_initialize_branch_without_project(
         self, phase_engine: PhaseStateEngine, feature_phases: list[str]

@@ -801,7 +801,8 @@ class ServerBootstrapper:
             PhaseConfigContext(
                 workphases=configs.workphases_config,
                 contracts=configs.contracts_config,
-            )
+            ),
+            project_plan_reader=project_manager,
         )
         workflow_gate_runner = WorkflowGateRunner(
             deliverable_checker=DeliverableChecker(workspace_root),

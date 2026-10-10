@@ -17,6 +17,7 @@ Unit tests for PhaseConfigContext contracts field rename (issue #271 C3)
 
 # Standard library
 import importlib
+from unittest.mock import MagicMock
 
 # Project modules
 from mcp_server.config.schemas.contracts_config import (
@@ -94,9 +95,11 @@ class TestPhaseContractResolverUsesContracts:
             workphases=_minimal_workphases(),
             contracts=_minimal_contracts(),
         )
-        resolver = PhaseContractResolver(ctx)
+        reader = MagicMock()
+        reader.get_project_plan.return_value = {}
+        resolver = PhaseContractResolver(ctx, reader)
         result = resolver.resolve_phase_exit(
-            workflow_name="feature", phase="research", cycle_number=None
+            workflow_name="feature", phase="research", cycle_number=None, issue_number=257
         )
         assert isinstance(result, list)
 

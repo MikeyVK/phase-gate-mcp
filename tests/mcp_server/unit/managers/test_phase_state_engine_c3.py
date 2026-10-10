@@ -41,8 +41,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def inspect_phase_exit(
@@ -50,8 +52,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def enforce_cycle_exit(
@@ -59,8 +63,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def inspect_cycle_exit(
@@ -68,8 +74,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:

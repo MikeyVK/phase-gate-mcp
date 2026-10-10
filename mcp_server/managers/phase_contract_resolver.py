@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.schemas import (
     BranchLocalArtifact,
     CheckSpec,
@@ -17,7 +16,6 @@ from mcp_server.schemas import (
 
 _PHASE_CONTRACTS_DISPLAY_PATH = "config/contracts.yaml"
 _WORKPHASES_DISPLAY_PATH = "config/workphases.yaml"
-_DELIVERABLES_DISPLAY_PATH = "deliverables.json"
 
 
 @dataclass(frozen=True)
@@ -35,36 +33,18 @@ class MergeReadinessContext:
 
 @dataclass(frozen=True)
 class PhaseConfigContext:
-    """Facade bundling workphase, phase contract, and issue deliverable context."""
+    """Facade bundling immutable workflow configuration."""
 
     workphases: WorkphasesConfig
     contracts: ContractsConfig
-    planning_deliverables: dict[str, Any] | None = None
-
-    @staticmethod
-    def _load_planning_deliverables(
-        workspace_root: Path,
-        issue_number: int | None,
-    ) -> dict[str, Any] | None:
-        """Load planning deliverables for one issue from deliverables.json."""
-        if issue_number is None:
-            return None
-
-        deliverables_path = workspace_root / _DELIVERABLES_DISPLAY_PATH
-        if not deliverables_path.exists():
-            return None
-
-        data = json.loads(deliverables_path.read_text(encoding="utf-8-sig"))
-        issue_data = data.get(str(issue_number), {})
-        planning_deliverables = issue_data.get("planning_deliverables")
-        return planning_deliverables if isinstance(planning_deliverables, dict) else None
 
 
 class PhaseContractResolver:
     """Resolve workflow-phase contracts into concrete check specs."""
 
-    def __init__(self, config: PhaseConfigContext) -> None:
+    def __init__(self, config: PhaseConfigContext, project_plan_reader: IProjectPlanReader) -> None:
         self._config = config
+        self._project_plan_reader = project_plan_reader
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
         """Report whether one workflow phase is marked cycle_based in config."""
@@ -114,6 +94,8 @@ class PhaseContractResolver:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> list[CheckSpec]:
         """Resolve phase-exit checks: exit_requires + cycle_exit_requires[cycle_number] if present.
 
@@ -137,6 +119,7 @@ class PhaseContractResolver:
             workflow_name=workflow_name,
             phase=phase,
             cycle_number=cycle_number,
+            issue_number=issue_number,
         )
         return self._merge_checks(config_checks=config_checks, issue_checks=issue_checks)
 
@@ -145,6 +128,8 @@ class PhaseContractResolver:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> list[CheckSpec]:
         """Resolve cycle-exit checks: cycle_exit_requires[cycle_number] only.
 
@@ -166,6 +151,7 @@ class PhaseContractResolver:
             workflow_name=workflow_name,
             phase=phase,
             cycle_number=cycle_number,
+            issue_number=issue_number,
         )
         return self._merge_checks(config_checks=config_checks, issue_checks=issue_checks)
 
@@ -174,9 +160,13 @@ class PhaseContractResolver:
         workflow_name: str,
         phase: str,
         cycle_number: int | None,
+        issue_number: int,
     ) -> list[CheckSpec]:
         """Resolve issue-specific checks from deliverables.json for the active phase."""
-        planning_deliverables = self._config.planning_deliverables
+        project = self._project_plan_reader.get_project_plan(issue_number)
+        if project is None:
+            raise ValueError(f"Project {issue_number} not found. Initialize project first.")
+        planning_deliverables = project.get("planning_deliverables")
         if planning_deliverables is None:
             return []
 

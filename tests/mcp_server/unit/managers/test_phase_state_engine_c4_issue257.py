@@ -18,7 +18,7 @@ from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
     get_default_server_root,
-    make_phase_config_context,
+    make_phase_contract_resolver,
     make_phase_state_engine,
     make_project_manager,
 )
@@ -28,7 +28,7 @@ class BlockingCycleGateRunner:
     """Gate runner fake that blocks normal cycle transitions."""
 
     def __init__(self) -> None:
-        self.enforce_calls: list[tuple[str, str, int | None]] = []
+        self.enforce_calls: list[tuple[str, str, int | None, int]] = []
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
         del workflow_name
@@ -39,8 +39,10 @@ class BlockingCycleGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        self.enforce_calls.append((workflow_name, phase, cycle_number))
+        self.enforce_calls.append((workflow_name, phase, cycle_number, issue_number))
         report = GateReport(
             passing=(),
             blocking=("cycle-docs",),
@@ -53,8 +55,10 @@ class BlockingCycleGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
 
@@ -62,7 +66,7 @@ class ReportingCycleGateRunner:
     """Gate runner fake that reports force-transition inspection results."""
 
     def __init__(self) -> None:
-        self.inspect_calls: list[tuple[str, str, int | None]] = []
+        self.inspect_calls: list[tuple[str, str, int | None, int]] = []
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
         del workflow_name
@@ -73,8 +77,10 @@ class ReportingCycleGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_cycle_exit(
@@ -82,8 +88,10 @@ class ReportingCycleGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        self.inspect_calls.append((workflow_name, phase, cycle_number))
+        self.inspect_calls.append((workflow_name, phase, cycle_number, issue_number))
         return GateReport(
             passing=("cycle-docs",),
             blocking=("cycle-checklist",),
@@ -96,16 +104,18 @@ class ConfigAwareCycleGateRunner:
 
     def __init__(self, resolver: PhaseContractResolver) -> None:
         self._resolver = resolver
-        self.enforce_calls: list[tuple[str, str, int | None]] = []
-        self.inspect_calls: list[tuple[str, str, int | None]] = []
+        self.enforce_calls: list[tuple[str, str, int | None, int]] = []
+        self.inspect_calls: list[tuple[str, str, int | None, int]] = []
 
     def enforce_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        self.enforce_calls.append((workflow_name, phase, cycle_number))
+        self.enforce_calls.append((workflow_name, phase, cycle_number, issue_number))
         return GateReport()
 
     def inspect_cycle_exit(
@@ -113,8 +123,10 @@ class ConfigAwareCycleGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        self.inspect_calls.append((workflow_name, phase, cycle_number))
+        self.inspect_calls.append((workflow_name, phase, cycle_number, issue_number))
         return GateReport()
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
@@ -303,7 +315,7 @@ def _create_config_driven_cycle_engine(
         ),
     )
     gate_runner = ConfigAwareCycleGateRunner(
-        PhaseContractResolver(make_phase_config_context(workspace_root, issue_number=issue_number))
+        make_phase_contract_resolver(workspace_root, project_plan_reader=project_manager)
     )
     engine = make_phase_state_engine(
         workspace_root,
@@ -338,7 +350,7 @@ def test_transition_cycle_raises_when_gate_blocks(
 
     state = engine.get_state(branch)
     assert state.current_cycle == 1
-    assert gate_runner.enforce_calls == [("feature", "implementation", 1)]
+    assert gate_runner.enforce_calls == [("feature", "implementation", 1, 257)]
 
 
 def test_force_cycle_transition_returns_gate_inspection_report(
@@ -373,7 +385,7 @@ def test_force_cycle_transition_returns_gate_inspection_report(
         "blocking": ["cycle-checklist"],
         "details": {"cycle-checklist": "missing force-transition checklist"},
     }
-    assert gate_runner.inspect_calls == [("feature", "implementation", 1)]
+    assert gate_runner.inspect_calls == [("feature", "implementation", 1, 257)]
     assert state.current_cycle == 3
     assert state.last_cycle == 1
     assert history_entry["forced"] is True
@@ -393,7 +405,7 @@ def test_cycle_transition_is_allowed_in_any_cycle_based_phase(workspace_root: Pa
     assert result["success"] is True
     assert result["from_cycle"] == 1
     assert result["to_cycle"] == 2
-    assert gate_runner.enforce_calls == [("feature", "implementation", 1)]
+    assert gate_runner.enforce_calls == [("feature", "implementation", 1, 257)]
     assert state.current_cycle == 2
 
 

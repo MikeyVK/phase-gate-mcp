@@ -42,10 +42,12 @@ class WorkflowGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
         """Run blocking gate evaluation for a phase exit and raise with the full report."""
         checks = self._phase_contract_resolver.resolve_phase_exit(
-            workflow_name, phase, cycle_number
+            workflow_name, phase, cycle_number, issue_number=issue_number
         )
         return self._run_resolved_checks(checks, raise_on_block=True)
 
@@ -54,10 +56,12 @@ class WorkflowGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
         """Run non-blocking gate inspection for a phase exit and return all blocked checks."""
         checks = self._phase_contract_resolver.resolve_phase_exit(
-            workflow_name, phase, cycle_number
+            workflow_name, phase, cycle_number, issue_number=issue_number
         )
         return self._run_resolved_checks(checks, raise_on_block=False)
 
@@ -66,10 +70,12 @@ class WorkflowGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
         """Run blocking gate evaluation for a cycle exit and raise with the full report."""
         checks = self._phase_contract_resolver.resolve_cycle_exit(
-            workflow_name, phase, cycle_number
+            workflow_name, phase, cycle_number, issue_number=issue_number
         )
         return self._run_resolved_checks(checks, raise_on_block=True)
 
@@ -78,10 +84,12 @@ class WorkflowGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
         """Run non-blocking gate inspection for a cycle exit and return all blocked checks."""
         checks = self._phase_contract_resolver.resolve_cycle_exit(
-            workflow_name, phase, cycle_number
+            workflow_name, phase, cycle_number, issue_number=issue_number
         )
         return self._run_resolved_checks(checks, raise_on_block=False)
 
