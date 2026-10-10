@@ -3,8 +3,8 @@
 # Issue \#491 — Planning mutation contract execution
 
 **Status:** DRAFT — independent Planning review requested  
-**Version:** 1.0  
-**Last Updated:** 2026-10-09
+**Version:** 1.1  
+**Last Updated:** 2026-10-10
 
 ## Purpose
 
@@ -238,7 +238,7 @@ Save/update/readback, protection/force, public admission and glob route pass foc
 
 - Pure models do no Git/state/config IO. ProjectManager uses required keyword-only ICycleEvidenceReader; commands return None; successful tool output comes from stored-plan query, not a last-result cache.
 - All operation targets refer to the original snapshot; duplicate/missing targets reject the complete call. Omission is unchanged; explicit removal only; survivor order then append order.
-- Every update, including phase-only/force, attempts fresh evidence. Known positive deletion/renumbering protection always wins. Only continued uncertainty can be overridden; accepted override facts appear only after successful persistence.
+- Every update, including phase-only/force, attempts fresh evidence. Known positive replacement/deletion/renumbering protection always wins, including under force. Only continued uncertainty can be overridden; accepted override facts appear only after successful persistence.
 - Generate C_n, cycle D_n.m and local phase D_n in storage. Names are not lookup keys. Complete resulting-plan validation and configured membership apply to save and update.
 - Preserve query purity, existing envelope/metadata and initialized-without-planning readback. Readback failure after a successful write must not claim rollback.
 - Retain normal numeric total/cycle consumers while migrating name/id and phases-map readers. Adjust helper construction centrally; do not rewrite all 28 helper-caller files.
@@ -259,7 +259,7 @@ Save/update/readback, protection/force, public admission and glob route pass foc
 
 ##### Protection and force retries
 
-**Method:** Inject a small controllable immutable-evidence fake through the public manager boundary. Cover C_1/C_3 protected with C_2 removal, unworked compaction, replacing protected content without renumbering, default unavailable rejection, force retry that becomes complete/positive, and force with continued uncertainty plus retained positives. Assert per-call attempts and observable outcome/notes, including write failure without successful-override note.
+**Method:** Inject a small controllable immutable-evidence fake through the public manager boundary. Cover C_1/C_3 protected with C_2 removal, unworked compaction, rejecting complete-block replacement of a protected cycle with unchanged numbering, both with and without force, default unavailable rejection, force retry that becomes complete/positive, and force with continued uncertainty plus retained positives. Assert per-call attempts and observable outcome/notes, including write failure without successful-override note.
 
 **Expected Result:** Every call retries evidence; positive protection cannot be forced; only uncertainty override is explicitly reported after success.
 
@@ -413,3 +413,4 @@ Active reference reconciliation — Update the smallest complete project/Git/pha
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-09 | @imp planner | Sequence approved Design into three coherent cycles, focused behavior evidence, explicit live cutovers and required broad Validation. |
+| 1.1 | 2026-10-10 | @imp planner | Apply owner-approved cycle immutability with a narrow existing guard/test adjustment; preserve the three-cycle plan and broad Validation obligations. |

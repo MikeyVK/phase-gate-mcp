@@ -3,7 +3,7 @@
   "branch": "refactor/491-planning-mutation-contracts",
   "issue_number": 491,
   "workflow_name": "refactor",
-  "current_phase": "documentation",
+  "current_phase": "planning",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -30,7 +30,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Return to the existing final cycle for the seven test-only suppressions identified by independent Validation QA; preserve production behavior and rerun affected evidence.",
+  "skip_reason": "Owner-requested backward transition from Documentation to Planning for a live demonstration of the renewed planning tools on the existing issue branch.",
   "issue_title": "refactor: Reconcile planning creation and mutation contracts",
   "parent_branch": "main",
   "created_at": "2026-10-08T16:57:25.629240+00:00",
@@ -91,6 +91,14 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "planning",
+      "timestamp": "2026-10-10T20:21:58.956316+00:00",
+      "human_approval_message": "The project owner explicitly instructed: 'Voer transitie naar planning uit'.",
+      "forced": true,
+      "skip_reason": "Owner-requested backward transition from Documentation to Planning for a live demonstration of the renewed planning tools on the existing issue branch."
     }
   ],
   "reconstructed": false,

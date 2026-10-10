@@ -2,9 +2,9 @@
 
 # Issue \#491 — Planning creation and mutation contracts
 
-**Status:** REVIEWED — independent Research GO; owner approved Design  
-**Version:** 1.15  
-**Last Updated:** 2026-10-09
+**Status:** Owner-approved protection amendment; focused review pending  
+**Version:** 1.16  
+**Last Updated:** 2026-10-10
 
 ## Purpose
 
@@ -88,7 +88,7 @@ The owner requires completed cycles to remain non-deletable, but does not assume
 | Existing history reader | GitAdapter.get_recent_commits returns a limited list of subject strings (default five), without commit identities or an issue-branch history boundary. It is insufficient for an exhaustive deletion decision. |
 | Trace meaning and workphase | A commit merely listing a future cycle in planning is not execution evidence. The decoded workphase is an active filter: only implementation-cycle commits may mark this issue's cycle as historical/protected. Require a distinct decoded cycle_number, not a subphase label such as c2. Evidence must also belong to the relevant issue and execution history; inherited C1 commits from other issues must not protect this issue's C1. Exact reachable-history and branch-basis semantics remain to be chosen. |
 | Revert and exceptional repair | Reverting changes does not erase the execution commit from reachable history, so the proposed protection remains. Removing/replacing history is exceptional repair outside this issue; no normal-workflow bypass is proposed. Reflogs, dangling objects and unrelated refs are not assumed to define the guard. |
-| Deletion versus edit | Evidence-based non-deletion does not itself freeze a cycle's name, criteria or deliverables, nor prove completion. Renumbering/replacement must not silently reinterpret an evidenced cycle identity. |
+| Deletion versus edit | Historical interim distinction, superseded by the 2026-10-10 owner amendment in [Approved Strategy](#approved-strategy): qualifying commits now prohibit replacement as well as deletion and renumbering. Commit existence still does not prove completion. |
 | State coherence without extra protection | Active/entered/touched state is not an independent reason to block planning mutations. Commit evidence alone defines cycle deletion/renumbering protection. The approved phase re-entry selection below restores execution coherence after an uncommitted current/last cycle is removed or shifted; do not introduce state-only immutability. |
 | Failure, force and history boundary | Investigate the active branch history without a last-N cutoff and qualify evidence by relevant issue/workphase/cycle. If reliable commit derivation fails, reject the update by default. The owner permits an explicit force input after agent-human or agent-agent investigation establishes that the mutation is justified, or manual repair through safe_edit_file. Force overrides the uncertain-evidence block, not known commit protection or plan validity. Closed issues/historical formats still have no compatibility requirement. |
 
@@ -416,7 +416,7 @@ Owner direction on 2026-10-08 and 2026-10-09 confirms:
 - total is server-derived from the valid resulting plan, persisted and returned for consultation. It is not required caller input and does not trigger deletion. This supersedes the earlier supplied desired-total/removal-above-range direction. Explicit removal intent is required for both phase blocks and cycles; exact request forms remain open.
 - For the first save, the ordered cycle list determines server-assigned cycle numbers. Agent-supplied cycle numbers are unnecessary there. Targeting existing cycles in updates remains an explicit boundary to finish.
 - Both operations apply one common complete-result validation before persistence: the final cycle sequence must be complete and a contiguous 1-based sequence, with valid complete blocks and no duplicate identities. Derived total reflects that validated result; missing cycle content is never manufactured.
-- Deletion may compact the numbering of unworked survivors, retaining their relative order. Reject deletion of a commit-evidenced cycle and any mutation that renumbers an evidenced survivor. C_1/C_3 evidenced with C_2 unworked therefore cannot permit deleting C_2. State coherence remains an additional requirement.
+- Owner amendment on 2026-10-10 after the live replacement demonstration: a cycle with qualifying execution commits is immutable through planning operations. Reject replacement, deletion and any renumbering of such a cycle, including under force. This supersedes the earlier deletion/numerical-identity-only protection. Deletion may still compact unworked survivors, retaining their relative order; C_1/C_3 evidenced with C_2 unworked therefore cannot permit deleting C_2. State coherence remains an additional requirement.
 - Naming/reference boundary: use cycle_name and deliverable_name for meaningful public names. The server supplies numerical references. Use C_<number> for cycles and D_<cycle number>.<deliverable number> for their deliverables; do not present deliverables as subcycles. Persist these generated identifiers in deliverables.json so direct file reads and project tools yield the same references. Exact field spelling and phase-deliverable convention remain open.
 - Completed cycles must never be deleted. Use attributable implementation execution commits as the selected evidence direction for non-deletion, without claiming those commits prove completion. The decoded workphase is part of qualification; commits from other phases or composite/subphase-only labels cannot mark an implementation cycle as historical. Read active-branch history without a last-N cutoff; exact query/interface is Design work.
 - Git selection boundary (owner-approved 2026-10-09): query complete ancestry from captured active-branch HEAD using issue-marker preselection, then validate exact title attribution and decoded execution workphase/cycle. No arbitrary count cutoff, all-refs search, first-parent restriction or required parent-basis dependency.
@@ -566,3 +566,4 @@ Keep shared plan semantics in scope; document unproven concerns separately and a
 | 1.13 | 2026-10-09 | @imp researcher | Approve initialization rejection before persistence and illustrate the caller's explicit cycle selection on the existing phase-transition boundary; resumption remains pending owner approval. |
 | 1.14 | 2026-10-09 | @imp researcher | Capture owner approval of explicit current-plan cycle selection on phase re-entry and split dir/pattern as the sole glob contract; close owner strategy questions for independent QA. |
 | 1.15 | 2026-10-09 | @imp researcher | Record independent Research GO and owner Design approval; mark stale phase-block and history/failure passages as superseded by Approved Strategy (P3). |
+| 1.16 | 2026-10-10 | @imp planner | Record the owner amendment prohibiting replacement, deletion and renumbering of commit-evidenced cycles after the live demonstration. |

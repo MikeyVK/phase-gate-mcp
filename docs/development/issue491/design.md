@@ -2,9 +2,9 @@
 
 # Issue \#491 — Planning creation, whole-block mutation and cycle resumption
 
-**Status:** DRAFT — independent Design review requested  
-**Version:** 1.1  
-**Last Updated:** 2026-10-09
+**Status:** Owner-approved protection amendment; focused review pending  
+**Version:** 1.2  
+**Last Updated:** 2026-10-10
 
 ## Purpose
 
@@ -400,7 +400,7 @@ For every update, attempt fresh evidence before persistence, including force=tru
 
 Emit structured evidence status/head/reason through the existing per-call NoteContext on the update response. An accepted uncertainty override is explicit as evidence_overridden=true in those operation facts and is rendered through the existing presentation configuration. It does not turn unavailable into complete. No persistent evidence cache or completion registry.
 
-Protection concerns cycle deletion/numerical identity. Replacing a protected cycle's complete content is allowed while retaining its original cycle identity/number; renaming or revising deliverables is not independently frozen. Stable current-branch issue identity and snapshot/candidate validity remain preconditions; force does not authorize mutation of another issue or stale/concurrently replaced planning.
+Owner-approved amendment on 2026-10-10: qualifying execution commits make the complete cycle immutable through planning operations. Reject every replace_cycle or remove_cycle targeting that cycle and every operation that renumbers it. Its name, deliverables and exit criteria cannot be replaced under the same identifier. Force overrides only continued evidence uncertainty and never this known protection. Stable current-branch issue identity and snapshot/candidate validity remain preconditions; force does not authorize mutation of another issue or stale/concurrently replaced planning.
 
 ProjectManager's command returns None and publishes those machine-readable facts through the supplied existing NoteContext, as other command paths already do. The tool queries only the stored plan after success. Do not introduce a mutable last-result cache, rerun evidence to reconstruct the outcome, or return a domain query result from the persistence command. The evidence note is an operational result; durable QA evidence records the actual call/outcome rather than treating a transient note/cache identifier as proof. Evidence-attempt diagnostics may accompany a rejected call, but publish an accepted-override note only after successful persistence. Do not display a successful uncertainty override after a write failure.
 
@@ -562,7 +562,7 @@ Save does not need execution evidence because it cannot overwrite an existing pl
 | Outcome | Persisted effect | Force/recovery |
 |---|---|---|
 | Invalid DTO, empty operations, duplicate/missing target, unknown phase or invalid complete result | No plan write | Correct input; force cannot bypass |
-| Known commit-protected deletion/renumbering | No plan write | Revise the mutation; force cannot bypass |
+| Known commit-protected replacement/deletion/renumbering | No plan write | Revise the mutation; force cannot bypass |
 | Evidence unavailable | No plan write by default | Investigate; a later force call retries and may explicitly accept continued uncertainty |
 | Valid candidate and accepted evidence outcome | One plan write; workflow pointers/history unchanged | Query returns the stored reference contract |
 | Invalid resume/approval/target plan | No workflow-state mutation | Read current plan and retry with valid input |
@@ -705,3 +705,4 @@ Planning must choose proportional slices around the actual dependency seams (val
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-09 | @imp designer | Define the approved clean-break planning, Git evidence, codec, initialization and explicit cycle-resumption contracts. |
 | 1.1 | 2026-10-09 | @imp designer | Resolve both independent QA P2 contract gaps: explicit existing read-only plan dependency and injected retained decoder-wrapper constructor/query cutover. |
+| 1.2 | 2026-10-10 | @imp planner | Apply the owner's commit-backed complete-cycle immutability amendment; retain evidence, force and persistence boundaries. |
