@@ -555,19 +555,36 @@ class TestPlanningDeliverablesSchema:
         assert planning_manager.deliverables_file.read_bytes() == before
         assert len(evidence_reader.calls) == 1
 
-    def test_protected_content_can_be_replaced_without_changing_identity(
-        self, planning_manager: ProjectManager, evidence_reader: EvidenceReader
+    @pytest.mark.parametrize("force", [False, True])
+    @pytest.mark.parametrize("evidence_complete", [False, True])
+    def test_protected_cycles_cannot_be_replaced_without_changing_identity(
+        self,
+        planning_manager: ProjectManager,
+        evidence_reader: EvidenceReader,
+        force: bool,
+        evidence_complete: bool,
     ) -> None:
-        evidence_reader.evidence = replace(evidence_reader.evidence, protected_cycle_numbers=(2,))
-        planning_manager.update_planning_deliverables(
-            491,
-            [ReplaceCycle(op="replace_cycle", cycle_id="C_2", cycle=author_cycle("Revised"))],
-            context=NoteContext(),
+        evidence_reader.evidence = replace(
+            evidence_reader.evidence,
+            status="complete" if evidence_complete else "unavailable",
+            protected_cycle_numbers=(2,),
+            reason_code=None if evidence_complete else "git_history_shallow",
         )
-        result = stored_plan(planning_manager)
-        assert result.cycles is not None
-        assert result.cycles.cycles[1].cycle_id == "C_2"
-        assert result.cycles.cycles[1].cycle_name == "Revised"
+        before = planning_manager.deliverables_file.read_bytes()
+        context = NoteContext()
+        with pytest.raises(PlanningMutationError, match="planning_cycle_protected"):
+            planning_manager.update_planning_deliverables(
+                491,
+                [
+                    SetPhase(op="set_phase", phase="validation", block=phase_block("Revised")),
+                    ReplaceCycle(op="replace_cycle", cycle_id="C_2", cycle=author_cycle("Revised")),
+                ],
+                context=context,
+                force=force,
+            )
+        assert planning_manager.deliverables_file.read_bytes() == before
+        assert len(evidence_reader.calls) == 1
+        assert context.entries[0].params["evidence_overridden"] is False
 
     @pytest.mark.parametrize("retry_complete", [False, True])
     def test_force_retries_evidence_and_reports_only_a_successful_override(
