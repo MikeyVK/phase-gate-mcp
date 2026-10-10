@@ -484,10 +484,13 @@ would renumber `C_3` and is rejected if `C_3` has qualifying commits.
 
 Unavailable or incomplete evidence (for example, a shallow checkout, detached HEAD,
 a traversal error or an undecodable exact-issue scope) blocks an ordinary update.
-Investigate first. `force=true` retries the evidence query and permits writing only
-if uncertainty persists; it never overrides known committed cycles, invalid final
-planning or snapshot/issue identity checks. Operation notes report the evidence
-status, captured HEAD, known protected cycles and any accepted uncertainty override.
+Investigate first. Every `force=true` call retries the evidence query. If evidence
+is complete, a valid update proceeds under the normal protection checks, with
+`evidence_overridden=false`. If evidence remains unavailable, force may accept that
+uncertainty; successful persistence then reports `evidence_overridden=true`.
+Known commit protection, final-plan validity and snapshot/issue identity checks remain
+binding in both cases. Operation notes report the evidence status, captured HEAD,
+known protected cycles and any accepted uncertainty override.
 
 The [ProjectManager](../../../mcp_server/managers/project_manager.py) receives a narrow
 read-only evidence dependency; [GitManager](../../../mcp_server/managers/git_manager.py)
