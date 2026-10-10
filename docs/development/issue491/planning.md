@@ -21,7 +21,7 @@ Compatibility/legacy behavior, historical closed-issue cleanup, completion regis
 ## Prerequisites
 
 - Independent Design GO from Beoordeel designplan on e35987036ce1c46714b97b9d970685dc2f71ec65, no remaining findings; owner approved Planning on 2026-10-09.
-- Research v1.15 Approved Strategy remains binding. Design v1.1 owns the concrete contracts; this document only sequences them.
+- Research v1.16 Approved Strategy remains binding. Design v1.2 owns the concrete contracts; this document only sequences them.
 - Before execution obtain independent Planning GO and owner authorization. No production/config/test edits or test runs have been performed in Planning.
 
 ## Summary
@@ -147,7 +147,7 @@ Shared codec and actual Git evidence behavior pass focused tests and applicable 
 
 #### Dependencies
 
-- Approved Design v1.1; no Implementation work before independent Planning GO and owner progression.
+- Approved Design v1.2; no Implementation work before independent Planning GO and owner progression.
 
 #### Obligations
 

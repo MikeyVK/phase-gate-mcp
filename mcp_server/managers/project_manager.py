@@ -268,8 +268,16 @@ class ProjectManager:
         try:
             if evidence.reason_code in {"branch_issue_mismatch", "git_snapshot_changed"}:
                 raise PlanningMutationError("planning_identity_conflict")
+            replacement_targets = {
+                operation.cycle_id
+                for operation in operations
+                if isinstance(operation, ReplaceCycle)
+            }
             for protected in evidence.protected_cycle_numbers:
-                if survivor_positions.get(protected) != protected:
+                if (
+                    survivor_positions.get(protected) != protected
+                    or f"C_{protected}" in replacement_targets
+                ):
                     raise PlanningMutationError("planning_cycle_protected")
             if evidence.status == "unavailable" and not force:
                 raise PlanningMutationError("planning_evidence_unavailable")

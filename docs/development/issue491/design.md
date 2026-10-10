@@ -144,7 +144,7 @@ Test through public commands, queries and phase APIs. Use actual value models an
 | Existing surface | Proportional behavior to prove |
 |---|---|
 | test_project_manager.py / test_project_tools.py | Initial numbering/name/reference readback; write-once save; complete phase/cycle replacement, append/removal and unrelated-block preservation; invalid result leaves bytes unchanged |
-| Planning update coverage | Original-snapshot multi-target semantics, duplicate/missing targets; protected deletion and renumbering; force retries and preserves positive protection |
+| Planning update coverage | Original-snapshot multi-target semantics, duplicate/missing targets; protected replacement, deletion and renumbering; force retries and preserves positive protection |
 | Existing schema/checker tests | One admitted/saved dir+pattern rule executes through the actual public gate/resolver route |
 | test_scope_encoder.py / test_phase_detection.py / existing cycle E2E | Lossless phase/cycle/subphase combinations, unknown result and canonical configured vocabulary; no assertions that obsolete formats fail |
 | Existing Git manager/adapter tests | More than five reachable commits, exact issue attribution, relevant execution phase, unavailable/shallow evidence; matching title normalization preserves other issue/body text |
@@ -396,7 +396,7 @@ GitManager implements ICycleEvidenceReader; it owns title attribution and scope 
 
 The canonical issue filter relies on the existing structured commit-issue contract. It is not a heuristic for arbitrary manually authored unlabelled commits. No historical-format guessing is introduced. GitConfig exposes shared pure canonical-marker/title-attribution helpers so evidence and title normalization do not define divergent rules.
 
-For every update, attempt fresh evidence before persistence, including force=true. Apply any known positive protection first: removed evidenced cycles or renumbered evidenced survivors always reject. Complete evidence applies normal protection. Unavailable evidence rejects by default; force may permit writing despite that uncertainty, while preserving known protection and all plan/phase validity.
+For every update, attempt fresh evidence before persistence, including force=true. Apply any known positive protection first: replacement/removal targeting an evidenced cycle or renumbering an evidenced survivor always rejects. Complete evidence applies normal protection. Unavailable evidence rejects by default; force may permit writing despite that uncertainty, while preserving known protection and all plan/phase validity.
 
 Emit structured evidence status/head/reason through the existing per-call NoteContext on the update response. An accepted uncertainty override is explicit as evidence_overridden=true in those operation facts and is rendered through the existing presentation configuration. It does not turn unavailable into complete. No persistent evidence cache or completion registry.
 

@@ -3,7 +3,7 @@
 # Project & Phase Management Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.3  
+**Version:** 3.4  
 **Last Updated:** 2026-10-10  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../mcp_server/tools/phase_tools.py)  
@@ -478,9 +478,11 @@ or merge-base cutoff. Exact issue subjects and the shared configured scope decod
 identify committed cycles in the workflow's cycle-based execution phase. Other phases,
 other issues and body-only markers do not protect cycles.
 
-A commit-evidenced cycle cannot be deleted or renumbered. Its complete content may
-be replaced if its identifier/number remains fixed. For example, removing `C_2`
-would renumber `C_3` and is rejected if `C_3` has qualifying commits.
+A commit-evidenced cycle cannot be replaced, deleted or renumbered. Every
+`replace_cycle` targeting it is rejected, even when its identifier/number would
+remain fixed. Its name, deliverables and exit criteria are protected together.
+For example, removing `C_2` would renumber `C_3` and is rejected if `C_3` has
+qualifying commits. `force=true` cannot override any of these known protections.
 
 Unavailable or incomplete evidence (for example, a shallow checkout, detached HEAD,
 a traversal error or an undecodable exact-issue scope) blocks an ordinary update.
@@ -695,6 +697,7 @@ Use `get_work_context` and the current project, phase, and cycle tool schemas fo
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.4 | 2026-10-10 | @imp implementer | Reflect owner-approved prohibition of complete-cycle replacement after qualifying execution commits (#491) |
 | 3.3 | 2026-10-10 | @imp documenter | Reconcile complete-block planning, persisted references, Git protection, explicit cycle resumption and initialization guard (#491) |
 | 3.1 | 2026-08-22 | Agent | Align project, transition, and planning output projections with structured DTOs |
 | 3.0 | 2026-07-21 | Agent | Update state management sections with dynamic state file version validation and Clean Break strategy (#438) |

@@ -431,6 +431,7 @@ class UpdatePlanningDeliverablesInput(BaseModel):
         min_length=1,
         description=(
             "Replace/remove original C_n cycles or named phase blocks explicitly. "
+            "Cycles with qualifying execution commits cannot be replaced or removed. "
             "Append cycles after surviving originals in request order. "
             "All targets resolve before renumbering; duplicate targets reject the whole request."
         ),
@@ -440,7 +441,8 @@ class UpdatePlanningDeliverablesInput(BaseModel):
         strict=True,
         description=(
             "Retry local Git evidence and accept continued uncertainty after investigation. "
-            "Known commit-protected deletion/renumbering and invalid planning remain forbidden."
+            "Known commit-protected replacement/deletion/renumbering "
+            "and invalid planning remain forbidden."
         ),
     )
 
@@ -587,7 +589,8 @@ class UpdatePlanningDeliverablesTool(
             "Mutate an existing plan using append_cycle, replace_cycle, remove_cycle, "
             "set_phase or remove_phase. Targets refer to the original snapshot; complete "
             "blocks replace their contents. The server derives references and totals, "
-            "protects committed cycle numbers, and retries evidence on every force call."
+            "protects committed cycles from replacement/deletion/renumbering, "
+            "and retries evidence on every call."
         )
 
     @property
