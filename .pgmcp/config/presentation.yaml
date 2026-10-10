@@ -135,7 +135,7 @@ global:
 
         close_open_pr_suggestion: "Call merge_pr to close the open PR before continuing branch work."
 
-        transition_phase_suggestion: 'transition_phase(to_phase="{required_phase}")'
+        transition_phase_suggestion: "Request a transition to the {required_phase} phase."
 
         load_context_suggestion: "Call get_work_context before using this tool."
 

@@ -433,7 +433,7 @@ class TestServerToolRegistration:
         assert response.root.isError is True
         assert "requires phase 'ready'" in text
         assert "Current phase: 'documentation'" in text
-        assert 'transition_phase(to_phase="ready")' in text
+        assert "Request a transition to the ready phase." in text
         mock_create_pr.assert_not_called()
 
     @pytest.mark.asyncio
