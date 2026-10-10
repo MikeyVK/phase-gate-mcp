@@ -3,8 +3,8 @@
 # Adding a First-Class Workflow
 
 **Status:** DEFINITIVE  
-**Version:** 1.0  
-**Last Updated:** 2026-08-18
+**Version:** 1.1  
+**Last Updated:** 2026-10-10
 
 ---
 
@@ -119,6 +119,25 @@ Add the workflow under `contracts.yaml`:
 4. Keep `ready` terminal under the current PR policy.
 5. Write compact, workflow-specific instructions instead of copying another
    workflow wholesale.
+
+A workflow supports **zero or one** `cycle_based` phase. The single top-level
+planning cycle list belongs to that configured phase; multiple cycle-based phases
+are rejected during configuration admission. Other planned phases use named
+whole-phase blocks. The shared scope contract also admits phase/sub-phase vocabulary
+at configuration validation: names must map unambiguously to uppercase tokens and
+must not collide with the reserved cycle/sub-phase delimiters. See the
+[scope contract source](../../mcp_server/core/scope_contract.py) before extending that vocabulary. The bundled Hotfix and Chore contracts have no cycle-based
+phase: keep these workflows compact, and choose a fuller workflow when the work
+needs a cycle plan.
+
+Planning save/update admission belongs in `enforcement.yaml` (the bundled policy
+permits Planning), while phase order and cycle behavior belong in `contracts.yaml`.
+On re-entry to the cycle-based phase after a planning mutation, instructions should
+require an explicit current-plan `resume_cycle="C_n"`. Refer to the
+[project and phase tools](tools/project.md) for complete-block operations,
+commit-protected numbering and first-entry/resumption rules. Commit instructions
+should supply the title without repeating the issue suffix added by the Git tool;
+see the [scope and title contract](tools/git.md#commit-scope-format).
 
 For every phase instruction, verify the semantic contract independently:
 
@@ -265,4 +284,5 @@ Confirm these relationships explicitly:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.1 | 2026-10-10 | @imp documenter | Document zero/one cycle-phase admission and planning/resumption policy boundaries (#491) |
 | 1.0 | 2026-08-18 | Agent | Initial deterministic workflow-extension procedure |

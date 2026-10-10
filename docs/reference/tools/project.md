@@ -3,8 +3,8 @@
 # Project & Phase Management Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.2  
-**Last Updated:** 2026-09-13  
+**Version:** 3.3  
+**Last Updated:** 2026-10-10  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../mcp_server/tools/phase_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_project_tools.py](../../../tests/mcp_server/unit/tools/test_project_tools.py), [tests/mcp_server/unit/tools/test_transition_phase_tool.py](../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py), [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py)  
@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Complete reference documentation for project lifecycle and phase management tools. These 4 tools provide workflow initialization, phase plan inspection, sequential phase transitions, and emergency phase skipping with human approval.
+Complete reference documentation for project lifecycle and phase management tools. The tools provide workflow initialization, complete planning queries and mutations, and phase/cycle transitions with configured admission and gates.
 
 Phase state persists in [.pgmcp/state.json](../../../.pgmcp/state.json) and workflow definitions / planning deliverables persist in [.pgmcp/deliverables.json](../../../.pgmcp/deliverables.json). Both files are branch-local artifacts synchronized with git branch operations and neutralized before PR submission.
 
@@ -21,12 +21,14 @@ Phase state persists in [.pgmcp/state.json](../../../.pgmcp/state.json) and work
 
 ## Overview
 
-The MCP server provides **4 project/phase tools**:
+The core project/phase tools are:
 
 | Tool | Purpose | Key Feature |
 |------|---------|-------------|
 | `initialize_project` | Initialize project with workflow selection | Human selects workflow type |
-| `get_project_plan` | Inspect project phase plan | Read-only phase inspection |
+| `get_project_plan` | Inspect project phase plan | Read-only complete planning query |
+| `save_planning_deliverables` | Save the initial complete plan | Server-derived references |
+| `update_planning_deliverables` | Mutate complete planning blocks | Explicit operations and Git protection |
 | `transition_phase` | Sequential phase transition | Strict validation |
 | `force_phase_transition` | Skip phases (emergency) | Requires reason + human approval |
 
@@ -104,10 +106,10 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 #### Behavior Notes
 
-- **State Persistence:** Creates `.pgmcp/deliverables.json` (workflow definition) and `.pgmcp/state.json` (branch state) atomically
+- **State Persistence:** Writes project metadata and branch state separately. Each file uses its existing persistence path; there is no transaction spanning both files.
 - **Parent Branch Auto-Detection:** If `parent_branch` not provided, attempts detection via `git reflog`
 - **Branch Validation:** Current branch must match pattern `<type>/<issue_number>-*`
-- **Idempotency:** Re-running on same branch returns error (project already initialized)
+- **Same-Branch Guard:** Existing same-branch state is rejected before project metadata can be overwritten. The direct branch initializer uses the same guard. Absent/other-branch state and the existing recovery route after PR closure remain supported; initialization does not unlock an open PR.
 - **Configured workflow required:** `custom_phases` does not create an arbitrary workflow; `workflow_name` must exist in `contracts.yaml`, and strict transitions use that configured contract
 
 #### Workflow Responsibility
@@ -149,7 +151,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
   - `name`: `string`
   - `status`: `string`
   - `tasks`: `list[PhaseTaskDTO]` with `id`, `title`, and `status`
-- `planning_deliverables`: optional existing `CyclePlanningModel`, containing every stored cycle number/name, ordered deliverable ID/description/validates and exit criterion, plus design/validation/documentation deliverables. It is absent from the compact cache JSON when planning has not yet been saved. Invalid stored planning returns a failed result; it is never silently omitted from a successful partial plan.
+- `planning_deliverables`: optional `StoredPlanningModel`, containing ordered cycles with server-derived references, names, complete deliverables and exit criteria, plus configured non-cycle phase blocks keyed by phase name. It is absent from the compact cache JSON when planning has not yet been saved. Invalid stored planning returns a failed result; it is never silently omitted from a successful partial plan.
 
 #### Reading large cached plans
 
@@ -191,6 +193,7 @@ Transition branch to next phase (strict sequential validation).
 | `branch` | `str` | **Yes** | Branch name (e.g., `"feature/123-oauth"`) |
 | `to_phase` | `str` | **Yes** | Target phase to transition to. Run `get_work_context()` to see valid phases for the current branch; enum is injected at runtime from `workphases.yaml`. |
 | `human_approval_message` | `str` | No | Optional human approval message (audit trail) |
+| `resume_cycle` | `str` | Conditional | Existing current-plan `cycle_id` (`"C_2"`, for example), required on re-entry to a cycle-based phase; see cycle entry below. |
 
 #### Returns
 
@@ -239,6 +242,7 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 | `to_phase` | `str` | **Yes** | Target phase to transition to (can skip phases). Run `get_work_context()` to see valid phases for the current branch; enum is injected at runtime from `workphases.yaml`. |
 | `skip_reason` | `str` | **Yes** | Reason for skipping validation (audit trail) — must be non-empty (min_length=1) |
 | `human_approval_message` | `str` | **Yes** | Human approval message (REQUIRED for forced transitions) — must be non-empty (min_length=1) |
+| `resume_cycle` | `str` | Conditional | Existing current-plan `cycle_id` (`"C_2"`, for example), required on re-entry to a cycle-based phase; see cycle entry below. |
 
 #### Returns
 
@@ -259,11 +263,36 @@ The bounded text contains the normal transition fields and gate evidence plus
 
 #### Behavior Notes
 
-- **No Validation:** Bypasses sequential phase validation
+- **Forced Transition:** Bypasses normal exit gates and sequential ordering. Required approval and cycle-entry validity still apply; an invalid or missing resumption target is rejected before any state write.
 - **Branch-Local State:** Updates `.pgmcp/state.json` for the active branch; forced-transition metadata stays in that branch-local state
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Use Sparingly:** Intended for emergency situations only
 - **Required Fields:** Both `skip_reason` and `human_approval_message` are REQUIRED (not optional)
+
+---
+
+### Entering or resuming a cycle-based phase
+
+Both phase-transition tools validate the complete current plan and cycle selection
+before changing state, transition history, or sub-phase context. First entry without
+prior cycle state/history selects `C_1`; an explicitly supplied first-entry target must
+also be `C_1`. Re-entry requires an explicit existing `resume_cycle` from the current
+plan. Non-cycle targets do not admit this field.
+
+For example, after an approved return to Planning and a complete-block mutation:
+
+```json
+{
+  "branch": "feature/123-oauth",
+  "to_phase": "implementation",
+  "resume_cycle": "C_2"
+}
+```
+
+Successful entry sets `current_cycle` to the selected number, clears `last_cycle`
+and the sub-phase context, and preserves factual cycle history. Planning mutations
+do not change workflow position. Git evidence protects cycle numbering, not completion;
+a previously active cycle alone is not protected against planning changes.
 
 ---
 
@@ -291,35 +320,100 @@ gate sequences remain in the cached `CycleTransitionOutput` or
 **Class:** `SavePlanningDeliverablesTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py)
 
-Save cycle planning deliverables for an issue to deliverables.json. Validates each `validates` entry schema before persisting.
+Save the complete initial plan once. The bundled [enforcement policy](../../../.pgmcp/config/enforcement.yaml)
+admits both planning mutation tools only in Planning; admission uses the existing
+configured mechanism rather than a hardcoded phase check.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `issue_number` | `int` | **Yes** | GitHub issue number |
-| `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
+| `issue_number` | positive `int` | **Yes** | Initialized issue to plan |
+| `planning_deliverables` | `SavePlanningModel` | **Yes** | Complete named blocks, using the input shape below |
+
+Supply ordered named cycles and/or configured non-cycle phase blocks:
+
+```json
+{
+  "issue_number": 123,
+  "planning_deliverables": {
+    "cycles": {
+      "cycles": [
+        {
+          "cycle_name": "Authentication",
+          "deliverables": [
+            {
+              "deliverable_name": "Authentication service",
+              "description": "Implement the configured authentication boundary",
+              "validates": {"type": "file_exists", "file": "backend/services/auth_service.py"}
+            }
+          ],
+          "exit_criteria": "Authentication behavior is verified"
+        }
+      ]
+    },
+    "phases": {
+      "validation": {
+        "deliverables": [
+          {
+            "deliverable_name": "Validation report",
+            "description": "Record observed validation outcomes"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+- Each cycle requires `cycle_name`, a nonempty complete `deliverables` list and
+  `exit_criteria`. Each deliverable requires `deliverable_name` and `description`;
+  `validates` is optional.
+- Each phase block contains its complete nonempty `deliverables` list. Phase names
+  must belong to the selected workflow, and its cycle-based phase uses `cycles`.
+- A workflow may contain zero or one cycle-based phase. Supply `cycles` when it has
+  one; omit the key when it has none. Explicit `null` is rejected. At least one
+  planning block must remain.
+- Callers do not supply totals, numeric cycle positions, or stored identifiers.
+  The server derives and persists contiguous `C_1`, `C_2`, … cycle references,
+  `D_1.1`, `D_1.2`, … within a cycle and `D_1`, `D_2`, … within each phase.
+  Deliverable references are local to their enclosing block; names describe content
+  and are not global lookup keys.
+
+#### Validation rules
+
+The [planning values](../../../mcp_server/schemas/deliverables.py) admit exactly the
+fields required for each `validates.type`:
+
+| Type | Required fields besides `type` |
+|------|---------------------------------|
+| `file_exists` | `file` |
+| `file_glob` | `dir`, `pattern` |
+| `contains_text`, `absent_text` | `file`, `text` |
+| `key_path` | `file`, `path` |
+
+For example: `{"type":"file_glob","dir":"mcp_server","pattern":"**/*.py"}`.
+The common final-plan validation runs before persistence for both save and update.
+The live deliverable-gate resolver reads the current plan and passes these rules to
+the existing checker. The planning document's scaffold context is a separate authoring
+schema: discover it with `scaffold_schema(artifact_type="planning")`, and use returned
+planning references in the document rather than inventing command identifiers.
 
 #### Returns (via MCP Resource Cache)
 
-`save_planning_deliverables` presents the issue, total cycles, total deliverables, and a
-bounded per-cycle deliverable count. The complete structured result remains cached.
+Successful save and update responses use `PlanningDeliverablesOutput`:
 
-The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains:
-- `success`: `bool`
-- `error_message`: `string | null`
-- `post_tool_instruction`: `string | null`
-- `issue_number`: `int`
-- `total_cycles`: `int`
-- `total_deliverables`: `int`
-- `cycles`: `list[PlannedCycleSummary]` with `cycle_number` and `deliverables_count`
+- `success`, `error_message`, `post_tool_instruction`, `issue_number`;
+- `error_code` for structured failures;
+- `total_cycles`, `total_deliverables`;
+- `cycles`: summaries with `cycle_id`, `cycle_number`, `cycle_name` and `deliverables_count`;
+- `planning_deliverables`: the complete persisted `StoredPlanningModel`.
 
-#### Behavior Notes
-
-- **Write-Once:** Raises an error if deliverables already exist for the issue (use `update_planning_deliverables` to extend)
-- **Layer 2 Validation:** Every `validates` entry is validated before writing
-
----
+Successful counts and references come from persisted readback, using the same complete
+representation as `get_project_plan` and direct file reads. A rejected command does
+not persist its candidate plan. A failed post-write readback reports
+`planning_readback_failed`; it does not claim that persistence was rolled back.
+Failure counts do not describe an existing plan; query it explicitly if needed.
 
 ### update_planning_deliverables
 
@@ -327,37 +421,84 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 **Class:** `UpdatePlanningDeliverablesTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py)
 
-Merge-update cycle planning deliverables for an issue in deliverables.json. Must be preceded by `save_planning_deliverables`. New cycles are appended; deliverables within existing cycles are merged by id.
+Apply explicit operations to an existing saved plan. Each replacement supplies the
+whole cycle or phase block; omitted blocks stay unchanged.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `issue_number` | `int` | **Yes** | GitHub issue number |
-| `planning_deliverables` | `dict` | **Yes** | Partial or full planning deliverables to merge. New cycles are appended; existing cycles have deliverables merged by id. Deliverable entries may include a `validates` spec with `type` + required fields (Layer 2 validation). |
+| `issue_number` | positive `int` | **Yes** | Initialized issue with a saved plan |
+| `operations` | nonempty list | **Yes** | Discriminated operations below |
+| `force` | `bool` | No | Default `false`; retry evidence and accept continued uncertainty only |
 
-#### Returns (via MCP Resource Cache)
+| `op` | Additional fields | Effect |
+|--------|-------------------|--------|
+| `append_cycle` | `cycle` | Append one complete named cycle |
+| `replace_cycle` | `cycle_id`, `cycle` | Replace an existing complete cycle |
+| `remove_cycle` | `cycle_id` | Explicitly delete an existing cycle |
+| `set_phase` | `phase`, `block` | Create or replace a complete configured non-cycle phase block |
+| `remove_phase` | `phase` | Explicitly delete an existing phase block |
 
-`update_planning_deliverables` uses the same bounded presentation and cached
-`PlanningDeliverablesOutput` contract as `save_planning_deliverables`.
+Here `cycle` and `block` use the save authoring shapes. All targets resolve against
+the original plan snapshot before renumbering; missing or duplicate targets reject
+the whole request. Surviving cycles retain their order; appended cycles follow them
+in request order. The server regenerates identifiers and totals for the final plan.
+Null values are not deletion requests, and there is no per-deliverable merge.
+The following example assumes the saved plan contains an unprotected `C_2` whose
+removal does not renumber a protected survivor.
 
-The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains:
-- `success`: `bool`
-- `error_message`: `string | null`
-- `post_tool_instruction`: `string | null`
-- `issue_number`: `int`
-- `total_cycles`: `int`
-- `total_deliverables`: `int`
-- `cycles`: `list[PlannedCycleSummary]` with `cycle_number` and `deliverables_count`
+```json
+{
+  "issue_number": 123,
+  "operations": [
+    {
+      "op": "set_phase",
+      "phase": "documentation",
+      "block": {
+        "deliverables": [
+          {
+            "deliverable_name": "API reference",
+            "description": "Reconcile the active authentication reference"
+          }
+        ]
+      }
+    },
+    {"op": "remove_cycle", "cycle_id": "C_2"}
+  ]
+}
+```
 
-#### Behavior Notes
+#### Git protection and force
 
-- **Requires Prior Save:** Returns error if `save_planning_deliverables` was not called first (write-once guard)
-- **Merge Strategy:** New cycle → append; existing cycle + new id → append; existing id → overwrite
-- **Layer 2 Validation:** Every `validates` entry is validated before writing
+Every update attempts fresh local Git evidence, including phase-only updates and
+`force=true` calls. Traversal starts at the captured active-branch HEAD and examines
+its reachable history without a fixed commit-count limit, network fetch, other refs
+or merge-base cutoff. Exact issue subjects and the shared configured scope decoder
+identify committed cycles in the workflow's cycle-based execution phase. Other phases,
+other issues and body-only markers do not protect cycles.
+
+A commit-evidenced cycle cannot be deleted or renumbered. Its complete content may
+be replaced if its identifier/number remains fixed. For example, removing `C_2`
+would renumber `C_3` and is rejected if `C_3` has qualifying commits.
+
+Unavailable or incomplete evidence (for example, a shallow checkout, detached HEAD,
+a traversal error or an undecodable exact-issue scope) blocks an ordinary update.
+Investigate first. `force=true` retries the evidence query and permits writing only
+if uncertainty persists; it never overrides known committed cycles, invalid final
+planning or snapshot/issue identity checks. Operation notes report the evidence
+status, captured HEAD, known protected cycles and any accepted uncertainty override.
+
+The [ProjectManager](../../../mcp_server/managers/project_manager.py) receives a narrow
+read-only evidence dependency; [GitManager](../../../mcp_server/managers/git_manager.py)
+owns configured interpretation and the Git adapter owns traversal. Planning value
+models perform no Git or state IO. Writes use the existing snapshot check and atomic
+file persistence, without a cross-process or cross-file transaction promise.
+
+The response contract is the same as save. Existing workspaces must explicitly adopt
+the new input and stored formats; no compatibility merge or automatic migration is supplied.
 
 ---
-
 
 ### .pgmcp/state.json
 
@@ -423,8 +564,33 @@ Workflow definition and planning deliverables (branch-local artifact):
       "created_at": "2026-02-08T10:00:00Z",
       "planning_deliverables": {
         "cycles": {
-          "total": 3,
-          "cycles": []
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Authentication",
+              "deliverables": [
+                {
+                  "deliverable_id": "D_1.1",
+                  "deliverable_name": "Authentication service",
+                  "description": "Implement the configured authentication boundary"
+                }
+              ],
+              "exit_criteria": "Authentication behavior is verified"
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_id": "D_1",
+                "deliverable_name": "Validation report",
+                "description": "Record observed validation outcomes"
+              }
+            ]
+          }
         }
       }
     }
@@ -435,7 +601,7 @@ Workflow definition and planning deliverables (branch-local artifact):
 **Behavior:**
 - Wrapped in a top-level `"schema_version": "1.0.0"` envelope and validated by `StateVersionValidator` on load.
 - Initialized by `initialize_project`.
-- Extended by `save_planning_deliverables` and `update_planning_deliverables`.
+- Initial planning is saved once; updates replace or explicitly remove complete blocks and derive references/totals before persistence.
 - On schema version mismatch or corruption, `StateVersionValidator` backs up to `deliverables.json.bak` and raises `ConfigError`.
 - Treated as a branch-local artifact and neutralized before `submit_pr`.
 ---
@@ -526,6 +692,7 @@ Use `get_work_context` and the current project, phase, and cycle tool schemas fo
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.3 | 2026-10-10 | @imp documenter | Reconcile complete-block planning, persisted references, Git protection, explicit cycle resumption and initialization guard (#491) |
 | 3.1 | 2026-08-22 | Agent | Align project, transition, and planning output projections with structured DTOs |
 | 3.0 | 2026-07-21 | Agent | Update state management sections with dynamic state file version validation and Clean Break strategy (#438) |
 | 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
