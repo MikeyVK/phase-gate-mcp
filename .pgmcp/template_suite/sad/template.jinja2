@@ -1,0 +1,110 @@
+{#
+arc42 component: exact pinned upstream LICENSE.txt notice
+The arc42 template and documentation is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+
+Under this license, you’re free to:
+
+* Share: copy and redistribute the material in any medium or format
+* Adapt: remix, transform, and build upon the material for any purpose, even commercially.
+
+We, the licensors, (Gernot Starke and Peter Hruschka, the creators of arc42) cannot (and surely will not) revoke these freedoms as long as you follow the license terms.
+
+You must give appropriate credit, provide a link to the license, and indicate if changes to arc42 were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
+
+If you remix, transform, or build upon material from arc42 and share the result outside your own organization, you must distribute your contributions under the same license as the original.
+
+What this means for companies: You can copy, modify and use arc42 inside your organization without ever publishing anything. The ShareAlike condition applies when you make an adapted version of the template available outside your organization, for example on your website, in a public repository or as part of a product you ship.
+
+You are completely free to use or publish your own content, even if it is embedded in the arc42 template, according to your own rules. Publishing an architecture document in arc42 structure does not place your own content under CC BY-SA.
+
+Details: https://arc42.org/license
+
+arc42 component attribution
+Source: arc42 9.0-EN, July 2025
+Authors: Gernot Starke and Peter Hruschka
+Pinned revision: 32fd461c91b184777e14f7d66b4e46db936fd3e5
+Source template: https://raw.githubusercontent.com/arc42/arc42-template/32fd461c91b184777e14f7d66b4e46db936fd3e5/EN/arc42-template.adoc
+Source license: https://raw.githubusercontent.com/arc42/arc42-template/32fd461c91b184777e14f7d66b4e46db936fd3e5/LICENSE.txt
+License: Creative Commons Attribution-ShareAlike 4.0 International
+License terms: https://creativecommons.org/licenses/by-sa/4.0/
+Changes: converted twelve English arc42 chapter carriers to existing pgmcp Markdown tiers;
+replaced upstream instructional prose with proportional authored draft carriers;
+added an explicit architecture perspective, compact linked ADR index, quality-scenario
+records and inherited pgmcp provenance/document metadata/history.
+The distributed arc42 template adaptation remains under CC BY-SA 4.0.
+Caller-authored architecture content is separately owned and is not placed under
+CC BY-SA merely by using this structure. No endorsement by arc42's authors is claimed.
+The co-located LICENSE-arc42.txt preserves the pinned upstream license notice.
+#}
+{% extends "shared/templates/bases/tier2_markdown_document.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+
+{% macro adr_index(records) -%}
+{%- set rows = namespace(items=['| ADR | Status | Record |', '| --- | --- | --- |']) -%}
+{%- for record in records -%}
+{%- set rows.items = rows.items + [
+    '| ' ~ sections.scalar_cell(record.adr_id) ~ ' | ' ~ sections.scalar_cell(record.status)
+    ~ ' | ' ~ links.inline(record.link) ~ ' |'
+] -%}
+{%- endfor -%}
+{{ rows.items | join('\n') }}
+{%- endmacro %}
+
+{% macro quality_scenarios(records) -%}
+{%- set selected = namespace(parts=[]) -%}
+{%- for record in records -%}
+{%- set selected.parts = selected.parts + [
+    sections.join([
+        sections.heading(record.name, 4),
+        sections.labelled('Scenario', record.scenario),
+        sections.labelled('Response Measure', record.response_measure)
+    ])
+] -%}
+{%- endfor -%}
+{{ sections.join(selected.parts) }}
+{%- endmacro %}
+
+{% block document_body -%}
+{%- set selected = namespace(parts=[
+    sections.labelled('Architecture Scope', links.label(content.architecture_scope))
+]) -%}
+{%- for field, heading in [
+    ('introduction_and_goals', '1. Introduction and Goals'),
+    ('architecture_constraints', '2. Architecture Constraints'),
+    ('context_and_scope', '3. Context and Scope'),
+    ('solution_strategy', '4. Solution Strategy'),
+    ('building_block_view', '5. Building Block View'),
+    ('runtime_view', '6. Runtime View'),
+    ('deployment_view', '7. Deployment View'),
+    ('crosscutting_concepts', '8. Cross-cutting Concepts')
+] -%}
+{%- set selected.parts = selected.parts + [sections.prose(heading, content[field])] -%}
+{%- endfor -%}
+{%- set selected.parts = selected.parts + [
+    sections.join([
+        sections.heading('9. Architecture Decisions'),
+        content.architecture_decisions.overview | text_block,
+        adr_index(content.architecture_decisions.adrs)
+    ]),
+    sections.join([
+        sections.heading('10. Quality Requirements'),
+        sections.heading('10.1 Quality Requirements Overview', 3),
+        content.quality_requirements.overview | text_block,
+        sections.heading('10.2 Quality Scenarios', 3),
+        quality_scenarios(content.quality_requirements.scenarios)
+    ]),
+    sections.prose('11. Risks and Technical Debts', content.risks_and_technical_debt),
+    sections.prose('12. Glossary', content.glossary),
+    sections.join([
+        sections.heading('Template Attribution'),
+        'Adapted from arc42 9.0-EN (July 2025) by Gernot Starke and Peter Hruschka. '
+        ~ 'The distributed template adaptation is licensed under '
+        ~ '[CC BY-SA 4.0](<https://creativecommons.org/licenses/by-sa/4.0/>). '
+        ~ 'Changes: Markdown framing, proportional draft carriers, explicit ADR links, '
+        ~ 'quality-scenario fields and pgmcp metadata. Caller-authored architecture content remains separately owned.',
+        '[Pinned source](<https://github.com/arc42/arc42-template/blob/32fd461c91b184777e14f7d66b4e46db936fd3e5/EN/arc42-template.adoc>).'
+    ])
+] -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

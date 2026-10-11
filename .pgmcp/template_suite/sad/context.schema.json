@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable arc42 software architecture document content",
+  "description": "Twelve proportional chapter carriers with caller-owned perspective, ADR links and measurable quality scenarios.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "document_metadata",
+    "architecture_scope",
+    "introduction_and_goals",
+    "architecture_constraints",
+    "context_and_scope",
+    "solution_strategy",
+    "building_block_view",
+    "runtime_view",
+    "deployment_view",
+    "crosscutting_concepts",
+    "architecture_decisions",
+    "quality_requirements",
+    "risks_and_technical_debt",
+    "glossary"
+  ],
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "document_metadata": {
+      "$ref": "../shared/definitions/document-metadata.schema.json"
+    },
+    "purpose": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "introduction_and_goals": {
+      "$ref": "#/$defs/Prose"
+    },
+    "architecture_constraints": {
+      "$ref": "#/$defs/Prose"
+    },
+    "context_and_scope": {
+      "$ref": "#/$defs/Prose"
+    },
+    "solution_strategy": {
+      "$ref": "#/$defs/Prose"
+    },
+    "building_block_view": {
+      "$ref": "#/$defs/Prose"
+    },
+    "runtime_view": {
+      "$ref": "#/$defs/Prose"
+    },
+    "deployment_view": {
+      "$ref": "#/$defs/Prose"
+    },
+    "crosscutting_concepts": {
+      "$ref": "#/$defs/Prose"
+    },
+    "architecture_decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overview",
+        "adrs"
+      ],
+      "properties": {
+        "overview": {
+          "$ref": "#/$defs/Prose"
+        },
+        "adrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AdrReference"
+          }
+        }
+      }
+    },
+    "quality_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overview",
+        "scenarios"
+      ],
+      "properties": {
+        "overview": {
+          "$ref": "#/$defs/Prose"
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualityScenario"
+          }
+        }
+      }
+    },
+    "risks_and_technical_debt": {
+      "$ref": "#/$defs/Prose"
+    },
+    "glossary": {
+      "$ref": "#/$defs/Prose"
+    },
+    "architecture_scope": {
+      "enum": [
+        "existing",
+        "proposed",
+        "mixed"
+      ]
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "AdrReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adr_id",
+        "status",
+        "link"
+      ],
+      "properties": {
+        "adr_id": {
+          "$ref": "#/$defs/Text"
+        },
+        "status": {
+          "$ref": "#/$defs/Text"
+        },
+        "link": {
+          "$ref": "../shared/definitions/link.schema.json"
+        }
+      }
+    },
+    "QualityScenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "scenario",
+        "response_measure"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "scenario": {
+          "$ref": "#/$defs/Prose"
+        },
+        "response_measure": {
+          "$ref": "#/$defs/Prose"
+        }
+      }
+    }
+  }
+}

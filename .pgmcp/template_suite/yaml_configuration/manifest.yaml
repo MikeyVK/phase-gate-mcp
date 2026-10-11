@@ -1,0 +1,2 @@
+template_id: yaml_configuration
+purpose: Create an ordinary mapping-root YAML configuration with preserved finite data values.

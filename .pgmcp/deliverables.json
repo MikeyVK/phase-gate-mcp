@@ -92,7 +92,7 @@
                   "description": "Markdown-tier packages, effective nested consumption, draft carriers, actual link pair and co-located source/license attribution.",
                   "validates": {
                     "type": "file_exists",
-                    "file": ".pgmcp/template_suite/sad/LICENSE-arc42.txt"
+                    "file": ".pgmcp/template_suite/sad/template.jinja2"
                   },
                   "deliverable_id": "D_3.2"
                 },

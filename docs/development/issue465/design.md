@@ -226,7 +226,7 @@ AdrReference is closed {adr_id: Text, status: Text, link: Link}. link.label supp
 
 ADR-to-SAD targets are caller-supplied actual heading fragments, for example #5-building-block-view. Native Lychee checks paths/fragments; no new anchor encoder, discovery or synchronization.
 
-Adapt arc42 9.0-EN, July 2025 at source 32fd461c91b184777e14f7d66b4e46db936fd3e5. Keep LICENSE-arc42.txt and attribution/source/change notes together in the sad package and add a short visible attribution at the end of document_body, before the inherited terminal history. Preserve CC BY-SA 4.0 for the distributed adaptation and identify authored architecture content separately. Do not override document_after or remove shared history. The component attribution is source-bound release evidence, not a new lifecycle mechanism.
+Adapt arc42 9.0-EN, July 2025 at source 32fd461c91b184777e14f7d66b4e46db936fd3e5. Keep the exact pinned upstream LICENSE.txt notice and attribution/source/change notes as non-rendered Jinja comments in the owning SAD template source and add a short visible attribution at the end of document_body, before the inherited terminal history. Preserve CC BY-SA 4.0 for the distributed adaptation and identify authored architecture content separately. Do not override document_after or remove shared history. The component attribution is source-bound release evidence, not a new lifecycle mechanism.
 
 ### Native adapter and check configuration
 
@@ -362,6 +362,10 @@ Keep exact version pins only in requirements.txt and refer to that file from the
 Declare all inherited optional inputs, reuse shared refs/patterns, retain terminal history and put source attribution in SAD body. Review minimal and populated graphs.
 
 **Consequence:** Admission failure or structurally incomplete/fabricated documents.
+
+## Implementation Integration Clarification
+
+The cold whole-suite admission exposed that auxiliary `.txt` files are rejected by the existing strict generation-source inventory. The component license and source/change notices therefore live in a non-rendered Jinja comment in `sad/template.jinja2`; their exact upstream text and package co-location are preserved. The visible document attribution is unchanged. This corrects the originally named auxiliary-file placement without adding source-inventory exceptions or changing the Approved Strategy. Validation must inspect that owning source in the assembled assets and repeat normal server admission.
 
 ## Planning Consequences
 

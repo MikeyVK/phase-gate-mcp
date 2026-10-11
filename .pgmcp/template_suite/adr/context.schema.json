@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portable architecture decision record content",
+  "description": "Caller-owned identity and decision status; empty required carriers admit drafts without certifying completeness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "adr_id",
+    "document_metadata",
+    "context",
+    "decision_drivers",
+    "options",
+    "decision",
+    "rationale",
+    "consequences"
+  ],
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/Text"
+    },
+    "document_metadata": {
+      "allOf": [
+        {
+          "$ref": "../shared/definitions/document-metadata.schema.json"
+        },
+        {
+          "properties": {
+            "status": {
+              "enum": [
+                "draft",
+                "proposed",
+                "accepted",
+                "rejected",
+                "superseded",
+                "deprecated"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "purpose": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_in": {
+      "$ref": "#/$defs/Prose"
+    },
+    "scope_out": {
+      "$ref": "#/$defs/Prose"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "related_docs": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "adr_id": {
+      "$ref": "#/$defs/Text"
+    },
+    "context": {
+      "$ref": "#/$defs/Prose"
+    },
+    "decision_drivers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Option"
+      }
+    },
+    "decision": {
+      "$ref": "#/$defs/Prose"
+    },
+    "rationale": {
+      "$ref": "#/$defs/Prose"
+    },
+    "consequences": {
+      "$ref": "#/$defs/Prose"
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Text"
+      }
+    },
+    "verification": {
+      "$ref": "#/$defs/Prose"
+    },
+    "sad_sections": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    },
+    "superseded_by": {
+      "type": "array",
+      "items": {
+        "$ref": "../shared/definitions/link.schema.json"
+      }
+    }
+  },
+  "$defs": {
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Prose": {
+      "type": "string"
+    },
+    "Option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "$ref": "#/$defs/Prose"
+        },
+        "pros": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          }
+        },
+        "cons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          }
+        }
+      }
+    }
+  }
+}

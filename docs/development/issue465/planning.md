@@ -198,7 +198,9 @@ Markdown-tier packages, effective nested consumption, draft carriers, actual lin
 
 **Type:** file_exists
 
-**File:** ".pgmcp/template_suite/sad/LICENSE-arc42.txt"
+**File:** ".pgmcp/template_suite/sad/template.jinja2"
+
+**Integration correction:** The exact component license and attribution are retained in non-rendered comments in this owning generation source; cold suite admission rejects auxiliary `.txt` files. No cycle, deliverable scope or exit criterion changes.
 
 ##### D\_3.3
 

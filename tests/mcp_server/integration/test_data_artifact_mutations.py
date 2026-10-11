@@ -1,3 +1,5 @@
+# pgmcp:v1 id=pytest_integration_test pv=1.0.0 pf=70EjvGU6LK1YPSz3 sf=zJbLuUrs_I33kpX4
+
 """Native data artifact persistence using real configured checks and public operations."""
 
 from __future__ import annotations
