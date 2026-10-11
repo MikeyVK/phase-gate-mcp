@@ -22,10 +22,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
-from mcp_server.managers.phase_state_engine import PhaseStateEngine
+from mcp_server.managers.phase_state_engine import PhaseEntryError, PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas import WorkphasesConfig
+from mcp_server.schemas.deliverables import CycleRef, PlanningMutationError
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
 
 
@@ -43,6 +44,14 @@ class TransitionPhaseInput(BaseModel):
     )
     human_approval_message: str | None = Field(
         default=None, description="Optional human approval message"
+    )
+
+    resume_cycle: CycleRef | None = Field(
+        default=None,
+        description=(
+            "On re-entry to a cycle-based phase, select an existing cycle_id "
+            "from the current project plan."
+        ),
     )
 
     @field_validator("human_approval_message", mode="before")
@@ -71,6 +80,14 @@ class ForcePhaseTransitionInput(BaseModel):
     skip_reason: str = Field(description="Reason for skipping validation (audit)", min_length=1)
     human_approval_message: str = Field(
         description="Human approval message (required)", min_length=1
+    )
+
+    resume_cycle: CycleRef | None = Field(
+        default=None,
+        description=(
+            "On re-entry to a cycle-based phase, select an existing cycle_id "
+            "from the current project plan."
+        ),
     )
 
     @field_validator("human_approval_message", mode="before")
@@ -186,6 +203,7 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
                 branch=params.branch,
                 to_phase=params.to_phase,
                 human_approval_message=params.human_approval_message,
+                resume_cycle=params.resume_cycle,
             )
 
         try:
@@ -209,6 +227,16 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
             return PhaseTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
+                error_code="phase_transition_conflict",
+                branch=params.branch,
+                from_phase="",
+                to_phase=params.to_phase,
+            )
+        except (PhaseEntryError, PlanningMutationError) as e:
+            return PhaseTransitionOutput(
+                success=False,
+                error_message=str(e),
+                error_code=e.error_code,
                 branch=params.branch,
                 from_phase="",
                 to_phase=params.to_phase,
@@ -217,6 +245,7 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
             return PhaseTransitionOutput(
                 success=False,
                 error_message=f"Transition failed: {e}",
+                error_code="phase_transition_failed",
                 branch=params.branch,
                 from_phase="",
                 to_phase=params.to_phase,
@@ -265,6 +294,7 @@ class ForcePhaseTransitionTool(
                 to_phase=params.to_phase,
                 skip_reason=params.skip_reason,
                 human_approval_message=params.human_approval_message,
+                resume_cycle=params.resume_cycle,
             )
 
         try:
@@ -292,6 +322,18 @@ class ForcePhaseTransitionTool(
             return ForcePhaseTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
+                error_code="phase_transition_conflict",
+                branch=params.branch,
+                from_phase="",
+                to_phase=params.to_phase,
+                skip_reason=params.skip_reason,
+                human_approval_message=params.human_approval_message,
+            )
+        except (PhaseEntryError, PlanningMutationError) as e:
+            return ForcePhaseTransitionOutput(
+                success=False,
+                error_message=str(e),
+                error_code=e.error_code,
                 branch=params.branch,
                 from_phase="",
                 to_phase=params.to_phase,
@@ -302,6 +344,7 @@ class ForcePhaseTransitionTool(
             return ForcePhaseTransitionOutput(
                 success=False,
                 error_message=f"Force transition failed: {e}",
+                error_code="phase_transition_failed",
                 branch=params.branch,
                 from_phase="",
                 to_phase=params.to_phase,

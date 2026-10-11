@@ -19,6 +19,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from mcp_server.core.scope_contract import validate_scope_vocabulary
+
 
 class PhaseDefinition(BaseModel):
     """Single phase definition from workphases.yaml."""
@@ -52,6 +54,12 @@ class WorkphasesConfig(BaseModel):
                 f"workphases.yaml declares multiple terminal phases: {terminal}. "
                 "Exactly one is permitted."
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_commit_scope_vocabulary(self) -> WorkphasesConfig:
+        """Reject names that cannot round-trip through the shared scope grammar."""
+        validate_scope_vocabulary({name: phase.subphases for name, phase in self.phases.items()})
         return self
 
     def get_terminal_phase(self) -> str:

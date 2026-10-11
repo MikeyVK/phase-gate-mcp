@@ -38,6 +38,8 @@ class IWorkflowGateRunner(Protocol):
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
         raise NotImplementedError
 
@@ -46,6 +48,8 @@ class IWorkflowGateRunner(Protocol):
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
         raise NotImplementedError
 
@@ -54,6 +58,8 @@ class IWorkflowGateRunner(Protocol):
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
         raise NotImplementedError
 
@@ -62,6 +68,8 @@ class IWorkflowGateRunner(Protocol):
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
         raise NotImplementedError
 

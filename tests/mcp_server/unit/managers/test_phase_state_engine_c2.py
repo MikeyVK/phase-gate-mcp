@@ -46,8 +46,10 @@ class BlockingGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         report = GateReport(
             passing=(),
             blocking=("research-doc",),
@@ -60,8 +62,10 @@ class BlockingGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
 
@@ -77,8 +81,10 @@ class InspectingGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_phase_exit(
@@ -86,8 +92,10 @@ class InspectingGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport(
             passing=("design-doc",),
             blocking=("planning-doc",),
@@ -287,7 +295,8 @@ def test_transition_phase_enforces_contracts_from_phase_contracts_yaml(
         PhaseConfigContext(
             workphases=loader.load_workphases_config(),
             contracts=loader.load_contracts_config(),
-        )
+        ),
+        project_plan_reader=project_manager,
     )
     real_gate_runner = WorkflowGateRunner(
         deliverable_checker=DeliverableChecker(workspace_root),

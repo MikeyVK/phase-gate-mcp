@@ -54,7 +54,7 @@ workflows:
                 commitment leaked into Research.
 
             [ ] Commit with git_add_or_commit(workflow_phase='research',
-                message='Research findings (#N)').
+                message='Research findings').
                 On the branch's first commit only, call git_push(set_upstream=True).
 
             [ ] Produce the outcome-neutral hand-over below; it is an evidence index, not approval.
@@ -125,7 +125,7 @@ workflows:
                 and document boundaries.
 
             [ ] Commit with git_add_or_commit(workflow_phase='design',
-                message='Design for #N').
+                message='Design').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA determines GO/NOGO.
           handover_template: |
@@ -195,11 +195,15 @@ workflows:
                 scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
                 safe_edit_file. A valid scaffold is not phase completion. Apply Documentation
                 Standard boundaries and keep document cycles identical to the structured payload.
-                Save them with save_planning_deliverables(issue_number=N, ...) after verifying IDs,
-                ordering, and dependencies.
+                Save complete named blocks with save_planning_deliverables(issue_number=N, ...);
+                verify ordering, dependencies, and stored C_n/D_n.m references through readback.
+
+            [ ] Planning updates replace or explicitly remove whole blocks only in this phase.
+                Before re-entry to the configured cycle-based phase, choose resume_cycle='C_n'
+                from the current get_project_plan readback; first entry starts C_1.
 
             [ ] Commit with git_add_or_commit(workflow_phase='planning',
-                message='Planning for #N').
+                message='Planning').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA determines GO/NOGO.
           handover_template: |
@@ -337,7 +341,7 @@ workflows:
                 deferred work. Do not claim independent QA approval.
 
             [ ] Commit with git_add_or_commit(workflow_phase='validation',
-                message='Validation for #N').
+                message='Validation').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA reads direct evidence
                 and alone determines GO/NOGO.
@@ -393,7 +397,7 @@ workflows:
                 tests or branch gates without an invalidating change.
 
             [ ] Commit with git_add_or_commit(workflow_phase='documentation',
-                message='Documentation for #N').
+                message='Documentation').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -532,7 +536,7 @@ workflows:
                 planning out.
 
             [ ] Commit with git_add_or_commit(workflow_phase='research',
-                message='Research findings (#N)').
+                message='Research findings').
                 On the branch's first commit only, call git_push(set_upstream=True).
 
             [ ] Produce the outcome-neutral hand-over below.
@@ -604,7 +608,7 @@ workflows:
                 document boundaries.
 
             [ ] Commit with git_add_or_commit(workflow_phase='design',
-                message='Design for #N').
+                message='Design').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA determines GO/NOGO.
           handover_template: |
@@ -673,11 +677,15 @@ workflows:
                 available. Create the initial document with
                 scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
                 safe_edit_file. A valid scaffold is not phase completion. Keep document cycles
-                identical to save_planning_deliverables(issue_number=N, ...); verify IDs, ordering,
-                dependencies, regression value, and cleanup ownership before saving.
+                identical to complete named blocks supplied to save_planning_deliverables(issue_number=N, ...);
+                verify ordering, dependencies, regression value, cleanup ownership, and stored references through readback.
+
+            [ ] Planning updates replace or explicitly remove whole blocks only in this phase.
+                Before re-entry to the configured cycle-based phase, choose resume_cycle='C_n'
+                from the current get_project_plan readback; first entry starts C_1.
 
             [ ] Commit with git_add_or_commit(workflow_phase='planning',
-                message='Planning for #N').
+                message='Planning').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA determines GO/NOGO.
           handover_template: |
@@ -816,7 +824,7 @@ workflows:
                 caveats, and deferred work. Do not claim independent QA approval.
 
             [ ] Commit with git_add_or_commit(workflow_phase='validation',
-                message='Validation for #N').
+                message='Validation').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA reads direct evidence
                 and alone determines GO/NOGO.
@@ -870,7 +878,7 @@ workflows:
                 repeat fresh implementation tests or branch gates.
 
             [ ] Commit with git_add_or_commit(workflow_phase='documentation',
-                message='Documentation for #N').
+                message='Documentation').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -963,7 +971,7 @@ workflows:
   hotfix:
     phases:
       - name: implementation
-        cycle_based: true
+        cycle_based: false
         subphases: [red, green, refactor]
         commit_type_map:
           red: test
@@ -981,7 +989,7 @@ workflows:
                 and exclusions. Stop on ambiguity or policy/migration decisions; do not broaden,
                 redesign, or invent strategy inside a hotfix.
 
-            [ ] On cycle 1 only, call git_push(set_upstream=True).
+            [ ] On the branch's first push, call git_push(set_upstream=True).
 
             [ ] Inspect direct failure and test seams. Any bounded execution delegation receives
                 the issue/evidence and direct paths, exact task/exclusions, expected evidence,
@@ -1008,11 +1016,10 @@ workflows:
                 supported behavior, architecture, and unplanned change. Optional adversarial
                 preflight returns findings-only and cannot issue PASS/GO or authorize progression.
 
-            [ ] When objective evidence is satisfied and slices remain, call
-                transition_cycle(to_cycle=N+1).
-                Continue only under the next instruction.
-                After the final slice, do not transition phase autonomously; produce the hand-over
-                and request independent review.
+            [ ] This workflow has no planning/cycle prerequisite. If the work exceeds one
+                contained hotfix, stop and reconsider the workflow with the owner.
+                When objective evidence is satisfied, produce the hand-over and request
+                independent review; do not transition phase autonomously.
           handover_template: |
             ### Hotfix / Implementation Hand-over
 
@@ -1073,7 +1080,7 @@ workflows:
                 not claim independent QA approval.
 
             [ ] Commit with git_add_or_commit(workflow_phase='validation',
-                message='Validation for #N').
+                message='Validation').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA alone determines
                 GO/NOGO.
@@ -1125,7 +1132,7 @@ workflows:
                 Validation evidence.
 
             [ ] Commit with git_add_or_commit(workflow_phase='documentation',
-                message='Documentation for #N').
+                message='Documentation').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -1263,7 +1270,7 @@ workflows:
                 cycles out.
 
             [ ] Commit with git_add_or_commit(workflow_phase='research',
-                message='Research findings (#N)').
+                message='Research findings').
                 On the branch's first commit only, call git_push(set_upstream=True).
 
             [ ] Produce the outcome-neutral hand-over below.
@@ -1334,7 +1341,7 @@ workflows:
                 validation obligations, risks, and planning consequences.
 
             [ ] Commit with git_add_or_commit(workflow_phase='design',
-                message='Design for #N').
+                message='Design').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA determines GO/NOGO.
           handover_template: |
@@ -1402,11 +1409,15 @@ workflows:
                 available. Create the initial document with
                 scaffold_artifact using the selected artifact_type, output basename as file_name, and schema-complete context and refine it with
                 safe_edit_file. A valid scaffold is not phase completion. Keep cycles identical to
-                save_planning_deliverables(issue_number=N, ...); verify order, IDs, preservation,
-                cleanup, and dependencies.
+                complete named blocks supplied to save_planning_deliverables(issue_number=N, ...);
+                verify order, preservation, cleanup, dependencies, and stored references through readback.
+
+            [ ] Planning updates replace or explicitly remove whole blocks only in this phase.
+                Before re-entry to the configured cycle-based phase, choose resume_cycle='C_n'
+                from the current get_project_plan readback; first entry starts C_1.
 
             [ ] Commit with git_add_or_commit(workflow_phase='planning',
-                message='Planning for #N').
+                message='Planning').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA determines GO/NOGO.
           handover_template: |
@@ -1539,7 +1550,7 @@ workflows:
                 demonstration/fallback, risks, and deferred work.
 
             [ ] Commit with git_add_or_commit(workflow_phase='validation',
-                message='Validation for #N').
+                message='Validation').
 
             [ ] Produce the outcome-neutral hand-over below. Independent QA alone determines
                 GO/NOGO.
@@ -1592,7 +1603,7 @@ workflows:
                 Validation evidence.
 
             [ ] Commit with git_add_or_commit(workflow_phase='documentation',
-                message='Documentation for #N').
+                message='Documentation').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -1727,7 +1738,7 @@ workflows:
                 mapping, dependencies, review criteria, and Documentation Standard compliance.
 
             [ ] Commit with git_add_or_commit(workflow_phase='planning',
-                message='Planning for #N').
+                message='Planning').
                 Push once with git_push(set_upstream=True) when tracking is absent.
 
             [ ] Stop with the outcome-neutral hand-over below.
@@ -1783,7 +1794,7 @@ workflows:
                 Capture relevant out-of-scope findings as deferred work.
 
             [ ] Commit with git_add_or_commit(workflow_phase='documentation',
-                message='Documentation for #N').
+                message='Documentation').
 
             [ ] Stop with the outcome-neutral review index below.
                 Fresh independent documentation QA inspects workspace evidence
@@ -1942,7 +1953,7 @@ workflows:
             [ ] Inspect the complete diff for scope, omissions, accidental files,
                 stale consumers, and maintainability. Commit with
                 git_add_or_commit(workflow_phase='implementation',
-                message='Implement chore for #N').
+                message='Implement chore').
             [ ] Stop with the outcome-neutral hand-over.
           handover_template: |
             ### Chore / Implementation Hand-over
@@ -2028,7 +2039,7 @@ workflows:
                 rendering, and source-consumer parity. Reuse fresh Validation evidence.
             [ ] Check scope, authority, reviewed-but-unchanged surfaces, and deferred work.
                 Commit changes with git_add_or_commit(workflow_phase='documentation',
-                message='Document chore for #N').
+                message='Document chore').
             [ ] Stop with the outcome-neutral hand-over.
           handover_template: |
             ### Chore / Documentation Hand-over
@@ -2163,7 +2174,7 @@ workflows:
             [ ] Verify evidence traceability, boundary discipline, and applicable
                 Documentation Standard compliance. Commit with
                 git_add_or_commit(workflow_phase='research',
-                message='Research findings (#N)').
+                message='Research findings').
 
             [ ] Stop with the outcome-neutral hand-over below.
           handover_template: |
@@ -2225,7 +2236,7 @@ workflows:
                 Stop on rejection, ambiguity, or partial creation failure.
 
             [ ] Commit with git_add_or_commit(workflow_phase='planning',
-                message='Planning for #N').
+                message='Planning').
 
             [ ] Stop with the outcome-neutral hand-over below.
           handover_template: |
@@ -2290,7 +2301,7 @@ workflows:
                 Research/Planning/strategy traceability, child usability, architecture/test
                 quality, coordination consequences, and applicable Documentation Standard
                 compliance. Commit with git_add_or_commit(workflow_phase='design',
-                message='Design for #N').
+                message='Design').
 
             [ ] Stop with the outcome-neutral review index below.
                 Fresh independent design QA reads workspace evidence and owns GO/NOGO.
@@ -2373,7 +2384,7 @@ workflows:
             [ ] Self-check scope, current-state accuracy, source authority,
                 Documentation Standard compliance, and absence of contradicted child
                 boundaries. Commit with git_add_or_commit(
-                workflow_phase='documentation', message='Documentation for #N').
+                workflow_phase='documentation', message='Documentation').
 
             [ ] Stop with the outcome-neutral review index below.
                 Fresh independent documentation QA owns any GO/NOGO verdict.

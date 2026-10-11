@@ -19,6 +19,7 @@ from mcp_server.core.interfaces import GateReport
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionInput,
@@ -47,8 +48,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def inspect_phase_exit(
@@ -56,8 +59,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def enforce_cycle_exit(
@@ -65,8 +70,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def inspect_cycle_exit(
@@ -74,8 +81,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
@@ -451,18 +460,21 @@ phases:
             # Inject planning_deliverables so gate would have PASSED
             pm.save_planning_deliverables(
                 42,
-                {
-                    "cycles": {
-                        "total": 1,
-                        "cycles": [
-                            {
-                                "cycle_number": 1,
-                                "deliverables": [{"id": "D1", "description": "D1"}],
-                                "exit_criteria": "c",
-                            }
-                        ],
+                SavePlanningModel.model_validate(
+                    {
+                        "cycles": {
+                            "cycles": [
+                                {
+                                    "cycle_name": "Cycle 1",
+                                    "deliverables": [
+                                        {"deliverable_name": "D1", "description": "D1"}
+                                    ],
+                                    "exit_criteria": "c",
+                                }
+                            ],
+                        }
                     }
-                },
+                ),
             )
 
         return tmp_path, branch
@@ -584,17 +596,13 @@ phases:
 
     def test_force_phase_transition_input_rejects_boolean_approval(self) -> None:
         """Reject boolean input for human_approval_message (C_PHASE_TOOLS.2)."""
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForcePhaseTransitionInput(
-                branch="feature/42-test",
-                to_phase="design",
-                skip_reason="Valid reason",
-                human_approval_message=True,  # type: ignore
-            )
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForcePhaseTransitionInput(
-                branch="feature/42-test",
-                to_phase="design",
-                skip_reason="Valid reason",
-                human_approval_message=False,  # type: ignore
-            )
+        for approval in (True, False):
+            with pytest.raises(ValidationError, match="human_approval_message"):
+                ForcePhaseTransitionInput.model_validate(
+                    {
+                        "branch": "feature/42-test",
+                        "to_phase": "design",
+                        "skip_reason": "Valid reason",
+                        "human_approval_message": approval,
+                    }
+                )

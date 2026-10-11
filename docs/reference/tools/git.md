@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.1  
-**Last Updated:** 2026-08-22  
+**Version:** 3.2  
+**Last Updated:** 2026-10-10  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_git_tools.py](../../../tests/mcp_server/unit/tools/test_git_tools.py)  
@@ -147,8 +147,8 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 |-----------|------|----------|-------------|
 | `message` | `str` | **Yes** | Commit message (WITHOUT prefix — prefix is auto-added) |
 | `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.pgmcp/state.json` if omitted. Valid values populated at runtime from `workphases.yaml`. |
-| `sub_phase` | `str` | No | Sub-phase for `implementation`: `"red"`, `"green"`, `"refactor"`. Valid values populated at runtime from `workphases.yaml`. |
-| `cycle_number` | `int` | No | **Required when the active phase is cycle-based (e.g. implementation).** TDD cycle number (e.g. `1`, `2`, `3`). Optional otherwise. |
+| `sub_phase` | `str` | No | Configured sub-phase (for example `"red"`, `"green"`, `"refactor"`). Vocabulary comes from `workphases.yaml`; cycle and sub-phase are independent scope fields. |
+| `cycle_number` | `int` | No | **Required when the active phase is cycle-based (e.g. implementation).** Positive cycle number (e.g. `1`, `2`, `3`); independent of whether a sub-phase is supplied. |
 | `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`). Valid values populated at runtime from `git.yaml` via the `commit_types` config. Use only as explicit override. |
 | `files` | `list[str]` | No | Specific file paths to stage — default: stage all changed files |
 | `skip_paths` | `frozenset[str]` | No | File paths to exclude from staging (advanced use) |
@@ -161,7 +161,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
   "message": "Changes committed",
   "commit": {
     "sha": "abc123def456",
-    "message": "feat(P_IMPLEMENTATION_SP_C1_GREEN): Implement user authentication (#42)"
+    "message": "feat(P_IMPLEMENTATION_C1_SP_GREEN): Implement user authentication (#42)"
   }
 }
 ```
@@ -201,17 +201,27 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 
 | Phase | Sub-phase | Scope | Prefix |
 |-------|-----------|-------|--------|
-| `implementation` | `red` | `P_IMPLEMENTATION_SP_C1_RED` | `test(...)` |
-| `implementation` | `green` | `P_IMPLEMENTATION_SP_C1_GREEN` | `feat(...)` |
-| `implementation` | `refactor` | `P_IMPLEMENTATION_SP_C1_REFACTOR` | `refactor(...)` |
+| `implementation` | — | `P_IMPLEMENTATION_C1` | Configured phase mapping |
+| `implementation` | `red` | `P_IMPLEMENTATION_C1_SP_RED` | `test(...)` |
+| `implementation` | `green` | `P_IMPLEMENTATION_C1_SP_GREEN` | `feat(...)` |
+| `implementation` | `refactor` | `P_IMPLEMENTATION_C1_SP_REFACTOR` | `refactor(...)` |
 | `documentation` | — | `P_DOCUMENTATION` | `docs(...)` |
 | `research` | — | `P_RESEARCH` | `docs(...)` |
+
+The shared configured [scope contract](../../../mcp_server/core/scope_contract.py)
+encodes and decodes phase, optional cycle and optional sub-phase independently.
+For example, `P_IMPLEMENTATION_C2_SP_GREEN` decodes to implementation, cycle 2 and
+green; `P_IMPLEMENTATION_C2` carries the cycle without a sub-phase.
+Phase/sub-phase vocabulary and commit mappings come from configuration, not the
+example names in this table. Unknown or malformed scopes are not guessed.
+Workflow position remains authoritative in `.pgmcp/state.json`; decoded commit
+history supplies planning cycle-protection evidence rather than reconstructing state.
 
 #### Behavior Notes
 
 - **Auto-Stage:** If `files` specified, stages those files; otherwise stages all changes
 - **No Changes:** Returns error if no changes to commit
-- **Issue suffix auto-append (#228):** The active issue number is extracted from the current branch name via `extract_issue_number()` and appended to the commit message as ` (#NNN)`. For branches without a parseable issue number (e.g. `main`, `feature/no-number`), no suffix is added. This happens transparently — no parameter needed.
+- **Issue suffix:** The active issue comes from configured branch conventions. Matching `#NNN` or `(#NNN)` mentions in the caller's first-line title are normalized to one terminal ` (#NNN)`; callers should supply the title without that suffix. Other issue numbers, larger numbers and body text remain unchanged. Branches without a parseable issue do not receive an automatic suffix.
 - **`phase` parameter:** Does NOT exist — `GitCommitInput` uses `extra="forbid"`. Passing `phase` crashes with a validation error.
 - **`cycle_number`:** Required when the active phase is cycle-based (e.g. `implementation`) — omitting it causes an error
 - **Ready-phase auto-exclude (#283):** When in `ready` phase, `.pgmcp/state.json` and `.pgmcp/deliverables.json` are automatically removed from the commit index before committing
@@ -955,5 +965,6 @@ Both `git_fetch` and `git_pull` execute potentially blocking GitPython network o
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.2 | 2026-10-10 | @imp documenter | Document shared independent phase/cycle/sub-phase scope fields and first-line issue normalization (#491) |
 | 3.1 | 2026-08-22 | Agent | Document bounded Git projections and current-branch semantics |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 14 Git tools: workflow (10), sync (2), analysis (2) |

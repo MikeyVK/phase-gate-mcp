@@ -51,12 +51,13 @@ from mcp_server.config.schemas import (
 )
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
-from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.exceptions import ConfigError, MCPError
 from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
+from mcp_server.core.scope_contract import ScopeContract
+from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
@@ -773,19 +774,19 @@ class ServerBootstrapper:
         workspace_root = Path(self._settings.server.workspace_root)
         server_root = workspace_root / self._settings.server.server_root_dir
 
+        scope_contract = ScopeContract(configs.workphases_config)
+        scope_decoder = ScopeDecoder(scope_contract)
         git_manager = GitManager(
             git_config=configs.git_config,
             workphases_config=configs.workphases_config,
+            scope_encoder=ScopeEncoder(scope_contract),
+            scope_decoder=scope_decoder,
         )
         state_repository = FileStateRepository(state_file=server_root / "state.json")
         branch_validated_reader = BranchValidatedStateReader(inner=state_repository)
-        commit_phase_detector = CommitPhaseDetector(
-            workphases_config=configs.workphases_config,
-        )
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=git_manager,
             state_reader=branch_validated_reader,
-            commit_phase_detector=commit_phase_detector,
         )
         project_manager = ProjectManager(
             workspace_root=workspace_root,
@@ -793,13 +794,15 @@ class ServerBootstrapper:
             git_manager=git_manager,
             workphases_config=configs.workphases_config,
             workflow_status_resolver=workflow_status_resolver,
+            cycle_evidence_reader=git_manager,
             server_root=server_root,
         )
         phase_contract_resolver = PhaseContractResolver(
             PhaseConfigContext(
                 workphases=configs.workphases_config,
                 contracts=configs.contracts_config,
-            )
+            ),
+            project_plan_reader=project_manager,
         )
         workflow_gate_runner = WorkflowGateRunner(
             deliverable_checker=DeliverableChecker(workspace_root),
@@ -815,9 +818,6 @@ class ServerBootstrapper:
             git_config=configs.git_config,
             contracts_config=configs.contracts_config,
             state_repository=state_repository,
-            scope_decoder=ScopeDecoder(
-                workphases_config=configs.workphases_config,
-            ),
             workflow_gate_runner=workflow_gate_runner,
             context_loaded_writer=context_loaded_cache,
             server_root=server_root,

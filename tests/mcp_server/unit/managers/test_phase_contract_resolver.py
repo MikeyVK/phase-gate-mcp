@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -17,7 +18,11 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.managers.phase_contract_resolver import (
     PhaseContractResolver,
 )
-from tests.mcp_server.test_support import get_default_server_root, make_phase_config_context
+from tests.mcp_server.test_support import (
+    get_default_server_root,
+    make_phase_config_context,
+    make_phase_contract_resolver,
+)
 
 
 @pytest.fixture
@@ -73,11 +78,11 @@ workflows:
           green: feat
           refactor: refactor
         exit_requires:
-          - id: required-design-doc
+          - id: D_1.2
             type: file_exists
             required: true
             file: docs/development/issue257/design.md
-          - id: design-doc
+          - id: D_1.1
             type: file_exists
             required: false
             file: docs/development/issue257/design-original.md
@@ -126,10 +131,13 @@ workflows:
                     "total": 1,
                     "cycles": [
                         {
+                            "cycle_id": "C_1",
                             "cycle_number": 1,
+                            "cycle_name": "Contract checks",
                             "deliverables": [
                                 {
-                                    "id": "design-doc",
+                                    "deliverable_id": "D_1.1",
+                                    "deliverable_name": "D_1.1 contract",
                                     "description": "Override recommended config gate",
                                     "validates": {
                                         "type": "file_exists",
@@ -137,7 +145,8 @@ workflows:
                                     },
                                 },
                                 {
-                                    "id": "required-design-doc",
+                                    "deliverable_id": "D_1.2",
+                                    "deliverable_name": "D_1.2 contract",
                                     "description": "Attempt to override required config gate",
                                     "validates": {
                                         "type": "file_exists",
@@ -145,7 +154,8 @@ workflows:
                                     },
                                 },
                                 {
-                                    "id": "issue-extra",
+                                    "deliverable_id": "D_1.3",
+                                    "deliverable_name": "D_1.3 contract",
                                     "description": "Add new issue-specific recommended gate",
                                     "validates": {
                                         "type": "contains_text",
@@ -157,15 +167,34 @@ workflows:
                             "exit_criteria": "Cycle 1 contract checks are valid",
                         }
                     ],
-                }
+                },
+                "phases": {},
             }
         }
     }
     (phase_gate_dir / "deliverables.json").write_text(
-        json.dumps(deliverables, indent=2), encoding="utf-8"
+        json.dumps({"schema_version": "1.0.0", "projects": deliverables}, indent=2),
+        encoding="utf-8",
     )
 
     return tmp_path
+
+
+def _make_resolver(
+    workspace_root: Path, *, with_issue_checks: bool = False
+) -> PhaseContractResolver:
+    """Supply explicit issue data only for tests exercising the merge policy."""
+    reader = MagicMock()
+    reader.get_project_plan.return_value = (
+        json.loads(
+            (workspace_root / get_default_server_root() / "deliverables.json").read_text(
+                encoding="utf-8"
+            )
+        )["projects"]["257"]
+        if with_issue_checks
+        else {}
+    )
+    return make_phase_contract_resolver(workspace_root, project_plan_reader=reader)
 
 
 class TestPhaseConfigContext:
@@ -263,16 +292,13 @@ class TestPhaseConfigContext:
         assert planning_phase.exit_requires == []
         assert planning_phase.cycle_exit_requires == {}
 
-    def test_context_loads_workphases_phase_contracts_and_issue_deliverables(
-        self, workspace_root: Path
-    ) -> None:
-        """Facade should expose both config sources and optional issue deliverables."""
-        context = make_phase_config_context(workspace_root, issue_number=257)
+    def test_context_loads_workphases_and_phase_contracts(self, workspace_root: Path) -> None:
+        """Facade exposes the configuration sources for contract resolution."""
+        context = make_phase_config_context(workspace_root)
 
         assert context.workphases.get_entry_expects("implementation") == []
         assert "feature" in context.contracts.workflows
         assert "implementation" in context.contracts.workflows["feature"].get_phase_names()
-        assert context.planning_deliverables is not None
 
     def test_context_uses_refactor_commit_mapping_in_fixture(self, workspace_root: Path) -> None:
         """Implementation refactor subphase should keep the existing refactor commit type."""
@@ -293,56 +319,63 @@ class TestPhaseContractResolver:
         self, workspace_root: Path
     ) -> None:
         """Docs workflow has no implementation contract and should resolve cleanly to []."""
-        resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
+        resolver = _make_resolver(workspace_root)
 
-        assert resolver.resolve_phase_exit("docs", "implementation", None) == []
+        assert resolver.resolve_phase_exit("docs", "implementation", None, issue_number=257) == []
 
     def test_resolve_returns_empty_list_for_unknown_workflow_and_phase(
         self, workspace_root: Path
     ) -> None:
         """Unknown workflow/phase combinations should not raise and should return []."""
-        resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
+        resolver = _make_resolver(workspace_root)
 
-        assert resolver.resolve_phase_exit("unknown-workflow", "implementation", None) == []
-        assert resolver.resolve_phase_exit("feature", "unknown-phase", None) == []
+        assert (
+            resolver.resolve_phase_exit(
+                "unknown-workflow", "implementation", None, issue_number=257
+            )
+            == []
+        )
+        assert resolver.resolve_phase_exit("feature", "unknown-phase", None, issue_number=257) == []
 
     def test_resolve_phase_exit_returns_exit_requires_plus_cycle_gates_when_cycle_number_present(
         self, workspace_root: Path
     ) -> None:
         """resolve_phase_exit with cycle_number returns exit_requires + cycle_exit_requires."""
-        resolver = PhaseContractResolver(
-            make_phase_config_context(workspace_root, issue_number=257)
+        resolver = _make_resolver(workspace_root, with_issue_checks=True)
+
+        checks = resolver.resolve_phase_exit(
+            "feature", "implementation", cycle_number=1, issue_number=257
         )
 
-        checks = resolver.resolve_phase_exit("feature", "implementation", cycle_number=1)
-
         assert [check.id for check in checks] == [
-            "required-design-doc",
+            "D_1.2",
             "c1-red-test",
-            "design-doc",
-            "issue-extra",
+            "D_1.1",
+            "D_1.3",
         ]
 
     def test_resolve_phase_exit_returns_only_exit_requires_when_no_cycle_number(
         self, workspace_root: Path
     ) -> None:
         """resolve_phase_exit without cycle_number returns only exit_requires, no cycle gates."""
-        resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
+        resolver = _make_resolver(workspace_root)
 
-        checks = resolver.resolve_phase_exit("feature", "implementation")
+        checks = resolver.resolve_phase_exit("feature", "implementation", issue_number=257)
 
         ids = [check.id for check in checks]
-        assert "required-design-doc" in ids
-        assert "design-doc" in ids
+        assert "D_1.2" in ids
+        assert "D_1.1" in ids
         assert "c1-red-test" not in ids
 
     def test_resolve_cycle_exit_returns_only_cycle_exit_requires(
         self, workspace_root: Path
     ) -> None:
         """resolve_cycle_exit returns only cycle_exit_requires, not exit_requires."""
-        resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
+        resolver = _make_resolver(workspace_root)
 
-        checks = resolver.resolve_cycle_exit("feature", "implementation", cycle_number=1)
+        checks = resolver.resolve_cycle_exit(
+            "feature", "implementation", cycle_number=1, issue_number=257
+        )
 
         assert [check.id for check in checks] == ["c1-red-test"]
 
@@ -355,12 +388,12 @@ class TestPhaseContractResolver:
         causing transition_cycle() to enforce phase-level gates that belong only to phase
         transitions.
         """
-        resolver = PhaseContractResolver(
-            make_phase_config_context(workspace_root, issue_number=257)
+        resolver = _make_resolver(workspace_root, with_issue_checks=True)
+
+        checks = resolver.resolve_cycle_exit(
+            "feature", "implementation", cycle_number=1, issue_number=257
         )
 
-        checks = resolver.resolve_cycle_exit("feature", "implementation", cycle_number=1)
-
         required_ids = {check.id for check in checks if check.required}
-        assert "required-design-doc" not in required_ids
+        assert "D_1.2" not in required_ids
         assert "c1-red-test" in required_ids

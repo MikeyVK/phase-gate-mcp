@@ -35,6 +35,7 @@ from git import Repo as GitRepo
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import MCPError
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.services.template_activation import UpgradeLock
 from scripts.build_package import read_manifest
 from tests.mcp_server.fixtures.installed_distribution import (
@@ -363,30 +364,53 @@ class TestTargetStartup:
         repo.index.commit("Initialize candidate workspace")
         manager = make_project_manager(fresh)
         manager.initialize_project(53, "Candidate planning readback", "feature")
+        author_plan = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": f"Cycle {number}: candidate readback",
+                            "deliverables": [
+                                {
+                                    "deliverable_name": f"Candidate value {number}",
+                                    "description": f"Preserve value {number}",
+                                    "validates": {
+                                        "type": "file_exists",
+                                        "file": f"src/c{number}.py",
+                                    },
+                                }
+                            ],
+                            "exit_criteria": f"Cycle {number} complete",
+                        }
+                        for number in range(1, 118)
+                    ]
+                }
+            }
+        )
         expected_plan = {
             "cycles": {
                 "total": 117,
                 "cycles": [
                     {
+                        "cycle_id": f"C_{number}",
                         "cycle_number": number,
-                        "name": f"Cycle {number}: candidate readback",
+                        "cycle_name": f"Cycle {number}: candidate readback",
                         "deliverables": [
                             {
-                                "id": f"C{number}.D1",
+                                "deliverable_id": f"D_{number}.1",
+                                "deliverable_name": f"Candidate value {number}",
                                 "description": f"Preserve value {number}",
-                                "validates": {
-                                    "type": "file_exists",
-                                    "file": f"src/c{number}.py",
-                                },
+                                "validates": {"type": "file_exists", "file": f"src/c{number}.py"},
                             }
                         ],
                         "exit_criteria": f"Cycle {number} complete",
                     }
                     for number in range(1, 118)
                 ],
-            }
+            },
+            "phases": {},
         }
-        manager.save_planning_deliverables(53, expected_plan)
+        manager.save_planning_deliverables(53, author_plan)
         with run_server_process(launch, cwd=fresh, env=fresh_env) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-target")
             tools = proc.list_tools()

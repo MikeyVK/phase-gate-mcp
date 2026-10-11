@@ -87,11 +87,11 @@ _MECHANICS: dict[str, tuple[int, tuple[CollectionExpectation, ...]]] = {
     ),
     "save_planning_deliverables": (
         10,
-        (("cycles", frozenset({"cycle_number", "deliverables_count"}), None),),
+        (("cycles", frozenset({"cycle_id", "cycle_name", "deliverables_count"}), None),),
     ),
     "update_planning_deliverables": (
         10,
-        (("cycles", frozenset({"cycle_number", "deliverables_count"}), None),),
+        (("cycles", frozenset({"cycle_id", "cycle_name", "deliverables_count"}), None),),
     ),
     "transition_phase": (20, (("skipped_gates", frozenset({"item"}), None),)),
     "force_phase_transition": (20, (("skipped_gates", frozenset({"item"}), None),)),

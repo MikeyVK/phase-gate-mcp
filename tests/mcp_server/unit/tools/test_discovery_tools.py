@@ -30,6 +30,7 @@ from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.schemas.tool_outputs import GetWorkContextOutput, WorkflowStateStatus
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import GetWorkContextInput, GetWorkContextTool
@@ -290,25 +291,28 @@ class TestGetWorkContextTddCycleInfo:
         )
 
         # Save planning deliverables with total=2 (matching 2 cycles)
-        planning_deliverables = {
-            "cycles": {
-                "total": 2,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": " & Storage",
-                        "deliverables": [{"id": "D1.1", "description": "ProjectManager schema"}],
-                        "exit_criteria": "Schema validated",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Validation Logic",
-                        "deliverables": [{"id": "D2.1", "description": "Cycle validation"}],
-                        "exit_criteria": "All validation covered",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": " & Storage",
+                            "deliverables": [
+                                {"deliverable_name": "D1.1", "description": "ProjectManager schema"}
+                            ],
+                            "exit_criteria": "Schema validated",
+                        },
+                        {
+                            "cycle_name": "Validation Logic",
+                            "deliverables": [
+                                {"deliverable_name": "D2.1", "description": "Cycle validation"}
+                            ],
+                            "exit_criteria": "All validation covered",
+                        },
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Set implementation phase with current cycle = 2
@@ -377,19 +381,21 @@ class TestGetWorkContextTddCycleInfo:
         )
 
         # Save planning deliverables
-        planning_deliverables = {
-            "cycles": {
-                "total": 1,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Schema & Storage",
-                        "deliverables": [{"id": "D1.1", "description": "ProjectManager schema"}],
-                        "exit_criteria": "Tests pass",
-                    }
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Schema & Storage",
+                            "deliverables": [
+                                {"deliverable_name": "D1.1", "description": "ProjectManager schema"}
+                            ],
+                            "exit_criteria": "Tests pass",
+                        }
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         # Set DESIGN phase (not TDD)
@@ -522,19 +528,21 @@ class TestTddCycleInfoStatusField:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
 
-        planning_deliverables = {
-            "cycles": {
-                "total": 1,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Status Field Test",
-                        "deliverables": [{"id": "D1.1", "description": "Add status field"}],
-                        "exit_criteria": "Status field present in output",
-                    }
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Status Field Test",
+                            "deliverables": [
+                                {"deliverable_name": "D1.1", "description": "Add status field"}
+                            ],
+                            "exit_criteria": "Status field present in output",
+                        }
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(146, planning_deliverables)
 
         state_engine.initialize_branch(

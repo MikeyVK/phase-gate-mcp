@@ -8,6 +8,7 @@ Cycle 1 goals covered here:
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -35,8 +36,10 @@ class FakeGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_phase_exit(
@@ -44,8 +47,10 @@ class FakeGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def enforce_cycle_exit(
@@ -53,8 +58,10 @@ class FakeGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_cycle_exit(
@@ -62,8 +69,10 @@ class FakeGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
 
@@ -148,11 +157,14 @@ def project_manager(workspace_root: Path, repo_loader: ConfigLoader) -> ProjectM
 
 def _make_runner(workspace_root: Path, workspace_loader: ConfigLoader) -> WorkflowGateRunner:
     """Create a real WorkflowGateRunner backed by local contracts.yaml."""
+    plan_reader = MagicMock()
+    plan_reader.get_project_plan.return_value = {}
     resolver = PhaseContractResolver(
         PhaseConfigContext(
             workphases=workspace_loader.load_workphases_config(),
             contracts=workspace_loader.load_contracts_config(),
-        )
+        ),
+        project_plan_reader=plan_reader,
     )
     return WorkflowGateRunner(
         deliverable_checker=DeliverableChecker(workspace_root),
@@ -173,10 +185,10 @@ def test_workflow_gate_runner_exposes_enforce_and_inspect_modes(
     runner = _make_runner(workspace_root, workspace_loader)
 
     enforce_report = runner.enforce_cycle_exit(
-        workflow_name="feature", phase="implementation", cycle_number=1
+        workflow_name="feature", phase="implementation", cycle_number=1, issue_number=257
     )
     inspect_report = runner.inspect_cycle_exit(
-        workflow_name="feature", phase="implementation", cycle_number=1
+        workflow_name="feature", phase="implementation", cycle_number=1, issue_number=257
     )
 
     assert enforce_report == GateReport(
@@ -195,7 +207,9 @@ def test_workflow_gate_runner_enforce_cycle_exit_raises_when_no_files_match(
     runner = _make_runner(workspace_root, workspace_loader)
 
     with pytest.raises(GateViolation) as exc_info:
-        runner.enforce_cycle_exit(workflow_name="feature", phase="implementation", cycle_number=1)
+        runner.enforce_cycle_exit(
+            workflow_name="feature", phase="implementation", cycle_number=1, issue_number=257
+        )
 
     report = exc_info.value.report
     assert report.passing == ()
@@ -212,7 +226,9 @@ def test_workflow_gate_runner_enforce_cycle_exit_reports_all_blocking_checks(
     runner = _make_runner(workspace_root, workspace_loader)
 
     with pytest.raises(GateViolation) as exc_info:
-        runner.enforce_cycle_exit(workflow_name="feature", phase="implementation", cycle_number=1)
+        runner.enforce_cycle_exit(
+            workflow_name="feature", phase="implementation", cycle_number=1, issue_number=257
+        )
 
     report = exc_info.value.report
     assert report.passing == ()

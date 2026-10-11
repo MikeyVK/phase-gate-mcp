@@ -105,6 +105,14 @@ class WorkflowEntry(BaseModel):
 
     phases: list[WorkflowPhaseEntry] = Field(..., min_length=1)
 
+    @model_validator(mode="after")
+    def validate_cycle_owner(self) -> WorkflowEntry:
+        """A single persisted cycle sequence has at most one configured phase owner."""
+        cycle_phases = [phase.name for phase in self.phases if phase.cycle_based]
+        if len(cycle_phases) > 1:
+            raise ValueError(f"workflow_cycle_based_conflict: {', '.join(cycle_phases)}")
+        return self
+
     def get_phase_names(self) -> list[str]:
         return [p.name for p in self.phases]
 

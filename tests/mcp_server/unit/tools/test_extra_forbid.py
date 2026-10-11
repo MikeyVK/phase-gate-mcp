@@ -119,11 +119,15 @@ class TestExtraForbidOnAllInputModels:
                     "issue_number": 1,
                     "planning_deliverables": {
                         "cycles": {
-                            "total": 1,
                             "cycles": [
                                 {
-                                    "cycle_number": 1,
-                                    "deliverables": [{"id": "D1.1", "description": "d"}],
+                                    "cycle_name": "Example cycle",
+                                    "deliverables": [
+                                        {
+                                            "deliverable_name": "Example deliverable",
+                                            "description": "d",
+                                        }
+                                    ],
                                     "exit_criteria": "c",
                                 }
                             ],
@@ -131,7 +135,10 @@ class TestExtraForbidOnAllInputModels:
                     },
                 },
             ),
-            (UpdatePlanningDeliverablesInput, {"issue_number": 1, "planning_deliverables": {}}),
+            (
+                UpdatePlanningDeliverablesInput,
+                {"issue_number": 1, "operations": [{"op": "remove_phase", "phase": "validation"}]},
+            ),
         ],
     )
     def test_extra_field_raises_validation_error(

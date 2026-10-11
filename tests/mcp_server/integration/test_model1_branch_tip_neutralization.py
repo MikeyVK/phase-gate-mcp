@@ -35,9 +35,8 @@ from git import Repo as GitRepo
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.git_manager import GitManager
 from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
@@ -116,7 +115,7 @@ def _make_commit_tool(repo_dir: Path) -> GitCommitTool:
     """Build GitCommitTool operating on repo_dir."""
     loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     git_config = loader.load_git_config()
-    manager = GitManager(
+    manager = make_git_manager(
         git_config=git_config,
         adapter=GitAdapter(str(repo_dir)),
         workphases_config=loader.load_workphases_config(),

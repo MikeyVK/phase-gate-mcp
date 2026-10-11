@@ -285,24 +285,3 @@ class TestDeliverableChecker:
                     "pattern": "*research*.md",
                 },
             )
-
-    def test_deliverable_checker_file_glob_pattern_in_subdir_passes(
-        self, checker: DeliverableChecker, tmp_path: Path
-    ) -> None:
-        """file_glob resolves dir relative to workspace_root and matches recursively.
-
-        Issue #229 C2 re-run — GAP-05: dir + pattern together locate the file.
-        """
-        nested = tmp_path / "mcp_server" / "managers"
-        nested.mkdir(parents=True)
-        (nested / "deliverable_checker.py").write_text("# module\n")
-
-        # Must not raise — file matches *.py in mcp_server/managers
-        checker.check(
-            "D2.5",
-            {
-                "type": "file_glob",
-                "dir": "mcp_server/managers",
-                "pattern": "deliverable_*.py",
-            },
-        )

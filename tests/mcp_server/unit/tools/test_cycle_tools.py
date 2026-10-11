@@ -21,6 +21,7 @@ from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -196,25 +197,28 @@ class TestCycleTools:
         )
         project_manager.save_planning_deliverables(
             257,
-            {
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "One",
-                            "deliverables": [{"id": "D1.1", "description": "cycle-1"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "Two",
-                            "deliverables": [{"id": "D2.1", "description": "cycle-2"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "One",
+                                "deliverables": [
+                                    {"deliverable_name": "D1.1", "description": "cycle-1"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "Two",
+                                "deliverables": [
+                                    {"deliverable_name": "D2.1", "description": "cycle-2"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         state_engine = make_phase_state_engine(
             tmp_path,
@@ -383,25 +387,28 @@ class TestCycleTools:
         )
         project_manager.save_planning_deliverables(
             257,
-            {
-                "cycles": {
-                    "total": 2,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "name": "One",
-                            "deliverables": [{"id": "D1.1", "description": "cycle-1"}],
-                            "exit_criteria": "pass",
-                        },
-                        {
-                            "cycle_number": 2,
-                            "name": "Two",
-                            "deliverables": [{"id": "D2.1", "description": "cycle-2"}],
-                            "exit_criteria": "pass",
-                        },
-                    ],
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "One",
+                                "deliverables": [
+                                    {"deliverable_name": "D1.1", "description": "cycle-1"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                            {
+                                "cycle_name": "Two",
+                                "deliverables": [
+                                    {"deliverable_name": "D2.1", "description": "cycle-2"}
+                                ],
+                                "exit_criteria": "pass",
+                            },
+                        ],
+                    }
                 }
-            },
+            ),
         )
         state_engine = make_phase_state_engine(
             tmp_path,
@@ -774,18 +781,15 @@ class TestForceCycleToolFormatting:
 
         from mcp_server.tools.cycle_tools import ForceCycleTransitionInput  # noqa: PLC0415
 
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForceCycleTransitionInput(
-                to_cycle=2,
-                skip_reason="Valid reason",
-                human_approval_message=True,  # type: ignore
-            )
-        with pytest.raises(ValidationError, match="human_approval_message"):
-            ForceCycleTransitionInput(
-                to_cycle=2,
-                skip_reason="Valid reason",
-                human_approval_message=False,  # type: ignore
-            )
+        for approval in (True, False):
+            with pytest.raises(ValidationError, match="human_approval_message"):
+                ForceCycleTransitionInput.model_validate(
+                    {
+                        "to_cycle": 2,
+                        "skip_reason": "Valid reason",
+                        "human_approval_message": approval,
+                    }
+                )
 
     def test_force_cycle_transition_input_rejects_empty_approval_and_reason(self) -> None:
         """Reject empty/whitespace approval/reason (C_CYCLE_TOOLS.3)."""

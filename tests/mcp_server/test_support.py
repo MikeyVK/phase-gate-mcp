@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from collections.abc import Callable
 from functools import partial
@@ -24,13 +23,18 @@ from mcp_server.config.loader import (
 from mcp_server.config.settings import Settings as RealSettings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.interfaces import GateReport
+from mcp_server.core.interfaces.git import ICycleEvidenceReader
+from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
+from mcp_server.core.scope_contract import ScopeContract
+from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
     PhaseConfigContext,
+    PhaseContractResolver,
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -50,6 +54,7 @@ from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
+    from mcp_server.adapters.git_adapter import GitAdapter
     from mcp_server.config.settings import Settings
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
     from mcp_server.server import MCPServer
@@ -97,8 +102,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_phase_exit(
@@ -106,8 +113,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def enforce_cycle_exit(
@@ -115,8 +124,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
     def inspect_cycle_exit(
@@ -124,8 +135,10 @@ class _NopGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return GateReport()
 
 
@@ -227,13 +240,29 @@ def load_issue_tool_dependencies(workspace_root: Path | str | None = None) -> di
     }
 
 
-def make_git_manager(workspace_root: Path | str | None = None) -> GitManager:
-    """Build a GitManager with explicit GitConfig."""
-    git_config = cast(
-        GitConfig,
-        _load_config(workspace_root, "git.yaml", "load_git_config"),
+def make_git_manager(
+    workspace_root: Path | str | None = None,
+    *,
+    git_config: GitConfig | None = None,
+    adapter: GitAdapter | None = None,
+    workphases_config: WorkphasesConfig | None = None,
+) -> GitManager:
+    """Compose the actual GitManager dependencies for public behavior tests."""
+    resolved_git_config = git_config or cast(
+        GitConfig, _load_config(workspace_root, "git.yaml", "load_git_config")
     )
-    return GitManager(git_config=git_config)
+    resolved_workphases = workphases_config or cast(
+        WorkphasesConfig,
+        _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
+    )
+    contract = ScopeContract(resolved_workphases)
+    return GitManager(
+        git_config=resolved_git_config,
+        adapter=adapter,
+        workphases_config=resolved_workphases,
+        scope_encoder=ScopeEncoder(contract),
+        scope_decoder=ScopeDecoder(contract),
+    )
 
 
 def load_workflow_config(workspace_root: Path | str | None = None) -> WorkflowConfig:
@@ -257,6 +286,8 @@ def make_project_manager(
     contracts_config: ContractsConfig | None = None,
     git_manager: GitManager | None = None,
     workflow_status_resolver: WorkflowStatusResolver | None = None,
+    *,
+    cycle_evidence_reader: ICycleEvidenceReader | None = None,
 ) -> ProjectManager:
     """Build a ProjectManager with explicit contracts config injection."""
     resolved_contracts_config = contracts_config or load_contracts_config(workspace_root)
@@ -270,7 +301,6 @@ def make_project_manager(
         _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
     )
     if workflow_status_resolver is None:
-        from mcp_server.core.commit_phase_detector import CommitPhaseDetector  # noqa: PLC0415
         from mcp_server.managers.workflow_status_resolver import (  # noqa: PLC0415
             WorkflowStatusResolver,
         )
@@ -280,11 +310,9 @@ def make_project_manager(
         _state_reader = FileStateRepository(
             state_file=workspace_path / get_default_server_root() / "state.json"
         )
-        _detector = CommitPhaseDetector(workphases_config=workphases_config)
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=_git_reader,
             state_reader=_state_reader,
-            commit_phase_detector=_detector,
         )
     return ProjectManager(
         workspace_root=workspace_root,
@@ -292,15 +320,17 @@ def make_project_manager(
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
         workflow_status_resolver=workflow_status_resolver,
+        cycle_evidence_reader=(
+            cycle_evidence_reader or resolved_git_manager or make_git_manager(workspace_root)
+        ),
         server_root=Path(workspace_root) / get_default_server_root(),
     )
 
 
 def make_phase_state_engine(
     workspace_root: Path | str,
-    project_manager: ProjectManager | None = None,
+    project_manager: IProjectPlanReader | None = None,
     state_repository: object | None = None,
-    scope_decoder: object | None = None,
     workflow_gate_runner: object | None = None,
     workflow_state_mutator: object | None = None,
     context_loaded_writer: object | None = None,
@@ -309,20 +339,12 @@ def make_phase_state_engine(
     workspace_path = Path(workspace_root)
     manager = project_manager or make_project_manager(workspace_root)
     git_config = cast(GitConfig, _load_config(workspace_root, "git.yaml", "load_git_config"))
-    workphases_config = _load_config(
-        workspace_root,
-        "workphases.yaml",
-        "load_workphases_config",
-    )
     contracts_config = cast(
         ContractsConfig,
         _load_config(workspace_root, "contracts.yaml", "load_contracts_config"),
     )
     resolved_state_repository = state_repository or FileStateRepository(
         state_file=workspace_path / get_default_server_root() / "state.json"
-    )
-    resolved_scope_decoder = scope_decoder or ScopeDecoder(
-        workphases_config=cast(WorkphasesConfig, workphases_config)
     )
     resolved_workflow_gate_runner = workflow_gate_runner or _NopGateRunner(contracts_config)
     if workflow_state_mutator is None:
@@ -337,7 +359,6 @@ def make_phase_state_engine(
         git_config=git_config,
         contracts_config=contracts_config,
         state_repository=resolved_state_repository,
-        scope_decoder=resolved_scope_decoder,
         workflow_gate_runner=resolved_workflow_gate_runner,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
         server_root=workspace_path / get_default_server_root(),
@@ -347,18 +368,8 @@ def make_phase_state_engine(
 
 def make_phase_config_context(
     workspace_root: Path | str,
-    issue_number: int | None = None,
 ) -> PhaseConfigContext:
-    """Build a PhaseConfigContext explicitly from config and optional deliverables."""
-    planning_deliverables = None
-    workspace_path = Path(workspace_root)
-    deliverables_path = workspace_path / get_default_server_root() / "deliverables.json"
-    if issue_number is not None and deliverables_path.exists():
-        data = json.loads(deliverables_path.read_text(encoding="utf-8-sig"))
-        issue_data = data.get(str(issue_number), {})
-        candidate = issue_data.get("planning_deliverables")
-        if isinstance(candidate, dict):
-            planning_deliverables = candidate
+    """Build a PhaseConfigContext explicitly from workflow configuration."""
     return PhaseConfigContext(
         workphases=_load_config(
             workspace_root,
@@ -373,8 +384,21 @@ def make_phase_config_context(
                 "load_contracts_config",
             ),
         ),
-        planning_deliverables=planning_deliverables,
     )
+
+
+def make_phase_contract_resolver(
+    workspace_root: Path | str,
+    *,
+    project_plan_reader: IProjectPlanReader | None = None,
+) -> PhaseContractResolver:
+    """Compose a resolver with the actual plan reader unless a unit double is supplied."""
+    reader = (
+        project_plan_reader
+        if project_plan_reader is not None
+        else make_project_manager(workspace_root)
+    )
+    return PhaseContractResolver(make_phase_config_context(workspace_root), reader)
 
 
 def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine:

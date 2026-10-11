@@ -130,3 +130,21 @@ class GitConfig(BaseModel):
             )
 
         return f"{branch_type}/{issue_number}-{slug}"
+
+    def canonical_issue_marker(self, issue_number: int) -> str:
+        """Return the exact subject suffix used for issue attribution."""
+        if issue_number < 1:
+            raise ValueError("issue_number_invalid")
+        return f"(#{issue_number})"
+
+    def subject_has_issue(self, subject: str, issue_number: int) -> bool:
+        """Qualify one exact terminal subject marker, never a body or larger number."""
+        marker = self.canonical_issue_marker(issue_number)
+        return subject.endswith(f" {marker}")
+
+    def normalize_issue_title(self, title: str, issue_number: int) -> str:
+        """Remove matching standalone title markers before appending one canonical suffix."""
+        self.canonical_issue_marker(issue_number)
+        pattern = rf"\(#{issue_number}\)|(?<![\w#])#{issue_number}(?![\w])"
+        without_markers = re.sub(pattern, "", title)
+        return re.sub(r"[ \t]+", " ", without_markers).strip()

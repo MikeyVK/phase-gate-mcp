@@ -4,9 +4,14 @@
 
 {% macro validation_spec(spec) -%}
 {%- set selected = namespace(parts=[
-    '**Type:** ' ~ spec.type,
-    '**File:** ' ~ (spec.file | tojson)
+    '**Type:** ' ~ spec.type
 ]) -%}
+{%- if spec.file is defined -%}
+{%- set selected.parts = selected.parts + ['**File:** ' ~ (spec.file | tojson)] -%}
+{%- endif -%}
+{%- if spec.dir is defined -%}
+{%- set selected.parts = selected.parts + ['**Directory:** ' ~ (spec.dir | tojson), '**Pattern:** ' ~ (spec.pattern | tojson)] -%}
+{%- endif -%}
 {%- if spec.text is defined -%}
 {%- set selected.parts = selected.parts + ['**Text:** ' ~ (spec.text | tojson)] -%}
 {%- endif -%}

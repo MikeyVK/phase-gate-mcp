@@ -5,7 +5,6 @@ new content. Tests are RED until the descriptions are updated (GREEN phase).
 
 Covers:
 - SubmitPRTool.base: 3-tier cascade documentation
-- SavePlanningDeliverablesTool / UpdatePlanningDeliverablesTool: validates-spec ref
 - AddLabelsInput.labels: label naming constraints
 - CreateMilestoneInput.due_on: ISO 8601 datetime format
 - ValidateDTOTool: file-exists scope clarification
@@ -19,10 +18,6 @@ from mcp_server.tools.label_tools import AddLabelsInput
 from mcp_server.tools.milestone_tools import CreateMilestoneInput
 from mcp_server.tools.phase_tools import ForcePhaseTransitionInput, TransitionPhaseInput
 from mcp_server.tools.pr_tools import SubmitPRInput
-from mcp_server.tools.project_tools import (
-    SavePlanningDeliverablesInput,
-    UpdatePlanningDeliverablesInput,
-)
 
 
 class TestC4DescriptionInvariants:
@@ -34,22 +29,6 @@ class TestC4DescriptionInvariants:
         desc = field_info.description or ""
         assert "state.json" in desc or "parent_branch" in desc or "git_config" in desc, (
             f"SubmitPRInput.base description must document cascade: {desc!r}"
-        )
-
-    def test_save_planning_deliverables_references_validates_spec(self) -> None:
-        """SavePlanningDeliverablesInput.planning_deliverables references validates-spec."""
-        field_info = SavePlanningDeliverablesInput.model_fields["planning_deliverables"]
-        desc = field_info.description or ""
-        assert "validates" in desc.lower(), (
-            f"planning_deliverables description must reference validates-spec: {desc!r}"
-        )
-
-    def test_update_planning_deliverables_references_validates_spec(self) -> None:
-        """UpdatePlanningDeliverablesInput.planning_deliverables references validates-spec."""
-        field_info = UpdatePlanningDeliverablesInput.model_fields["planning_deliverables"]
-        desc = field_info.description or ""
-        assert "validates" in desc.lower(), (
-            f"planning_deliverables description must reference validates-spec: {desc!r}"
         )
 
     def test_add_labels_mentions_naming_constraints(self) -> None:

@@ -17,6 +17,7 @@ import pytest
 from mcp_server.core.interfaces import GateReport
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
     get_default_server_root,
     make_phase_state_engine,
@@ -40,8 +41,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def inspect_phase_exit(
@@ -49,8 +52,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def enforce_cycle_exit(
@@ -58,8 +63,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def inspect_cycle_exit(
@@ -67,8 +74,10 @@ class _StaticGateRunner:
         workflow_name: str,
         phase: str,
         cycle_number: int,
+        *,
+        issue_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number
+        del workflow_name, phase, cycle_number, issue_number
         return self._report
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
@@ -209,21 +218,35 @@ class TestForceTransitionSkippedGateWarning:
 
         assert "skipped_gates" in caplog.text
 
-    def test_force_transition_logs_warning_for_skipped_entry_expects(
+    def test_force_transition_reports_skipped_gate_with_valid_entry_plan(
         self,
         engine_with_gates: PhaseStateEngine,
         project_manager_with_gates: ProjectManager,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        """force_transition logs warning when to_phase has entry_expects (GAP-03).
-
-        Forcing research → implementation bypasses the implementation entry expects check.
-        Warning must mention skipped_gates.
-        """
+        """Force reports skipped exit gates while retaining complete entry-plan validity."""
         project_manager_with_gates.initialize_project(
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
+        )
+        project_manager_with_gates.save_planning_deliverables(
+            229,
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "Begin work",
+                                "deliverables": [
+                                    {"deliverable_name": "Result", "description": "Useful result"}
+                                ],
+                                "exit_criteria": "Behavior demonstrated",
+                            }
+                        ]
+                    }
+                }
+            ),
         )
         engine_with_gates.initialize_branch(
             branch="feature/229-c3b",
@@ -298,18 +321,19 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
         )
         pm.save_planning_deliverables(
             229,
-            {
-                "cycles": {
-                    "total": 1,
-                    "cycles": [
-                        {
-                            "cycle_number": 1,
-                            "deliverables": [{"id": "D1", "description": "D1"}],
-                            "exit_criteria": "c",
-                        }
-                    ],
+            SavePlanningModel.model_validate(
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_name": "Cycle 1",
+                                "deliverables": [{"deliverable_name": "D1", "description": "D1"}],
+                                "exit_criteria": "c",
+                            }
+                        ],
+                    }
                 }
-            },
+            ),
         )
 
         engine = make_phase_state_engine(workspace_root, project_manager=pm)

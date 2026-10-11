@@ -90,7 +90,6 @@ class TestPhaseStateEngineStateRoot:
             git_config=MagicMock(),
             contracts_config=MagicMock(),
             state_repository=MagicMock(),
-            scope_decoder=MagicMock(),
             workflow_gate_runner=MagicMock(),
             state_reconstructor=MagicMock(),
             workflow_state_mutator=MagicMock(),
@@ -148,6 +147,7 @@ class TestProjectManagerStateRoot:
             server_root=state_root,
             contracts_config=MagicMock(),
             workflow_status_resolver=MagicMock(),
+            cycle_evidence_reader=MagicMock(),
         )
 
     def test_deliverables_file_uses_injected_state_root(self, tmp_path: Path) -> None:
@@ -350,7 +350,6 @@ class TestPhaseStateEngineNoFallback:
                 git_config=MagicMock(),
                 contracts_config=MagicMock(),
                 state_repository=MagicMock(),
-                scope_decoder=MagicMock(),
                 workflow_gate_runner=MagicMock(),
                 state_reconstructor=MagicMock(),
                 workflow_state_mutator=MagicMock(),

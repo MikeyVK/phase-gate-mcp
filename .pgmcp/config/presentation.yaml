@@ -63,6 +63,10 @@ global:
 
   failures:
 
+    planning_cycle_protected: "Planning change rejected: cycles with implementation commits cannot be replaced, removed or renumbered. ({error_code})"
+
+    planning_already_saved: "Planning already exists. Use update_planning_deliverables to change it. ({error_code})"
+
     dirty_workdir: "Branch '{branch}' is not in a clean state -- commit or stash changes."
 
     no_upstream: "No upstream tracking branch configured for branch '{branch}'."
@@ -125,13 +129,17 @@ global:
 
     templates:
 
+      info:
+
+        planning_cycle_evidence: "Cycle evidence: {status}; HEAD={head_sha}; reason={reason_code}; protected={protected_cycle_numbers}; evidence_overridden={evidence_overridden}"
+
       suggestions:
 
         allowed_bases_suggestion: "Allowed bases: {bases}"
 
         close_open_pr_suggestion: "Call merge_pr to close the open PR before continuing branch work."
 
-        transition_phase_suggestion: 'transition_phase(to_phase="{required_phase}")'
+        transition_phase_suggestion: "Request a transition to the {required_phase} phase."
 
         load_context_suggestion: "Call get_work_context before using this tool."
 
@@ -330,7 +338,7 @@ tools:
     collections:
       - field: cycles
         heading: "Cycles:"
-        item_template: "- Cycle {cycle_number}: {deliverables_count} deliverables"
+        item_template: "- {cycle_id} — {cycle_name}: {deliverables_count} deliverables"
   update_planning_deliverables:
     category: planning
     max_items: 10
@@ -338,7 +346,7 @@ tools:
     collections:
       - field: cycles
         heading: "Cycles:"
-        item_template: "- Cycle {cycle_number}: {deliverables_count} deliverables"
+        item_template: "- {cycle_id} — {cycle_name}: {deliverables_count} deliverables"
   git_list_branches:
     category: query
     max_items: 20
@@ -551,6 +559,7 @@ tools:
     template_success: "Milestone #{number}: {title} [{state}]."
   transition_phase:
     category: mutation
+    template_failure: "Phase transition rejected: {error_code}. {error_message}"
     max_items: 20
     template_success: "Transitioned '{from_phase}' → '{to_phase}' on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     collections:
@@ -561,6 +570,7 @@ tools:
       - "context_reset"
   force_phase_transition:
     category: mutation
+    template_failure: "Forced phase transition rejected: {error_code}. {error_message}"
     max_items: 20
     template_success: |
       Force-transitioned '{from_phase}' → '{to_phase}' on branch '{branch}'.
@@ -624,3 +634,4 @@ tools:
     category: mutation
     template_success: "Edited {path}; written={written}; validation={validation_status}."
     template_failure: "Edit {path} failed: {error_code}."
+

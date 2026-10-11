@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -99,37 +100,40 @@ class TestTransitionCycleTool:
         )
 
         # Save planning deliverables (4 cycles)
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Schema & Storage",
-                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
-                        "exit_criteria": "Tests pass",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Validation Logic",
-                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
-                        "exit_criteria": "All scenarios covered",
-                    },
-                    {
-                        "cycle_number": 3,
-                        "name": "Discovery Tools",
-                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
-                        "exit_criteria": "Tools return cycle info",
-                    },
-                    {
-                        "cycle_number": 4,
-                        "name": "Transition Tools",
-                        "deliverables": [{"id": "D4.1", "description": "transition_cycle"}],
-                        "exit_criteria": "All transitions working",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Schema & Storage",
+                            "deliverables": [{"deliverable_name": "D1.1", "description": "Schema"}],
+                            "exit_criteria": "Tests pass",
+                        },
+                        {
+                            "cycle_name": "Validation Logic",
+                            "deliverables": [
+                                {"deliverable_name": "D2.1", "description": "Validators"}
+                            ],
+                            "exit_criteria": "All scenarios covered",
+                        },
+                        {
+                            "cycle_name": "Discovery Tools",
+                            "deliverables": [
+                                {"deliverable_name": "D3.1", "description": "get_work_context"}
+                            ],
+                            "exit_criteria": "Tools return cycle info",
+                        },
+                        {
+                            "cycle_name": "Transition Tools",
+                            "deliverables": [
+                                {"deliverable_name": "D4.1", "description": "transition_cycle"}
+                            ],
+                            "exit_criteria": "All transitions working",
+                        },
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(issue_number, planning_deliverables)
 
         # Initialize implementation phase with cycle 1
@@ -302,40 +306,44 @@ class TestForceCycleTransitionTool:
         )
 
         # Save planning deliverables (4 cycles)
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Schema & Storage",
-                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
-                        "exit_criteria": "Tests pass",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Validation Logic",
-                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
-                        "exit_criteria": "All scenarios covered",
-                    },
-                    {
-                        "cycle_number": 3,
-                        "name": "Discovery Tools",
-                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
-                        "exit_criteria": "Tools return cycle info",
-                    },
-                    {
-                        "cycle_number": 4,
-                        "name": "Transition Tools",
-                        "deliverables": [
-                            {"id": "D4.1", "description": "transition_cycle"},
-                            {"id": "D4.2", "description": "force_cycle_transition"},
-                        ],
-                        "exit_criteria": "All transitions working",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Schema & Storage",
+                            "deliverables": [{"deliverable_name": "D1.1", "description": "Schema"}],
+                            "exit_criteria": "Tests pass",
+                        },
+                        {
+                            "cycle_name": "Validation Logic",
+                            "deliverables": [
+                                {"deliverable_name": "D2.1", "description": "Validators"}
+                            ],
+                            "exit_criteria": "All scenarios covered",
+                        },
+                        {
+                            "cycle_name": "Discovery Tools",
+                            "deliverables": [
+                                {"deliverable_name": "D3.1", "description": "get_work_context"}
+                            ],
+                            "exit_criteria": "Tools return cycle info",
+                        },
+                        {
+                            "cycle_name": "Transition Tools",
+                            "deliverables": [
+                                {"deliverable_name": "D4.1", "description": "transition_cycle"},
+                                {
+                                    "deliverable_name": "D4.2",
+                                    "description": "force_cycle_transition",
+                                },
+                            ],
+                            "exit_criteria": "All transitions working",
+                        },
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(
             issue_number=issue_number, planning_deliverables=planning_deliverables
         )
@@ -498,37 +506,40 @@ class TestForceCycleAuditSchema:
             workflow_name="feature",
         )
 
-        planning_deliverables = {
-            "cycles": {
-                "total": 4,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Schema",
-                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
-                        "exit_criteria": "Tests pass",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Validation",
-                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
-                        "exit_criteria": "All scenarios covered",
-                    },
-                    {
-                        "cycle_number": 3,
-                        "name": "Discovery",
-                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
-                        "exit_criteria": "Tools work",
-                    },
-                    {
-                        "cycle_number": 4,
-                        "name": "Transition",
-                        "deliverables": [{"id": "D4.1", "description": "transition_cycle"}],
-                        "exit_criteria": "Transitions work",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Schema",
+                            "deliverables": [{"deliverable_name": "D1.1", "description": "Schema"}],
+                            "exit_criteria": "Tests pass",
+                        },
+                        {
+                            "cycle_name": "Validation",
+                            "deliverables": [
+                                {"deliverable_name": "D2.1", "description": "Validators"}
+                            ],
+                            "exit_criteria": "All scenarios covered",
+                        },
+                        {
+                            "cycle_name": "Discovery",
+                            "deliverables": [
+                                {"deliverable_name": "D3.1", "description": "get_work_context"}
+                            ],
+                            "exit_criteria": "Tools work",
+                        },
+                        {
+                            "cycle_name": "Transition",
+                            "deliverables": [
+                                {"deliverable_name": "D4.1", "description": "transition_cycle"}
+                            ],
+                            "exit_criteria": "Transitions work",
+                        },
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(issue_number, planning_deliverables)
 
         branch = "feature/146-tdd-cycle-tracking"
@@ -700,31 +711,29 @@ class TestTransitionCycleHistory:
             workflow_name="feature",
         )
 
-        planning_deliverables = {
-            "cycles": {
-                "total": 3,
-                "cycles": [
-                    {
-                        "cycle_number": 1,
-                        "name": "Cycle One",
-                        "deliverables": [{"id": "D1.1", "description": "D1"}],
-                        "exit_criteria": "EC1",
-                    },
-                    {
-                        "cycle_number": 2,
-                        "name": "Cycle Two",
-                        "deliverables": [{"id": "D2.1", "description": "D2"}],
-                        "exit_criteria": "EC2",
-                    },
-                    {
-                        "cycle_number": 3,
-                        "name": "Cycle Three",
-                        "deliverables": [{"id": "D3.1", "description": "D3"}],
-                        "exit_criteria": "EC3",
-                    },
-                ],
+        planning_deliverables = SavePlanningModel.model_validate(
+            {
+                "cycles": {
+                    "cycles": [
+                        {
+                            "cycle_name": "Cycle One",
+                            "deliverables": [{"deliverable_name": "D1.1", "description": "D1"}],
+                            "exit_criteria": "EC1",
+                        },
+                        {
+                            "cycle_name": "Cycle Two",
+                            "deliverables": [{"deliverable_name": "D2.1", "description": "D2"}],
+                            "exit_criteria": "EC2",
+                        },
+                        {
+                            "cycle_name": "Cycle Three",
+                            "deliverables": [{"deliverable_name": "D3.1", "description": "D3"}],
+                            "exit_criteria": "EC3",
+                        },
+                    ],
+                }
             }
-        }
+        )
         project_manager.save_planning_deliverables(issue_number, planning_deliverables)
 
         branch = "feature/146-tdd-cycle-tracking"
@@ -861,6 +870,13 @@ class TestTransitionCycleExitCriteria:
             workflow_name="feature",
         )
 
+        branch = "feature/146-tdd-cycle-tracking"
+        state_engine.initialize_branch(
+            branch=branch,
+            issue_number=issue_number,
+            initial_phase="implementation",
+        )
+
         if bypass_validation:
             # Write planning deliverables directly to bypass schema validation
             # Used to simulate corrupt/external state for testing robustness
@@ -869,24 +885,18 @@ class TestTransitionCycleExitCriteria:
             raw = json.loads(projects_file.read_text(encoding="utf-8"))
             projects = raw.get("projects", raw)
             projects[str(issue_number)]["planning_deliverables"] = {
-                "cycles": {"total": len(cycles), "cycles": cycles}
+                "cycles": {"total": len(cycles), "cycles": cycles},
+                "phases": {},
             }
             projects_file.write_text(json.dumps(raw, indent=2), encoding="utf-8")
         else:
-            planning_deliverables = {
-                "cycles": {
-                    "total": len(cycles),
-                    "cycles": cycles,
+            planning_deliverables = SavePlanningModel.model_validate(
+                {
+                    "cycles": {"cycles": cycles},
                 }
-            }
+            )
             project_manager.save_planning_deliverables(issue_number, planning_deliverables)
 
-        branch = "feature/146-tdd-cycle-tracking"
-        state_engine.initialize_branch(
-            branch=branch,
-            issue_number=issue_number,
-            initial_phase="implementation",
-        )
         state = state_engine.get_state(branch)
         state = state.with_updates(
             current_phase="implementation",
@@ -911,15 +921,29 @@ class TestTransitionCycleExitCriteria:
             bypass_validation=True,
             cycles=[
                 {
+                    "cycle_id": "C_1",
                     "cycle_number": 1,
-                    "name": "Schema",
-                    "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                    "cycle_name": "Schema",
+                    "deliverables": [
+                        {
+                            "deliverable_id": "D_1.1",
+                            "deliverable_name": "Schema",
+                            "description": "Schema",
+                        }
+                    ],
                     "exit_criteria": "",  # Empty - bypasses save_planning_deliverables validation
                 },
                 {
+                    "cycle_id": "C_2",
                     "cycle_number": 2,
-                    "name": "Validation",
-                    "deliverables": [{"id": "D2.1", "description": "Validators"}],
+                    "cycle_name": "Validation",
+                    "deliverables": [
+                        {
+                            "deliverable_id": "D_2.1",
+                            "deliverable_name": "Validators",
+                            "description": "Validators",
+                        }
+                    ],
                     "exit_criteria": "All validators pass",
                 },
             ],
@@ -936,7 +960,13 @@ class TestTransitionCycleExitCriteria:
 
         assert not result.success, "Must block when exit_criteria is empty"
         text = result.error_message or ""
-        assert "exit" in text.lower() or "criteria" in text.lower()
+        assert "planning_stored_invalid" in text
+        assert (
+            make_phase_state_engine(_workspace_root)
+            .get_state("feature/146-tdd-cycle-tracking")
+            .current_cycle
+            == 1
+        )
 
     @pytest.mark.asyncio()
     async def test_transition_blocked_when_current_cycle_missing_exit_criteria(
@@ -951,15 +981,29 @@ class TestTransitionCycleExitCriteria:
             bypass_validation=True,
             cycles=[
                 {
+                    "cycle_id": "C_1",
                     "cycle_number": 1,
-                    "name": "Schema",
-                    "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                    "cycle_name": "Schema",
+                    "deliverables": [
+                        {
+                            "deliverable_id": "D_1.1",
+                            "deliverable_name": "Schema",
+                            "description": "Schema",
+                        }
+                    ],
                     # No exit_criteria key at all
                 },
                 {
+                    "cycle_id": "C_2",
                     "cycle_number": 2,
-                    "name": "Validation",
-                    "deliverables": [{"id": "D2.1", "description": "Validators"}],
+                    "cycle_name": "Validation",
+                    "deliverables": [
+                        {
+                            "deliverable_id": "D_2.1",
+                            "deliverable_name": "Validators",
+                            "description": "Validators",
+                        }
+                    ],
                     "exit_criteria": "All validators pass",
                 },
             ],
@@ -976,7 +1020,13 @@ class TestTransitionCycleExitCriteria:
 
         assert not result.success, "Must block when exit_criteria key is missing"
         text = result.error_message or ""
-        assert "exit" in text.lower() or "criteria" in text.lower()
+        assert "planning_stored_invalid" in text
+        assert (
+            make_phase_state_engine(_workspace_root)
+            .get_state("feature/146-tdd-cycle-tracking")
+            .current_cycle
+            == 1
+        )
 
     @pytest.mark.asyncio()
     async def test_transition_succeeds_when_exit_criteria_present(
@@ -990,15 +1040,13 @@ class TestTransitionCycleExitCriteria:
             tmp_path,
             cycles=[
                 {
-                    "cycle_number": 1,
-                    "name": "Schema",
-                    "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                    "cycle_name": "Schema",
+                    "deliverables": [{"deliverable_name": "D1.1", "description": "Schema"}],
                     "exit_criteria": "All schema tests pass",
                 },
                 {
-                    "cycle_number": 2,
-                    "name": "Validation",
-                    "deliverables": [{"id": "D2.1", "description": "Validators"}],
+                    "cycle_name": "Validation",
+                    "deliverables": [{"deliverable_name": "D2.1", "description": "Validators"}],
                     "exit_criteria": "All validators pass",
                 },
             ],
