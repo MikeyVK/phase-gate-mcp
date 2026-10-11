@@ -1,0 +1,22 @@
+adapter_id: check_jsonschema
+version: "1.0.0"
+files:
+  - check.py
+  - requirements.txt
+  - dependencies.json
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      yaml_configuration:
+        configured_targets: yaml_sources
+        inputs: [content, selection]
+        requires_file: true
+      json_schema:
+        configured_targets: json_schema_sources
+        inputs: [content, selection]
+        requires_file: true
