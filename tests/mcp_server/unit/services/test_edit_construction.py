@@ -40,22 +40,22 @@ def checks() -> ChecksConfig:
     )
 
 
-def test_operations_preserve_exact_matching_newlines_and_unchanged_text() -> None:
+def test_operations_use_lf_text_and_preserve_matching_behavior() -> None:
     cases: tuple[tuple[str, EditOperation, str], ...] = (
         ("x x", ReplaceOperation(target_content="x", replacement="y"), "y x"),
         (
             "x\r\nx\r\nx",
             ReplaceOperation(target_content="x", replacement="y", search_window=(2, 2)),
-            "x\r\ny\r\nx",
+            "x\ny\nx",
         ),
         ("x", ReplaceOperation(target_content="x", replacement="x"), "x"),
         ("x", RewriteOperation(content="x"), "x"),
-        ("old", RewriteOperation(content="new\r\n"), "new\r\n"),
+        ("old", RewriteOperation(content="new\r\n"), "new\n"),
         ("", AppendOperation(content="tail"), "tail\n"),
         ("x", AppendOperation(content="tail\n"), "x\ntail\n"),
         ("x\n", AppendOperation(content="tail"), "x\ntail\n"),
         ("x x", AppendOperation(content="a", anchor="x", position="before"), "a\nx x"),
-        ("x\r\nx", AppendOperation(content="a\n\n", anchor="x"), "x\na\r\nx"),
+        ("x\r\nx", AppendOperation(content="a\r\n\r\n", anchor="x"), "x\na\nx"),
         ("a1 a2", PatternReplaceOperation(pattern=r"a\d", replacement="b"), "b b"),
         (
             r"a\b a\b",

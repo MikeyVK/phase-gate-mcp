@@ -24,7 +24,7 @@ from mcp_server.services.edit_construction import (
     PatternReplaceOperation,
     ReplaceOperation,
     RewriteOperation,
-    construct_edit_proposal,
+    construct_edit,
     select_profile,
 )
 from mcp_server.services.edit_construction import (
@@ -76,7 +76,7 @@ def operation(
         reader=OriginalFileReader(),
         writer=CheckedFileWriter(),
         select=select,
-        construct=construct_edit_proposal,
+        construct=construct_edit,
         checks=checks,
     ), runtime
 
@@ -106,7 +106,7 @@ async def test_policy_retains_actual_text_bytes_and_validation(
     written = policy == "report" or (has_profile and outcome == "passed")
     assert result.written is written and result.success is written
     assert target.read_bytes() == (proposed.encode("utf-8") if written else original)
-    assert result.content_changed is (False if written else None)
+    assert result.content_changed is (True if written else None)
     assert result.validation_status == (outcome if has_profile else "not_executed")
     assert result.profile_id == ("renamed" if has_profile else None)
     assert len(runtime.requests) == int(has_profile)
@@ -421,104 +421,70 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
     ("original", "command", "expected", "changed"),
     [
         (
-            b"alpha\r\nbeta\r\n",
-            ReplaceOperation(target_content="beta", replacement="BETA"),
-            b"alpha\r\nBETA\r\n",
-            True,
-        ),
-        (
-            b"alpha\r\nbeta\r\n",
-            ReplaceOperation(target_content="beta", replacement="BETA\nGAMMA"),
-            b"alpha\r\nBETA\r\nGAMMA\r\n",
-            True,
-        ),
-        (
-            b"alpha\r\n",
-            AppendOperation(content="beta"),
-            b"alpha\r\nbeta\r\n",
-            True,
-        ),
-        (
-            b"alpha\r\nbeta\r\n",
-            PatternReplaceOperation(pattern="beta", replacement="BETA"),
-            b"alpha\r\nBETA\r\n",
-            True,
-        ),
-        (
-            b"a\r\nb\nc\r\n",
-            ReplaceOperation(target_content="b\nc", replacement="B\nC"),
-            b"a\r\nB\r\nC\r\n",
+            b"same\r\nsame\r\nend\r",
+            ReplaceOperation(
+                target_content="same\r\nend\r",
+                replacement="B\r\nLAST\r",
+                search_window=(2, 3),
+            ),
+            b"same\nB\nLAST\n",
             True,
         ),
         (
             b"alpha\r\nbeta\nlast\r",
-            ReplaceOperation(target_content="beta", replacement="BETA"),
-            b"alpha\r\nBETA\nlast\r",
+            AppendOperation(content="tail\r\n"),
+            b"alpha\nbeta\nlast\ntail\n",
             True,
         ),
         (
-            b"a\r\nb\nc\r\n",
-            ReplaceOperation(target_content="b\n", replacement="b\n"),
-            b"a\r\nb\nc\r\n",
-            False,
+            b"alpha\r\nbeta\r\n",
+            RewriteOperation(content="alpha\rbeta\r"),
+            b"alpha\nbeta\n",
+            True,
         ),
         (
-            b"a\r\nb\nc\r\n",
-            PatternReplaceOperation(pattern="b\n", replacement="b\n", regex=False),
-            b"a\r\nb\nc\r\n",
-            False,
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern="alpha\r\nbeta", replacement="joined", regex=False),
+            b"joined\n",
+            True,
         ),
         (
-            b"a\r\nb\nc\r\n",
-            PatternReplaceOperation(pattern=r"b\n", replacement="b\n"),
-            b"a\r\nb\nc\r\n",
-            False,
+            b"alpha\r\nbeta\r\n",
+            PatternReplaceOperation(pattern=r"(b)(eta)\n", replacement=r"\2-\1\r\nGAMMA\n"),
+            b"alpha\neta-b\nGAMMA\n",
+            True,
         ),
         (
             b"alpha\r\nbeta\r\n",
             PatternReplaceOperation(pattern="absent", replacement="X"),
-            b"alpha\r\nbeta\r\n",
-            False,
-        ),
-        (
-            b"alpha\r\nbeta\r\n",
-            ReplaceOperation(target_content="beta", replacement="BETA\r\nGAMMA"),
-            b"alpha\r\nBETA\r\nGAMMA\r\n",
-            True,
-        ),
-        (
-            b"alpha\r\nbeta\r\n",
-            PatternReplaceOperation(pattern="\n", replacement="\r\n", regex=False),
-            b"alpha\r\nbeta\r\n",
-            True,
-        ),
-        (
-            b"same\r\nsame\nsame\r\n",
-            ReplaceOperation(target_content="same", replacement="X", search_window=(2, 2)),
-            b"same\r\nX\nsame\r\n",
-            True,
-        ),
-        (
-            b"alpha\r\nbeta\r\n",
-            PatternReplaceOperation(pattern=r"(b)(eta)", replacement=r"\2-\1"),
-            b"alpha\r\neta-b\r\n",
-            True,
-        ),
-        (
-            b"alpha\r\nbeta\r\n",
-            PatternReplaceOperation(pattern=r"(?=b)", replacement="X"),
-            b"alpha\r\nXbeta\r\n",
+            b"alpha\nbeta\n",
             True,
         ),
         (
             b"alpha\nbeta\n",
-            ReplaceOperation(target_content="beta", replacement="BETA\r\nGAMMA"),
-            b"alpha\nBETA\r\nGAMMA\n",
+            PatternReplaceOperation(pattern="\n", replacement="\r\n", regex=False),
+            b"alpha\nbeta\n",
+            False,
+        ),
+        (
+            b"alpha\rbeta\r",
+            AppendOperation(content="new\r\n\r\n", anchor="alpha\rbeta\r", position="before"),
+            b"new\n\nalpha\nbeta\n",
             True,
         ),
     ],
+    ids=[
+        "replace-window-literal-newlines",
+        "append-mixed-source",
+        "rewrite-cr-input",
+        "literal-pattern-newlines",
+        "regex-expansion",
+        "no-match-normalization",
+        "lf-byte-identity",
+        "anchored-append",
+    ],
 )
-async def test_targeted_edits_preserve_original_line_terminators(
+async def test_edits_use_lf_text_and_report_actual_byte_change(
     tmp_path: Path,
     original: bytes,
     command: EditCommand,
@@ -534,4 +500,4 @@ async def test_targeted_edits_preserve_original_line_terminators(
     assert result.written and result.validation_status == "passed"
     assert result.content_changed is changed
     assert target.read_bytes() == expected
-    assert runtime.requests[0][0].model_dump()["content"] == expected.decode("utf-8")
+    assert runtime.requests[0][0].model_dump()["content"].encode("utf-8") == expected

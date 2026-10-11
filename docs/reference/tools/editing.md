@@ -37,11 +37,30 @@ Example:
 }
 ```
 
+## Text and line endings
+
+Every completed proposal uses LF (`\n`) line endings for the entire file, including `rewrite` and operations with no matches. CRLF and lone CR in the source or inserted text are normalized to LF before validation and writing. A successful edit can therefore normalize untouched lines as well.
+
+Literal matching operands (`target_content`, `anchor`, and `pattern` when `regex=false`) are normalized to LF too. Regex patterns and replacement syntax keep Python's native meaning: matching runs against the LF source, and expanded output is normalized to LF. Use `\n` when matching line endings; a regex escape for CRLF does not match that normalized source.
+
+Normalization does not change Unicode characters, BOM, other whitespace or final-newline policy. Append retains its existing separator behavior. This is the safe-edit write policy; Git and editor settings can independently affect line endings outside a tool call.
+
 ## Validation and result
 
 The operation selects check obligations using an explicit `template_id` when supplied, otherwise available artifact-header metadata or the file extension. `enforce` prevents a write when required checks fail; `report` returns the check facts without enforcing that rejection policy. These are validation policies, not legacy strict/interactive/verify-only modes or a general quality-gate invocation.
 
-The result records the attempted operation, write/content-change facts, selected validation profile and check results, plus structured failure details where applicable. Read the cached complete result when you need full diagnostics or the generated diff; use the bounded presented response for routine outcomes. Check configuration defines applicable adapter checks and native execution evidence.
+The result records the attempted operation, write/content-change facts, selected validation profile and check results, plus structured failure details where applicable.
+
+| Field | Meaning |
+|---|---|
+| `written=true` | The guarded file replacement completed, including a byte-identical proposal. |
+| `content_changed=true` | The final UTF-8 proposal bytes differ from the original bytes read at the start of this call, and replacement completed. |
+| `content_changed=false` | Replacement completed with the same bytes as the original. |
+| `content_changed=null` | No replacement completed; this does not establish that the proposed text was identical. |
+
+A no-match operation can still report `content_changed=true` when CRLF/CR source bytes become LF. Byte-identical proposals still run validation and the write path. Checks receive the exact final text sent to the writer; the writer retains its guard against a concurrent change to the original bytes.
+
+Read the cached complete result when you need full diagnostics or the generated diff; use the bounded presented response for routine outcomes. Check configuration defines applicable adapter checks and native execution evidence.
 
 For the delivered Markdown policies and the `.md` extension route, the existing Lychee adapter checks local links and heading fragments against the proposed edit before writing, using the edited file's intended path as the resolution base. Self-links resolve against the proposed content. See [Markdown validation](scaffolding.md#markdown-validation) for native availability, offline scope and the template package's structural responsibility. A successful link check does not establish that a full rewrite preserves the template's H1 or document structure.
 
