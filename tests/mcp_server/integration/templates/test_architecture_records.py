@@ -340,4 +340,3 @@ def test_real_adr_sad_relative_fragments(
     assert response["external_tools"] == [{"tool_id": "lychee", "version": "0.24.2"}]
     assert adr_file.read_text(encoding="utf-8") == adr_text
     assert sad_file.read_text(encoding="utf-8") == sad_text
-
