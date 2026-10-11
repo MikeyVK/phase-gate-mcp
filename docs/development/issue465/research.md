@@ -3,16 +3,16 @@
 # Issue 465 — YAML, JSON Schema and architecture artifact research
 
 **Status:** Draft — YAML direction approved; combined Research incomplete  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-11
 
 ## Purpose
 
-Establish independently evidenced scope and strategy for the combined artifact-family issue. This initial draft records the YAML workspace inventory; it does not close Research.
+Establish independently evidenced scope and strategy for the combined artifact-family issue. Record the YAML workspace inventory, source-based technical feasibility and separate JSON Schema/ADR/SAD conclusions; Research remains open for the remaining owner strategy decisions.
 
 ## Scope In
 
-YAML source files and direct consumers in C:/temp/pgmcp and C:/1Voudig/99_Programming/ST; historical YAML seeds and issue-460 deferral. C:/temp/S1mpleTrader was also inspected as a smaller checkout. Further conclusions for #484 and #498 remain separate work.
+YAML source files and direct consumers in C:/temp/pgmcp and C:/1Voudig/99_Programming/ST; historical YAML seeds and issue-460 deferral. C:/temp/S1mpleTrader was also inspected as a smaller checkout. Include separate source-based conclusions for JSON Schema (#484) and portable ADR/arc42 SAD (#498), with shared rendering, provenance, native validation and distribution boundaries.
 
 ## Scope Out
 
@@ -60,22 +60,91 @@ Current `.pgmcp/config/checks.yaml` admits Python, TypeScript, commit and Markdo
 ### #465: options considered
 | Option | Value | Disposition |
 |---|---|---|
-| Bounded reusable YAML configuration family | Provides ordinary configuration authoring through pgmcp, with reliable data rendering and configured output checks. | Owner-selected direction; concrete input shapes, renderer and native tool remain to be researched. |
+| Bounded reusable YAML configuration family | Provides ordinary configuration authoring through pgmcp, with reliable data rendering and configured output checks. | Owner-selected direction; concrete rendering/checking recommendations are recorded below and await boundary approval. |
 | Consumer-specific packages sharing YAML rendering | Add prescribed structure, required fields or useful defaults for a proven consumer. | Add only where that extra value is demonstrated; no package per observed configuration file. |
 | Only manifest/policy authoring packages | Small and tied to closed consumers. | Rejected as premature narrowing; does not meet the wider controlled-authoring goal. |
 | No YAML family | Avoids new rendering and validation responsibility. | Not the selected direction; leaves agents without this supported pgmcp authoring route. |
 
 The owner selected a modest complete YAML configuration family primarily for the value of the controlled authoring route, rather than for domain structure invented by a generic template. Supporting all YAML constructs or rebuilding consumer configuration models is not required.
 
-### Separate combined-issue work
-The controlled-authoring goal applies to evaluating all three artifact families. It does not expand #484 from JSON Schema source artifacts to arbitrary JSON configuration, or settle #498 ADR/SAD contracts and arc42 attribution. Their independent conclusions and boundary strategies remain required before combined Research closes.
+### #465: rendering and configured output checks
+
+| Investigated route | Source observation | Research conclusion |
+|---|---|---|
+| Existing Jinja/raw interpolation | The real filter registration has no YAML serializer. Direct interpolation does not supply a complete scalar/container contract. | Do not revive the old renderer or implement YAML quoting in Jinja loops. |
+| PyYAML safe emission | PyYAML is already a server dependency; inspected workspace metadata reports 6.0.3. Its safe emitter serializes standard data, with formatting options and scalar representer extension points. | A small artifact-agnostic serialization filter is a viable generic capability addition; it must be registered in the real admission and rendering environments. No YAML parser/emitter implementation of our own. |
+| JSON-data-shaped YAML | The existing content boundary accepts finite JSON values and detaches them to ordinary dict/list values before Jinja rendering. | Use one mapping-root document with ordinary string keys, finite scalars, mappings and lists. This excludes a free-form YAML DSL, custom objects/tags, multi-document streams and authored cyclic references. |
+| Native check-jsonschema | Supports YAML/JSON instance checks against a local schema and JSON Schema metaschema checks, with native JSON diagnostics. Verified tool baseline: 0.38.2; not a claimed functional minimum. | One native-tool adapter can serve configured checks for both source families. A local output schema can express the generic YAML configuration shape; no application field knowledge belongs in the adapter. |
+| yamllint | Offers syntax/style rules and native configuration; defaults include more style policy than this issue requires, and configuration can be discovered outside the workspace unless explicitly selected. | A viable optional style tool, but not required merely to add another gate when the chosen serializer and schema check cover the selected initial contract. |
+
+Source-based feasibility is not execution proof. [PyYAML emission](https://pyyaml.org/wiki/PyYAMLDocumentation), [native checker usage](https://check-jsonschema.readthedocs.io/en/stable/usage.html) and [yamllint configuration](https://yamllint.readthedocs.io/en/stable/configuration.html) are the primary references.
+
+The two YAML parser families are not equivalent. PyYAML recognizes additional plain scalar spellings such as on/off and timestamps. The inspected [0.38.2 YAML parser](https://github.com/python-jsonschema/check-jsonschema/blob/0.38.2/src/check_jsonschema/parsers/yaml.py) uses ruamel.yaml, treats timestamps as strings and converts mapping keys to strings. Therefore native checker success cannot prove the original key types or equality with a PyYAML consumer. The proposed initial rendering contract quotes string keys/ordinary strings consistently and preserves multiline string values; acceptance evidence must compare emitted data with both the real PyYAML consumer and the selected checker. Header comments are feasible through the package; per-entry comment authoring, anchors and exact style round-tripping are not required by the current recommendation.
+
+### Shared scaffold/edit integration
+
+Scaffold selects the package policy and calls CheckService.run_content before persistence. Safe edit calls the same method for proposed text; its existing selection precedence is explicit template ID, recognized original provenance, then longest matching configured filename suffix. A native adapter must declare content and selection inputs to serve both pre-write checks and run_checks. No new write service, tool DTO, phase enforcement or artifact-specific Python dispatch is needed.
+
+YAML can use the existing hash-comment provenance carrier and configured .yaml/.yml fallback. The release manifest already distributes the complete source suite and configuration root. Precise adapter files, native arguments, profile IDs and package roots are Design work.
+
+### #484: JSON Schema source conclusions
+
+The shared document metadata definition and its Research/generic_doc consumers are concrete Draft 2020-12 source use cases. Native execution contracts also use that dialect, including $id. The existing Jinja tojson filter is available and already used by the Planning renderer, so the proposed object-based source package does not need a new JSON serializer or context architecture.
+
+The proposed initial dialect is Draft 2020-12. Parsed source and native metaschema acceptance are distinct from a consumer's restrictions: TemplateContractLoader additionally requires an exact dialect URI, object root, unique keys, finite values, contained references and finite static expansion; its resolver excludes several otherwise standard schema keywords. Those restrictions must not be imposed on every JSON Schema source by an adapter. A real template-schema load and instance validation belong in acceptance evidence for that consumer.
+
+The inspected [0.38.2 JSON parser](https://github.com/python-jsonschema/check-jsonschema/blob/0.38.2/src/check_jsonschema/parsers/json_.py) uses optional orjson, otherwise ordinary json.loads. The fallback accepts nonstandard numeric constants and repeated names. A deterministic parser environment is therefore part of the adapter-package requirement; the proposed native route installs its supported orjson dependency so ordinary JSON syntax does not silently inherit the permissive fallback. Repeated-key rejection is still a stricter consumer guarantee, not provided by this metaschema tool. [orjson's documented loads behavior](https://github.com/ijl/orjson#deserialize) supports rejecting those nonstandard constants. Exact dependency versions and native error paths need focused implementation evidence.
+
+Metaschema validation checks the authored schema's formal vocabulary, not the availability of its authored references or representative instance acceptance. Local instance schemas can retrieve external refs; --no-cache is not an offline switch. Use local, nonremote-ref output schemas for the generic YAML check and builtin dialect metaschemas for schema-source checks. Preserve native JSON and stderr diagnostics through the existing check/v1 contract.
+
+JSON cannot use the existing comment prefix. [The standard $comment annotation](https://json-schema.org/draft/2020-12/json-schema-core#section-8.3) is a possible persisted source-provenance carrier, separate from validation meaning.
+
+| Provenance option | Consequence |
+|---|---|
+| Explicit template selection, with a configured .schema.json suffix where appropriate | Smallest code change. Persistent identity can be carried in $comment, but the current first-line reader will not reconstruct it automatically. Requires an explicit exception to automatic provenance routing for this format. |
+| A canonical root $comment carrier plus bounded opening-carrier recognition | Retains persisted identity and automatic package-profile selection. Requires one generic framing/reader extension, preserving ArtifactIdentity and existing carriers; no whole-document scan or schema-specific engine knowledge. |
+
+The second route is recommended for the owner's consistent authoring goal. Caller-authored schema explanations remain distinct from the reserved technical carrier. The precise framing, budget and malformed-carrier behavior are Design work.
+
+### #498: ADR and arc42 SAD conclusions
+
+Keep the existing architecture package's supported concept-document contract. Add separate portable ADR/SAD packages. The inspected Ypsia ADR v1.1.0 is prior art, not an input contract to preserve: its required integer ID is not rendered, its option-object schema does not specify the fields read by Jinja, its status schema does not enforce declared states, and mandatory Strategic/Tactical categories are project-specific. Do not carry those assumptions or alias fields into new packages.
+
+The proposed ADR content covers a visible caller-owned identifier, context/problem, decision drivers, concrete alternatives, a decision and rationale, status and consequences. Optional participants, tags, supersession and verification are authored facts. A single clearly defined ADR status is sufficient initially; it is not approval or workflow evidence. Minimal valid scaffolds may have explicit empty content carriers; never invent conclusions such as "None identified" for omitted evidence.
+
+The SAD retains all twelve official arc42 sections in order, with proportional authored content and a clear distinction between proposed and existing architecture. Its section 9 indexes linked ADRs; each linked ADR records its relevant SAD section targets. Reuse explicit label/target links; do not introduce document discovery, automatic numbering, taxonomy-derived section selection or a lifecycle engine. The supplied links and index facts are reviewed author input, not automatically synchronized state.
+
+The inspected immutable arc42 source is **32fd461c91b184777e14f7d66b4e46db936fd3e5**, declaring **9.0-EN, July 2025**. The [pinned EN source](https://raw.githubusercontent.com/arc42/arc42-template/32fd461c91b184777e14f7d66b4e46db936fd3e5/EN/arc42-template.adoc), [revision file](https://raw.githubusercontent.com/arc42/arc42-template/32fd461c91b184777e14f7d66b4e46db936fd3e5/EN/version.properties) and [license](https://raw.githubusercontent.com/arc42/arc42-template/32fd461c91b184777e14f7d66b4e46db936fd3e5/LICENSE.txt) were read at that exact revision after resolving the official main commit through the GitHub API. Section 10 includes both overview and quality scenarios. The adapted arc42 template requires attribution to Gernot Starke and Peter Hruschka, a CC BY-SA 4.0 link, identification of adaptations and preservation of that license for the distributed adaptation. Caller-authored architecture content remains separately owned. Use a component attribution/license record rather than silently treating the adaptation as solely the repository's general license.
+
+### Impact and proportionate evidence
+
+| Boundary | Likely change and proof obligation |
+|---|---|
+| Template assets | Four bounded concrete purposes: ordinary YAML configuration, JSON Schema source, ADR and SAD. Package IDs and exact fields remain Design choices. Existing architecture and shared full-document metadata retain their contracts. |
+| Generic rendering | One YAML serialization capability; reuse real filter registration and existing detached finite input. JSON uses tojson. Do not promise this entire feature is suite-only; prove later package extension is file-based once required generic capabilities exist. |
+| Generic provenance | Only the selected JSON carrier can require a bounded reader/shared-format change; existing carriers remain supported. |
+| Native tooling and configuration | One native-tool adapter candidate, pinned environment requirements, content/selection capabilities, check/profile bindings and release assets. Configure native semantics instead of writing application validators in the adapter. |
+| Tests and helpers | Reuse delivered_templates and existing public scaffold/edit fixtures. Prove parsed type/value preservation, native acceptance/rejection and enforce/report write behavior. Prove actual consumer use separately. For ADR/SAD prove field placement, supplied status/identity, twelve-section structure and real cross-links; avoid whole-document snapshots and arbitrary prose assertions. |
+| Documentation and instructions | Extend existing template/adapter usage and provenance references only where behavior changes. No general instruction rollout or new template-release procedure; use the current suite maintenance/release contract. |
+
+No native candidate execution, benchmark or implementation test was performed in this Research step. Feasibility claims are based on direct source inspection. Production/configuration/template assets remain unchanged.
+
+### Remaining strategy decisions
+
+| Boundary | Recommended strategy awaiting owner approval |
+|---|---|
+| YAML rendering/checking | Add only an artifact-agnostic PyYAML rendering capability and a native check-jsonschema adapter with a deterministic supported parser environment. Start with single mapping-root, ordinary finite data, a header comment and readable multiline values; omit authored anchors/per-entry comment DSL. |
+| JSON Schema/provenance | One object-based Draft 2020-12 source family, no arbitrary JSON generator or template-consumer-specific validator. Preserve persisted identity via $comment with a small bounded generic reader extension; retain explicit selection and configured suffix fallback. |
+| ADR/SAD and licensing | New portable packages, visible caller-owned ADR identity and authored status, proportional drafts and explicit ADR/SAD links. Preserve architecture; no legacy input bridges, automatic lifecycle or numbering. Distribute the arc42 adaptation with its pinned-source attribution and component license. |
+
+These recommendations complete the technical comparison, not the human strategy gate. The separately approved controlled-authoring direction remains binding; combined Research stays open until these affected boundaries are explicitly accepted.
 
 ## Questions
 
-- Bound the ordinary YAML data shapes, string/type guarantees and comment/multiline behavior; determine whether authoring anchors adds enough value for the initial family.
-- Identify the smallest reliable YAML rendering capability and existing native output checker that fit the current package, adapter and profile contracts.
-- Determine how the selected output profile is reused for subsequent safe edits; keep format validation distinct from optional consumer-schema validation.
-- Capture separate owner decisions for JSON Schema source artifacts and ADR/SAD packages before closing combined Research.
+- Accept or revise the proposed YAML rendering/checking boundary, including the finite single-mapping scope and limited authored comment support.
+- Choose automatic bounded $comment provenance recognition or explicit selection for JSON Schema, while retaining the distinction between native metaschema evidence and stricter consumer admission.
+- Accept or revise the portable ADR/SAD boundary and distribution of the attributed arc42 adaptation.
+- After those owner choices, complete the phase hand-over for independently invoked QA; no technical recommendation authorizes phase progression.
 
 ## Approved Strategy
 
@@ -86,7 +155,7 @@ The controlled-authoring goal applies to evaluating all three artifact families.
 | Durable artifact authoring | Aim to support creation and subsequent editing through pgmcp so the owner can configure form, content constraints and quality checks. This combined issue implements its selected families, not every persistent file type. |
 | YAML family scope | Pursue a modest complete reusable family for ordinary structured configuration. Do not restrict it to pgmcp manifests/policies or create a separate package for each source file. Its primary value is the supported authoring route. |
 | Template content versus consumer semantics | Templates prescribe structure where useful. A generic YAML family owns supported input forms and reliable output; application-specific validity remains with an applicable schema or consumer validator. |
-| Public tooling and adapter boundary | Prefer existing configurable tools for checks and formatting. Adapters integrate those tools without acquiring application-specific configuration knowledge. Tool selection and version requirements remain Research work. |
+| Public tooling and adapter boundary | Prefer existing configurable tools for checks and formatting. Adapters integrate those tools without acquiring application-specific configuration knowledge. Source-based tool and parser-environment recommendations are recorded above; their approval remains open. |
 | Existing package and authoring contracts | Reuse the current discovery, context-schema, rendering and configured validation boundaries. Support the new family by additions where possible; do not redesign existing supported artifact contracts. |
 | Historical seeds | Do not restore the incomplete v2 seeds or introduce a compatibility path for them. They are Research evidence, not a supported contract to preserve. |
 | Harness enforcement | Supplying a pgmcp authoring route does not disable write tools in an external harness. General harness restrictions or an instruction rollout are not added to this issue. |
@@ -98,7 +167,13 @@ This approves the YAML direction and shared value criterion. It does not approve
 
 A complete supported YAML family provides creation through scaffolding and subsequent editing through the existing safe-edit route, with schema-complete input, coherent rendering and configured output validation. It must preserve supported data structure and intended value types. Checks must report their actual guarantees: generic format acceptance is not application-semantic acceptance.
 
-Minimal and populated examples must prove parsed-data behavior and useful configured validation; suite-only extension remains an acceptance boundary. Keep evidence focused and avoid whole-file snapshots or tests merely rejecting old behavior. The chosen renderer/profile integration and exact supported forms still require research. #484 and #498 retain separate expected results.
+Minimal and populated examples must prove parsed-data behavior and useful configured validation; suite-only extension remains an acceptance boundary after required generic capabilities exist. Keep evidence focused and avoid whole-file snapshots or tests merely rejecting old behavior. Native candidate behavior still requires execution evidence in the owning implementation/validation phases.
+
+| Included issue | Separate acceptance result |
+|---|---|
+| #465 | A supported ordinary YAML configuration package creates a single mapping-root document, preserves intended supported types/text and uses the configured native pre-write route for scaffolding and editing. Demonstrate real-consumer parsing and suite-only extension. |
+| #484 | A supported object-based Draft 2020-12 source package renders parseable JSON, receives native metaschema evidence and uses the selected valid provenance/edit route. Demonstrate a generated schema through a real template consumer and representative instance validation without claiming metaschema equivalence to every consumer restriction. |
+| #498 | Separate portable ADR/SAD packages consume supplied identity, status, content and references meaningfully; SAD retains twelve ordered sections and a compact ADR index. Demonstrate a real linked pair, invalid-input behavior, proportional drafts and correct attribution. Preserve the existing architecture package contract. |
 
 ## Evidence
 
@@ -131,6 +206,26 @@ checks.yaml lines 18–73 define no YAML check, profile or extension mapping; Co
 
 - [Output check configuration](<../../../.pgmcp/config/checks.yaml>)
 - [ConfigLoader](<../../../mcp_server/config/loader.py>)
+
+### Technical source and impact inspection
+
+**Invocation:** Read the current TemplateEngine/filter registration, TemplateCatalogRenderer, ScaffoldOperation, EditOperation, profile selection, CheckService, TemplateContractLoader and schema resolver; inspect delivered-template/public-operation fixtures and release assets. Read the official check-jsonschema 0.38.2 parser/reporting sources and PyYAML/Jinja documentation. Resolve arc42 main via the official GitHub API and read the exact pinned source files recorded in Findings.
+
+**Observed Result:** Shared scaffold/edit content validation and detached finite input already exist. YAML serialization, native source-family checks and the selected JSON carrier are genuine additions. Two bounded producer-delegated research tasks supplied findings for #484/#498; the producer independently checked the decisive local schemas/renderers and native parser/source evidence. Delegates issued no QA verdict or authorization.
+
+- [Rendering and real filter registration](<../../../mcp_server/services/template_engine.py>)
+- [Finite detached content](<../../../mcp_server/core/interfaces/template_catalog.py>)
+- [Scaffold pre-write checks](<../../../mcp_server/services/scaffold_operation.py>)
+- [Safe-edit pre-write checks](<../../../mcp_server/services/edit_operation.py>)
+- [Profile selection](<../../../mcp_server/services/edit_construction.py>)
+- [Bounded current provenance reader](<../../../mcp_server/services/artifact_header_reader.py>)
+- [Template consumer](<../../../mcp_server/services/template_contract_loader.py>)
+- [Consumer-specific schema restrictions](<../../../mcp_server/utils/schema_utils.py>)
+- [Native execution schema using $id](<../../../mcp_server/execution/contracts/check_v1.schema.json>)
+- [Delivered-template fixtures](<../../../tests/mcp_server/fixtures/delivered_templates.py>)
+- [Existing architecture package](<../../../.pgmcp/template_suite/architecture/context.schema.json>)
+- [Existing template release procedure](<../../development/schema-template-maintenance.md>)
+- [Release assets](<../../../.pgmcp/config/release_manifest.yaml>)
 
 ## Consumers
 
@@ -175,3 +270,4 @@ Select bounded supported shapes and explicit validation guarantees before Design
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-11 | @imp researcher | Record historical YAML disposition and representative pgmcp/ST sources; keep scope and combined-issue strategies open. |
 | 0.2 | 2026-10-11 | @imp researcher | Capture owner-approved controlled authoring and YAML direction; retain unresolved technical and combined-issue boundaries. |
+| 0.3 | 2026-10-11 | @imp researcher | Record native rendering/checking feasibility, parser/provenance limits, portable ADR/SAD and pinned arc42 evidence; present boundary strategies for owner decision. |
