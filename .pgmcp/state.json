@@ -3,9 +3,9 @@
   "branch": "feature/465-yaml-json-schema-adr-sad-artifacts",
   "issue_number": 465,
   "workflow_name": "feature",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 3,
-  "last_cycle": null,
+  "last_cycle": 3,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -92,8 +92,16 @@
       "forced": true,
       "skip_reason": "Independent QA confirms SAD provenance is displaced by a leading newline. Return only to correct template comment whitespace and extend existing public reader assertion; no gate waiver.",
       "resume_cycle": "C_3"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-11T18:06:07.715026+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
