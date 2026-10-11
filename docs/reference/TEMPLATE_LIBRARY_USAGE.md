@@ -1,7 +1,7 @@
 # Template Library Usage
 
 **Status:** DEFINITIVE  
-**Last Updated:** 2026-10-07
+**Last Updated:** 2026-10-11
 
 Use the active template suite to discover a suitable artifact package, inspect its caller schema, create a valid starting point, and refine the result for its intended use. The runtime catalog and resolved package schema own exact IDs, purposes, fields, and package identity; this guide intentionally contains no copied inventory.
 
@@ -16,6 +16,14 @@ A successful scaffold gives you a valid basis. Read the result and refine the fi
 The public [scaffolding tool reference](tools/scaffolding.md) documents the current operation and schema behavior. The [editing reference](tools/editing.md) explains refinement and validation policy.
 
 The [context migration and output responsibilities](tools/scaffolding.md#context-migration-and-output-responsibilities) explain mandatory authored document metadata, revision history, preserved caller content and clean input migration. These requirements are separate from technical package provenance; use the selected schema for exact admitted fields.
+
+## Data and architecture artifacts
+
+For ordinary YAML configuration, supply the discovered package's `data` mapping and optional header comment. For JSON Schema sources, supply the explicit Draft 2020-12 schema object; the generated root `$comment` carries package provenance. Both use the [native validation routes](tools/scaffolding.md#yaml-and-json-schema-validation). Parsing or metaschema acceptance does not establish application semantics or consumer support.
+
+Architecture decision records and software architecture documents build on the existing Markdown tiers. The ADR context owns its decision identifier and authored status; the SAD context owns its architecture perspective, twelve arc42 chapter carriers, decision links and measurable quality scenarios. Discover the resolved schemas for exact required fields. Empty required carriers permit a proportional draft and require later substantive review. Identifiers, status, numbering, links and synchronization remain caller-owned.
+
+When constructing an ADR/SAD pair, create the destination document before adding a link to it, then check both paths and fragments through the existing Markdown profile. The SAD template retains its pinned arc42 attribution and component license in its owning source, and emits visible attribution before the final revision history. Caller-authored architecture content remains separately owned.
 
 ## Extend or maintain a package
 
@@ -38,4 +46,3 @@ See [Template Package Identity and Artifact Provenance](template_metadata_format
 - [Discovery and Admin Tools](tools/discovery.md) — restart behavior.
 - [Scaffold Schema and Template Maintenance](../development/schema-template-maintenance.md) — package extension, maintenance and evidence-backed release preparation.
 - [Template Package Identity and Artifact Provenance](template_metadata_format.md) — persisted artifact provenance.
-

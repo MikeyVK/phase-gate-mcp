@@ -3,7 +3,7 @@
   "branch": "feature/465-yaml-json-schema-adr-sad-artifacts",
   "issue_number": 465,
   "workflow_name": "feature",
-  "current_phase": "validation",
+  "current_phase": "documentation",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -97,6 +97,14 @@
       "from_phase": "implementation",
       "to_phase": "validation",
       "timestamp": "2026-10-11T18:06:07.715026+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-10-11T18:16:40.217888+00:00",
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
