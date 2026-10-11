@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -211,3 +212,67 @@ def test_selected_graph_renders_retained_root_and_round_trips(
     if maximum and frame_start == "<!--":
         assert len(rendered.split("\n", 1)[0]) == 100
     assert ArtifactHeaderReader().read(rendered).provenance == identity
+
+@pytest.mark.parametrize("template_id", ['quote"slash\\', "😀" * 24])
+@pytest.mark.parametrize("bom", ["", "\ufeff"])
+def test_json_opening_carrier_decodes_identity(template_id: str, bom: str) -> None:
+    identity = ArtifactIdentity(id=template_id, pv="1.2.3-beta1", pf="A" * 16, sf="B" * 16)
+    record = f"pgmcp:v1 id={identity.id} pv={identity.pv} pf={identity.pf} sf={identity.sf}"
+    original = bom + ' \n{\n  "$comment": ' + json.dumps(record) + ',\n "body": ['
+    assert ArtifactHeaderReader().read(original) == HeaderReadResult(
+        status=HeaderReadStatus.RECOGNIZED, provenance=identity
+    )
+
+
+@pytest.mark.parametrize(
+    ("opening", "status"),
+    [
+        ('{"$comment": "ordinary", "body": "' + RECORD + '"}', HeaderReadStatus.ABSENT),
+        ('{"body": 1, "$comment": "' + RECORD + '"}', HeaderReadStatus.ABSENT),
+        ('{"$comment": "' + RECORD + '" "body": 1}', HeaderReadStatus.INVALID),
+        ('{"$comment": "' + RECORD + '\\q"}', HeaderReadStatus.INVALID),
+        ('{"$comment": "pgmcp:v1 id=partial"}', HeaderReadStatus.INVALID),
+        ('{"$comment": "' + RECORD + '" ' + " " * 512 + "}", HeaderReadStatus.INVALID),
+        pytest.param(
+            '{"$comment": "' + RECORD + "x" * 100_000,
+            HeaderReadStatus.INVALID,
+            id="opening-overflow",
+        ),
+    ],
+)
+def test_json_opening_carrier_reports_absence_or_malformed_identity(
+    opening: str, status: HeaderReadStatus
+) -> None:
+    assert ArtifactHeaderReader().read(opening) == HeaderReadResult(
+        status=status, provenance=None
+    )
+
+
+def test_shared_json_frame_preserves_first_identity_and_authored_members() -> None:
+    suite = Path(__file__).resolve().parents[4] / ".pgmcp/template_suite"
+    names = (ROOT_NAME, "shared/templates/bases/tier1_json_object.jinja2")
+    renderer = Environment(
+        loader=DictLoader(
+            {
+                **{name: (suite / name).read_text(encoding="utf-8") for name in names},
+                "schema": (
+                    '{% extends "shared/templates/bases/tier1_json_object.jinja2" %}'
+                    "{% block json_members %}"
+                    "{% for key, value in content.items() %}"
+                    ",{{ key | tojson }}: {{ value | tojson }}"
+                    "{% endfor %}{% endblock %}"
+                ),
+            }
+        ),
+        undefined=StrictUndefined,
+        keep_trailing_newline=True,
+    )
+    register_template_filters(renderer)
+    authored = {"$anchor": "earlier", "properties": {"flag": False}}
+    output = renderer.get_template("schema").render(provenance=provenance(), content=authored)
+    decoded = json.loads(output)
+    assert next(iter(decoded)) == "$comment"
+    assert decoded.pop("$comment") == RECORD
+    assert decoded == authored
+    assert output.endswith("\n") and not output.endswith("\n\n")
+    assert ArtifactHeaderReader().read(output).provenance == provenance()

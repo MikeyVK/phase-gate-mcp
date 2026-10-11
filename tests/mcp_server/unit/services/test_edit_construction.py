@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from mcp_server.config.schemas.checks_config import ChecksConfig
@@ -126,6 +128,12 @@ def test_selection_uses_configured_suffix_and_original_metadata(checks: ChecksCo
             header("source_notes"),
             None,
             "orders.d.ts",
+            ("metadata", "notes", "source_notes", None, None),
+        ),
+        (
+            json.dumps({"$comment": header("source_notes")[3:].strip(), "type": "object"}),
+            None,
+            "source.schema.json",
             ("metadata", "notes", "source_notes", None, None),
         ),
         ("body\n", None, "orders.d.ts", ("extension", "declaration", None, ".D.TS", "absent")),
