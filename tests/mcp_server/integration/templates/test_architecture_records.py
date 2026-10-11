@@ -8,6 +8,8 @@ import pytest
 from jsonschema.exceptions import ValidationError
 from pydantic import JsonValue
 
+from mcp_server.core.interfaces.template_catalog import thaw_json
+from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.integration.adapters.test_lychee import (
@@ -184,8 +186,9 @@ def test_sad_drafts_and_effective_nested_fields(
 ) -> None:
     package = delivered(tmp_path, pytestconfig.rootpath, "sad")
     context = sad_context()
+    expected_provenance = ArtifactIdentity.model_validate(thaw_json(package.provenance))
     minimal = package.renderer.render("sad", context, package.provenance)
-    assert ArtifactHeaderReader().read(minimal).provenance == package.provenance
+    assert ArtifactHeaderReader().read(minimal).provenance == expected_provenance
     headings = [line for line in minimal.splitlines() if line.startswith("## ")]
     assert [line for line in headings if line[3:4].isdigit()] == [
         f"## {heading}" for _, heading in CHAPTERS
@@ -217,7 +220,7 @@ def test_sad_drafts_and_effective_nested_fields(
     }
     context.update(common_fields())
     populated = package.renderer.render("sad", context, package.provenance)
-    assert ArtifactHeaderReader().read(populated).provenance == package.provenance
+    assert ArtifactHeaderReader().read(populated).provenance == expected_provenance
     assert_common_consumption(populated)
     for field, _ in CHAPTERS:
         if field not in ("architecture_decisions", "quality_requirements"):
