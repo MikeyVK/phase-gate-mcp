@@ -3,7 +3,7 @@
 # Issue 500 — v3 Release Preparation and Development Archive
 
 **Status:** IN PROGRESS  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-11
 
 ## Scope In
@@ -46,9 +46,49 @@ The fixed archive set at HEAD `8770607492aeb6d076dfe5aae1dc78f79515dd07` is:
 
 #396 requests a separate archive branch and removal from main. The owner's #500 instruction instead retains the documents in the existing in-repository archive. Its administrative disposition belongs to Coordination; it is not silently considered completed by this different route. Existing historical link defects are not a repository-wide cleanup mandate.
 
+## Historical Release Reconstruction — Additional Research
+
+The owner requested feasibility research for retrospective GitHub releases 1.0.0 and 2.0.0. This authorizes investigation and preparation of a proposal, not tag creation or publication.
+
+### GitHub Capabilities and Practical Value
+
+GitHub releases associate a tag, authored notes and optional downloadable assets. A new tag can target an exact historical commit SHA without rewriting repository history. GitHub supplies source ZIP/tar archives for the tagged revision; a Python wheel is a separately supplied asset. Historical source dates and the new publication date should be stated separately: the release creation API does not accept a caller-specified `published_at`. Explicit latest-release selection prevents historical publication from displacing the intended current release.
+
+This provides stable version references, comparable release boundaries, discoverable changes/migration notes and downloads. Publishing on GitHub does not publish to PyPI or establish new quality guarantees for old software. Generated notes can help inventory merged PRs, but require review for product meaning and correct range.
+
+Sources:
+- [GitHub: About releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
+- [GitHub: Create a release](https://docs.github.com/en/rest/releases/releases#create-a-release)
+- [GitHub: Generated release notes](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes)
+
+### Repository Evidence
+
+| Version | Proposed canonical source boundary | Supporting observations | Remaining limitation |
+|---|---|---|---|
+| 1.0.0 | `3bfcef80fa97303d2b51738005b022edbcb0afbd`, merged PR #426, 2026-07-08 | PR #426 completes standalone packaging, CLI/init, environment naming and documentation. Archived #416 validation records a built/installed v1 wheel. Local `C:/temp/packages/phase_gate_mcp-1.0.0-py3-none-any.whl` has 212 Python files matching this revision after CRLF/LF normalization; all 132 present assets likewise match the manifest-mapped sources. | Current changelog dates v1 to July 6; PR #389 introduced the package name/version earlier, June 7. Selecting the complete standalone release on July 8 is a proposal, not proof that a public release occurred then. |
+| 2.0.0 | `ee32667ca95bf17ffb4ecd59062ef8cbed930e0b`, merged PR #441, 2026-07-22 | PR #441 explicitly releases 2.0.0 with upgrade CLI, workspace version checks/preservation and version-source parity. Its package and manifest versions are 2.0.0. | Local `dist/phase_gate_mcp-2.0.0-py3-none-any.whl` is a later build: 171 Python files match both this revision and August 18 PR #447, but its assets match the latter. |
+
+The asset inspection found seven manifest-mapped Copilot files absent from both wheels: the three `.github/agents/{co,imp,qa}.agent.md` files and four `.github/prompts/{create-issue,end-issue,go,start-issue}.prompt.md` files under the Copilot asset subtree. The v2 wheel additionally contains 20 assets absent from the July 22 manifest-source set and one changed common asset; at August 18, all its 182 present assets match. These are historical artifact observations, not a mandate to fix or retest old versions.
+
+Evidence method: read-only `zipfile.ZipFile` metadata/content inspection; `git ls-tree -r <revision>` plus `git cat-file --batch` supplied tracked source blobs. Python file inventories and historical manifest-mapped assets were compared, with CRLF/LF equivalence reported explicitly. This is not byte-identical build proof: v1/v2 have 19 exact Python-file byte matches each; the remaining matching files differ in line endings. No wheel was installed, rebuilt, executed or uploaded. Local sdists were found but their parity was not investigated.
+
+The existing changelog is a starting point, not ready-to-publish notes: its v2 section includes standalone packaging and environment naming already delivered by #426. Reconstruct each release's actual capabilities and additions from the selected boundaries, rather than copying overlapping bullets or using development-folder membership.
+
+Primary evidence:
+- [PR #389 — rebrand to v1](https://github.com/MikeyVK/phase-gate-mcp/pull/389)
+- [PR #426 — standalone v1 package](https://github.com/MikeyVK/phase-gate-mcp/pull/426)
+- [PR #441 — explicit v2 release](https://github.com/MikeyVK/phase-gate-mcp/pull/441)
+- [Historical #416 validation](../archive/issue416/validation.md)
+
+### Smallest Feasible Route — Proposed
+
+Agree the two canonical SHAs; prepare reviewed notes identifying the historical revision/date and retrospective publication; after separate approval publish `v1.0.0` and `v2.0.0` with their exact targets and automatic source downloads. Optional old wheel/sdist uploads require a separate artifact decision and honest limitations. A later rebuilt package must be identified as a reconstruction and verified against its chosen source; do not relabel the August v2 package as the original July distribution.
+
+No old-version repair campaign, broad historical test rerun, new release architecture or history rewrite is needed for source-based historical releases. The active tools expose release reads but no native release/tag publication operation; the eventual approved publication procedure therefore needs an explicit route, such as the GitHub release UI or authorized API/CLI use. The final v3 release should explicitly become the current release.
+
 ## Questions
 
-- What exact v2 distribution/revision did the owner install, given the empty GitHub release/tag collections?
+- Does the owner approve PR #426 (July 8) and PR #441 (July 22) as the canonical reconstructed v1/v2 release boundaries? This is distinct from the particular later v2 wheel installed in another workspace.
 - Which publication destination and artifacts should be prepared, and what procedure will the owner approve for publication?
 - Does any version/migration or archive-link finding require a change beyond mechanical maintenance? If so, reopen scope/strategy before implementing it.
 
@@ -110,3 +150,4 @@ Classify each consumer, especially workspace .version, package self-pins, indepe
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-11 | @imp researcher | Record bounded release research and the owner-approved development archive addition. |
+| 0.2 | 2026-10-11 | @imp researcher | Investigate retrospective GitHub releases, candidate source boundaries, historical wheel/asset correspondence and publication limits. |
