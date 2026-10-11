@@ -1,0 +1,9 @@
+{
+  "native_tools": [
+    {
+      "tool_id": "check-jsonschema",
+      "module": "check_jsonschema",
+      "requirements_file": "requirements.txt"
+    }
+  ]
+}

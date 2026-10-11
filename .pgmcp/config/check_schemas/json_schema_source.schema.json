@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Object-based Draft 2020-12 schema source",
+  "type": "object",
+  "required": [
+    "$schema"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://json-schema.org/draft/2020-12/schema"
+    }
+  }
+}

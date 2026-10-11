@@ -3,6 +3,8 @@
 pgmcp:v1 id={{ record.id }} pv={{ record.pv }} pf={{ record.pf }} sf={{ record.sf }}
 {%- endmacro -%}
 {%- set artifact -%}
+{% block artifact_frame %}
 {% block comment_start required %}{% endblock %} {{ provenance_fields(provenance) }}{% block comment_end %}{% endblock %}{{ '\n\n' }}{% block content required %}{% endblock %}
+{% endblock artifact_frame %}
 {%- endset -%}
 {{ artifact | text_block }}{{ '\n' -}}

@@ -59,3 +59,29 @@ artifacts:
     default_root: "frontend/src/dtos"
   validation_report:
     default_root: "docs/development"
+
+  yaml_configuration:
+    default_root: "config"
+    additional_roots:
+      - ".pgmcp/config"
+      - "locales"
+      - ".github"
+      - "mcp_server/bundled_adapters"
+      - ".pgmcp/temp"
+  json_schema:
+    default_root: "schemas"
+    additional_roots:
+      - ".pgmcp/template_suite"
+      - "mcp_server/execution/contracts"
+      - ".pgmcp/config/check_schemas"
+      - ".pgmcp/temp"
+  adr:
+    default_root: "docs/architecture/decisions"
+    additional_roots:
+      - "docs/development"
+      - ".pgmcp/temp"
+  sad:
+    default_root: "docs/architecture"
+    additional_roots:
+      - "docs/development"
+      - ".pgmcp/temp"

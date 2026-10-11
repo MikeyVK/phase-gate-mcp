@@ -1,7 +1,7 @@
 # Template Package Identity and Artifact Provenance
 
 **Status:** DEFINITIVE  
-**Last Updated:** 2026-09-24
+**Last Updated:** 2026-10-11
 
 This reference describes the current package identity and source provenance written into newly scaffolded artifacts. The old `TEMPLATE_METADATA` YAML block, regex-validation rules, per-file path headers, and manually maintained template registry are not part of the active suite contract.
 
@@ -13,7 +13,7 @@ The resolved package fingerprint describes the selected package's admitted gener
 
 ## Persisted artifact record
 
-Each newly scaffolded artifact carries one compact `pgmcp:v1` provenance record as a complete native comment on its first physical line. The record has exactly four fields:
+Each newly scaffolded artifact carries one compact `pgmcp:v1` provenance record. Comment-capable outputs place it in a complete native comment on the first physical line; YAML uses `#`. JSON object outputs place the same record in the first root `$comment` string because JSON has no comment syntax. The record has exactly four fields:
 
 | Field | Meaning |
 |---|---|
@@ -28,7 +28,9 @@ The logical record has this form:
 pgmcp:v1 id=<template_id> pv=<package_version> pf=<package_fingerprint> sf=<suite_fingerprint>
 ```
 
-The surrounding comment syntax follows the generated file's language. The record contains no absolute or workspace path, creation timestamp, update timestamp, per-file hash, or historical registry pointer.
+Comment framing follows the output language. The JSON Schema package reserves the root `$comment` for provenance; caller schema members are serialized as data afterward. The reader examines only a bounded 512-character JSON opening and its first root `$comment` string, allowing an optional BOM and leading JSON whitespace. It decodes that string through the same provenance model and 91-character logical-record limit; it neither searches later members nor validates the whole JSON document.
+
+The record contains no absolute or workspace path, creation timestamp, update timestamp, per-file hash, or historical registry pointer.
 
 ## Meaning and limits
 

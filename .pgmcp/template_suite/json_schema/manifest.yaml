@@ -1,0 +1,2 @@
+template_id: json_schema
+purpose: Create an object-based Draft 2020-12 JSON Schema source with bounded pgmcp provenance.

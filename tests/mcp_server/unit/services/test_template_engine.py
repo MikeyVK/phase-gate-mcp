@@ -1,7 +1,9 @@
 """Unit tests for the injected-environment TemplateEngine contract."""
 
 import pytest
+import yaml
 from jinja2 import DictLoader, Environment, StrictUndefined, TemplateNotFound, UndefinedError
+from pydantic import JsonValue
 
 from mcp_server.services.template_engine import TemplateEngine
 
@@ -68,3 +70,30 @@ def test_missing_variable_raises_under_strict_undefined(
     template = engine.env.from_string("{{ required_var.field }}")
     with pytest.raises(UndefinedError):
         template.render()
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {},
+        {
+            "false": "false",
+            "0": "0",
+            "null": "null",
+            "nested": [False, 0, None, {"on": "on", "unicode": "雪"}],
+            "lines": "first\nsecond\n\n",
+            "carriage": "first\r\nsecond",
+            "control": "tab\tand\x01",
+        },
+    ],
+)
+def test_yaml_filter_preserves_mapping_values(data: dict[str, JsonValue]) -> None:
+    environment = Environment(
+        loader=DictLoader({"yaml": "{{ content | toyaml }}"}),
+        undefined=StrictUndefined,
+    )
+    renderer = TemplateEngine(environment=environment)
+    output = renderer.render_context("yaml", {"content": data})
+    assert yaml.safe_load(output) == data
+    assert output.endswith("\n")
+    assert "\r" not in output

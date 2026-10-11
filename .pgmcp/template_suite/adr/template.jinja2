@@ -1,0 +1,51 @@
+{% extends "shared/templates/bases/tier2_markdown_document.jinja2" %}
+{% import "shared/templates/patterns/markdown/sections.jinja2" as sections %}
+{% import "shared/templates/patterns/markdown/links.jinja2" as links %}
+
+{% macro option(item) -%}
+{%- set selected = namespace(parts=[
+    sections.heading(item.name, 3), item.description | text_block
+]) -%}
+{%- for field, label in [('pros', 'Pros'), ('cons', 'Cons')] -%}
+{%- if item[field] is defined -%}
+{%- set selected.parts = selected.parts + [
+    sections.join(['**' ~ label ~ ':**', sections.bullets(item[field])])
+] -%}
+{%- endif -%}
+{%- endfor -%}
+{{ sections.join(selected.parts) }}
+{%- endmacro %}
+
+{% block document_body -%}
+{%- set selected = namespace(parts=[sections.labelled('ADR', links.label(content.adr_id))]) -%}
+{%- for field, heading in [('participants', 'Participants'), ('tags', 'Tags')] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [
+    sections.join([sections.heading(heading), sections.bullets(content[field])])
+] -%}
+{%- endif -%}
+{%- endfor -%}
+{%- set options = namespace(parts=[sections.heading('Options')]) -%}
+{%- for item in content.options -%}
+{%- set options.parts = options.parts + [option(item)] -%}
+{%- endfor -%}
+{%- set selected.parts = selected.parts + [
+    sections.prose('Context', content.context),
+    sections.join([sections.heading('Decision Drivers'), sections.bullets(content.decision_drivers)]),
+    sections.join(options.parts),
+    sections.prose('Decision', content.decision),
+    sections.prose('Rationale', content.rationale),
+    sections.prose('Consequences', content.consequences)
+] -%}
+{%- if content.verification is defined -%}
+{%- set selected.parts = selected.parts + [sections.prose('Verification', content.verification)] -%}
+{%- endif -%}
+{%- for field, heading in [('sad_sections', 'SAD Sections'), ('supersedes', 'Supersedes'), ('superseded_by', 'Superseded By')] -%}
+{%- if content[field] is defined -%}
+{%- set selected.parts = selected.parts + [
+    sections.join([sections.heading(heading), links.inline_list(content[field])])
+] -%}
+{%- endif -%}
+{%- endfor -%}
+{{ sections.join(selected.parts) }}
+{%- endblock %}

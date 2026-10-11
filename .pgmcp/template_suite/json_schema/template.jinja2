@@ -1,0 +1,5 @@
+{% extends "shared/templates/bases/tier1_json_object.jinja2" %}
+{% block json_members -%}
+{% for key, value in content.schema.items() %},
+  {{ key | tojson }}: {{ value | tojson }}{% endfor %}
+{%- endblock %}

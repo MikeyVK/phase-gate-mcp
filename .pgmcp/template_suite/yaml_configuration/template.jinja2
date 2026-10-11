@@ -1,0 +1,10 @@
+{% extends "shared/templates/bases/tier1_yaml.jinja2" %}
+{% block content -%}
+{% if content.header_comment is defined -%}
+{% set note = content.header_comment | replace('\r\n', '\n') | replace('\r', '\n') -%}
+{% for line in note.split('\n') -%}
+{{ '#' ~ (' ' ~ line if line else '') }}{{ '\n' }}
+{%- endfor %}
+{% endif -%}
+{{ content.data | toyaml }}
+{%- endblock %}

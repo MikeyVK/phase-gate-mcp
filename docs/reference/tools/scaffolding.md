@@ -60,7 +60,7 @@ This example follows the current design package's required context fields; optio
 
 The result reports the selected template identity, package version/fingerprint, output path when written, check observations, validation status, and persistence/failure facts. `enforce` prevents persistence when required checks fail; `report` retains check outcomes while permitting persistence according to the operation contract. Native check availability and execution are reported as observed facts, not converted into an assumed pass.
 
-Every newly scaffolded artifact carries the compact `pgmcp:v1` provenance record on its first physical line. The record is not an alternate schema or package registry. Package manifests, context schema and policy own their respective facts; artifact-location config selects default destinations. Use [editing.md](editing.md) for changes to an existing file.
+Comment-capable outputs carry the compact `pgmcp:v1` provenance record on their first physical line. JSON object outputs carry the same record in their first root `$comment` string; see [provenance framing and reader limits](../template_metadata_format.md#persisted-artifact-record). The record is not an alternate schema or package registry. Package manifests, context schema and policy own their respective facts; artifact-location config selects default destinations. Use [editing.md](editing.md) for changes to an existing file.
 
 ## Markdown validation
 
@@ -71,6 +71,16 @@ Checks run against the proposed Markdown before persistence, at the intended out
 The native executable must satisfy the adapter's [dependency declaration](../../../mcp_server/bundled_adapters/lychee/dependencies.json). Missing or mismatched native dependencies are reported as unavailable, not passed; see [Execution Adapters](../execution-adapters.md) for prerequisite ownership and result semantics.
 
 Generated H1 headings and document structure belong to the template package. There is no runtime H1 presence/count or template-structure check. Native link acceptance therefore does not certify structural conformance. Use the existing [package development and release procedure](../../development/schema-template-maintenance.md#develop-and-release-a-package) to review rendering, representative artifacts and the supported structural claim.
+
+## YAML and JSON Schema validation
+
+The YAML configuration package accepts a caller-owned JSON-compatible mapping. Its shared `toyaml` serializer preserves supported value types, quotes ordinary strings and string keys, uses lossless literal blocks for suitable multiline values and emits LF text; optional header prose becomes YAML comments. The `yaml_configuration_review` profile uses native check-jsonschema to parse YAML and require an object root. Application-specific keys and semantics remain the consumer's responsibility.
+
+The JSON Schema package accepts a Draft 2020-12 schema object with the root `$comment` reserved for provenance. Its `json_schema_review` profile runs two bindings of the same native tool: one checks the explicit object/dialect envelope and the other validates the schema against its metaschema. This creates JSON Schema sources; it does not provide an unrestricted JSON package. Native validity does not guarantee that a particular consumer supports every admitted schema keyword.
+
+Template policy selects the output profile for scaffolding. Existing-file edits use the original artifact identity when recognized; extension routes also cover `.yaml`, `.yml` and `.schema.json`. There is no global `.json` route. Required failed checks block `enforce` persistence; `report` returns observed findings while permitting persistence under the operation contract.
+
+The [workspace bindings](../../../.pgmcp/config/checks.yaml) own native arguments and source-family branch selectors. The [adapter reference](../execution-adapters.md#check-jsonschema-source-families) explains prerequisite admission and literal-file selection. These files-required checks need concrete file targets when invoked directly.
 
 ## Context migration and output responsibilities
 

@@ -3,8 +3,8 @@
 # Native Adapter Execution Contract
 
 **Status:** Current
-**Version:** 1.1
-**Last Updated:** 2026-10-07
+**Version:** 1.2
+**Last Updated:** 2026-10-11
 
 
 ## Purpose
@@ -209,9 +209,17 @@ These guards protect selection, operation and result semantics. They do not isol
 
 
 
+### Check-jsonschema source families
+
+The bundled `check_jsonschema` adapter provides YAML configuration and JSON Schema checks through one pinned native tool. The [package requirements](../../mcp_server/bundled_adapters/check_jsonschema/requirements.txt) declare check-jsonschema 0.38.2, orjson 3.13.0, ruamel.yaml 0.18.16 and jsonschema 4.25.1. Provision those prerequisites in the Python interpreter selected by the execution runtime. The adapter launches that interpreter's `-m check_jsonschema`, checks actual distribution versions and import availability, and refuses missing or mismatched prerequisites before analysis.
+
+Selection requests require literal existing file operands supplied through targets or admitted native positional arguments. Configured scope can therefore use explicit file operands in its native arguments even when targets are empty. Directory targets and requests without any file operands are unsupported; the adapter does not discover files or infer operands. Content requests use the supplied proposal at the intended target path through the existing invocation scratch allocation, preserving the original file. Native arguments come from the [workspace bindings](../../.pgmcp/config/checks.yaml), including parser choice and complete JSON report format; the adapter does not supply application-specific schema rules.
+
+The YAML binding checks an object root. JSON Schema bindings separately check the Draft 2020-12 envelope and native metaschema validity. A complete native negative result is a failed check; unusable schema/configuration, malformed native results or missing prerequisites remain unavailable. Diagnostics preserve native evidence. Alternate validators and substitute help/version operations do not satisfy this check contract. Content requests additionally refuse `--data-transform` and `--fill-defaults` so pre-write validation checks the actual proposed data; selection requests retain those native options. Native validity still differs from acceptance by a particular application consumer.
+
 ### Versions, completion and causal diagnostics
 
-The package-local dependency declaration is authoritative for each pinned main tool: Ruff/Mypy/Pytest requirements.txt, Pyright/Commitlint package.json and Lychee dependencies.json. Adapters read that declaration on use, observe the actual version and refuse missing, unreadable or mismatched prerequisites as dependency_unavailable before version-dependent analysis or source mutation. Available actual and expected versions remain visible. Stdlib-only adapters report their actual runtime; TypeScript syntax uses its declared dependency.
+The package-local dependency declaration is authoritative for each pinned main tool: Ruff/Mypy/Pytest/check-jsonschema requirements.txt, Pyright/Commitlint package.json and Lychee dependencies.json. Adapters read that declaration on use, observe the actual version and refuse missing, unreadable or mismatched prerequisites as dependency_unavailable before version-dependent analysis or source mutation. Available actual and expected versions remain visible. Stdlib-only adapters report their actual runtime; TypeScript syntax uses its declared dependency.
 
 Metadata/help/show/watch and substitute operations do not prove the requested check/test/fix ran. They are refused where unsupported. Deliberately admitted Ruff --exit-zero, Pytest --collect-only and native exit 5 keep their native policies.
 
@@ -288,4 +296,3 @@ Read the complete cached DTO rather than recovering facts from the bounded text 
 
 - [Checks/tests/fixes](<tools/quality.md>)
 - [Server configuration](<server-configuration.md>)
-
