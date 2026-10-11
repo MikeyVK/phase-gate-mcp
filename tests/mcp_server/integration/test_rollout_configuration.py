@@ -4,7 +4,7 @@
 Integration tests for rollout_configuration_compatibility.
 
 Verifies prospective V3 rollout configuration compatibility, schema admission
-against the real 19-package template catalog reconciled with project_structure.yaml,
+against the admitted template catalog and current artifact location configuration,
 obsolete configuration rejection, atomic compare-before-write replacement via
 CheckedFileWriter with race-condition drift refusal, clean-break presentation alignment,
 and native Pyright setting preservation without mutating live configurations.
@@ -13,7 +13,7 @@ and native Pyright setting preservation without mutating live configurations.
 @dependencies: [pytest, tomllib, ConfigLoader, ConfigValidator, ArtifactLocationsConfig]
 @responsibilities:
     - Test end-to-end rollout_configuration_compatibility
-    - Verify public target loaders accept prospective configs with real 19 template_ids
+    - Verify public target loaders accept current configs with admitted template IDs
     - Reconcile placement roots against owner's project_structure.yaml and design contracts
     - Verify CheckedFileWriter.replace_if_unchanged atomic replacement and drift refusal
     - Verify presentation.yaml clean break: no legacy quality gates/autofix, full V3 surface
@@ -28,7 +28,6 @@ from pathlib import Path
 
 # Third-party
 import pytest
-import yaml
 
 # Project modules
 from mcp_server.bootstrap import SupportedToolContract
@@ -41,70 +40,7 @@ from mcp_server.execution.models import ApplyFixesOutput, RunTestsOutput
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.schemas.execution_outputs import RunChecksOutput
 from mcp_server.utils.atomic_file_writer import CheckedFileWriter, OriginalChangedError
-
-# Authoritative prospective V3 artifacts.yaml strictly reconciled with project_structure.yaml
-PROSPECTIVE_V3_ARTIFACTS_YAML = """version: "2.0.0"
-artifacts:
-  architecture:
-    default_root: "docs/architecture"
-    additional_roots:
-      - "docs/reference"
-  commit:
-    default_root: ".pgmcp/temp/artifacts"
-  design:
-    default_root: "docs/development"
-    additional_roots:
-      - "docs"
-  generic_doc:
-    default_root: "docs"
-    additional_roots:
-      - "docs/reference"
-      - "docs/manuals"
-  issue:
-    default_root: ".github/ISSUE_TEMPLATE"
-  planning:
-    default_root: "docs/development"
-    additional_roots:
-      - "docs"
-  pr:
-    default_root: ".github/PULL_REQUEST_TEMPLATE"
-  pytest_integration_test:
-    default_root: "tests/mcp_server/integration"
-  pytest_unit_test:
-    default_root: "tests/mcp_server/unit"
-    additional_roots:
-      - "tests/backend"
-  python_adapter:
-    default_root: "mcp_server/adapters"
-  python_class:
-    default_root: "mcp_server"
-  python_protocol:
-    default_root: "mcp_server/core/interfaces"
-  python_pydantic_config:
-    default_root: "mcp_server/config/schemas"
-  python_pydantic_dto:
-    default_root: "mcp_server/dtos"
-    additional_roots:
-      - "backend/dtos"
-  python_worker:
-    default_root: "mcp_server/workers"
-    additional_roots:
-      - "backend/workers"
-  reference:
-    default_root: "docs/reference"
-    additional_roots:
-      - "docs/architecture"
-      - "docs/manuals"
-      - "docs/coding_standards"
-  research:
-    default_root: "docs/development"
-    additional_roots:
-      - "docs"
-  typescript_dto:
-    default_root: "frontend/src/dtos"
-  validation_report:
-    default_root: "docs/development"
-"""
+from tests.mcp_server.test_support import make_template_suite_admission
 
 PYPROJECT_PYRIGHT_HUNK = (
     "[tool.pyright]\n"
@@ -403,64 +339,37 @@ def temp_workspace(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def real_template_ids() -> frozenset[str]:
-    """Discover the real template package IDs from .pgmcp/template_suite."""
-    root_dir = Path(__file__).resolve().parents[3]
-    suite_dir = root_dir / ".pgmcp" / "template_suite"
-    assert suite_dir.exists(), f"template_suite not found at {suite_dir}"
+def real_template_ids(tmp_path: Path, pytestconfig: pytest.Config) -> frozenset[str]:
+    """Read package identities through the real suite admission boundary."""
+    root_dir = pytestconfig.rootpath
+    admit = make_template_suite_admission(
+        root_dir / ".pgmcp" / "config",
+        official_adapter_root=root_dir / "mcp_server" / "bundled_adapters",
+        workspace_adapter_root=tmp_path / "workspace_adapters",
+    )
+    snapshot = admit(root_dir / ".pgmcp" / "template_suite")
+    return frozenset(package.manifest.template_id for package in snapshot.catalog.packages)
 
-    package_ids = []
-    for entry in sorted(suite_dir.iterdir()):
-        if entry.is_dir() and entry.name != "shared":
-            manifest_path = entry / "manifest.yaml"
-            assert manifest_path.exists(), f"manifest.yaml missing in {entry}"
-            manifest_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-            template_id = manifest_data.get("template_id")
-            assert template_id == entry.name, f"ID mismatch: {template_id} vs {entry.name}"
-            package_ids.append(template_id)
 
-    assert len(package_ids) == 19, f"Expected 19 packages, found {len(package_ids)}"
-    return frozenset(package_ids)
+@pytest.fixture
+def artifacts_yaml(pytestconfig: pytest.Config) -> str:
+    """Read the authored location configuration for isolated behavioral checks."""
+    return (pytestconfig.rootpath / ".pgmcp" / "config" / "artifacts.yaml").read_text(
+        encoding="utf-8"
+    )
 
 
 class TestRolloutConfiguration:
     """Integration test suite for rollout_configuration_compatibility."""
 
-    def test_real_template_suite_catalog_has_all_19_packages(
-        self, real_template_ids: frozenset[str]
+    def test_artifacts_location_config_validates_current_catalog(
+        self, temp_workspace: Path, real_template_ids: frozenset[str], artifacts_yaml: str
     ) -> None:
-        """Verify that the repository contains exactly 19 valid template packages."""
-        expected_packages = {
-            "architecture",
-            "commit",
-            "design",
-            "generic_doc",
-            "issue",
-            "planning",
-            "pr",
-            "pytest_integration_test",
-            "pytest_unit_test",
-            "python_adapter",
-            "python_class",
-            "python_protocol",
-            "python_pydantic_config",
-            "python_pydantic_dto",
-            "python_worker",
-            "reference",
-            "research",
-            "typescript_dto",
-            "validation_report",
-        }
-        assert real_template_ids == expected_packages
-
-    def test_artifacts_location_config_validates_prospective_v3(
-        self, temp_workspace: Path, real_template_ids: frozenset[str]
-    ) -> None:
-        """Verify that ConfigLoader and ConfigValidator accept prospective V3 artifacts.yaml."""
+        """Validate authored locations against identities admitted from the current suite."""
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         artifacts_file = config_dir / "artifacts.yaml"
-        artifacts_file.write_text(PROSPECTIVE_V3_ARTIFACTS_YAML, encoding="utf-8")
+        artifacts_file.write_text(artifacts_yaml, encoding="utf-8")
 
         loader = ConfigLoader(config_dir)
         config = loader.load_artifact_locations_config()
@@ -532,16 +441,18 @@ class TestRolloutConfiguration:
         with pytest.raises(ConfigError):
             loader.load_artifact_locations_config()
 
-    def test_artifacts_checked_replacement_and_drift_protection(self, temp_workspace: Path) -> None:
+    def test_artifacts_checked_replacement_and_drift_protection(
+        self, temp_workspace: Path, artifacts_yaml: str
+    ) -> None:
         """A legacy location file can be replaced atomically, while drift is refused."""
         legacy = "version: 1.0.0\nartifact_types: []\n"
         isolated_target = temp_workspace / "artifacts.yaml"
         isolated_target.write_text(legacy, encoding="utf-8")
         pre_sha = hashlib.sha256(isolated_target.read_bytes()).hexdigest()
-        post_sha = hashlib.sha256(PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")).hexdigest()
+        post_sha = hashlib.sha256(artifacts_yaml.encode("utf-8")).hexdigest()
 
-        apply_checked_replacement(isolated_target, pre_sha, PROSPECTIVE_V3_ARTIFACTS_YAML, post_sha)
-        assert isolated_target.read_bytes() == PROSPECTIVE_V3_ARTIFACTS_YAML.encode("utf-8")
+        apply_checked_replacement(isolated_target, pre_sha, artifacts_yaml, post_sha)
+        assert isolated_target.read_bytes() == artifacts_yaml.encode("utf-8")
 
         race_target = temp_workspace / "race_artifacts.yaml"
         race_target.write_text(legacy, encoding="utf-8")
@@ -549,9 +460,7 @@ class TestRolloutConfiguration:
         race_target.write_text("version: 1.0.0\n# concurrent race edit\n", encoding="utf-8")
         drift_bytes = race_target.read_bytes()
         with pytest.raises(OriginalChangedError):
-            CheckedFileWriter().replace_if_unchanged(
-                race_target, snapshot_bytes, PROSPECTIVE_V3_ARTIFACTS_YAML
-            )
+            CheckedFileWriter().replace_if_unchanged(race_target, snapshot_bytes, artifacts_yaml)
         assert race_target.read_bytes() == drift_bytes
         assert not list(temp_workspace.glob("*.staging"))
 

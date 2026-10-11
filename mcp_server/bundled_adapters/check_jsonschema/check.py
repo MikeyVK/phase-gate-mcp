@@ -113,6 +113,7 @@ def _validate(value: object) -> _Request | dict[str, object]:
     args = value["args"]
     if not isinstance(args, list) or any(not isinstance(arg, str) for arg in args):
         return _invalid(["args"], "wrong_type")
+    files: tuple[str, ...]
     if content:
         for field in ("target_path", "input_path"):
             if not isinstance(value[field], str):
@@ -192,8 +193,8 @@ def _options(args: tuple[str, ...]) -> _Options:
             files.append(token)
             continue
         if token.startswith("--"):
-            name, separator, attached = token[2:].partition("=")
-            pending = [(name, attached if separator else None)]
+            name, separator, inline_value = token[2:].partition("=")
+            pending = [(name, inline_value if separator else None)]
         else:
             pending = []
             for position, alias in enumerate(token[1:], start=1):
