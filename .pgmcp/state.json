@@ -3,7 +3,7 @@
   "branch": "feature/465-yaml-json-schema-adr-sad-artifacts",
   "issue_number": 465,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "issue_title": "feat: Add a complete supported YAML artifact family",
   "parent_branch": "main",
   "created_at": "2026-10-11T12:21:48.620698+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-11T16:05:02.673187+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
