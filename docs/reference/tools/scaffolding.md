@@ -74,7 +74,7 @@ Generated H1 headings and document structure belong to the template package. The
 
 ## YAML and JSON Schema validation
 
-The YAML configuration package accepts a caller-owned JSON-compatible mapping. Its shared `toyaml` serializer preserves supported value types, quotes strings and emits LF text; optional header prose becomes YAML comments. The `yaml_configuration_review` profile uses native check-jsonschema to parse YAML and require an object root. Application-specific keys and semantics remain the consumer's responsibility.
+The YAML configuration package accepts a caller-owned JSON-compatible mapping. Its shared `toyaml` serializer preserves supported value types, quotes ordinary strings and string keys, uses lossless literal blocks for suitable multiline values and emits LF text; optional header prose becomes YAML comments. The `yaml_configuration_review` profile uses native check-jsonschema to parse YAML and require an object root. Application-specific keys and semantics remain the consumer's responsibility.
 
 The JSON Schema package accepts a Draft 2020-12 schema object with the root `$comment` reserved for provenance. Its `json_schema_review` profile runs two bindings of the same native tool: one checks the explicit object/dialect envelope and the other validates the schema against its metaschema. This creates JSON Schema sources; it does not provide an unrestricted JSON package. Native validity does not guarantee that a particular consumer supports every admitted schema keyword.
 
