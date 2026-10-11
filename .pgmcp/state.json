@@ -3,7 +3,7 @@
   "branch": "refactor/470-safe-edit-text-newline-policy",
   "issue_number": 470,
   "workflow_name": "refactor",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -26,6 +26,14 @@
       "from_phase": "research",
       "to_phase": "design",
       "timestamp": "2026-10-11T09:15:31.248135+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-10-11T09:19:23.157213+00:00",
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
