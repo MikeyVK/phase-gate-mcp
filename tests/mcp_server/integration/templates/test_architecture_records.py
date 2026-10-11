@@ -8,6 +8,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 from pydantic import JsonValue
 
+from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.integration.adapters.test_lychee import (
     DEFAULT_ARGS,
@@ -184,6 +185,7 @@ def test_sad_drafts_and_effective_nested_fields(
     package = delivered(tmp_path, pytestconfig.rootpath, "sad")
     context = sad_context()
     minimal = package.renderer.render("sad", context, package.provenance)
+    assert ArtifactHeaderReader().read(minimal).provenance == package.provenance
     headings = [line for line in minimal.splitlines() if line.startswith("## ")]
     assert [line for line in headings if line[3:4].isdigit()] == [
         f"## {heading}" for _, heading in CHAPTERS
@@ -215,6 +217,7 @@ def test_sad_drafts_and_effective_nested_fields(
     }
     context.update(common_fields())
     populated = package.renderer.render("sad", context, package.provenance)
+    assert ArtifactHeaderReader().read(populated).provenance == package.provenance
     assert_common_consumption(populated)
     for field, _ in CHAPTERS:
         if field not in ("architecture_decisions", "quality_requirements"):
@@ -334,3 +337,4 @@ def test_real_adr_sad_relative_fragments(
     assert response["external_tools"] == [{"tool_id": "lychee", "version": "0.24.2"}]
     assert adr_file.read_text(encoding="utf-8") == adr_text
     assert sad_file.read_text(encoding="utf-8") == sad_text
+

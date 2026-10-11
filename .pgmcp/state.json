@@ -30,7 +30,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Required Validation found a stale fixed-inventory test fixture and two local Mypy errors. Independent QA GO authorizes bounded C_3 repair; no validation criterion is waived and the full suite will rerun.",
+  "skip_reason": "Independent QA confirms SAD provenance is displaced by a leading newline. Return only to correct template comment whitespace and extend existing public reader assertion; no gate waiver.",
   "issue_title": "feat: Add a complete supported YAML artifact family",
   "parent_branch": "main",
   "created_at": "2026-10-11T12:21:48.620698+00:00",
@@ -75,8 +75,25 @@
       "forced": true,
       "skip_reason": "Required Validation found a stale fixed-inventory test fixture and two local Mypy errors. Independent QA GO authorizes bounded C_3 repair; no validation criterion is waived and the full suite will rerun.",
       "resume_cycle": "C_3"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-11T17:50:53.826823+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-11T18:00:35.351902+00:00",
+      "human_approval_message": "Vraag go-no-go aan 'beoordeel designplan' voor transistie naar planning en ga dan zelfstandig verder met qa iedere keer via die andere chat",
+      "forced": true,
+      "skip_reason": "Independent QA confirms SAD provenance is displaced by a leading newline. Return only to correct template comment whitespace and extend existing public reader assertion; no gate waiver.",
+      "resume_cycle": "C_3"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }
