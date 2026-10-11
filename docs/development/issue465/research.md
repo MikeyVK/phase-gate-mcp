@@ -2,13 +2,13 @@
 
 # Issue 465 — YAML, JSON Schema and architecture artifact research
 
-**Status:** Draft — YAML direction approved; combined Research incomplete  
-**Version:** 0.5  
+**Status:** Research complete — owner strategy approved; independent review pending  
+**Version:** 0.6  
 **Last Updated:** 2026-10-11
 
 ## Purpose
 
-Establish independently evidenced scope and strategy for the combined artifact-family issue. Record the YAML workspace inventory, source-based technical feasibility and separate JSON Schema/ADR/SAD conclusions; Research remains open for the remaining owner strategy decisions.
+Establish independently evidenced scope and strategy for the combined artifact-family issue. Record the YAML workspace inventory, source-based technical feasibility and separate JSON Schema/ADR/SAD conclusions; The owner strategy is complete; independent Research-to-Design review remains pending.
 
 ## Scope In
 
@@ -60,7 +60,7 @@ Current `.pgmcp/config/checks.yaml` admits Python, TypeScript, commit and Markdo
 ### #465: options considered
 | Option | Value | Disposition |
 |---|---|---|
-| Bounded reusable YAML configuration family | Provides ordinary configuration authoring through pgmcp, with reliable data rendering and configured output checks. | Owner-selected direction; concrete rendering/checking recommendations are recorded below and await boundary approval. |
+| Bounded reusable YAML configuration family | Provides ordinary configuration authoring through pgmcp, with reliable data rendering and configured output checks. | Owner-selected direction; the rendering/checking boundary recorded below is now owner-approved. |
 | Consumer-specific packages sharing YAML rendering | Add prescribed structure, required fields or useful defaults for a proven consumer. | Add only where that extra value is demonstrated; no package per observed configuration file. |
 | Only manifest/policy authoring packages | Small and tied to closed consumers. | Rejected as premature narrowing; does not meet the wider controlled-authoring goal. |
 | No YAML family | Avoids new rendering and validation responsibility. | Not the selected direction; leaves agents without this supported pgmcp authoring route. |
@@ -104,7 +104,7 @@ JSON cannot use the existing comment prefix. [The standard $comment annotation](
 | Explicit template selection, with a configured .schema.json suffix where appropriate | Smallest code change. Persistent identity can be carried in $comment, but the current first-line reader will not reconstruct it automatically. Requires an explicit exception to automatic provenance routing for this format. |
 | A canonical root $comment carrier plus bounded opening-carrier recognition | Retains persisted identity and automatic package-profile selection. Requires one generic framing/reader extension, preserving ArtifactIdentity and existing carriers; no whole-document scan or schema-specific engine knowledge. |
 
-The owner selected the second route on 2026-10-11: extend the reader narrowly so the persisted pgmcp identity can be recognized through the root $comment carrier. This is an approved provenance strategy, not approval of all schema-source or native-checker recommendations. Preserve the existing ArtifactIdentity and supported comment carriers, explicit template selection and configured suffix fallback. Recognition stays bounded to the opening carrier; do not scan arbitrary body content or introduce schema-validation knowledge into the reader. Caller-authored schema explanations remain distinct from the reserved technical carrier. The precise framing, budget and malformed-carrier behavior are Design work.
+The owner selected the second route on 2026-10-11: extend the reader narrowly so the persisted pgmcp identity can be recognized through the root $comment carrier. At that decision point, approval covered provenance only. The later final owner decision below separately approves the bounded schema-source and native-checker strategy. Preserve the existing ArtifactIdentity and supported comment carriers, explicit template selection and configured suffix fallback. Recognition stays bounded to the opening carrier; do not scan arbitrary body content or introduce schema-validation knowledge into the reader. Caller-authored schema explanations remain distinct from the reserved technical carrier. The precise framing, budget and malformed-carrier behavior are Design work.
 
 ### #498: ADR and arc42 SAD conclusions
 
@@ -129,22 +129,23 @@ The inspected immutable arc42 source is **32fd461c91b184777e14f7d66b4e46db936fd3
 
 No native candidate execution, benchmark or implementation test was performed in this Research step. Feasibility claims are based on direct source inspection. Production/configuration/template assets remain unchanged.
 
-### Remaining strategy decisions
+### Final boundary decisions
 
-| Boundary | Recommended strategy awaiting owner approval |
+The owner explicitly accepted the remaining proposals on 2026-10-11 with "Akkoord", in response to the producer's three-boundary YAML, JSON Schema and ADR/SAD decision table. This supplements the earlier controlled-authoring, Markdown-inheritance and provenance decisions.
+
+| Boundary | Owner-approved strategy |
 |---|---|
 | YAML rendering/checking | Add only an artifact-agnostic PyYAML rendering capability and a native check-jsonschema adapter with a deterministic supported parser environment. Start with single mapping-root, ordinary finite data, a header comment and readable multiline values; omit authored anchors/per-entry comment DSL. |
-| JSON Schema source/checking | One object-based Draft 2020-12 source family, no arbitrary JSON generator or template-consumer-specific validator. The bounded $comment provenance reader extension is already approved separately; native metaschema-checking and parser-environment recommendations remain open. |
+| JSON Schema source/checking | One object-based Draft 2020-12 source family, no arbitrary JSON generator or template-consumer-specific validator. The bounded $comment provenance reader extension and native metaschema-checking route with a deterministic supported parser environment are approved. |
 | ADR/SAD and licensing | New portable packages, visible caller-owned ADR identity and authored status, proportional drafts and explicit ADR/SAD links. Preserve architecture; no legacy input bridges, automatic lifecycle or numbering. Distribute the arc42 adaptation with its pinned-source attribution and component license. |
 
-These recommendations complete the technical comparison, not the human strategy gate. The separately approved controlled-authoring direction remains binding; combined Research stays open until these affected boundaries are explicitly accepted.
+These decisions complete the human strategy gate for the researched boundaries. They do not substitute for independent QA or authorize implementation. Concrete package fields, native arguments and versions, framing and operational details belong in Design.
 
 ## Questions
 
-- Accept or revise the proposed YAML rendering/checking boundary, including the finite single-mapping scope and limited authored comment support.
-- Accept or revise the proposed JSON Schema source/checking boundary, including the distinction between native metaschema evidence and stricter consumer admission. Bounded automatic $comment identity recognition is owner-approved; its framing details belong in Design.
-- Accept or revise the portable ADR/SAD boundary and distribution of the attributed arc42 adaptation.
-- After those owner choices, complete the phase hand-over for independently invoked QA; no technical recommendation authorizes phase progression.
+No Research strategy decision remains open. Design must specify package IDs and fields, the YAML serializer's concrete scalar/multiline contract, native adapter arguments and supported version/parser environment, JSON provenance framing and bounded malformed-carrier behavior, and proportional ADR/SAD draft/status/link behavior. These are refinements within the approved boundaries, not new architecture proposals.
+
+Independent QA must evaluate the Research-to-Design gate before phase progression.
 
 ## Approved Strategy
 
@@ -155,15 +156,18 @@ These recommendations complete the technical comparison, not the human strategy 
 | Durable artifact authoring | Aim to support creation and subsequent editing through pgmcp so the owner can configure form, content constraints and quality checks. This combined issue implements its selected families, not every persistent file type. |
 | YAML family scope | Pursue a modest complete reusable family for ordinary structured configuration. Do not restrict it to pgmcp manifests/policies or create a separate package for each source file. Its primary value is the supported authoring route. |
 | Template content versus consumer semantics | Templates prescribe structure where useful. A generic YAML family owns supported input forms and reliable output; application-specific validity remains with an applicable schema or consumer validator. |
-| Public tooling and adapter boundary | Prefer existing configurable tools for checks and formatting. Adapters integrate those tools without acquiring application-specific configuration knowledge. Source-based tool and parser-environment recommendations are recorded above; their approval remains open. |
+| Public tooling and adapter boundary | Prefer existing configurable tools for checks and formatting. Adapters integrate those tools without acquiring application-specific configuration knowledge. Owner-approved native route: one check-jsonschema adapter with distinct configured YAML instance-schema and JSON Schema metaschema checks, and a deterministic supported parser environment. Native validation does not imply every consumer's stricter admission. |
 | Existing package and authoring contracts | Reuse the current discovery, context-schema, rendering and configured validation boundaries. Support the new family by additions where possible; do not redesign existing supported artifact contracts. |
-| ADR/SAD Markdown inheritance | The owner explicitly requires both new packages to build on the existing Jinja2 Markdown tiers and shared patterns. Preserve base-owned provenance, heading, metadata and revision history; supply artifact-specific body content through the existing blocks. This does not yet approve the remaining ADR/SAD content or licensing strategy. |
+| ADR/SAD Markdown inheritance | The owner explicitly requires both new packages to build on the existing Jinja2 Markdown tiers and shared patterns. Preserve base-owned provenance, heading, metadata and revision history; supply artifact-specific body content through the existing blocks. The later owner approval also covers the bounded portable content/linking and attributed component-license strategy below. |
 | Historical seeds | Do not restore the incomplete v2 seeds or introduce a compatibility path for them. They are Research evidence, not a supported contract to preserve. |
 | Harness enforcement | Supplying a pgmcp authoring route does not disable write tools in an external harness. General harness restrictions or an instruction rollout are not added to this issue. |
 | JSON scope | Retain #484's JSON Schema source-artifact scope. General JSON configuration authoring needs a separate explicit scope decision. |
 | JSON Schema provenance | Owner decision, 2026-10-11: extend the reader narrowly to derive the existing pgmcp identity from a canonical root $comment carrier. Preserve bounded recognition, ArtifactIdentity, existing comment carriers, explicit selection and configured suffix fallback. Do not add schema-validation responsibilities or a whole-document scan. Exact framing and malformed-carrier behavior are Design work. |
+| YAML rendering and output scope | Owner decision, 2026-10-11: use the existing PyYAML library through one generic rendering capability. Support one mapping-root, finite ordinary data, header comment and multiline text; omit authored anchors/per-entry comment DSL. Use the configured native instance-schema check. |
+| JSON Schema source and native environment | Owner decision, 2026-10-11: support an object-based Draft 2020-12 source family, reuse JSON rendering, and use the same native tool via a separate metaschema check. Specify a predictable version/parser contract in Design; do not impose a particular template consumer's restrictions in the adapter or add a general JSON generator. |
+| Portable ADR/SAD and distribution | Owner decision, 2026-10-11: use new portable packages on existing Markdown tiers, supplied ADR identity/status, explicit ADR/SAD links and twelve SAD sections. Keep existing architecture supported; no legacy input bridges, automatic numbering or lifecycle engine. Distribute the pinned arc42 adaptation with attribution and its component license. |
 
-These owner decisions approve the controlled-authoring/YAML direction, shared value criterion, ADR/SAD Markdown inheritance and targeted JSON Schema provenance recognition. They do not approve concrete DTOs, serialization details, a universal YAML generator, all remaining source/checking and ADR/SAD content/licensing boundaries, or a transition to Design.
+The strategy gate is complete. Concrete DTOs, field names, serialization details and operational version/framing contracts remain Design work within these boundaries. Independent QA must supply the Research-to-Design verdict; owner strategy approval alone is not that verdict.
 
 ## Expected Results
 
@@ -275,3 +279,4 @@ Select bounded supported shapes and explicit validation guarantees before Design
 | 0.3 | 2026-10-11 | @imp researcher | Record native rendering/checking feasibility, parser/provenance limits, portable ADR/SAD and pinned arc42 evidence; present boundary strategies for owner decision. |
 | 0.4 | 2026-10-11 | @imp researcher | Capture the owner's explicit requirement that ADR/SAD reuse existing Jinja2 Markdown tiers and shared framing responsibilities. |
 | 0.5 | 2026-10-11 | @imp researcher | Record owner-approved bounded $comment identity recognition; separate it from remaining source/checking decisions. |
+| 0.6 | 2026-10-11 | @imp researcher | Capture final owner approval for YAML/native checks, JSON Schema/parser scope and portable attributed ADR/SAD; close Research strategy questions for independent review. |
