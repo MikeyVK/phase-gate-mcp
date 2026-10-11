@@ -127,7 +127,7 @@ One internal cutover removes source terminator mapping/preferred-terminator sele
 
 ### Safety and check/write identity
 
-**Method:** Existing real reader/writer integration assertions and unit writer tests
+**Method:** Existing real reader/writer integration assertions, including race and write failures
 
 **Expected Result:** Checked UTF-8 content equals persisted bytes; external byte changes block writes.
 
@@ -147,7 +147,7 @@ One coherent implementation cycle is sufficient. Establish a focused green basel
 - [Construction](<../../../mcp_server/services/edit_construction.py>)
 - [Operation](<../../../mcp_server/services/edit_operation.py>)
 - [Existing integration coverage](<../../../tests/mcp_server/integration/test_edit_operation_v3.py>)
-- [Writer coverage](<../../../tests/mcp_server/unit/utils/test_atomic_file_writer.py>)
+- [Checked-writer behavior](<../../../tests/mcp_server/integration/test_edit_operation_v3.py>)
 
 ## Version History
 
