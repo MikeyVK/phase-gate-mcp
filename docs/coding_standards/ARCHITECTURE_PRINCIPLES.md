@@ -2,7 +2,7 @@
 
 **Status:** Binding contract for all implementation work
 **Read when:** Before production or test code changes that can affect an architectural boundary
-**Last updated:** 2026-08-20
+**Last updated:** 2026-10-11
 
 ---
 
@@ -327,6 +327,31 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 - Core and domain services must produce structured data outputs (such as models, data transfer objects, error codes, or metadata event keys with raw parameter dictionaries).
 - The presentation of these outputs (including human-readable translations, formatting, iconography/emojis, and visual structures) is the exclusive responsibility of a dedicated presentation layer or external configuration/localization files.
 - This ensures the domain layer remains fully agnostic of the final display format and media (e.g., CLI, JSON-RPC responses, web UI, or logs).
+
+### 15.1 Pragmatic Failure Presentation
+
+Classify a failure by its meaning before adding presentation machinery:
+
+| Failure category | Presentation responsibility |
+|---|---|
+| Policy blockages, interventions, and recovery guidance | Return a stable error code and relevant structured facts. Author the explanation and any recovery instruction in external presentation configuration; use the existing generic presenter to select and render it. |
+| Input schema failures | Reuse the existing schema validator's diagnostics and schema feedback. Do not invent a separate code or template for every type or format error. |
+| System and developer exceptions | Preserve the original exception or native diagnostic text through the existing error boundary and generic configured fallback. Dedicated templates are unnecessary unless there is a distinct policy intervention to explain. |
+
+Diagnostic text is evidence, not automatically presentation debt. Retain useful
+`error_message` values, native messages, stderr and tracebacks according to the
+existing output and cache contracts. This does not permit core code to compose
+policy explanations, recovery advice, headings or visual layouts.
+
+Reuse existing DTOs, error handling and configured code-to-text mappings. Do not add
+per-error exception or DTO classes, tool-specific presenter branches, or another
+mapping layer solely to improve wording. If `error_message` only repeats
+`error_code`, remove the duplicate from the configured text projection rather than
+changing the structured response contract. A known policy failure can display its
+configured explanation and technical code once.
+
+See [Presentation Architecture](../reference/presentation_architecture.md) for the
+current configuration and rendering mechanisms.
 
 ---
 

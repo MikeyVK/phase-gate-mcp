@@ -3,7 +3,7 @@
   "branch": "refactor/491-planning-mutation-contracts",
   "issue_number": 491,
   "workflow_name": "refactor",
-  "current_phase": "planning",
+  "current_phase": "documentation",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -30,7 +30,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Return to Planning for the owner's ongoing live demonstration, now verifying rejection of protected-cycle replacement after the focused implementation repair and independent QA GO.",
+  "skip_reason": "Owner-directed return from Planning after live planning demonstrations and cleanup, solely to document the approved pragmatic failure-presentation decision. This phase jump does not assert renewed Validation completion or Ready approval after the protected-cycle behavior amendment.",
   "issue_title": "refactor: Reconcile planning creation and mutation contracts",
   "parent_branch": "main",
   "created_at": "2026-10-08T16:57:25.629240+00:00",
@@ -116,6 +116,14 @@
       "human_approval_message": "The owner explicitly requested 'Voer transitie naar planning uit' for these live planning-tool checks and then instructed 'Mutatie na commits verbieden!. Kun je dit eenvoudig en gericht aanpassen'.",
       "forced": true,
       "skip_reason": "Return to Planning for the owner's ongoing live demonstration, now verifying rejection of protected-cycle replacement after the focused implementation repair and independent QA GO."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "documentation",
+      "timestamp": "2026-10-11T07:57:54.432478+00:00",
+      "human_approval_message": "Ga naar de documentation phase en zorg dat architectural principles een tekst krijgt die het besluit dat we hier hebben doorgevoerd ten aanzien van presentatie, een plek krijgt die we in de toekomst zonder graven kunnen raadplegen.",
+      "forced": true,
+      "skip_reason": "Owner-directed return from Planning after live planning demonstrations and cleanup, solely to document the approved pragmatic failure-presentation decision. This phase jump does not assert renewed Validation completion or Ready approval after the protected-cycle behavior amendment."
     }
   ],
   "reconstructed": false,
