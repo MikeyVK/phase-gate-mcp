@@ -3,8 +3,8 @@
 # Issue \#491 — Planning mutation and workflow validation
 
 **Status:** Independent Validation review requested  
-**Version:** 1.1  
-**Last Updated:** 2026-10-10
+**Version:** 1.2  
+**Last Updated:** 2026-10-11
 
 ## Purpose
 
@@ -20,7 +20,7 @@ Compatibility/migration tooling, completion tracking, broad test rewrites, unrel
 
 ## Prerequisites
 
-- Research Approved Strategy, Design v1.1 and the three-cycle Planning are authoritative.
+- Research Approved Strategy v1.16, Design v1.2 and the three-cycle Planning v1.1 are authoritative; the Ready refresh below covers the later approved amendment.
 - Independent Implementation → Validation GO from ‘Beoordeel designplan’ on b72922a673a26dc6612835defd08df89c9f5e4b4; both P2 test-boundary findings were corrected and independently rechecked.
 
 ## Issue Number
@@ -58,7 +58,7 @@ PASS
 - [Planning command owner](<../../../mcp_server/managers/project_manager.py>)
 - [Mutation/protection behavior](<../../../tests/mcp_server/unit/managers/test_project_manager.py>)
 
-**Outcome:** Write-once save, five explicit whole-block operations and original-snapshot targeting produce a commonly validated complete plan. Server derives total/C_n/D_n.m/local D_n. Missing/duplicate/invalid targets preserve bytes. Every update retries evidence, including force; known positive deletion/renumbering protection remains binding and accepted uncertainty override is reported only after persistence.
+**Outcome:** Write-once save, five explicit whole-block operations and original-snapshot targeting produce a commonly validated complete plan. Server derives total/C_n/D_n.m/local D_n. Missing/duplicate/invalid targets preserve bytes. Every update retries evidence, including force; known positive replacement/deletion/renumbering protection remains binding and accepted uncertainty override is reported only after persistence.
 
 ### D\_2.2 — Planning consumers and admission
 
@@ -163,6 +163,50 @@ Independent Validation QA on a30ac083 confirmed all nine broad checks and the fu
 
 **Reuse boundary:** The complete native suite was already executed and independently confirmed. Only the three negative-test invocation forms changed afterward; their complete files were rerun independently. No shared fixture, helper, import or production/configuration change invalidates the remaining suite surfaces. The broad check rows above keep their original snapshot/counts. After this revision, the same five branch checks and four configured Python checks were rerun with timeout_seconds=600 and no argument override: all nine passed. Receipts 4554fcbeae844a4d9bde59d060b71cfa and b408d42473474e56b426695852d3b0d4. Markdown validation of the final prose update also passed.
 
+## Ready evidence refresh — 2026-10-11
+
+This supplement supersedes the earlier full-suite reuse boundary for the final
+production/configuration tree at `f81c6bcd3e9c8e73c814aaaba552fe26c4f285d8`.
+The owner-approved amendment now prohibits replacement as well as removal and
+renumbering of cycles with qualifying implementation commits, even with force.
+Research v1.16, Design v1.2 and Planning v1.1 describe that amended strategy.
+The subsequent changes remain configuration-owned failure wording and the durable
+presentation rationale in [Architecture §15.1](../../coding_standards/ARCHITECTURE_PRINCIPLES.md#151-pragmatic-failure-presentation).
+No new tests or compatibility route were added for the presentation change.
+
+| Fresh verification | Exact invocation and observed outcome |
+|---|---|
+| Complete native suite | `run_tests(scope="configured", tests=["python_tests"], timeout_seconds=1200)`; args omitted. Eight xdist workers, 2,861 items: **2,859 passed, 1 skipped, 1 xpassed, 261 warnings; exit 0; 516.67 seconds**. |
+| Branch gates | `run_checks(scope="branch", checks=["python_format","python_lint","python_types","python_pyright","markdown_links"], timeout_seconds=600)`; args omitted. All five passed, every native exit 0; 65 formatted files, 21 production files for Mypy/Pyright, Pyright zero errors/warnings; 277 successful links, one exclusion, zero errors. |
+| Workspace Python gates | `run_checks(scope="configured", checks=["python_format","python_lint","python_types","python_pyright"], timeout_seconds=600)`; args omitted. All four passed, every native exit 0; 469 files already formatted, Mypy/Pyright 189 production files, Pyright zero errors/warnings. |
+
+Suite receipt `2c47c8ce7dd941f780ea5f35a72d4f6e`, branch receipt
+`77ed30860f5d4f268eee8c3504ecd324` and configured receipt
+`3479aa36ba50494299e6871d09d8ae8b` are optional transient diagnostic locators.
+The suite's native session header and final outcome were inspected in bounded
+cache windows; no complete multipart DTO assembly is claimed. The commands,
+snapshot and factual outcomes above are the durable evidence and reproduction route.
+
+Owner-directed live calls additionally confirmed:
+
+- Save and update in Documentation reject through configured Planning admission.
+- Save of an existing plan rejects with `planning_already_saved`.
+- Protected C_3 replacement rejects normally and with force; protected C_2 removal
+  rejects with `planning_cycle_protected`.
+- Two fictional complete cycles append as C_4/C_5 with D_4.1–D_4.2 and
+  D_5.1–D_5.2. Removing the first shifts the second to C_4/D_4.1/D_4.2 while
+  preserving its authoring content.
+- Removing the remaining fictional cycle through update restores the original
+  three-cycle/nine-deliverable planning exactly. Complete native readback after
+  the refreshed suite confirms that same planning remains intact.
+- After restart, known policy failures show configured readable explanations and
+  the technical code once; tool/domain/presenter code is unchanged by that correction.
+
+The retained native skip, non-strict XPASS and warnings remain the caveats already
+described below. No separate deferred implementation work was identified.
+Independent QA owns the final review verdict; entering Ready does not itself
+supply that approval.
+
 ## Demonstration
 
 Reproduce with run_tests(scope="targets", targets=["tests/mcp_server/integration/test_project_plan_readback.py"], tests=["python_tests"], timeout_seconds=600). The normal bootstrap precedes plan save. Four parameterized phase/cycle × normal/force cases use registered MCP handlers of the same server. Missing reader.py blocks the correct deliverable and preserves state. Create reader.py, replace the saved rule with revised.py and retry: the refreshed rule still blocks without restart. Create revised.py for normal success, or force with approval/reason and observe the current deliverable in skipped_gates. Outcomes are read from actual cached DTOs through the registered resource handler, not reconstructed from summaries.
@@ -192,3 +236,4 @@ All behavior fixtures use isolated temporary workspaces. No live planning mutati
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-10 | @imp validator | Record full configured verification, structural mapping and public gate demonstration. |
 | 1.1 | 2026-10-10 | @imp validator | Record final suppression correction, independent affected-file evidence and explicit full-suite reuse boundary. |
+| 1.2 | 2026-10-11 | @imp implementer | Record fresh Ready suite/gates after the protection amendment, live planning demonstrations and cleanup, and configured failure presentation. |
