@@ -431,7 +431,9 @@ class EditOperationOutput(_MutationOperationOutput):
     """Complete edit result with factual source selection and completed text effect."""
 
     path: WorkspaceRelativePath
-    content_changed: StrictBool | None
+    content_changed: StrictBool | None = Field(
+        description="UTF-8 byte difference from the original after a write; otherwise null."
+    )
     selected_source: Literal["input", "metadata", "extension", "none"] | None
     template_id: TemplateId | None
     extension: ExtensionKey | None

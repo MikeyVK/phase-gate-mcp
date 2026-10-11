@@ -13,7 +13,6 @@ from mcp_server.core.interfaces.file_writer import (
     ICheckedFileReplacer,
     IOriginalFileReader,
     OriginalChangedError,
-    OriginalFileSnapshot,
     OriginalReadError,
     OriginalTargetMissingError,
     OriginalTargetNotFileError,
@@ -36,7 +35,6 @@ from mcp_server.schemas.mutation_outputs import (
 from mcp_server.services.edit_construction import (
     EditConstructionError,
     EditProfileSelection,
-    EditProposal,
 )
 from mcp_server.services.edit_construction import (
     EditOperation as EditCommand,
@@ -102,7 +100,7 @@ class EditOperation:
         reader: IOriginalFileReader,
         writer: ICheckedFileReplacer,
         select: Callable[[str, str, str | None], EditProfileSelection],
-        construct: Callable[[OriginalFileSnapshot, EditCommand], EditProposal],
+        construct: Callable[[str, EditCommand], str],
         checks: CheckService,
     ) -> None:
         self._paths = paths
@@ -176,7 +174,7 @@ class EditOperation:
 
         selection = self._select(original.original_text, target.name, template_id)
         try:
-            proposed = self._construct(original, operation)
+            proposed = self._construct(original.original_text, operation)
         except EditConstructionError as exc:
             return self._result(
                 logical,
@@ -192,7 +190,7 @@ class EditOperation:
                 execution = await self._checks.run_content(
                     selection.profile_id,
                     target_path=str(target),
-                    content=proposed.physical_text,
+                    content=proposed,
                 )
             except ContentPreparationError as exc:
                 cause = exc.__cause__
@@ -252,7 +250,7 @@ class EditOperation:
             housekeeping = self._writer.replace_if_unchanged(
                 target,
                 original.original_bytes,
-                proposed.physical_text,
+                proposed,
             )
         except _FILE_ERRORS as exc:
             code, details = _file_details(logical, exc)
@@ -272,7 +270,7 @@ class EditOperation:
             selection=selection,
             checks=checks,
             written=True,
-            content_changed=proposed.logical_text != original.original_text,
+            content_changed=proposed.encode("utf-8") != original.original_bytes,
             housekeeping=self._housekeeping(housekeeping),
         )
 

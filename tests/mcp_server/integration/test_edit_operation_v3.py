@@ -24,7 +24,7 @@ from mcp_server.services.edit_construction import (
     PatternReplaceOperation,
     ReplaceOperation,
     RewriteOperation,
-    construct_edit_proposal,
+    construct_edit,
     select_profile,
 )
 from mcp_server.services.edit_construction import (
@@ -76,7 +76,7 @@ def operation(
         reader=OriginalFileReader(),
         writer=CheckedFileWriter(),
         select=select,
-        construct=construct_edit_proposal,
+        construct=construct_edit,
         checks=checks,
     ), runtime
 

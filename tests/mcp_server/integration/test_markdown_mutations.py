@@ -27,7 +27,7 @@ from mcp_server.services.artifact_header_reader import ArtifactHeaderReader
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.edit_construction import (
     RewriteOperation,
-    construct_edit_proposal,
+    construct_edit,
     select_profile,
 )
 from mcp_server.services.edit_operation import EditOperation
@@ -247,7 +247,7 @@ async def test_edit_native_link_policy(
             template_profiles=template_profiles,
             extension_profile_for_filename=delivered.checks.match_for_filename,
         ),
-        construct=construct_edit_proposal,
+        construct=construct_edit,
         checks=checks,
     )
     result = await service.execute(
