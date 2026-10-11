@@ -3,7 +3,7 @@
 # Issue 465 — YAML, JSON Schema and architecture artifact research
 
 **Status:** Draft — YAML direction approved; combined Research incomplete  
-**Version:** 0.3  
+**Version:** 0.5  
 **Last Updated:** 2026-10-11
 
 ## Purpose
@@ -104,11 +104,11 @@ JSON cannot use the existing comment prefix. [The standard $comment annotation](
 | Explicit template selection, with a configured .schema.json suffix where appropriate | Smallest code change. Persistent identity can be carried in $comment, but the current first-line reader will not reconstruct it automatically. Requires an explicit exception to automatic provenance routing for this format. |
 | A canonical root $comment carrier plus bounded opening-carrier recognition | Retains persisted identity and automatic package-profile selection. Requires one generic framing/reader extension, preserving ArtifactIdentity and existing carriers; no whole-document scan or schema-specific engine knowledge. |
 
-The second route is recommended for the owner's consistent authoring goal. Caller-authored schema explanations remain distinct from the reserved technical carrier. The precise framing, budget and malformed-carrier behavior are Design work.
+The owner selected the second route on 2026-10-11: extend the reader narrowly so the persisted pgmcp identity can be recognized through the root $comment carrier. This is an approved provenance strategy, not approval of all schema-source or native-checker recommendations. Preserve the existing ArtifactIdentity and supported comment carriers, explicit template selection and configured suffix fallback. Recognition stays bounded to the opening carrier; do not scan arbitrary body content or introduce schema-validation knowledge into the reader. Caller-authored schema explanations remain distinct from the reserved technical carrier. The precise framing, budget and malformed-carrier behavior are Design work.
 
 ### #498: ADR and arc42 SAD conclusions
 
-Keep the existing architecture package's supported concept-document contract. Add separate portable ADR/SAD packages. The inspected Ypsia ADR v1.1.0 is prior art, not an input contract to preserve: its required integer ID is not rendered, its option-object schema does not specify the fields read by Jinja, its status schema does not enforce declared states, and mandatory Strategic/Tactical categories are project-specific. Do not carry those assumptions or alias fields into new packages.
+Keep the existing architecture package's supported concept-document contract. Add separate portable ADR/SAD packages. The owner explicitly requires both to build on the existing Jinja2 Markdown tiers: tier2_markdown_document -> tier1_document -> tier0_root, reusing shared Markdown section/link patterns. The shared tiers own provenance, the H1 heading, document metadata and revision history; the concrete packages supply their ADR/SAD body. Do not introduce parallel Markdown framing or duplicate the base responsibilities. The inspected Ypsia ADR v1.1.0 is prior art, not an input contract to preserve: its required integer ID is not rendered, its option-object schema does not specify the fields read by Jinja, its status schema does not enforce declared states, and mandatory Strategic/Tactical categories are project-specific. Do not carry those assumptions or alias fields into new packages.
 
 The proposed ADR content covers a visible caller-owned identifier, context/problem, decision drivers, concrete alternatives, a decision and rationale, status and consequences. Optional participants, tags, supersession and verification are authored facts. A single clearly defined ADR status is sufficient initially; it is not approval or workflow evidence. Minimal valid scaffolds may have explicit empty content carriers; never invent conclusions such as "None identified" for omitted evidence.
 
@@ -134,7 +134,7 @@ No native candidate execution, benchmark or implementation test was performed in
 | Boundary | Recommended strategy awaiting owner approval |
 |---|---|
 | YAML rendering/checking | Add only an artifact-agnostic PyYAML rendering capability and a native check-jsonschema adapter with a deterministic supported parser environment. Start with single mapping-root, ordinary finite data, a header comment and readable multiline values; omit authored anchors/per-entry comment DSL. |
-| JSON Schema/provenance | One object-based Draft 2020-12 source family, no arbitrary JSON generator or template-consumer-specific validator. Preserve persisted identity via $comment with a small bounded generic reader extension; retain explicit selection and configured suffix fallback. |
+| JSON Schema source/checking | One object-based Draft 2020-12 source family, no arbitrary JSON generator or template-consumer-specific validator. The bounded $comment provenance reader extension is already approved separately; native metaschema-checking and parser-environment recommendations remain open. |
 | ADR/SAD and licensing | New portable packages, visible caller-owned ADR identity and authored status, proportional drafts and explicit ADR/SAD links. Preserve architecture; no legacy input bridges, automatic lifecycle or numbering. Distribute the arc42 adaptation with its pinned-source attribution and component license. |
 
 These recommendations complete the technical comparison, not the human strategy gate. The separately approved controlled-authoring direction remains binding; combined Research stays open until these affected boundaries are explicitly accepted.
@@ -142,7 +142,7 @@ These recommendations complete the technical comparison, not the human strategy 
 ## Questions
 
 - Accept or revise the proposed YAML rendering/checking boundary, including the finite single-mapping scope and limited authored comment support.
-- Choose automatic bounded $comment provenance recognition or explicit selection for JSON Schema, while retaining the distinction between native metaschema evidence and stricter consumer admission.
+- Accept or revise the proposed JSON Schema source/checking boundary, including the distinction between native metaschema evidence and stricter consumer admission. Bounded automatic $comment identity recognition is owner-approved; its framing details belong in Design.
 - Accept or revise the portable ADR/SAD boundary and distribution of the attributed arc42 adaptation.
 - After those owner choices, complete the phase hand-over for independently invoked QA; no technical recommendation authorizes phase progression.
 
@@ -157,11 +157,13 @@ These recommendations complete the technical comparison, not the human strategy 
 | Template content versus consumer semantics | Templates prescribe structure where useful. A generic YAML family owns supported input forms and reliable output; application-specific validity remains with an applicable schema or consumer validator. |
 | Public tooling and adapter boundary | Prefer existing configurable tools for checks and formatting. Adapters integrate those tools without acquiring application-specific configuration knowledge. Source-based tool and parser-environment recommendations are recorded above; their approval remains open. |
 | Existing package and authoring contracts | Reuse the current discovery, context-schema, rendering and configured validation boundaries. Support the new family by additions where possible; do not redesign existing supported artifact contracts. |
+| ADR/SAD Markdown inheritance | The owner explicitly requires both new packages to build on the existing Jinja2 Markdown tiers and shared patterns. Preserve base-owned provenance, heading, metadata and revision history; supply artifact-specific body content through the existing blocks. This does not yet approve the remaining ADR/SAD content or licensing strategy. |
 | Historical seeds | Do not restore the incomplete v2 seeds or introduce a compatibility path for them. They are Research evidence, not a supported contract to preserve. |
 | Harness enforcement | Supplying a pgmcp authoring route does not disable write tools in an external harness. General harness restrictions or an instruction rollout are not added to this issue. |
 | JSON scope | Retain #484's JSON Schema source-artifact scope. General JSON configuration authoring needs a separate explicit scope decision. |
+| JSON Schema provenance | Owner decision, 2026-10-11: extend the reader narrowly to derive the existing pgmcp identity from a canonical root $comment carrier. Preserve bounded recognition, ArtifactIdentity, existing comment carriers, explicit selection and configured suffix fallback. Do not add schema-validation responsibilities or a whole-document scan. Exact framing and malformed-carrier behavior are Design work. |
 
-This approves the YAML direction and shared value criterion. It does not approve concrete DTOs, serialization details, a universal YAML generator, all remaining #484/#498 boundaries, or a transition to Design.
+These owner decisions approve the controlled-authoring/YAML direction, shared value criterion, ADR/SAD Markdown inheritance and targeted JSON Schema provenance recognition. They do not approve concrete DTOs, serialization details, a universal YAML generator, all remaining source/checking and ADR/SAD content/licensing boundaries, or a transition to Design.
 
 ## Expected Results
 
@@ -271,3 +273,5 @@ Select bounded supported shapes and explicit validation guarantees before Design
 | 0.1 | 2026-10-11 | @imp researcher | Record historical YAML disposition and representative pgmcp/ST sources; keep scope and combined-issue strategies open. |
 | 0.2 | 2026-10-11 | @imp researcher | Capture owner-approved controlled authoring and YAML direction; retain unresolved technical and combined-issue boundaries. |
 | 0.3 | 2026-10-11 | @imp researcher | Record native rendering/checking feasibility, parser/provenance limits, portable ADR/SAD and pinned arc42 evidence; present boundary strategies for owner decision. |
+| 0.4 | 2026-10-11 | @imp researcher | Capture the owner's explicit requirement that ADR/SAD reuse existing Jinja2 Markdown tiers and shared framing responsibilities. |
+| 0.5 | 2026-10-11 | @imp researcher | Record owner-approved bounded $comment identity recognition; separate it from remaining source/checking decisions. |
