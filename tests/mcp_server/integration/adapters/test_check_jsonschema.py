@@ -74,13 +74,22 @@ def invoke(
     python_args: tuple[str, ...] = (),
     raw: bytes | None = None,
 ) -> tuple[int, dict[str, JsonValue]]:
-    payload = raw if raw is not None else json.dumps({
-        "execution_context": {"scratch_directory": str(package.workspace.parent)},
-        **request,
-    }).encode("utf-8")
+    payload = (
+        raw
+        if raw is not None
+        else json.dumps(
+            {
+                "execution_context": {"scratch_directory": str(package.workspace.parent)},
+                **request,
+            }
+        ).encode("utf-8")
+    )
     result = subprocess.run(
         [str(package.launch.executable), *python_args, *package.launch.args],
-        input=payload, cwd=package.workspace, capture_output=True, timeout=40,
+        input=payload,
+        cwd=package.workspace,
+        capture_output=True,
+        timeout=40,
     )
     assert not result.stderr, result.stderr.decode("utf-8", errors="replace")
     response: JsonValue = TypeAdapter(JsonValue).validate_json(result.stdout)
@@ -106,13 +115,18 @@ def native_args(mode: str) -> list[str]:
         return ["--check-metaschema", "--force-filetype", "json", "--output-format", "JSON"]
     filename = "yaml_configuration" if mode == "yaml" else "json_schema_source"
     return [
-        "--schemafile", f".pgmcp/config/check_schemas/{filename}.schema.json",
-        "--force-filetype", "yaml" if mode == "yaml" else "json",
-        "--output-format", "JSON",
+        "--schemafile",
+        f".pgmcp/config/check_schemas/{filename}.schema.json",
+        "--force-filetype",
+        "yaml" if mode == "yaml" else "json",
+        "--output-format",
+        "JSON",
     ]
 
 
-def selection(targets: tuple[Path, ...], args: list[str], operation: str = "json_schema") -> dict[str, object]:
+def selection(
+    targets: tuple[Path, ...], args: list[str], operation: str = "json_schema"
+) -> dict[str, object]:
     return {"operation": operation, "targets": [str(path) for path in targets], "args": args}
 
 
@@ -123,25 +137,47 @@ def selection(targets: tuple[Path, ...], args: list[str], operation: str = "json
         ("yaml", "- sequence\n", 1),
         ("shape", '{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object"}', 0),
         ("shape", '{"type":"object"}', 1),
-        ("metaschema", '{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object"}', 0),
+        (
+            "metaschema",
+            '{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object"}',
+            0,
+        ),
         ("metaschema", '{"$schema":"https://json-schema.org/draft/2020-12/schema","type":7}', 1),
         ("metaschema", '{"type":', 1),
     ],
-    ids=["yaml-pass", "yaml-root-fail", "shape-pass", "shape-fail", "meta-pass", "meta-fail", "parse-fail"],
+    ids=[
+        "yaml-pass",
+        "yaml-root-fail",
+        "shape-pass",
+        "shape-fail",
+        "meta-pass",
+        "meta-fail",
+        "parse-fail",
+    ],
 )
 def test_source_family_native_results(
-    checker_package: CheckerPackage, mode: str, source: str, expected: int,
+    checker_package: CheckerPackage,
+    mode: str,
+    source: str,
+    expected: int,
 ) -> None:
     package = checker_package
-    target = package.workspace / ("[source] sample.yaml" if mode == "yaml" else "[source] sample.schema.json")
+    target = package.workspace / (
+        "[source] sample.yaml" if mode == "yaml" else "[source] sample.schema.json"
+    )
     target.write_text(source, encoding="utf-8")
     args = native_args(mode)
     direct = subprocess.run(
         [sys.executable, "-m", "check_jsonschema", *args, str(target)],
-        cwd=package.workspace, capture_output=True, timeout=30,
+        cwd=package.workspace,
+        capture_output=True,
+        timeout=30,
     )
     assert direct.returncode == expected, (direct.stdout, direct.stderr)
-    code, response = invoke(package, selection((target,), args, "yaml_configuration" if mode == "yaml" else "json_schema"))
+    code, response = invoke(
+        package,
+        selection((target,), args, "yaml_configuration" if mode == "yaml" else "json_schema"),
+    )
     assert code == expected
     assert decision(response)["status"] == ("passed" if expected == 0 else "failed")
     evidence = response["evidence"]
@@ -161,17 +197,24 @@ def test_source_family_native_results(
 
 
 @pytest.mark.parametrize("broken", [False, True])
-def test_content_checks_proposal_and_preserves_original(checker_package: CheckerPackage, broken: bool) -> None:
+def test_content_checks_proposal_and_preserves_original(
+    checker_package: CheckerPackage, broken: bool
+) -> None:
     package = checker_package
     original = package.workspace / "settings.yaml"
     original.write_text("original: value\n", encoding="utf-8")
     proposed = package.workspace.parent / "proposal.yaml"
     source = "- not a mapping\n" if broken else "replacement: 3\n"
     proposed.write_text(source, encoding="utf-8")
-    code, response = invoke(package, {
-        "operation": "yaml_configuration", "target_path": str(original),
-        "input_path": str(proposed), "args": native_args("yaml"),
-    })
+    code, response = invoke(
+        package,
+        {
+            "operation": "yaml_configuration",
+            "target_path": str(original),
+            "input_path": str(proposed),
+            "args": native_args("yaml"),
+        },
+    )
     assert code == (1 if broken else 0)
     assert decision(response)["status"] == ("failed" if broken else "passed")
     assert original.read_text(encoding="utf-8") == "original: value\n"
@@ -181,16 +224,30 @@ def test_content_checks_proposal_and_preserves_original(checker_package: Checker
 def test_configured_explicit_file_operands(checker_package: CheckerPackage) -> None:
     package = checker_package
     target = package.workspace / "draft.schema.json"
-    target.write_text('{"$schema":"https://json-schema.org/draft/2020-12/schema"}', encoding="utf-8")
+    target.write_text(
+        '{"$schema":"https://json-schema.org/draft/2020-12/schema"}', encoding="utf-8"
+    )
     code, response = invoke(package, selection((), [*native_args("shape"), str(target)]))
     assert code == 0 and decision(response)["status"] == "passed"
 
 
 @pytest.mark.parametrize(
     "case",
-    ["empty", "directory", "help", "version", "validator", "stdin", "extra-file", "transform", "defaults"],
+    [
+        "empty",
+        "directory",
+        "help",
+        "version",
+        "validator",
+        "stdin",
+        "extra-file",
+        "transform",
+        "defaults",
+    ],
 )
-def test_unsupported_selection_and_content_modes(checker_package: CheckerPackage, case: str) -> None:
+def test_unsupported_selection_and_content_modes(
+    checker_package: CheckerPackage, case: str
+) -> None:
     package = checker_package
     target = package.workspace / "draft.yaml"
     target.write_text("key: value\n", encoding="utf-8")
@@ -213,8 +270,10 @@ def test_unsupported_selection_and_content_modes(checker_package: CheckerPackage
             "defaults": ["--fill-defaults"],
         }
         request = {
-            "operation": "yaml_configuration", "target_path": str(target),
-            "input_path": str(target), "args": [*args, *additions[case]],
+            "operation": "yaml_configuration",
+            "target_path": str(target),
+            "input_path": str(target),
+            "args": [*args, *additions[case]],
         }
     code, response = invoke(package, request)
     assert code == 3
@@ -223,17 +282,34 @@ def test_unsupported_selection_and_content_modes(checker_package: CheckerPackage
     assert target.read_text(encoding="utf-8") == "key: value\n"
 
 
-@pytest.mark.parametrize("missing", [False, True])
-def test_native_schema_loading_errors_are_unavailable(checker_package: CheckerPackage, missing: bool) -> None:
+@pytest.mark.parametrize("failure", ["missing", "schema", "reference"])
+def test_native_schema_loading_errors_are_unavailable(
+    checker_package: CheckerPackage, failure: str
+) -> None:
     package = checker_package
     target = package.workspace / "source.yaml"
     target.write_text("key: value\n", encoding="utf-8")
     schema = package.workspace / "broken.schema.json"
-    if not missing:
-        schema.write_text('{"type":7}', encoding="utf-8")
-    code, response = invoke(package, selection((target,), [
-        "--schemafile", str(schema), "--force-filetype", "yaml", "--output-format", "JSON",
-    ], "yaml_configuration"))
+    if failure != "missing":
+        schema.write_text(
+            '{"type":7}' if failure == "schema" else '{"$ref":"missing.schema.json"}',
+            encoding="utf-8",
+        )
+    code, response = invoke(
+        package,
+        selection(
+            (target,),
+            [
+                "--schemafile",
+                str(schema),
+                "--force-filetype",
+                "yaml",
+                "--output-format",
+                "JSON",
+            ],
+            "yaml_configuration",
+        ),
+    )
     assert code == 3
     assert decision(response)["status"] == "unavailable"
     assert decision(response)["reason"] in {"invalid_configuration", "execution_error"}
@@ -241,7 +317,9 @@ def test_native_schema_loading_errors_are_unavailable(checker_package: CheckerPa
 
 
 @pytest.mark.parametrize("failure", ["missing", "mismatch"])
-def test_dependency_admission_uses_package_requirements(checker_package: CheckerPackage, failure: str) -> None:
+def test_dependency_admission_uses_package_requirements(
+    checker_package: CheckerPackage, failure: str
+) -> None:
     package = checker_package
     python_args: tuple[str, ...] = ()
     if failure == "missing":
@@ -257,7 +335,9 @@ def test_dependency_admission_uses_package_requirements(checker_package: Checker
 
 
 @pytest.mark.parametrize("case", ["unknown", "operation", "relative", "malformed"])
-def test_malformed_wire_is_separate_from_native_usage(checker_package: CheckerPackage, case: str) -> None:
+def test_malformed_wire_is_separate_from_native_usage(
+    checker_package: CheckerPackage, case: str
+) -> None:
     package = checker_package
     request = selection((), native_args("shape"))
     raw = None
