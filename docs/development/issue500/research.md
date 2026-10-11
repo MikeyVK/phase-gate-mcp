@@ -2,17 +2,17 @@
 
 # Issue 500 — v3 Release Preparation and Development Archive
 
-**Status:** IN PROGRESS  
-**Version:** 0.2  
+**Status:** REVIEW REQUESTED  
+**Version:** 0.3  
 **Last Updated:** 2026-10-11
 
 ## Scope In
 
-Package release-version sources and runtime fallbacks; release notes reconstructed from durable merged work; installation/migration and native prerequisite guidance; #289 inventory reconciliation through Coordination; existing release assembly and installed-package verification; narrow temporary artifact routing; relocation of the baseline issue folders and links affected by that relocation.
+Package release-version sources and runtime fallbacks; release notes reconstructed from durable merged work; installation/migration and native prerequisite guidance; #289 inventory reconciliation through Coordination; existing release assembly and installed-package verification; narrow temporary artifact routing; relocation of the baseline issue folders and links affected by that relocation; retrospective GitHub release notes and reconstructed wheel/sdist for the selected v1/v2 boundaries.
 
 ## Scope Out
 
-Publishing, tagging or external rollout without separate approval; epic closure or priority changes; parked #121/#462; optional features; generic production refactoring; a new release automation platform; repository-wide historical-document rewrites.
+Publishing, tagging or external rollout without separate approval; PyPI; historical runtime repair and old full-suite campaigns; epic closure or priority changes; parked #121/#462; optional features; generic production refactoring; a new release automation platform; repository-wide historical-document rewrites.
 
 ## Problem Statement
 
@@ -80,27 +80,86 @@ Primary evidence:
 - [PR #441 — explicit v2 release](https://github.com/MikeyVK/phase-gate-mcp/pull/441)
 - [Historical #416 validation](../archive/issue416/validation.md)
 
-### Smallest Feasible Route — Proposed
+### Owner Scope Update — Historical Installation Packages
 
-Agree the two canonical SHAs; prepare reviewed notes identifying the historical revision/date and retrospective publication; after separate approval publish `v1.0.0` and `v2.0.0` with their exact targets and automatic source downloads. Optional old wheel/sdist uploads require a separate artifact decision and honest limitations. A later rebuilt package must be identified as a reconstruction and verified against its chosen source; do not relabel the August v2 package as the original July distribution.
+On 2026-10-11 the owner selected **installation packages for v1/v2 as well**, in addition to the proposed GitHub release preparation. The earlier source-only minimum is superseded. Prepare wheel and sdist for each historical source boundary, alongside v3; PyPI is not selected. Actual publication/tagging still needs separate approval.
 
-No old-version repair campaign, broad historical test rerun, new release architecture or history rewrite is needed for source-based historical releases. The active tools expose release reads but no native release/tag publication operation; the eventual approved publication procedure therefore needs an explicit route, such as the GitHub release UI or authorized API/CLI use. The final v3 release should explicitly become the current release.
+Historical build inputs must remain distinguishable: original SHA, original runtime and manifest-mapped assets, reconstruction date/toolchain and any packaging-only correction. Both historical pyprojects use only `assets/**/*`; both retained sdists also omit the seven Copilot dotfile assets. The proposed minimal correction is explicit hidden/nested asset inclusion in the isolated reconstruction's packaging declaration. Do not transplant v3 runtime, owner config, templates or later agent assets into those packages. Do not describe regenerated packages as the original byte-identical historical binaries.
+
+Verify each exact reconstructed wheel/sdist against that historical source and manifest; confirm installation, CLI version, fresh init and a bounded startup/handshake in isolated workspaces. The sdist must be usable to rebuild its corresponding complete wheel. No old full-suite rerun or historical runtime repair campaign is proposed. If historical code cannot run with the selected dependency environment, report the concrete blocker and reopen the boundary before patching runtime code.
+
+The active tools expose release reads but no native release/tag publication operation. Prepare local reviewed notes and exact-target publication inputs; the eventual separately approved action can use GitHub's Release API or `gh release create --target <SHA>` with explicit assets/notes and latest policy. No tag/release/draft creation is part of Research. v3 should explicitly become the current release when it is published.
+
+## Remaining Release Scope — Findings and Execution Boundary
+
+### Delivered v3 Changes
+
+The merged range is the proposed v2 boundary `ee32667ca95bf17ffb4ecd59062ef8cbed930e0b` through main `8770607492aeb6d076dfe5aae1dc78f79515dd07`: 23 first-parent merge PRs. Their bodies and current active references were inspected proportionally. This reconstructs material release behavior; it is not a semantic audit of every historical epic child.
+
+| Release-facing subject | Durable merge evidence | Final behavior to explain |
+|---|---|---|
+| Core v3 suite and execution cutover | [#464](https://github.com/MikeyVK/phase-gate-mcp/pull/464) | Explicit package manifests/schemas/policies and graph composition; separate scaffold/edit contracts; native checks/tests/fixes replace old quality routes. Old aliases and configuration shapes require manual migration. |
+| Native execution and branch selection | [#479](https://github.com/MikeyVK/phase-gate-mcp/pull/479), [#489](https://github.com/MikeyVK/phase-gate-mcp/pull/489) | Complete native invocations, dependency/version refusal and truthful outcomes; per-check configured filtering overlays Git candidates only for check branch scope. Explicit targets remain intentional. |
+| Recovery | [#488](https://github.com/MikeyVK/phase-gate-mcp/pull/488) | Rejected startup exposes health/restart with actionable textual JSON diagnosis; fix then restart. Restart acknowledgement does not prove healthy admission. |
+| Planning, scope and state | [#496](https://github.com/MikeyVK/phase-gate-mcp/pull/496) | Whole-block mutations, named ordered input, derived references/totals, commit-protected cycle identity, configured Planning admission and explicit resume; shared scope codec and initialization guard. |
+| LF edits and checked diagnostics | [#497](https://github.com/MikeyVK/phase-gate-mcp/pull/497), [#490](https://github.com/MikeyVK/phase-gate-mcp/pull/490) | One LF proposal for checks/write, actual byte-change reporting, candidate-source syntax diagnostics and durable evidence guidance. |
+| Template contracts and new families | [#480](https://github.com/MikeyVK/phase-gate-mcp/pull/480), [#487](https://github.com/MikeyVK/phase-gate-mcp/pull/487), [#499](https://github.com/MikeyVK/phase-gate-mcp/pull/499) | Authored document metadata/history, shared composition/spacing, ASCII structured Python identifiers; YAML configuration, JSON Schema, ADR and arc42 SAD packages. |
+| Markdown and semantic assurance | [#494](https://github.com/MikeyVK/phase-gate-mcp/pull/494), [#493](https://github.com/MikeyVK/phase-gate-mcp/pull/493), [#495](https://github.com/MikeyVK/phase-gate-mcp/pull/495) | Lychee replaces owned Markdown preflight; no runtime H1/template-preservation claim. Evidence-based package release review belongs to the existing maintenance guide. Active links were repaired. |
+| Public discovery and workflow policy | [#451](https://github.com/MikeyVK/phase-gate-mcp/pull/451), [#454](https://github.com/MikeyVK/phase-gate-mcp/pull/454), [#450](https://github.com/MikeyVK/phase-gate-mcp/pull/450), [#457](https://github.com/MikeyVK/phase-gate-mcp/pull/457) | Removed documentation search; mandatory positive issue number on branch creation; compact configured Chore and streamlined phase instructions. Refresh client tool discovery. |
+| Git push and release/agent boundaries | [#453](https://github.com/MikeyVK/phase-gate-mcp/pull/453), [#447](https://github.com/MikeyVK/phase-gate-mcp/pull/447) | Truthful remote/upstream results and canonical distributable host-agent sources; current packaging includes hidden assets. |
+| Presentation and earlier quality fixes | [#455](https://github.com/MikeyVK/phase-gate-mcp/pull/455), [#458](https://github.com/MikeyVK/phase-gate-mcp/pull/458), [#461](https://github.com/MikeyVK/phase-gate-mcp/pull/461), [#452](https://github.com/MikeyVK/phase-gate-mcp/pull/452) | Compact configured presentation and complete DTO evidence. Summarize current native execution/results, without reviving later-retired quality DTOs or numbered gates. |
+
+Current Unreleased notes cover only #443/#473. Reconcile v1/v2 overlap and write the v3 narrative around final public behavior, breaking inputs/configuration, owner migration and limits.
+
+### Version and Migration Consumers
+
+Update only the package-release values in `pyproject.toml`, `.pgmcp/config/release_manifest.yaml`, the final `_default_server_version()` fallback and Commitlint's `phase-gate-mcp` requirement. Correct the two stale setup claims. Adapt existing CLI parity and missing-metadata tests at their actual dependency boundary: installed host metadata has priority over the checkout manifest, so a repository-parity test must isolate that observation rather than require an owner installation upgrade to pass.
+
+Preserve schema/config identities, independent adapter/template versions, runtime resolution policy and workspace markers. `installation.json` and suite checkpoints must be published through renewal. Current health is healthy/2.0.0; it is not v3 installation evidence. The current installation checkpoint predates new #465 packages; an installed3.0.0 runtime can reject this old installation until owner-led upgrade/reconciliation.
+
+Migration guidance must distinguish package installation; owner config; managed suite staging/verified backup or explicit baseline acceptance; external-suite owner action; and server restart/client reconnect. Do not mutate the working release-preparation workspace merely to manufacture isolated install proof.
+
+Native prerequisites remain declared per adapter: Ruff0.15.6, Mypy1.19.1, Pyright1.1.408, Lychee0.24.2, Pytest9.0.2 and its pinned test dependencies, check-jsonschema0.38.2 and parser dependencies, Commitlint21.2.2/Node>=22.12.0, and TypeScript6.0.3. The release notes link to those authoritative package declarations; no new global installation layer is needed.
+
+### Archive, Routing and Coordination
+
+The fixed archive set contains **23 directories / 124 files**. Seven active inbound link occurrences exist in five setup/reference/diagram documents. Relocation also changes outbound relative-link depth inside historical documents; fix only relocation-induced breakage. Generic future issue paths and historical narrative/example path strings are not automatic replacement targets. Historical reports are not added to wheel assets. Links from packaged docs to intentionally unbundled history require an explicit reading route, not an assumption that the history exists in the installation.
+
+Issue/PR policies use workspace persistence, so their configured defaults directly select the output directory. Change their two roots to `.pgmcp/temp/artifacts`; commit already uses it and `.gitignore` already excludes `.pgmcp/temp/`. Existing resolver/create-only behavior can prove effective paths and no worktree pollution without new routing code or new tests.
+
+Coordination owns #289 inventory reconciliation: #399/#414 closed, #396/#415 open. #396's separate-archive-branch request differs from this approved in-repository archive route. Record that disposition explicitly. Live open-priority queries found only #500 and umbrella #289 at high priority and none critical; do not reopen medium/low backlog, #121 or #462.
+
+### Verification and Stop Conditions
+
+- During Implementation, adapt/run existing CLI/settings and build/target-resolver tests at changed boundaries, with focused Python and YAML checks. No new content-mirroring or legacy-preservation tests are proposed.
+- Use the existing manifest/build procedure for v3. Verify the **exact final wheel and sdist**, all mapped files including hidden Copilot/template members, adapter/contracts data, installed module origins/catalog and CLI version; distinguish this from tests that build their own candidate.
+- Reuse existing installed-distribution, target-startup, cutover and renewal tests for fresh init, managed checkpoint/backup/baseline behavior, external-root refusal and handshake. Record package install and owner migration as separate observations.
+- Chore Validation requires one fresh `run_tests(scope='configured', timeout_seconds=1200)` and `run_checks(scope='branch')` after final implementation. Use the configured per-check branch policies; add only narrowly justified doc/data checks. Preserve native arguments and the approved1800-second client window.
+- Check affected documentation links and historical relocation against its pre-move state; do not equate a move with a mandate to fix unrelated pre-existing archive defects. Preserve source content and inspect Git rename/diff inventory.
+- Historical artifacts need bounded exact-package install/init/startup proof, not full old suites. Missing asset members, failed catalog/startup, owner-root overwrite, incompatible dependency environment or sdist unable to rebuild the intended complete wheel are explicit stop conditions.
+- Any runtime/code repair beyond release values, unrelated configuration/instruction changes, legacy bridge, new release platform, owner rollout or publication requires renewed scope/strategy authority. Independent QA reviews final evidence; producer delegates return findings only.
+
+Primary verification entry points: [CLI tests](../../../tests/mcp_server/unit/test_cli.py), [settings tests](../../../tests/mcp_server/unit/config/test_settings.py), [build tests](../../../tests/mcp_server/unit/test_build_package.py), [installed distribution](../../../tests/mcp_server/integration/test_installed_distribution_v3.py), [target startup](../../../tests/mcp_server/integration/test_target_startup.py), [renewal routes](../../../tests/mcp_server/integration/test_renewal_cli.py), [target resolver](../../../tests/mcp_server/unit/services/test_artifact_target_resolver.py).
 
 ## Questions
 
-- Does the owner approve PR #426 (July 8) and PR #441 (July 22) as the canonical reconstructed v1/v2 release boundaries? This is distinct from the particular later v2 wheel installed in another workspace.
-- Which publication destination and artifacts should be prepared, and what procedure will the owner approve for publication?
-- Does any version/migration or archive-link finding require a change beyond mechanical maintenance? If so, reopen scope/strategy before implementing it.
+- Final artifact hashes, build/install outcomes and the release publication date remain execution evidence, not Research facts.
+- Publication approval remains outstanding by design. Present reviewed notes, exact SHAs, wheel/sdist identities and the concrete GitHub API/CLI procedure before asking to create tags/releases or upload assets.
+- If historical installation or final v3 verification reveals a runtime defect, return the exact finding for triage rather than implicitly widening this Chore.
 
 ## Approved Strategy
 
-**Owner-approved boundaries, not approval to implement or publish this entire issue:**
+**Owner-approved preparation scope and its bounded maintenance strategy:**
 - Archive the 23 pre-existing direct issue directories into `docs/development/archive/`. Preserve `MAINTENANCE_SCRIPTS.md`, `schema-template-maintenance.md` and the new issue500 working directory. This is relocation, not deletion or a separate archive branch.
 - The development-directory inventory is explicitly incomplete and mixed across releases. It must not be the source of truth for v3 release notes. Reconstruct delivered work independently from verified version baseline, merged commits, PRs and issue evidence.
 - The existing #500 issue records approval for the narrow issue/pr temporary-root change. No aliases or general scaffolding refactor are intended.
 - Release preparation uses the current manifest, build and renewal architecture. Actual publication, tagging and external rollout remain subject to separate human approval, as stated in #500.
 
-The exact publication destination/artifacts, verified v2 baseline and any concrete migration/version behavior changes still need Research resolution before progression. No new compatibility policy for an unexpected defect is inferred from this maintenance request.
+- Following the owner's 2026-10-11 continuation and artifact choice, prepare GitHub release notes plus wheel/sdist for v1 at PR #426, v2 at PR #441 and the final v3 revision. These are canonical reconstruction boundaries, not invented evidence of historical GitHub publication. PyPI is outside scope.
+- Preserve historical runtime and declared asset contents. Limit reconstruction corrections to build-time inclusion of those declared hidden assets; document the overlay and verify resulting wheel/sdist. No historical runtime repair or old full-suite campaign is included.
+- Reconcile v3 package-release literals and existing affected tests, preserve independent version identities and runtime resolution behavior. Use current package-data declarations first, not a speculative packaging rewrite.
+- Existing/external workspace config and suite migration remain owner-led through renewal. Release verification uses isolated workspaces. No automatic upgrade of the active owner environment is included.
+- Use existing verification mechanisms and phase-owned broad runs. Scope growth, any new compatibility bridge or a concrete runtime defect needs renewed triage. Publication/tagging/rollout approval is a later, separate decision.
 
 ## Expected Results
 
@@ -151,3 +210,4 @@ Classify each consumer, especially workspace .version, package self-pins, indepe
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-11 | @imp researcher | Record bounded release research and the owner-approved development archive addition. |
 | 0.2 | 2026-10-11 | @imp researcher | Investigate retrospective GitHub releases, candidate source boundaries, historical wheel/asset correspondence and publication limits. |
+| 0.3 | 2026-10-11 | @imp researcher | Incorporate owner-selected historical installation packages; complete v3 merge ledger, consumer/migration/archive impact and bounded verification strategy. |
