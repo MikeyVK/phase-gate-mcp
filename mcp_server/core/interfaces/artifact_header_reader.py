@@ -40,5 +40,5 @@ class IArtifactHeaderReader(Protocol):
     """Read original artifact text without filesystem, catalog or mutation access."""
 
     def read(self, content: str) -> HeaderReadResult:
-        """Inspect only the first physical line and return a closed result."""
+        """Inspect only the bounded native opening carrier and return a closed result."""
         ...

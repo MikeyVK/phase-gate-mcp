@@ -14,6 +14,8 @@ from typing import Any
 from jinja2 import Environment, Template
 from pydantic import JsonValue
 
+from mcp_server.services.yaml_serialization import yaml_text
+
 
 class TemplateEngine:
     """Render catalog-selected Jinja templates from one admitted source snapshot."""
@@ -165,3 +167,4 @@ def register_template_filters(environment: Environment) -> None:
     environment.filters["kebabcase"] = _filter_kebabcase
     environment.filters["validate_identifier"] = _filter_validate_identifier
     environment.filters["text_block"] = text_block
+    environment.filters["toyaml"] = yaml_text

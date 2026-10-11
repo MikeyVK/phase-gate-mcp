@@ -1,0 +1,6 @@
+{% extends "shared/templates/bases/tier0_root.jinja2" %}
+{% block artifact_frame -%}
+{
+  "$comment": {{ provenance_fields(provenance) | tojson }}{% block json_members required %}{% endblock %}
+}
+{%- endblock %}

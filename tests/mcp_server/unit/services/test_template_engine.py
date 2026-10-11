@@ -2,8 +2,8 @@
 
 import pytest
 import yaml
-from pydantic import JsonValue
 from jinja2 import DictLoader, Environment, StrictUndefined, TemplateNotFound, UndefinedError
+from pydantic import JsonValue
 
 from mcp_server.services.template_engine import TemplateEngine
 
@@ -70,6 +70,7 @@ def test_missing_variable_raises_under_strict_undefined(
     template = engine.env.from_string("{{ required_var.field }}")
     with pytest.raises(UndefinedError):
         template.render()
+
 
 @pytest.mark.parametrize(
     "data",

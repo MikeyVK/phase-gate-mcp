@@ -1,9 +1,10 @@
 # mcp_server/services/artifact_header_reader.py
 # template=service version=5d5b489a created=2026-09-13T17:18Z updated=
-"""Bounded first-line recognition of the canonical artifact provenance dialect."""
+"""Bounded recognition of canonical comment and JSON provenance carriers."""
 
 from __future__ import annotations
 
+import json
 import re
 
 from pydantic import ValidationError
@@ -19,11 +20,14 @@ class ArtifactHeaderReader:
     """Interpret original text without selecting a package or modifying content."""
 
     def read(self, content: str) -> HeaderReadResult:
-        """Inspect at most the budget plus one BOM, CRLF and overflow character.
+        """Inspect a 100-character comment line or a 512-character JSON opening.
 
-        A pgmcp: marker within that first-line prefix is header-like even when
-        its surrounding frame is malformed. No body content is inspected.
+        The JSON route examines only its first root comment string. Existing
+        comment framing retains BOM, CRLF and overflow lookahead.
         """
+        json_prefix = content[:514].removeprefix("\ufeff")
+        if json_prefix.lstrip(" \t\r\n").startswith("{"):
+            return self._read_json(json_prefix[:512])
         prefix = content[:104]
         if prefix.startswith("\ufeff"):
             prefix = prefix[1:]
@@ -43,6 +47,11 @@ class ArtifactHeaderReader:
             record = line[2:]
         else:
             return rejected
+        return self._read_record(record)
+
+    @staticmethod
+    def _read_record(record: str) -> HeaderReadResult:
+        rejected = HeaderReadResult(status=HeaderReadStatus.INVALID, provenance=None)
         match = re.fullmatch(r"pgmcp:v1 id=(\S+) pv=(\S+) pf=(\S+) sf=(\S+)", record)
         if match is None:
             return rejected
@@ -52,3 +61,29 @@ class ArtifactHeaderReader:
         except ValidationError:
             return rejected
         return HeaderReadResult(status=HeaderReadStatus.RECOGNIZED, provenance=provenance)
+
+    def _read_json(self, prefix: str) -> HeaderReadResult:
+        """Decode only the first root comment's bounded string token."""
+        absent = HeaderReadResult(status=HeaderReadStatus.ABSENT, provenance=None)
+        rejected = HeaderReadResult(status=HeaderReadStatus.INVALID, provenance=None)
+        key = re.match(r'\A[ \t\r\n]*\{[ \t\r\n]*"\$comment"', prefix)
+        if key is None:
+            return absent
+        value_prefix = prefix[key.end() :].lstrip(" \t\r\n")
+        if not value_prefix.startswith(":"):
+            return rejected if value_prefix.startswith('"pgmcp:') else absent
+        value_prefix = value_prefix[1:].lstrip(" \t\r\n")
+        if not value_prefix.startswith('"'):
+            return absent
+        try:
+            record, end = json.JSONDecoder().raw_decode(value_prefix)
+        except json.JSONDecodeError:
+            # Only the first bounded token is eligible; never search later members.
+            token = re.match(r'"(?:\\.|[^"\\])*', value_prefix)
+            return rejected if token is not None and "pgmcp:" in token[0] else absent
+        if not isinstance(record, str) or "pgmcp:" not in record:
+            return absent
+        following = value_prefix[end:].lstrip(" \t\r\n")
+        if len(record) > 91 or not following or following[0] not in ",}":
+            return rejected
+        return self._read_record(record)

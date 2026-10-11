@@ -213,6 +213,7 @@ def test_selected_graph_renders_retained_root_and_round_trips(
         assert len(rendered.split("\n", 1)[0]) == 100
     assert ArtifactHeaderReader().read(rendered).provenance == identity
 
+
 @pytest.mark.parametrize("template_id", ['quote"slash\\', "😀" * 24])
 @pytest.mark.parametrize("bom", ["", "\ufeff"])
 def test_json_opening_carrier_decodes_identity(template_id: str, bom: str) -> None:
@@ -243,9 +244,7 @@ def test_json_opening_carrier_decodes_identity(template_id: str, bom: str) -> No
 def test_json_opening_carrier_reports_absence_or_malformed_identity(
     opening: str, status: HeaderReadStatus
 ) -> None:
-    assert ArtifactHeaderReader().read(opening) == HeaderReadResult(
-        status=status, provenance=None
-    )
+    assert ArtifactHeaderReader().read(opening) == HeaderReadResult(status=status, provenance=None)
 
 
 def test_shared_json_frame_preserves_first_identity_and_authored_members() -> None:
