@@ -3,7 +3,7 @@
 # Issue 319 — bounded quality configuration choice
 
 **Status:** DRAFT — INDEPENDENT REVIEW REQUIRED  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-12
 
 ## Purpose
@@ -80,7 +80,9 @@ These are owner declarations, not attestations that files exist, args are suffic
 
 ### Workspace defaults and installation
 
-Newly shipped default bindings declare null so an installer makes the choice. This repository's active bindings record the actually chosen policy: Ruff/Mypy/Pyright/Pytest/Commitlint native_discovery; Lychee and schema checks configured_arguments; Python/TypeScript syntax not_applicable. Metaschema's existing explicit native binding arguments remain configured_arguments; no external file is implied. These assignments are workspace data, not hardcoded tool-name branches.
+The distribution source remains this repository's `.pgmcp/config`; the existing asset compiler copies it unchanged. Repository choices acknowledge this workspace only. Fresh `--init` clears `configuration_choice` to null in the newly copied checks/tests/fixes bindings before initialization completes. This is a bounded acknowledgement reset in the existing fresh-init path, using ConfigLoader's admitted binding models and preserving every other binding/config value. It does not read, discover or export native tool configuration; it does not touch an existing server root, template-only renewal, or the source assets. Thus packaged source bindings can contain the repository choices, while effective configuration in a newly initialized workspace is deliberately unresolved. No separate distribution config source, builder or routing layer is introduced. The installation guide identifies `--init` as this ownership boundary; manual copying must likewise clear declarations before choosing workspace policy.
+
+This repository's active bindings record the actually chosen policy: Ruff/Mypy/Pyright/Pytest/Commitlint native_discovery; Lychee and schema checks configured_arguments; Python/TypeScript syntax not_applicable. Metaschema's existing explicit native binding arguments remain configured_arguments; no external file is implied. These assignments are workspace data, not hardcoded tool-name branches.
 
 Setup guide requires provisioning native pins, selecting workspace-native policy/arguments, setting every needed binding choice and performing a scoped check. No native config files are copied/merged automatically. Existing installations missing the field remain available for setup but affected execution requires acknowledgement. Release notes must say this explicitly; review compatibility implications before deciding final release publication.
 
@@ -88,7 +90,20 @@ Setup guide requires provisioning native pins, selecting workspace-native policy
 
 Resolve the requested binding set and applicability with existing mechanisms. Before any applicable adapter/process or content scratch/fix mutation in the selected operation, reject unresolved choices and identify their binding IDs. For selection checks, do not reject a binding already prefiltered to not_applicable; preserve empty selections. In a mixed batch, unresolved applicable bindings prevent the batch from executing, so a fix batch cannot partly mutate before setup refusal.
 
-The public check/test/fix output envelopes should carry one stable consumer-side configuration_choice_required code with the affected binding identities and factual no-invocation outcome. Extend their existing typed failure vocabulary only as needed; do not fabricate adapter versions, captures, native verdicts or evidence. This is a bounded additive refusal fact, not a native protocol change. Content preflight maps the same fact through existing validation outcomes: enforce prevents writing/scaffolding, report retains its established reporting/write semantics. The input policy validation flag itself is not redefined.
+Use `configuration_choice_required` as the operation error code and the unconfigured binding's consumer-owned row reason. Error details contain the ordered, unique affected `binding_ids`, not adapter IDs. Extend only the existing public consumer contracts; the adapter protocol remains unchanged. Validate that the affected IDs exactly match refused rows and that the whole batch has no invocation. Unresolved setup is not a native unavailable/failed verdict.
+
+| Consumer | Operation outcome | Ordered rows and facts | Mutation |
+| --- | --- | --- | --- |
+| Selection checks | Existing operational `success=true`, `run_status=incomplete`, error `configuration_choice_required`; affected binding_ids in details | Applicable unresolved rows: `not_executed/configuration_choice_required`. Other applicable rows: `not_executed/not_started`. Prefiltered rows remain `not_executed/not_applicable` | No adapter/process invocation |
+| Tests | Existing operational `success=true`, same error/details, selected_tests retained | Selected unresolved rows: `not_executed/configuration_choice_required`; selected acknowledged rows: `not_executed/not_started` | No collection/test invocation |
+| Fixes | Existing operational `success=true`, same error/details, selected_fixes retained | Selected unresolved rows: `not_executed/configuration_choice_required`; selected acknowledged rows: `not_executed/not_started` | No fix invocation or partial fix effects |
+| Scaffold, enforce or report | `success=false`, `written=false`, `validation_status=not_executed`, same error/details | Unresolved content rows use the same refusal reason; remaining obligations are not_started | No validation scratch allocation and no artifact creation |
+| Edit, enforce or report | `success=false`, `written=false`, `content_changed=null`, `validation_status=not_executed`, same error/details | Same content rows; original read/profile selection may already have occurred | No validation scratch allocation and no target replacement |
+| Commit artifact preflight (`scaffold_artifact`, commit package) | Same scaffold refusal, `success=false`, `written=false`, `validation_status=not_executed`, same error/details | Same content obligations through the package's existing commit_preflight profile | No commit artifact created. This path does not stage/commit; direct git_add_or_commit currently has no content-check dependency and is not given a new one in this issue. |
+
+Every unattempted row has absent adapter identity/capture, native tool versions, evidence, request rejection and termination facts. Keep actual effective_args/args_source where selection has resolved them. Refused-row messages are null; explanation/recovery is configured from the operation code and affected binding IDs. Ordinary not_started diagnostics retain their existing contract.
+
+Both content policies block this *not executed* result. This preserves the existing rule that report can write after an executed failed/unavailable validation, but cannot treat an unstarted obligation as completed validation. Do not add a report exception for setup refusal. Empty branch/all-prefiltered check selections remain neutral and do not require acknowledgement. Complete applicable admission precedes all invocation, content scratch allocation and fix effects; no first-binding success can mask a later unresolved binding.
 
 Author the human explanation and recovery action in presentation.yaml using the existing generic presenter. Generic execution owns the fact; no message is hardcoded in an adapter, command or new presenter branch. Recovery tells the agent/owner to configure the relevant binding deliberately, not to fabricate a native config file.
 
@@ -111,3 +126,4 @@ Adapt existing public configuration/execution tests with a small parametrized se
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-12 | @imp designer | Define bounded binding choice, truthful refusal and native-behavior preservation under the approved Chore strategy. |
+| 0.2 | 2026-10-12 | @imp researcher | Resolve fresh-init ownership without asset builders; define consumer refusal rows, absent native facts and both content policies before implementation. |
