@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
@@ -90,7 +91,12 @@ class TestTransitionCycleTool:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         # Initialize project
         project_manager.initialize_project(
@@ -144,7 +150,7 @@ class TestTransitionCycleTool:
         )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=1)
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -190,10 +196,15 @@ class TestTransitionCycleTool:
 
         # Set current cycle to 2
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=2)
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         #  Mock git
         with (
@@ -250,10 +261,15 @@ class TestTransitionCycleTool:
 
         # Change phase to design
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_phase="design")
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         # Mock git
         with (
@@ -296,7 +312,12 @@ class TestForceCycleTransitionTool:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         # Initialize project
         project_manager.initialize_project(
@@ -362,7 +383,7 @@ class TestForceCycleTransitionTool:
             last_cycle=1,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -498,7 +519,12 @@ class TestForceCycleAuditSchema:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         project_manager.initialize_project(
             issue_number=issue_number,
@@ -555,7 +581,7 @@ class TestForceCycleAuditSchema:
             last_cycle=1,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -703,7 +729,12 @@ class TestTransitionCycleHistory:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         project_manager.initialize_project(
             issue_number=issue_number,
@@ -749,7 +780,7 @@ class TestTransitionCycleHistory:
             last_cycle=None,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -862,7 +893,12 @@ class TestTransitionCycleExitCriteria:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         project_manager.initialize_project(
             issue_number=issue_number,
@@ -904,7 +940,7 @@ class TestTransitionCycleExitCriteria:
             last_cycle=None,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root
 

@@ -62,13 +62,6 @@ class ToolErrorHandlerDecorator(
         return getattr(self._inner_tool, "enforcement_event", self.name)
 
     @property
-    def _tool(self) -> object:
-        inner = self._inner_tool
-        while hasattr(inner, "_inner_tool"):
-            inner = inner._inner_tool
-        return inner
-
-    @property
     def input_schema(self) -> dict[str, Any]:
         return self._inner_tool.input_schema
 

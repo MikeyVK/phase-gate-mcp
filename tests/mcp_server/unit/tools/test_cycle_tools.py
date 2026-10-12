@@ -10,14 +10,12 @@
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from shutil import copytree
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel
 
-from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
@@ -30,6 +28,7 @@ from mcp_server.tools.cycle_tools import (
 )
 from tests.mcp_server.test_support import (
     get_default_server_root,
+    make_dispatch_dependencies,
     make_dispatch_server,
     make_git_manager,
     make_phase_state_engine,
@@ -40,46 +39,6 @@ TRANSITION_ADVISORY_NOTE = (
     "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
     "to load the current phase context for this branch."
 )
-
-
-def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
-    workspace_root = Path(settings.server.workspace_root)
-    server_root_dir = getattr(settings.server, "server_root_dir", get_default_server_root())
-    resolved_server_root = workspace_root / server_root_dir
-
-    # Configure resolved paths on mock settings if needed
-    if not hasattr(settings.server, "resolved_server_root") or isinstance(
-        settings.server.resolved_server_root, MagicMock
-    ):
-        settings.server.resolved_server_root = resolved_server_root
-    if not hasattr(settings.server, "resolved_config_root") or isinstance(
-        settings.server.resolved_config_root, MagicMock
-    ):
-        config_dir = (
-            Path(settings.server.config_root)
-            if getattr(settings.server, "config_root", None)
-            else resolved_server_root / "config"
-        )
-        if not config_dir.exists():
-            package_root = Path(__file__).resolve().parents[4]
-            settings.server.resolved_config_root = package_root / "mcp_server" / "assets" / "config"
-        else:
-            settings.server.resolved_config_root = config_dir
-    if not hasattr(settings.server, "resolved_template_root") or isinstance(
-        settings.server.resolved_template_root, MagicMock
-    ):
-        template_dir = resolved_server_root / "templates"
-        if not template_dir.exists():
-            settings.server.resolved_template_root = (
-                Path.cwd() / get_default_server_root() / "templates"
-            )
-        else:
-            settings.server.resolved_template_root = template_dir
-
-    bootstrapper = ServerBootstrapper(settings)
-    configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
-    managers = bootstrapper._build_manager_graph(configs)  # type: ignore[reportPrivateUsage]
-    return managers, workspace_root
 
 
 class FakeForceCycleStateEngine:
@@ -254,9 +213,8 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
@@ -318,9 +276,8 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
@@ -436,9 +393,8 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
@@ -503,9 +459,8 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [

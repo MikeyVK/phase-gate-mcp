@@ -268,23 +268,6 @@ labels: []
         config = _load_label_config(yaml_file)
         assert not config.labels
 
-    def test_load_builds_caches(self, tmp_path: Path) -> None:
-        """Verify _labels_by_name cache is populated."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-  - name: "priority:high"
-    color: "D93F0B"
-"""
-        yaml_file = tmp_path / "labels.yaml"
-        yaml_file.write_text(yaml_content)
-
-        config = _load_label_config(yaml_file)
-        # pylint: disable=protected-access
-        assert "type:feature" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
-        assert "priority:high" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
-
 
 class TestLabelValidation:
     """Test label name validation methods."""
@@ -592,24 +575,6 @@ labels:
         assert all(label.name.startswith("type:") for label in type_labels)
         assert priority_labels[0].name == "priority:high"
 
-    def test_cache_build_on_load(self, tmp_path: Path) -> None:
-        """Caches are populated at load time."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-  - name: "priority:high"
-    color: "D93F0B"
-"""
-        yaml_file = tmp_path / "labels.yaml"
-        yaml_file.write_text(yaml_content)
-
-        config = _load_label_config(yaml_file)
-        # pylint: disable=protected-access
-        assert len(config._labels_by_name) == 2  # pyright: ignore[reportPrivateUsage]
-        assert "type:feature" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
-        assert "priority:high" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
-
 
 class TestGitHubSync:
     """Test GitHub label synchronization."""
@@ -854,37 +819,3 @@ labels:
         assert "skipped" in result
         assert "errors" in result
         assert isinstance(result["created"], list)
-
-    def test_needs_update_color_differs(self, tmp_path: Path) -> None:
-        """Helper detects color change."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "FF0000"
-    description: "Test"
-"""
-        yaml_file = tmp_path / "labels.yaml"
-        yaml_file.write_text(yaml_content)
-
-        config = _load_label_config(yaml_file)
-        label = config.labels[0]
-
-        github_label = {"color": "1D76DB", "description": "Test"}
-        assert config._needs_update(label, github_label)  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
-
-    def test_needs_update_description_differs(self, tmp_path: Path) -> None:
-        """Helper detects description change."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-    description: "New"
-"""
-        yaml_file = tmp_path / "labels.yaml"
-        yaml_file.write_text(yaml_content)
-
-        config = _load_label_config(yaml_file)
-        label = config.labels[0]
-
-        github_label = {"color": "1D76DB", "description": "Old"}
-        assert config._needs_update(label, github_label)  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]

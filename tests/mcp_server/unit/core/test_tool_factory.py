@@ -1,61 +1,75 @@
 # tests/mcp_server/unit/core/test_tool_factory.py
 # template=unit_test version=3d15d309 created=2026-06-19T22:38Z updated=
-"""Unit tests for mcp_server.core.tool_factory.
+"""Behavior tests for ToolFactory's public execution pipeline."""
 
-Unit tests for ToolFactory composition root.
-
-@layer: Tests (Unit)
-@dependencies: [mcp_server.core.tool_factory, unittest.mock]
-@responsibilities:
-    - Test TestToolFactory functionality
-"""
-
-# Standard library
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
-# Third-party
-# Project modules
-from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
-from mcp_server.core.decorators.input_validation_decorator import InputValidationDecorator
-from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHandlerDecorator
+import pytest
+from pydantic import BaseModel, ConfigDict
+
 from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput, ValidationErrorOutput
+
+
+class FactoryInput(BaseModel):
+    """A typed input whose validation is observable at the factory boundary."""
+
+    model_config = ConfigDict(frozen=True)
+    value: int
+
+
+class FactoryOutput(BaseModel):
+    """The value returned by the core test double."""
+
+    model_config = ConfigDict(frozen=True)
+    value: int
 
 
 class TestToolFactory:
-    """Test suite for tool_factory."""
+    """Public execution proves validation, enforcement and error handling."""
 
-    def test_create_tool_decorates_correctly(self) -> None:
-        """Verify that create_tool wraps core tool in correct decorator stack."""
-        mock_runner = MagicMock(spec=EnforcementRunner)
-        mock_root = Path("mock/workspace/root")
-        factory = ToolFactory(enforcement_runner=mock_runner, workspace_root=mock_root)
+    @pytest.mark.asyncio
+    async def test_create_tool_executes_public_pipeline(self) -> None:
+        """Validate before policies, run policies around the core, and convert failures."""
+        runner = MagicMock(spec=EnforcementRunner)
+        root = Path("mock/workspace/root")
+        core = MagicMock(spec=ICoreTool)
+        core.name = "mock_tool"
+        core.description = "mock description"
+        core.args_model = FactoryInput
+        core.enforcement_event = "mock_tool"
+        core.tool_category = None
+        output = FactoryOutput(value=3)
+        core.execute = AsyncMock(return_value=output)
+        pipeline = MagicMock()
+        pipeline.attach_mock(runner.run, "policy")
+        pipeline.attach_mock(core.execute, "execute")
+        decorated = ToolFactory(runner, root).create_tool(core)
+        context = NoteContext()
 
-        mock_core_tool = MagicMock(spec=ICoreTool)
-        mock_core_tool.name = "mock_tool"
-        mock_core_tool.description = "mock description"
-        mock_core_tool.args_model = None
+        rejected = await decorated.execute({"value": "invalid"}, context)
+        assert isinstance(rejected.operation, ValidationErrorOutput)
+        runner.run.assert_not_called()
+        core.execute.assert_not_awaited()
 
-        decorated = factory.create_tool(mock_core_tool)
+        accepted = await decorated.execute({"value": 3}, context)
+        assert accepted.operation == output
+        assert [entry[0] for entry in pipeline.mock_calls] == ["policy", "execute", "policy"]
+        core.execute.assert_awaited_once_with(FactoryInput(value=3), context)
+        assert runner.run.call_count == 2
+        for policy_call, timing in zip(runner.run.call_args_list, ("pre", "post"), strict=True):
+            assert policy_call.kwargs["event"] == "mock_tool"
+            assert policy_call.kwargs["timing"] == timing
+            enforcement_context = policy_call.kwargs["enforcement_ctx"]
+            assert enforcement_context.workspace_root == root
+            assert enforcement_context.params == FactoryInput(value=3)
 
-        # 1. Outer decorator: ToolErrorHandlerDecorator
-        assert isinstance(decorated, ToolErrorHandlerDecorator)
-
-        # Private attribute access (_inner_tool, _enforcement_runner, _workspace_root) is
-        # required in this unit test to verify the structural ordering and configuration
-        # of the nested decorator pipeline stack.
-
-        # 2. Middle decorator: InputValidationDecorator
-        middle = decorated._inner_tool  # pyright: ignore[reportPrivateUsage]
-        assert isinstance(middle, InputValidationDecorator)
-
-        # 3. Inner decorator: EnforcementDecorator
-        inner = middle._inner_tool  # pyright: ignore[reportPrivateUsage]
-        assert isinstance(inner, EnforcementDecorator)
-        assert inner._enforcement_runner == mock_runner  # pyright: ignore[reportPrivateUsage]
-        assert inner._workspace_root == mock_root  # pyright: ignore[reportPrivateUsage]
-
-        # 4. Target tool
-        assert inner._inner_tool == mock_core_tool  # pyright: ignore[reportPrivateUsage]
+        core.execute.side_effect = ValueError("execution failed")
+        failed = await decorated.execute({"value": 3}, context)
+        assert isinstance(failed.operation, ExecutionErrorOutput)
+        assert failed.operation.error_message == "ValueError: execution failed"
+        assert pipeline.mock_calls[-1] == call.execute(FactoryInput(value=3), context)

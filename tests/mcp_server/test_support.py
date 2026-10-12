@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from shutil import copy2, copytree
@@ -31,7 +32,10 @@ from mcp_server.core.policy_engine import PolicyEngine
 from mcp_server.core.scope_contract import ScopeContract
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
+from mcp_server.managers.deliverable_checker import DeliverableChecker
+from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import (
     PhaseConfigContext,
     PhaseContractResolver,
@@ -39,6 +43,7 @@ from mcp_server.managers.phase_contract_resolver import (
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.schemas import (
     ContractsConfig,
     GitConfig,
@@ -51,10 +56,13 @@ from mcp_server.services.template_contract_loader import TemplateContractLoader
 from mcp_server.services.template_engine import register_template_filters
 from mcp_server.services.template_graph import TemplateGraphResolver
 from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_suite
+from mcp_server.state.context_loaded_cache import ContextLoadedCache
+from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
     from mcp_server.adapters.git_adapter import GitAdapter
+    from mcp_server.config.schemas.milestone_config import MilestoneConfig
     from mcp_server.config.settings import Settings
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
     from mcp_server.server import MCPServer
@@ -415,13 +423,19 @@ def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine
     )
 
 
-def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
+def make_create_issue_tool(
+    manager: MagicMock | None = None,
+    *,
+    milestone_config: MilestoneConfig | None = None,
+) -> CreateIssueTool:
     """Create CreateIssueTool with explicit config objects and a mock manager."""
     dependencies = load_issue_tool_dependencies()
     return CreateIssueTool(
         manager=manager or MagicMock(),
         issue_config=dependencies["issue_config"],
-        milestone_config=dependencies["milestone_config"],
+        milestone_config=(
+            milestone_config if milestone_config is not None else dependencies["milestone_config"]
+        ),
         contracts_config=dependencies["contracts_config"],
         label_config=dependencies["label_config"],
         scope_config=dependencies["scope_config"],
@@ -448,6 +462,72 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
     resolved_settings = settings or ServerSettings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
     return bootstrapper.bootstrap_target()
+
+
+@dataclass(frozen=True)
+class DispatchDependencies:
+    """Only the dependencies shared by public tool-dispatch behavior tests."""
+
+    git_manager: GitManager
+    project_manager: ProjectManager
+    phase_state_engine: PhaseStateEngine
+    workflow_gate_runner: WorkflowGateRunner
+    github_manager: GitHubManager
+    pr_status_cache: PRStatusCache
+    enforcement_runner: EnforcementRunner
+
+
+def make_dispatch_dependencies(settings: Settings) -> DispatchDependencies:
+    """Compose dispatch dependencies through public constructors and test factories."""
+    workspace_root = Path(settings.server.workspace_root)
+    server_root = workspace_root / settings.server.server_root_dir
+    config_root = (
+        Path(settings.server.config_root) if settings.server.config_root else server_root / "config"
+    )
+    loader = ConfigLoader(config_root)
+    contracts = loader.load_contracts_config()
+    git_manager = make_git_manager(workspace_root)
+    state_repository = FileStateRepository(state_file=server_root / "state.json")
+    project_manager = make_project_manager(
+        workspace_root, contracts_config=contracts, git_manager=git_manager
+    )
+    workflow_gate_runner = WorkflowGateRunner(
+        DeliverableChecker(workspace_root),
+        make_phase_contract_resolver(workspace_root, project_plan_reader=project_manager),
+    )
+    phase_state_engine = make_phase_state_engine(
+        workspace_root,
+        project_manager=project_manager,
+        state_repository=state_repository,
+        workflow_gate_runner=workflow_gate_runner,
+    )
+    github_manager = GitHubManager(
+        issue_config=loader.load_issue_config(),
+        label_config=loader.load_label_config(),
+        scope_config=loader.load_scope_config(),
+        milestone_config=loader.load_milestone_config(),
+        contributor_config=loader.load_contributor_config(),
+        git_config=git_manager.git_config,
+    )
+    pr_status_cache = PRStatusCache(github_manager=github_manager)
+    enforcement_runner = EnforcementRunner(
+        workspace_root=workspace_root,
+        config=loader.load_enforcement_config(),
+        git_config=git_manager.git_config,
+        state_reader=state_repository,
+        pr_status_reader=pr_status_cache,
+        server_root=server_root,
+        context_loaded_reader=ContextLoadedCache(),
+    )
+    return DispatchDependencies(
+        git_manager=git_manager,
+        project_manager=project_manager,
+        phase_state_engine=phase_state_engine,
+        workflow_gate_runner=workflow_gate_runner,
+        github_manager=github_manager,
+        pr_status_cache=pr_status_cache,
+        enforcement_runner=enforcement_runner,
+    )
 
 
 def make_dispatch_server(settings: Settings) -> MCPServer:

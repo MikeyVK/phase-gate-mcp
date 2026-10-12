@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 """Tests for GitCheckoutTool state synchronization with PhaseStateEngine.
 
 @layer: Tests (Unit)
@@ -22,8 +21,6 @@ class TestGitCheckoutStateSync:
         """Test that git_checkout syncs state and returns current phase info."""
         mock_manager = Mock()
         mock_manager.get_current_branch.return_value = "main"
-        tool = GitCheckoutTool(manager=mock_manager)
-
         params = Mock()
         params.branch = "feature/123-test"
 
@@ -37,7 +34,7 @@ class TestGitCheckoutStateSync:
             required_phases=["research", "planning", "design", "implementation"],
             transitions=[],
         )
-        tool._state_engine = mock_engine
+        tool = GitCheckoutTool(manager=mock_manager, state_engine=mock_engine)
 
         result = await tool.execute(params, NoteContext())
 
@@ -50,21 +47,18 @@ class TestGitCheckoutStateSync:
         assert result.success is True
         assert result.branch == "feature/123-test"
         assert result.current_phase == "implementation"
-        assert result.current_phase == "implementation"
 
     @pytest.mark.asyncio
     async def test_checkout_handles_state_sync_failure_gracefully(self) -> None:
         """Test that git_checkout handles state sync failures gracefully."""
         mock_manager = Mock()
         mock_manager.get_current_branch.return_value = "main"
-        tool = GitCheckoutTool(manager=mock_manager)
-
         params = Mock()
         params.branch = "feature/456-test"
 
         mock_engine = Mock()
         mock_engine.get_state.side_effect = ValueError("State sync failed")
-        tool._state_engine = mock_engine
+        tool = GitCheckoutTool(manager=mock_manager, state_engine=mock_engine)
 
         result = await tool.execute(params, NoteContext())
 
@@ -79,8 +73,6 @@ class TestGitCheckoutStateSync:
         """Test that git_checkout handles unknown/missing phase gracefully."""
         mock_manager = Mock()
         mock_manager.get_current_branch.return_value = "main"
-        tool = GitCheckoutTool(manager=mock_manager)
-
         params = Mock()
         params.branch = "main"
 
@@ -92,7 +84,7 @@ class TestGitCheckoutStateSync:
             current_phase="unknown",
             transitions=[],
         )
-        tool._state_engine = mock_engine
+        tool = GitCheckoutTool(manager=mock_manager, state_engine=mock_engine)
 
         result = await tool.execute(params, NoteContext())
 
@@ -109,8 +101,6 @@ class TestGitCheckoutStateSync:
         """Checkout handles StateBranchMismatchError gracefully (C_ENGINE_BREAK)."""
         mock_manager = Mock()
         mock_manager.get_current_branch.return_value = "main"
-        tool = GitCheckoutTool(manager=mock_manager)
-
         params = Mock()
         params.branch = "feature/231-state-snapshot-cqrs"
 
@@ -119,7 +109,7 @@ class TestGitCheckoutStateSync:
             "Loaded state branch 'main' does not match "
             "requested branch 'feature/231-state-snapshot-cqrs'"
         )
-        tool._state_engine = mock_engine
+        tool = GitCheckoutTool(manager=mock_manager, state_engine=mock_engine)
 
         result = await tool.execute(params, NoteContext())
 

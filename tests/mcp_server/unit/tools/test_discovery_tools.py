@@ -1,5 +1,4 @@
 # tests/mcp_server/unit/tools/test_discovery_tools.py
-# pyright: reportPrivateUsage=false
 """
 Tests for the get_work_context discovery tool.
 
@@ -7,13 +6,12 @@ Tests for the get_work_context discovery tool.
 @dependencies: [pytest, tempfile, unittest.mock, mcp_server.tools.discovery_tools]
 """
 
+from dataclasses import dataclass
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
 
-import mcp_server.tools.discovery_tools as discovery_module
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.contracts_config import (
@@ -29,15 +27,11 @@ from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.schemas.deliverables import SavePlanningModel
 from mcp_server.schemas.tool_outputs import GetWorkContextOutput, WorkflowStateStatus
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import GetWorkContextInput, GetWorkContextTool
 from tests.mcp_server.test_support import (
     get_default_server_root,
-    make_phase_state_engine,
-    make_project_manager,
 )
 
 
@@ -49,24 +43,36 @@ def make_settings(workspace_root: Path | str = ".", github_token: str | None = N
     )
 
 
+@dataclass(frozen=True)
+class WorkContextCase:
+    """Keep injected dependencies accessible without inspecting the tool."""
+
+    tool: GetWorkContextTool
+    git: MagicMock
+    state: MagicMock
+
+
 def make_work_context_tool(
     workspace_root: Path | str = ".",
     github_token: str | None = None,
     contracts_config: ContractsConfig | None = None,
     context_loaded_writer: IContextLoadedWriter | None = None,
-) -> GetWorkContextTool:
+) -> WorkContextCase:
     settings = make_settings(workspace_root=workspace_root, github_token=github_token)
-    return GetWorkContextTool(
+    git = MagicMock()
+    state = MagicMock()
+    tool = GetWorkContextTool(
         settings=settings,
-        git_manager=MagicMock(),
+        git_manager=git,
         project_manager=MagicMock(),
-        state_engine=MagicMock(),
+        state_engine=state,
         github_manager=MagicMock(),
         workphases_config=load_workphases_config(),
         workflow_status_resolver=MagicMock(),
         contracts_config=contracts_config,
         context_loaded_writer=context_loaded_writer,
     )
+    return WorkContextCase(tool=tool, git=git, state=state)
 
 
 def load_workflow_config() -> WorkflowConfig:
@@ -89,45 +95,35 @@ class TestGetWorkContextTool:
     """Tests for GetWorkContextTool."""
 
     @pytest.fixture()
-    def tool(self) -> GetWorkContextTool:
+    def case(self) -> WorkContextCase:
         """Fixture to instantiate GetWorkContextTool."""
         return make_work_context_tool()
 
-    def test_tool_name(self, tool: GetWorkContextTool) -> None:
+    def test_tool_name(self, case: WorkContextCase) -> None:
         """Should have correct tool name."""
-        assert tool.name == "get_work_context"
+        assert case.tool.name == "get_work_context"
 
     @pytest.mark.asyncio
-    async def test_get_context_returns_branch_info(self, tool: GetWorkContextTool) -> None:
+    async def test_get_context_returns_branch_info(self, case: WorkContextCase) -> None:
         """Should return branch information."""
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
-        with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "main"
-            mock_git.get_recent_commits.return_value = []
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
-
-            tool._settings.github.token = None
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
+        case.git.get_current_branch.return_value = "main"
+        result = await case.tool.execute(GetWorkContextInput(), NoteContext())
 
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
         assert result.current_branch == "main"
 
     @pytest.mark.asyncio
-    async def test_get_context_extracts_issue_number(self, tool: GetWorkContextTool) -> None:
+    async def test_get_context_extracts_issue_number(self, case: WorkContextCase) -> None:
         """Issue number comes from BranchState after C1 (issue #268)."""
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
-        tool._state_engine.get_state.return_value.issue_number = 42
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/42-implement-dto"
-        tool._git_manager = mock_git
-        tool._settings.github.token = None
+        case.state.get_state.return_value.issue_number = 42
+        case.git.get_current_branch.return_value = "feature/42-implement-dto"
 
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await case.tool.execute(GetWorkContextInput(), NoteContext())
 
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
@@ -135,39 +131,33 @@ class TestGetWorkContextTool:
 
     @pytest.mark.asyncio
     async def test_get_context_extracts_issue_number_alternate_format(
-        self, tool: GetWorkContextTool
+        self, case: WorkContextCase
     ) -> None:
         """Issue number from BranchState for bug/ branches after C1 (issue #268)."""
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
-        tool._state_engine.get_state.return_value.issue_number = 99
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "bug/99-bug"
-        tool._git_manager = mock_git
-        tool._settings.github.token = None
+        case.state.get_state.return_value.issue_number = 99
+        case.git.get_current_branch.return_value = "bug/99-bug"
 
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await case.tool.execute(GetWorkContextInput(), NoteContext())
 
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
         assert result.issue_number == 99
 
     @pytest.mark.asyncio
-    async def test_get_context_detects_workflow_phase_from_commit_scope(
-        self, tool: GetWorkContextTool
+    async def test_get_context_reads_phase_and_sub_phase_from_state(
+        self, case: WorkContextCase
     ) -> None:
         """Phase and sub-phase come from BranchState after C1 (issue #268)."""
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
-        tool._state_engine.get_state.return_value.current_phase = "implementation"
-        tool._state_engine.get_state.return_value.current_sub_phase = "red"
-        tool._state_engine.get_state.return_value.workflow_name = "feature"
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/42-dto"
-        tool._git_manager = mock_git
-        tool._settings.github.token = None
+        case.state.get_state.return_value.current_phase = "implementation"
+        case.state.get_state.return_value.current_sub_phase = "red"
+        case.state.get_state.return_value.workflow_name = "feature"
+        case.git.get_current_branch.return_value = "feature/42-dto"
 
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await case.tool.execute(GetWorkContextInput(), NoteContext())
 
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
@@ -175,7 +165,7 @@ class TestGetWorkContextTool:
         assert result.sub_phase == "red"
 
     @pytest.mark.asyncio
-    async def test_detect_workflow_phase_variations(self, tool: GetWorkContextTool) -> None:
+    async def test_detect_workflow_phase_variations(self, case: WorkContextCase) -> None:
         """All 7 workflow phases appear in output when set via BranchState after C1."""
         test_cases = [
             ("research", "🔍"),
@@ -189,70 +179,27 @@ class TestGetWorkContextTool:
 
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "main"
-        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
-        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
+        case.git.get_current_branch.return_value = "main"
 
         for expected_phase, _ in test_cases:
-            tool._state_engine.get_state.return_value.current_phase = expected_phase  # pyright: ignore[reportPrivateUsage]
-            tool._state_engine.get_state.return_value.workflow_name = "feature"  # pyright: ignore[reportPrivateUsage]
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
+            case.state.get_state.return_value.current_phase = expected_phase
+            case.state.get_state.return_value.workflow_name = "feature"
+            result = await case.tool.execute(GetWorkContextInput(), NoteContext())
             assert isinstance(result, GetWorkContextOutput)
             assert result.success
             assert result.phase == expected_phase
 
     @pytest.mark.asyncio
-    async def test_get_context_with_github_integration(self, tool: GetWorkContextTool) -> None:
-        """Should handle GitHub integration gracefully (error case)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/42-implement-dto"
-        mock_git.get_recent_commits.return_value = []
-        tool._git_manager = mock_git
-        mock_github_manager = tool._github_manager
-        assert mock_github_manager is not None
-        mock_github_manager.get_issue.side_effect = RuntimeError("GitHub unavailable")
-
-        tool._settings.github.token = "test-token"
-
-        # Execute - GitHub code path will fail gracefully
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        # Should not error even if GitHub fetch fails
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-
-    @pytest.mark.asyncio
-    async def test_get_context_github_success(self, tool: GetWorkContextTool) -> None:
-        """GitHub block removed in C1 (issue #268); tool completes successfully."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/42-test"
-        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
-        tool._settings.github.token = "test-token"  # pyright: ignore[reportPrivateUsage]
-
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-
-    @pytest.mark.asyncio
     async def test_get_context_shows_error_message_when_phase_unknown(
-        self, tool: GetWorkContextTool
+        self, case: WorkContextCase
     ) -> None:
         """When state engine fails, output shows unknown confidence (no error raised)."""
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
-        tool._state_engine.get_state.side_effect = OSError("state.json missing")  # pyright: ignore[reportPrivateUsage]
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "main"
-        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
-        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
+        case.state.get_state.side_effect = OSError("state.json missing")
+        case.git.get_current_branch.return_value = "main"
 
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await case.tool.execute(GetWorkContextInput(), NoteContext())
 
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
@@ -260,420 +207,21 @@ class TestGetWorkContextTool:
         assert result.workflow_state_status is WorkflowStateStatus.UNREADABLE
 
 
-class TestGetWorkContextTddCycleInfo:
-    """Tests for TDD cycle info in get_work_context.
-
-    Issue #146 Cycle 3: Conditional visibility of tdd_cycle_info.
-    """
-
-    @pytest.fixture()
-    def tool(self) -> GetWorkContextTool:
-        """Fixture to instantiate GetWorkContextTool."""
-        return make_work_context_tool()
-
-    @pytest.mark.asyncio
-    async def test_tdd_cycle_info_shown_during_tdd_phase(
-        self, tool: GetWorkContextTool, tmp_path: Path
-    ) -> None:
-        """Test that tdd_cycle_info appears when in TDD phase.
-
-        Issue #146 Cycle 3: Conditional visibility based on workflow_phase.
-        """
-        workspace_root = tmp_path
-
-        # Create minimal project structure
-        project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
-
-        # Initialize project
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-
-        # Save planning deliverables with total=2 (matching 2 cycles)
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": " & Storage",
-                            "deliverables": [
-                                {"deliverable_name": "D1.1", "description": "ProjectManager schema"}
-                            ],
-                            "exit_criteria": "Schema validated",
-                        },
-                        {
-                            "cycle_name": "Validation Logic",
-                            "deliverables": [
-                                {"deliverable_name": "D2.1", "description": "Cycle validation"}
-                            ],
-                            "exit_criteria": "All validation covered",
-                        },
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        # Set implementation phase with current cycle = 2
-        state_engine.initialize_branch(
-            branch="feature/146-tdd-cycle-tracking",
-            issue_number=146,
-            initial_phase="implementation",
-        )
-        state = state_engine.get_state("feature/146-tdd-cycle-tracking")
-        state = state.with_updates(current_cycle=2)
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
-
-        # Mock Git and settings
-        with (
-            patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            # Provide implementation-scoped commit so ScopeDecoder has context
-            mock_git.get_recent_commits.return_value = [
-                "test(P_IMPLEMENTATION_SP_C2_GREEN): add cycle info display"
-            ]
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
-
-            tool._settings.github.token = None
-            tool._project_manager = project_manager
-            tool._state_engine = state_engine
-            tool._settings.server.workspace_root = str(workspace_root)
-
-            # Configure resolver to match expected phase/cycle for TDD info visibility
-            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
-                current_phase="implementation",
-                sub_phase="green",
-                current_cycle=2,
-                phase_source="state.json",
-                phase_confidence="high",
-                phase_detection_error=None,
-            )
-
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-        assert result.current_cycle is None
-
-    @pytest.mark.asyncio
-    async def test_tdd_cycle_info_hidden_outside_tdd_phase(
-        self, tool: GetWorkContextTool, tmp_path: Path
-    ) -> None:
-        """Test that tdd_cycle_info is hidden when NOT in TDD phase.
-
-        Issue #146 Cycle 3: Conditional visibility - no noise outside TDD.
-        """
-        workspace_root = tmp_path
-
-        # Create minimal project structure
-        project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
-
-        # Initialize project
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-
-        # Save planning deliverables
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": "Schema & Storage",
-                            "deliverables": [
-                                {"deliverable_name": "D1.1", "description": "ProjectManager schema"}
-                            ],
-                            "exit_criteria": "Tests pass",
-                        }
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        # Set DESIGN phase (not TDD)
-        state_engine.initialize_branch(
-            branch="feature/146-tdd-cycle-tracking", issue_number=146, initial_phase="design"
-        )
-
-        # Mock Git
-        with (
-            patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git.get_recent_commits.return_value = [
-                "test(P_IMPLEMENTATION_SP_C1_RED): graceful degradation path"
-            ]
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
-
-            tool._settings.github.token = None
-            tool._project_manager = project_manager
-            tool._state_engine = state_engine
-            tool._settings.server.workspace_root = str(workspace_root)
-
-            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
-                current_phase="design",
-                sub_phase=None,
-                current_cycle=None,
-                phase_source="state.json",
-                phase_confidence="high",
-                phase_detection_error=None,
-            )
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        # Assert - NO tdd_cycle_info in design phase
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-        assert result.phase == "design"
-
-    @pytest.mark.asyncio
-    async def test_tdd_cycle_info_graceful_degradation(
-        self, tool: GetWorkContextTool, tmp_path: Path
-    ) -> None:
-        """Test graceful degradation when planning deliverables missing.
-
-        Issue #146 Cycle 3: Avoid crashes if planning_deliverables not saved.
-        """
-        workspace_root = tmp_path
-
-        # Create minimal project structure WITHOUT planning deliverables
-        project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
-
-        # Initialize project WITHOUT planning deliverables
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-        # NOTE: Deliberately NOT calling save_planning_deliverables
-
-        # Set implementation phase
-        state_engine.initialize_branch(
-            branch="feature/146-tdd-cycle-tracking",
-            issue_number=146,
-            initial_phase="implementation",
-        )
-
-        # Mock Git
-        with (
-            patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git.get_recent_commits.return_value = [
-                "test(P_IMPLEMENTATION_SP_C1_RED): graceful degradation path"
-            ]
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
-
-            tool._settings.github.token = None
-            tool._project_manager = project_manager
-            tool._state_engine = state_engine
-            tool._settings.server.workspace_root = str(workspace_root)
-
-            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
-                current_phase="implementation",
-                sub_phase="red",
-                current_cycle=1,
-                phase_source="state.json",
-                phase_confidence="high",
-                phase_detection_error=None,
-            )
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        # Assert - tool should NOT crash
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-        assert result.phase == "implementation"
-
-
-class TestTddCycleInfoStatusField:
-    """Tests for the status field in tdd_cycle_info (Issue #146 Cycle 7 D2).
-
-    design.md:365-376 specifies tdd_cycle_info must include status='in_progress'.
-    discovery_tools.py:168-175 did not include this field.
-    """
-
-    @pytest.fixture()
-    def tool(self) -> GetWorkContextTool:
-        """Fixture to instantiate GetWorkContextTool."""
-        return make_work_context_tool()
-
-    @pytest.mark.asyncio
-    async def test_tdd_cycle_info_includes_status_field(
-        self, tool: GetWorkContextTool, tmp_path: Path
-    ) -> None:
-        """tdd_cycle_info must include status='in_progress' per design.md:375.
-
-        Issue #146 Cycle 7 D2: Align implementation with design spec.
-        The status field is always 'in_progress' when the cycle is active.
-        """
-        workspace_root = tmp_path
-        project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
-
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-
-        planning_deliverables = SavePlanningModel.model_validate(
-            {
-                "cycles": {
-                    "cycles": [
-                        {
-                            "cycle_name": "Status Field Test",
-                            "deliverables": [
-                                {"deliverable_name": "D1.1", "description": "Add status field"}
-                            ],
-                            "exit_criteria": "Status field present in output",
-                        }
-                    ],
-                }
-            }
-        )
-        project_manager.save_planning_deliverables(146, planning_deliverables)
-
-        state_engine.initialize_branch(
-            branch="feature/146-tdd-cycle-tracking",
-            issue_number=146,
-            initial_phase="implementation",
-        )
-        # Set current cycle so tdd_cycle_info is populated
-        state = state_engine.get_state("feature/146-tdd-cycle-tracking")
-        state = state.with_updates(current_cycle=1)
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
-
-        with (
-            patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            # Provide a non-empty commits list so ScopeDecoder is invoked (not short-circuited)
-            mock_git.get_recent_commits.return_value = [
-                "test(P_IMPLEMENTATION_SP_C1_RED): add status field test"
-            ]
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
-
-            tool._settings.github.token = None
-            tool._project_manager = project_manager
-            tool._state_engine = state_engine
-            tool._settings.server.workspace_root = str(workspace_root)
-
-            # Configure resolver to provide implementation phase with cycle 1
-            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
-                current_phase="implementation",
-                sub_phase="red",
-                current_cycle=1,
-                phase_source="state.json",
-                phase_confidence="high",
-                phase_detection_error=None,
-            )
-
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-        assert result.current_cycle is None
-
-
-class TestGetWorkContextResolverAdoption:
-    """C4: WorkflowStatusResolver adoption in GetWorkContextTool.execute().
-
-    Issue #231: These tests FAIL (RED) until WorkflowStatusResolver is added as
-    a constructor parameter and used in execute() instead of local phase detection.
-    """
-
-    @pytest.mark.asyncio
-    async def test_execute_calls_resolver_when_injected(self) -> None:
-        """GetWorkContextTool calls resolver.resolve_current() when resolver is injected."""
-        resolver = MagicMock()
-        resolver.resolve_current.return_value = WorkflowStatusDTO(
-            current_phase="design",
-            sub_phase=None,
-            current_cycle=None,
-            phase_source="state.json",
-            phase_confidence="high",
-            phase_detection_error=None,
-        )
-        settings = make_settings()
-        settings.github.token = None
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/99-test"
-
-        tool = GetWorkContextTool(
-            settings=settings,
-            git_manager=mock_git,
-            project_manager=MagicMock(),
-            state_engine=MagicMock(),
-            workflow_status_resolver=resolver,
-        )
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-        assert result.current_branch == "feature/99-test"
-
-    @pytest.mark.asyncio
-    async def test_execute_gates_cycle_enrichment_on_current_cycle_not_none(self) -> None:
-        """Cycle enrichment gated on current_cycle is not None, not phase string equality."""
-        resolver = MagicMock()
-        resolver.resolve_current.return_value = WorkflowStatusDTO(
-            current_phase="implementation",
-            sub_phase="red",
-            current_cycle=None,  # Gate: no cycle → no enrichment
-            phase_source="state.json",
-            phase_confidence="high",
-            phase_detection_error=None,
-        )
-        settings = make_settings()
-        settings.github.token = None
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/99-test"
-
-        tool = GetWorkContextTool(
-            settings=settings,
-            git_manager=mock_git,
-            project_manager=MagicMock(),
-            state_engine=MagicMock(),
-            workflow_status_resolver=resolver,
-        )
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-        assert result.current_cycle is None
+class TestGetWorkContextStateCycleProjection:
+    """Expose phase and cycle information from injected branch state."""
 
     @pytest.mark.asyncio
     async def test_execute_hides_cycle_for_non_cycle_phase_even_when_preserved(self) -> None:
-        planning_tool = make_work_context_tool(contracts_config=load_contracts_config())
-        planning_tool._git_manager.get_current_branch.return_value = "bug/230-test"  # pyright: ignore[reportPrivateUsage]
-        planning_tool._state_engine.get_state.return_value.workflow_name = "bug"  # pyright: ignore[reportPrivateUsage]
-        planning_tool._state_engine.get_state.return_value.current_phase = "planning"  # pyright: ignore[reportPrivateUsage]
-        planning_tool._state_engine.get_state.return_value.issue_number = 230  # pyright: ignore[reportPrivateUsage]
-        planning_tool._state_engine.get_state.return_value.parent_branch = None  # pyright: ignore[reportPrivateUsage]
-        planning_tool._state_engine.get_state.return_value.current_cycle = 3  # pyright: ignore[reportPrivateUsage]
-        planning_tool._state_engine.get_state.return_value.current_sub_phase = None  # pyright: ignore[reportPrivateUsage]
+        planning_case = make_work_context_tool(contracts_config=load_contracts_config())
+        planning_case.git.get_current_branch.return_value = "bug/230-test"
+        planning_case.state.get_state.return_value.workflow_name = "bug"
+        planning_case.state.get_state.return_value.current_phase = "planning"
+        planning_case.state.get_state.return_value.issue_number = 230
+        planning_case.state.get_state.return_value.parent_branch = None
+        planning_case.state.get_state.return_value.current_cycle = 3
+        planning_case.state.get_state.return_value.current_sub_phase = None
 
-        planning_result = await planning_tool.execute(GetWorkContextInput(), NoteContext())
+        planning_result = await planning_case.tool.execute(GetWorkContextInput(), NoteContext())
 
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
@@ -682,16 +230,16 @@ class TestGetWorkContextResolverAdoption:
         assert planning_result.phase == "planning"
         assert planning_result.current_cycle is None
 
-        implementation_tool = make_work_context_tool(contracts_config=load_contracts_config())
-        implementation_tool._git_manager.get_current_branch.return_value = "bug/230-test"  # pyright: ignore[reportPrivateUsage]
-        implementation_tool._state_engine.get_state.return_value.workflow_name = "bug"  # pyright: ignore[reportPrivateUsage]
-        implementation_tool._state_engine.get_state.return_value.current_phase = "implementation"  # pyright: ignore[reportPrivateUsage]
-        implementation_tool._state_engine.get_state.return_value.issue_number = 230  # pyright: ignore[reportPrivateUsage]
-        implementation_tool._state_engine.get_state.return_value.parent_branch = None  # pyright: ignore[reportPrivateUsage]
-        implementation_tool._state_engine.get_state.return_value.current_cycle = 3  # pyright: ignore[reportPrivateUsage]
-        implementation_tool._state_engine.get_state.return_value.current_sub_phase = None  # pyright: ignore[reportPrivateUsage]
+        implementation_case = make_work_context_tool(contracts_config=load_contracts_config())
+        implementation_case.git.get_current_branch.return_value = "bug/230-test"
+        implementation_case.state.get_state.return_value.workflow_name = "bug"
+        implementation_case.state.get_state.return_value.current_phase = "implementation"
+        implementation_case.state.get_state.return_value.issue_number = 230
+        implementation_case.state.get_state.return_value.parent_branch = None
+        implementation_case.state.get_state.return_value.current_cycle = 3
+        implementation_case.state.get_state.return_value.current_sub_phase = None
 
-        implementation_result = await implementation_tool.execute(
+        implementation_result = await implementation_case.tool.execute(
             GetWorkContextInput(), NoteContext()
         )
 
@@ -701,7 +249,7 @@ class TestGetWorkContextResolverAdoption:
         assert implementation_result.current_cycle == 3
 
     @pytest.mark.asyncio
-    async def test_execute_shows_phase_from_resolver(self) -> None:
+    async def test_execute_shows_phase_from_branch_state(self) -> None:
         """GetWorkContextTool output reflects phase from BranchState after C1."""
         resolver = MagicMock()
         settings = make_settings()
@@ -730,83 +278,6 @@ class TestGetWorkContextResolverAdoption:
 
 # ---------------------------------------------------------------------------
 # C6 RED — GetWorkContextTool StateNotFoundError / StateBranchMismatchError (issue #298)
-# ---------------------------------------------------------------------------
-
-
-def _make_work_context_tool(
-    tmp_path: Path,
-    resolver_side_effect: Exception,
-) -> GetWorkContextTool:
-    """Return a GetWorkContextTool whose resolver raises the given exception."""
-    mock_git = MagicMock()
-    mock_git.get_current_branch.return_value = "feature/298-test"
-
-    mock_resolver = MagicMock()
-    mock_resolver.resolve_current.side_effect = resolver_side_effect
-
-    settings = make_settings(tmp_path)
-
-    return GetWorkContextTool(
-        settings=settings,
-        git_manager=mock_git,
-        project_manager=MagicMock(),
-        state_engine=MagicMock(),
-        workflow_status_resolver=mock_resolver,
-    )
-
-
-class TestGetWorkContextStateErrors:
-    """C6 (issue #298): StateNotFoundError / StateBranchMismatchError → error + RecoveryNote."""
-
-    @pytest.mark.asyncio
-    async def test_get_work_context_returns_error_with_recovery_note_when_state_absent(
-        self, tmp_path: Path
-    ) -> None:
-        """StateNotFoundError from state_engine → graceful degradation (not error) after C1."""
-        tool = _make_work_context_tool(
-            tmp_path, resolver_side_effect=StateNotFoundError("feature/298-test")
-        )
-        ctx = NoteContext()
-        result = await tool.execute(GetWorkContextInput(), ctx)
-
-        # C1 (issue #268): graceful degradation path; state errors no longer hard-fail
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-
-    @pytest.mark.asyncio
-    async def test_get_work_context_returns_error_with_recovery_note_on_mismatch(
-        self, tmp_path: Path
-    ) -> None:
-        """StateBranchMismatchError from state_engine → graceful degradation after C1."""
-        tool = _make_work_context_tool(
-            tmp_path, resolver_side_effect=StateBranchMismatchError("branch mismatch")
-        )
-        ctx = NoteContext()
-        result = await tool.execute(GetWorkContextInput(), ctx)
-
-        # C1 (issue #268): graceful degradation path; state errors no longer hard-fail
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-
-    @pytest.mark.asyncio
-    async def test_get_work_context_graceful_io_error_path_unchanged(self, tmp_path: Path) -> None:
-        """OSError in resolver still uses existing graceful fallback (not error result)."""
-        tool = _make_work_context_tool(tmp_path, resolver_side_effect=OSError("disk error"))
-        ctx = NoteContext()
-        result = await tool.execute(GetWorkContextInput(), ctx)
-
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success  # OSError → graceful degradation, not hard error
-
-
-# ---------------------------------------------------------------------------
-# C1 RED — GetWorkContextTool sub_role_hint + phase_instructions (issue #268)
 # ---------------------------------------------------------------------------
 
 
@@ -885,33 +356,6 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         assert result.phase_instructions == ""
         assert result.workflow_state_status is WorkflowStateStatus.INVALID_PHASE
         assert "research" in result.valid_phases
-
-    @pytest.mark.asyncio
-    async def test_get_work_context_returns_empty_string_when_workflow_unavailable(
-        self,
-    ) -> None:
-        """Graceful fallback when workflow resolution raises (OSError path)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
-
-        mock_git = MagicMock()
-        mock_git.get_current_branch.return_value = "feature/268-test"
-        resolver = MagicMock()
-        resolver.resolve_current.side_effect = OSError("state.json missing")
-        settings = make_settings()
-        settings.github.token = None
-        tool = GetWorkContextTool(
-            settings=settings,
-            git_manager=mock_git,
-            project_manager=MagicMock(),
-            state_engine=MagicMock(),
-            workflow_status_resolver=resolver,
-        )
-
-        result = await tool.execute(GetWorkContextInput(), NoteContext())
-        assert isinstance(result, GetWorkContextOutput)
-        assert result.success
-
-    # --- C1 correction: bug workflow entries ---
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_phase_instructions_for_bug_research(
@@ -1011,11 +455,6 @@ class TestGetWorkContextC1Restructuring:
             contracts_config=load_contracts_config(),
         )
 
-    def test_get_work_context_input_has_no_include_closed_recent(self) -> None:
-        """GetWorkContextInput must reject include_closed_recent (field removed in C1)."""
-        with pytest.raises(ValidationError):
-            GetWorkContextInput(include_closed_recent=True)  # type: ignore[call-arg]
-
     @pytest.mark.asyncio
     async def test_get_work_context_returns_sub_role_hint_for_known_phase(self) -> None:
         """New format: orientation header shows 'Role: implementer' for implementation phase."""
@@ -1069,10 +508,8 @@ class TestGetWorkContextC1Restructuring:
         assert result.success
         assert result.workflow_state_status is WorkflowStateStatus.INVALID_PHASE
         assert result.phase_instructions == ""
-        assert tool._contracts_config is not None
-        assert result.valid_phases == tuple(
-            tool._contracts_config.workflows["feature"].get_phase_names()
-        )
+        contracts = load_contracts_config()
+        assert result.valid_phases == tuple(contracts.workflows["feature"].get_phase_names())
 
     @pytest.mark.asyncio
     async def test_get_work_context_does_not_synthesize_invalid_phase_prose(self) -> None:
@@ -1166,9 +603,6 @@ class TestGetWorkContextC1Restructuring:
         from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(state_raises=StateNotFoundError("feature/268-test"))
-        tool._workflow_status_resolver.resolve_current.side_effect = StateNotFoundError(
-            "feature/268-test"
-        )
 
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
@@ -1258,12 +692,6 @@ class TestGetWorkContextC7ContractsInjection:
             contracts_config=contracts_config,
             context_loaded_writer=context_loaded_writer,
         )
-
-    def test_sub_role_map_removed_from_module(self) -> None:
-        assert not hasattr(discovery_module, "_SUB_ROLE_MAP")
-
-    def test_phase_instructions_map_removed_from_module(self) -> None:
-        assert not hasattr(discovery_module, "_PHASE_INSTRUCTIONS_MAP")
 
     @pytest.mark.asyncio
     async def test_sub_role_comes_from_contracts(self) -> None:

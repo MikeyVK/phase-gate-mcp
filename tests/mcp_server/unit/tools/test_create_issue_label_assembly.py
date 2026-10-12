@@ -1,14 +1,13 @@
-# pyright: reportPrivateUsage=false
 """
 Cycle 5 — Label assembly in CreateIssueTool.
 
-Tests for the private `_assemble_labels()` method and for `execute()` forwarding
-assembled labels to GitHubManager.
+Tests public issue creation and the labels forwarded to GitHubManager.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, unittest.mock, mcp_server.tools.issue_tools]
 """
 
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,6 +16,8 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.github_models import IssueReadModel
 from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from tests.mcp_server.test_support import make_create_issue_tool
+
+pytestmark = pytest.mark.asyncio
 
 BODY = "## Problem\n\nTest problem."
 
@@ -54,156 +55,130 @@ def make_tool(manager: MagicMock | None = None) -> CreateIssueTool:
     return make_create_issue_tool(mgr)
 
 
+async def assembled_labels(params: CreateIssueInput) -> list[str]:
+    """Observe labels submitted by the public issue-creation operation."""
+    manager = MagicMock()
+    tool = make_tool(manager)
+    result = await tool.execute(params, NoteContext())
+    assert result.success is True
+    manager.create_issue.assert_called_once()
+    return cast(list[str], manager.create_issue.call_args.kwargs["labels"])
+
+
 class TestTypeLabelAssembly:
-    def test_feature_produces_type_feature(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="feature"))
+    async def test_feature_produces_type_feature(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="feature"))
         assert "type:feature" in labels
 
-    def test_bug_produces_type_bug(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="bug"))
+    async def test_bug_produces_type_bug(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="bug"))
         assert "type:bug" in labels
 
-    def test_hotfix_produces_type_bug_not_type_hotfix(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="hotfix"))
+    async def test_hotfix_produces_type_bug_not_type_hotfix(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="hotfix"))
         assert "type:bug" in labels
         assert "type:hotfix" not in labels
 
-    def test_chore_produces_type_chore(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="chore"))
+    async def test_chore_produces_type_chore(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="chore"))
         assert "type:chore" in labels
 
-    def test_is_epic_overrides_type_to_type_epic(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="feature", is_epic=True))
+    async def test_is_epic_overrides_type_to_type_epic(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="feature", is_epic=True))
         assert "type:epic" in labels
         assert "type:feature" not in labels
 
-    def test_is_epic_overrides_any_issue_type(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="bug", is_epic=True))
+    async def test_is_epic_overrides_any_issue_type(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="bug", is_epic=True))
         assert "type:epic" in labels
         assert "type:bug" not in labels
 
-    def test_no_duplicate_type_labels(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="feature"))
+    async def test_no_duplicate_type_labels(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="feature"))
         type_labels = [label for label in labels if label.startswith("type:")]
         assert len(type_labels) == 1
 
 
 class TestScopeLabelAssembly:
-    def test_scope_mcp_server_produces_scope_mcp_server(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(scope="mcp-server"))
+    async def test_scope_mcp_server_produces_scope_mcp_server(self) -> None:
+        labels = await assembled_labels(make_params(scope="mcp-server"))
         assert "scope:mcp-server" in labels
 
-    def test_scope_tooling_produces_scope_tooling(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(scope="tooling"))
+    async def test_scope_tooling_produces_scope_tooling(self) -> None:
+        labels = await assembled_labels(make_params(scope="tooling"))
         assert "scope:tooling" in labels
 
-    def test_scope_platform_produces_scope_platform(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(scope="platform"))
+    async def test_scope_platform_produces_scope_platform(self) -> None:
+        labels = await assembled_labels(make_params(scope="platform"))
         assert "scope:platform" in labels
 
 
 class TestPriorityLabelAssembly:
-    def test_priority_medium_produces_priority_medium(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(priority="medium"))
+    async def test_priority_medium_produces_priority_medium(self) -> None:
+        labels = await assembled_labels(make_params(priority="medium"))
         assert "priority:medium" in labels
 
-    def test_priority_high_produces_priority_high(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(priority="high"))
+    async def test_priority_high_produces_priority_high(self) -> None:
+        labels = await assembled_labels(make_params(priority="high"))
         assert "priority:high" in labels
 
-    def test_priority_critical_produces_priority_critical(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(priority="critical"))
+    async def test_priority_critical_produces_priority_critical(self) -> None:
+        labels = await assembled_labels(make_params(priority="critical"))
         assert "priority:critical" in labels
 
 
 class TestPhaseLabelAssembly:
-    def test_feature_workflow_first_phase_is_research(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="feature"))
+    async def test_feature_workflow_first_phase_is_research(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="feature"))
         assert "phase:research" in labels
 
-    def test_hotfix_workflow_first_phase_is_implementation(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="hotfix"))
+    async def test_hotfix_workflow_first_phase_is_implementation(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="hotfix"))
         assert "phase:implementation" in labels
 
-    def test_docs_workflow_first_phase_is_planning(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="docs"))
+    async def test_docs_workflow_first_phase_is_planning(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="docs"))
         assert "phase:planning" in labels
 
-    def test_bug_workflow_first_phase_is_research(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="bug"))
+    async def test_bug_workflow_first_phase_is_research(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="bug"))
         assert "phase:research" in labels
 
-    def test_chore_workflow_first_phase_is_research(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="chore"))
+    async def test_chore_workflow_first_phase_is_research(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="chore"))
         assert "phase:research" in labels
 
-    def test_no_duplicate_phase_labels(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(issue_type="feature"))
+    async def test_no_duplicate_phase_labels(self) -> None:
+        labels = await assembled_labels(make_params(issue_type="feature"))
         phase_labels = [label for label in labels if label.startswith("phase:")]
         assert len(phase_labels) == 1
 
 
 class TestParentLabelAssembly:
-    def test_parent_issue_produces_parent_n_label(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(parent_issue=91))
+    async def test_parent_issue_produces_parent_n_label(self) -> None:
+        labels = await assembled_labels(make_params(parent_issue=91))
         assert "parent:91" in labels
 
-    def test_parent_issue_none_produces_no_parent_label(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(parent_issue=None))
+    async def test_parent_issue_none_produces_no_parent_label(self) -> None:
+        labels = await assembled_labels(make_params(parent_issue=None))
         assert not any(label.startswith("parent:") for label in labels)
 
-    def test_parent_issue_different_value(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(parent_issue=149))
+    async def test_parent_issue_different_value(self) -> None:
+        labels = await assembled_labels(make_params(parent_issue=149))
         assert "parent:149" in labels
 
 
 class TestFullLabelSet:
-    def test_minimal_input_produces_four_labels(self) -> None:
-        labels = make_tool()._assemble_labels(make_params())
+    async def test_minimal_input_produces_four_labels(self) -> None:
+        labels = await assembled_labels(make_params())
         assert len(labels) == 4
 
-    def test_with_parent_issue_produces_five_labels(self) -> None:
-        labels = make_tool()._assemble_labels(make_params(parent_issue=10))
+    async def test_with_parent_issue_produces_five_labels(self) -> None:
+        labels = await assembled_labels(make_params(parent_issue=10))
         assert len(labels) == 5
 
-    def test_full_label_set_no_duplicates(self) -> None:
-        labels = make_tool()._assemble_labels(
+    async def test_full_label_set_no_duplicates(self) -> None:
+        labels = await assembled_labels(
             make_params(issue_type="bug", priority="high", scope="platform", parent_issue=55)
         )
         assert len(labels) == len(set(labels))
-
-
-class TestExecuteForwardsAssembledLabels:
-    @pytest.mark.asyncio
-    async def test_execute_passes_assembled_labels_to_manager(self) -> None:
-        mock_manager = MagicMock()
-        mock_manager.create_issue.return_value = {
-            "number": 1,
-            "title": "Test",
-            "url": "http://x",
-        }
-        tool = make_tool(mock_manager)
-
-        params = make_params(issue_type="feature", scope="mcp-server", priority="medium")
-        await tool.execute(params, NoteContext())
-
-        call_kwargs = mock_manager.create_issue.call_args.kwargs
-        labels = call_kwargs["labels"]
-        assert labels is not None
-        assert isinstance(labels, list)
-        assert len(labels) > 0
-
-    @pytest.mark.asyncio
-    async def test_execute_labels_include_type_scope_priority_phase(self) -> None:
-        mock_manager = MagicMock()
-        mock_manager.create_issue.return_value = {"number": 2, "title": "T", "url": ""}
-        tool = make_tool(mock_manager)
-
-        params = make_params(issue_type="feature", scope="tooling", priority="high")
-        await tool.execute(params, NoteContext())
-
-        labels = mock_manager.create_issue.call_args.kwargs["labels"]
-        assert "type:feature" in labels
-        assert "scope:tooling" in labels
-        assert "priority:high" in labels
-        assert "phase:research" in labels
