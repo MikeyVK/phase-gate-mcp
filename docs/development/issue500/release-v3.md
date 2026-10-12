@@ -2,8 +2,8 @@
 
 # Phase-Gate MCP 3.0.0
 
-**Status:** PREPARED FOR PUBLICATION  
-**Version:** 1.0  
+**Status:** PUBLISHED  
+**Version:** 1.1  
 **Last Updated:** 2026-10-12
 
 ## Purpose
@@ -61,3 +61,4 @@ The source payload corresponds to commit `fcde44d2368399b080c82546c899d49b37ae75
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-12 | @imp documenter | Prepare distinct GitHub release notes from the selected source boundary and verified installation artifacts. |
+| 1.1 | 2026-10-12 | @imp documenter | Record verified GitHub publication; published release excerpt is unchanged. |

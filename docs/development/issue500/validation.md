@@ -2,8 +2,8 @@
 
 # Issue 500 — release and workspace evidence
 
-**Status:** Validation complete; independent review and publication pending  
-**Version:** 0.1  
+**Status:** Validation complete; publication verified  
+**Version:** 0.2  
 **Last Updated:** 2026-10-12
 
 ## Purpose
@@ -56,7 +56,7 @@ v1 source3bfcef80fa97303d2b51738005b022edbcb0afbd (PR426,2026-07-08); v2 sourcee
 
 ### V3 installed candidate and renewal routes are evidenced
 
-Only release-facing documentation changed after the existing isolated runtime/renewal proof. Final wheel identity and exact install/catalog checks are being refreshed for those docs; the unchanged runtime/renewal observations remain reusable.
+Only release-facing documentation changed after the existing isolated runtime/renewal proof. Final wheel identity and exact install/catalog checks were refreshed for those docs as recorded below; the unchanged runtime/renewal observations remain reusable.
 
 **Sources:**
 
@@ -126,10 +126,30 @@ On reviewed snapshot `d24d8dfb94f03e2c79fee10e0b9c0e4a3d56cef5` (only the Valida
 `run_checks(scope='branch', timeout_seconds=900)` used configured profile python_review and passed python_format, python_lint, python_types and python_pyright. Both complete result DTOs were read as needed: test header plus final native summary/capture fields, and the entire 8597-character branch DTO. Supplemental receipts: tests3cc54103d74e44019f0eec6c94c8083a; checks59cd536171a342ff9e1779aafa029d47. They supplement these durable invocation/outcome facts.
 
 The earlier full #465 result is no longer used as final #500 evidence. Source changes are complete; remaining edits concern unbundled evidence, release records and workflow state. Independent QA owns the phase verdict.
+### GitHub publication and online issue reconciliation
+
+Owner-authorized publication completed on 2026-10-12. GitHub release API and tag references independently confirm:
+
+| Release | Exact tag/source commit | Published UTC |
+| --- | --- | --- |
+| [v1.0.0](https://github.com/MikeyVK/phase-gate-mcp/releases/tag/v1.0.0) | 3bfcef80fa97303d2b51738005b022edbcb0afbd | 2026-10-12T07:10:18Z |
+| [v2.0.0](https://github.com/MikeyVK/phase-gate-mcp/releases/tag/v2.0.0) | ee32667ca95bf17ffb4ecd59062ef8cbed930e0b | 2026-10-12T07:10:21Z |
+| [v3.0.0](https://github.com/MikeyVK/phase-gate-mcp/releases/tag/v3.0.0) | fcde44d2368399b080c82546c899d49b37ae759a | 2026-10-12T07:10:24Z |
+
+Invocation: `gh release create vN.0.0 exact-wheel exact-sdist --repo MikeyVK/phase-gate-mcp --target full-source-SHA --title release-title --notes-file -`; v1/v2 use `--latest=false`, v3 uses `--latest`. Each command exited0. No native publication tool exists; the owner explicitly authorized this fallback. Notes are the corresponding release document from Summary up to, excluding, Version History; local provenance and authored header are not published.
+
+Observed result: each release is published, not draft/prerelease, with exactly two uploaded installation assets. All six remote asset sizes and SHA-256 digests match the tables in [v1](release-v1.md), [v2](release-v2.md) and [v3](release-v3.md). All three tag refs point to the exact source commits above. Release bodies match the authored excerpts after normalizing Windows stdin CRLF transport. The latest-release API returns v3.0.0. Historical release dates are described in their notes; publication dates are not backdated. PyPI is excluded.
+
+`scaffold_artifact(artifact_type='issue', file_name='issue500-publication-body.md', validation='enforce')` produced the body in the configured temporary root. Native `update_issue(issue_number=500, body=...)` published it after removing only the recognized first-line provenance marker. A subsequent GitHub API read matched the submitted body exactly after CRLF normalization. [Issue500](https://github.com/MikeyVK/phase-gate-mcp/issues/500) remains open; labels/state and epic289 were not changed.
+
+### Compact Documentation reconciliation
+
+Reviewed authoritative CHANGELOG, setup upgrade/bootstrap guides, release-assets procedure, artifact defaults, agent instructions, template packages and their derived installed consumers. Release-facing sources were already synchronized and validated before the immutable package build; no further source/config/template/agent edits are needed. This phase changes only these four unbundled issue records and workflow state. Existing technical and source/installed parity evidence remains fresh. Publication records are now reconciled with live GitHub facts; focused link verification covers the four modified records. No new document, test or runtime repair is added.
+
 ## Caveats
 
-- Final configured tests and branch gates passed on the reviewed snapshot; independent phase review and actual publication remain pending.
-- Artifact payload is bound to fcde44d2368399b080c82546c899d49b37ae759a; actual GitHub publication and online issue500 body update remain pending.
+- Independent QA returned GO for Implementation → Validation on d24d8dfb94f03e2c79fee10e0b9c0e4a3d56cef5 and Validation → Documentation on b82eb1e99c8c5f9903c950b11adbb576b87fc49b. Documentation → Ready review remains the next gate.
+- V3 artifact payload and published tag are bound to fcde44d2368399b080c82546c899d49b37ae759a. Subsequent issue evidence/state changes are unbundled; merging this maintenance branch remains separate.
 - ServerInfo.version reports the SDK version; PGMCP CLI/distribution metadata identify the release. Existing SchemaAttachment.schema warning does not block proven routes.
 
 ## Deferred Work
@@ -147,3 +167,4 @@ Deletion denied; ownership/ACL intervention is excluded from the safe release cl
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-12 | @imp implementer | Persist focused, package, archive, routing, cleanup and owner-migration observations. |
+| 0.2 | 2026-10-12 | @imp documenter | Record full Validation gates, independent phase reviews, verified GitHub publication and compact documentation reconciliation. |
