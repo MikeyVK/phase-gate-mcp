@@ -15,8 +15,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.core.exceptions import ConfigError, StateCorruptedError, ValidationError
+from mcp_server.core.interfaces import IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import (
     EnforcementAction,
@@ -47,6 +47,8 @@ def _make_runner(
     tmp_path: Path,
     config: EnforcementConfig,
     pr_status_reader: IPRStatusReader | None = None,
+    *,
+    state_reader: IStateReader | None = None,
 ) -> EnforcementRunner:
     return EnforcementRunner(
         workspace_root=tmp_path,
@@ -54,8 +56,10 @@ def _make_runner(
         git_config=MagicMock(),
         pr_status_reader=pr_status_reader,
         server_root=tmp_path / get_default_server_root(),
-        state_reader=FileStateRepository(
-            state_file=tmp_path / get_default_server_root() / "state.json"
+        state_reader=(
+            state_reader
+            if state_reader is not None
+            else FileStateRepository(state_file=tmp_path / get_default_server_root() / "state.json")
         ),
     )
 
@@ -382,8 +386,23 @@ class TestCheckPhaseReadinessHandler:
                 note_context=_make_note_context(),
             )
 
-    def test_blocks_when_state_json_absent(self, tmp_path: Path) -> None:
-        """ValidationError raised when state.json is absent (no active phase)."""
+    @pytest.mark.parametrize(
+        ("load_error", "expected_error"),
+        [
+            (None, ValidationError),
+            (FileNotFoundError("state missing"), ValidationError),
+            (StateCorruptedError("invalid state"), StateCorruptedError),
+            (PermissionError("state unreadable"), PermissionError),
+            (RuntimeError("reader failure"), RuntimeError),
+        ],
+    )
+    def test_blocks_when_state_cannot_be_read(
+        self,
+        tmp_path: Path,
+        load_error: Exception | None,
+        expected_error: type[Exception],
+    ) -> None:
+        """Absent state blocks by policy; reader failures retain their diagnosis."""
         config = EnforcementConfig(
             enforcement=[
                 EnforcementRule(
@@ -394,15 +413,21 @@ class TestCheckPhaseReadinessHandler:
                 )
             ]
         )
-        runner = _make_runner(tmp_path, config)
+        reader = None
+        if load_error is not None:
+            reader = MagicMock(spec=IStateReader)
+            reader.load.side_effect = load_error
+        runner = _make_runner(tmp_path, config, state_reader=reader)
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(expected_error) as raised:
             runner.run(
                 event="submit_pr",
                 timing="pre",
                 enforcement_ctx=_make_ctx(tmp_path),
                 note_context=_make_note_context(),
             )
+        if load_error is not None and expected_error is not ValidationError:
+            assert raised.value is load_error
 
 
 class TestColdStartWiring:

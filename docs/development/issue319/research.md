@@ -230,6 +230,8 @@ Owner-approved final strategy: preserve and repair the activated native lint pol
 
 Owner-approved lint repair, 2026-10-12: runtime server identity uses installed `phase-gate-mcp` metadata exclusively, including editable development installs. Remove repository-manifest/default-version fallbacks and the special treatment of version 1.0.0; missing or defective metadata remains an error. This decision concerns server identity, separately from the quality bindings' unchanged fail-on-use setup policy. Refresh editable installation metadata when the package version changes. Adapt existing public version behavior tests and remove the obsolete fallback/content-parity test; no compatibility route is retained.
 
+Owner-approved phase-readiness repair, 2026-10-12: retain the phase-policy rejection for FileNotFoundError and StateNotFoundError only. Propagate every other state-reader failure unchanged through existing error boundaries, so corrupted/unreadable state is not presented as a phase mismatch. No phase-policy or presentation mechanism change; adapt the existing public enforcement behavior test.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
