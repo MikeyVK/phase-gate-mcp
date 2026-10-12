@@ -9,7 +9,6 @@ Tests for CLI.
 # Standard library
 import contextlib
 import json
-from importlib import metadata
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
 
@@ -316,32 +315,3 @@ def test_cli_upgrade_failure_exits_1(tmp_path: Path) -> None:
         main(settings)
         renewal.assert_called_once_with(["--upgrade"], settings=settings)
         exit_process.assert_called_once_with(1)
-
-
-def test_version_consistency() -> None:
-    """Verify version parity across SSOT files (pyproject.toml, manifest, settings.py)."""
-    import yaml  # noqa: PLC0415
-
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
-
-    repo_root = Path(__file__).resolve().parent.parent.parent.parent
-
-    # 1. pyproject.toml
-    pyproject_path = repo_root / "pyproject.toml"
-    assert pyproject_path.exists()
-    pyproject_text = pyproject_path.read_text(encoding="utf-8")
-    assert 'version = "3.0.0"' in pyproject_text
-
-    # 2. release_manifest.yaml
-    manifest_path = repo_root / ".pgmcp" / "config" / "release_manifest.yaml"
-    assert manifest_path.exists()
-    manifest_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    assert manifest_data.get("version") == "3.0.0"
-
-    # Repository parity observes the manifest fallback, not the host installation.
-    with patch(
-        "mcp_server.config.settings.metadata.version",
-        side_effect=metadata.PackageNotFoundError,
-    ):
-        settings = Settings()
-        assert settings.server.version == "3.0.0"

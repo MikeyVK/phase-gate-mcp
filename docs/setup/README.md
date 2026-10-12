@@ -51,6 +51,13 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
+The running server obtains its version exclusively from installed `phase-gate-mcp`
+package metadata. Development uses the editable installation above: source edits
+remain directly usable after a server restart, while installation metadata supplies
+the version. Re-run `pip install -e .` after changing the package version. Missing
+or unreadable package metadata is an error; repository manifests and fixed defaults
+are not runtime version sources.
+
 For a new server root, `pgmcp --init` requires complete assembled package assets. A clean editable checkout installed with `pip install -e .` does not assemble those assets automatically. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; follow the [Release Assets Procedure](../reference/release-assets-procedure.md). Use initialization after provisioning a package with those assets:
 
 

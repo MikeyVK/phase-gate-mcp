@@ -17,11 +17,7 @@ import pytest
 from pydantic import ValidationError
 
 # Project modules
-from mcp_server.config.settings import (
-    ServerSettings,
-    Settings,
-    _default_server_version,  # pyright: ignore[reportPrivateUsage]
-)
+from mcp_server.config.settings import ServerSettings, Settings
 from tests.mcp_server.test_support import get_default_server_root
 
 
@@ -73,28 +69,24 @@ logging:
     assert settings.logging.level == "WARNING"
 
 
-def test_default_server_version_resolves_via_distribution_map() -> None:
-    """Version lookup uses packages_distributions() to find the owning distribution."""
-    with (
-        patch(
-            "mcp_server.config.settings.metadata.packages_distributions",
-            return_value={"mcp_server": ["some-dist"]},
-        ),
-        patch(
-            "mcp_server.config.settings.metadata.version",
-            return_value="3.1.0",
-        ),
-    ):
-        assert _default_server_version() == "3.1.0"
-
-
-def test_default_server_version_raises_when_no_package_metadata_exists() -> None:
-    """Missing package metadata should fall back to release manifest or default version."""
+@pytest.mark.parametrize("installed_version", ["3.1.0", "1.0.0"])
+def test_server_version_uses_installed_package(installed_version: str) -> None:
+    """The public version property reports the installed package version."""
     with patch(
         "mcp_server.config.settings.metadata.version",
-        side_effect=metadata.PackageNotFoundError,
+        return_value=installed_version,
     ):
-        assert _default_server_version() == "3.0.0"
+        assert ServerSettings().version == installed_version
+
+
+@pytest.mark.parametrize("error_type", [metadata.PackageNotFoundError, RuntimeError])
+def test_server_version_propagates_metadata_errors(error_type: type[Exception]) -> None:
+    """Missing or defective installation metadata remains an explicit failure."""
+    with (
+        patch("mcp_server.config.settings.metadata.version", side_effect=error_type),
+        pytest.raises(error_type),
+    ):
+        _ = ServerSettings().version
 
 
 # ---------------------------------------------------------------------------

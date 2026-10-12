@@ -24,33 +24,6 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
-def _default_server_version() -> str:
-    """Resolve server version from package metadata or release_manifest.yaml."""
-    try:
-        ver = metadata.version("phase-gate-mcp")
-        if ver and ver != "1.0.0":
-            return ver
-    except Exception:
-        pass
-
-    manifest_path = (
-        Path(__file__).resolve().parent.parent.parent
-        / ".pgmcp"
-        / "config"
-        / "release_manifest.yaml"
-    )
-    if manifest_path.exists():
-        try:
-            with open(manifest_path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-                if isinstance(data, dict) and "version" in data:
-                    return str(data["version"])
-        except Exception:
-            pass
-
-    return "3.0.0"
-
-
 class LogSettings(BaseModel):
     """Logging configuration settings."""
 
@@ -93,7 +66,7 @@ class ServerSettings(BaseModel):
     @property
     def version(self) -> str:
         """Resolve server version from installed package metadata (read-only)."""
-        return _default_server_version()
+        return metadata.version("phase-gate-mcp")
 
 
 class GitHubSettings(BaseModel):
