@@ -1,18 +1,18 @@
 <!-- pgmcp:v1 id=research pv=1.0.0 pf=MBj0BrCWRmEii6mk sf=KoFPQ3-cAAWFeesb -->
 
-# Issue 319 — native policy findings and optional quality configuration assets
+# Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** RESEARCH — OWNER DECISION PENDING  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-12
 
 ## Purpose
 
-Bound the native lint repairs and identify the smallest clean optional asset-distribution route before implementation.
+Bound native lint repairs and investigate deliberate workspace quality-tool setup and missing-configuration refusal before implementation.
 
 ## Scope In
 
-Owner-authorized native Ruff activation; all 179 current diagnostics and affected consumers; consolidated #47 exception boundary assessment; actual settings of all nine bundled tools; optional asset/source ownership and v3.1.0 release preparation.
+Owner-authorized native Ruff activation; all 179 current diagnostics and affected consumers; consolidated #47 exception boundary assessment; actual settings of all nine bundled tools; owner-reopened distribution strategy, missing-native-config behavior and installation guidance. The issue's release target remains provisional pending the revised strategy.
 
 ## Scope Out
 
@@ -125,7 +125,9 @@ AST inspection of all 134 reported attribute accesses yields 40 calls, 27 writes
 
 There are nine adapters; Coverage is listed separately as an existing dependency/config subsection of Pytest, not a tenth adapter. pytest-xdist 3.8.0 and pytest-asyncio 1.3.0 are pinned prerequisites. PGMCP checks/tests/fixes configs, schema files and adapter dependency manifests already ship; they are distinct from missing native project-config reference files.
 
-### Placement and source-ownership choices
+### Placement and source-ownership choices — superseded proposal
+
+The owner reopened this route after reviewing its extraction/maintenance cost. These alternatives remain research history; separate asset references and TOML builders are not the current recommended execution strategy. See the owner-revision findings below.
 
 | Option | Architecture / cost | Owner adoption |
 | --- | --- | --- |
@@ -148,30 +150,51 @@ Affected consumers: native lint/editor/branch checks; existing tests/helpers; pa
 
 During repair, adapt the narrow existing tests proving each public behavior and run relevant Python gates per file type. Reuse packaging/CLI/init fixtures for faithful section export and installed optional-file preservation; prove exact wheel/sdist/installed references using actual artifacts. Keep full configured verification in Validation. No Research full suite was run, no production/test repair is implemented yet, and 179 remains the intentionally failing baseline.
 
-### Recommended strategy awaiting remaining owner decision
+### Owner revision: deliberate setup and missing native configuration
 
-Retain the activated native rules; narrow real silent-fallback defects, preserve necessary failure/cleanup contracts, prefer public behavior and constructor injection, remove proven orphan test setup/escape access, and use only locally justified exceptions. For distribution, prefer separate optional assets and a bounded build-time TOML section export. The latter two choices are proposals, not owner-approved placement/extraction design.
+On 2026-10-12 the owner questioned distributing project-derived examples and maintaining tool/version-specific export builders. The requested research direction is deliberate workspace setup, clear installation guidance, and quality calls that refuse absent required native configuration; server-startup refusal is a deeper alternative to assess, not an approved implementation. Do not build the earlier asset exporter while this decision is reopened.
+
+The current setup/bootstrap guides mention native prerequisite provisioning but do not provide a complete explicit task for native quality policy: source/test roots, Python version/platform, rule/severity choices, discovery/exclusions, CLI-versus-file policy and an actual initial check. Expand the existing installation guide at that boundary rather than scattering rules across agent files/contracts. Document per-tool differences and existing owner-config precedence; no one-size root-file copy should be presented as completed setup.
+
+### Live missing-config probes through existing tools
+
+Verified the three named .pgmcp/temp/issue319-missing-native.{toml,json,cjs} paths were absent; no probe file was created or any real config moved. Independent calls used scope='targets', checks=[one binding], and preserved relevant severity/offline flags. Code target was mcp_server/managers/state_version_validator.py; Markdown target was this research document. Each timeout was90 seconds.
+
+| Tool | Native argument supplied | Observed public outcome |
+| --- | --- | --- |
+| Ruff0.15.6 | --config .pgmcp/temp/issue319-missing-native.toml | Check unavailable / unsupported_input; native invalid-value diagnostic names the missing --config argument. No passed check. |
+| Mypy1.19.1 | --config-file .pgmcp/temp/issue319-missing-native.toml | Check unavailable / invalid_configuration; Cannot find config file. |
+| Pyright1.1.408 | --project .pgmcp/temp/issue319-missing-native.json, --level warning --warnings | Check unavailable / invalid_configuration; native config-read message names cwd rather than the requested path. This is not proof of a precise missing-path presentation. |
+| Lychee0.24.2 | --config .pgmcp/temp/issue319-missing-native.toml, --offline --cache=false --include-fragments | Check unavailable / invalid_configuration; file-not-found from existing native-config inspection. |
+| Pytest9.0.2 | run_tests(scope='targets', targets=['tests/mcp_server/unit/test_cli.py'], tests=['python_tests'], args={'python_tests':['-c','.pgmcp/temp/issue319-missing-native.toml','--collect-only','-q']}, timeout_seconds=90) | Test result failed; native child exit1 and FileNotFoundError traceback. It stopped in config loading before test collection; no test assertions ran. This is refusal, but not a tidy typed configuration-unavailable result. |
+
+The four check operations have success=true with run_status=incomplete and an unavailable row: successful orchestration must not be mistaken for a passed native check. The adapter process captures exit3; native dependency identities are explicit. Pytest's observed response is materially different and should be kept visible. Commitlint --config support is source/official-CLI evidence only, not live-probed here because its public check is content-only. Syntax tools and CLI-only/schema-driven tools still need their own applicability decision; a native-file requirement cannot honestly apply to every tool.
+
+### Configuration policy versus unconditional enforcement
+
+Existing check_selection.py:371 and test_service.py:290 replace a binding's default_args when the caller supplies args. Therefore explicit native file flags in default_args are a useful configured-call policy but are bypassable by ordinary argument replacement. They are not an unconditional file-prerequisite contract. Requires_file in adapter manifests describes content-input scratch requirements, not workspace setup; do not repurpose it.
+
+| Route | What it guarantees | Cost / limitation |
+| --- | --- | --- |
+| Installation task plus explicit native flags in configured defaults | Calls using those defaults refuse missing named configs through current native tools. Owner-selected policy and paths stay visible. | Mostly docs/config, but explicit caller args can omit the flags. File presence alone does not certify complete tool sections or correct selection. |
+| Declarative workspace file prerequisites checked before relevant invocation | Can refuse missing owner-declared files even when native args are overridden, without parsing native configuration or hardcoding tool names. | This does not exist today: needs a bounded configuration/execution contract and consistent check/test/fix/content handling. Confirm scope/workflow before designing it. Existence still does not prove that native args consumed the file or that its policy is suitable. |
+| Refuse server startup on native setup omissions | Strong early admission boundary for declared startup prerequisites. | Can prevent health/recovery and unrelated tools from helping finish setup; heavier than call-time refusal. No startup change is recommended or implemented by this research. |
+
+Recommended next decision: keep native policy repairs and make quality-tool setup a concrete owner/agent installation task. Do not ship project-config builders. Decide whether configured defaults plus explicit native arguments are sufficient, or missing-file refusal must hold for every relevant call despite args overrides. If the latter is required, treat it as a small explicit call-time requirement feature with its own approved boundary; do not pretend it is already enforced by configuration. Native tools remain responsible for parsing/policy; PGMCP must not infer resolved config or audit all tool-version defaults.
+
 
 ## Questions
 
-- Approve separate optional release assets plus a narrow build-time export of only the four native TOML tool sections, with an explicit build-only writer dependency? Alternative placements/source strategies are compared above.
-- Confirm the proposed local treatment of necessary boundary/cleanup catches and exclusion of old server archive in both native discovery and branch preselection; explicit target access remains available.
-
-## References
-
-- [Ruff configuration](<https://docs.astral.sh/ruff/configuration/>)
-- [BLE001 semantics](<https://docs.astral.sh/ruff/rules/blind-except/>)
-- [Mypy 1.19.1 config reference](<https://github.com/python/mypy/blob/v1.19.1/docs/source/config_file.rst>)
-- [Python tomllib](<https://docs.python.org/3.13/library/tomllib.html>)
-- [TOML writer option](<https://github.com/hukkin/tomli-w>)
+- Is call-time missing-file refusal required even when the caller replaces native args, or is explicit configured native policy plus installation instructions sufficient?
+- If unconditional refusal is required, approve investigating only owner-declared file prerequisites at the invocation boundary, keeping native parsing/discovery with each tool? Server-startup blocking remains a separate, heavier option.
 
 ## Approved Strategy
 
-Approved by the owner: activate G004/BLE001/SLF001; assess and repair meaningful active problems; ship existing native settings as optional owner-controlled reference assets in a new release. Existing architecture requires public-behavior tests and preserved command/error/cleanup semantics. Updated issue targets v3.1.0. No compatibility bridges, Pylint reintegration or unbounded test expansion. Pending human decision: adapter-package versus separate-assets placement, and whole-project reference versus faithful build-time TOML export/canonical config relocation. Research must not close or enter Implementation until that remaining strategy is settled.
+Confirmed: activate G004/BLE001/SLF001, classify real problems, preserve public failure/cancellation contracts, prefer public-behavior tests and remove only proven orphaned setup/access. The owner has reopened the earlier native-example asset request because specific builders and simplistic adoption are undesirable; no asset placement/export has been approved. Current requested research direction is deliberate native-quality setup, clear existing installation guidance and missing-config refusal. The degree of call-time enforcement versus configured defaults remains a human decision. No startup blocking, execution-contract extension, asset exporter or release/version mutation is authorized by this Research. The issue body still describes the earlier assets scope and requires Coordination reconciliation after the revised strategy is settled.
 
 ## Expected Results
 
-Agreed stricter lint policy passes after justified bounded repairs and exclusions; existing public tool/error/cancellation outcomes remain correct. All actual native-file cases have SSOT-derived packaged references, all CLI/no-file cases are explained, and fresh installation exposes optional references without touching root-native configs. Native args/discovery and template renewal retain their current contracts.
+Agreed stricter lint policy passes after proportionate repairs; existing public tool/error/cancellation outcomes remain correct. New-workspace instructions require deliberate native policy setup and an initial scoped verification. Once selected, missing-file policy must state exactly which calls it protects and how args overrides behave. No accidental adoption, native-config parsing in generic PGMCP, or promise of unconditional enforcement from default arguments alone.
 
 ## Evidence
 
@@ -208,3 +231,4 @@ One authoritative source, faithful derived outputs, inactive placement and expli
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-12 | @imp researcher | Activate authorized native policy, classify current diagnostics and compare bounded optional configuration distribution strategies. |
+| 0.2 | 2026-10-12 | @imp researcher | Reopen native asset/export proposal; document live missing-config refusals, default-argument override boundary and focused workspace setup alternatives. |
