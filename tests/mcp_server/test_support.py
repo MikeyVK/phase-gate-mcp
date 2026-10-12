@@ -72,18 +72,15 @@ def get_default_server_root() -> str:
     """Get the default server root directory name from Settings."""
     from unittest.mock import Mock  # noqa: PLC0415
 
-    try:
-        from mcp_server.config.settings import Settings  # noqa: PLC0415
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
 
-        settings = Settings.from_env()
-        if isinstance(settings, Mock) or isinstance(getattr(settings, "server", None), Mock):
-            return ".pgmcp"
-        val = settings.server.server_root_dir
-        if isinstance(val, Mock):
-            return ".pgmcp"
-        return str(val)
-    except Exception:
+    settings = Settings.from_env()
+    if isinstance(settings, Mock) or isinstance(getattr(settings, "server", None), Mock):
         return ".pgmcp"
+    val = settings.server.server_root_dir
+    if isinstance(val, Mock):
+        return ".pgmcp"
+    return str(val)
 
 
 class _NopGateRunner:

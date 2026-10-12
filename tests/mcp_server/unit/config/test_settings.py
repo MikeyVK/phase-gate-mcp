@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 # Third-party
 import pytest
+import yaml
 from pydantic import ValidationError
 
 # Project modules
@@ -196,26 +197,31 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     assert settings.logging.level == "ERROR"
 
 
-def test_get_default_server_root_resolves_dynamically(
+@pytest.mark.parametrize(
+    ("config_yaml", "expected_root"),
+    [
+        ("{}", ".pgmcp"),
+        ("server:\n  server_root_dir: .custom-test-root\n", ".custom-test-root"),
+        ("server: [", None),
+    ],
+)
+def test_get_default_server_root_loads_settings(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    config_yaml: str,
+    expected_root: str | None,
 ) -> None:
-    """Test that get_default_server_root resolves dynamically."""
+    """The helper respects configured roots and propagates invalid settings."""
+    config_file = tmp_path / "settings.yaml"
+    config_file.write_text(config_yaml, encoding="utf-8")
+    monkeypatch.setenv("PGMCP_CONFIG_PATH", str(config_file))
     monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
 
-    real_exists = Path.exists
-
-    def mock_exists(self: Path) -> bool:
-        if self.name == ".phase-gate":
-            return False
-        return real_exists(self)
-
-    monkeypatch.setattr(Path, "exists", mock_exists)
-
-    # By default, it should be ".pgmcp"
-    assert get_default_server_root() == ".pgmcp"
-
-    # If overridden in the environment, it should dynamically change
-    monkeypatch.setenv("PGMCP_SERVER_PROJECT_DIR", ".custom-test-root")
+    if expected_root is None:
+        with pytest.raises(yaml.YAMLError):
+            get_default_server_root()
+    else:
+        assert get_default_server_root() == expected_root
 
 
 def test_resolved_paths_properties(tmp_path: Path) -> None:

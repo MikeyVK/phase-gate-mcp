@@ -236,6 +236,8 @@ Owner-approved context-loaded repair, 2026-10-12: retain missing-state bootstrap
 
 Owner-approved note-parser repair, 2026-10-12: catch only ValueError while extracting note-format placeholders. Invalid format syntax remains visible through the existing formatting-error output; unexpected parser errors propagate. Do not change format-error presentation or the separate formatting error boundaries. Adapt the existing public note-rendering test, with no new test file.
 
+Owner-approved test-helper repair, 2026-10-12: remove the broad Settings failure fallback in get_default_server_root. Real configuration errors propagate to test setup instead of selecting .pgmcp silently; retain the separate explicit Mock provisions. Adapt the existing root-resolution test to default/custom settings and invalid YAML, without a new test file.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
