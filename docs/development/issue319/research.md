@@ -2,8 +2,8 @@
 
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
-**Status:** RESEARCH — OWNER DECISION PENDING  
-**Version:** 0.3  
+**Status:** APPROVED STRATEGY — COMPACT DESIGN FOR REVIEW  
+**Version:** 0.4  
 **Last Updated:** 2026-10-12
 
 ## Purpose
@@ -163,7 +163,23 @@ Affected consumers: native lint/editor/branch checks; existing tests/helpers; pa
 
 During repair, adapt the narrow existing tests proving each public behavior and run relevant Python gates per file type. Reuse packaging/CLI/init fixtures for faithful section export and installed optional-file preservation; prove exact wheel/sdist/installed references using actual artifacts. Keep full configured verification in Validation. No Research full suite was run, no production/test repair is implemented yet, and 179 remains the intentionally failing baseline.
 
-### Owner revision: deliberate setup and missing native configuration
+### Final owner-approved direction: configuration choice, not effective source
+
+The owner accepts a meaningful choice declaration in checks.yaml/tests.yaml/fixes.yaml and asks for its design within a bounded issue. This supersedes both optional native-config distribution/export and the proposed universal missing-file prerequisite. Record a declared configuration choice, not a claimed resolved native configuration source.
+
+The choice belongs to the owner-authored operation binding. No adapter-package manifest mutation, copied sample files, native-config serializer or startup prerequisite survey is in scope. Existing native args, parsing and discovery remain unchanged. An unselected choice blocks an applicable execution; a selected choice documents intent without proving a particular file was loaded or its policy is correct. Caller argument replacement remains supported and reported by the existing args_source facts.
+
+A nullable/unset state is intentional setup state, not successful execution or legacy fallback. The server must remain available for setup and health/recovery; refusal occurs on relevant use. Syntax/no-config cases receive an explicit not-applicable choice instead of invented files. Package-config routing is not added where packages do not actually provide it.
+
+### Bounded Chore assessment
+
+The active Chore implementation contract permits one coherent code/config/test/docs maintenance change. Retain the existing phase sequence; no new workflow phase or initialize_project recovery is required. A compact design artifact can define the maintenance contract before the normal Research → Implementation review without creating separate Design/Planning phases.
+
+Scope cap: one binding choice contract across the three existing YAML models and the existing selection/content-check/test/fix admission routes; one shared factual refusal vocabulary in existing result envelopes; configured presentation and one setup-guide boundary. Adapter wires/entrypoints, source resolution, native argv semantics, template/phase/state engines and asset compiler remain unchanged. Combined with the already bounded native-lint/test cleanup, this remains a coherent quality-setup maintenance issue.
+
+If design/QA finds a need for a resolved-config engine, native selector rewriting, package-config activation, startup survey, or generalized policy/rollout framework, stop and reconsider workflow/scope with Coordination. Chore is not permission to skip design, targeted behavior evidence or phase-owned full Validation.
+
+### Owner revision: deliberate setup and missing native configuration — historical intermediate direction
 
 On 2026-10-12 the owner questioned distributing project-derived examples and maintaining tool/version-specific export builders. The requested research direction is deliberate workspace setup, clear installation guidance, and quality calls that refuse absent required native configuration; server-startup refusal is a deeper alternative to assess, not an approved implementation. Do not build the earlier asset exporter while this decision is reopened.
 
@@ -183,7 +199,9 @@ Verified the three named .pgmcp/temp/issue319-missing-native.{toml,json,cjs} pat
 
 The four check operations have success=true with run_status=incomplete and an unavailable row: successful orchestration must not be mistaken for a passed native check. The adapter process captures exit3; native dependency identities are explicit. Pytest's observed response is materially different and should be kept visible. Commitlint --config support is source/official-CLI evidence only, not live-probed here because its public check is content-only. Syntax tools and CLI-only/schema-driven tools still need their own applicability decision; a native-file requirement cannot honestly apply to every tool.
 
-### Configuration policy versus unconditional enforcement
+### Configuration policy versus unconditional enforcement — historical alternatives
+
+The final choice gate above supersedes a universal file-presence gate. This comparison explains the trade-off that led to the owner decision; neither missing-file prerequisite nor startup blocking is the selected implementation.
 
 Existing check_selection.py:371 and test_service.py:290 replace a binding's default_args when the caller supplies args. Therefore explicit native file flags in default_args are a useful configured-call policy but are bypassable by ordinary argument replacement. They are not an unconditional file-prerequisite contract. Requires_file in adapter manifests describes content-input scratch requirements, not workspace setup; do not repurpose it.
 
@@ -198,16 +216,15 @@ Recommended next decision: keep native policy repairs and make quality-tool setu
 
 ## Questions
 
-- Is call-time missing-file refusal required even when the caller replaces native args, or is explicit configured native policy plus installation instructions sufficient?
-- If unconditional refusal is required, approve investigating only owner-declared file prerequisites at the invocation boundary, keeping native parsing/discovery with each tool? Server-startup blocking remains a separate, heavier option.
+No remaining owner-level placement/enforcement choice for the selected bounded strategy. Compact design and independent QA must verify the concrete binding/refusal semantics before Implementation. Coordination must replace the issue body's obsolete sample-asset acceptance criteria.
 
 ## Approved Strategy
 
-Confirmed: activate G004/BLE001/SLF001, classify real problems, preserve public failure/cancellation contracts, prefer public-behavior tests and remove only proven orphaned setup/access. The owner has reopened the earlier native-example asset request because specific builders and simplistic adoption are undesirable; no asset placement/export has been approved. Current requested research direction is deliberate native-quality setup, clear existing installation guidance and missing-config refusal. The degree of call-time enforcement versus configured defaults remains a human decision. No startup blocking, execution-contract extension, asset exporter or release/version mutation is authorized by this Research. The issue body still describes the earlier assets scope and requires Coordination reconciliation after the revised strategy is settled.
+Owner-approved final strategy: preserve and repair the activated native lint policy; add a truthful, owner-authored configuration-choice declaration to checks/tests/fixes bindings; refuse relevant use while the choice is unresolved; document deliberate workspace setup. Preserve native argument replacement/discovery and report actual argument origin rather than claiming effective config sources. Syntax and other no-file cases remain legitimate. Public tool inputs and adapter protocols/entrypoints remain intact; any new choice-refusal fact uses the existing result envelopes and configured presentation. Missing/empty choice represents unresolved setup and must not silently continue old execution. Existing owners must acknowledge the chosen policy; do not add a compatibility bridge. No sample/config assets, exporter, native-file existence mandate, package configuration router, startup refusal or broad architecture rewrite. Issue remains Chore only under the scope cap above. The issue's v3.1.0 preparation target is retained provisionally; final release assessment must describe the new acknowledgement requirement and confirm the resulting public contract impact.
 
 ## Expected Results
 
-Agreed stricter lint policy passes after proportionate repairs; existing public tool/error/cancellation outcomes remain correct. New-workspace instructions require deliberate native policy setup and an initial scoped verification. Once selected, missing-file policy must state exactly which calls it protects and how args overrides behave. No accidental adoption, native-config parsing in generic PGMCP, or promise of unconditional enforcement from default arguments alone.
+The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
 
 ## Evidence
 
@@ -228,9 +245,9 @@ The stored native rule extension is consumed without rule-selector arguments; st
 
 Classify each inventory row; adapt meaningful existing public behavior evidence; preserve primary exceptions/failure DTOs and allow only justified local exceptions.
 
-### Optional native samples drift or are silently adopted.
+### A declaration could falsely claim effective native configuration.
 
-One authoritative source, faithful derived outputs, inactive placement and explicit owner adoption; no runtime config injection or root overwrite.
+Use choice/intent vocabulary; preserve args_source facts. No resolved-source claim, native file interpretation or mandatory sample activation. Inspect all invocation routes for the same unresolved-choice guard.
 
 ## Related Documents
 
@@ -246,3 +263,4 @@ One authoritative source, faithful derived outputs, inactive placement and expli
 | 0.1 | 2026-10-12 | @imp researcher | Activate authorized native policy, classify current diagnostics and compare bounded optional configuration distribution strategies. |
 | 0.2 | 2026-10-12 | @imp researcher | Reopen native asset/export proposal; document live missing-config refusals, default-argument override boundary and focused workspace setup alternatives. |
 | 0.3 | 2026-10-12 | @imp researcher | Classify all nine adapters into native-file, conditional/CLI and no-file cases; propose exact invocation requirement and installation scope. |
+| 0.4 | 2026-10-12 | @imp researcher | Capture owner-approved truthful choice gate and cap Chore scope; supersede assets, file-prerequisite and startup-blocking proposals. |
