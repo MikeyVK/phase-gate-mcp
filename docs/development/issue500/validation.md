@@ -2,7 +2,7 @@
 
 # Issue 500 — release and workspace evidence
 
-**Status:** Implementation evidence; final Validation and publication pending  
+**Status:** Validation complete; independent review and publication pending  
 **Version:** 0.1  
 **Last Updated:** 2026-10-12
 
@@ -24,7 +24,7 @@ PyPI, historical runtime repairs, new regression tests, general release infrastr
 
 ## Validation Status
 
-PARTIAL
+PASS
 
 ## Evidence
 
@@ -119,9 +119,16 @@ Reproduction: clean only untracked generated build/ and phase_gate_mcp.egg-info/
 Source binding: all 475 final payload members map to commit `fcde44d2368399b080c82546c899d49b37ae759a`. Comparison against Git blobs found 28 exact byte matches and 447 differences solely from checkout CRLF/LF conversion, with zero content mismatches. Exact wheel/sdist/installed comparisons use the actual checkout bytes; this is not a claim of byte-reproducible builds from raw Git archives. This commit is the reviewed v3 release payload source; subsequent issue evidence/state changes are not packaged.
 
 Final wheel metadata identifies isolated backend `setuptools (84.0.0)`, separately from the build driver's installed setuptools82.0.1. The focused release/report Markdown link selection passed with native configured arguments.
+### Final phase-owned configured suite and branch checks
+
+On reviewed snapshot `d24d8dfb94f03e2c79fee10e0b9c0e4a3d56cef5` (only the Validation state transition was uncommitted), `run_tests(scope='configured', timeout_seconds=1200)` retained the native Pytest arguments and reported **2923 passed, 1 skipped, 1 xpassed, 269 warnings in 383.39s**, native exit0. Python3.13.7, Pytest9.0.2, eight xdist workers and tests/mcp_server. No coverage flags, exclusions or new tests were added. The existing skip/XPASS and warning categories are reported as observed.
+
+`run_checks(scope='branch', timeout_seconds=900)` used configured profile python_review and passed python_format, python_lint, python_types and python_pyright. Both complete result DTOs were read as needed: test header plus final native summary/capture fields, and the entire 8597-character branch DTO. Supplemental receipts: tests3cc54103d74e44019f0eec6c94c8083a; checks59cd536171a342ff9e1779aafa029d47. They supplement these durable invocation/outcome facts.
+
+The earlier full #465 result is no longer used as final #500 evidence. Source changes are complete; remaining edits concern unbundled evidence, release records and workflow state. Independent QA owns the phase verdict.
 ## Caveats
 
-- Final configured tests/branch gates and independent phase review remain pending; prior #465 full run is not presented as current #500 evidence.
+- Final configured tests and branch gates passed on the reviewed snapshot; independent phase review and actual publication remain pending.
 - Artifact payload is bound to fcde44d2368399b080c82546c899d49b37ae759a; actual GitHub publication and online issue500 body update remain pending.
 - ServerInfo.version reports the SDK version; PGMCP CLI/distribution metadata identify the release. Existing SchemaAttachment.schema warning does not block proven routes.
 
