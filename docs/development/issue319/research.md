@@ -242,6 +242,8 @@ Owner-approved Git test-helper repair, 2026-10-12: remove the merge-base failure
 
 Owner-approved unused-helper cleanup, 2026-10-12: delete _path_in_head_tree after repository search confirms no production/test callers. Do not add behavior or tests for unused code. This completes the eight fallback/classification items; protective exception boundaries and archive selection remain separate owner decisions.
 
+Owner-approved CLI boundary exception, 2026-10-12: retain the broad --init catch with a local, justified BLE001 suppression. It reports the original initialization failure on stderr and exits 1; it does not resume execution or invent fallback data. Do not widen this approval to other catch sites or add tests for the annotation.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.

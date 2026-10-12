@@ -128,7 +128,7 @@ def main(settings: Settings | None = None) -> None:
                 file=sys.stdout,
             )
             sys.exit(0)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 -- CLI boundary reports init failure and exits 1.
             print(f"Error initializing server root: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(1)
 
