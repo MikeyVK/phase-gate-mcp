@@ -16,13 +16,13 @@ artifacts:
       - "docs/reference"
       - "docs/manuals"
   issue:
-    default_root: ".github/ISSUE_TEMPLATE"
+    default_root: ".pgmcp/temp/artifacts"
   planning:
     default_root: "docs/development"
     additional_roots:
       - "docs"
   pr:
-    default_root: ".github/PULL_REQUEST_TEMPLATE"
+    default_root: ".pgmcp/temp/artifacts"
   pytest_integration_test:
     default_root: "tests/mcp_server/integration"
   pytest_unit_test:

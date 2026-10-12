@@ -103,7 +103,7 @@ Run this read-only selection from the workspace root; normalize separators befor
 $normal = @('README.md', 'CHANGELOG.md', 'AGENTS.md',
     'docs/development/schema-template-maintenance.md',
     'docs/development/MAINTENANCE_SCRIPTS.md',
-    'docs/development/issue460/deferred-work.md',
+    'docs/development/archive/issue460/deferred-work.md',
     'mcp_server/resources/cache_reading.md') + @(
     rg --files docs/setup docs/reference docs/manuals docs/coding_standards -g '*.md'
 )

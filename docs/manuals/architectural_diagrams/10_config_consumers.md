@@ -57,7 +57,7 @@ independent owners and are outside this scaffolding/configuration seam.
 
 - [Config loader](../../../mcp_server/config/loader.py)
 - [Server bootstrap composition](../../../mcp_server/bootstrap.py)
-- [Suite-resolution design](../../development/issue460/design-suite-resolution.md)
-- [Configuration and execution design](../../development/issue460/design-execution-adapters.md)
+- [Suite-resolution design](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/design-suite-resolution.md)
+- [Configuration and execution design](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/design-execution-adapters.md)
 - [Scaffolding subsystem](09_scaffolding_subsystem.md)
 - [Config layer overview](05_config_layer.md)

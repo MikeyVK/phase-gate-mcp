@@ -1,8 +1,31 @@
 # Workspace Upgrade Guide
 
-**Purpose:** Owner-led initialization and template renewal for an existing PGMCP server root.
+**Purpose:** Owner-led package migration and template renewal for an existing PGMCP server root.
 
-This guide describes the behavior of the current CLI and renewal implementation. The project release remains **2.0.0**; template-suite renewal is a separate operation and does not imply a new package release.
+This guide covers **PGMCP 3.0.0**. Package installation, owner-managed configuration
+and managed template-suite renewal are distinct operations. Use the reviewed artifacts
+and version-specific notes from [GitHub Releases](https://github.com/MikeyVK/phase-gate-mcp/releases).
+
+## Install the intended package
+
+Install the reviewed release wheel in the Python environment used by the MCP launch
+configuration. For a downloaded 3.0.0 wheel, for example:
+
+```powershell
+python -m pip install --upgrade ./phase_gate_mcp-3.0.0-py3-none-any.whl
+pgmcp --version
+```
+
+Use that environment's executable rather than an unrelated global `pgmcp`. A version
+response confirms the invoked package; it does not prove workspace migration or healthy
+server admission. Use the GitHub release assets; this example does not assume a PyPI
+release. Source distributions follow the existing
+[release assets procedure](../reference/release-assets-procedure.md).
+
+PGMCP does not install native adapter dependencies. Provision each selected adapter's
+declared executable/version through the environment's chosen installation process; see
+the [native adapter contract](../reference/execution-adapters.md). Workspace adapters
+and their configuration remain owner-managed.
 
 ## Initialize a new server root
 
@@ -12,9 +35,26 @@ Set the workspace and server-root configuration for the intended repository, the
 pgmcp --init
 ```
 
-Initialization copies the packaged assets to a previously absent server root and establishes its initial managed template state. If the configured server root already exists, `--init` refuses and exits with code 1. It does not merge with, replace, or repair an existing root. Normal server startup also requires the root to exist.
+Initialization copies the packaged assets to a previously absent resolved server root
+and establishes its initial managed template state. If that root already exists,
+`--init` refuses and exits with code 1. It does not merge with, replace or repair an
+existing root. Normal server startup also requires the root to exist.
 
-PGMCP does not install Python or native dependencies. Provision the package and its dependencies using your environment's chosen installation process. Workspace adapters in the server root are owner-managed; do not treat them as package-managed assets.
+## Reconcile an existing v2 workspace
+
+Preserve owner changes and explicitly reconcile the v3 configuration and public tool
+contracts before using the new server. Compare the shipped defaults with the effective
+owner configuration rather than copying over populated roots. In particular, migrate
+artifact/package declarations, execution bindings and adapter capabilities, branch
+check `configured_targets` policies, and workflow/enforcement contracts. Use the
+[server configuration reference](../reference/server-configuration.md) and rediscover
+the exposed tool schemas; old aliases and removed inputs have no compatibility bridge.
+
+`PGMCP_CONFIG_ROOT` selects the effective owner-managed configuration root;
+`PGMCP_TEMPLATE_ROOT` selects the active suite when configured. Existing or external
+roots do not become package-owned through installation. Host agent instructions are
+separate distributable assets: review and deploy the selected host's files explicitly.
+Do not use `--init` to migrate an existing root.
 
 ## Renew an existing managed template suite
 
@@ -24,31 +64,51 @@ Run renewal from the workspace whose configured server root should be renewed:
 pgmcp --upgrade
 ```
 
-Renewal stages and validates a candidate, compares it with the active suite and recorded template checkpoint, and reports the resulting changes. It does not perform an external rollout or overwrite the external configuration root. Preserve and review owner-managed configuration and adapters as part of your change process.
+Renewal stages and validates a candidate, compares it with the active suite and recorded
+template checkpoint, and reports the resulting changes. It does not refresh owner-managed
+configuration or workspace adapters and does not perform an external rollout.
 
 ### When a trustworthy template baseline is missing
 
-If no checkpoint exists and the complete active suite cannot be established as equal to the validated candidate, renewal reports `checkpoint_required`, returns exit code `2`, leaves the active suite unchanged, and retains the staged candidate. An equal active suite can establish its initial checkpoint automatically; follow the actual CLI outcome. Exit code 2 means owner action is required; it is not a successful activation or an ordinary execution failure.
+If no checkpoint exists and the complete active suite cannot be established as equal
+to the validated candidate, renewal reports `checkpoint_required`, returns exit code
+`2`, leaves the active suite unchanged and retains the staged candidate. An equal
+active suite can establish its initial checkpoint automatically; follow the actual CLI
+outcome. Exit code 2 requires owner action and does not claim successful activation.
 
-After reviewing the actual local suite and the staged candidate, choose one explicit action:
+After reviewing the local suite and staged candidate, choose one explicit action:
 
-- Accept the current candidate as the adopted baseline, without replacing suite contents:
+- Reconcile the complete local suite with the candidate, then accept the adopted baseline
+  without replacing its contents:
   ```powershell
   pgmcp --upgrade --accept-template-baseline
   ```
-- Replace the complete managed suite with the verified candidate. This action creates a backup before activation:
+- Replace the complete managed suite with the verified candidate after reviewing owner
+  changes. This action creates a verified backup before activation:
   ```powershell
   pgmcp --upgrade --force-template-upgrade
   ```
 
-Use baseline acceptance only after reconciling the local templates with the candidate. Force renewal intentionally replaces the managed template suite; review owner changes and keep the generated backup according to your recovery policy. Do not infer a trustworthy checkpoint from legacy version markers or registries.
+Keep the backup according to your recovery policy. Do not infer a trustworthy checkpoint
+from legacy version markers or registries. For an external template root, its owner
+performs the required migration and checkpoint decision; force renewal does not imply
+authority to replace that root.
 
-### After renewal
+### Restart and verify
 
-When the active suite changes, restart any running PGMCP server so it loads the new suite. If renewal reports conflicts or another corrective action, follow the exact action printed by the CLI and review the affected component before resolving it. A renewal that leaves the active suite unchanged does not require a restart.
+Restart the MCP server after package installation, an active suite change or a change
+to startup-loaded configuration. Reconnect or refresh the MCP client so it discovers
+the new tool contracts. A launch-environment change may require closing and relaunching
+the client so the proxy and child server inherit the new settings.
+
+Inspect `health_check` after restart. If startup is rejected, use its diagnosis to
+repair the cause, then request another restart. A restart acknowledgement alone is
+not healthy-admission evidence. Follow any exact corrective action reported by renewal;
+an unchanged suite alone does not require a restart.
 
 ## Related documentation
 
 - [Setup Guide](README.md) — manual IDE and workspace setup.
 - [Agentic Bootstrap Guide](agentic-bootstrap.md) — agent-assisted bootstrap.
-- [Server Configuration](../reference/server-configuration.md) — configuration parameters.
+- [Server Configuration](../reference/server-configuration.md) — effective roots and declarations.
+- [Repository changelog](https://github.com/MikeyVK/phase-gate-mcp/blob/main/CHANGELOG.md) — release preparation and breaking changes.

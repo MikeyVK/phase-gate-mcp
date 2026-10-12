@@ -155,7 +155,7 @@ tool_timeout_sec = 1800
 - For the required full native-configured suite, use `run_tests(scope="configured", timeout_seconds=1200)`. Keep native execution arguments unchanged.
 - The client window covers the complete MCP call, including adapter execution, bounded stopping and result delivery. Account for all selected bindings when choosing per-call budgets.
 - Do not partition a required full run solely because its known workload exceeds a short default timeout. A timed-out or incomplete run remains incomplete evidence.
-- Rationale: the client previously stopped waiting before the full-suite result could be delivered. The owner approved a 1800-second client window and a 1200-second full-test execution budget on 2026-10-04, superseding the [issue460 300-second/partition decision](../development/issue460/validation.md#owner-decision--client-timeout-2026-09-26). Neither setting promises completion of an arbitrarily long run.
+- Rationale: the client previously stopped waiting before the full-suite result could be delivered. The owner approved a 1800-second client window and a 1200-second full-test execution budget on 2026-10-04, superseding the [issue460 300-second/partition decision](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/validation.md#owner-decision--client-timeout-2026-09-26). Neither setting promises completion of an arbitrarily long run.
 
 This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. On every host using main, apply this policy to the local connection and activate it. A Git merge cannot update or activate a Git-ignored client configuration; retain existing machine paths and secrets.
 

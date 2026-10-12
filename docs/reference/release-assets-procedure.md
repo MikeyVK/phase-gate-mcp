@@ -3,8 +3,8 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.1  
-**Last Updated:** 2026-10-07
+**Version:** 1.2  
+**Last Updated:** 2026-10-11
 
 ---
 
@@ -118,6 +118,68 @@ During the Python wheel compilation step:
 3. It copies specified paths from the repository sources to the subdirectories under `mcp_server/assets/`.
 4. The `pyproject.toml` file bundles `mcp_server/assets/` and `mcp_server/bundled_adapters/` via `package-data`, including nested files and dotfiles, resulting in a clean standalone wheel.
 
+### 3.1 Prepare reviewable release artifacts
+
+GitHub Releases is the selected publication destination for 1.0.0, 2.0.0 and 3.0.0.
+Prepare a wheel and source distribution (sdist) for each version. PyPI publication
+is outside this procedure's approved scope. Run the existing
+`scripts/build_package.py` assembly before building; the sdist must retain the
+assembled assets so it can rebuild a complete wheel.
+
+Reconstruct notes from the selected Git revision, merged PRs and durable issue
+evidence. The mixed `docs/development/` inventory is not a release-change source
+of truth. State breaking contracts, native prerequisites, owner migration and known
+limits. For v3, record the final source SHA; prepare notes and artifact identities
+for review before requesting publication approval.
+
+### 3.2 Reconstruct the historical releases
+
+| Release | Canonical source | Source date |
+|---------|------------------|-------------|
+| 1.0.0 | `3bfcef80fa97303d2b51738005b022edbcb0afbd`, [PR #426](https://github.com/MikeyVK/phase-gate-mcp/pull/426) | 2026-07-08 |
+| 2.0.0 | `ee32667ca95bf17ffb4ecd59062ef8cbed930e0b`, [PR #441](https://github.com/MikeyVK/phase-gate-mcp/pull/441) | 2026-07-22 |
+
+Build in isolated source copies. Preserve the historical runtime and manifest-mapped
+asset contents. The sole approved historical packaging correction is to include
+declared hidden assets in `pyproject.toml` through `assets/**/*`,
+`assets/**/.*` and `assets/**/.github/**/*`. Record this overlay; do not insert
+later runtime, templates, configuration or agent assets.
+
+Historical `mcp>=1` declarations admit today's incompatible MCP 2.3 API. The
+bounded historical installation proof uses an explicit `mcp==1.25.0` environment
+constraint alongside the exact wheel, preserving its original dependency metadata
+and runtime. Record the resolved dependencies and constraint with the evidence.
+Identify the PGMCP release through installed distribution metadata and CLI output;
+the old MCP handshake's `serverInfo.version` reports SDK version `1.25.0`.
+
+Keep historical source dates separate from present reconstruction and publication
+dates. GitHub generates source archives from the tagged commit; reconstructed wheel
+and sdist assets containing the packaging overlay must be described explicitly.
+They are not the original historical binaries or an unmodified tag-source build.
+
+### 3.3 Verify artifacts and obtain publication approval
+
+Record each artifact's filename, SHA-256, source SHA, reconstruction/build date,
+toolchain, dependency constraints and any overlay. Verify the exact wheel and sdist
+against the manifest, including hidden files; rebuild a wheel from the sdist and
+check its payload. In isolated installations, record installed module origins,
+asset/catalog parity, CLI/package version, fresh initialization and startup/MCP
+handshake. For v3 also record managed and external renewal outcomes, checkpoint and
+backup behavior, and owner-config preservation. A test-built candidate does not
+substitute for evidence about the files offered for download.
+
+Keep exact invocations, outcomes and limitations in durable validation evidence.
+Stop on missing assets, failed installation/admission/startup, incompatible
+dependencies or owner-root overwrite. No unperformed v3 outcome is implied by this
+procedure. The approved boundaries are recorded in the
+[#500 Research artifact](https://github.com/MikeyVK/phase-gate-mcp/blob/0b228c336b6e8413327b84f15acf1f0fb2280c43/docs/development/issue500/research.md);
+historical issue reports are intentionally not installed package assets.
+
+Creating tags, publishing releases, uploading assets and external rollout require
+separate human approval of the reviewed notes, exact source SHAs, artifact hashes
+and concrete execution procedure. Select the intended latest release explicitly
+when publishing historical versions.
+
 ---
 
 ## 4. Bootstrapping and renewal
@@ -184,3 +246,4 @@ part of this procedure.
 | 0.1 | 2026-07-05 | Agent | Initial draft |
 | 1.0.0 | 2026-07-08 | Agent | Document build automation, manifest paths, and schema matching implementation #420 |
 | 1.1 | 2026-10-07 | @imp documenter | Include the active template maintenance guide as one asset and connect package review to distribution without changing activation behavior. |
+| 1.2 | 2026-10-11 | @imp documenter | Define bounded GitHub release preparation, historical reconstruction provenance, exact-artifact verification and separate publication approval. |

@@ -8,6 +8,7 @@ Tests for CLI.
 
 # Standard library
 import contextlib
+from importlib import metadata
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
 
@@ -289,14 +290,18 @@ def test_version_consistency() -> None:
     pyproject_path = repo_root / "pyproject.toml"
     assert pyproject_path.exists()
     pyproject_text = pyproject_path.read_text(encoding="utf-8")
-    assert 'version = "2.0.0"' in pyproject_text
+    assert 'version = "3.0.0"' in pyproject_text
 
     # 2. release_manifest.yaml
     manifest_path = repo_root / ".pgmcp" / "config" / "release_manifest.yaml"
     assert manifest_path.exists()
     manifest_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    assert manifest_data.get("version") == "2.0.0"
+    assert manifest_data.get("version") == "3.0.0"
 
-    # 3. Settings default version
-    settings = Settings()
-    assert settings.server.version == "2.0.0"
+    # Repository parity observes the manifest fallback, not the host installation.
+    with patch(
+        "mcp_server.config.settings.metadata.version",
+        side_effect=metadata.PackageNotFoundError,
+    ):
+        settings = Settings()
+        assert settings.server.version == "3.0.0"
