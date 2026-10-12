@@ -108,7 +108,9 @@ AST inspection of all 134 reported attribute accesses yields 40 calls, 27 writes
 - The autouse conftest fixture resets CreateBranchInput._git_config, but that field no longer exists in the active input model. This is orphaned test maintenance, not a real config-singleton dependency.
 - The sole production diagnostic is ToolErrorHandlerDecorator._tool unwrapping inner._inner_tool. Repository consumer search finds only seven getattr(...,"_tool",...) uses in the registration integration test; no active production consumer. The public tool name/schema suffice for registration assertions. Removing this test-driven escape property and adapting those assertions is smaller than adding a general wrapper interface. The seven reflection consumers do not themselves trigger SLF001; the inventory therefore includes them explicitly.
 
-### Native configuration inventory and proposed requirement scope
+### Native configuration inventory and proposed requirement scope — superseded file-gate proposal
+
+The actual nine-tool inventory remains current. Its mandatory-file recommendations and proposed scope-lock bullets are historical intermediate proposals, superseded by the final configuration-choice strategy below and design.md.
 
 All nine current adapters were rechecked against their native invocations and workspace bindings. Reading native configuration is already supported; unconditional refusal on absence is a separate policy, not an existing guarantee.
 
@@ -151,13 +153,17 @@ Source ownership is a separate choice. Shipping the whole root pyproject is simp
 
 The build script currently copies files/directories; it cannot extract TOML sections. Python tomllib only reads TOML. No TOML writer is currently installed in the active development environment. A library-based export needs an explicit build-only serializer prerequisite, faithful nested/array-table handling and parsed source/output parity; do not introduce a runtime dependency or a hand-written general TOML parser. Output placement and this bounded build addition still need owner agreement.
 
-### Initialization, renewal and release boundaries
+### Initialization, renewal and release boundaries — packaging facts and superseded asset proposal
+
+The current init/renewal mechanisms described here remain source facts. Proposed native-reference distribution in this section is not part of the final strategy.
 
 Fresh --init rejects an existing server root before copying all package/assets into a new root. Native references there are inactive until owner adoption; no new root pyproject/Pyright/Commitlint file should be created implicitly. Existing --upgrade selects package/assets/template_suite only: it will NOT refresh the proposed native-reference folder. New installed distributions can still supply current references for manual adoption. Do not quietly broaden renewal or overwrite workspace files.
 
 The updated issue targets v3.1.0 for additive optional assets and compatible repairs. Research does not change version values/build artifacts or authorize publication. Published v3.0.0 stays immutable. If maintaining the requested behavior requires a public contract change or a new general mechanism, reopen the scope/workflow decision instead of calling it mechanical.
 
-### Consumer and verification boundary
+### Consumer and verification boundary — earlier asset proposal
+
+The final affected surfaces and evidence boundary are defined by the approved choice strategy and compact design; export/installed-reference obligations below are superseded.
 
 Affected consumers: native lint/editor/branch checks; existing tests/helpers; packaging script/manifest and build prerequisites; installed asset inventory; fresh-init copy; optional owner adoption; setup/release notes and existing version parity assertions. Unaffected: execution DTOs, generic selection algorithm, adapter entrypoints/protocols, tool catalog, phase/state/planning policies, quality preflight selection, template contracts and normal template-only renewal.
 
@@ -264,3 +270,4 @@ Use choice/intent vocabulary; preserve args_source facts. No resolved-source cla
 | 0.2 | 2026-10-12 | @imp researcher | Reopen native asset/export proposal; document live missing-config refusals, default-argument override boundary and focused workspace setup alternatives. |
 | 0.3 | 2026-10-12 | @imp researcher | Classify all nine adapters into native-file, conditional/CLI and no-file cases; propose exact invocation requirement and installation scope. |
 | 0.4 | 2026-10-12 | @imp researcher | Capture owner-approved truthful choice gate and cap Chore scope; supersede assets, file-prerequisite and startup-blocking proposals. |
+
