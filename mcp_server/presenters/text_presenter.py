@@ -425,7 +425,7 @@ class TextPresenter(ITextPresenter):
                     for _, field_name, _, _ in formatter.parse(found_template):
                         if field_name is not None:
                             placeholders.append(field_name.split(".")[0].split("[")[0])
-                except Exception:
+                except ValueError:
                     pass
 
                 format_dict = {}

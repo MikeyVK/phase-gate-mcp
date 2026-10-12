@@ -14,6 +14,7 @@
 # Standard library
 import json
 from typing import Any, ClassVar
+from unittest.mock import patch
 
 # Third-party
 import pytest
@@ -204,18 +205,44 @@ class TestTextPresenter:
 
         assert text == "📋 No model success message"
 
-    def test_present_text_with_notes(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting with operation notes."""
+    @pytest.mark.parametrize(
+        ("template", "parse_error"),
+        [
+            ("Try {action}", None),
+            ("Try {action", None),
+            ("Try {action}", RuntimeError("parser failure")),
+        ],
+    )
+    def test_present_notes_handles_format_syntax(
+        self,
+        mock_yaml_config: dict[str, Any],
+        template: str,
+        parse_error: Exception | None,
+    ) -> None:
+        """Note syntax errors remain visible; unexpected parser faults propagate."""
+        mock_yaml_config["global"]["notes"]["templates"]["suggestions"]["try_this"] = template
         presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, result="Done")
-        notes = [
-            Note(key="try_this", params={"action": "re-running the test"}),
-        ]
+        notes = [Note(key="try_this", params={"action": "re-running the test"})]
 
-        text = presenter.present_text(tool_name="dummy_tool", success=True, data=dto, notes=notes)
+        if parse_error is not None:
+            with (
+                patch(
+                    "mcp_server.presenters.text_presenter.SafeNoneFormatter.parse",
+                    side_effect=parse_error,
+                ),
+                pytest.raises(type(parse_error)) as raised,
+            ):
+                presenter.present_notes("dummy_tool", notes)
+            assert raised.value is parse_error
+            return
 
+        text = presenter.present_notes("dummy_tool", notes)
+        assert text is not None
         assert "💡 Suggestions" in text
-        assert "Try re-running the test" in text
+        if template == "Try {action":
+            assert "Format error:" in text
+        else:
+            assert "Try re-running the test" in text
 
     def test_present_text_fallback_run_id_none_validation_error(
         self, mock_yaml_config: dict[str, Any]

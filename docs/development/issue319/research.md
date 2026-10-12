@@ -234,6 +234,8 @@ Owner-approved phase-readiness repair, 2026-10-12: retain the phase-policy rejec
 
 Owner-approved context-loaded repair, 2026-10-12: retain missing-state bootstrap and issue-mismatch bypasses, but remove the catch that suppresses other state-read/issue-extraction failures before consulting the context-loaded flag. Those failures propagate unchanged even when the flag is true. The context cache, reset lifecycle, configured exemptions and presentation remain unchanged. Repair invalid existing state fixtures and adapt one existing public gate test.
 
+Owner-approved note-parser repair, 2026-10-12: catch only ValueError while extracting note-format placeholders. Invalid format syntax remains visible through the existing formatting-error output; unexpected parser errors propagate. Do not change format-error presentation or the separate formatting error boundaries. Adapt the existing public note-rendering test, with no new test file.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
