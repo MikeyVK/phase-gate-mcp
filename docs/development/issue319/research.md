@@ -3,7 +3,7 @@
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** RESEARCH — OWNER DECISION PENDING  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-12
 
 ## Purpose
@@ -108,22 +108,35 @@ AST inspection of all 134 reported attribute accesses yields 40 calls, 27 writes
 - The autouse conftest fixture resets CreateBranchInput._git_config, but that field no longer exists in the active input model. This is orphaned test maintenance, not a real config-singleton dependency.
 - The sole production diagnostic is ToolErrorHandlerDecorator._tool unwrapping inner._inner_tool. Repository consumer search finds only seven getattr(...,"_tool",...) uses in the registration integration test; no active production consumer. The public tool name/schema suffice for registration assertions. Removing this test-driven escape property and adapting those assertions is smaller than adding a general wrapper interface. The seven reflection consumers do not themselves trigger SLF001; the inventory therefore includes them explicitly.
 
-### Native configuration inventory: all bundled quality tools
+### Native configuration inventory and proposed requirement scope
 
-| Tool / admitted version | Actual source | Distribution implications |
-| --- | --- | --- |
-| Ruff 0.15.6 | pyproject.toml tool.ruff, including new lint rules | Export nested native values and test exceptions; py311, length 100 and exclusions are workspace policy. |
-| Mypy 1.19.1 | pyproject.toml tool.mypy, including overrides array | Strict production mcp_server selection and tests.* override are repository-specific; preserve shape. |
-| Pyright 1.1.408 | pyrightconfig.json; checks.yaml native --level warning --warnings | Preserve explicit severities/exceptions; Windows, mcp_server/backend/tests roots require owner adjustment. |
-| Pytest 9.0.2 | pyproject.toml tool.pytest.ini_options | Test roots, markers, asyncio strict and -n auto depend on the workspace and installed plugins. |
-| Coverage 7.13.5 / pytest-cov 7.0.0 | pyproject.toml tool.coverage | Part of the Pytest package family; source=mcp_server, branch=true, threshold 90. Coverage stays opt-in, not newly enforced. |
-| Commitlint 21.2.2 / parser 10.4.0 | commitlint.config.cjs | Simple parser preset, defaultIgnores=false and two required-field rules; no pgmcp import. Package prerequisites remain separately declared. |
-| Lychee 0.24.2 | checks.yaml native --offline --cache=false --include-fragments | No authored native file exists; these defaults already ship. Do not invent one for symmetry. |
-| Check-jsonschema 0.38.2 | checks.yaml native args plus existing check_schemas | Already shipped; schema paths are root-relative. YAML shape, JSON-source shape and metaschema are distinct bindings. |
-| Python syntax / provisioned interpreter | ast.parse, no native file | No configuration asset to export; grammar follows admitted interpreter. |
-| TypeScript syntax 6.0.3 | Native API discovers nearest target tsconfig; no authored tsconfig exists here | Retain owner config discovery; document no supplied baseline rather than manufacture one. |
+All nine current adapters were rechecked against their native invocations and workspace bindings. Reading native configuration is already supported; unconditional refusal on absence is a separate policy, not an existing guarantee.
 
-There are nine adapters; Coverage is listed separately as an existing dependency/config subsection of Pytest, not a tenth adapter. pytest-xdist 3.8.0 and pytest-asyncio 1.3.0 are pinned prerequisites. PGMCP checks/tests/fixes configs, schema files and adapter dependency manifests already ship; they are distinct from missing native project-config reference files.
+| Adapter / roles | Current actual native policy in this workspace | Native config behavior | Proposed #319 requirement scope |
+| --- | --- | --- | --- |
+| Ruff0.15.6: format/lint checks and fixes | pyproject.toml tool.ruff, including lint rules/ignores and shared format settings | Native Ruff discovery or explicit --config. No unconditional adapter-owned file requirement. | Require the owner-declared native policy file for both check and fix roles; this keeps formatting/lint behavior intentional. Do not prescribe one filename for every workspace. |
+| Mypy1.19.1: types check | pyproject.toml tool.mypy, including overrides | Native parser reads discovered or explicit --config-file config; missing explicit file was live-refused. No unconditional file requirement. | Require an owner-declared config file to make source selection/strictness explicit. |
+| Pyright1.1.408: types check | pyrightconfig.json plus --level warning --warnings in checks.yaml | Native discovery or --project; discovered file already controls include/platform/severity. Missing explicit file was live-refused. | Require an owner-declared native project config; preserve native argument/discovery semantics. |
+| Pytest9.0.2: tests | pyproject.toml tool.pytest.ini_options, with Coverage7.13.5 configuration for opt-in coverage | Native pytest discovery or -c; missing explicit TOML stopped before collection with an untidy failed/traceback result. | Require the owner-declared test policy config. Do not introduce separate mandatory coverage config or enable coverage. Existing plugin pins remain prerequisites. |
+| Commitlint21.2.2: content-based commit check | commitlint.config.cjs selects parser/rules | Native CLI discovers config or accepts --config. Adapter rejects empty-rules reports as invalid_configuration. Explicit missing-file refusal has source/CLI evidence, not a live producer probe. | Require an owner-declared native policy file for this content check. Do not confuse native rules with the adapter's provenance marker reader. |
+| Lychee0.24.2: selection/content links | checks.yaml native --offline --cache=false --include-fragments; no authored lychee file/section here | Native config is supported; the adapter reads applicable boundary settings. CLI-only policy is already explicit and sufficient here. Missing explicitly requested config was live-refused. | No universal native-file requirement. Keep CLI-only setup valid; owner may declare a required file if this binding deliberately uses one. |
+| Check-jsonschema0.38.2: YAML/JSON source shape and metaschema | Explicit --schemafile paths for YAML/JSON-source checks; --check-metaschema for metaschema check | The external schema is the native policy/input dependency, not a separate general tool config. Schema-backed bindings already point to released schema files. Metaschema uses the tool's built-in schema. | Apply any declared prerequisite to external-schema bindings only; no mandatory general config file and no external-file requirement for metaschema. Native checker interprets/validates schemas. |
+| Python syntax: content syntax | ast.parse under the provisioned Python interpreter | No native config file or args are supported. | Exclude from native-file requirement; retain syntax-only preflight. |
+| TypeScript syntax6.0.3: content syntax | No tsconfig in this repo. Adapter uses TypeScript API to find nearest tsconfig for logical target; absent file produces empty compiler options | Existing native config is consumed when found and parse errors are refused. Absent config is intentionally allowed; native args are unsupported. It does not provide semantic/type checking. | No universal tsconfig requirement for this syntax capability; keep native discovery and configless syntax. Owner-declared prerequisites could be opt-in later, not a new default here. |
+
+Five policy-file families therefore qualify for the proposed mandatory workspace prerequisite: Ruff, Mypy, Pyright, Pytest and Commitlint. Lychee/file-backed JSON checks are conditional cases; the two syntax adapters and built-in metaschema need no invented file.
+
+Coverage is a subsection/dependency of the Pytest family, not a tenth adapter. Pytest's existing plugin prerequisites are pytest-cov7.0.0, pytest-xdist3.8.0 and pytest-asyncio1.3.0. Provisioning native packages/versions, PGMCP check/test/fix bindings, and native policy files are three distinct installation tasks.
+
+Proposed scope lock, awaiting owner approval:
+- Retain the activated G004/BLE001/SLF001 policy and bounded diagnostic repairs.
+- Keep parsing/discovery/native option semantics with the native tool. No per-tool exporter, config builder or resolved-config engine.
+- Required paths are workspace-owned declarations at the relevant operation binding, not filenames/tools hardcoded in generic execution or compulsory files baked into adapter packages.
+- Any missing-file check applies before an applicable invocation, including content-only preflight and fix roles where configured. It must not treat an already-not-applicable branch row as an attempted check.
+- Preserve caller native args. If unconditional presence is chosen, the prerequisite must not disappear with args overrides; presence still does not promise use of that exact file or policy correctness.
+- Document deliberate setup for all nine adapters, including CLI-only and no-file cases; improve selected native-config failure presentation only where needed.
+- Exclude server-startup blocking, sample distribution/export, new native configuration files for currently no-file tools, general adapter redesign, and additional coverage enforcement.
+- Actual shape of the prerequisite declaration and failure contract remains an implementation/design decision after strategy approval. The issue body needs Coordination reconciliation with this proposed replacement of its earlier asset scope.
 
 ### Placement and source-ownership choices — superseded proposal
 
@@ -232,3 +245,4 @@ One authoritative source, faithful derived outputs, inactive placement and expli
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-12 | @imp researcher | Activate authorized native policy, classify current diagnostics and compare bounded optional configuration distribution strategies. |
 | 0.2 | 2026-10-12 | @imp researcher | Reopen native asset/export proposal; document live missing-config refusals, default-argument override boundary and focused workspace setup alternatives. |
+| 0.3 | 2026-10-12 | @imp researcher | Classify all nine adapters into native-file, conditional/CLI and no-file cases; propose exact invocation requirement and installation scope. |
