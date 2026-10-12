@@ -138,7 +138,7 @@ Owner-authorized publication completed on 2026-10-12. GitHub release API and tag
 
 Invocation: `gh release create vN.0.0 exact-wheel exact-sdist --repo MikeyVK/phase-gate-mcp --target full-source-SHA --title release-title --notes-file -`; v1/v2 use `--latest=false`, v3 uses `--latest`. Each command exited0. No native publication tool exists; the owner explicitly authorized this fallback. Notes are the corresponding release document from Summary up to, excluding, Version History; local provenance and authored header are not published.
 
-Observed result: each release is published, not draft/prerelease, with exactly two uploaded installation assets. All six remote asset sizes and SHA-256 digests match the tables in [v1](release-v1.md), [v2](release-v2.md) and [v3](release-v3.md). All three tag refs point to the exact source commits above. Release bodies match the authored excerpts after normalizing Windows stdin CRLF transport. The latest-release API returns v3.0.0. Historical release dates are described in their notes; publication dates are not backdated. PyPI is excluded.
+Observed result: each release is published, not draft/prerelease, with exactly two uploaded installation assets. All six remote asset sizes and SHA-256 digests match the tables in [v1](release-v1.md), [v2](release-v2.md) and [v3](release-v3.md). All three tag refs point to the exact source commits above. Release bodies match the authored excerpts after normalizing Windows stdin CRLF transport and removing the blank line immediately after `## Summary`, as performed by the publication excerpt extraction. No other content differs. The latest-release API returns v3.0.0. Historical release dates are described in their notes; publication dates are not backdated. PyPI is excluded.
 
 `scaffold_artifact(artifact_type='issue', file_name='issue500-publication-body.md', validation='enforce')` produced the body in the configured temporary root. Native `update_issue(issue_number=500, body=...)` published it after removing only the recognized first-line provenance marker. A subsequent GitHub API read matched the submitted body exactly after CRLF normalization. [Issue500](https://github.com/MikeyVK/phase-gate-mcp/issues/500) remains open; labels/state and epic289 were not changed.
 
@@ -148,7 +148,7 @@ Reviewed authoritative CHANGELOG, setup upgrade/bootstrap guides, release-assets
 
 ## Caveats
 
-- Independent QA returned GO for Implementation → Validation on d24d8dfb94f03e2c79fee10e0b9c0e4a3d56cef5 and Validation → Documentation on b82eb1e99c8c5f9903c950b11adbb576b87fc49b. Documentation → Ready review remains the next gate.
+- Independent QA returned GO for Implementation → Validation on d24d8dfb94f03e2c79fee10e0b9c0e4a3d56cef5 and Validation → Documentation on b82eb1e99c8c5f9903c950b11adbb576b87fc49b. Documentation → Ready GO was returned on ed03a15626d724a033dcaa21fec2ff288539e769; its non-blocking P3 request to specify publication whitespace normalization is corrected here.
 - V3 artifact payload and published tag are bound to fcde44d2368399b080c82546c899d49b37ae759a. Subsequent issue evidence/state changes are unbundled; merging this maintenance branch remains separate.
 - ServerInfo.version reports the SDK version; PGMCP CLI/distribution metadata identify the release. Existing SchemaAttachment.schema warning does not block proven routes.
 
