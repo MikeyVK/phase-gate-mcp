@@ -130,15 +130,6 @@ def _has_net_diff(repo: GitRepo, path: str, base: str) -> bool:
     return bool(diff_output.strip())
 
 
-def _path_in_head_tree(repo: GitRepo, path: str) -> bool:
-    """Return True if path exists in the HEAD commit tree."""
-    try:
-        repo.git.show(f"HEAD:{path}")
-        return True
-    except Exception:
-        return False
-
-
 # ---------------------------------------------------------------------------
 # C10 — Model 1 D1 invariant: end-to-end integration proof
 # ---------------------------------------------------------------------------
