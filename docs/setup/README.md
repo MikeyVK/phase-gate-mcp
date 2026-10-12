@@ -68,6 +68,42 @@ Renewal preserves owner-managed configuration. If it reports
 `checkpoint_required`, review the local suite and follow the owner-led procedure in
 the [Workspace Upgrade Guide](workspace-upgrade.md) before choosing an action.
 
+### Choose the workspace quality policy
+
+Provision each required adapter's pinned native dependencies, then choose the native
+policy for this workspace: source/test roots, language/platform versions, rules,
+severities, exclusions and any native CLI arguments. Native discovery, a native
+file, explicit schema/arguments or a capability requiring no extra policy are all
+legitimate; pgmcp does not determine the effective native configuration for you.
+
+Fresh `pgmcp --init` clears only `configuration_choice` in its newly copied
+`config/checks.yaml`, `config/tests.yaml` and `config/fixes.yaml` bindings. Source
+assets and existing roots are unchanged. When manually copying bindings for a new
+workspace, clear copied acknowledgements likewise. Existing installations missing
+the field remain available for health/setup, but must acknowledge every binding
+they intend to execute.
+
+| configuration_choice | Owner declaration |
+| --- | --- |
+| null or omitted | Setup is unresolved; applicable use is refused |
+| native_discovery | Deliberately accept the native tool's discovery behavior |
+| configured_arguments | Deliberately use the binding's native argument policy |
+| not_applicable | This capability needs no additional native policy configuration |
+
+Record the choice only after reviewing the relevant binding. It does not prove
+that a particular file exists or was consumed. Caller arguments still replace
+configured defaults and are reported through args_source; they cannot acknowledge
+an unresolved binding. A mixed applicable batch with an unresolved choice starts
+no checks/tests/fixes. Content preflight refuses writing under both enforce and
+report when an obligation was not started; report still handles executed native
+failed/unavailable outcomes according to its existing contract.
+
+Use a small representative `run_checks(scope="targets", ...)` and, when needed,
+a focused `run_tests(scope="targets", ...)` to verify the installed tool, intended
+policy and target selection. Review the returned diagnostics before expanding
+scope. Template-only renewal preserves the owner's bindings and does not reset
+acknowledgements.
+
 ---
 
 ## 3. IDE Configuration: VS Code vs. Google Antigravity
@@ -198,4 +234,3 @@ Verify that the MCP server is active by running the following command in the cha
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
-

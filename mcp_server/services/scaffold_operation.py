@@ -29,6 +29,7 @@ from mcp_server.execution.models import (
     AdapterUnavailableReason,
     CheckFailed,
     CheckUnavailable,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     InvalidCheckRequest,
     InvocationCancelled,
@@ -110,6 +111,8 @@ def project_mutation_check(
         AdapterUnavailableReason | AdapterCallFailureReason | ConsumerNotExecutedReason | None
     ) = "not_started"
     message: str | None = "Check was not started because the operation stopped."
+    if row.not_executed == "configuration_choice_required":
+        reason, message = "configuration_choice_required", None
     if observation is not None:
         response = (
             observation.response.root if isinstance(observation, InvocationCompleted) else None
@@ -171,6 +174,14 @@ def mutation_execution_blocker(
     execution: ContentExecution,
     checks: tuple[MutationCheck, ...],
 ) -> tuple[MutationErrorCode | None, MutationErrorDetails | None]:
+    if execution.stop_reason == "configuration_choice_required":
+        return "configuration_choice_required", ConfigurationChoiceDetails(
+            binding_ids=tuple(
+                check.check_id
+                for check in checks
+                if check.reason == "configuration_choice_required"
+            )
+        )
     if execution.stop_reason == "adapter_request_rejected":
         rejected = next(check for check in checks if check.request_rejection is not None)
         return "adapter_request_rejected", RejectedRequestDetails(check_id=rejected.check_id)

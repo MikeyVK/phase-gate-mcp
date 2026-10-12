@@ -86,6 +86,7 @@ def compose(
                     "field": "error_code",
                     "cases": {
                         "no_configured_tests": "No test bindings configured.",
+                        "configuration_choice_required": "Choose configuration for these tests.",
                         "no_active_tests": "No active test bindings.",
                         "selection_invalid": "Test selection invalid.",
                         "scope_resolution_failed": "Test scope could not be resolved.",

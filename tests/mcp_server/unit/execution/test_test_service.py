@@ -12,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.adapter_manifest import AdapterTrustConfig
 from mcp_server.config.schemas.adapter_manifest import TestCapability as Capability
+from mcp_server.config.schemas.checks_config import ConfigurationChoice
 from mcp_server.config.schemas.tests_config import TestsConfig as Config
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
@@ -25,6 +26,7 @@ from mcp_server.execution.check_selection import FileScopePaths
 from mcp_server.execution.models import (
     AdapterCallFailure,
     AdapterCallFailureReason,
+    ConfigurationChoiceDetails,
     InvocationCancelled,
     InvocationCompleted,
     InvocationFailed,
@@ -69,7 +71,7 @@ class Catalog:
         )
 
 
-def configuration() -> Config:
+def configuration(choice: ConfigurationChoice = "configured_arguments") -> Config:
     return Config.model_validate(
         {
             "tests": {
@@ -77,6 +79,7 @@ def configuration() -> Config:
                     "adapter_id": adapter,
                     "capability": "suite",
                     "timeout_seconds": budget,
+                    "configuration_choice": choice,
                     "default_args": ["--label", "two words", ""],
                     "active": active,
                 }
@@ -100,9 +103,12 @@ def passed() -> tuple[bytes, int]:
 
 
 @pytest.mark.asyncio
-async def test_configured_selection_keeps_order_args_and_native_empty_scope(tmp_path: Path) -> None:
+@pytest.mark.parametrize("choice", ["native_discovery", "configured_arguments", "not_applicable"])
+async def test_configured_selection_keeps_order_args_and_native_empty_scope(
+    tmp_path: Path, choice: ConfigurationChoice
+) -> None:
     runtime = RecordingTestRuntime((passed(), passed()))
-    manager = RunManager(configuration(), Catalog(), runtime, FileScopePaths(tmp_path))
+    manager = RunManager(configuration(choice), Catalog(), runtime, FileScopePaths(tmp_path))
     output = await manager.run(Selection(scope="configured", args={"second": []}))
     assert output.success and output.error_code is None
     assert output.selected_tests == ("first", "second")
@@ -444,3 +450,35 @@ def test_required_config_loads_strictly_and_validates_catalog_without_launch(
         changed["tests"]["python_tests"].update(adapter_id=adapter, capability=capability)
         with pytest.raises(ConfigError):
             ConfigValidator().validate_tests_config(Config.model_validate(changed), catalog)
+
+
+@pytest.mark.asyncio
+async def test_unresolved_binding_refuses_batch_despite_caller_arguments(tmp_path: Path) -> None:
+    source = tmp_path / "input.py"
+    original = b"unchanged\n"
+    source.write_bytes(original)
+    data = configuration().model_dump(mode="json")
+    data["tests"]["second"]["configuration_choice"] = None
+    configured = Config.model_validate(data)
+    runtime = RecordingTestRuntime((passed(), passed()))
+    output = await RunManager(configured, Catalog(), runtime, FileScopePaths(tmp_path)).run(
+        Selection(
+            scope="targets",
+            targets=[source.name],
+            tests=["first", "second"],
+            args={"second": ["caller"]},
+        )
+    )
+    assert output.success and output.error_code == "configuration_choice_required"
+    assert isinstance(output.error_details, ConfigurationChoiceDetails)
+    assert output.error_details.binding_ids == ("second",)
+    assert [row.reason for row in output.results] == [
+        "not_started",
+        "configuration_choice_required",
+    ]
+    assert all(
+        row.adapter is None and row.capture is None and row.evidence is None
+        for row in output.results
+    )
+    assert output.results[1].args_source == "caller"
+    assert runtime.calls == [] and source.read_bytes() == original

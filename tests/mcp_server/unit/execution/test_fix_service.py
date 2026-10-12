@@ -33,6 +33,7 @@ from mcp_server.execution.models import (
     AdapterCallFailure,
     AdapterCallFailureReason,
     ApplyFixesOutput,
+    ConfigurationChoiceDetails,
     FixRoleResponse,
     FixScopeDetails,
     FixTerminationDetails,
@@ -125,6 +126,7 @@ def configuration() -> FixesConfig:
                     "adapter_id": adapter,
                     "capability": "repair",
                     "timeout_seconds": budget,
+                    "configuration_choice": "configured_arguments",
                     "default_args": ["two words", ""],
                 }
                 for name, adapter, budget in (
@@ -531,6 +533,7 @@ async def test_native_three_step_chain_preserves_format_and_partial_lint_writes(
                     "adapter_id": "ruff",
                     "capability": operation,
                     "timeout_seconds": 20,
+                    "configuration_choice": "native_discovery",
                     "default_args": [],
                 }
                 for name, operation in (
@@ -605,3 +608,35 @@ def test_required_fix_config_and_catalog_admission_without_execution(
         changed["fixes"]["python_format"].update(adapter_id=adapter, capability=capability)
         with pytest.raises(ConfigError):
             ConfigValidator().validate_fixes_config(FixesConfig.model_validate(changed), resolved)
+
+
+@pytest.mark.asyncio
+async def test_unresolved_binding_refuses_batch_despite_caller_arguments(tmp_path: Path) -> None:
+    source = tmp_path / "input.py"
+    original = b"unchanged\n"
+    source.write_bytes(original)
+    data = configuration().model_dump(mode="json")
+    data["fixes"]["second"]["configuration_choice"] = None
+    configured = FixesConfig.model_validate(data)
+    runtime = RecordingRuntime((passed(), passed()))
+    output = await FixManager(configured, Catalog(), runtime, FileFixScopePaths(tmp_path)).run(
+        FixSelectionRequest(
+            scope="targets",
+            targets=[source.name],
+            fixes=["first", "second"],
+            args={"second": ["caller"]},
+        )
+    )
+    assert output.success and output.error_code == "configuration_choice_required"
+    assert isinstance(output.error_details, ConfigurationChoiceDetails)
+    assert output.error_details.binding_ids == ("second",)
+    assert [row.reason for row in output.results] == [
+        "not_started",
+        "configuration_choice_required",
+    ]
+    assert all(
+        row.adapter is None and row.capture is None and row.evidence is None
+        for row in output.results
+    )
+    assert output.results[1].args_source == "caller"
+    assert runtime.calls == [] and source.read_bytes() == original

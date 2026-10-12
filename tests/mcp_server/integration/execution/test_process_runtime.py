@@ -507,6 +507,7 @@ def real_check_service(
         "capability": "echo",
         "timeout_seconds": 5,
         "default_args": [mode],
+        "configuration_choice": "configured_arguments",
     }
     config = ChecksConfig.model_validate(
         {
@@ -558,6 +559,7 @@ async def public_role_run(
                         "capability": "suite",
                         "timeout_seconds": 5,
                         "default_args": [mode if name == "first" else "passed"],
+                        "configuration_choice": "configured_arguments",
                         "active": True,
                     }
                     for name in ("first", "second")
@@ -578,6 +580,7 @@ async def public_role_run(
                     "capability": "repair",
                     "timeout_seconds": 5,
                     "default_args": [mode if name == "first" else "passed"],
+                    "configuration_choice": "configured_arguments",
                 }
                 for name in ("first", "second")
             }

@@ -93,6 +93,7 @@ def configured_checks(*, default_profile: str | None = "default") -> ChecksConfi
                     capability=capability,
                     timeout_seconds=timeout,
                     default_args=args,
+                    configuration_choice="configured_arguments",
                 ),
             )
             for name, capability, timeout, args in (

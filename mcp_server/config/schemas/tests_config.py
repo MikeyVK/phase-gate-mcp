@@ -18,6 +18,7 @@ from pydantic import (
 )
 
 from mcp_server.config.schemas.adapter_manifest import AdapterId, CapabilityId
+from mcp_server.config.schemas.checks_config import ConfigurationChoice
 
 TestId = AdapterId
 
@@ -43,6 +44,7 @@ class TestBinding(_TestsBase):
     capability: CapabilityId
     timeout_seconds: Annotated[StrictInt, Field(gt=0)]
     default_args: Annotated[tuple[StrictStr, ...], BeforeValidator(_sequence)]
+    configuration_choice: ConfigurationChoice | None = None
     active: StrictBool
 
 

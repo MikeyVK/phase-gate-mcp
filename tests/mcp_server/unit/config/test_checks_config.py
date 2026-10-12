@@ -60,6 +60,7 @@ def test_explicit_loader_keeps_order_and_exact_empty_or_nonempty_defaults(tmp_pa
     assert tuple(dict(config.checks)) == ("first", "second")
     assert dict(config.checks)["first"].default_args == ("--literal", "", "a b")
     assert dict(config.checks)["second"].default_args == ()
+    assert all(binding.configuration_choice is None for _, binding in config.checks)
     assert dict(config.profiles)["preflight"].checks == ("second", "first")
     assert config.run_checks.default_profile == "explicit"
     assert config.model_dump(mode="json")["profiles_by_extension"] == {".py": "preflight"}

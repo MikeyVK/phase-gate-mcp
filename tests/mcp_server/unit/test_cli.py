@@ -8,6 +8,7 @@ Tests for CLI.
 
 # Standard library
 import contextlib
+import json
 from importlib import metadata
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
@@ -16,6 +17,7 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 
 from mcp_server.cli import main
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
@@ -68,6 +70,26 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     (mock_assets / "config").mkdir(parents=True)
     (mock_assets / "template_suite").mkdir(parents=True)
     (mock_assets / "config" / "workflows.yaml").touch()
+    binding = {
+        "adapter_id": "fixture",
+        "capability": "check",
+        "timeout_seconds": 9,
+        "default_args": ["--literal", "two words"],
+        "configuration_choice": "configured_arguments",
+    }
+    copied_config = {
+        "checks": {
+            "configured_targets": {},
+            "checks": {"chosen": binding},
+            "profiles": {"preflight": {"checks": ["chosen"]}},
+            "profiles_by_extension": {".py": "preflight"},
+            "run_checks": {},
+        },
+        "tests": {"tests": {"chosen": {**binding, "active": True}}},
+        "fixes": {"fixes": {"chosen": binding}},
+    }
+    for section, data in copied_config.items():
+        (mock_assets / "config" / f"{section}.yaml").write_text(json.dumps(data), encoding="utf-8")
     import shutil  # noqa: PLC0415
 
     original_copytree = shutil.copytree
@@ -94,6 +116,21 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert (server_root / "config/workflows.yaml").is_file()
     assert (server_root / "template_suite").is_dir()
     assert not (server_root / ".version").exists()
+    installed = ConfigLoader(server_root / "config", server_root / "template_suite")
+    reset_models = (
+        ("checks", installed.load_checks_config()),
+        ("tests", installed.load_tests_config()),
+        ("fixes", installed.load_fixes_config()),
+    )
+    for section, model in reset_models:
+        result = model.model_dump(mode="json", exclude_unset=True)
+        assert result[section]["chosen"]["configuration_choice"] is None
+        result[section]["chosen"]["configuration_choice"] = "configured_arguments"
+        assert result == copied_config[section]
+        assert (
+            json.loads((mock_assets / "config" / f"{section}.yaml").read_text(encoding="utf-8"))
+            == copied_config[section]
+        )
     operation.execute.assert_called_once_with()
     assert "Successfully initialized" in capsys.readouterr().out
 
@@ -135,6 +172,8 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
     workspace.mkdir()
     server_root = workspace / ".pgmcp"
     server_root.mkdir()
+    owner_config = server_root / "checks.yaml"
+    owner_config.write_bytes(b"owner choices")
 
     settings = Settings(
         server=ServerSettings(
@@ -155,6 +194,7 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
     captured = capsys.readouterr()
     assert "already exists" in captured.err or "already exists" in captured.out
+    assert owner_config.read_bytes() == b"owner choices"
 
 
 def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:

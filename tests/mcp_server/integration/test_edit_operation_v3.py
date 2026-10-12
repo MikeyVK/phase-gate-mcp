@@ -42,8 +42,11 @@ def operation(
     outcomes: tuple[str, ...],
     *,
     has_profile: bool = True,
+    unresolved: bool = False,
 ) -> tuple[EditOperation, RecordingRuntime]:
-    checks, _, runtime = compose(root, outcomes)
+    checks, _, runtime = compose(
+        root, outcomes, unresolved_checks=frozenset({"check_0"}) if unresolved else frozenset()
+    )
     config = ChecksConfig.model_validate(
         {
             "configured_targets": {"fixture": {"include": ["**"], "exclude": []}},
@@ -53,6 +56,7 @@ def operation(
                     "capability": "check",
                     "timeout_seconds": 3,
                     "default_args": [],
+                    "configuration_choice": "configured_arguments",
                 }
             },
             "profiles": {"renamed": {"checks": ["syntax"]}},
@@ -501,3 +505,24 @@ async def test_edits_use_lf_text_and_report_actual_byte_change(
     assert result.content_changed is changed
     assert target.read_bytes() == expected
     assert runtime.requests[0][0].model_dump()["content"].encode("utf-8") == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("policy", ["enforce", "report"])
+async def test_unresolved_content_choice_preserves_original_without_scratch(
+    tmp_path: Path, policy: Literal["enforce", "report"]
+) -> None:
+    service, runtime = operation(tmp_path, ("passed",), unresolved=True)
+    target = tmp_path / "notes.md"
+    target.write_bytes(b"original")
+    result = await service.execute(
+        path=target.name, operation=RewriteOperation(content="replacement"), validation=policy
+    )
+    assert result.error_code == "configuration_choice_required"
+    assert result.validation_status == "not_executed"
+    assert not result.written and result.content_changed is None
+    assert result.checks[0].reason == "configuration_choice_required"
+    assert result.checks[0].invocation is None and result.checks[0].evidence is None
+    assert runtime.requests == [] and target.read_bytes() == b"original"
+    assert not (tmp_path / "scratch").exists()
+    assert EditOperationOutput.model_validate_json(result.model_dump_json()) == result

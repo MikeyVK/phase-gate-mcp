@@ -129,10 +129,6 @@ global:
 
     templates:
 
-      info:
-
-        planning_cycle_evidence: "Cycle evidence: {status}; HEAD={head_sha}; reason={reason_code}; protected={protected_cycle_numbers}; evidence_overridden={evidence_overridden}"
-
       suggestions:
 
         allowed_bases_suggestion: "Allowed bases: {bases}"
@@ -202,6 +198,8 @@ global:
 
       info:
 
+        planning_cycle_evidence: "Cycle evidence: {status}; HEAD={head_sha}; reason={reason_code}; protected={protected_cycle_numbers}; evidence_overridden={evidence_overridden}"
+
         dirty_workspace_branch_blocker: "Commit or stash changes before creating a new branch"
 
         pytest_lf_cache_empty_info: "Last-failed cache was empty; ran full selection instead."
@@ -231,11 +229,12 @@ tools:
     collections:
       - field: results
         heading: "Fixes"
-        item_template: "{fix_id}: {status}; args_source={args_source}"
+        item_template: "{fix_id}: {status}; reason={reason}; args_source={args_source}"
     enum_cases:
       - field: error_code
         cases:
           no_configured_fixes: "No fix bindings configured."
+          configuration_choice_required: "Quality configuration is unresolved. Choose configuration_choice deliberately in the affected checks.yaml, tests.yaml or fixes.yaml bindings, then retry."
           selection_invalid: "Fix selection invalid."
           scope_resolution_failed: "Fix scope could not be resolved."
           adapter_request_rejected: "Internal fix request rejected."
@@ -586,6 +585,16 @@ tools:
       - "context_reset"
   scaffold_artifact:
     category: scaffold
+    max_items: 5
+    collections:
+      - field: checks
+        heading: "Validation checks"
+        item_template: "{check_id}: {status}; reason={reason}"
+    enum_cases:
+      - field: error_code
+        cases:
+          configuration_choice_required: "Quality configuration is unresolved. Choose configuration_choice deliberately in the affected checks.yaml, tests.yaml or fixes.yaml bindings, then retry."
+
     template_success: "Scaffolded {template_id}: {output_path}; validation={validation_status}."
     template_failure: "Scaffolding {template_id} failed: {error_code}."
   scaffold_schema:
@@ -605,6 +614,7 @@ tools:
         cases:
           no_configured_checks: "No checks are configured."
           default_profile_missing: "No default check profile is configured."
+          configuration_choice_required: "Quality configuration is unresolved. Choose configuration_choice deliberately in the affected checks.yaml, tests.yaml or fixes.yaml bindings, then retry."
           selection_invalid: "The check selection is invalid."
           branch_basis_unavailable: "The branch comparison basis is unavailable."
           scope_resolution_failed: "The requested scope could not be resolved."
@@ -619,12 +629,13 @@ tools:
     collections:
       - field: results
         heading: "Tests"
-        item_template: "{test_id}: {status}; args_source={args_source}"
+        item_template: "{test_id}: {status}; reason={reason}; args_source={args_source}"
     enum_cases:
       - field: error_code
         cases:
           no_configured_tests: "No test bindings configured."
           no_active_tests: "No active test bindings."
+          configuration_choice_required: "Quality configuration is unresolved. Choose configuration_choice deliberately in the affected checks.yaml, tests.yaml or fixes.yaml bindings, then retry."
           selection_invalid: "Test selection invalid."
           scope_resolution_failed: "Test scope could not be resolved."
           adapter_request_rejected: "Internal test request rejected."
@@ -632,6 +643,15 @@ tools:
           termination_unconfirmed: "Test termination unconfirmed."
   safe_edit_file:
     category: mutation
+    max_items: 5
+    collections:
+      - field: checks
+        heading: "Validation checks"
+        item_template: "{check_id}: {status}; reason={reason}"
+    enum_cases:
+      - field: error_code
+        cases:
+          configuration_choice_required: "Quality configuration is unresolved. Choose configuration_choice deliberately in the affected checks.yaml, tests.yaml or fixes.yaml bindings, then retry."
+
     template_success: "Edited {path}; written={written}; validation={validation_status}."
     template_failure: "Edit {path} failed: {error_code}."
-

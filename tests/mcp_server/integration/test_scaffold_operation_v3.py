@@ -46,6 +46,7 @@ def operation(
     render: Callable[[str, object, FrozenJsonObject], str] | None = None,
     write_scratch: Callable[[Path, bytes], int] | None = None,
     remove_scratch: Callable[[Path], None] = shutil.rmtree,
+    unresolved: bool = False,
 ) -> tuple[ScaffoldOperation, RecordingRuntime]:
     profile = delivered.catalog.get("issue").policy.output_profile
     checks, _, runtime = compose(
@@ -55,6 +56,7 @@ def operation(
         file_content=write_scratch is not None,
         write_bytes=write_scratch if write_scratch is not None else Path.write_bytes,
         remove_tree=remove_scratch,
+        unresolved_checks=frozenset({"check_0"}) if unresolved else frozenset(),
     )
     locations = ArtifactLocationsConfig.model_validate(
         {"version": "2.0.0", "artifacts": {"issue": {"default_root": "outputs"}}}
@@ -372,3 +374,24 @@ async def test_postcommit_result_failure_does_not_undo_created_bytes(
     assert (tmp_path / "outputs" / "result.md").read_bytes() == delivered.renderer.render(
         "issue", context, delivered.provenance
     ).encode("utf-8")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("policy", ["enforce", "report"])
+async def test_unresolved_content_choice_refuses_creation_without_scratch(
+    tmp_path: Path, delivered: DeliveredTemplate, policy: Literal["enforce", "report"]
+) -> None:
+    service, runtime = operation(tmp_path, delivered, ("passed",), unresolved=True)
+    result = await service.execute(
+        artifact_type="issue",
+        file_name="refused.md",
+        context={"problem": "Example"},
+        validation=policy,
+    )
+    assert result.error_code == "configuration_choice_required"
+    assert result.validation_status == "not_executed" and not result.written
+    assert result.checks[0].reason == "configuration_choice_required"
+    assert result.checks[0].invocation is None and result.checks[0].evidence is None
+    assert runtime.requests == [] and not (tmp_path / "outputs" / "refused.md").exists()
+    assert not (tmp_path / "scratch").exists()
+    assert ScaffoldOperationOutput.model_validate_json(result.model_dump_json()) == result

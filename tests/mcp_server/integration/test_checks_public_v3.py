@@ -46,9 +46,14 @@ def compose(
     selector_override: CheckSelector | None = None,
     branch: IBranchChangeReader | None = None,
     filtered_checks: frozenset[str] = frozenset(),
+    unresolved_checks: frozenset[str] = frozenset(),
 ) -> tuple[Composition, RecordingRuntime]:
     executor, selector, runtime = build_checks(
-        root, outcomes, branch=branch, filtered_checks=filtered_checks
+        root,
+        outcomes,
+        branch=branch,
+        filtered_checks=filtered_checks,
+        unresolved_checks=unresolved_checks,
     )
     names = tuple(f"check_{index}" for index in range(len(outcomes)))
     config = ChecksConfig.model_validate(
@@ -63,6 +68,7 @@ def compose(
                     "capability": "filtered" if name in filtered_checks else "check",
                     "timeout_seconds": index + 3,
                     "default_args": [name],
+                    "configuration_choice": "configured_arguments",
                 }
                 for index, name in enumerate(names)
             },
@@ -106,6 +112,7 @@ def compose(
                     "field": "error_code",
                     "cases": {
                         "no_configured_checks": "No checks are configured.",
+                        "configuration_choice_required": "Choose configuration for these checks.",
                         "default_profile_missing": "No default check profile is configured.",
                         "selection_invalid": "The check selection is invalid.",
                         "branch_basis_unavailable": "The branch comparison basis is unavailable.",
@@ -367,6 +374,7 @@ async def test_branch_no_applicable_outcomes(
         outcomes,
         branch=ChangedBranch(),
         filtered_checks=filtered,
+        unresolved_checks=filtered,
     )
     result = await run(
         composition,
@@ -392,3 +400,39 @@ async def test_branch_no_applicable_outcomes(
         assert runtime.requests[0][0].targets == (str(tmp_path / "source.py"),)
         assert runtime.requests[0][1] == 11
         assert result.results[0].adapter is not None and result.results[0].capture is not None
+
+
+@pytest.mark.asyncio
+async def test_unresolved_choice_is_projected_with_binding_ids_and_no_native_facts(
+    tmp_path: Path, pytestconfig: pytest.Config
+) -> None:
+    composition, runtime = compose(
+        tmp_path,
+        pytestconfig,
+        ("passed", "passed"),
+        unresolved_checks=frozenset({"check_1"}),
+    )
+    result = await run(
+        composition,
+        {
+            "scope": "configured",
+            "args": {"check_1": ["caller"]},
+        },
+    )
+    assert result.error_code == "configuration_choice_required"
+    assert result.run_status == "incomplete" and result.success
+    assert result.error_details is not None
+    assert result.error_details.model_dump() == {"binding_ids": ("check_1",)}
+    assert [row.reason for row in result.results] == [
+        "not_started",
+        "configuration_choice_required",
+    ]
+    assert all(
+        row.adapter is None and row.capture is None and row.evidence is None
+        for row in result.results
+    )
+    assert runtime.requests == []
+    invalid = result.model_dump(mode="json")
+    invalid["error_details"] = {"binding_ids": ["check_0"]}
+    with pytest.raises(ValidationError, match="configuration_refusal"):
+        RunChecksOutput.model_validate_json(json.dumps(invalid))
