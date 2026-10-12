@@ -47,6 +47,15 @@ Isolated artifact checks observed all 258 manifest assets, complete template/ada
 
 Native syntax/schema acceptance does not prove application semantics or continued conformance to a template after free-text editing. Template release review uses the existing maintenance procedure; automatic template-compliance enforcement is outside this release. Offline Markdown checks do not certify external reachability. Presentation and response caches are bounded and transient: retain invocation/outcome evidence for independent review. Cycle commit protection does not imply completion. Automatic external rollout and parked #121/#462 remain outside scope.
 
+## Downloads and source identity
+
+The final wheel and sdist were rebuilt on 2026-10-12 after aligning publication-facing guides. Python3.13.7 and build1.5.0 drove the existing manifest assembly/build procedure; the wheel was built from the sdist. All 191 runtime Python sources, 258 manifest assets, adapter data and execution contracts are present without bytecode/cache members. The downloadable payload is bound to the reviewed release source; the `v3.0.0` tag identifies that exact source commit.
+
+| Download | SHA-256 |
+| --- | --- |
+| `phase_gate_mcp-3.0.0-py3-none-any.whl` | `c77366dae59e77464da01b4e7f83bce1d4558d02f84fe5dc76a7269c2a1d5570` |
+| `phase_gate_mcp-3.0.0.tar.gz` | `c9f86c6cbac840a054ae5a4b05deeca5fbcf4cbc0c1387244b9090e2b973d411` |
+The source payload corresponds to commit `fcde44d2368399b080c82546c899d49b37ae759a`. Git checkout CRLF/LF conversion accounts for byte differences from raw Git blobs; no code or data differs beyond those line endings. Exact artifact/installed comparisons use the packaged bytes. This does not claim a byte-reproducible build.
 ## Version History
 
 | Version | Date | Author | Changes |

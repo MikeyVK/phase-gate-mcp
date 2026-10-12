@@ -37,7 +37,7 @@ The last pre-issue full suite was #465 snapshot d84811c4. This branch subsequent
 - [CLI parity](<../../../tests/mcp_server/unit/test_cli.py>)
 - [Settings](<../../../tests/mcp_server/unit/config/test_settings.py>)
 
-**Invocation:** run_tests(scope='targets', targets=[test_cli.py,config/test_settings.py,test_build_package.py,services/test_artifact_target_resolver.py], timeout_seconds=600); targeted python_format/python_lint; settings.py python_pyright; artifacts.yaml/release_manifest.yaml yaml_configuration.
+**Invocation:** run_tests(scope='targets', targets=['tests/mcp_server/unit/test_cli.py','tests/mcp_server/unit/config/test_settings.py','tests/mcp_server/unit/test_build_package.py','tests/mcp_server/unit/services/test_artifact_target_resolver.py'], timeout_seconds=600); targeted python_format/python_lint; settings.py python_pyright; artifacts.yaml/release_manifest.yaml yaml_configuration.
 
 **Observed Result:** 40 passed, 48 warnings, 7.59s, native exit0. Formatting, lint, production Pyright and both YAML files passed. The first parity assertion was outside its metadata patch; its location was corrected and all40 reran successfully. No new tests added.
 
@@ -66,7 +66,7 @@ Only release-facing documentation changed after the existing isolated runtime/re
 
 **Invocation:** Existing build script; exactwheel install outside checkout; installed CATALOG_PROBE under -I; CLI --version/--init twice; bounded stdio handshake; isolated managed and external --upgrade/--accept-template-baseline/--force-template-upgrade; pipcheck.
 
-**Observed Result:** Initial candidate:258 assets,191 runtimepy,23 templates/schemas,9 adapters,476 installedfiles;67 loaded PGMCP modules originate in installedvenv. CLI3.0,init0/reinit1,pipcheck0,handshake49tools(protocol2025-11-25,MCP1.30). Changed managed suite: normal2 preservesbytes; acceptbaseline0 preservesbytes and recordscheckpoint; force0 makes exact backup and activates exact candidate. Externalnormal2 preservesbytes; externalforce1 external_root_force_forbidden. The final clean build has258 asset/191runtime exact parity and0bytecode; final installed proof is pending.
+**Observed Result:** Initial candidate:258 assets,191 runtimepy,23 templates/schemas,9 adapters,476 installedfiles;67 loaded PGMCP modules originate in installedvenv. CLI3.0,init0/reinit1,pipcheck0,handshake49tools(protocol2025-11-25,MCP1.30). Changed managed suite: normal2 preservesbytes; acceptbaseline0 preservesbytes and recordscheckpoint; force0 makes exact backup and activates exact candidate. Externalnormal2 preservesbytes; externalforce1 external_root_force_forbidden. The final clean build has258 asset/191runtime exact parity and0bytecode; final installed proof completed as recorded below.
 
 ### Owner-authorized upgrade restored the active server
 
@@ -106,10 +106,23 @@ The owner authorized cleanup and publication on2026-10-12. Nearblanket deletion 
 
 **Observed Result:** 286 selected targets removed plus13 accessible scratchchildren. Removed10.8GiB writerETL and NGENPDB/analysis, oldcheckcaches/proposal/logs and two unused tracked template_registry.json files. Proposal was byte-identical144files to active suite, no activationjournal. Releasefiles, issue500, co-drafts, backups, runtime/dependencies and active lock kept. Protected leftovers remain in .pytest_cache_ci, .tmp/pytest-of-1Voudig and temp/cy08*-ruff; no ACL change. .gitignore now covers proposal and cachevariants.
 
+### Final v3 wheel and source distribution
+
+Existing `python scripts/build_package.py` built the final wheel from the sdist after the publication-facing documentation refresh. The exact wheel contains 191 runtime Python sources, 258 manifest assets and 475 total package payload members. Every payload byte matches the current sources, all seven hidden Copilot files are included, and no bytecode/cache members remain. Its pyproject matches the sdist. Final installed catalog: 23 templates, nine adapters and 67 observed module origins in the isolated prefix; CLI3.0/exit0; init0/reinit1; 49 unique tools; actual health_check healthy3.0; pip check passed. SDK transport metadata reports1.30.0. Unchanged renewal runtime/config/template observations above remain valid.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| phase_gate_mcp-3.0.0-py3-none-any.whl | 796852 | c77366dae59e77464da01b4e7f83bce1d4558d02f84fe5dc76a7269c2a1d5570 |
+| phase_gate_mcp-3.0.0.tar.gz | 589206 | c9f86c6cbac840a054ae5a4b05deeca5fbcf4cbc0c1387244b9090e2b973d411 |
+
+Reproduction: clean only untracked generated build/ and phase_gate_mcp.egg-info/ after containment/reparse/tracked-file checks; run the existing build script; install this exact wheel with --no-index --no-deps --no-compile into an isolated prefix using the admitted dependency environment; run the existing CATALOG_PROBE under -I, CLI/init and bounded MCP calls. The build driver uses Python3.13.7, build1.5.0, setuptools82.0.1, wheel0.46.3 and PyYAML6.0.3; build backend isolation is retained. Local reproduction inputs/logs are .pgmcp/temp/issue500/final-v3-proof/{inventory,payload,catalog,runtime}.json and build.log; these paths supplement the durable invocation/outcome facts, not replace them.
+Source binding: all 475 final payload members map to commit `fcde44d2368399b080c82546c899d49b37ae759a`. Comparison against Git blobs found 28 exact byte matches and 447 differences solely from checkout CRLF/LF conversion, with zero content mismatches. Exact wheel/sdist/installed comparisons use the actual checkout bytes; this is not a claim of byte-reproducible builds from raw Git archives. This commit is the reviewed v3 release payload source; subsequent issue evidence/state changes are not packaged.
+
+Final wheel metadata identifies isolated backend `setuptools (84.0.0)`, separately from the build driver's installed setuptools82.0.1. The focused release/report Markdown link selection passed with native configured arguments.
 ## Caveats
 
 - Final configured tests/branch gates and independent phase review remain pending; prior #465 full run is not presented as current #500 evidence.
-- Final artifact sourcecommit binding, actual GitHub publication and online issue500 body update remain pending.
+- Artifact payload is bound to fcde44d2368399b080c82546c899d49b37ae759a; actual GitHub publication and online issue500 body update remain pending.
 - ServerInfo.version reports the SDK version; PGMCP CLI/distribution metadata identify the release. Existing SchemaAttachment.schema warning does not block proven routes.
 
 ## Deferred Work
