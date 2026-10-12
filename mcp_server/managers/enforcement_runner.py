@@ -406,9 +406,6 @@ class EnforcementRunner:
                 return
         except (FileNotFoundError, StateNotFoundError):
             return  # Bootstrap: no state.json means gate is inactive
-            return  # Bootstrap: no state.json means gate is inactive
-        except Exception:
-            pass
 
         if self._context_loaded_reader is None:
             raise ConfigError(

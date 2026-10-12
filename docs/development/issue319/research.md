@@ -232,6 +232,8 @@ Owner-approved lint repair, 2026-10-12: runtime server identity uses installed `
 
 Owner-approved phase-readiness repair, 2026-10-12: retain the phase-policy rejection for FileNotFoundError and StateNotFoundError only. Propagate every other state-reader failure unchanged through existing error boundaries, so corrupted/unreadable state is not presented as a phase mismatch. No phase-policy or presentation mechanism change; adapt the existing public enforcement behavior test.
 
+Owner-approved context-loaded repair, 2026-10-12: retain missing-state bootstrap and issue-mismatch bypasses, but remove the catch that suppresses other state-read/issue-extraction failures before consulting the context-loaded flag. Those failures propagate unchanged even when the flag is true. The context cache, reset lifecycle, configured exemptions and presentation remain unchanged. Repair invalid existing state fixtures and adapt one existing public gate test.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
