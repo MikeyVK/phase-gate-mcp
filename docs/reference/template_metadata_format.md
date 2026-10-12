@@ -44,4 +44,4 @@ The active suite is resolved from its configured `template_suite/` root when the
 
 - [Template Library Usage](TEMPLATE_LIBRARY_USAGE.md) — discovery, valid scaffold basis, and normal refinement.
 - [Scaffolding Tools](tools/scaffolding.md) — current public schema and scaffold behavior.
-- [Template Package Resolution Design](../development/issue460/design-suite-resolution.md) — identity boundaries and computed fingerprint semantics.
+- [Template Package Resolution Design](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/design-suite-resolution.md) — identity boundaries and computed fingerprint semantics.

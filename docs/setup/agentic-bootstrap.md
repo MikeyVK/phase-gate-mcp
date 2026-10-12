@@ -3,8 +3,8 @@
 # Agentic Bootstrap Guide for New Projects
 
 **Status:** APPROVED  
-**Version:** 1.2  
-**Last Updated:** 2026-10-01
+**Version:** 1.3  
+**Last Updated:** 2026-10-11
 
 ---
 
@@ -50,15 +50,14 @@ Run the following commands in the terminal using the terminal execution tool:
 # Create virtual environment
 python -m venv .venv
 
-# Install the phase-gate-mcp package
-# (Once published: pip install phase-gate-mcp)
-# (For local testing: pip install C:/path/to/local/wheel)
-.\.venv\Scripts\python -m pip install phase-gate-mcp
+# Install the reviewed release wheel in the MCP launch environment.
+# Release downloads remain pending publication; do not assume a PyPI release.
+.\.venv\Scripts\python -m pip install C:/path/to/phase_gate_mcp-3.0.0-py3-none-any.whl
 ```
 
 ### 3. Initialize or Renew the Server Root
 
-This guide assumes an installed package with complete assembled assets. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; see the [release assets procedure](../reference/release-assets-procedure.md). The development checkout need not already contain a release-ready wheel. The project release remains 2.0.0; the new template renewal behavior does not imply a new package release.
+This guide targets **PGMCP 3.0.0** and assumes an installed package with complete assembled assets. Exact package verification and limitations are recorded with the release evidence. Release preparation uses `scripts/build_package.py`; see the [release assets procedure](../reference/release-assets-procedure.md). A development checkout is not itself a release-ready wheel. Install the reviewed package first; configuration migration, template renewal and server/client restart are separate owner-controlled steps.
 
 For a previously absent server root:
 
@@ -80,7 +79,7 @@ An existing server root requires the owner-led renewal procedure:
 .\.venv\Scripts\pgmcp --upgrade
 ```
 
-Renewal stages and validates a candidate for the managed template suite, compares it with the active suite and recorded checkpoint, and reports activation or required owner action. It does not refresh owner-managed configuration or workspace adapters. A missing trustworthy baseline can produce `checkpoint_required` and exit code 2; follow the explicit acceptance or backed-up replacement procedure in the [workspace upgrade guide](workspace-upgrade.md). Restart a running server after the active suite changes. Treat `installation.json` as the installation/checkpoint record, rather than using a root `.version` file as renewal authority.
+Renewal stages and validates a candidate for the managed template suite, compares it with the active suite and recorded checkpoint, and reports activation or required owner action. It does not refresh owner-managed configuration or workspace adapters. For an existing v2 workspace, explicitly reconcile effective configuration and changed tool inputs against the shipped defaults; preserve owner changes and external roots. Provision the applicable native executables/versions separately, as declared by the [adapter packages](../reference/execution-adapters.md). A missing trustworthy baseline can produce `checkpoint_required` and exit code 2; follow the explicit acceptance or verified-backup replacement procedure in the [workspace upgrade guide](workspace-upgrade.md). Restart after package, active-suite or startup-loaded configuration changes and reconnect the client to refresh tool discovery. Launch-environment changes may require closing and relaunching the client. Treat `installation.json` as the installation/checkpoint record rather than a root `.version` file. Check healthy admission after restart; an acknowledgement alone does not establish it.
 
 ### 4. Deploy IDE-Specific Configurations & Rules
 Based on the active IDE, copy and set up the workspace rules and configurations:
@@ -141,7 +140,7 @@ When a developer wants to add the Phase-Gate workflow to an existing project/rep
 ### 1. Install phase-gate-mcp Package
 The agent installs the package in the project's existing Python virtual environment:
 ```powershell
-.\.venv\Scripts\python -m pip install phase-gate-mcp
+.\.venv\Scripts\python -m pip install C:/path/to/phase_gate_mcp-3.0.0-py3-none-any.whl
 ```
 
 ### 2. Run CLI Initializer
@@ -184,6 +183,7 @@ This ensures that the workflow configurations are tracked in Git, making them in
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.3 | 2026-10-11 | @imp implementer | Target prepared v3 package; distinguish reviewed wheel installation, owner configuration, native prerequisites, suite renewal and server/client activation without claiming publication |
 | 1.2 | 2026-10-01 | Implementation documenter | Describe current template_suite/checkpoint renewal, owner-led baseline handling and restart; retain complete-package assumption |
 | 1.1 | 2026-07-20 | Agent | Document .version file creation during CLI init |
 | 1.0 | 2026-07-08 | Agent | Initial draft |

@@ -1,6 +1,6 @@
 [project]
 name = "phase-gate-mcp"
-version = "2.0.0"
+version = "3.0.0"
 description = "Phase-Gate MCP Server — AI-assisted workflow orchestration with phase, cycle, and quality gate enforcement"
 authors = [
     {name = "Phase Gate Team"}
@@ -48,6 +48,9 @@ mcp_server = [
     "execution/contracts/*.json",
     "resources/cache_reading.md",
 ]
+
+[tool.setuptools.exclude-package-data]
+mcp_server = ["**/__pycache__/*", "**/*.pyc", "**/*.pyo"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

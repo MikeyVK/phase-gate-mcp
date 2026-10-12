@@ -48,7 +48,7 @@ def _default_server_version() -> str:
         except Exception:
             pass
 
-    return "2.0.0"
+    return "3.0.0"
 
 
 class LogSettings(BaseModel):

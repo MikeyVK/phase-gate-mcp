@@ -94,7 +94,7 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
         "mcp_server.config.settings.metadata.version",
         side_effect=metadata.PackageNotFoundError,
     ):
-        assert _default_server_version() == "2.0.0"
+        assert _default_server_version() == "3.0.0"
 
 
 # ---------------------------------------------------------------------------

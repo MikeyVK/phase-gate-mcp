@@ -68,8 +68,8 @@ configured output checks provide any applicable syntax evidence.
 - Generic services own rendering, validation orchestration, target resolution, and
   persistence; artifact-specific Python registration is not the package extension path.
 
-See [template suite resolution](../../development/issue460/design-suite-resolution.md),
-[code and test artifact contracts](../../development/issue460/design-code-test-artifacts.md),
+See [template suite resolution](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/design-suite-resolution.md),
+[code and test artifact contracts](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/design-code-test-artifacts.md),
 [scaffolding tools](../../reference/tools/scaffolding.md), and
 [configuration consumers](10_config_consumers.md) for their respective authorities.
 
