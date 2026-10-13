@@ -3,20 +3,21 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+
+from mcp_server.core.exceptions import MCPError
 
 PlanningText = Annotated[str, StringConstraints(strict=True, min_length=1, pattern=r"\S")]
 CycleRef = Annotated[str, Field(strict=True, pattern=r"^C_[1-9][0-9]*$")]
 
 
-class PlanningMutationError(ValueError):
-    """Structured planning command failure for the presentation boundary."""
+class PlanningMutationError(MCPError):
+    """Planning command diagnosis carried by the shared domain exception contract."""
 
-    def __init__(self, error_code: str) -> None:
-        super().__init__(error_code)
-        self.error_code = error_code
+    def __init__(self, error_code: str, *, params: dict[str, Any] | None = None) -> None:
+        super().__init__(error_code, code=error_code, params=params)
 
 
 class PlanningValue(BaseModel):

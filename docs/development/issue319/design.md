@@ -3,8 +3,8 @@
 # Issue 319 — bounded quality configuration choice
 
 **Status:** DRAFT — INDEPENDENT REVIEW REQUIRED  
-**Version:** 0.2  
-**Last Updated:** 2026-10-12
+**Version:** 0.3  
+**Last Updated:** 2026-10-13
 
 ## Purpose
 
@@ -109,7 +109,13 @@ Author the human explanation and recovery action in presentation.yaml using the 
 
 ### Existing maintenance and ownership
 
-Retain the Research G004/BLE001/SLF001 inventory and scoped repair dispositions. Preserve failure DTOs, primary errors/cleanup notes and public testing; remove proven orphan setup and test-only escape access. Native settings remain owner-authored; adapter metadata/pins are unchanged by the choice feature. No config resolution, package-copy flow or source-consumer catalogue is added.
+Retain the Research G004/BLE001/SLF001 inventory and owner-approved dispositions. The 2026-10-13 exception-ownership decision supersedes preservation of bespoke catch-to-tool-failure DTOs at the seventeen identified sites. Ordinary exceptions reach the existing wrapper; commit cleanup re-raises the primary exception with secondary diagnosis. Preserve successful operation outputs, factual negative outcomes and domain semantics. Native settings remain owner-authored; adapter metadata/pins are unchanged.
+
+The existing ConfigErrorOutput and ExecutionErrorOutput carry optional error_code; ToolErrorOutput carries error_params separately from existing request params. Traceback includes the original exception chain and cleanup notes. The shared capture in existing core error handling has no presentation or tool/domain-specific dispatch. Existing generic presentation selects configured domain failures or its default exception text, rather than projecting an exception through a normal tool-result template.
+
+PlanningMutationError uses the existing MCPError hierarchy and code/params. Save/update manager commands return the persisted StoredPlanningModel after readback; post-write failure raises planning_readback_failed with persisted=true and the original cause. Tools only project successful returned plans. The standalone PolicyDecision preserves allowed=false on evaluation error and retains the captured diagnosis.
+
+RenewalResult retains its factual outcome and adds the existing typed error diagnostic, including subtype fields. RenewalPresenter owns text projection of results and direct CLI errors. Initialization preserves nonzero outcome exitcodes and facts; only a missing result is an internal exception. Terminal CLI catches retain complete diagnosis and exit1. No new wrapper class, presenter class, registry, adapter protocol or configuration resolver is added.
 
 ## Test Design
 
@@ -127,3 +133,4 @@ Adapt existing public configuration/execution tests with a small parametrized se
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-12 | @imp designer | Define bounded binding choice, truthful refusal and native-behavior preservation under the approved Chore strategy. |
 | 0.2 | 2026-10-12 | @imp researcher | Resolve fresh-init ownership without asset builders; define consumer refusal rows, absent native facts and both content policies before implementation. |
+| 0.3 | 2026-10-13 | @imp implementer | Specify approved exception ownership using existing wrapper/error DTOs and renewal presenter; preserve domain and post-write diagnosis without a new architecture. |

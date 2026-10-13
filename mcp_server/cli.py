@@ -11,8 +11,10 @@ import yaml
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import Settings
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.exceptions import ConfigError, MCPError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
+from mcp_server.presenters.renewal_presenter import RenewalPresenter
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.startup_recovery_presenter import StartupRecoveryPresenter
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
@@ -120,16 +122,21 @@ def main(settings: Settings | None = None) -> None:
             operation = build_default_operation(_settings)
             operation.execute()
             outcome = operation.last_result
-            if outcome is None or outcome.exit_code != 0:
-                raise RuntimeError("target_initialization_failed")
+            if outcome is None:
+                raise RuntimeError("target_initialization_result_missing")
+            if outcome.exit_code != 0:
+                sys.stderr.write(RenewalPresenter().present(outcome))
+                sys.stderr.flush()
+                sys.exit(outcome.exit_code)
 
             print(  # noqa: T201
                 f"Successfully initialized server root at '{resolved_server_root}'",
                 file=sys.stdout,
             )
             sys.exit(0)
-        except Exception as e:  # noqa: BLE001 -- CLI boundary reports init failure and exits 1.
-            print(f"Error initializing server root: {e}", file=sys.stderr)  # noqa: T201
+        except Exception as error:  # noqa: BLE001 -- Terminal CLI boundary preserves exception diagnostics.
+            sys.stderr.write(RenewalPresenter().present_error(capture_exception(error)))
+            sys.stderr.flush()
             sys.exit(1)
 
     resolved_server_root = Path(_settings.server.resolved_server_root)

@@ -1,6 +1,7 @@
 """Git tools."""
 
 import contextlib
+import traceback
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal
@@ -162,27 +163,15 @@ class CreateBranchTool(ICoreTool[CreateBranchInput, CreateBranchOutput]):
             },
         )
 
-        try:
-            branch_name = self.manager.create_branch(
-                params.issue_number, params.name, params.branch_type, params.base_branch, context
-            )
-            return CreateBranchOutput(
-                success=True,
-                branch_name=branch_name,
-                branch_type=params.branch_type,
-                base_branch=params.base_branch,
-            )
-        except Exception as e:
-            logger.error(
-                "Branch creation failed", extra={"props": {"name": params.name, "error": str(e)}}
-            )
-            return CreateBranchOutput(
-                success=False,
-                error_message=str(e),
-                branch_name="",
-                branch_type=params.branch_type,
-                base_branch=params.base_branch,
-            )
+        branch_name = self.manager.create_branch(
+            params.issue_number, params.name, params.branch_type, params.base_branch, context
+        )
+        return CreateBranchOutput(
+            success=True,
+            branch_name=branch_name,
+            branch_type=params.branch_type,
+            base_branch=params.base_branch,
+        )
 
 
 class GitStatusInput(BaseModel):
@@ -234,31 +223,19 @@ class GitStatusTool(ICoreTool[GitStatusInput, GitStatusOutput]):
         del params
         del context
 
-        try:
-            status = self.manager.get_status()
-            modified_files = status.get("modified_files", [])
-            untracked_files = status.get("untracked_files", [])
+        status = self.manager.get_status()
+        modified_files = status.get("modified_files", [])
+        untracked_files = status.get("untracked_files", [])
 
-            return GitStatusOutput(
-                success=True,
-                branch=status["branch"],
-                is_clean=status["is_clean"],
-                modified_files=modified_files,
-                untracked_files=untracked_files,
-                modified_count=len(modified_files),
-                untracked_count=len(untracked_files),
-            )
-        except Exception as e:
-            return GitStatusOutput(
-                success=False,
-                error_message=str(e),
-                branch="",
-                is_clean=False,
-                modified_files=[],
-                untracked_files=[],
-                modified_count=0,
-                untracked_count=0,
-            )
+        return GitStatusOutput(
+            success=True,
+            branch=status["branch"],
+            is_clean=status["is_clean"],
+            modified_files=modified_files,
+            untracked_files=untracked_files,
+            modified_count=len(modified_files),
+            untracked_count=len(untracked_files),
+        )
 
 
 class GitCommitInput(BaseModel):
@@ -380,47 +357,36 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
         else:
             issue_number = self.manager.git_config.extract_issue_number(current_branch)
 
-        try:
-            if self._phase_guard is not None:
-                self._phase_guard(current_branch, workflow_phase, params.cycle_number)
+        if self._phase_guard is not None:
+            self._phase_guard(current_branch, workflow_phase, params.cycle_number)
 
-            if self._phase_contract_resolver is not None and self._state_engine is not None:
-                if params.workflow_phase is None:
-                    # auto-detect path: state already loaded above
-                    assert auto_state is not None  # exception path returns early above
-                    guard_workflow_name = auto_state.workflow_name
-                else:
-                    # explicit path: load state for workflow_name only
-                    guard_state = self._state_engine.get_state(current_branch)
-                    guard_workflow_name = guard_state.workflow_name
-                if (
-                    self._phase_contract_resolver.is_cycle_based_phase(
-                        guard_workflow_name, workflow_phase
-                    )
-                    and params.cycle_number is None
-                ):
-                    return GitCommitOutput(
-                        success=False,
-                        error_message=(
-                            f"cycle_number is required when committing in a cycle-based phase "
-                            f"('{workflow_phase}'). "
-                            "Use: git_add_or_commit(..., cycle_number=N)"
-                        ),
-                        commit_hash="",
-                        branch=current_branch,
-                        workflow_phase=workflow_phase or "",
-                        commit_type="",
-                    )
-        except Exception as e:
-            return GitCommitOutput(
-                success=False,
-                error_message=str(e),
-                commit_hash="",
-                branch=current_branch,
-                workflow_phase=workflow_phase or "",
-                commit_type="",
-            )
-
+        if self._phase_contract_resolver is not None and self._state_engine is not None:
+            if params.workflow_phase is None:
+                # auto-detect path: state already loaded above
+                assert auto_state is not None  # exception path returns early above
+                guard_workflow_name = auto_state.workflow_name
+            else:
+                # explicit path: load state for workflow_name only
+                guard_state = self._state_engine.get_state(current_branch)
+                guard_workflow_name = guard_state.workflow_name
+            if (
+                self._phase_contract_resolver.is_cycle_based_phase(
+                    guard_workflow_name, workflow_phase
+                )
+                and params.cycle_number is None
+            ):
+                return GitCommitOutput(
+                    success=False,
+                    error_message=(
+                        f"cycle_number is required when committing in a cycle-based phase "
+                        f"('{workflow_phase}'). "
+                        "Use: git_add_or_commit(..., cycle_number=N)"
+                    ),
+                    commit_hash="",
+                    branch=current_branch,
+                    workflow_phase=workflow_phase or "",
+                    commit_type="",
+                )
         commit_type = params.commit_type
         if commit_type is None and self._commit_type_resolver is not None:
             commit_type = self._commit_type_resolver(
@@ -432,12 +398,8 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
         old_sub_phase = None
         commit_files = params.files
         if self._state_engine is not None:
-            try:
-                state_obj = auto_state or self._state_engine.get_state(current_branch)
-                old_sub_phase = state_obj.current_sub_phase
-            except Exception:
-                pass
-
+            state_obj = auto_state or self._state_engine.get_state(current_branch)
+            old_sub_phase = state_obj.current_sub_phase
         try:
             ctx = context
             if self._state_engine is not None:
@@ -477,23 +439,17 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 commit_type=commit_type or "",
                 files=commit_files or [],
             )
-        except Exception as e:
+        except Exception as exc:  # noqa: BLE001 -- Restore state before propagating to the wrapper.
             if self._state_engine is not None:
                 try:
                     self._state_engine.record_sub_phase(current_branch, old_sub_phase)
-                except Exception as rollback_err:
-                    logger.error("Failed to rollback sub_phase mutation: %s", rollback_err)
-            return GitCommitOutput(
-                success=False,
-                error_message=str(e),
-                commit_hash="",
-                branch=current_branch,
-                workflow_phase=workflow_phase or "",
-                sub_phase=params.sub_phase,
-                cycle_number=params.cycle_number,
-                commit_type=commit_type or "",
-                files=commit_files or [],
-            )
+                except Exception as rollback_err:  # noqa: BLE001 -- Preserve the original commit error.
+                    exc.add_note(
+                        "Sub-phase rollback failed:\n"
+                        + "".join(traceback.format_exception(rollback_err))
+                    )
+                    logger.error("Failed to rollback sub_phase mutation", exc_info=True)
+            raise
 
 
 class GitRestoreInput(BaseModel):
@@ -543,22 +499,13 @@ class GitRestoreTool(ICoreTool[GitRestoreInput, GitRestoreOutput]):
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitRestoreInput, context: NoteContext) -> GitRestoreOutput:
-        try:
-            self.manager.restore(files=params.files, note_context=context, source=params.source)
-            return GitRestoreOutput(
-                success=True,
-                files=params.files,
-                source=params.source,
-                files_count=len(params.files),
-            )
-        except Exception as e:
-            return GitRestoreOutput(
-                success=False,
-                error_message=str(e),
-                files=params.files,
-                source=params.source,
-                files_count=len(params.files),
-            )
+        self.manager.restore(files=params.files, note_context=context, source=params.source)
+        return GitRestoreOutput(
+            success=True,
+            files=params.files,
+            source=params.source,
+            files_count=len(params.files),
+        )
 
 
 class GitCheckoutInput(BaseModel):
@@ -617,22 +564,8 @@ class GitCheckoutTool(ICoreTool[GitCheckoutInput, GitCheckoutOutput]):
         with contextlib.suppress(Exception):
             previous_branch = self.manager.get_current_branch()
 
-        try:
-            # GitPython operations can block; run them in a worker thread.
-            await anyio.to_thread.run_sync(self.manager.checkout, params.branch)
-        except Exception as exc:
-            logger.error(
-                "Branch checkout failed",
-                extra={"props": {"branch": params.branch, "error": str(exc)}},
-            )
-            return GitCheckoutOutput(
-                success=False,
-                error_message=str(exc),
-                branch=params.branch,
-                previous_branch=previous_branch,
-                current_phase="unknown",
-            )
-
+        # GitPython operations can block; run them in a worker thread.
+        await anyio.to_thread.run_sync(self.manager.checkout, params.branch)
         current_phase = "unknown"
         parent_branch: str | None = None
         try:
@@ -761,25 +694,13 @@ class GitMergeTool(ICoreTool[GitMergeInput, GitMergeOutput]):
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitMergeInput, context: NoteContext) -> GitMergeOutput:
-        try:
-            status = self.manager.get_status()
-            self.manager.merge(params.branch, context)
-            return GitMergeOutput(
-                success=True,
-                source_branch=params.branch,
-                target_branch=status["branch"],
-            )
-        except Exception as e:
-            try:
-                target = self.manager.get_current_branch()
-            except Exception:
-                target = ""
-            return GitMergeOutput(
-                success=False,
-                error_message=str(e),
-                source_branch=params.branch,
-                target_branch=target,
-            )
+        status = self.manager.get_status()
+        self.manager.merge(params.branch, context)
+        return GitMergeOutput(
+            success=True,
+            source_branch=params.branch,
+            target_branch=status["branch"],
+        )
 
 
 class GitDeleteBranchInput(BaseModel):
@@ -833,24 +754,15 @@ class GitDeleteBranchTool(ICoreTool[GitDeleteBranchInput, GitDeleteBranchOutput]
     async def execute(
         self, params: GitDeleteBranchInput, context: NoteContext
     ) -> GitDeleteBranchOutput:
-        try:
-            result: BranchDeleteResult = self.manager.delete_branch(
-                params.branch, context, force=params.force, mode=params.mode
-            )
-            return GitDeleteBranchOutput(
-                success=True,
-                branch=params.branch,
-                local_status=result.local_status,
-                remote_status=result.remote_status,
-            )
-        except Exception as e:
-            return GitDeleteBranchOutput(
-                success=False,
-                error_message=str(e),
-                branch=params.branch,
-                local_status="error",
-                remote_status="error",
-            )
+        result: BranchDeleteResult = self.manager.delete_branch(
+            params.branch, context, force=params.force, mode=params.mode
+        )
+        return GitDeleteBranchOutput(
+            success=True,
+            branch=params.branch,
+            local_status=result.local_status,
+            remote_status=result.remote_status,
+        )
 
 
 class GitStashInput(BaseModel):
@@ -909,31 +821,20 @@ class GitStashTool(ICoreTool[GitStashInput, GitStashOutput]):
     async def execute(self, params: GitStashInput, context: NoteContext) -> GitStashOutput:
         del context
 
-        try:
-            stashes = []
-            if params.action == "push":
-                self.manager.stash(
-                    message=params.message, include_untracked=params.include_untracked
-                )
-            elif params.action == "pop":
-                self.manager.stash_pop()
-            elif params.action == "list":
-                stashes = self.manager.stash_list()
+        stashes = []
+        if params.action == "push":
+            self.manager.stash(message=params.message, include_untracked=params.include_untracked)
+        elif params.action == "pop":
+            self.manager.stash_pop()
+        elif params.action == "list":
+            stashes = self.manager.stash_list()
 
-            return GitStashOutput(
-                success=True,
-                action=params.action,
-                message=params.message,
-                stashes=stashes,
-            )
-        except Exception as e:
-            return GitStashOutput(
-                success=False,
-                error_message=str(e),
-                action=params.action,
-                message=params.message,
-                stashes=[],
-            )
+        return GitStashOutput(
+            success=True,
+            action=params.action,
+            message=params.message,
+            stashes=stashes,
+        )
 
 
 class GetParentBranchInput(BaseModel):
@@ -994,22 +895,15 @@ class GetParentBranchTool(ICoreTool[GetParentBranchInput, GetParentBranchOutput]
                 success=False, error_message="PhaseStateEngine must be injected", branch=""
             )
 
-        try:
-            branch = params.branch or self.manager.get_current_branch()
-            state = await anyio.to_thread.run_sync(self._state_engine.get_state, branch)
-            parent = state.parent_branch
+        branch = params.branch or self.manager.get_current_branch()
+        state = await anyio.to_thread.run_sync(self._state_engine.get_state, branch)
+        parent = state.parent_branch
 
-            return GetParentBranchOutput(
-                success=True,
-                branch=branch,
-                parent_branch=parent,
-            )
-        except Exception as exc:
-            return GetParentBranchOutput(
-                success=False,
-                error_message=f"Failed to get parent branch: {exc}",
-                branch=params.branch or "",
-            )
+        return GetParentBranchOutput(
+            success=True,
+            branch=branch,
+            parent_branch=parent,
+        )
 
 
 class CheckMergeInput(BaseModel):
@@ -1058,23 +952,14 @@ class CheckMergeTool(ICoreTool[CheckMergeInput, CheckMergeOutput]):
 
     async def execute(self, params: CheckMergeInput, context: NoteContext) -> CheckMergeOutput:
         del context
-        try:
-            reachable = self.manager.is_ancestor(params.merge_sha)
-            return CheckMergeOutput(
-                success=reachable,
-                merge_sha=params.merge_sha,
-                is_ancestor=reachable,
-                error_message=None
-                if reachable
-                else (
-                    f"SHA {params.merge_sha} is NOT reachable from HEAD — "
-                    "merge may not have landed yet"
-                ),
-            )
-        except Exception as e:
-            return CheckMergeOutput(
-                success=False,
-                merge_sha=params.merge_sha,
-                is_ancestor=False,
-                error_message=str(e),
-            )
+        reachable = self.manager.is_ancestor(params.merge_sha)
+        return CheckMergeOutput(
+            success=reachable,
+            merge_sha=params.merge_sha,
+            is_ancestor=reachable,
+            error_message=None
+            if reachable
+            else (
+                f"SHA {params.merge_sha} is NOT reachable from HEAD — merge may not have landed yet"
+            ),
+        )

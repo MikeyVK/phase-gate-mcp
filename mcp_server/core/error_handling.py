@@ -7,11 +7,14 @@ Note: this handler intentionally catches only expected/known exception types.
 Unexpected exceptions still propagate (so we don't blanket-catch everything).
 """
 
+from __future__ import annotations
+
 import functools
 import json
 import logging
+import traceback
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from mcp_server.core.exceptions import (
     ConfigError,
@@ -23,9 +26,42 @@ from mcp_server.core.exceptions import (
 )
 from mcp_server.tools.tool_result import ToolResult
 
+if TYPE_CHECKING:
+    from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+
+
+def capture_exception(
+    error: BaseException, *, params: dict[str, Any] | None = None
+) -> ConfigErrorOutput | ExecutionErrorOutput:
+    """Capture original diagnostic facts without presentation or exception dispatch."""
+    from mcp_server.schemas.error_outputs import (  # noqa: PLC0415 -- Avoid eager core/schema imports.
+        ConfigErrorOutput,
+        ExecutionErrorOutput,
+    )
+
+    trace = "".join(traceback.format_exception(error))
+    error_code = error.code if isinstance(error, MCPError) else None
+    error_params = error.params if isinstance(error, MCPError) else {}
+    if isinstance(error, ConfigError):
+        return ConfigErrorOutput(
+            error_message=error.message,
+            file_path=error.file_path,
+            traceback=trace,
+            error_code=error_code,
+            error_params=error_params,
+            params=params or {},
+        )
+    return ExecutionErrorOutput(
+        error_message=f"{type(error).__name__}: {error}",
+        traceback=trace,
+        error_code=error_code,
+        error_params=error_params,
+        params=params or {},
+    )
 
 
 def tool_error_handler(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:

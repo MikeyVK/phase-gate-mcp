@@ -186,14 +186,17 @@ class TestTextPresenter:
 
         text = presenter.present_text(tool_name="dummy_tool", success=False, data=dto)
 
-        assert text == "❌ Error: Operation failed"
+        assert text == "❌ Failed: Operation failed"
 
-    def test_present_text_default_failure_template(self, mock_yaml_config: dict[str, Any]) -> None:
+    @pytest.mark.parametrize("tool_name", ["dummy_no_model", "dummy_tool"])
+    def test_present_text_default_failure_template(
+        self, mock_yaml_config: dict[str, Any], tool_name: str
+    ) -> None:
         """Test presenting failure using default failure template when no specific one exists."""
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = ExecutionErrorOutput(error_message="Something crashed")
 
-        text = presenter.present_text(tool_name="dummy_no_model", success=False, data=dto)
+        text = presenter.present_text(tool_name=tool_name, success=False, data=dto)
 
         assert text == "❌ Failed: Something crashed"
 

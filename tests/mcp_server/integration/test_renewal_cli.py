@@ -11,8 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.cli_renewal import RenewalCli, build_default_operation
+from mcp_server.cli_renewal import RenewalCli, build_default_operation, main
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.exceptions import MCPError
 from mcp_server.services.installation_state import InstallationStateRepository
 from mcp_server.services.template_activation import (
     ActivationFiles,
@@ -298,6 +299,12 @@ def test_busy_and_invalid_profile_are_actionable(renewal_case: RenewalCase) -> N
     assert code == 1
     result = _result(operation)
     assert result.outcome == "candidate_invalid"
+    assert result.diagnostic is not None
+    assert result.diagnostic.traceback is not None
+    assert result.diagnostic.error_code is not None
+    assert result.diagnostic.error_params
+    assert result.diagnostic.traceback in out + err
+    assert "validate_template_policy" in result.diagnostic.traceback
     rendered = (out + err).lower()
     assert "issue" in rendered
     assert "missing_profile" in rendered
@@ -384,3 +391,61 @@ def test_first_legacy_upgrade_requires_owner_migration(renewal_case: RenewalCase
     assert legacy_file.read_bytes() == original
     assert renewal_case.actual.is_dir()
     assert (renewal_case.server / "installation.json").is_file()
+
+
+@pytest.mark.parametrize("missing_result", [False, True])
+def test_cli_execution_failure_preserves_diagnostic(
+    renewal_case: RenewalCase, monkeypatch: pytest.MonkeyPatch, missing_result: bool
+) -> None:
+    """The outer CLI boundary exposes execution faults and missing results."""
+    operation = build_default_operation(_settings(renewal_case))
+    stdout, stderr = StringIO(), StringIO()
+
+    def fail_execute(**_kwargs: object) -> None:
+        if missing_result:
+            return
+        try:
+            raise OSError("fixture source unreadable")
+        except OSError as cause:
+            raise MCPError(
+                "fixture renewal fault", code="fixture_renewal_fault", params={"component": "issue"}
+            ) from cause
+
+    monkeypatch.setattr(operation, "execute", fail_execute)
+    code = RenewalCli(operation=operation, stdout=stdout, stderr=stderr).run(["--upgrade"])
+
+    assert code == 1
+    assert not stdout.getvalue()
+    err = stderr.getvalue()
+    assert "Traceback" in err
+    if missing_result:
+        assert "template_renewal_result_missing" in err
+    else:
+        assert "fixture source unreadable" in err
+        assert "fixture renewal fault" in err
+        assert "component: issue" in err
+        assert "fail_execute" in err
+
+
+def test_cli_composition_failure_preserves_diagnostic(
+    renewal_case: RenewalCase,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Composition faults reach the same presentation boundary as execution faults."""
+
+    def fail_build(_settings: Settings) -> TemplateRenewalService:
+        raise MCPError(
+            "fixture composition fault",
+            code="fixture_composition_fault",
+            params={"root": str(renewal_case.server)},
+        )
+
+    monkeypatch.setattr("mcp_server.cli_renewal.build_default_operation", fail_build)
+    assert main(["--upgrade"], settings=_settings(renewal_case)) == 1
+    captured = capsys.readouterr()
+    assert not captured.out
+    assert "fixture composition fault" in captured.err
+    assert str(renewal_case.server) in captured.err
+    assert "Traceback" in captured.err
+    assert "fail_build" in captured.err

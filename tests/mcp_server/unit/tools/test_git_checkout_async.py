@@ -26,16 +26,10 @@ class TestGitCheckoutAsync:
         params.branch = "feature/123-test"
 
         mock_run_sync = AsyncMock(side_effect=RuntimeError("stop"))
-        with patch("anyio.to_thread.run_sync", mock_run_sync):
-            result = await tool.execute(params, NoteContext())
+        with (
+            patch("anyio.to_thread.run_sync", mock_run_sync),
+            pytest.raises(RuntimeError, match="stop") as caught,
+        ):
+            await tool.execute(params, NoteContext())
 
-        from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
-
-        assert isinstance(result, GitCheckoutOutput)
-        assert result.success is False
-        assert result.error_message is not None
-        assert "stop" in result.error_message
-
-    def test_placeholder_for_pylint(self) -> None:
-        """Placeholder test to satisfy pylint too-few-public-methods."""
-        assert True
+        assert caught.value is mock_run_sync.side_effect

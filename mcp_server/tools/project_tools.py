@@ -25,7 +25,6 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.schemas import ContractsConfig
 from mcp_server.schemas.deliverables import (
-    PlanningMutationError,
     PlanningOperation,
     SavePlanningModel,
     StoredPlanningModel,
@@ -226,81 +225,69 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         Returns:
             InitializeProjectOutput
         """
-        try:
-            # Step 0: Get current branch once and reuse
-            with anyio.fail_after(5):
-                branch = await anyio.to_thread.run_sync(self.git_manager.get_current_branch)
+        # Step 0: Get current branch once and reuse
+        with anyio.fail_after(5):
+            branch = await anyio.to_thread.run_sync(self.git_manager.get_current_branch)
 
-            await anyio.to_thread.run_sync(
-                lambda: self.state_engine.validate_branch_initialization(branch)
-            )
+        await anyio.to_thread.run_sync(
+            lambda: self.state_engine.validate_branch_initialization(branch)
+        )
 
-            # Step 1: Determine parent_branch
-            parent_branch = params.parent_branch
+        # Step 1: Determine parent_branch
+        parent_branch = params.parent_branch
 
-            if parent_branch is None:
-                # Auto-detect from git reflog
-                parent_branch = await self._detect_parent_branch_from_reflog(branch)
-                if parent_branch:
-                    logger.info("Auto-detected parent_branch: %s for %s", parent_branch, branch)
+        if parent_branch is None:
+            # Auto-detect from git reflog
+            parent_branch = await self._detect_parent_branch_from_reflog(branch)
+            if parent_branch:
+                logger.info("Auto-detected parent_branch: %s for %s", parent_branch, branch)
 
-            # Step 2: Create deliverables.json (workflow definition)
-            options = None
-            if params.custom_phases or params.skip_reason or parent_branch:
-                options = ProjectInitOptions(
-                    custom_phases=params.custom_phases,
-                    skip_reason=params.skip_reason,
-                    parent_branch=parent_branch,
-                )
-
-            with anyio.fail_after(20):
-                result = await anyio.to_thread.run_sync(
-                    lambda: self.manager.initialize_project(
-                        issue_number=params.issue_number,
-                        issue_title=params.issue_title,
-                        workflow_name=params.workflow_name,
-                        options=options,
-                    )
-                )
-
-            # Step 3: Determine first phase from workflow
-            first_phase = result["required_phases"][0]
-
-            # Step 5: Initialize branch state
-            with anyio.fail_after(10):
-                await anyio.to_thread.run_sync(
-                    lambda: self.state_engine.initialize_branch(
-                        branch=branch,
-                        issue_number=params.issue_number,
-                        initial_phase=first_phase,
-                    )
-                )
-
-            return InitializeProjectOutput(
-                success=True,
-                issue_number=params.issue_number,
-                workflow_name=params.workflow_name,
-                branch=branch,
-                initial_phase=first_phase,
+        # Step 2: Create deliverables.json (workflow definition)
+        options = None
+        if params.custom_phases or params.skip_reason or parent_branch:
+            options = ProjectInitOptions(
+                custom_phases=params.custom_phases,
+                skip_reason=params.skip_reason,
                 parent_branch=parent_branch,
-                required_phases=result["required_phases"],
-                execution_mode=result["execution_mode"],
-                files_created=[
-                    "deliverables.json (workflow definition)",
-                    "state.json (branch state)",
-                ],
             )
 
-        except Exception as e:
-            return InitializeProjectOutput(
-                success=False,
-                error_message=str(e),
-                issue_number=params.issue_number,
-                workflow_name=params.workflow_name,
-                branch="",
-                initial_phase="",
-                execution_mode="",
+        with anyio.fail_after(20):
+            result = await anyio.to_thread.run_sync(
+                lambda: self.manager.initialize_project(
+                    issue_number=params.issue_number,
+                    issue_title=params.issue_title,
+                    workflow_name=params.workflow_name,
+                    options=options,
+                )
             )
+
+        # Step 3: Determine first phase from workflow
+        first_phase = result["required_phases"][0]
+
+        # Step 5: Initialize branch state
+        with anyio.fail_after(10):
+            await anyio.to_thread.run_sync(
+                lambda: self.state_engine.initialize_branch(
+                    branch=branch,
+                    issue_number=params.issue_number,
+                    initial_phase=first_phase,
+                )
+            )
+
+        return InitializeProjectOutput(
+            success=True,
+            issue_number=params.issue_number,
+            workflow_name=params.workflow_name,
+            branch=branch,
+            initial_phase=first_phase,
+            parent_branch=parent_branch,
+            required_phases=result["required_phases"],
+            execution_mode=result["execution_mode"],
+            files_created=[
+                "deliverables.json (workflow definition)",
+                "state.json (branch state)",
+            ],
+        )
 
 
 class GetProjectPlanInput(BaseModel):
@@ -470,13 +457,9 @@ def _planning_input_schema(model: type[BaseModel], manager: ProjectManager) -> d
 
 
 def _planning_response(
-    manager: IProjectPlanReader, issue_number: int
+    planning: StoredPlanningModel, issue_number: int
 ) -> PlanningDeliverablesOutput:
     """Assemble one successful command response from the persisted complete plan."""
-    plan = manager.get_project_plan(issue_number)
-    if plan is None or plan.get("planning_deliverables") is None:
-        raise ValueError("Planning deliverables unavailable after persistence")
-    planning = StoredPlanningModel.model_validate(plan["planning_deliverables"], strict=True)
     cycles = planning.cycles.cycles if planning.cycles is not None else []
     summaries = [
         PlannedCycleSummary(
@@ -497,27 +480,6 @@ def _planning_response(
         ),
         cycles=summaries,
         planning_deliverables=planning,
-    )
-
-
-def _planning_failure(
-    issue_number: int, error: Exception, *, persisted: bool
-) -> PlanningDeliverablesOutput:
-    """Keep rejected commands and failed post-write readback distinct."""
-    code = (
-        "planning_readback_failed"
-        if persisted
-        else error.error_code
-        if isinstance(error, PlanningMutationError)
-        else "planning_command_failed"
-    )
-    return PlanningDeliverablesOutput(
-        success=False,
-        issue_number=issue_number,
-        error_code=code,
-        error_message=str(error),
-        total_cycles=0,
-        total_deliverables=0,
     )
 
 
@@ -556,16 +518,11 @@ class SavePlanningDeliverablesTool(
         self, params: SavePlanningDeliverablesInput, context: NoteContext
     ) -> PlanningDeliverablesOutput:
         del context
-        persisted = False
-        try:
-            self._manager.save_planning_deliverables(
-                issue_number=params.issue_number,
-                planning_deliverables=params.planning_deliverables,
-            )
-            persisted = True
-            return _planning_response(self._manager, params.issue_number)
-        except Exception as error:
-            return _planning_failure(params.issue_number, error, persisted=persisted)
+        planning = self._manager.save_planning_deliverables(
+            issue_number=params.issue_number,
+            planning_deliverables=params.planning_deliverables,
+        )
+        return _planning_response(planning, params.issue_number)
 
 
 class UpdatePlanningDeliverablesTool(
@@ -604,15 +561,10 @@ class UpdatePlanningDeliverablesTool(
     async def execute(
         self, params: UpdatePlanningDeliverablesInput, context: NoteContext
     ) -> PlanningDeliverablesOutput:
-        persisted = False
-        try:
-            self._manager.update_planning_deliverables(
-                issue_number=params.issue_number,
-                operations=params.operations,
-                context=context,
-                force=params.force,
-            )
-            persisted = True
-            return _planning_response(self._manager, params.issue_number)
-        except Exception as error:
-            return _planning_failure(params.issue_number, error, persisted=persisted)
+        planning = self._manager.update_planning_deliverables(
+            issue_number=params.issue_number,
+            operations=params.operations,
+            context=context,
+            force=params.force,
+        )
+        return _planning_response(planning, params.issue_number)

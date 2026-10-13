@@ -8,11 +8,16 @@ from unittest.mock import AsyncMock, MagicMock, call
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+from mcp_server.core.exceptions import ConfigError, MCPError
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.schemas.error_outputs import ExecutionErrorOutput, ValidationErrorOutput
+from mcp_server.schemas.error_outputs import (
+    ConfigErrorOutput,
+    ExecutionErrorOutput,
+    ValidationErrorOutput,
+)
 
 
 class FactoryInput(BaseModel):
@@ -32,8 +37,16 @@ class FactoryOutput(BaseModel):
 class TestToolFactory:
     """Public execution proves validation, enforcement and error handling."""
 
+    @pytest.mark.parametrize(
+        "failure",
+        [
+            ValueError("execution failed"),
+            ConfigError("invalid config", file_path="settings.yaml"),
+            MCPError("domain rejection", code="domain_rejected", params={"value": "domain fact"}),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_create_tool_executes_public_pipeline(self) -> None:
+    async def test_create_tool_executes_public_pipeline(self, failure: Exception) -> None:
         """Validate before policies, run policies around the core, and convert failures."""
         runner = MagicMock(spec=EnforcementRunner)
         root = Path("mock/workspace/root")
@@ -68,8 +81,17 @@ class TestToolFactory:
             assert enforcement_context.workspace_root == root
             assert enforcement_context.params == FactoryInput(value=3)
 
-        core.execute.side_effect = ValueError("execution failed")
+        core.execute.side_effect = failure
         failed = await decorated.execute({"value": 3}, context)
-        assert isinstance(failed.operation, ExecutionErrorOutput)
-        assert failed.operation.error_message == "ValueError: execution failed"
+        diagnostic = failed.operation
+        assert isinstance(diagnostic, (ExecutionErrorOutput, ConfigErrorOutput))
+        assert diagnostic.params == {"value": 3}
+        assert diagnostic.traceback is not None
+        assert type(failure).__name__ in diagnostic.traceback
+        if isinstance(failure, MCPError):
+            assert diagnostic.error_code == failure.code
+            assert diagnostic.error_params == failure.params
+        if isinstance(failure, ConfigError):
+            assert isinstance(diagnostic, ConfigErrorOutput)
+            assert diagnostic.file_path == "settings.yaml"
         assert pipeline.mock_calls[-1] == call.execute(FactoryInput(value=3), context)

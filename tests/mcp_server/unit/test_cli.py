@@ -20,6 +20,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+from mcp_server.services.template_renewal import RenewalOutcome, RenewalResult
 
 
 def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -58,7 +59,10 @@ def test_cli_run() -> None:
         mock_asyncio_run.assert_called_once_with(mock_server.run())
 
 
-def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+@pytest.mark.parametrize("outcome", ["fresh_installed", "candidate_invalid", "upgrade_busy"])
+def test_cli_init_result(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], outcome: RenewalOutcome
+) -> None:
     """Initialization copies assets and delegates checkpoint creation to renewal."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -101,10 +105,10 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
             shutil.copytree = mock_copytree
 
     operation = MagicMock()
-    operation.last_result.exit_code = 0
+    operation.last_result = RenewalResult(outcome=outcome, failure_code="fixture_result")
     with (
         patch("sys.argv", ["mcp-server", "--init"]),
-        patch("sys.exit", side_effect=SystemExit(0)),
+        patch("sys.exit", side_effect=SystemExit(operation.last_result.exit_code)) as exit_process,
         patch("shutil.copytree", side_effect=mock_copytree),
         patch("mcp_server.cli_renewal.build_default_operation", return_value=operation),
         contextlib.suppress(SystemExit),
@@ -131,7 +135,14 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
             == copied_config[section]
         )
     operation.execute.assert_called_once_with()
-    assert "Successfully initialized" in capsys.readouterr().out
+    exit_process.assert_called_once_with(operation.last_result.exit_code)
+    captured = capsys.readouterr()
+    if outcome == "fresh_installed":
+        assert "Successfully initialized" in captured.out
+        assert not captured.err
+    else:
+        assert "fixture_result" in captured.err
+        assert not captured.out
 
 
 def test_cli_fails_fast_when_state_dir_missing(
@@ -315,3 +326,40 @@ def test_cli_upgrade_failure_exits_1(tmp_path: Path) -> None:
         main(settings)
         renewal.assert_called_once_with(["--upgrade"], settings=settings)
         exit_process.assert_called_once_with(1)
+
+
+def test_cli_init_exception_preserves_diagnostic(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Initialization failures expose the original chained exception and facts."""
+    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+
+    settings = Settings(server=ServerSettings(workspace_root=str(tmp_path)))
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    cause = OSError("fixture source unreadable")
+
+    def fail_copy(*_args: object, **_kwargs: object) -> None:
+        try:
+            raise cause
+        except OSError as error:
+            raise ConfigError(
+                "fixture invalid assets",
+                file_path=str(assets),
+            ) from error
+
+    with (
+        patch("sys.argv", ["pgmcp", "--init"]),
+        patch("shutil.copytree", side_effect=fail_copy),
+        pytest.raises(SystemExit) as exited,
+    ):
+        main(settings)
+
+    assert exited.value.code == 1
+    err = capsys.readouterr().err
+    assert "fixture source unreadable" in err
+    assert "fixture invalid assets" in err
+    assert "ERR_CONFIG" in err
+    assert str(assets) in err
+    assert "Traceback" in err
+    assert "fail_copy" in err

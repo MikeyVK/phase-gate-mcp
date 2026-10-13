@@ -3,8 +3,8 @@
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** APPROVED STRATEGY — COMPACT DESIGN FOR REVIEW  
-**Version:** 0.4  
-**Last Updated:** 2026-10-12
+**Version:** 0.5  
+**Last Updated:** 2026-10-13
 
 ## Purpose
 
@@ -242,7 +242,9 @@ Owner-approved Git test-helper repair, 2026-10-12: remove the merge-base failure
 
 Owner-approved unused-helper cleanup, 2026-10-12: delete _path_in_head_tree after repository search confirms no production/test callers. Do not add behavior or tests for unused code. This completes the eight fallback/classification items; protective exception boundaries and archive selection remain separate owner decisions.
 
-Owner-approved CLI boundary exception, 2026-10-12: retain the broad --init catch with a local, justified BLE001 suppression. It reports the original initialization failure on stderr and exits 1; it does not resume execution or invent fallback data. Do not widen this approval to other catch sites or add tests for the annotation.
+Owner-approved exception ownership, 2026-10-13, superseding the str-only CLI rationale of 2026-10-12: existing wrappers capture complete diagnosis; existing presenters own readable error projection. No new exception architecture, compatibility branch or regression campaign. Ordinary manager/internal exceptions propagate through tools. Necessary commit rollback retains both the primary exception and secondary diagnostics before re-raising. Planning command errors use the existing MCPError contract; post-write readback failures remain distinguishable as persisted with their original cause. CLI/renewal retains factual outcomes and their exitcodes, with complete diagnostics for exceptions mapped to outcomes. The standalone policy boundary retains fail-closed denial and full diagnosis. Broad local suppressions are limited to these justified boundaries/cleanup, not applied to ordinary tool translation.
+
+This approval covers the identified seventeen catch sites and the CLI/renewal diagnostic path. Earlier typed Git auto-detect/checkout state-sync and GetProjectPlan translations remain separate audit items; do not silently expand into all server exception handling. Native adapter protocols, successful tool outputs, planning mutation selection/numbering/persistence and workflow policy are unchanged. Existing generic error DTOs gain code/domain facts while retaining request parameters separately; genuine exception responses now use the existing generic wrapper outputs rather than bespoke tool failure DTOs.
 
 ## Expected Results
 
@@ -286,4 +288,5 @@ Use choice/intent vocabulary; preserve args_source facts. No resolved-source cla
 | 0.2 | 2026-10-12 | @imp researcher | Reopen native asset/export proposal; document live missing-config refusals, default-argument override boundary and focused workspace setup alternatives. |
 | 0.3 | 2026-10-12 | @imp researcher | Classify all nine adapters into native-file, conditional/CLI and no-file cases; propose exact invocation requirement and installation scope. |
 | 0.4 | 2026-10-12 | @imp researcher | Capture owner-approved truthful choice gate and cap Chore scope; supersede assets, file-prerequisite and startup-blocking proposals. |
+| 0.5 | 2026-10-13 | @imp implementer | Record owner-approved exception ownership, complete diagnostic preservation and bounded CLI/renewal plus seventeen-site repair; supersede str-only CLI handling. |
 

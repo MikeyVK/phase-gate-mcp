@@ -36,6 +36,7 @@ from mcp_server.presenters.collection_text_renderer import (
 )
 from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 
 if TYPE_CHECKING:
     from mcp_server.bootstrap import SupportedToolContract
@@ -123,12 +124,15 @@ class TextPresenter(ITextPresenter):
             if field_name is not None
         ]
         params = data.get("params", {}) or {}
+        error_params = data.get("error_params", {}) or {}
         values: dict[str, object] = {}
         for placeholder in placeholders:
             if placeholder == "run_id" and run_id is not None:
                 values[placeholder] = run_id
             elif placeholder in data:
                 values[placeholder] = data[placeholder]
+            elif isinstance(error_params, dict) and placeholder in error_params:
+                values[placeholder] = error_params[placeholder]
             elif isinstance(params, dict) and placeholder in params:
                 values[placeholder] = params[placeholder]
             elif placeholder == "error_message" and "message" in data:
@@ -153,7 +157,11 @@ class TextPresenter(ITextPresenter):
         resolved_success = success if success is not None else getattr(data, "success", True)
 
         # Resolve category internally based on tool config to decouple transport
-        tool_cfg = self.tools_config.get(tool_name)
+        tool_cfg = (
+            None
+            if isinstance(data, (ConfigErrorOutput, ExecutionErrorOutput))
+            else self.tools_config.get(tool_name)
+        )
         resolved_cat = "query"
         if tool_cfg is not None:
             if isinstance(tool_cfg, ToolPresentationConfig):

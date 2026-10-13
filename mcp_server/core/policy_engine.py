@@ -6,16 +6,22 @@ Responsibility: Single source of policy enforcement
 Used by: MCP tools for operation validation
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from mcp_server.config.loader import ConfigLoader
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.schemas import GitConfig, OperationPoliciesConfig
 
+if TYPE_CHECKING:
+    from mcp_server.schemas.error_outputs import ToolErrorOutput
 
-@dataclass
+
+@dataclass(frozen=True)
 class PolicyDecision:
     """Result of a policy decision."""
 
@@ -26,6 +32,7 @@ class PolicyDecision:
     phase: str | None = None
     context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    diagnostic: ToolErrorOutput | None = None
 
 
 class PolicyEngine:
@@ -151,11 +158,12 @@ class PolicyEngine:
             self._log_decision(decision)
             return decision
 
-        except Exception as e:
-            # Error in policy evaluation - log and deny by default (fail-safe)
+        except Exception as e:  # noqa: BLE001 -- Policy boundary denies execution and preserves diagnosis.
+            # Error in policy evaluation - retain fail-closed decision and original evidence.
             decision = PolicyDecision(
                 allowed=False,
                 reason=f"Policy evaluation error: {e}",
+                diagnostic=capture_exception(e),
                 operation=operation,
                 path=path,
                 phase=phase,

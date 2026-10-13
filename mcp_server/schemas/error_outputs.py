@@ -21,6 +21,7 @@ class ToolErrorOutput(BaseModel):
     error_type: str
     error_message: str | None = None
     traceback: str | None = None
+    error_params: dict[str, Any] = Field(default_factory=dict)
     params: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -36,6 +37,7 @@ class ExecutionErrorOutput(ToolErrorOutput):
     """Error output for unhandled tool execution exceptions."""
 
     error_type: str = "ExecutionError"
+    error_code: str | None = None
 
 
 class CacheErrorOutput(ToolErrorOutput):
@@ -55,4 +57,5 @@ class ConfigErrorOutput(ToolErrorOutput):
     """Error output for system configuration failures."""
 
     error_type: str = "ConfigError"
+    error_code: str | None = None
     file_path: str | None = None

@@ -8,10 +8,12 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SerializeAsAny, field_validator
 
 from mcp_server.config.schemas.installation import InstallationState, TemplateCheckpoint
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.exceptions import MCPError
+from mcp_server.schemas.error_outputs import ToolErrorOutput
 from mcp_server.services.template_components import (
     ComponentKey,
     ComponentSelection,
@@ -74,6 +76,7 @@ class RenewalResult(BaseModel):
     validation_stage: str | None = None
     failure_code: str | None = None
     failure_params: Mapping[str, str] = Field(default_factory=dict)
+    diagnostic: SerializeAsAny[ToolErrorOutput] | None = None
     available_actions: tuple[RenewalAction, ...] = ()
 
     @field_validator("failure_params", mode="after")
@@ -576,6 +579,7 @@ class TemplateRenewalService:
             validation_stage=stage,
             failure_code=code,
             failure_params=params,
+            diagnostic=capture_exception(error),
         )
 
 
