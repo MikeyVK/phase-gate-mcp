@@ -72,9 +72,9 @@ class ServerSettings(BaseModel):
 class GitHubSettings(BaseModel):
     """GitHub integration settings."""
 
-    owner: str = "MikeyVK"
-    repo: str = "S1mpleTraderV3"
-    project_number: int = 1
+    owner: str | None = None
+    repo: str | None = None
+    project_number: int | None = None
     token: str | None = Field(default=None, validate_default=True)
 
 

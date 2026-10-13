@@ -1,7 +1,6 @@
 """GitHub adapter for the MCP server."""
 
 import contextlib
-import os
 from datetime import datetime
 from typing import Any
 
@@ -12,35 +11,25 @@ from github.Milestone import Milestone
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 
-from mcp_server.config.settings import GitHubSettings, Settings
+from mcp_server.config.settings import GitHubSettings
 from mcp_server.core.exceptions import ExecutionError, MCPSystemError
 
 
 class GitHubAdapter:
     """Adapter for interacting with the GitHub API."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
-        """Initialize the GitHub adapter."""
-        github_settings = (
-            settings.github
-            if settings is not None
-            else GitHubSettings(
-                owner=os.environ.get("GITHUB_OWNER", GitHubSettings().owner),
-                repo=os.environ.get("GITHUB_REPO", GitHubSettings().repo),
-                project_number=int(
-                    os.environ.get(
-                        "GITHUB_PROJECT_NUMBER",
-                        str(GitHubSettings().project_number),
-                    )
-                ),
-                token=os.environ.get("GITHUB_TOKEN"),
-            )
-        )
+    def __init__(self, settings: GitHubSettings) -> None:
+        """Initialize with explicitly resolved GitHub settings."""
+        github_settings = settings
         if not github_settings.token:  # pylint: disable=no-member
             raise MCPSystemError(
                 "GitHub token not configured",
                 fallback="Configure GITHUB_TOKEN environment variable",
             )
+
+        identity = (github_settings.owner, github_settings.repo)
+        if any(value is None or not value.strip() for value in identity):
+            raise MCPSystemError("GitHub repository identity is incomplete")
 
         self.client = Github(github_settings.token)  # pylint: disable=no-member
         self._repo: Repository | None = None

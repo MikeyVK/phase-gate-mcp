@@ -4,6 +4,8 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from mcp_server.adapters.github_adapter import GitHubAdapter
+from mcp_server.config.settings import GitHubSettings
+from mcp_server.core.exceptions import MCPSystemError
 from mcp_server.core.interfaces import PRStatus
 from mcp_server.schemas import (
     ContributorConfig,
@@ -37,6 +39,7 @@ class GitHubManager:
         milestone_config: MilestoneConfig | None = None,
         contributor_config: ContributorConfig | None = None,
         git_config: GitConfig | None = None,
+        github_settings: GitHubSettings | None = None,
     ) -> None:
         """Initialize the GitHub manager."""
         self._adapter = adapter
@@ -46,12 +49,15 @@ class GitHubManager:
         self._milestone_config = milestone_config
         self._contributor_config = contributor_config
         self._git_config = git_config
+        self._github_settings = github_settings
 
     @property
     def adapter(self) -> GitHubAdapter:
         """Lazily construct the GitHub adapter when first used."""
         if self._adapter is None:
-            self._adapter = GitHubAdapter()
+            if self._github_settings is None:
+                raise MCPSystemError("GitHub settings were not injected")
+            self._adapter = GitHubAdapter(settings=self._github_settings)
         return self._adapter
 
     def validate_issue_params(

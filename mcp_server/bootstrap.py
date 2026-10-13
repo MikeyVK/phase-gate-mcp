@@ -823,6 +823,7 @@ class ServerBootstrapper:
             server_root=server_root,
         )
         github_manager = GitHubManager(
+            github_settings=self._settings.github,
             issue_config=configs.issue_config,
             label_config=configs.label_config,
             scope_config=configs.scope_config,
@@ -1066,6 +1067,6 @@ class ServerBootstrapper:
         resources.append(CacheReadGuideResource())
 
         if self._settings.github.token:
-            resources.append(GitHubIssuesResource())
+            resources.append(GitHubIssuesResource(manager=managers.github_manager))
 
         return resources

@@ -3,7 +3,7 @@
   "branch": "chore/319-native-quality-configs-v3-1",
   "issue_number": 319,
   "workflow_name": "chore",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -15,7 +15,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Return from failed Validation to implement the owner's explicitly approved safe-edit report-mode setup exception. Existing seven test-migration failures remain separate; no failed evidence is waived.",
+  "skip_reason": "Owner-approved removal of hardcoded GitHub identity defaults and necessary settings/resource injection, after independent entry GO. Manifest/build content proposal remains research-only; previous passing Validation covers the prior snapshot and is not reused for new code.",
   "issue_title": "chore: Strengthen native lint policy and bundle reusable quality-tool configuration assets",
   "parent_branch": "main",
   "created_at": "2026-10-12T12:33:59.703382+00:00",
@@ -51,6 +51,14 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-13T20:14:40.799122+00:00",
+      "human_approval_message": "Akkoord voor het verwijderen van de hardcoded fallbacks. Onderzoek of er nog meer van deze fallbacks zijn. Daarna wil ik alle kandidaten voor config aanpassing van je op een rijtje hebben en een voorstel voor de structuur die we in release_manifest.yaml kunnen gebruiken om dit aan te geven.",
+      "forced": true,
+      "skip_reason": "Owner-approved removal of hardcoded GitHub identity defaults and necessary settings/resource injection, after independent entry GO. Manifest/build content proposal remains research-only; previous passing Validation covers the prior snapshot and is not reused for new code."
     }
   ],
   "reconstructed": false,

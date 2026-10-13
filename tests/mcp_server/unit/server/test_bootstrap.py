@@ -12,7 +12,7 @@
 
 import dataclasses
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import BaseModel
@@ -53,6 +53,7 @@ from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.server import MCPServer
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
@@ -236,15 +237,29 @@ def test_target_startup_registers_github_tools_and_resource(
             template_root=str(project_root / ".pgmcp" / "template_suite"),
             bypass_version_check=True,
         ),
-        github=GitHubSettings(token=token),
+        github=GitHubSettings(
+            owner="test-owner" if token else None,
+            repo="test-repo" if token else None,
+            token=token,
+        ),
     )
 
-    server = ServerBootstrapper(settings).bootstrap_target()
+    with patch("mcp_server.managers.github_manager.GitHubAdapter") as constructor:
+        server = ServerBootstrapper(settings).bootstrap_target()
+        constructor.assert_not_called()
 
-    tool_names = {tool.name for tool in server.tools}
-    resource_uris = {resource.uri_pattern for resource in server.resources}
-    assert ("get_pr" in tool_names) is github_enabled
-    assert ("pgmcp://github/issues" in resource_uris) is github_enabled
+        tool_names = {tool.name for tool in server.tools}
+        resource_uris = {resource.uri_pattern for resource in server.resources}
+        assert ("get_pr" in tool_names) is github_enabled
+        assert ("pgmcp://github/issues" in resource_uris) is github_enabled
+        if github_enabled:
+            resource = next(
+                item for item in server.resources if isinstance(item, GitHubIssuesResource)
+            )
+            assert resource.manager.adapter is constructor.return_value
+            constructor.assert_called_once_with(settings=settings.github)
+        else:
+            constructor.assert_not_called()
 
 
 class TestMCPServerBootstrap:

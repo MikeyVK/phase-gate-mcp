@@ -35,6 +35,9 @@ def test_default_settings() -> None:
     assert settings.server.name == "phase-gate-mcp"
     assert settings.server.version == "3.0.0"
     assert settings.logging.level == "INFO"
+    assert settings.github.owner is None
+    assert settings.github.repo is None
+    assert settings.github.project_number is None
 
 
 def test_load_from_env(mock_env_vars: MagicMock) -> None:  # noqa: ARG001
@@ -54,6 +57,11 @@ server:
   name: "yaml-server"
 logging:
   level: "WARNING"
+github:
+  owner: "yaml-owner"
+  repo: "yaml-repo"
+  project_number: 7
+  token: "yaml-token"
 """,
         encoding="utf-8",
     )
@@ -62,12 +70,18 @@ logging:
     monkeypatch.delenv("PGMCP_WORKSPACE_ROOT", raising=False)
     monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
+    for variable in ("GITHUB_OWNER", "GITHUB_REPO", "GITHUB_PROJECT_NUMBER", "GITHUB_TOKEN"):
+        monkeypatch.delenv(variable, raising=False)
 
     settings = Settings.from_env()
 
     assert settings.server.name == "yaml-server"
     assert settings.server.version == "3.0.0"
     assert settings.logging.level == "WARNING"
+    assert settings.github.owner == "yaml-owner"
+    assert settings.github.repo == "yaml-repo"
+    assert settings.github.project_number == 7
+    assert settings.github.token == "yaml-token"
 
 
 @pytest.mark.parametrize("installed_version", ["3.1.0", "1.0.0"])
