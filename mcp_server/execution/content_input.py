@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -167,16 +168,25 @@ class FileContentScratch:
             try:
                 self._remove_tree(directory)
             except OSError as rollback_error:
-                exc.add_note(f"scratch_rollback_failed: {rollback_error}")
+                exc.add_note(
+                    "scratch_rollback_failed:\n"
+                    + "".join(traceback.format_exception(rollback_error))
+                )
                 cleanup = (directory, str(rollback_error))
-            except BaseException as rollback_error:
-                exc.add_note(f"scratch_rollback_failed: {rollback_error}")
+            except BaseException as rollback_error:  # noqa: BLE001 -- Preserve the primary failure or cancellation during cleanup.
+                exc.add_note(
+                    "scratch_rollback_failed:\n"
+                    + "".join(traceback.format_exception(rollback_error))
+                )
             raise ScratchPreparationError("write", str(exc), cleanup=cleanup) from exc
         except BaseException as exc:
             try:
                 self._remove_tree(directory)
-            except BaseException as rollback_error:
-                exc.add_note(f"scratch_rollback_failed: {rollback_error}")
+            except BaseException as rollback_error:  # noqa: BLE001 -- Preserve the primary failure or cancellation during cleanup.
+                exc.add_note(
+                    "scratch_rollback_failed:\n"
+                    + "".join(traceback.format_exception(rollback_error))
+                )
             raise
         return OwnedScratchFile(directory=directory, input_path=input_path)
 
@@ -235,8 +245,11 @@ class ContentInputPreparer:
         except BaseException as exc:
             try:
                 self._scratch.remove(allocation)
-            except BaseException as rollback_error:
-                exc.add_note(f"scratch_rollback_failed: {rollback_error}")
+            except BaseException as rollback_error:  # noqa: BLE001 -- Preserve the primary failure or cancellation during cleanup.
+                exc.add_note(
+                    "scratch_rollback_failed:\n"
+                    + "".join(traceback.format_exception(rollback_error))
+                )
             raise
         return PreparedContent(request=request, scratch=allocation)
 

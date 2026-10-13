@@ -343,19 +343,46 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
 
-    def test_present_text_cache_publication_failure(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting with CachePublication indicating failure."""
+    @pytest.mark.parametrize("format_stage", ["main", "instruction", "note"])
+    def test_present_text_cache_publication_failure(
+        self,
+        mock_yaml_config: dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+        format_stage: str,
+    ) -> None:
+        """Formatting faults retain the outcome fallback and full logged diagnosis."""
+        notes: list[Note] = []
+        if format_stage == "main":
+            mock_yaml_config["tools"]["dummy_tool"]["template_success"] = "Success: {result"
+        elif format_stage == "instruction":
+            mock_yaml_config["global"]["next_instruction_texts"]["test_advisory"] = "Try {action"
+        else:
+            mock_yaml_config["global"]["notes"]["templates"]["suggestions"]["try_this"] = (
+                "Try {action"
+            )
+            notes = [Note(key="try_this", params={"action": "retry"})]
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, result="Fallback JSON test")
         cache_pub = CachePublication(success=False, error_code="write_failed")
         text = presenter.present_text(
             tool_name="dummy_tool",
             data=dto,
-            notes=[],
+            notes=notes,
             cache_pub=cache_pub,
         )
+        assert "Format error" in text
         assert "*(Cache publication failed. Full details dumped inline)*" in text
-        assert "```json" in text
+        fallback = json.loads(text.split("```json\n", 1)[1].split("\n```", 1)[0])
+        assert fallback == dto.model_dump()
+        records = [
+            record
+            for record in caplog.records
+            if record.name == "mcp_server.presenters.text_presenter"
+        ]
+        assert len(records) == 1
+        assert records[0].exc_info is not None
+        assert records[0].exc_info[0] is ValueError
+        assert records[0].exc_info[2] is not None
 
     def test_present_text_dynamic_category_emoji(self) -> None:
         """Verify that custom categories and emojis configured in YAML are resolved dynamically."""

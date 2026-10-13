@@ -3,7 +3,7 @@
 # Issue 319 — bounded quality configuration choice
 
 **Status:** DRAFT — INDEPENDENT REVIEW REQUIRED  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-13
 
 ## Purpose
@@ -117,6 +117,14 @@ PlanningMutationError uses the existing MCPError hierarchy and code/params. Save
 
 RenewalResult retains its factual outcome and adds the existing typed error diagnostic, including subtype fields. RenewalPresenter owns text projection of results and direct CLI errors. Initialization preserves nonzero outcome exitcodes and facts; only a missing result is an internal exception. Terminal CLI catches retain complete diagnosis and exit1. No new wrapper class, presenter class, registry, adapter protocol or configuration resolver is added.
 
+The remaining fallback boundaries preserve their existing output contracts. Scratch
+rollback adds the full secondary traceback to original exception notes without
+replacing primary failure/cancellation. Presentation/cache catches retain complete
+secondary diagnosis through existing logging while keeping tool outcomes, schema
+attachments and JSON fallbacks available; no new DTO or presenter pipeline is added.
+The owner-approved unused label-sync method/helper and their ten exclusive tests are
+removed from the configuration model. Metadata validation, lookups and conversion remain.
+
 ## Test Design
 
 Adapt existing public configuration/execution tests with a small parametrized set across check/test/fix/content routes: unresolved setup refuses with zero invocations/side effects, all admitted choices retain native args/args_source, caller args cannot acknowledge an unresolved binding, and empty/not-applicable branch selection remains neutral. Verify content enforce/report retain their existing write policy when validation refuses. Use existing native-lint/CLI/setup behavior tests for repairs; avoid testing literal YAML/doc text. Reuse fresh evidence and keep the required full configured suite in Validation.
@@ -134,3 +142,4 @@ Adapt existing public configuration/execution tests with a small parametrized se
 | 0.1 | 2026-10-12 | @imp designer | Define bounded binding choice, truthful refusal and native-behavior preservation under the approved Chore strategy. |
 | 0.2 | 2026-10-12 | @imp researcher | Resolve fresh-init ownership without asset builders; define consumer refusal rows, absent native facts and both content policies before implementation. |
 | 0.3 | 2026-10-13 | @imp implementer | Specify approved exception ownership using existing wrapper/error DTOs and renewal presenter; preserve domain and post-write diagnosis without a new architecture. |
+| 0.4 | 2026-10-13 | @imp implementer | Keep scratch and fallback diagnostics in existing boundaries; record approved unused label-sync and test cleanup. |

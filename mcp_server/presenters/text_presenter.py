@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import string
 from collections.abc import Sequence
 from enum import Enum
@@ -48,6 +49,8 @@ class SafeNoneFormatter(SequenceSafeNoneFormatter):
 
 # Legacy note mapping removed
 
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_RUN_ID = "DEFAULT_RUN_ID_SENTINEL"
 
@@ -231,6 +234,8 @@ class TextPresenter(ITextPresenter):
                     max_items=tool_cfg.max_items if tool_cfg else None,
                 )
             except Exception as exc:
+                # Preserve the published outcome while retaining presentation diagnostics.
+                logger.exception("Main template formatting failed for %s", tool_name)
                 text = f"Format error: {exc}"
         else:
             # If no template is found, use a fallback text or DTO string
@@ -307,6 +312,8 @@ class TextPresenter(ITextPresenter):
                         formatted_instruction = formatter.format(raw_text, **format_dict)
                         text = f"{text}\n\n{formatted_instruction}"
                     except Exception as exc:
+                        # Optional guidance must not replace the operation's readable result.
+                        logger.exception("Instruction %s formatting failed for %s", key, tool_name)
                         text = f"{text}\n\nFormat error in instruction '{key}': {exc}"
 
         # 7. Append formatted notes if provided
@@ -421,6 +428,8 @@ class TextPresenter(ITextPresenter):
                     formatted_text = formatter.format(found_template, **format_dict)
                     grouped_texts[found_group].append(formatted_text)
                 except Exception as exc:
+                    # One malformed note must not hide the remaining operation evidence.
+                    logger.exception("Note %s formatting failed for %s", key, tool_name)
                     grouped_texts[found_group].append(f"Format error: {exc}")
         lines = []
         for group in group_names:

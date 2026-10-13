@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import uuid
 from collections import OrderedDict
@@ -21,6 +22,8 @@ from mcp_server.utils.cache_serialization import serialize_cached_response
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound="BaseModel")
 
@@ -52,6 +55,8 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
                 self._cache.popitem(last=False)
             return CachePublication(run_id=run_id, success=True, size_chars=size_chars)
         except Exception:
+            # Publication failure must not replace the underlying tool outcome.
+            logger.exception("Cache publication failed")
             return CachePublication(run_id=None, success=False, error_code="write_failed")
 
     def get(self, run_id: str, response_model: type[T] | None = None) -> T | None:

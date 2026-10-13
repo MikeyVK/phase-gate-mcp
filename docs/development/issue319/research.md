@@ -3,7 +3,7 @@
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** APPROVED STRATEGY — COMPACT DESIGN FOR REVIEW  
-**Version:** 0.5  
+**Version:** 0.6  
 **Last Updated:** 2026-10-13
 
 ## Purpose
@@ -61,7 +61,7 @@ These are assessment findings, not 43 proven bugs or a reduction quota. The curr
 | --- | --- | --- |
 | [mcp_server/#Archief/supervisor_old.py](../../../mcp_server/%23Archief/supervisor_old.py) | 132 | Archive selection: propose exclude in native discovery and branch preselection; retain explicit targeting semantics. Do not repair old code. |
 | [mcp_server/cli.py](../../../mcp_server/cli.py) | 109 | Final initialization/CLI failure boundary: preserve exit 1 and error reporting; retain cause/trace diagnostics rather than changing the public command outcome. |
-| [mcp_server/config/schemas/label_config.py](../../../mcp_server/config/schemas/label_config.py) | 120, 146 | External label-list/per-label operation boundaries. Preserve error collection and partial progress; no general relocation of sync orchestration in this issue. |
+| [mcp_server/config/schemas/label_config.py](../../../mcp_server/config/schemas/label_config.py) | 120, 146 | Initial assessment assumed an active sync consumer. Repository search found only ten tests and no active code/scripts/docs callers; the owner-approved cleanup below supersedes preservation of this unused route. |
 | [mcp_server/config/settings.py](../../../mcp_server/config/settings.py) | 33, 48 | Two silent metadata/YAML fallbacks. Narrow expected lookup/read/parse failures; unexpected programming errors must not be silently mistaken for unavailable version metadata. |
 | [mcp_server/core/policy_engine.py](../../../mcp_server/core/policy_engine.py) | 154 | Fail-closed policy evaluation. Preserve deny on evaluation failure and its decision facts; do not make a lint repair turn this into allow or uncontrolled propagation. |
 | [mcp_server/execution/content_input.py](../../../mcp_server/execution/content_input.py) | 172, 178, 238 | Three nested cleanup catches attach rollback diagnostics to the original failure. Preserve cancellation/primary exception and notes; narrow local justified exceptions only, not BaseException handling globally. |
@@ -273,6 +273,26 @@ Classify each inventory row; adapt meaningful existing public behavior evidence;
 
 Use choice/intent vocabulary; preserve args_source facts. No resolved-source claim, native file interpretation or mandatory sample activation. Inspect all invocation routes for the same unresolved-choice guard.
 
+### Remaining boundary dispositions — 2026-10-13
+
+The owner authorized the remaining bounded batches and explicitly approved removing
+unused LabelConfig.sync_to_github, its private update helper and the ten tests that
+were its only callers. Label metadata, validation, public lookup and conversion
+remain; there is no replacement synchronization architecture.
+
+Scratch rollback retains its original primary failure/cancellation and records the
+complete secondary traceback in existing exception notes. Three necessary cleanup
+catches have local BLE001 rationales. Presentation and cache retain their existing
+fallback outcomes and original operation evidence; their caught failures now carry
+full traceback/cause through the existing stderr/audit logging. This is a diagnostic
+repair at established fallback boundaries, not a new response field or error pipeline.
+Cache serialization retains its JSON fallback and original tool diagnosis. The
+secondary cache/presentation traceback is available in logs, not a new returned DTO.
+
+Adapt existing public behavior tests for these boundaries; remove obsolete sync tests.
+Keep configured/workspace verification in Validation. Archive selection remains pending
+the owner's explicit choice; do not change old code or enable force-exclude.
+
 ## Related Documents
 
 - [Issue319](<https://github.com/MikeyVK/phase-gate-mcp/issues/319>)
@@ -289,4 +309,5 @@ Use choice/intent vocabulary; preserve args_source facts. No resolved-source cla
 | 0.3 | 2026-10-12 | @imp researcher | Classify all nine adapters into native-file, conditional/CLI and no-file cases; propose exact invocation requirement and installation scope. |
 | 0.4 | 2026-10-12 | @imp researcher | Capture owner-approved truthful choice gate and cap Chore scope; supersede assets, file-prerequisite and startup-blocking proposals. |
 | 0.5 | 2026-10-13 | @imp implementer | Record owner-approved exception ownership, complete diagnostic preservation and bounded CLI/renewal plus seventeen-site repair; supersede str-only CLI handling. |
+| 0.6 | 2026-10-13 | @imp implementer | Record remaining boundary diagnostics and owner-approved unused label-sync removal; preserve fallback contracts and bound verification. |
 

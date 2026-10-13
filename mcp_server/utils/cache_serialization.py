@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from pydantic.main import IncEx
+
+
+logger = logging.getLogger(__name__)
 
 
 def _absent_optional_nulls(value: object) -> IncEx:
@@ -47,6 +51,8 @@ def serialize_cached_response(dto: BaseModel) -> str:
     try:
         content = dto.model_dump_json(exclude=_absent_optional_nulls(dto))
     except Exception as e:
+        # Preserve JSON fallback while retaining the complete diagnosis in the log.
+        logger.exception("Cache serialization failed for %s", type(dto).__name__)
         fallback = {
             "success": False,
             "error_type": "SerializationError",

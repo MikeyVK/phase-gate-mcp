@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
@@ -383,16 +385,30 @@ def test_cleanup_uses_existing_termination_evidence(
         provider.remove(prepared.scratch)
 
 
-def test_partial_write_failure_keeps_primary_error_when_rollback_fails(tmp_path: Path) -> None:
+@pytest.mark.parametrize("cancel_write", [False, True])
+@pytest.mark.parametrize("cancel_rollback", [False, True])
+def test_partial_write_failure_keeps_primary_error_when_rollback_fails(
+    tmp_path: Path, cancel_write: bool, cancel_rollback: bool
+) -> None:
     root = resolve_temporary_paths(tmp_path).validation_root
-    primary = OSError("fixture disk full")
+    primary = (
+        asyncio.CancelledError("fixture write cancelled")
+        if cancel_write
+        else OSError("fixture disk full")
+    )
+    secondary = (
+        asyncio.CancelledError("fixture rollback cancelled")
+        if cancel_rollback
+        else PermissionError("fixture rollback denied")
+    )
 
     def partial_write(path: Path, content: bytes) -> int:
         path.write_bytes(content[:2])
         raise primary
 
     def denied_remove(directory: Path) -> None:
-        raise PermissionError(f"fixture rollback denied: {directory}")
+        assert directory == root / "owned"
+        raise secondary
 
     provider = FileContentScratch(
         root,
@@ -400,12 +416,24 @@ def test_partial_write_failure_keeps_primary_error_when_rollback_fails(tmp_path:
         write_bytes=partial_write,
         remove_tree=denied_remove,
     )
-    with pytest.raises(ScratchPreparationError) as failure:
-        provider.create("proposed.py", b"complete text")
-    assert failure.value.phase == "write"
-    assert failure.value.__cause__ is primary
+    if cancel_write:
+        with pytest.raises(asyncio.CancelledError) as cancelled:
+            provider.create("proposed.py", b"complete text")
+        assert cancelled.value is primary
+        propagated: BaseException = cancelled.value
+    else:
+        with pytest.raises(ScratchPreparationError) as failure:
+            provider.create("proposed.py", b"complete text")
+        assert failure.value.phase == "write"
+        assert failure.value.__cause__ is primary
+        propagated = failure.value
     assert (root / "owned" / "proposed.py").read_bytes() == b"co"
-    assert any("rollback" in note for note in getattr(primary, "__notes__", ()))
+    diagnosis = "".join(traceback.format_exception(propagated))
+    assert type(primary).__name__ in diagnosis
+    assert str(primary) in diagnosis
+    assert type(secondary).__name__ in diagnosis
+    assert str(secondary) in diagnosis
+    assert "denied_remove" in diagnosis
     FileContentScratch(root, fresh_id=lambda: uuid4().hex).remove(
         OwnedScratchFile(root / "owned", root / "owned" / "proposed.py")
     )
