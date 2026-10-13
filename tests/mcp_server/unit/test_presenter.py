@@ -179,14 +179,25 @@ class TestTextPresenter:
 
         assert text == "📋 Success: Operation completed\n\n🚀 TEST ADVISORY WARNING"
 
-    def test_present_text_failure(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting failure output with custom template and emoji prefix."""
+    @pytest.mark.parametrize("request_params", [{}, {"value": 3}])
+    def test_present_text_failure(
+        self, mock_yaml_config: dict[str, Any], request_params: dict[str, Any]
+    ) -> None:
+        """Configured failures project domain facts before conflicting request values."""
+        mock_yaml_config["global"]["failures"] = {
+            "domain_failure": "Failed: {error_message}; value={value}"
+        }
         presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = ExecutionErrorOutput(error_message="Operation failed")
+        dto = ExecutionErrorOutput(
+            error_message="Operation failed",
+            error_code="domain_failure",
+            error_params={"value": "domain fact"},
+            params=request_params,
+        )
 
         text = presenter.present_text(tool_name="dummy_tool", success=False, data=dto)
 
-        assert text == "❌ Failed: Operation failed"
+        assert text == "❌ Failed: Operation failed; value=domain fact"
 
     @pytest.mark.parametrize("tool_name", ["dummy_no_model", "dummy_tool"])
     def test_present_text_default_failure_template(

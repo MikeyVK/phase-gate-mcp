@@ -225,34 +225,11 @@ class TextPresenter(ITextPresenter):
         # Format template if we have one, otherwise dump/default representation
         if template:
             try:
-                # Fill missing keys in data_dict with None to trigger SafeNoneFormatter
-                # Parse all placeholders in the template
-                placeholders = []
-                none_val = self.get_none_value()
-                formatter = SafeNoneFormatter(
-                    none_val,
-                    formatting=self.global_config.formatting,
+                text = self._format_data_template(
+                    template,
+                    data_dict,
                     max_items=tool_cfg.max_items if tool_cfg else None,
                 )
-                for _, field_name, _, _ in formatter.parse(template):
-                    if field_name is not None:
-                        placeholders.append(field_name.split(".")[0].split("[")[0])
-
-                format_dict = {}
-                params_dict = data_dict.get("params", {}) or {}
-                for key in placeholders:
-                    val = None
-                    if key in data_dict:
-                        val = data_dict[key]
-                    elif isinstance(params_dict, dict) and key in params_dict:
-                        val = params_dict[key]
-                    elif key == "error_message" and "message" in data_dict:
-                        val = data_dict["message"]
-                    elif key == "message" and "error_message" in data_dict:
-                        val = data_dict["error_message"]
-                    format_dict[key] = val
-
-                text = formatter.format(template, **format_dict)
             except Exception as exc:
                 text = f"Format error: {exc}"
         else:
