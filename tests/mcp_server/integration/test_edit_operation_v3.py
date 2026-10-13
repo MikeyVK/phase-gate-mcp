@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shutil
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, TypeVar
 
@@ -43,9 +45,16 @@ def operation(
     *,
     has_profile: bool = True,
     unresolved: bool = False,
+    write_scratch: Callable[[Path, bytes], int] | None = None,
+    remove_scratch: Callable[[Path], None] = shutil.rmtree,
 ) -> tuple[EditOperation, RecordingRuntime]:
     checks, _, runtime = compose(
-        root, outcomes, unresolved_checks=frozenset({"check_0"}) if unresolved else frozenset()
+        root,
+        outcomes,
+        unresolved_checks=frozenset({"check_0"}) if unresolved else frozenset(),
+        file_content=write_scratch is not None,
+        write_bytes=write_scratch if write_scratch is not None else Path.write_bytes,
+        remove_tree=remove_scratch,
     )
     config = ChecksConfig.model_validate(
         {
@@ -168,13 +177,30 @@ async def test_final_guard_preserves_external_writer_and_passed_checks(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["missing", "directory", "root", "encoding", "permission", "edit"])
-async def test_precheck_failures_do_not_invent_check_results(
+@pytest.mark.parametrize(
+    "kind", ["missing", "directory", "root", "encoding", "permission", "edit", "scratch"]
+)
+async def test_preparation_failures_preserve_original_and_check_facts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
     kind: str,
 ) -> None:
-    service, runtime = operation(tmp_path, ("passed",))
+    primary = OSError("scratch write refused")
+    secondary = PermissionError("scratch cleanup refused")
+
+    def failed_write(_path: Path, _content: bytes) -> int:
+        raise primary
+
+    def failed_cleanup(_path: Path) -> None:
+        raise secondary
+
+    service, runtime = operation(
+        tmp_path,
+        ("passed",),
+        write_scratch=failed_write if kind == "scratch" else None,
+        remove_scratch=failed_cleanup if kind == "scratch" else shutil.rmtree,
+    )
     target = tmp_path if kind == "root" else tmp_path / "notes.md"
     command: EditCommand = RewriteOperation(content="proposed")
     if kind == "directory":
@@ -192,6 +218,28 @@ async def test_precheck_failures_do_not_invent_check_results(
     result = await service.execute(
         path="." if kind == "root" else target.name, operation=command, validation="report"
     )
+    if kind == "scratch":
+        assert result.error_code == "preparation_failed"
+        assert not result.written and result.content_changed is None
+        assert target.read_bytes() == b"original" and runtime.requests == []
+        assert result.error_details is not None
+        assert result.error_details.model_dump()["reason"] == "validation_input_write_failed"
+        assert result.checks[0].invocation is None
+        assert result.checks[0].housekeeping[0].purpose == "validation_input"
+        records = [
+            record
+            for record in caplog.records
+            if record.name == "mcp_server.services.edit_operation"
+        ]
+        assert len(records) == 1
+        assert records[0].exc_info is not None
+        boundary_error = records[0].exc_info[1]
+        assert boundary_error is not None and boundary_error.__cause__ is not None
+        assert boundary_error.__cause__.__cause__ is primary
+        assert "OSError: scratch write refused" in caplog.text
+        assert "PermissionError: scratch cleanup refused" in caplog.text
+        assert "failed_cleanup" in caplog.text
+        return
     expected = {
         "missing": "original_missing",
         "directory": "target_invalid",

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -46,6 +47,8 @@ from mcp_server.services.scaffold_operation import (
     validation_status,
 )
 from mcp_server.utils.path_resolver import ArtifactTargetError, normalize_workspace_relative_path
+
+logger = logging.getLogger(__name__)
 
 _FILE_ERRORS = (
     OriginalTargetMissingError,
@@ -196,6 +199,8 @@ class EditOperation:
                 cause = exc.__cause__
                 if not isinstance(cause, ScratchPreparationError):
                     raise
+                # Preserve exception causes and rollback notes before outcome conversion.
+                logger.exception("Edit validation input preparation failed for %s", logical)
                 checks = tuple(
                     project_mutation_check(
                         row,

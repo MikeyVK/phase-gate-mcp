@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -58,6 +59,8 @@ from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.template_catalog import TemplateCatalog
 from mcp_server.utils.path_resolver import ArtifactTargetError
+
+logger = logging.getLogger(__name__)
 
 ValidationPolicy = Literal["enforce", "report"]
 ValidationStatus = Literal["passed", "failed", "unavailable", "not_executed"]
@@ -315,6 +318,10 @@ class ScaffoldOperation:
             cause = exc.__cause__
             if not isinstance(cause, ScratchPreparationError):
                 raise
+            # Preserve exception causes and rollback notes before outcome conversion.
+            logger.exception(
+                "Scaffold validation input preparation failed for %s", target.output_path
+            )
             checks = tuple(
                 project_mutation_check(
                     row,

@@ -289,12 +289,16 @@ async def test_staging_failures_keep_write_and_cleanup_facts_separate(
 async def test_preparation_failure_retains_its_stage_without_writing(
     tmp_path: Path,
     delivered: DeliveredTemplate,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
+    primary = OSError("scratch write refused")
+    secondary = PermissionError("scratch cleanup refused")
+
     def failed_write(_path: Path, _content: bytes) -> int:
-        raise PermissionError("scratch write refused")
+        raise primary
 
     def failed_cleanup(_path: Path) -> None:
-        raise PermissionError("scratch cleanup refused")
+        raise secondary
 
     service, runtime = operation(
         tmp_path,
@@ -319,6 +323,19 @@ async def test_preparation_failure_retains_its_stage_without_writing(
     assert result.checks[0].housekeeping[0].path == "scratch/one"
     assert (tmp_path / "scratch" / "one").is_dir()
     assert not (tmp_path / "outputs" / "result.md").exists()
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "mcp_server.services.scaffold_operation"
+    ]
+    assert len(records) == 1
+    assert records[0].exc_info is not None
+    boundary_error = records[0].exc_info[1]
+    assert boundary_error is not None and boundary_error.__cause__ is not None
+    assert boundary_error.__cause__.__cause__ is primary
+    assert "OSError: scratch write refused" in caplog.text
+    assert "PermissionError: scratch cleanup refused" in caplog.text
+    assert "failed_cleanup" in caplog.text
 
 
 @pytest.mark.asyncio
