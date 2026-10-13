@@ -3,7 +3,7 @@
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** APPROVED STRATEGY — COMPACT DESIGN FOR REVIEW  
-**Version:** 0.6  
+**Version:** 0.7  
 **Last Updated:** 2026-10-13
 
 ## Purpose
@@ -59,7 +59,7 @@ These are assessment findings, not 43 proven bugs or a reduction quota. The curr
 
 | Source | Lines | Research disposition |
 | --- | --- | --- |
-| [mcp_server/#Archief/supervisor_old.py](../../../mcp_server/%23Archief/supervisor_old.py) | 132 | Archive selection: propose exclude in native discovery and branch preselection; retain explicit targeting semantics. Do not repair old code. |
+| Former `mcp_server/#Archief/supervisor_old.py` (removed) | 132 | Historical scan finding. Owner approved removing the unused file and its otherwise empty archive directory instead of adding exclusions; Git history retains the old implementation. |
 | [mcp_server/cli.py](../../../mcp_server/cli.py) | 109 | Final initialization/CLI failure boundary: preserve exit 1 and error reporting; retain cause/trace diagnostics rather than changing the public command outcome. |
 | [mcp_server/config/schemas/label_config.py](../../../mcp_server/config/schemas/label_config.py) | 120, 146 | Initial assessment assumed an active sync consumer. Repository search found only ten tests and no active code/scripts/docs callers; the owner-approved cleanup below supersedes preservation of this unused route. |
 | [mcp_server/config/settings.py](../../../mcp_server/config/settings.py) | 33, 48 | Two silent metadata/YAML fallbacks. Narrow expected lookup/read/parse failures; unexpected programming errors must not be silently mistaken for unavailable version metadata. |
@@ -290,8 +290,11 @@ Cache serialization retains its JSON fallback and original tool diagnosis. The
 secondary cache/presentation traceback is available in logs, not a new returned DTO.
 
 Adapt existing public behavior tests for these boundaries; remove obsolete sync tests.
-Keep configured/workspace verification in Validation. Archive selection remains pending
-the owner's explicit choice; do not change old code or enable force-exclude.
+Keep configured/workspace verification in Validation. The owner explicitly approved
+removing the entire old supervisor archive on 2026-10-13. The directory contained
+only supervisor_old.py (4,504 bytes), with no active callers; the current entrypoint
+uses mcp_server.core.proxy. Remove that file and the empty directory rather than
+adding native exclusions or force-exclude. Git history preserves the old code.
 
 ## Related Documents
 
@@ -310,4 +313,5 @@ the owner's explicit choice; do not change old code or enable force-exclude.
 | 0.4 | 2026-10-12 | @imp researcher | Capture owner-approved truthful choice gate and cap Chore scope; supersede assets, file-prerequisite and startup-blocking proposals. |
 | 0.5 | 2026-10-13 | @imp implementer | Record owner-approved exception ownership, complete diagnostic preservation and bounded CLI/renewal plus seventeen-site repair; supersede str-only CLI handling. |
 | 0.6 | 2026-10-13 | @imp implementer | Record remaining boundary diagnostics and owner-approved unused label-sync removal; preserve fallback contracts and bound verification. |
+| 0.7 | 2026-10-13 | @imp implementer | Record owner-approved removal of the unused old supervisor archive instead of adding exclusions. |
 
