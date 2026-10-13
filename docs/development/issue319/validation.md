@@ -1,14 +1,14 @@
 <!-- pgmcp:v1 id=validation_report pv=1.0.0 pf=dfPHW469kz8S1nLL sf=KoFPQ3-cAAWFeesb -->
 
-# Issue 319 — workspace validation and remaining test-contract failures
+# Issue 319 — completed workspace validation
 
-**Status:** FAILED VALIDATION — IMPLEMENTATION REPAIR REQUIRED  
-**Version:** 0.1  
+**Status:** VALIDATION COMPLETE — INDEPENDENT REVIEW REQUIRED  
+**Version:** 0.2  
 **Last Updated:** 2026-10-13
 
 ## Purpose
 
-Record factual workspace evidence at implementation commit 06187e57b976749deecff1d2f2b9f7f3ee49cd04 after independent GO to enter Validation. This producer report does not grant independent QA approval.
+Record current workspace evidence at a5cdbcaa1faf1287dc5a92fc747cd6e57583b374 after independent GO to re-enter Validation. Retain the earlier failed attempt as history; the seven consumer failures were repaired in Implementation. This producer report does not grant independent QA approval.
 
 ## Scope Out
 
@@ -17,7 +17,7 @@ Native-config assets/exporters, effective-source resolution, compatibility bridg
 ## Prerequisites
 
 - Approved Research and compact maintenance design.
-- Independent Implementation → Validation GO at 06187e57; full Validation was intentionally not executed by QA.
+- Independent Implementation → Validation GO at a5cdbcaa after targeted review of the seven repairs; full Validation was intentionally not executed by QA.
 
 ## Issue Number
 
@@ -25,7 +25,7 @@ Native-config assets/exporters, effective-source resolution, compatibility bridg
 
 ## Validation Status
 
-FAIL
+PASS
 
 ## Scope
 
@@ -39,7 +39,7 @@ Native lint G004/BLE001/SLF001, explicit configuration_choice across existing bi
 
 - [Affected existing test expectations](<../../../tests/mcp_server/integration/test_ready_phase_enforcement.py>)
 
-**Outcome:** Completed; negative native result. Seven failures remain in four existing test files. Validation cannot close.
+**Outcome:** Completed successfully after the repairs: 2931 passed, 1 skipped, 1 xpassed; native exit 0. No remaining test failures.
 
 ### Run the required branch quality profile.
 
@@ -55,7 +55,7 @@ Native lint G004/BLE001/SLF001, explicit configuration_choice across existing bi
 
 - [Native Ruff policy](<../../../pyproject.toml>)
 
-**Outcome:** Passed configured python_lint with existing native defaults; no temporary rule selectors or force-exclude.
+**Outcome:** Reuse the passed configured python_lint at 06187e57 for unchanged sources and native policy; current branch lint verifies all subsequently changed files. No temporary rule selectors or force-exclude.
 
 ### Inspect consumer scope, deferred work and evidence boundaries.
 
@@ -71,20 +71,20 @@ Native lint G004/BLE001/SLF001, explicit configuration_choice across existing bi
 
 ### The required full suite completed without timeout.
 
-Testpaths and eight-worker scheduling came from existing pyproject.toml; no marker filters, target narrowing, argument overrides or coverage flags. The result was read by bounded failure/summary windows after checking its 858868-character size, rather than downloading the whole cache. Coverage is opt-in and was not measured. Supplemental receipt 49df31355a554b42b5209d658c71c7bb is navigation only.
+Testpaths and eight-worker scheduling came from existing pyproject.toml; no marker filters, target narrowing, argument overrides or coverage flags. Read the collection header and native summary/diagnostic tail after checking the 851464-character size. Coverage is opt-in and was not measured. Receipt 03cfb18ffa6d411eb886da5c3f564e63 is supplementary. Historical first attempt at 06187e57: 2928 items, 7 failed, 2919 passed, 1 skipped, 1 xpassed, 280 warnings, 411.29 seconds, native exit 1; recorded in report revision 0.1 / commit 3251f25f.
 
 **Sources:**
 
 - [Native test policy](<../../../pyproject.toml>)
 - [Test binding](<../../../.pgmcp/config/tests.yaml>)
 
-**Invocation:** run_tests(scope='configured', timeout_seconds=900)
+**Invocation:** run_tests(scope='configured', timeout_seconds=1200)
 
-**Observed Result:** Pytest 9.0.2 / Python 3.13.7: 2928 collected; 7 failed, 2919 passed, 1 skipped, 1 xpassed, 280 warnings; 411.29 seconds; native exit 1; no termination problem; args_source=configured, effective_args=[].
+**Observed Result:** Pytest 9.0.2 / Python 3.13.7: 2933 items; 2931 passed, 1 skipped, 1 xpassed, 289 warnings; 322.17 seconds; native exit 0; no termination problem; args_source=configured, effective_args=[]. The five additional cases since the first run belong to the separately approved safe-edit report matrix; the seven-failure repair added no cases.
 
 ### Required branch checks passed.
 
-args_source=configured for every check; native arguments unchanged. python_pyright effective_args=['--level','warning','--warnings']; the other checks had no caller arguments. Removed target mcp_server/#Archief/supervisor_old.py was excluded by deletion. Receipt 1253b8901178484798df5da52ee40701 is supplementary.
+args_source=configured for every check; native arguments unchanged. python_pyright effective_args=['--level','warning','--warnings']; the other checks had no caller arguments. Removed target mcp_server/#Archief/supervisor_old.py was excluded by deletion. Receipt c1aae9b456b94e418445a2b0b68678de is supplementary.
 
 **Sources:**
 
@@ -92,11 +92,11 @@ args_source=configured for every check; native arguments unchanged. python_pyrig
 
 **Invocation:** run_checks(scope='branch', timeout_seconds=600)
 
-**Observed Result:** python_review: python_format, python_lint, python_types and python_pyright all passed, each native exit 0. Ruff 0.15.6 formatted selection: 74 files already formatted. Mypy 1.19.1: 33 source files. Pyright 1.1.408: 33 files, zero errors/warnings.
+**Observed Result:** python_review: python_format, python_lint, python_types and python_pyright all passed, each native exit 0. Ruff 0.15.6 formatted selection: 78 files already formatted. Mypy 1.19.1: 33 source files. Pyright 1.1.408: 33 files, zero errors/warnings.
 
 ### Native stricter lint policy passes workspace-wide.
 
-This supplemental check closes the material acceptance gap between branch-only evidence and the issue's full selected native lint policy. Receipt 2349b832417347ee80376b35e0cfc655 is supplementary.
+Earlier configured evidence at 06187e57 covers unchanged sources/native settings; the current branch checks cover later changed files. This is evidence reuse, not a claim that configured lint was repeated at a5cdbcaa. Receipt 2349b832417347ee80376b35e0cfc655 is supplementary.
 
 **Sources:**
 
@@ -106,9 +106,9 @@ This supplemental check closes the material acceptance gap between branch-only e
 
 **Observed Result:** Ruff 0.15.6: All checks passed; native exit 0; args_source=configured; effective_args=[].
 
-### The remaining test failures have concrete source routes.
+### All seven earlier failures have targeted consumer repairs.
 
-Failures below were read from the completed native run and checked against current source. No production or test code was changed in Validation. The report is a repair hand-over, not an assertion that all failures are harmless.
+Implementation commit a5cdbcaa changes four existing test files only. run_tests(scope='targets', targets=the four sources below, tests=['python_tests'], timeout_seconds=300): 53 passed, 21 warnings, 6.91 seconds, native exit 0. Target lint/Pyright passed; one formatting difference was fixed and format/lint rechecked. Independent entry QA found no repair blockers. The full suite above confirms the repaired cases in configured scope. No production or test code was changed during this Validation attempt.
 
 **Sources:**
 
@@ -119,25 +119,28 @@ Failures below were read from the completed native run and checked against curre
 
 ## Preservation
 
-Previously reviewed targeted evidence remains available in implementation commit bodies, including the 59-test scratch outcome-conversion repair at 06187e57. The full suite now supplies the broader evidence that was deliberately reserved for this phase. Passing gates do not override seven failing tests.
+Previously reviewed targeted evidence remains available in implementation commit bodies: scratch diagnosis at 06187e57, safe-edit report recovery at 24c24b91 and seven consumer repairs at a5cdbcaa. The current full suite supplies the required broader evidence; no failing tests are waived.
 
 ## Containment
 
-The failed native suite completed with exit 1, not timeout. No repair, native config relaxation, workflow forcing or phase progression was performed after discovering failures. Fresh full-suite evidence must be rerun after any implementation repair; other evidence may be reused while still valid.
+The initial failed run stopped progression. Repairs occurred in Implementation, followed by independent entry GO and one fresh configured suite plus branch checks. Current runs completed with native exit 0 and no termination problem. No native configuration relaxation or test filtering was used.
 
 ## Failures
 
-- Two failures: test_planning_commands_use_configured_phase_admission[False-planning-True] and [True-planning-True]. The manager mock configures get_project_plan, but save/update now return StoredPlanningModel directly. Their unconfigured command return values are MagicMock objects, rejected by PlanningDeliverablesOutput. Restore truthful command-return fixtures and retain admission/no-invocation assertions.
-- One failure: TestGitToolsIntegration.test_git_delete_branch_tool_flow. Its delete_branch mock returns MagicMock rather than the current result contract; local_status and remote_status are rejected by the output schema. Inspect the actual manager contract and supply the appropriate public value object.
-- Two failures: TestTransitionCycleExitCriteria.test_transition_blocked_when_current_cycle_missing_exit_criteria and ...has_empty_exit_criteria. StoredPlanningModel rejects these deliberately invalid persisted cycles in ProjectManager._stored_plan; PlanningMutationError('planning_stored_invalid') propagates before the later cycle criterion check. The tests expect the earlier tool-owned failure outcome. Resolve the current valid-planning/exception-boundary intent in Implementation; do not weaken the stored schema or add compatibility handling just to satisfy old expectations.
-- Two failures: TestInitializeProjectToolMode1.test_error_handling_state_creation_failure and ...git_failure. Direct tool execution now propagates the injected OSError/RuntimeError under the approved wrapper-ownership policy; the tests still expect result.success=false from that bare tool. Adapt public exception/wrapper behavior evidence rather than restoring bespoke tool catches.
+None remaining in the current required runs. Earlier failures and their completed repairs:
+
+- Planning save/update (2): operation-appropriate StoredPlanningModel command returns replace stale get_project_plan mocks. Retain phase refusal, zero blocked command calls and returned-plan checks.
+- Git deletion (1): use public BranchDeleteResult; check success, both statuses and the manager call. The old catch masked an invalid mock because success was not asserted.
+- Invalid stored cycles (2): retain empty/missing exit_criteria, assert planning_stored_invalid with the original Pydantic field diagnosis, and compare complete branchstate before/after refusal.
+- Bare initialization (2): assert exact original RuntimeError/OSError identity; existing wrappers retain error-presentation responsibility.
 
 ## Caveats
 
 - One skip is the existing manual proxy test requiring RUN_MANUAL_TESTS; one non-strict xfail passed in the enforcement-runner test. No caller filters were used. These outcomes are disclosed, not counted as ordinary passed tests.
-- Warnings include schema-field shadowing, collection-name collisions, synchronous functions with asyncio marks, Python pathlib deprecation, MCP resource-return deprecation, GitHub authentication deprecation, an unawaited restart-test coroutine and AnyIO cancellation-argument deprecation. They did not cause native exit 1; the seven listed failures did.
-- Branch diff against main contains 86 files, +4518/-4300, including approved mechanical test migrations, test removal, existing manager/tool formatting changes, config declarations and tool-owned workflow records. Raw line counts are not a claim of new behavioral scope.
-- Code snapshot is 06187e57. The phase-transition state and this report are the only subsequent mutations; no new implementation evidence is claimed.
+- Warnings include schema-field shadowing, collection-name collisions, synchronous functions with asyncio marks, Python pathlib deprecation, MCP resource-return deprecation, GitHub authentication deprecation, an unawaited restart-test coroutine and AnyIO cancellation-argument deprecation. These diagnostics did not change the current native exit 0; they remain disclosed housekeeping.
+- Branch diff against main at a5cdbcaa contains 92 files, +5229/-4676, including approved maintenance, safe-edit report recovery and existing test migrations/removals. Raw line counts are not a claim of new behavioral scope.
+- The restart-test diagnostic tail includes unobserved tasks raising mocked SystemExit(42) from tests/mcp_server/tools/test_admin_tools.py. Native exit remains 0; record this as test-harness housekeeping, not a new operational failure or a warning-free claim.
+- Code snapshot is a5cdbcaa. Only workflow state and this report change after the completed runs.
 
 ## Deferred Work
 
@@ -154,13 +157,14 @@ Scheduled next-phase work, not deferred implementation: explain whole-batch unre
 
 ### Existing warning and stale-marker housekeeping outside the seven required failure repairs.
 
-Warnings are disclosed rather than expanding #319 into a dependency/runtime cleanup. A narrow check of touched asyncio marks and the xpassing old expectation is reasonable during repair; broader deprecation changes need Coordination triage. No new issue has been created and no separate follow-up has been assigned yet.
+Existing warnings, the non-strict xpass and mocked restart-task diagnostics do not fail the native run, but add diagnostic noise. Their source paths are retained for Coordination triage; fixing the async harness/deprecations is outside the owner-approved seven-failure repair. No new issue or separate follow-up has been assigned.
 
 **References:**
 
 - [Context-loaded test marks](<../../../tests/mcp_server/integration/test_context_loaded_enforcement.py>)
 - [Existing xfail marker](<../../../tests/mcp_server/unit/managers/test_enforcement_runner_unit.py>)
 - [Path handling warning source](<../../../mcp_server/utils/path_resolver.py>)
+- [Restart test harness](<../../../tests/mcp_server/tools/test_admin_tools.py>)
 
 ## Related Documents
 
@@ -174,3 +178,4 @@ Warnings are disclosed rather than expanding #319 into a dependency/runtime clea
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-13 | @imp validator | Record completed full native suite, passing branch and configured lint gates, seven remaining failures and bounded follow-up. |
+| 0.2 | 2026-10-13 | @imp validator | Record current passed configured suite and branch gates after seven targeted consumer repairs; preserve failed-attempt history and diagnostic limitations. |
