@@ -101,9 +101,15 @@ Record the choice only after reviewing the relevant binding. It does not prove
 that a particular file exists or was consumed. Caller arguments still replace
 configured defaults and are reported through args_source; they cannot acknowledge
 an unresolved binding. A mixed applicable batch with an unresolved choice starts
-no checks/tests/fixes. Content preflight refuses writing under both enforce and
-report when an obligation was not started; report still handles executed native
-failed/unavailable outcomes according to its existing contract.
+no checks/tests/fixes. Scaffold and safe-edit enforce refuse writing when setup
+prevents an obligation from starting. With a valid server startup basis,
+`safe_edit_file(validation="report")` may instead perform a guarded edit of existing
+configuration files while choices are unresolved. It returns `written=true` only
+for a completed write and `validation_status=not_executed`, preserving each check's
+reason without native invocation or validation scratch. Use this route for initial
+configuration; then restart/reload the server as required and verify the chosen
+bindings. Original-file and persistence errors still block the edit. Report also
+retains its existing behavior for executed failed/unavailable check outcomes.
 
 Use a small representative `run_checks(scope="targets", ...)` and, when needed,
 a focused `run_tests(scope="targets", ...)` to verify the installed tool, intended

@@ -3,7 +3,7 @@
   "branch": "chore/319-native-quality-configs-v3-1",
   "issue_number": 319,
   "workflow_name": "chore",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -15,7 +15,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Return from failed Validation to implement the owner's explicitly approved safe-edit report-mode setup exception. Existing seven test-migration failures remain separate; no failed evidence is waived.",
   "issue_title": "chore: Strengthen native lint policy and bundle reusable quality-tool configuration assets",
   "parent_branch": "main",
   "created_at": "2026-10-12T12:33:59.703382+00:00",
@@ -35,6 +35,14 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-13T18:04:33.651447+00:00",
+      "human_approval_message": "Verander dit eerst netjes, zodat we bij een geldige basis voor opstarten wel de safe edit tool kunnen gebruiken om gericht overige configs aan te passen. Daarna praten we verder over de wheel creatie en package deployment strategie.",
+      "forced": true,
+      "skip_reason": "Return from failed Validation to implement the owner's explicitly approved safe-edit report-mode setup exception. Existing seven test-migration failures remain separate; no failed evidence is waived."
     }
   ],
   "reconstructed": false,

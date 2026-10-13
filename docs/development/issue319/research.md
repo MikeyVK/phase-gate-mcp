@@ -3,7 +3,7 @@
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** APPROVED STRATEGY — COMPACT DESIGN FOR REVIEW  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-13
 
 ## Purpose
@@ -246,6 +246,18 @@ Owner-approved exception ownership, 2026-10-13, superseding the str-only CLI rat
 
 This approval covers the identified seventeen catch sites and the CLI/renewal diagnostic path. Earlier typed Git auto-detect/checkout state-sync and GetProjectPlan translations remain separate audit items; do not silently expand into all server exception handling. Native adapter protocols, successful tool outputs, planning mutation selection/numbering/persistence and workflow policy are unchanged. Existing generic error DTOs gain code/domain facts while retaining request parameters separately; genuine exception responses now use the existing generic wrapper outputs rather than bespoke tool failure DTOs.
 
+Owner-approved safe-edit report revision, 2026-10-13: with a valid startup basis,
+safe_edit_file(validation="report") may perform its guarded edit when unresolved
+configuration_choice prevents content checks from starting. Preserve all not_executed
+check rows and reasons, with no native invocation or scratch allocation; a completed
+write is success=true/written=true with validation_status=not_executed and no operation
+error. Original-file and persistence failures retain their own error and these check
+facts. Enforce, scaffold, standalone checks/tests/fixes, invalid requests, interruption
+and unconfirmed termination retain their prior blocking rules. This replaces only the
+earlier both-edit-policies setup refusal; no flag, DTO field or presenter branch is added.
+Configured presentation explains absent validation. Wheel/deployment policy remains
+a separate owner discussion; it is not implemented by this revision.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
@@ -314,4 +326,5 @@ adding native exclusions or force-exclude. Git history preserves the old code.
 | 0.5 | 2026-10-13 | @imp implementer | Record owner-approved exception ownership, complete diagnostic preservation and bounded CLI/renewal plus seventeen-site repair; supersede str-only CLI handling. |
 | 0.6 | 2026-10-13 | @imp implementer | Record remaining boundary diagnostics and owner-approved unused label-sync removal; preserve fallback contracts and bound verification. |
 | 0.7 | 2026-10-13 | @imp implementer | Record owner-approved removal of the unused old supervisor archive instead of adding exclusions. |
+| 0.8 | 2026-10-13 | @imp implementer | Record owner-approved safe-edit report setup exception with truthful unexecuted-check facts; keep deployment strategy separate. |
 

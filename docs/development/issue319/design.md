@@ -3,7 +3,7 @@
 # Issue 319 — bounded quality configuration choice
 
 **Status:** DRAFT — INDEPENDENT REVIEW REQUIRED  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-13
 
 ## Purpose
@@ -90,7 +90,7 @@ Setup guide requires provisioning native pins, selecting workspace-native policy
 
 Resolve the requested binding set and applicability with existing mechanisms. Before any applicable adapter/process or content scratch/fix mutation in the selected operation, reject unresolved choices and identify their binding IDs. For selection checks, do not reject a binding already prefiltered to not_applicable; preserve empty selections. In a mixed batch, unresolved applicable bindings prevent the batch from executing, so a fix batch cannot partly mutate before setup refusal.
 
-Use `configuration_choice_required` as the operation error code and the unconfigured binding's consumer-owned row reason. Error details contain the ordered, unique affected `binding_ids`, not adapter IDs. Extend only the existing public consumer contracts; the adapter protocol remains unchanged. Validate that the affected IDs exactly match refused rows and that the whole batch has no invocation. Unresolved setup is not a native unavailable/failed verdict.
+For refused operations, use `configuration_choice_required` as the operation error code and the unconfigured binding's consumer-owned row reason. The owner-approved edit-report continuation below retains the row reasons without an operation error after a completed write. Error details contain the ordered, unique affected `binding_ids`, not adapter IDs. Extend only the existing public consumer contracts; the adapter protocol remains unchanged. Validate that the affected IDs exactly match refused rows and that the whole batch has no invocation. Unresolved setup is not a native unavailable/failed verdict.
 
 | Consumer | Operation outcome | Ordered rows and facts | Mutation |
 | --- | --- | --- | --- |
@@ -98,12 +98,13 @@ Use `configuration_choice_required` as the operation error code and the unconfig
 | Tests | Existing operational `success=true`, same error/details, selected_tests retained | Selected unresolved rows: `not_executed/configuration_choice_required`; selected acknowledged rows: `not_executed/not_started` | No collection/test invocation |
 | Fixes | Existing operational `success=true`, same error/details, selected_fixes retained | Selected unresolved rows: `not_executed/configuration_choice_required`; selected acknowledged rows: `not_executed/not_started` | No fix invocation or partial fix effects |
 | Scaffold, enforce or report | `success=false`, `written=false`, `validation_status=not_executed`, same error/details | Unresolved content rows use the same refusal reason; remaining obligations are not_started | No validation scratch allocation and no artifact creation |
-| Edit, enforce or report | `success=false`, `written=false`, `content_changed=null`, `validation_status=not_executed`, same error/details | Same content rows; original read/profile selection may already have occurred | No validation scratch allocation and no target replacement |
+| Edit, enforce | `success=false`, `written=false`, `content_changed=null`, `validation_status=not_executed`, same error/details | Same content rows; original read/profile selection may already have occurred | No validation scratch allocation and no target replacement |
+| Edit, report | Completed guarded write: `success=true`, `written=true`, factual `content_changed`, `validation_status=not_executed`, no operation error/details | Preserve unresolved/not_started rows and absent native facts; the full batch remains unattempted | No validation scratch allocation or adapter execution; target replacement is allowed. File/persistence failures retain their own error and check rows. |
 | Commit artifact preflight (`scaffold_artifact`, commit package) | Same scaffold refusal, `success=false`, `written=false`, `validation_status=not_executed`, same error/details | Same content obligations through the package's existing commit_preflight profile | No commit artifact created. This path does not stage/commit; direct git_add_or_commit currently has no content-check dependency and is not given a new one in this issue. |
 
 Every unattempted row has absent adapter identity/capture, native tool versions, evidence, request rejection and termination facts. Keep actual effective_args/args_source where selection has resolved them. Refused-row messages are null; explanation/recovery is configured from the operation code and affected binding IDs. Ordinary not_started diagnostics retain their existing contract.
 
-Both content policies block this *not executed* result. This preserves the existing rule that report can write after an executed failed/unavailable validation, but cannot treat an unstarted obligation as completed validation. Do not add a report exception for setup refusal. Empty branch/all-prefiltered check selections remain neutral and do not require acknowledgement. Complete applicable admission precedes all invocation, content scratch allocation and fix effects; no first-binding success can mask a later unresolved binding.
+Owner revision, 2026-10-13: scaffold and edit-enforce block this *not executed* result. Edit-report may continue to its guarded write specifically after configuration_choice_required, retaining the unexecuted check rows without claiming validation. Both edit policies still block invalid requests, interruption and unconfirmed termination. Original-file/persistence checks remain mandatory. Empty branch/all-prefiltered selections remain neutral. Complete applicable admission still precedes every adapter invocation, content scratch allocation and fix effect; the unresolved content batch is not partly executed. The edit output contract admits this specific report state, including retained check facts when a later file/persistence error prevents the write. Presentation of absent validation comes from configuration.
 
 Author the human explanation and recovery action in presentation.yaml using the existing generic presenter. Generic execution owns the fact; no message is hardcoded in an adapter, command or new presenter branch. Recovery tells the agent/owner to configure the relevant binding deliberately, not to fabricate a native config file.
 
@@ -127,7 +128,7 @@ removed from the configuration model. Metadata validation, lookups and conversio
 
 ## Test Design
 
-Adapt existing public configuration/execution tests with a small parametrized set across check/test/fix/content routes: unresolved setup refuses with zero invocations/side effects, all admitted choices retain native args/args_source, caller args cannot acknowledge an unresolved binding, and empty/not-applicable branch selection remains neutral. Verify content enforce/report retain their existing write policy when validation refuses. Use existing native-lint/CLI/setup behavior tests for repairs; avoid testing literal YAML/doc text. Reuse fresh evidence and keep the required full configured suite in Validation.
+Adapt existing public configuration/execution tests with a small parametrized set across check/test/fix/content routes: unresolved setup refuses with zero invocations/side effects, all admitted choices retain native args/args_source, caller args cannot acknowledge an unresolved binding, and empty/not-applicable branch selection remains neutral. Verify scaffold and edit-enforce setup refusal, edit-report guarded writes with truthful unexecuted-check facts, and preserved original-file/persistence blockers. Use existing native-lint/CLI/setup behavior tests for repairs; avoid testing literal YAML/doc text. Reuse fresh evidence and keep the required full configured suite in Validation.
 
 ## Related Documents
 
@@ -143,3 +144,4 @@ Adapt existing public configuration/execution tests with a small parametrized se
 | 0.2 | 2026-10-12 | @imp researcher | Resolve fresh-init ownership without asset builders; define consumer refusal rows, absent native facts and both content policies before implementation. |
 | 0.3 | 2026-10-13 | @imp implementer | Specify approved exception ownership using existing wrapper/error DTOs and renewal presenter; preserve domain and post-write diagnosis without a new architecture. |
 | 0.4 | 2026-10-13 | @imp implementer | Keep scratch and fallback diagnostics in existing boundaries; record approved unused label-sync and test cleanup. |
+| 0.5 | 2026-10-13 | @imp implementer | Define approved safe-edit report continuation for unresolved setup, preserving validation facts and all write guards. |

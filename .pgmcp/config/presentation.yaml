@@ -653,5 +653,9 @@ tools:
         cases:
           configuration_choice_required: "Quality configuration is unresolved. Choose configuration_choice deliberately in the affected checks.yaml, tests.yaml or fixes.yaml bindings, then retry."
 
+      - field: validation_status
+        cases:
+          not_executed: "No validation was performed. Review the reported check reasons before relying on this content."
+
     template_success: "Edited {path}; written={written}; validation={validation_status}."
     template_failure: "Edit {path} failed: {error_code}."

@@ -188,6 +188,7 @@ class EditOperation:
             )
 
         checks: tuple[MutationCheck, ...] = ()
+        unresolved_report = False
         if selection.profile_id is not None:
             try:
                 execution = await self._checks.run_content(
@@ -231,7 +232,10 @@ class EditOperation:
             if not checks:
                 raise ValueError("selected_profile_requires_check_obligations")
             blocker_code, blocker_details = mutation_execution_blocker(execution, checks)
-            if blocker_code is not None:
+            unresolved_report = (
+                policy == "report" and blocker_code == "configuration_choice_required"
+            )
+            if blocker_code is not None and not unresolved_report:
                 return self._result(
                     logical,
                     policy,
@@ -249,7 +253,7 @@ class EditOperation:
                 checks=checks,
                 error_code="validation_blocked",
             )
-        if any(check.status == "not_executed" for check in checks):
+        if not unresolved_report and any(check.status == "not_executed" for check in checks):
             raise ValueError("incomplete_checks_without_execution_blocker")
         try:
             housekeeping = self._writer.replace_if_unchanged(
