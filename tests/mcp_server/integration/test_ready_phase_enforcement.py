@@ -45,7 +45,8 @@ from mcp_server.managers.enforcement_runner import (
 )
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.schemas.deliverables import RemovePhase, SavePlanningModel
+from mcp_server.schemas.deliverables import RemovePhase, SavePlanningModel, StoredPlanningModel
+from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput
 from mcp_server.tools.git_tools import GitCommitTool
 from mcp_server.tools.pr_tools import SubmitPRTool
 from mcp_server.tools.project_tools import (
@@ -159,10 +160,10 @@ async def test_planning_commands_use_configured_phase_admission(
     _write_state(tmp_path, phase)
     runner = _make_runner(tmp_path)
     manager = MagicMock(spec=ProjectManager)
-    manager.get_project_plan.return_value = {
-        "planning_deliverables": {
+    stored_plan = StoredPlanningModel.model_validate(
+        {
             "phases": {
-                "validation": {
+                "documentation" if update else "validation": {
                     "deliverables": [
                         {
                             "deliverable_id": "D_1",
@@ -173,7 +174,9 @@ async def test_planning_commands_use_configured_phase_admission(
                 }
             }
         }
-    }
+    )
+    command = manager.update_planning_deliverables if update else manager.save_planning_deliverables
+    command.return_value = stored_plan
     if update:
         result = await EnforcementDecorator(
             UpdatePlanningDeliverablesTool(manager), runner, tmp_path
@@ -184,7 +187,6 @@ async def test_planning_commands_use_configured_phase_admission(
             ),
             NoteContext(),
         )
-        command = manager.update_planning_deliverables
     else:
         result = await EnforcementDecorator(
             SavePlanningDeliverablesTool(manager), runner, tmp_path
@@ -208,7 +210,9 @@ async def test_planning_commands_use_configured_phase_admission(
             ),
             NoteContext(),
         )
-        command = manager.save_planning_deliverables
     operation = result.operation if isinstance(result, ToolExecution) else result
     assert operation.success is allowed
     assert command.call_count == int(allowed)
+    if allowed:
+        assert isinstance(operation, PlanningDeliverablesOutput)
+        assert operation.planning_deliverables == stored_plan

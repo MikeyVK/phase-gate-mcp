@@ -13,7 +13,7 @@ import pytest
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.git_manager import GitPushResult
+from mcp_server.managers.git_manager import BranchDeleteResult, GitPushResult
 from mcp_server.schemas.github_models import IssueReadModel
 
 # Git Tools
@@ -313,11 +313,17 @@ class TestGitToolsIntegration:
     async def test_git_delete_branch_tool_flow(self) -> None:
         """Test git delete branch tool complete flow."""
         mock_manager = make_mock_git_manager()
+        mock_manager.delete_branch.return_value = BranchDeleteResult(
+            local_status="deleted", remote_status="deleted"
+        )
 
         tool = make_git_delete_branch_tool(mock_manager)
         result = await tool.execute(GitDeleteBranchInput(branch="feature/old"), NoteContext())
 
+        assert result.success
         assert result.branch == "feature/old"
+        assert result.local_status == "deleted"
+        assert result.remote_status == "deleted"
         mock_manager.delete_branch.assert_called_once_with(
             "feature/old", ANY, force=False, mode="both"
         )

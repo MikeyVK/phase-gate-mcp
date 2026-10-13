@@ -13,10 +13,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.deliverables import PlanningMutationError, SavePlanningModel
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -985,24 +986,23 @@ class TestTransitionCycleExitCriteria:
             ],
         )
 
-        with (
-            patch("mcp_server.tools.cycle_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git_class.return_value = mock_git
+        state_reader = make_phase_state_engine(_workspace_root)
+        branch = "feature/146-tdd-cycle-tracking"
+        before = state_reader.get_state(branch)
+        assert before.current_cycle == 1
 
-            result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
+        with pytest.raises(PlanningMutationError) as rejected:
+            await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert not result.success, "Must block when exit_criteria is empty"
-        text = result.error_message or ""
-        assert "planning_stored_invalid" in text
-        assert (
-            make_phase_state_engine(_workspace_root)
-            .get_state("feature/146-tdd-cycle-tracking")
-            .current_cycle
-            == 1
+        assert rejected.value.code == "planning_stored_invalid"
+        cause = rejected.value.__cause__
+        assert isinstance(cause, ValidationError)
+        assert any(
+            error["loc"] == ("cycles", "cycles", 0, "exit_criteria")
+            and error["type"] == "string_too_short"
+            for error in cause.errors()
         )
+        assert state_reader.get_state(branch) == before
 
     @pytest.mark.asyncio()
     async def test_transition_blocked_when_current_cycle_missing_exit_criteria(
@@ -1045,24 +1045,22 @@ class TestTransitionCycleExitCriteria:
             ],
         )
 
-        with (
-            patch("mcp_server.tools.cycle_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git_class.return_value = mock_git
+        state_reader = make_phase_state_engine(_workspace_root)
+        branch = "feature/146-tdd-cycle-tracking"
+        before = state_reader.get_state(branch)
+        assert before.current_cycle == 1
 
-            result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
+        with pytest.raises(PlanningMutationError) as rejected:
+            await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert not result.success, "Must block when exit_criteria key is missing"
-        text = result.error_message or ""
-        assert "planning_stored_invalid" in text
-        assert (
-            make_phase_state_engine(_workspace_root)
-            .get_state("feature/146-tdd-cycle-tracking")
-            .current_cycle
-            == 1
+        assert rejected.value.code == "planning_stored_invalid"
+        cause = rejected.value.__cause__
+        assert isinstance(cause, ValidationError)
+        assert any(
+            error["loc"] == ("cycles", "cycles", 0, "exit_criteria") and error["type"] == "missing"
+            for error in cause.errors()
         )
+        assert state_reader.get_state(branch) == before
 
     @pytest.mark.asyncio()
     async def test_transition_succeeds_when_exit_criteria_present(
