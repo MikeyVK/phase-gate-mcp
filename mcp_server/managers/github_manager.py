@@ -4,12 +4,12 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from mcp_server.adapters.github_adapter import GitHubAdapter
-from mcp_server.config.settings import GitHubSettings
 from mcp_server.core.exceptions import MCPSystemError
 from mcp_server.core.interfaces import PRStatus
 from mcp_server.schemas import (
     ContributorConfig,
     GitConfig,
+    GitHubSettings,
     IssueConfig,
     LabelConfig,
     MilestoneConfig,

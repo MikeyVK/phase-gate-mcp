@@ -23,6 +23,7 @@ from mcp_server.config.schemas.operation_policies_config import OperationPolicie
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
+from mcp_server.config.settings import GitHubSettings
 from mcp_server.schemas.error_outputs import (
     CacheErrorOutput,
     EnforcementErrorOutput,
@@ -50,6 +51,7 @@ __all__ = [
     "EnforcementConfig",
     "EnforcementRule",
     "GitConfig",
+    "GitHubSettings",
     "IssueConfig",
     "LabelConfig",
     "MergePolicy",

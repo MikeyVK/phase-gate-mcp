@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.interfaces import ICoreTool
+from mcp_server.core.interfaces import ICoreTool, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.state_repository import InMemoryStateRepository
@@ -361,6 +361,10 @@ class TestServerToolRegistration:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Dispatch pre-hook should return a phase error and never reach GitHub PR creation."""
+        monkeypatch.setattr(
+            "mcp_server.managers.github_manager.GitHubManager.get_pr_status",
+            MagicMock(return_value=PRStatus.ABSENT),
+        )
         monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
         _bootstrap_workspace_configs(tmp_path)
         _write_phase_state(tmp_path, "documentation")

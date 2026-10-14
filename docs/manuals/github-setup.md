@@ -12,7 +12,7 @@ PGMCP reads GitHub connection settings through [`Settings.from_env()`](../../mcp
 | `GITHUB_TOKEN` | Optional credential; token-dependent tools and resources become available only when configured. |
 | `GITHUB_PROJECT_NUMBER` | Optional project metadata; no default or requirement for the existing issue/PR tools. |
 
-Local startup, health and editing do not require GitHub setup. GitHub operations require an explicit owner, repository name and token; incomplete setup is refused before client construction. There are no personal identity defaults or git-remote inference.
+Local startup and health do not require GitHub setup. GitHub operations require an explicit owner, repository name and token; incomplete setup is refused before client construction. Existing workspace enforcement can require a GitHub PR-status lookup before branch mutations, including file edits; local startup availability does not bypass that gate. There are no personal identity defaults or git-remote inference.
 
 These environment variables override the corresponding fields in the optional `PGMCP_CONFIG_PATH` settings overlay. Keep the token outside source control. A changed launch environment may require starting a fresh MCP client session; package or active configuration changes require a server restart. See [server configuration](../reference/server-configuration.md) and [workspace upgrade](../setup/workspace-upgrade.md) for the local roots and lifecycle.
 

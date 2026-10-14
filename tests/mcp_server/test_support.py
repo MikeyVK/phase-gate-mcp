@@ -499,6 +499,7 @@ def make_dispatch_dependencies(settings: Settings) -> DispatchDependencies:
         workflow_gate_runner=workflow_gate_runner,
     )
     github_manager = GitHubManager(
+        github_settings=settings.github,
         issue_config=loader.load_issue_config(),
         label_config=loader.load_label_config(),
         scope_config=loader.load_scope_config(),

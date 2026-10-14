@@ -14,7 +14,7 @@
 
 Complete reference documentation for all 17 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
 
-GitHub operations require a token and explicit repository owner/name in resolved settings. Local startup, health and editing remain available without GitHub setup. The five issue tools remain
+GitHub operations require a token and explicit repository owner/name in resolved settings. Local startup and health remain available without GitHub setup. Existing workspace PR-status enforcement may require that setup before branch mutations; see [GitHub setup](../../manuals/github-setup.md). The five issue tools remain
 registered without a token so their schemas are discoverable; the twelve PR, label, and
 milestone tools are active only when credentials are configured.
 

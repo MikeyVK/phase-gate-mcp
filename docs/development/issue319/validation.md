@@ -10,6 +10,10 @@
 
 Record the current ce6a76b7 implementation attempt and preserve earlier checkpoint evidence as history. This producer report does not grant independent QA approval.
 
+## Validation Status
+
+FAIL — six current suite failures; repair required before progression.
+
 ## Current attempt — 2026-10-14
 
 Independent entry GO covered ce6a76b7d2f7c7c00ecd53054dfb3b902ab96bc1. run_tests(scope='configured', timeout_seconds=1200), without caller filters/argument overrides: 2936 items; 6 failed, 2928 passed, 1 skipped, 1 xpassed, 275 warnings; 321.22 seconds; native exit 1, no termination problem. Receipt e780297a74f0469a8708b945abc7a5ab is supplementary. Read the collection header and diagnostic windows after inspecting the 884584-character size.
@@ -37,9 +41,9 @@ Native-config assets/exporters, effective-source resolution, compatibility bridg
 
 #319
 
-## Validation Status
+## Historical Validation Status
 
-PASS
+PASS — a5cdbcaa only
 
 ## Scope
 

@@ -24,7 +24,7 @@ Owner decision on 2026-10-14: stop expanding #319. Complete the existing native-
 
 ## Retained implementation and evidence boundary
 
-The GitHub identity repair at b1069a55 removes concrete owner/repository defaults and the implicit project-board number, injects GitHubSettings from the composition root and preserves lazy client construction. It stays on this branch; no rollback is requested. Independent QA approved entry for this repair, not its completed implementation. Targeted evidence recorded in the commit: 115 passed, plus focused checks and additional targeted cases.
+The GitHub identity repair at b1069a55 removes concrete owner/repository defaults and the implicit project-board number, injects GitHubSettings from the composition root and preserves lazy client construction. It stays on this branch; no rollback is requested. Independent QA approved entry for this repair, not its completed implementation. Targeted evidence recorded in the commit: 115 passed, plus focused checks and additional targeted cases. Existing PR-status enforcement can require GitHub setup before branch mutations; startup/health availability does not imply an offline mutation bypass.
 
 The existing [Validation report](validation.md) records a full configured suite at a5cdbcaa: 2931 passed, 1 skipped and 1 xpassed, with passing branch checks. That remains historical evidence for that snapshot. It does not cover the later identity repair and must not be presented as final validation of b1069a55 or subsequent documentation commits. The current owner decision changes scope, not the truth of earlier results.
 
