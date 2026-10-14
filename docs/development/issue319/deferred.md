@@ -3,7 +3,7 @@
 # Issue 319 — scope closure and deferred work
 
 **Status:** OWNER-DIRECTED SCOPE BOUNDARY — FOLLOW-UP DEFERRED  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-14
 
 ## Purpose
@@ -32,7 +32,7 @@ The existing [Validation report](validation.md) records a full configured suite 
 
 Observed: initialize_project accepts an optional parent and can infer it from checkout reflog; the state engine can inherit a parent from project metadata. submit_pr accepts a caller head and optional base, falling back through stored parent to the configured default. The parent reader checks issue identity but not the exact branch name.
 
-Owner-selected direction: CO creates/checks out/initializes the branch and must supply parent_branch explicitly. Git supplies the actual checked-out branch; state.branch is the head identity, so no duplicate head field is needed. Imp starts from that initialized state. submit_pr should accept neither head nor base and should use only matching branchstate and its parent. Lower-level create_pr should require an explicit base. This direction is retained for a separate issue; it is not implemented or a completed design.
+Owner-selected direction: CO creates/checks out/initializes the branch and must supply parent_branch explicitly. Git supplies the actual checked-out branch; state.branch is the head identity, so no duplicate head field is needed. Imp starts from that initialized state. submit_pr should accept neither head nor base and should use only matching branchstate and its parent. Lower-level create_pr should require an explicit base. This direction is retained for a separate issue; it is not implemented or a completed design. It changes public tool inputs and state mutation contracts, exceeding this Chore. Until addressed, inferred/overridden branch identities can select an unintended parent/head; explicit current calls remain available. Sources: [initialization](../../../mcp_server/tools/project_tools.py), [PR submission](../../../mcp_server/tools/pr_tools.py), [parent reader](../../../mcp_server/managers/branch_parent_reader.py) and [state mutator](../../../mcp_server/managers/workflow_state_mutator.py).
 
 - Reopen boundaries together: InitializeProjectInput/output, ProjectInitOptions/ProjectPlan, ProjectManager.initialize_project, PhaseStateEngine.initialize_branch, BranchState, BranchStateParentReader, SubmitPRInput/SubmitPRTool and the lower GitHub manager/adapter create_pr methods.
 - Remove reflog inference and the parent/base cascades; refuse absent, blank or mismatched registration before project/state or PR side effects. Preserve the existing configured Ready admission.
@@ -46,7 +46,7 @@ Owner-selected direction: CO creates/checks out/initializes the branch and must 
 
 Observed: the existing manifest copies .pgmcp/config as a directory; scripts/build_package.py copies registered assets without a content policy. Fresh CLI --init already clears configuration_choice in the copied check/test/fix bindings; packaged source bindings can still contain this repository's acknowledgements. This is the retained implemented contract, not an assertion that the wheel is workspace-neutral.
 
-Deferred investigation: distinguish whole-file distribution sources from content transformations and decide which project-specific values should be absent in a standalone distribution. An explicitly configured copy/YAML-field-reset rule and individually registered config files were proposals only. No manifest schema, transformation grammar, alternative distribution source, new builder or packaging-content choice is approved by #319. Native tool config examples/exporters remain excluded. Follow-up must assess actual wheel/sdist/init/upgrade consumers and preserve owner-managed existing configuration.
+Deferred investigation: distinguish whole-file distribution sources from content transformations and decide which project-specific values should be absent in a standalone distribution. An explicitly configured copy/YAML-field-reset rule and individually registered config files were proposals only. No manifest schema, transformation grammar, alternative distribution source, new builder or packaging-content choice is approved by #319. Native tool config examples/exporters remain excluded. Follow-up must assess actual wheel/sdist/init/upgrade consumers and preserve owner-managed existing configuration. This is deferred because distribution ownership/content rules need their own reviewed boundary. Impact: a raw package copy is not a neutral workspace config; the retained fresh-init reset and documented owner review remain necessary.
 
 ## Retained #319 work — remaining fallback and document portability
 
@@ -54,12 +54,12 @@ Owner clarification, 2026-10-14: include these investigated repairs in #319. Use
 
 - StatusResource now reads the stored phase through existing injected read-only interfaces and the existing branch-validated reader. Missing/mismatched state propagates rather than selecting a phase by branch name.
 - ConfigLoader's write-only template_root parameter/environment fallback, the unused production resolve_config_root helper and bootstrap _build_config_layer are removed. Existing constructor consumers are mechanically migrated. Settings now owns the template_suite default used by startup/renewal; deliberate legacy-suite migration remains intact.
-- Bundled Codex reboot instructions now identify PGMCP and use get_work_context. Active setup/manual examples use owner-provided GitHub identity rather than personal defaults; machine-local source links and obsolete remote-autodetection claims are corrected. Product source/release/license provenance remains. Owner-managed local harness copies are not automatically overwritten.
+- Bundled Codex reboot instructions now identify PGMCP and use get_work_context. Active setup/manual examples use owner-provided GitHub identity rather than personal defaults; machine-local source links and obsolete remote-autodetection claims are corrected. Product source/release/license provenance remains. The corresponding tracked active reboot/research-rule copies are synchronized during Documentation; unrelated owner launch settings and secrets are not overwritten.
 - Complete these bounded repairs in Implementation with focused evidence, then include them in final Validation. No release packaging changes are authorized.
 
 ## DF-319.4 — existing test-harness warning housekeeping
 
-Retain the earlier Validation report's disclosed manual skip, non-strict xpass, deprecations, stale asyncio marks and mocked restart-task diagnostics for separate triage. A passing native run does not mean warning-free execution. Do not add a generic warning cleanup or regression-test campaign to #319.
+Retain the earlier Validation report's disclosed manual skip, non-strict xpass, deprecations, stale asyncio marks and mocked restart-task diagnostics for separate triage. A passing native run does not mean warning-free execution. Do not add a generic warning cleanup or regression-test campaign to #319. This work is deferred because the current native gates pass and harness/deprecation repair is a separate maintenance scope; impact is noisy diagnostics and weaker warning signal. Sources and exact run outcomes are preserved in [Validation](validation.md); Coordination triage remains unassigned.
 
 ## Bounded remaining closeout
 
@@ -90,3 +90,4 @@ Coordination owns issue creation, priority and scheduling for these follow-ups; 
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-14 | @imp implementer | Record owner-directed Chore cap, investigated deferred candidates, retained implementation and bounded closeout obligations. |
 | 0.2 | 2026-10-14 | @imp implementer | Retain bounded fallback/document-portability repairs in #319 and explicitly postpone the new release; leave parent/head, package-content and harness-housekeeping follow-ups deferred. |
+| 0.3 | 2026-10-14 | @imp documenter | Record completed retained repairs, tracked instruction parity and explicit deferred impact/source/triage boundaries. |

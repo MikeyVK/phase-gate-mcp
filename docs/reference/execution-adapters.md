@@ -53,6 +53,14 @@ OS confinement, external migration or legacy compatibility routes, automatic dep
 
 
 
+### Owner acknowledgement belongs to the public binding
+
+configuration_choice is declared in the workspace check/test/fix binding and checked
+before applicable invocation. It is not a manifest field, adapter request field or
+claim about resolved native configuration. Refused setup has no adapter identity,
+native evidence or process capture. Native arguments, discovery and the adapter
+protocol remain unchanged. See [binding admission and content-policy outcomes](tools/quality.md#deliberate-binding-setup).
+
 ### Public caller intent and mandatory adapter context
 
 The public run_checks/run_tests/apply_fixes tools accept workspace-relative targets and native arguments under their separate live input schemas. PGMCP resolves the admitted selection, creates an invocation allocation and injects execution_context into the internal JSON request. Public callers do not supply that internal context field.

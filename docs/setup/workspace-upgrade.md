@@ -6,6 +6,22 @@ This guide covers **PGMCP 3.0.0**. Package installation, owner-managed configura
 and managed template-suite renewal are distinct operations. Use the reviewed artifacts
 and version-specific notes from [GitHub Releases](https://github.com/MikeyVK/phase-gate-mcp/releases).
 
+## Unreleased maintenance — owner acknowledgement required
+
+The unreleased #319 changes require a deliberate configuration_choice on each relevant
+check/test/fix binding. Existing configurations with missing/null choices can start for
+setup/health, but applicable quality execution is refused until acknowledged. Fresh
+--init clears inherited choices in its newly copied bindings; template renewal does
+not refresh or overwrite owner bindings. Review the [quality setup procedure](README.md#choose-the-workspace-quality-policy)
+and perform a focused first verification. Report-mode safe-edit can retain truthful
+unexecuted-check facts while making a guarded edit; existing workspace admission and
+PR-status gates still apply. GitHub repository owner/name no longer have personal
+defaults; supply explicit settings for GitHub use.
+
+A new release is explicitly postponed. These are development upgrade notes, not a new
+published version or instruction to replace owner-managed native configs. The 3.0.0
+release and its artifacts remain unchanged.
+
 ## Install the intended package
 
 Install the reviewed release wheel in the Python environment used by the MCP launch
