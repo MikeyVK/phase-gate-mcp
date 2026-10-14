@@ -71,8 +71,8 @@ Workspace declarations normally live under the selected server root's `config/` 
 | `PGMCP_CONFIG_ROOT` | No | Owner-controlled configuration-root override. |
 | `PGMCP_TEMPLATE_ROOT` | No | Template-suite-root override. |
 | `GITHUB_TOKEN` | No | Credential for token-dependent GitHub tools and resources. |
-| `GITHUB_OWNER` / `GITHUB_REPO` | No | Repository identity overrides. |
-| `GITHUB_PROJECT_NUMBER` | No | GitHub project-number override. |
+| `GITHUB_OWNER` / `GITHUB_REPO` | For GitHub use | Explicit repository owner/name; no identity defaults or remote inference. May also be supplied in the settings overlay. |
+| `GITHUB_PROJECT_NUMBER` | No | Optional project number; no default. |
 | `PGMCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`). |
 | `LOG_LEVEL` | No | Logging verbosity (default: `INFO`). |
 

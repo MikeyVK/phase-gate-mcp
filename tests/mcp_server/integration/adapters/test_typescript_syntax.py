@@ -131,7 +131,7 @@ def typescript_package(tmp_path: Path, pytestconfig: pytest.Config) -> TypeScrip
     source = pytestconfig.rootpath / "mcp_server/bundled_adapters/typescript_syntax"
     root = tmp_path / "official packages" / "typescript_syntax"
     copytree(source, root)
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",
@@ -308,7 +308,7 @@ def test_dependency_absence_is_distinct_from_missing_node(
     empty = tmp_path / "empty lookup and workspace"
     empty.mkdir()
     assert which("node", path=str(empty)) is None
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
 
     def resolve_missing(name: str) -> Path | None:
         result = which(name, path=str(empty))

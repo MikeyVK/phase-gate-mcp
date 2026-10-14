@@ -51,6 +51,13 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
+The running server obtains its version exclusively from installed `phase-gate-mcp`
+package metadata. Development uses the editable installation above: source edits
+remain directly usable after a server restart, while installation metadata supplies
+the version. Re-run `pip install -e .` after changing the package version. Missing
+or unreadable package metadata is an error; repository manifests and fixed defaults
+are not runtime version sources.
+
 For a new server root, `pgmcp --init` requires complete assembled package assets. A clean editable checkout installed with `pip install -e .` does not assemble those assets automatically. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; follow the [Release Assets Procedure](../reference/release-assets-procedure.md). Use initialization after provisioning a package with those assets:
 
 
@@ -67,6 +74,48 @@ pgmcp --upgrade
 Renewal preserves owner-managed configuration. If it reports
 `checkpoint_required`, review the local suite and follow the owner-led procedure in
 the [Workspace Upgrade Guide](workspace-upgrade.md) before choosing an action.
+
+### Choose the workspace quality policy
+
+Provision each required adapter's pinned native dependencies, then choose the native
+policy for this workspace: source/test roots, language/platform versions, rules,
+severities, exclusions and any native CLI arguments. Native discovery, a native
+file, explicit schema/arguments or a capability requiring no extra policy are all
+legitimate; pgmcp does not determine the effective native configuration for you.
+
+Fresh `pgmcp --init` clears only `configuration_choice` in its newly copied
+`config/checks.yaml`, `config/tests.yaml` and `config/fixes.yaml` bindings. Source
+assets and existing roots are unchanged. When manually copying bindings for a new
+workspace, clear copied acknowledgements likewise. Existing installations missing
+the field remain available for health/setup, but must acknowledge every binding
+they intend to execute.
+
+| configuration_choice | Owner declaration |
+| --- | --- |
+| null or omitted | Setup is unresolved; applicable use is refused |
+| native_discovery | Deliberately accept the native tool's discovery behavior |
+| configured_arguments | Deliberately use the binding's native argument policy |
+| not_applicable | This capability needs no additional native policy configuration |
+
+Record the choice only after reviewing the relevant binding. It does not prove
+that a particular file exists or was consumed. Caller arguments still replace
+configured defaults and are reported through args_source; they cannot acknowledge
+an unresolved binding. A mixed applicable batch with an unresolved choice starts
+no checks/tests/fixes. Scaffold and safe-edit enforce refuse writing when setup
+prevents an obligation from starting. With a valid server startup basis,
+`safe_edit_file(validation="report")` may instead perform a guarded edit of existing
+configuration files while choices are unresolved. It returns `written=true` only
+for a completed write and `validation_status=not_executed`, preserving each check's
+reason without native invocation or validation scratch. Use this route for initial
+configuration; then restart/reload the server as required and verify the chosen
+bindings. Original-file and persistence errors still block the edit. Report also
+retains its existing behavior for executed failed/unavailable check outcomes.
+
+Use a small representative `run_checks(scope="targets", ...)` and, when needed,
+a focused `run_tests(scope="targets", ...)` to verify the installed tool, intended
+policy and target selection. Review the returned diagnostics before expanding
+scope. Template-only renewal preserves the owner's bindings and does not reset
+acknowledgements.
 
 ---
 
@@ -116,9 +165,9 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
             "PGMCP_SERVER_NAME": "phase-gate-mcp",
             "PGMCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
             "PGMCP_SERVER_PROJECT_DIR": ".pgmcp",
-           "GITHUB_OWNER": "MikeyVK",
-           "GITHUB_REPO": "phase-gate-mcp",
-           "GITHUB_PROJECT_NUMBER": "1"
+           "GITHUB_OWNER": "${env:GITHUB_OWNER}",
+           "GITHUB_REPO": "${env:GITHUB_REPO}",
+           "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
          }
        }
      }
@@ -163,17 +212,17 @@ This tracked setup policy and the tracked AGENTS.md instructions survive cloning
 
 All core files defining the agent behaviors, constraints, workflows, and role prompts are fully tracked in Git and immediately available when cloning the repository. 
 
-Verify that the following files are present in your workspace:
-* **Project Rules (Always-on instructions):** [AGENTS.md](file:///c:/temp/pgmcp/AGENTS.md)
+Verify that the following files are present in your workspace; links show their tracked product sources:
+* **Project Rules (Always-on instructions):** [AGENTS.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/AGENTS.md)
 * **Custom Slash Commands / Workflows:**
-  * [create-issue.md](file:///c:/temp/pgmcp/.agents/workflows/create-issue.md)
-  * [end-issue.md](file:///c:/temp/pgmcp/.agents/workflows/end-issue.md)
-  * [go.md](file:///c:/temp/pgmcp/.agents/workflows/go.md)
-  * [start-issue.md](file:///c:/temp/pgmcp/.agents/workflows/start-issue.md)
+  * [create-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/create-issue.md)
+  * [end-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/end-issue.md)
+  * [go.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/go.md)
+  * [start-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/start-issue.md)
 * **Specialized Agent Roles:**
-  * **Coordination Authority (@co):** [.github/agents/co.agent.md](file:///c:/temp/pgmcp/.github/agents/co.agent.md) (VS Code) & [.agents/rules/co.agent.md](file:///c:/temp/pgmcp/.agents/rules/co.agent.md) (Antigravity)
-  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](file:///c:/temp/pgmcp/.github/agents/imp.agent.md) (VS Code) & [.agents/rules/imp.agent.md](file:///c:/temp/pgmcp/.agents/rules/imp.agent.md) (Antigravity)
-  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](file:///c:/temp/pgmcp/.github/agents/qa.agent.md) (VS Code) & [.agents/rules/qa.agent.md](file:///c:/temp/pgmcp/.agents/rules/qa.agent.md) (Antigravity)
+  * **Coordination Authority (@co):** [.github/agents/co.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/co.agent.md) (VS Code) & [.agents/rules/co.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/co.agent.md) (Antigravity)
+  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/imp.agent.md) (VS Code) & [.agents/rules/imp.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/imp.agent.md) (Antigravity)
+  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/qa.agent.md) (VS Code) & [.agents/rules/qa.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/qa.agent.md) (Antigravity)
 
 *To activate an agent role in VS Code, load `@file:.github/agents/<role>.agent.md` (e.g., `@file:.github/agents/co.agent.md`). In Google Antigravity, load `@file:.agents/rules/<role>.agent.md` (e.g., `@file:.agents/rules/co.agent.md`).*
 
@@ -198,4 +247,3 @@ Verify that the MCP server is active by running the following command in the cha
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
-

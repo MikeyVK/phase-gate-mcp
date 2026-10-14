@@ -14,7 +14,7 @@
 
 Complete reference documentation for all 17 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
 
-All GitHub operations require a `GITHUB_TOKEN` to execute. The five issue tools remain
+GitHub operations require a token and explicit repository owner/name in resolved settings. Local startup and health remain available without GitHub setup. Existing workspace PR-status enforcement may require that setup before branch mutations; see [GitHub setup](../../manuals/github-setup.md). The five issue tools remain
 registered without a token so their schemas are discoverable; the twelve PR, label, and
 milestone tools are active only when credentials are configured.
 
@@ -35,8 +35,8 @@ All tools:
 - ✅ Support Unicode content (emojis, non-ASCII characters)
 - ✅ Validate inputs before API calls
 - ✅ Return structured responses with detailed error messages
-- ✅ Require `GITHUB_TOKEN` environment variable
-- ✅ Detect repository from git remote or `GITHUB_REPO` env var
+- ✅ Require a token in resolved settings, supplied through the environment or settings overlay
+- ✅ Use explicitly supplied repository owner/name from resolved settings; no git-remote inference
 
 ### Presentation and Cache Contract
 
@@ -59,10 +59,16 @@ Check the returned fields and any explicit failure status before reporting an ou
 
 ## Environment Variables
 
+These variables override the corresponding github fields in the optional
+PGMCP_CONFIG_PATH settings overlay. GitHub use requires resolved token, owner and repo
+values; the environment variables are not separately required when the overlay
+already supplies those values.
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GITHUB_TOKEN` | **Yes** | None | GitHub personal access token (classic or fine-grained) |
-| `GITHUB_REPO` | No | Auto-detected from git remote | Repository in `owner/repo` format |
+| `GITHUB_TOKEN` | If absent from overlay | None | Token required for GitHub use; classic or fine-grained |
+| `GITHUB_OWNER` | If absent from overlay | None | Owner required for GitHub use |
+| `GITHUB_REPO` | If absent from overlay | None | Repository name required for GitHub use, separate from owner |
 
 **Token Permissions (minimum):**
 - Issues: `repo` scope or fine-grained `issues:write`

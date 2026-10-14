@@ -12,7 +12,7 @@ import pytest
 from github import GithubException
 
 from mcp_server.adapters.github_adapter import GitHubAdapter
-from mcp_server.config.settings import Settings
+from mcp_server.config.settings import GitHubSettings
 from mcp_server.core.exceptions import ExecutionError, MCPSystemError
 
 
@@ -23,19 +23,40 @@ def mock_github_client() -> Iterator[MagicMock]:
 
 
 @pytest.fixture
-def injected_settings() -> Settings:
-    return Settings(github={"token": "test-token", "owner": "test-owner", "repo": "test-repo"})
+def injected_settings() -> GitHubSettings:
+    return GitHubSettings(token="test-token", owner="test-owner", repo="test-repo")
 
 
 @pytest.fixture
-def adapter(mock_github_client: MagicMock, injected_settings: Settings) -> GitHubAdapter:  # noqa: ARG001
+def adapter(
+    mock_github_client: MagicMock,  # noqa: ARG001 -- Fixture patches the external client.
+    injected_settings: GitHubSettings,
+) -> GitHubAdapter:
     """Return an adapter with mocked client and explicit settings."""
     return GitHubAdapter(settings=injected_settings)
 
 
-def test_init_no_token() -> None:
-    with pytest.raises(MCPSystemError, match="GitHub token not configured"):
-        GitHubAdapter(settings=Settings(github={"token": None}))
+@pytest.mark.parametrize(
+    ("owner", "repo", "token", "message"),
+    [
+        ("test-owner", "test-repo", None, "GitHub token not configured"),
+        (None, "test-repo", "test-token", "GitHub repository identity is incomplete"),
+        ("test-owner", None, "test-token", "GitHub repository identity is incomplete"),
+        ("", "test-repo", "test-token", "GitHub repository identity is incomplete"),
+        ("test-owner", " ", "test-token", "GitHub repository identity is incomplete"),
+    ],
+)
+def test_init_incomplete_settings(
+    mock_github_client: MagicMock,
+    owner: str | None,
+    repo: str | None,
+    token: str | None,
+    message: str,
+) -> None:
+    settings = GitHubSettings(owner=owner, repo=repo, token=token)
+    with pytest.raises(MCPSystemError, match=message):
+        GitHubAdapter(settings=settings)
+    mock_github_client.assert_not_called()
 
 
 def test_repo_property(adapter: GitHubAdapter, mock_github_client: MagicMock) -> None:  # noqa: ARG001

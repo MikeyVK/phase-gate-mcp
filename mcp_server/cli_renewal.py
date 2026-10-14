@@ -16,7 +16,7 @@ from jinja2 import Environment
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
-from mcp_server.core.exceptions import MCPError
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.presenters.renewal_presenter import RenewalPresenter
@@ -72,11 +72,7 @@ def build_default_operation(
 
     server_root = Path(settings.server.resolved_server_root).resolve()
     managed_root = server_root / "template_suite"
-    actual_root = (
-        Path(settings.server.resolved_template_root).resolve()
-        if settings.server.template_root is not None
-        else managed_root
-    )
+    actual_root = Path(settings.server.resolved_template_root).resolve()
     legacy_root = server_root / "templates" if actual_root == managed_root else None
     legacy_version_path = server_root / ".version" if actual_root == managed_root else None
     candidate_root = server_root / "upgrade"
@@ -95,7 +91,6 @@ def build_default_operation(
         contracts = TemplateContractLoader(suite_root)
         return ConfigLoader(
             effective_config_root,
-            suite_root,
             context_schema_reader=contracts.load_context_schema,
         )
 
@@ -234,15 +229,14 @@ class RenewalCli:
                 force=bool(args.force_template_upgrade),
                 resolve_components=tuple(args.resolve_template or ()),
             )
-        except MCPError as error:
-            print(f"Template upgrade failed: {error.message}", file=self._stderr)
-            return 1
-        except (OSError, ValueError, TypeError) as error:
-            print(f"Template upgrade failed: {error}", file=self._stderr)
+            result = self._operation.last_result
+            if result is None:
+                raise RuntimeError("template_renewal_result_missing")
+        except Exception as error:  # noqa: BLE001 -- Terminal CLI boundary preserves exception diagnostics.
+            self._stderr.write(self._presenter.present_error(capture_exception(error)))
+            self._stderr.flush()
             return 1
 
-        result = self._operation.last_result
-        assert result is not None
         self._stdout.write(self._presenter.present(result))
         self._stdout.flush()
         return result.exit_code
@@ -257,9 +251,15 @@ def main(
 ) -> int:
     """Public entry point for the prepared renewal command."""
 
-    resolved_settings = settings or Settings.from_env()
-    resolved_operation = operation or build_default_operation(resolved_settings)
-    return RenewalCli(operation=resolved_operation, presenter=presenter).run(argv)
+    resolved_presenter = presenter or RenewalPresenter()
+    try:
+        resolved_settings = settings or Settings.from_env()
+        resolved_operation = operation or build_default_operation(resolved_settings)
+    except Exception as error:  # noqa: BLE001 -- Terminal CLI composition boundary preserves diagnostics.
+        sys.stderr.write(resolved_presenter.present_error(capture_exception(error)))
+        sys.stderr.flush()
+        return 1
+    return RenewalCli(operation=resolved_operation, presenter=resolved_presenter).run(argv)
 
 
 __all__ = [

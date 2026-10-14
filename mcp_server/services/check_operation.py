@@ -21,6 +21,7 @@ from mcp_server.execution.models import (
     CheckFailed,
     CheckNotExecuted,
     CheckUnavailable,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     ExternalToolIdentity,
     InvalidCheckRequest,
@@ -68,6 +69,8 @@ def project_selection_check(row: CheckExecution[SelectionCheckResponse]) -> Sele
     observed = row.invocation
     if observed is None and row.not_executed == "not_applicable":
         reason, message = "not_applicable", None
+    if row.not_executed == "configuration_choice_required":
+        reason, message = "configuration_choice_required", None
     if observed is not None:
         if row.binding.contract_version != 1:
             raise ValueError("selection_check_contract_version_invalid")
@@ -142,6 +145,7 @@ class CheckOperation:
             CheckSelectionDetails
             | BranchBasisDetails
             | ScopeDetails
+            | ConfigurationChoiceDetails
             | RejectedRequestDetails
             | TerminationDetails
             | None
@@ -199,7 +203,15 @@ class CheckOperation:
             execution = await self._executor.run_selection(plan)
             results = tuple(project_selection_check(row) for row in execution.results)
             error_code = execution.stop_reason
-            if error_code == "adapter_request_rejected":
+            if error_code == "configuration_choice_required":
+                error_details = ConfigurationChoiceDetails(
+                    binding_ids=tuple(
+                        row.check_id
+                        for row in results
+                        if row.reason == "configuration_choice_required"
+                    )
+                )
+            elif error_code == "adapter_request_rejected":
                 rejected = next(row for row in results if row.request_rejection is not None)
                 error_details = RejectedRequestDetails(check_id=rejected.check_id)
             elif error_code == "termination_unconfirmed":

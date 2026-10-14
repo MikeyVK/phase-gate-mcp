@@ -32,9 +32,7 @@ async def test_renamed_recomposed_profile_uses_declared_native_capabilities(
     monkeypatch.setenv(
         "PATH", str(lychee_runtime.executable.parent) + os.pathsep + os.environ.get("PATH", "")
     )
-    loader = ConfigLoader(
-        pytestconfig.rootpath / ".pgmcp/config", pytestconfig.rootpath / ".pgmcp/templates"
-    )
+    loader = ConfigLoader(pytestconfig.rootpath / ".pgmcp/config")
     catalog = AdapterCatalogLoader(
         pytestconfig.rootpath / "mcp_server/bundled_adapters",
         tmp_path / "adapters",

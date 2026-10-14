@@ -25,6 +25,7 @@ from mcp_server.execution.models import (
     AdapterUnavailableReason,
     ApplyFixesErrorCode,
     ApplyFixesOutput,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     ExternalToolIdentity,
     FixPassed,
@@ -168,11 +169,12 @@ def _expected_exit(response: FixResponse) -> AdapterExitCode:
 def _project(
     selected: _SelectedFix,
     invocation: InvocationCompleted[FixResponse] | InvocationFailed | InvocationCancelled | None,
+    not_executed_reason: Literal["not_started", "configuration_choice_required"] = "not_started",
 ) -> PublicFixResult:
     status: Literal["passed", "failed", "unavailable", "not_executed"] = "not_executed"
     reason: (
         AdapterUnavailableReason | AdapterCallFailureReason | ConsumerNotExecutedReason | None
-    ) = "not_started"
+    ) = not_executed_reason
     message: str | None = None
     evidence: NativeEvidence | None = None
     external_tools: tuple[ExternalToolIdentity, ...] | None = None
@@ -292,6 +294,28 @@ class FixManager:
         )
         # Whole selection is admitted before the first possible write.
         targets, scope_issues = _scope(self._paths, request)
+        unresolved = tuple(
+            fix_id for fix_id in selected_ids if definitions[fix_id].configuration_choice is None
+        )
+        if not scope_issues and unresolved:
+            return ApplyFixesOutput(
+                success=True,
+                requested_scope=request.scope,
+                requested_targets=request.targets,
+                selected_fixes=selected_ids,
+                results=tuple(
+                    _project(
+                        item,
+                        None,
+                        "configuration_choice_required"
+                        if item.fix_id in unresolved
+                        else "not_started",
+                    )
+                    for item in selected
+                ),
+                error_code="configuration_choice_required",
+                error_details=ConfigurationChoiceDetails(binding_ids=unresolved),
+            )
         rows: list[PublicFixResult] = []
         code = "scope_resolution_failed" if scope_issues else None
         details: FixScopeDetails | RejectedFixRequestDetails | FixTerminationDetails | None = (

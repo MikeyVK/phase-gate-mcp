@@ -71,6 +71,7 @@ def compose(
                     "field": "error_code",
                     "cases": {
                         "no_configured_fixes": "No fix bindings configured.",
+                        "configuration_choice_required": "Choose configuration for these fixes.",
                         "selection_invalid": "Fix selection invalid.",
                         "scope_resolution_failed": "Fix scope could not be resolved.",
                         "adapter_request_rejected": "Internal fix request rejected.",
@@ -180,6 +181,7 @@ async def test_native_three_step_chain_reports_partial_writes_without_rollback(
                     "capability": capability,
                     "timeout_seconds": 20,
                     "default_args": [],
+                    "configuration_choice": "native_discovery",
                 }
                 for name, capability in (
                     ("first", "format"),

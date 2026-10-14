@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable, Iterable
+from collections.abc import Callable, Hashable
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -65,76 +65,17 @@ def normalize_config_root(config_root: Path | str) -> Path:
     return Path(config_root).resolve()
 
 
-def resolve_config_root(
-    preferred_root: Path | str | None = None,
-    explicit_root: Path | str | None = None,
-    required_files: Iterable[str] = (),
-) -> Path:
-    """Resolve one canonical phase-gate config root without legacy compatibility fallbacks."""
-    required = tuple(required_files)
-
-    def _has_required_files(candidate: Path) -> bool:
-        return all((candidate / file_name).exists() for file_name in required)
-
-    if explicit_root is not None:
-        explicit_candidate = normalize_config_root(explicit_root)
-        if explicit_candidate.exists() and _has_required_files(explicit_candidate):
-            return explicit_candidate
-        missing = [
-            file_name for file_name in required if not (explicit_candidate / file_name).exists()
-        ]
-        if missing:
-            missing_text = ", ".join(str(file_name) for file_name in missing)
-            raise FileNotFoundError(
-                "Explicit config_root is missing required files: "
-                f"{missing_text} ({explicit_candidate})"
-            )
-        raise FileNotFoundError(f"Explicit config_root does not exist: {explicit_candidate}")
-
-    candidates: list[Path] = []
-
-    if preferred_root is not None:
-        candidates.append(Path(preferred_root).resolve())
-    candidates.append(Path.cwd().resolve())
-    candidates.append(Path(__file__).resolve().parents[2])
-
-    unique_candidates: list[Path] = []
-    seen: set[Path] = set()
-    for candidate in candidates:
-        if candidate in seen:
-            continue
-        seen.add(candidate)
-        unique_candidates.append(candidate)
-
-    for candidate in unique_candidates:
-        if candidate.exists() and _has_required_files(candidate):
-            return candidate
-
-    raise FileNotFoundError("Could not locate canonical phase-gate config directory")
-
-
 class ConfigLoader:
     """Single YAML reader for migrated config schemas."""
 
     def __init__(
         self,
         config_root: Path,
-        template_root: Path | None = None,
         *,
         context_schema_reader: Callable[[Path], FrozenJsonObject] | None = None,
     ) -> None:
         self._context_schema_reader = context_schema_reader
         self.config_root = normalize_config_root(config_root)
-        if template_root is not None:
-            self.template_root = Path(template_root).resolve()
-        else:
-            try:
-                from mcp_server.config.settings import Settings  # noqa: PLC0415
-
-                settings = Settings.from_env()
-                self.template_root = Path(settings.server.resolved_template_root)
-            except Exception:  # noqa: BLE001
-                self.template_root = (self.config_root.parent / "templates").resolve()
 
     def load_adapter_manifest(self, path: Path) -> AdapterManifest:
         """Read one package declaration without legacy configuration-version rules."""

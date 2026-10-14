@@ -4,26 +4,33 @@
 """
 
 from pathlib import Path
-from unittest.mock import patch
+from typing import cast
+from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from mcp_server.core.interfaces.git import CycleEvidence
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
+from mcp_server.core.tool_factory import ToolFactory
+from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.state_repository import StateAlreadyExistsError
 from mcp_server.schemas.deliverables import (
     AppendCycle,
     CycleInput,
     CyclesInput,
     DeliverableInput,
     PhaseBlockInput,
+    PlanningMutationError,
     RemoveCycle,
     RemovePhase,
     ReplaceCycle,
     SavePlanningModel,
     SetPhase,
 )
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.tools.project_tools import (
     GetProjectPlanInput,
     GetProjectPlanTool,
@@ -95,16 +102,16 @@ class TestInitializeProjectToolParentBranch:
             plan_path = workspace_root / ".pgmcp" / "deliverables.json"
             before_plan = plan_path.read_bytes()
             before_state = tool.state_engine.get_state(branch)
-            rejected = await tool.execute(
-                InitializeProjectInput(
-                    issue_number=491,
-                    issue_title="Changed",
-                    workflow_name="bug",
-                    parent_branch="main",
-                ),
-                NoteContext(),
-            )
-        assert not rejected.success
+            with pytest.raises(StateAlreadyExistsError):
+                await tool.execute(
+                    InitializeProjectInput(
+                        issue_number=491,
+                        issue_title="Changed",
+                        workflow_name="bug",
+                        parent_branch="main",
+                    ),
+                    NoteContext(),
+                )
         assert plan_path.read_bytes() == before_plan
         assert tool.state_engine.get_state(branch) == before_state
 
@@ -441,7 +448,7 @@ class TestPlanningCommands:
         )
 
     @pytest.mark.asyncio
-    async def test_duplicate_save_returns_failure_without_a_successful_plan(
+    async def test_duplicate_save_raises_without_changing_plan(
         self, planning_manager: ProjectManager
     ) -> None:
         tool = SavePlanningDeliverablesTool(manager=planning_manager)
@@ -450,10 +457,9 @@ class TestPlanningCommands:
         )
         assert (await tool.execute(params, NoteContext())).success
         before = planning_manager.get_project_plan(229)
-        result = await tool.execute(params, NoteContext())
-        assert not result.success and result.error_code is not None
-        assert result.planning_deliverables is None
-        assert result.total_cycles == 0 and result.total_deliverables == 0
+        with pytest.raises(PlanningMutationError) as rejected:
+            await tool.execute(params, NoteContext())
+        assert rejected.value.code == "planning_already_saved"
         assert planning_manager.get_project_plan(229) == before
 
     @pytest.mark.asyncio
@@ -559,18 +565,18 @@ class TestPlanningCommands:
         assert cycles.cycles[0].deliverables[0].deliverable_id == "D_1.1"
 
     @pytest.mark.asyncio
-    async def test_update_before_save_returns_failure_and_no_plan(
-        self, planning_manager: ProjectManager
-    ) -> None:
-        result = await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=229,
-                operations=[AppendCycle(op="append_cycle", cycle=_cycle("First", "First block"))],
-            ),
-            NoteContext(),
-        )
-        assert not result.success and result.error_code is not None
-        assert result.planning_deliverables is None and result.total_cycles == 0
+    async def test_update_before_save_raises(self, planning_manager: ProjectManager) -> None:
+        with pytest.raises(PlanningMutationError) as rejected:
+            await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
+                UpdatePlanningDeliverablesInput(
+                    issue_number=229,
+                    operations=[
+                        AppendCycle(op="append_cycle", cycle=_cycle("First", "First block"))
+                    ],
+                ),
+                NoteContext(),
+            )
+        assert rejected.value.code == "planning_missing"
 
     @pytest.mark.asyncio
     async def test_unknown_configured_phase_rejects_without_changing_plan(
@@ -578,27 +584,72 @@ class TestPlanningCommands:
     ) -> None:
         planning_manager.save_planning_deliverables(229, _minimal_deliverables())
         before = planning_manager.get_project_plan(229)
-        result = await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
-            UpdatePlanningDeliverablesInput(
-                issue_number=229,
-                operations=[
-                    SetPhase(
-                        op="set_phase",
-                        phase="unknown_phase",
-                        block=PhaseBlockInput(
-                            deliverables=[
-                                DeliverableInput(
-                                    deliverable_name="Invalid", description="Unknown phase"
-                                )
-                            ]
-                        ),
-                    )
-                ],
-            ),
-            NoteContext(),
-        )
-        assert not result.success and result.error_code is not None
+        with pytest.raises(PlanningMutationError) as rejected:
+            await UpdatePlanningDeliverablesTool(manager=planning_manager).execute(
+                UpdatePlanningDeliverablesInput(
+                    issue_number=229,
+                    operations=[
+                        SetPhase(
+                            op="set_phase",
+                            phase="unknown_phase",
+                            block=PhaseBlockInput(
+                                deliverables=[
+                                    DeliverableInput(
+                                        deliverable_name="Invalid", description="Unknown phase"
+                                    )
+                                ]
+                            ),
+                        )
+                    ],
+                ),
+                NoteContext(),
+            )
+        assert rejected.value.code == "planning_phase_invalid"
         assert planning_manager.get_project_plan(229) == before
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("update", [False, True])
+    async def test_post_write_readback_failure_preserves_diagnostic(
+        self, planning_manager: ProjectManager, monkeypatch: pytest.MonkeyPatch, update: bool
+    ) -> None:
+        """A persisted mutation exposes domain facts and its original readback cause."""
+        if update:
+            planning_manager.save_planning_deliverables(229, _minimal_deliverables())
+            core = UpdatePlanningDeliverablesTool(manager=planning_manager)
+            params = UpdatePlanningDeliverablesInput(
+                issue_number=229,
+                operations=[AppendCycle(op="append_cycle", cycle=_cycle("Second", "New boundary"))],
+            )
+        else:
+            core = SavePlanningDeliverablesTool(manager=planning_manager)
+            params = SavePlanningDeliverablesInput(
+                issue_number=229, planning_deliverables=_minimal_deliverables()
+            )
+        before = planning_manager.deliverables_file.read_bytes()
+
+        def fail_readback(_issue_number: int) -> dict[str, object]:
+            raise OSError("fixture readback inaccessible")
+
+        monkeypatch.setattr(planning_manager, "get_project_plan", fail_readback)
+        runner = MagicMock(spec=EnforcementRunner)
+        tool = ToolFactory(runner, planning_manager.workspace_root).create_tool(
+            cast(ICoreTool[BaseModel, BaseModel], core)
+        )
+        request = params.model_dump(mode="json")
+        result = await tool.execute(request, NoteContext())
+
+        assert planning_manager.deliverables_file.read_bytes() != before
+        operation = result.operation
+        assert isinstance(operation, ExecutionErrorOutput)
+        assert not operation.success
+        assert operation.error_code == "planning_readback_failed"
+        assert operation.error_params == {"issue_number": 229, "persisted": True}
+        assert operation.params == request
+        assert "persisted" not in operation.params
+        assert operation.traceback is not None
+        assert "fixture readback inaccessible" in operation.traceback
+        assert "planning_readback_failed" in operation.traceback
+        assert "fail_readback" in operation.traceback
 
     @pytest.mark.parametrize(
         "validates",

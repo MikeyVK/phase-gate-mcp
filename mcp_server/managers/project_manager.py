@@ -233,7 +233,7 @@ class ProjectManager:
 
     def save_planning_deliverables(
         self, issue_number: int, planning_deliverables: SavePlanningModel
-    ) -> None:
+    ) -> StoredPlanningModel:
         """Validate and persist one complete initial plan, once."""
         projects, project, snapshot = self._planning_project(issue_number)
         if "planning_deliverables" in project:
@@ -246,6 +246,7 @@ class ProjectManager:
             raise PlanningMutationError("planning_input_invalid") from exc
         self._validate_planning(project, candidate)
         self._persist_planning(projects, project, candidate, snapshot)
+        return self._readback_planning(issue_number)
 
     def update_planning_deliverables(
         self,
@@ -254,7 +255,7 @@ class ProjectManager:
         *,
         context: NoteContext,
         force: bool = False,
-    ) -> None:
+    ) -> StoredPlanningModel:
         """Resolve complete operations against one snapshot and protect execution identities."""
         projects, project, snapshot = self._planning_project(issue_number)
         if "planning_deliverables" not in project:
@@ -288,6 +289,19 @@ class ProjectManager:
         context.produce(
             self._evidence_note(evidence, overridden=force and evidence.status == "unavailable")
         )
+        return self._readback_planning(issue_number)
+
+    def _readback_planning(self, issue_number: int) -> StoredPlanningModel:
+        """Read the saved plan and preserve the fact that persistence already occurred."""
+        try:
+            plan = self.get_project_plan(issue_number)
+            if plan is None or plan.get("planning_deliverables") is None:
+                raise ValueError("Planning deliverables unavailable after persistence")
+            return StoredPlanningModel.model_validate(plan["planning_deliverables"], strict=True)
+        except Exception as error:  # noqa: BLE001 -- Enrich post-write failure without discarding its cause.
+            raise PlanningMutationError(
+                "planning_readback_failed", params={"issue_number": issue_number, "persisted": True}
+            ) from error
 
     def _planning_project(self, issue_number: int) -> tuple[dict[str, Any], dict[str, Any], bytes]:
         if not self.deliverables_file.exists():

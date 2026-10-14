@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shutil
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, TypeVar
 
@@ -42,8 +44,18 @@ def operation(
     outcomes: tuple[str, ...],
     *,
     has_profile: bool = True,
+    unresolved: bool = False,
+    write_scratch: Callable[[Path, bytes], int] | None = None,
+    remove_scratch: Callable[[Path], None] = shutil.rmtree,
 ) -> tuple[EditOperation, RecordingRuntime]:
-    checks, _, runtime = compose(root, outcomes)
+    checks, _, runtime = compose(
+        root,
+        outcomes,
+        unresolved_checks=frozenset({"check_0"}) if unresolved else frozenset(),
+        file_content=write_scratch is not None,
+        write_bytes=write_scratch if write_scratch is not None else Path.write_bytes,
+        remove_tree=remove_scratch,
+    )
     config = ChecksConfig.model_validate(
         {
             "configured_targets": {"fixture": {"include": ["**"], "exclude": []}},
@@ -53,10 +65,11 @@ def operation(
                     "capability": "check",
                     "timeout_seconds": 3,
                     "default_args": [],
+                    "configuration_choice": "configured_arguments",
                 }
             },
             "profiles": {"renamed": {"checks": ["syntax"]}},
-            "profiles_by_extension": {".md": "renamed"} if has_profile else {},
+            "profiles_by_extension": {".md": "renamed", ".yaml": "renamed"} if has_profile else {},
             "run_checks": {},
         }
     )
@@ -125,12 +138,14 @@ async def test_policy_retains_actual_text_bytes_and_validation(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("change", ["bytes", "missing"])
-async def test_final_guard_preserves_external_writer_and_passed_checks(
+@pytest.mark.parametrize("unresolved", [False, True], ids=["checked", "unconfigured"])
+async def test_final_guard_preserves_external_writer_and_check_facts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     change: str,
+    unresolved: bool,
 ) -> None:
-    service, runtime = operation(tmp_path, ("passed",))
+    service, runtime = operation(tmp_path, ("passed",), unresolved=unresolved)
     target = tmp_path / "notes.md"
     original = b"source\r\n"
     competing = b"source\n"
@@ -154,7 +169,11 @@ async def test_final_guard_preserves_external_writer_and_passed_checks(
         validation="report",
     )
     assert result.error_code == ("original_changed" if change == "bytes" else "original_missing")
-    assert result.validation_status == "passed" and len(runtime.requests) == 1
+    assert result.validation_status == ("not_executed" if unresolved else "passed")
+    assert len(runtime.requests) == int(not unresolved)
+    if unresolved:
+        assert result.checks[0].reason == "configuration_choice_required"
+        assert result.checks[0].invocation is None
     assert not result.written and result.content_changed is None
     if change == "bytes":
         assert target.read_bytes() == competing
@@ -164,13 +183,30 @@ async def test_final_guard_preserves_external_writer_and_passed_checks(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kind", ["missing", "directory", "root", "encoding", "permission", "edit"])
-async def test_precheck_failures_do_not_invent_check_results(
+@pytest.mark.parametrize(
+    "kind", ["missing", "directory", "root", "encoding", "permission", "edit", "scratch"]
+)
+async def test_preparation_failures_preserve_original_and_check_facts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
     kind: str,
 ) -> None:
-    service, runtime = operation(tmp_path, ("passed",))
+    primary = OSError("scratch write refused")
+    secondary = PermissionError("scratch cleanup refused")
+
+    def failed_write(_path: Path, _content: bytes) -> int:
+        raise primary
+
+    def failed_cleanup(_path: Path) -> None:
+        raise secondary
+
+    service, runtime = operation(
+        tmp_path,
+        ("passed",),
+        write_scratch=failed_write if kind == "scratch" else None,
+        remove_scratch=failed_cleanup if kind == "scratch" else shutil.rmtree,
+    )
     target = tmp_path if kind == "root" else tmp_path / "notes.md"
     command: EditCommand = RewriteOperation(content="proposed")
     if kind == "directory":
@@ -188,6 +224,28 @@ async def test_precheck_failures_do_not_invent_check_results(
     result = await service.execute(
         path="." if kind == "root" else target.name, operation=command, validation="report"
     )
+    if kind == "scratch":
+        assert result.error_code == "preparation_failed"
+        assert not result.written and result.content_changed is None
+        assert target.read_bytes() == b"original" and runtime.requests == []
+        assert result.error_details is not None
+        assert result.error_details.model_dump()["reason"] == "validation_input_write_failed"
+        assert result.checks[0].invocation is None
+        assert result.checks[0].housekeeping[0].purpose == "validation_input"
+        records = [
+            record
+            for record in caplog.records
+            if record.name == "mcp_server.services.edit_operation"
+        ]
+        assert len(records) == 1
+        assert records[0].exc_info is not None
+        boundary_error = records[0].exc_info[1]
+        assert boundary_error is not None and boundary_error.__cause__ is not None
+        assert boundary_error.__cause__.__cause__ is primary
+        assert "OSError: scratch write refused" in caplog.text
+        assert "PermissionError: scratch cleanup refused" in caplog.text
+        assert "failed_cleanup" in caplog.text
+        return
     expected = {
         "missing": "original_missing",
         "directory": "target_invalid",
@@ -368,13 +426,17 @@ async def test_postcommit_result_failure_leaves_completed_bytes(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("failure", ["write", "write_cleanup", "missing_stage"])
+@pytest.mark.parametrize(
+    ("failure", "unresolved"),
+    [("write", False), ("write_cleanup", False), ("missing_stage", False), ("write", True)],
+)
 async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     failure: str,
+    unresolved: bool,
 ) -> None:
-    service, _ = operation(tmp_path, ("passed",))
+    service, runtime = operation(tmp_path, ("passed",), unresolved=unresolved)
     target = tmp_path / "notes.md"
     target.write_bytes(b"original")
     actual_write, actual_unlink, actual_replace = os.write, Path.unlink, os.replace
@@ -399,9 +461,16 @@ async def test_partial_staging_failure_preserves_original_and_cleanup_facts(
     else:
         monkeypatch.setattr("mcp_server.utils.atomic_file_writer.os.write", partial)
     monkeypatch.setattr(Path, "unlink", cleanup)
-    result = await service.execute(path=target.name, operation=RewriteOperation(content="proposed"))
+    result = await service.execute(
+        path=target.name, operation=RewriteOperation(content="proposed"), validation="report"
+    )
     assert result.error_code == "persistence_failed" and not result.written
-    assert result.content_changed is None and result.validation_status == "passed"
+    assert result.content_changed is None
+    assert result.validation_status == ("not_executed" if unresolved else "passed")
+    assert len(runtime.requests) == int(not unresolved)
+    if unresolved:
+        assert result.checks[0].reason == "configuration_choice_required"
+        assert result.checks[0].invocation is None
     assert target.read_bytes() == b"original"
     assert result.error_details is not None
     assert result.error_details.model_dump()["stage"] == (
@@ -501,3 +570,36 @@ async def test_edits_use_lf_text_and_report_actual_byte_change(
     assert result.content_changed is changed
     assert target.read_bytes() == expected
     assert runtime.requests[0][0].model_dump()["content"].encode("utf-8") == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("policy", ["enforce", "report"])
+async def test_unresolved_content_choice_retains_batch_facts_without_scratch(
+    tmp_path: Path, policy: Literal["enforce", "report"]
+) -> None:
+    def deny_scratch(_path: Path, _content: bytes) -> int:
+        pytest.fail("Unconfigured checks must not prepare validation input")
+
+    service, runtime = operation(
+        tmp_path, ("passed", "passed"), unresolved=True, write_scratch=deny_scratch
+    )
+    target = tmp_path / "notes.md"
+    target.write_bytes(b"original")
+    result = await service.execute(
+        path=target.name, operation=RewriteOperation(content="replacement"), validation=policy
+    )
+    written = policy == "report"
+    assert result.success is written and result.written is written
+    assert result.content_changed is (True if written else None)
+    assert result.error_code == (None if written else "configuration_choice_required")
+    assert (result.error_details is None) is written
+    assert result.validation_status == "not_executed"
+    assert [(row.check_id, row.status, row.reason) for row in result.checks] == [
+        ("check_0", "not_executed", "configuration_choice_required"),
+        ("check_1", "not_executed", "not_started"),
+    ]
+    assert all(row.invocation is None and row.evidence is None for row in result.checks)
+    assert runtime.requests == []
+    assert target.read_bytes() == (b"replacement" if written else b"original")
+    assert not (tmp_path / "scratch").exists()
+    assert EditOperationOutput.model_validate_json(result.model_dump_json()) == result

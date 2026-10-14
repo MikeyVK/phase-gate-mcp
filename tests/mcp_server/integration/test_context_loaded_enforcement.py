@@ -41,11 +41,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.config.loader import ConfigLoader
-from mcp_server.core.exceptions import ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.core.exceptions import StateCorruptedError, ValidationError
+from mcp_server.core.interfaces import IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
-from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.managers.state_repository import BranchState, FileStateRepository
 from mcp_server.schemas import GitConfig
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool
@@ -59,7 +59,7 @@ from tests.mcp_server.test_support import (
 pytestmark = pytest.mark.asyncio
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
-_BRANCH = "feature/test-268"
+_BRANCH = "feature/268-test"
 
 
 # ---------------------------------------------------------------------------
@@ -74,7 +74,24 @@ def _make_pr_reader() -> IPRStatusReader:
     return reader
 
 
-def _make_runner(cache: ContextLoadedCache, server_root: Path) -> EnforcementRunner:
+def _make_state(server_root: Path) -> None:
+    """Persist valid branch state for context-gate integration cases."""
+    FileStateRepository(state_file=server_root / "state.json").save(
+        BranchState(
+            branch=_BRANCH,
+            issue_number=268,
+            workflow_name="feature",
+            current_phase="implementation",
+        )
+    )
+
+
+def _make_runner(
+    cache: ContextLoadedCache,
+    server_root: Path,
+    *,
+    state_reader: IStateReader | None = None,
+) -> EnforcementRunner:
     """Build an EnforcementRunner with the live enforcement.yaml and given cache."""
     loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     config = loader.load_enforcement_config()
@@ -85,7 +102,11 @@ def _make_runner(cache: ContextLoadedCache, server_root: Path) -> EnforcementRun
         pr_status_reader=_make_pr_reader(),
         server_root=server_root,
         context_loaded_reader=cache,
-        state_reader=FileStateRepository(state_file=server_root / "state.json"),
+        state_reader=(
+            state_reader
+            if state_reader is not None
+            else FileStateRepository(state_file=server_root / "state.json")
+        ),
     )
 
 
@@ -107,7 +128,7 @@ class TestContextLoadedGate:
     """EnforcementRunner gate blocks/allows tools based on context-loaded state."""
 
     def test_gate_blocks_tool_when_context_not_loaded(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
+        _make_state(tmp_path)
         cache = ContextLoadedCache()
         runner = _make_runner(cache, server_root=tmp_path)
 
@@ -120,23 +141,49 @@ class TestContextLoadedGate:
                 tool_category="branch_mutating",
             )
 
-    def test_gate_allows_tool_when_context_loaded(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
+    @pytest.mark.parametrize(
+        "state_error",
+        [
+            None,
+            StateCorruptedError("invalid state"),
+            PermissionError("unreadable state"),
+            RuntimeError("reader failure"),
+        ],
+    )
+    def test_loaded_context_requires_readable_state(
+        self, tmp_path: Path, state_error: Exception | None
+    ) -> None:
+        """Loaded context permits valid state; reader faults propagate unchanged."""
+        _make_state(tmp_path)
         cache = ContextLoadedCache()
         cache.set_context_loaded(_BRANCH, value=True)
-        runner = _make_runner(cache, server_root=tmp_path)
+        reader = None
+        if state_error is not None:
+            reader = MagicMock(spec=IStateReader)
+            reader.load.side_effect = state_error
+        runner = _make_runner(cache, server_root=tmp_path, state_reader=reader)
 
-        # Must not raise
-        runner.run(
-            "git_commit",
-            "pre",
-            _make_ctx("git_commit"),
-            NoteContext(),
-            tool_category="branch_mutating",
-        )
+        if state_error is None:
+            runner.run(
+                "git_commit",
+                "pre",
+                _make_ctx("git_commit"),
+                NoteContext(),
+                tool_category="branch_mutating",
+            )
+        else:
+            with pytest.raises(type(state_error)) as raised:
+                runner.run(
+                    "git_commit",
+                    "pre",
+                    _make_ctx("git_commit"),
+                    NoteContext(),
+                    tool_category="branch_mutating",
+                )
+            assert raised.value is state_error
 
     def test_force_phase_transition_exempt(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
+        _make_state(tmp_path)
         cache = ContextLoadedCache()  # context NOT loaded
         runner = _make_runner(cache, server_root=tmp_path)
 
@@ -150,7 +197,7 @@ class TestContextLoadedGate:
         )
 
     def test_force_cycle_transition_exempt(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
+        _make_state(tmp_path)
         cache = ContextLoadedCache()  # context NOT loaded
         runner = _make_runner(cache, server_root=tmp_path)
 

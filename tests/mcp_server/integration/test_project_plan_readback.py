@@ -11,6 +11,7 @@ import re
 import shutil
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from git import Actor, Repo
@@ -29,8 +30,10 @@ from pydantic import AnyUrl
 import mcp_server
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.interfaces import PRStatus
 from mcp_server.core.interfaces.git import CycleEvidence
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.state_repository import BranchState, FileStateRepository
 from mcp_server.schemas.deliverables import (
     CycleInput,
@@ -262,6 +265,7 @@ async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_updat
     legacy_suite_roots: SuiteRoots, boundary: str, forced: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Saved and revised rules govern real normal/forced transitions without a restart."""
+    monkeypatch.setattr(GitHubManager, "get_pr_status", Mock(return_value=PRStatus.ABSENT))
     workspace = legacy_suite_roots.workspace
     monkeypatch.chdir(workspace)
     repo = Repo.init(workspace)

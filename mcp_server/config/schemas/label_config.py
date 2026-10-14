@@ -111,49 +111,6 @@ class LabelConfig(BaseModel):
     def get_labels_by_category(self, category: str) -> list[Label]:
         return self._labels_by_category.get(category, [])
 
-    def sync_to_github(self, github_adapter: Any, dry_run: bool = False) -> dict[str, list[str]]:  # noqa: ANN401
-        result: dict[str, list[str]] = {"created": [], "updated": [], "skipped": [], "errors": []}
-
-        try:
-            existing = github_adapter.list_labels()
-            existing_by_name = {label["name"]: label for label in existing}
-        except Exception as exc:
-            result["errors"].append(f"Failed to fetch labels: {exc}")
-            return result
-
-        for label in self.labels:
-            try:
-                if label.name not in existing_by_name:
-                    if not dry_run:
-                        github_adapter.create_label(
-                            name=label.name,
-                            color=label.color,
-                            description=label.description,
-                        )
-                    result["created"].append(label.name)
-                else:
-                    existing_label = existing_by_name[label.name]
-                    if self._needs_update(label, existing_label):
-                        if not dry_run:
-                            github_adapter.update_label(
-                                name=label.name,
-                                color=label.color,
-                                description=label.description,
-                            )
-                        result["updated"].append(label.name)
-                    else:
-                        result["skipped"].append(label.name)
-            except Exception as exc:
-                result["errors"].append(f"{label.name}: {exc}")
-
-        return result
-
-    def _needs_update(self, yaml_label: Label, github_label: dict[str, Any]) -> bool:
-        return bool(
-            yaml_label.color != github_label["color"]
-            or yaml_label.description != github_label.get("description", "")
-        )
-
     @field_validator("labels")
     @classmethod
     def validate_no_duplicates(cls, labels: list[Label]) -> list[Label]:

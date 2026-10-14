@@ -79,9 +79,7 @@ class ProjectionCore:
 @pytest.fixture
 def config(pytestconfig: pytest.Config) -> PresentationConfig:
     root = pytestconfig.rootpath / ServerSettings().server_root_dir
-    return ConfigLoader(
-        config_root=root / "config", template_root=root / "templates"
-    ).load_presentation_config()
+    return ConfigLoader(config_root=root / "config").load_presentation_config()
 
 
 def _presenter(config: PresentationConfig, tool: ToolPresentationConfig) -> TextPresenter:

@@ -8,6 +8,21 @@ All notable changes to Phase-Gate MCP Server are documented here, following
 
 ## Unreleased
 
+- Require deliberate configuration_choice for applicable check/test/fix bindings,
+  including content preflight. Missing choices permit startup for setup but refuse
+  execution; native discovery and caller argument semantics remain unchanged.
+  Fresh initialization clears inherited acknowledgements. See the
+  [setup procedure](docs/setup/README.md#choose-the-workspace-quality-policy).
+- Retain guarded report-mode edits when quality setup prevents checks from starting,
+  reporting validation_status=not_executed without claiming validation.
+- Activate Ruff G004/BLE001/SLF001 with bounded repairs and preserve complete exception,
+  cleanup and CLI/renewal diagnosis through existing wrappers and presenters.
+- Remove personal GitHub identity defaults, require explicit settings injection, read
+  status phases from branchstate and remove unused config/template-root fallbacks.
+  Correct active setup examples and agent instructions.
+
+A new release is explicitly postponed; no release version/date is assigned here.
+
 Release artifacts, tags and publication dates are recorded on
 [GitHub Releases](https://github.com/MikeyVK/phase-gate-mcp/releases).
 The release-preparation evidence records exact package verification and limitations.

@@ -27,7 +27,7 @@ __all__ = ["ruff_package"]
 
 
 def fix_package(base: RuffPackage, repo: Path) -> RuffPackage:
-    loader = ConfigLoader(base.workspace / "config", base.workspace / "templates")
+    loader = ConfigLoader(base.workspace / "config")
     catalog = AdapterCatalogLoader(
         base.root.parent,
         base.workspace / "adapters",

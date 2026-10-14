@@ -49,6 +49,17 @@ Normalization does not change Unicode characters, BOM, other whitespace or final
 
 The operation selects check obligations using an explicit `template_id` when supplied, otherwise available artifact-header metadata or the file extension. `enforce` prevents a write when required checks fail; `report` returns the check facts without enforcing that rejection policy. These are validation policies, not legacy strict/interactive/verify-only modes or a general quality-gate invocation.
 
+With a valid startup configuration, `report` also permits guarded edits when unresolved
+`configuration_choice` prevents the selected content-check batch from starting. This
+supports initial edits to workspace configuration. A completed write reports
+`success=true`, `written=true` and `validation_status=not_executed`; check rows retain
+`configuration_choice_required` or `not_started`, with no native invocation or scratch
+allocation. Presentation explicitly reports absent validation. This does not acknowledge
+any binding or certify content. Original-file and persistence failures retain their
+own error and the unexecuted check facts. `enforce`, scaffold and standalone quality
+operations still refuse unresolved setup. Invalid requests, interruption and unconfirmed
+termination remain blockers under either edit policy.
+
 The result records the attempted operation, write/content-change facts, selected validation profile and check results, plus structured failure details where applicable.
 
 | Field | Meaning |

@@ -1,4 +1,4 @@
-<!-- template=reference version=6.1 updated=2026-10-02 -->
+<!-- template=reference version=6.1 updated=2026-10-14 -->
 # Checks, Tests, and Fixes
 
 The V3 execution surface has three distinct operations: `run_checks`, `run_tests`, and
@@ -16,6 +16,28 @@ callers continue to use the tool schemas below; they do not supply this internal
 context. See the [native adapter execution contract](../execution-adapters.md) for
 resource ownership, whole-selection transports, declared prerequisites, accepted
 native cache/report effects and the concrete Pyright and Lychee input limits.
+
+## Deliberate binding setup
+
+Each binding in checks.yaml, tests.yaml and fixes.yaml declares configuration_choice.
+Null or omitted means unresolved setup: startup remains available, but an applicable
+operation is refused with configuration_choice_required and the affected binding_ids.
+The owner selects native_discovery, configured_arguments or not_applicable after
+reviewing the workspace policy. This is an acknowledgement, not proof of an effective
+native config source. See [workspace quality setup](../../setup/README.md#choose-the-workspace-quality-policy).
+
+Admission covers the whole applicable batch before any adapter starts or a fix takes
+effect. Unresolved rows are not_executed/configuration_choice_required; other applicable
+rows are not_executed/not_started. Existing empty/not_applicable selection outcomes
+remain neutral. Caller args cannot acknowledge a binding and retain their existing
+replacement behavior and actual args_source reporting.
+
+Scaffold and edit-enforce refuse an unexecuted required check. With a valid startup
+basis, safe_edit_file(validation="report") can perform its guarded edit while retaining
+unexecuted check rows and validation_status=not_executed; it does not claim validation.
+Original-file, persistence, interruption and unconfirmed-termination blockers remain.
+Existing workspace enforcement still applies, including any GitHub PR-status lookup
+required before a branch mutation.
 
 ## `run_checks`
 

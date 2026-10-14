@@ -6,10 +6,12 @@
 """
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mcp_server.config.settings import GitHubSettings
+from mcp_server.core.exceptions import MCPSystemError
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.schemas import (
     ContributorConfig,
@@ -31,9 +33,20 @@ class TestGitHubManager:
     def manager(self, mock_adapter: MagicMock) -> GitHubManager:
         return GitHubManager(adapter=mock_adapter)
 
-    def test_init_default(self) -> None:
-        mgr = GitHubManager()
-        assert mgr.adapter is not None
+    @pytest.mark.parametrize("settings_injected", [False, True])
+    def test_init_lazy_settings(self, settings_injected: bool) -> None:
+        settings = GitHubSettings(owner="test-owner", repo="test-repo", token="test-token")
+        with patch("mcp_server.managers.github_manager.GitHubAdapter") as constructor:
+            mgr = GitHubManager(github_settings=settings if settings_injected else None)
+            constructor.assert_not_called()
+            if settings_injected:
+                assert mgr.adapter is constructor.return_value
+                assert mgr.adapter is constructor.return_value
+                constructor.assert_called_once_with(settings=settings)
+            else:
+                with pytest.raises(MCPSystemError, match="GitHub settings were not injected"):
+                    _ = mgr.adapter
+                constructor.assert_not_called()
 
     def test_get_issues_resource_data(
         self, manager: GitHubManager, mock_adapter: MagicMock

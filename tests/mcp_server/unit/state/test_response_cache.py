@@ -34,15 +34,44 @@ class TestResponseCache:
         with pytest.raises(ValidationError):
             CachePublication(run_id="g" * 32)  # Non-hex characters
 
-    def test_response_cache_manager_put_get_exists(self) -> None:
-        """Verify ResponseCacheManager put, get, and exists behavior with hex UUIDs."""
+    @pytest.mark.parametrize("publication_fails", [False, True])
+    def test_response_cache_manager_put_get_exists(
+        self,
+        publication_fails: bool,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Verify cache publication or its non-destructive failure with diagnosis."""
         cache = ResponseCacheManager()
 
         class DummyModel(BaseModel):
             value: str
 
         model = DummyModel(value="test")
+        cause = OSError("cache storage unavailable")
+        failure = RuntimeError("cache publication failed")
+
+        if publication_fails:
+
+            def fail_publication() -> None:
+                raise failure from cause
+
+            monkeypatch.setattr("mcp_server.state.response_cache.uuid.uuid4", fail_publication)
+
         pub = cache.put("test_tool", model)
+
+        if publication_fails:
+            assert not pub.success
+            assert pub.run_id is None
+            assert pub.error_code == "write_failed"
+            assert model.value == "test"
+            record = caplog.records[-1]
+            assert record.exc_info is not None
+            assert record.exc_info[1] is failure
+            assert failure.__cause__ is cause
+            assert "OSError: cache storage unavailable" in caplog.text
+            assert "RuntimeError: cache publication failed" in caplog.text
+            return
 
         assert pub.success
         assert pub.run_id is not None

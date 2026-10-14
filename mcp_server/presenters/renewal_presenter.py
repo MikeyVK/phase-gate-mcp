@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from mcp_server.schemas.error_outputs import ConfigErrorOutput, ToolErrorOutput
 from mcp_server.services.template_components import ComponentSelection
 from mcp_server.services.template_renewal import RenewalResult
 
@@ -42,6 +43,8 @@ class RenewalPresenter:
             lines.append(f"Failure: {result.failure_code}")
         for key, value in sorted(result.failure_params.items()):
             lines.append(f"{key}: {value}")
+        if result.diagnostic is not None:
+            lines.extend(("", self.present_error(result.diagnostic).rstrip("\n")))
         if result.backup_path is not None:
             lines.append(f"Backup: {result.backup_path}")
 
@@ -57,6 +60,20 @@ class RenewalPresenter:
                     "Restart any running pgmcp server to load the new template suite.",
                 )
             )
+        return "\n".join(lines) + "\n"
+
+    def present_error(self, diagnostic: ToolErrorOutput) -> str:
+        """Render preserved exception facts, including their original traceback."""
+        lines = [f"Error: {diagnostic.error_type}: {diagnostic.error_message}"]
+        error_code = getattr(diagnostic, "error_code", None)
+        if error_code is not None:
+            lines.append(f"Error code: {error_code}")
+        for key, value in sorted(diagnostic.error_params.items()):
+            lines.append(f"{key}: {value}")
+        if isinstance(diagnostic, ConfigErrorOutput) and diagnostic.file_path is not None:
+            lines.append(f"File: {diagnostic.file_path}")
+        if diagnostic.traceback is not None:
+            lines.extend(("", diagnostic.traceback.rstrip("\n")))
         return "\n".join(lines) + "\n"
 
     def _heading(self, result: RenewalResult) -> str:

@@ -148,7 +148,7 @@ def test_loader_and_one_way_catalog_references(tmp_path: Path) -> None:
         "    default_root: docs/./design\n    additional_roots: [notes/drafts]\n",
         encoding="utf-8",
     )
-    config = ConfigLoader(tmp_path, template_root=tmp_path).load_artifact_locations_config()
+    config = ConfigLoader(tmp_path).load_artifact_locations_config()
     assert config.artifacts[0][1].default_root == "docs/design"
     assert config.artifacts[0][1].additional_roots == ("notes/drafts",)
     validator = ConfigValidator()
@@ -161,7 +161,7 @@ def test_loader_and_one_way_catalog_references(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     with pytest.raises(ConfigError):
-        ConfigLoader(tmp_path, template_root=tmp_path).load_artifact_locations_config()
+        ConfigLoader(tmp_path).load_artifact_locations_config()
 
 
 def test_location_config_rejects_invalid_or_duplicate_roots(

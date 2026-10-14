@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -46,6 +47,8 @@ from mcp_server.services.scaffold_operation import (
     validation_status,
 )
 from mcp_server.utils.path_resolver import ArtifactTargetError, normalize_workspace_relative_path
+
+logger = logging.getLogger(__name__)
 
 _FILE_ERRORS = (
     OriginalTargetMissingError,
@@ -185,6 +188,7 @@ class EditOperation:
             )
 
         checks: tuple[MutationCheck, ...] = ()
+        unresolved_report = False
         if selection.profile_id is not None:
             try:
                 execution = await self._checks.run_content(
@@ -196,6 +200,8 @@ class EditOperation:
                 cause = exc.__cause__
                 if not isinstance(cause, ScratchPreparationError):
                     raise
+                # Preserve exception causes and rollback notes before outcome conversion.
+                logger.exception("Edit validation input preparation failed for %s", logical)
                 checks = tuple(
                     project_mutation_check(
                         row,
@@ -226,7 +232,10 @@ class EditOperation:
             if not checks:
                 raise ValueError("selected_profile_requires_check_obligations")
             blocker_code, blocker_details = mutation_execution_blocker(execution, checks)
-            if blocker_code is not None:
+            unresolved_report = (
+                policy == "report" and blocker_code == "configuration_choice_required"
+            )
+            if blocker_code is not None and not unresolved_report:
                 return self._result(
                     logical,
                     policy,
@@ -244,7 +253,7 @@ class EditOperation:
                 checks=checks,
                 error_code="validation_blocked",
             )
-        if any(check.status == "not_executed" for check in checks):
+        if not unresolved_report and any(check.status == "not_executed" for check in checks):
             raise ValueError("incomplete_checks_without_execution_blocker")
         try:
             housekeeping = self._writer.replace_if_unchanged(

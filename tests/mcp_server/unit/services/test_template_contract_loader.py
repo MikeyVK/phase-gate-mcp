@@ -343,9 +343,7 @@ class TestTemplateContractLoader:
         }
         write_schemas(root, {"pkg/context.schema.json": document})
         reader = TemplateContractLoader(root)
-        loader = ConfigLoader(
-            suite_roots.config, root, context_schema_reader=reader.load_context_schema
-        )
+        loader = ConfigLoader(suite_roots.config, context_schema_reader=reader.load_context_schema)
         monkeypatch.chdir(suite_roots.temp)
         monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(suite_roots.temp))
         snapshot = loader.load_template_context_schema(path)
@@ -360,7 +358,7 @@ class TestTemplateContractLoader:
         with pytest.raises(ValidationError):
             ConfigValidator().validate_template_context(snapshot, {"unknown": 0})
         with pytest.raises(ConfigError, match="template_context_reader_required"):
-            ConfigLoader(suite_roots.config, root).load_template_context_schema(path)
+            ConfigLoader(suite_roots.config).load_template_context_schema(path)
 
     @pytest.mark.parametrize("payload", [b'{"$schema": 1, "$schema": 2}', b'{"n": NaN}', b"[]"])
     def test_noncanonical_json_documents_fail(

@@ -17,6 +17,7 @@ from mcp_server.execution.models import (
     AdapterRunIdentity,
     AdapterUnavailableReason,
     CheckedCoverage,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     ExternalToolIdentity,
     JsonEvidence,
@@ -74,6 +75,7 @@ class BranchBasisDetails(_ExecutionOutputModel):
 
 
 RunChecksErrorCode = Literal[
+    "configuration_choice_required",
     "no_configured_checks",
     "selection_invalid",
     "default_profile_missing",
@@ -120,6 +122,7 @@ class SelectionCheckResult(_ExecutionOutputModel):
         if self.status == "not_executed":
             if self.reason not in {
                 "not_started",
+                "configuration_choice_required",
                 "interrupted",
                 "invalid_request",
                 "scope_restricted",
@@ -159,6 +162,18 @@ class SelectionCheckResult(_ExecutionOutputModel):
                     or self.termination_problem is not None
                 ):
                     raise ValueError("scope_refusal_selection_facts_invalid")
+            elif self.reason == "configuration_choice_required":
+                if (
+                    attempted
+                    or self.message is not None
+                    or self.evidence is not None
+                    or self.external_tools is not None
+                    or self.request_rejection is not None
+                    or self.coverage is not None
+                    or self.required_targets
+                    or self.termination_problem is not None
+                ):
+                    raise ValueError("configuration_refusal_native_facts_forbidden")
             elif self.reason == "not_started":
                 if (
                     attempted
@@ -251,6 +266,7 @@ class RunChecksOutput(_ExecutionOutputModel):
         CheckSelectionDetails
         | BranchBasisDetails
         | ScopeDetails
+        | ConfigurationChoiceDetails
         | RejectedRequestDetails
         | TerminationDetails
         | None
@@ -290,6 +306,7 @@ class RunChecksOutput(_ExecutionOutputModel):
             raise ValueError("unexpected_operational_failure")
 
         expected_details: dict[str, type[BaseModel] | tuple[type[BaseModel], ...] | None] = {
+            "configuration_choice_required": ConfigurationChoiceDetails,
             "no_configured_checks": None,
             "selection_invalid": CheckSelectionDetails,
             "default_profile_missing": None,
@@ -305,6 +322,18 @@ class RunChecksOutput(_ExecutionOutputModel):
                 raise ValueError("unexpected_error_details")
         elif not isinstance(self.error_details, expected):
             raise ValueError("error_details_type_mismatch")
+
+        refused = tuple(
+            row.check_id for row in self.results if row.reason == "configuration_choice_required"
+        )
+        if self.error_code == "configuration_choice_required":
+            if not isinstance(self.error_details, ConfigurationChoiceDetails):
+                raise ValueError("configuration_refusal_requires_details")
+            self.error_details.validate_refusal(
+                refused, attempted=any(row.adapter is not None for row in self.results)
+            )
+        elif refused:
+            raise ValueError("configuration_refusal_requires_operation_error")
 
         unconfirmed = tuple(
             row.check_id

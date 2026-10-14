@@ -1,15 +1,10 @@
-"""RED tests for Cycle 2 of issue #260: state_root injection.
-
-These tests verify that all production code accepts an injected state_root
-and does NOT compute workspace_root / get_default_server_root() internally.
-
-TDD: These tests FAIL before the GREEN implementation.
-"""
+"""Behavior tests for explicitly injected server-state locations."""
 
 from __future__ import annotations
 
 import json
 import shutil
+from collections.abc import Coroutine
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -17,6 +12,7 @@ import pytest
 
 from mcp_server.config.loader import normalize_config_root
 from mcp_server.core.interfaces import IStateReader
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import (
     EnforcementConfig,
     EnforcementRunner,
@@ -24,9 +20,10 @@ from mcp_server.managers.enforcement_runner import (
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.tools.admin_tools import (
+    RestartServerInput,
     RestartServerTool,
 )
-from mcp_server.tools.cycle_tools import TransitionCycleTool
+from mcp_server.tools.cycle_tools import TransitionCycleInput, TransitionCycleTool
 from mcp_server.tools.git_tools import build_phase_guard
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -247,82 +244,104 @@ class TestBuildPhaseGuard:
 
 
 class TestCycleToolsStateRoot:
-    """Cycle tools must read state.json from state_root, not workspace_root/.pgmcp."""
+    """Cycle dispatch resolves its branch from the injected server-state location."""
 
-    def test_transition_cycle_tool_reads_state_from_state_root(self, tmp_path: Path) -> None:
-        """TransitionCycleTool._get_current_branch falls back to state_root/state.json."""
-        state_root = tmp_path / get_default_server_root()
-        state_root.mkdir()
-        state_file = state_root / "state.json"
-        state_file.write_text(json.dumps({"branch": "feature/99-test"}), encoding="utf-8")
-
-        tool = TransitionCycleTool(
-            workspace_root=tmp_path,
-            server_root=state_root,
-        )
-        # Simulate git unavailable — should fall back to state.json
-        with patch.object(tool, "_get_git_manager") as mock_git:
-            mock_git.return_value.get_current_branch.side_effect = RuntimeError("no git")
-            branch = tool._get_current_branch()  # pyright: ignore[reportPrivateUsage]
-        assert branch == "feature/99-test"
-
-    def test_transition_cycle_tool_does_not_read_from_workspace_phase_gate(
-        self, tmp_path: Path
-    ) -> None:
+    @pytest.mark.asyncio
+    async def test_transition_cycle_tool_reads_state_from_state_root(self, tmp_path: Path) -> None:
+        """Unavailable Git uses the saved branch for the actual transition."""
         state_root = tmp_path / ".custom-state"
         state_root.mkdir()
-        # No state.json in state_root
-
-        # Put misleading state.json in workspace/.pgmcp
-        phase_gate_dir = tmp_path / get_default_server_root()
-        phase_gate_dir.mkdir()
-        (phase_gate_dir / "state.json").write_text(
-            json.dumps({"branch": "feature/wrong-branch"}), encoding="utf-8"
+        (state_root / "state.json").write_text(
+            json.dumps({"branch": "feature/99-test"}), encoding="utf-8"
         )
-
+        git_manager = MagicMock()
+        git_manager.get_current_branch.side_effect = RuntimeError("no git")
+        state_engine = MagicMock()
+        state_engine.transition_cycle.return_value = {
+            "to_cycle": 2,
+            "total_cycles": 2,
+            "cycle_name": "Next",
+        }
         tool = TransitionCycleTool(
             workspace_root=tmp_path,
             server_root=state_root,
+            git_manager=git_manager,
+            state_engine=state_engine,
         )
-        with patch.object(tool, "_get_git_manager") as mock_git:
-            mock_git.return_value.get_current_branch.return_value = "feature/correct-branch"
-            branch = tool._get_current_branch()  # pyright: ignore[reportPrivateUsage]
-        assert branch == "feature/correct-branch"
 
+        result = await tool.execute(
+            TransitionCycleInput(to_cycle=2, issue_number=99), NoteContext()
+        )
 
-# ---------------------------------------------------------------------------
-# F5 / admin_tools — workspace-aware restart marker
-# ---------------------------------------------------------------------------
+        assert result.success
+        assert result.branch == "feature/99-test"
+        state_engine.transition_cycle.assert_called_once_with(
+            branch="feature/99-test", to_cycle=2, gate_runner=None
+        )
+
+    @pytest.mark.asyncio
+    async def test_transition_cycle_tool_uses_git_without_saved_state(self, tmp_path: Path) -> None:
+        """Dispatch uses the injected Git branch when its own saved state is absent."""
+        state_root = tmp_path / ".custom-state"
+        state_root.mkdir()
+        other_state_root = tmp_path / get_default_server_root()
+        other_state_root.mkdir()
+        (other_state_root / "state.json").write_text(
+            json.dumps({"branch": "feature/99-other"}), encoding="utf-8"
+        )
+        git_manager = MagicMock()
+        git_manager.get_current_branch.return_value = "feature/99-current"
+        state_engine = MagicMock()
+        state_engine.transition_cycle.return_value = {
+            "to_cycle": 2,
+            "total_cycles": 2,
+            "cycle_name": "Next",
+        }
+        tool = TransitionCycleTool(
+            workspace_root=tmp_path,
+            server_root=state_root,
+            git_manager=git_manager,
+            state_engine=state_engine,
+        )
+
+        result = await tool.execute(
+            TransitionCycleInput(to_cycle=2, issue_number=99), NoteContext()
+        )
+
+        assert result.success
+        assert result.branch == "feature/99-current"
+        state_engine.transition_cycle.assert_called_once_with(
+            branch="feature/99-current", to_cycle=2, gate_runner=None
+        )
 
 
 class TestAdminToolsRestartMarker:
-    """RestartServerTool must resolve restart marker relative to injected server_root."""
+    """Restart requests write their marker at the injected server root."""
 
-    def test_uses_injected_server_root(self, tmp_path: Path) -> None:
-        """Marker path must come from constructor-injected server_root, not env vars."""
-        server_root = tmp_path / get_default_server_root()
-        tool = RestartServerTool(server_root=server_root)
-        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert str(server_root) in str(result)
-        assert ".restart_marker" in result.name
-
-    def test_does_not_use_cwd_dot_phase_gate(self, tmp_path: Path) -> None:
-        """Marker path must not contain CWD-relative get_default_server_root()."""
-        server_root = tmp_path / ".custom-state"
-        tool = RestartServerTool(server_root=server_root)
-        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert get_default_server_root() not in str(result)
-
-    def test_env_var_does_not_override_injected_server_root(
+    @pytest.mark.asyncio
+    async def test_uses_injected_server_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Even with MCP_WORKSPACE_ROOT set, injected server_root wins."""
-        server_root = tmp_path / get_default_server_root()
-        tool = RestartServerTool(server_root=server_root)
+        """A request writes its diagnostic marker and schedules the restart."""
+        server_root = tmp_path / ".custom-state"
         monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(tmp_path / "other"))
-        monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
-        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert result == server_root / ".restart_marker"
+        tool = RestartServerTool(server_root=server_root)
+
+        def close_scheduled_exit(coroutine: Coroutine[object, object, None]) -> None:
+            # Consume the scheduled coroutine without executing its process-exit effect.
+            coroutine.close()
+
+        with patch(
+            "mcp_server.tools.admin_tools.asyncio.create_task", side_effect=close_scheduled_exit
+        ) as schedule:
+            result = await tool.execute(RestartServerInput(reason="marker test"), NoteContext())
+
+        assert result.success
+        marker = json.loads((server_root / ".restart_marker").read_text(encoding="utf-8"))
+        assert marker["reason"] == result.reason == "marker test"
+        assert marker["pid"] == result.pid
+        assert marker["timestamp"] == result.timestamp
+        schedule.assert_called_once()
 
 
 # ===========================================================================
@@ -425,45 +444,6 @@ class TestBaseTransitionToolNoFallback:
                 workspace_root=Path("/some/workspace"),
                 # server_root omitted — must raise, not default to workspace/.pgmcp
             )
-
-
-# ---------------------------------------------------------------------------
-# RestartServerTool — must accept server_root injection
-# ---------------------------------------------------------------------------
-
-
-class TestAdminToolsServerRootInjection:
-    """RestartServerTool must accept server_root and use it for the marker path."""
-
-    def test_restart_tool_uses_injected_server_root(self, tmp_path: Path) -> None:
-        """RestartServerTool(server_root=...) sets marker path from server_root.
-
-        RED: RestartServerTool has no __init__ accepting server_root.
-        Constructing with server_root= raises TypeError (unexpected kwarg).
-        """
-        server_root = tmp_path / get_default_server_root()
-        tool = RestartServerTool(server_root=server_root)
-
-        expected = server_root / ".restart_marker"
-        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert result == expected
-
-    def test_marker_path_ignores_env_vars_when_server_root_injected(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Injected server_root must win over any MCP_WORKSPACE_ROOT env var.
-
-        RED: marker path currently comes from env-var lookup, not constructor injection.
-        """
-        server_root = tmp_path / get_default_server_root()
-        tool = RestartServerTool(server_root=server_root)
-
-        monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", "/some/other/workspace")
-        monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
-
-        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert result == server_root / ".restart_marker"
-        assert "/some/other/workspace" not in str(result)
 
 
 # ---------------------------------------------------------------------------

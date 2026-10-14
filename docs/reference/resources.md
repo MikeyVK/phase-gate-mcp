@@ -71,65 +71,26 @@ example_output: |
 
 ### 1.2 `pgmcp://status/phase` (Implemented)
 
-**Description:** Read-time snapshot of the current Git branch, a coarse phase inferred from the branch name, working-tree cleanliness, and read timestamp. It does not load the workflow phase from project state or query GitHub Projects.
+**Description:** Read-time snapshot of the current Git branch, its persisted workflow
+phase from `state.json`, working-tree cleanliness and read timestamp. The existing
+branch-validated state reader refuses missing or mismatched state; no phase is
+inferred from branch names and no GitHub Project query is made.
 
 **Data Format:** JSON
 
 **Refresh:** Recomputed when the resource is read.
 
-```yaml
-schema:
-  type: object
-  properties:
-    current_phase:
-      type: string
-      enum: [Discovery, Planning, Design, Implementation, Integration, Documentation, Maintenance]
-    phase_description:
-      type: string
-      description: "Human-readable context for the phase"
-    active_branch:
-      type: string
-      description: "Current Git branch name"
-    branch_type:
-      type: string
-      enum: [main, feature, bug, refactor, docs, hotfix, chore, epic]
-    current_sprint:
-      type: object
-      description: "Active GitHub Project iteration"
-      properties:
-        name: { type: string }
-        start_date: { type: string, format: date }
-        end_date: { type: string, format: date }
-    blocking_issues:
-      type: array
-      items: { type: string }
-      description: "Issues with 'blocker' or 'critical' label"
-    in_progress_issues:
-      type: array
-      items:
-        type: object
-        properties:
-          number: { type: integer }
-          title: { type: string }
-          assignee: { type: string }
-
-example_output: |
-  {
-    "current_phase": "Implementation",
-    "phase_description": "Week 1: Configuration Schemas",
-    "active_branch": "feature/config-schemas-week1",
-    "branch_type": "feature",
-    "current_sprint": {
-      "name": "Sprint 3: Config & Bootstrap",
-      "start_date": "2025-12-02",
-      "end_date": "2025-12-16"
-    },
-    "blocking_issues": ["#42: Config Schema validation failing"],
-    "in_progress_issues": [
-      { "number": 45, "title": "Implement WorkerManifest schema", "assignee": "mikey" }
-    ]
-  }
+```json
+{
+  "current_phase": "implementation",
+  "active_branch": "feature/42-example",
+  "is_clean": true,
+  "last_updated": "2026-10-14 12:00:00"
+}
 ```
+
+`current_phase` is the stored configured phase identifier. Resource read failures
+remain errors instead of returning an invented phase.
 
 ---
 
@@ -257,7 +218,7 @@ schema:
 example_output: |
   {
     "project_name": "PhaseGate Development",
-    "project_url": "https://github.com/users/mikey/projects/1",
+    "project_url": "https://github.com/users/example-user/projects/1",
     "columns": [
       { "name": "Backlog", "count": 8, "items": [...] },
       { "name": "Todo", "count": 3, "items": [...] },

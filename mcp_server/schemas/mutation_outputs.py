@@ -28,6 +28,7 @@ from mcp_server.execution.models import (
     AdapterCallFailureReason,
     AdapterRunIdentity,
     AdapterUnavailableReason,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     ExternalToolIdentity,
     NativeEvidence,
@@ -55,6 +56,7 @@ def _validate_json_pointer(value: str) -> str:
 JsonPointer = Annotated[StrictStr, AfterValidator(_validate_json_pointer)]
 
 MutationErrorCode = Literal[
+    "configuration_choice_required",
     "context_invalid",
     "target_invalid",
     "target_exists",
@@ -177,6 +179,7 @@ MutationErrorDetails = (
     | PersistenceDetails
     | RejectedRequestDetails
     | TerminationDetails
+    | ConfigurationChoiceDetails
 )
 
 
@@ -230,6 +233,14 @@ class MutationCheck(_MutationModel):
                     raise ValueError("invalid_request_facts_invalid")
                 if self.invocation is None:
                     raise ValueError("attempt_identity_and_capture_required")
+            elif self.reason == "configuration_choice_required":
+                if (
+                    self.message is not None
+                    or self.invocation is not None
+                    or self.termination_problem is not None
+                    or self.housekeeping
+                ):
+                    raise ValueError("configuration_refusal_native_facts_forbidden")
             elif self.reason == "not_started":
                 if self.message is None:
                     raise ValueError("not_started_message_required")
@@ -311,6 +322,11 @@ class _MutationOperationOutput(_MutationModel):
     error_details: MutationErrorDetails | None
     housekeeping: tuple[HousekeepingIssue, ...]
 
+    @property
+    def _allows_unresolved_validation(self) -> bool:
+        """Keep incomplete validation strict unless the concrete operation admits it."""
+        return False
+
     @model_validator(mode="after")
     def validate_operation(self) -> Self:
         if self.success != self.written:
@@ -322,7 +338,7 @@ class _MutationOperationOutput(_MutationModel):
 
         statuses = tuple(row.status for row in self.checks)
         if self.written:
-            if "not_executed" in statuses:
+            if "not_executed" in statuses and not self._allows_unresolved_validation:
                 raise ValueError("written_operation_requires_complete_validation")
             if self.validation_policy == "enforce" and self.validation_status != "passed":
                 raise ValueError("enforce_write_requires_passed_validation")
@@ -346,6 +362,7 @@ class _MutationOperationOutput(_MutationModel):
             raise ValueError("not_executed_status_invalid")
 
         expected_details: dict[str, type[BaseModel] | tuple[type[BaseModel], ...] | None] = {
+            "configuration_choice_required": ConfigurationChoiceDetails,
             "context_invalid": ContextDetails,
             "original_unreadable": OriginalReadDetails,
             "original_changed": AffectedPathDetails,
@@ -371,6 +388,18 @@ class _MutationOperationOutput(_MutationModel):
                     raise ValueError("unexpected_error_details")
             elif not isinstance(self.error_details, expected):
                 raise ValueError("error_details_type_mismatch")
+
+        refused = tuple(
+            row.check_id for row in self.checks if row.reason == "configuration_choice_required"
+        )
+        if self.error_code == "configuration_choice_required":
+            if not isinstance(self.error_details, ConfigurationChoiceDetails):
+                raise ValueError("configuration_refusal_requires_details")
+            self.error_details.validate_refusal(
+                refused, attempted=any(row.invocation is not None for row in self.checks)
+            )
+        elif refused and not self._allows_unresolved_validation:
+            raise ValueError("configuration_refusal_requires_operation_error")
 
         rejected = tuple(row.check_id for row in self.checks if row.reason == "invalid_request")
         if isinstance(self.error_details, RejectedRequestDetails):
@@ -438,6 +467,20 @@ class EditOperationOutput(_MutationOperationOutput):
     template_id: TemplateId | None
     extension: ExtensionKey | None
     selection_reason: MetadataFallbackReason | None
+
+    @property
+    def _allows_unresolved_validation(self) -> bool:
+        """Report may retain a wholly unattempted batch blocked by setup."""
+        return (
+            self.validation_policy == "report"
+            and any(row.reason == "configuration_choice_required" for row in self.checks)
+            and all(
+                row.status == "not_executed"
+                and row.reason in {"configuration_choice_required", "not_started"}
+                and row.invocation is None
+                for row in self.checks
+            )
+        )
 
     @model_validator(mode="after")
     def validate_edit(self) -> Self:

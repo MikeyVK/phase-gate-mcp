@@ -1081,12 +1081,9 @@ async def test_git_add_or_commit_raises_on_phase_mismatch(mock_git_manager: Magi
         cycle_number=2,
         message="add red test",
     )
-    result = await tool.execute(params, NoteContext())
-
-    assert isinstance(result, GitCommitOutput)
-    assert result.success is False
-    assert result.error_message is not None
-    assert "phase_mismatch" in result.error_message
+    with pytest.raises(CommitPhaseMismatchError, match="phase_mismatch"):
+        await tool.execute(params, NoteContext())
+    mock_git_manager.commit_with_scope.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -1108,12 +1105,9 @@ async def test_git_add_or_commit_raises_on_cycle_mismatch(mock_git_manager: Magi
         cycle_number=2,
         message="add green impl",
     )
-    result = await tool.execute(params, NoteContext())
-
-    assert isinstance(result, GitCommitOutput)
-    assert result.success is False
-    assert result.error_message is not None
-    assert "phase_mismatch" in result.error_message
+    with pytest.raises(CommitPhaseMismatchError, match="phase_mismatch"):
+        await tool.execute(params, NoteContext())
+    mock_git_manager.commit_with_scope.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -1188,19 +1182,18 @@ class TestGitCommitBranchMismatch:
         assert result.success is False
 
     @pytest.mark.asyncio
-    async def test_commit_type_resolver_returns_none_on_branch_mismatch(
+    async def test_commit_state_read_failure_prevents_mutation(
         self, mock_git_manager: MagicMock
     ) -> None:
-        """build_commit_type_resolver returns None (no type) on StateBranchMismatchError."""
+        """Explicit-phase commit cannot mutate without a reliable rollback snapshot."""
         mock_state_engine = MagicMock()
-        mock_state_engine.get_state.side_effect = StateBranchMismatchError(
+        state_error = StateBranchMismatchError(
             "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
         )
+        mock_state_engine.get_state.side_effect = state_error
         mock_git_manager.adapter.get_current_branch.return_value = "feature/231-test"
-        mock_git_manager.commit_with_scope.return_value = "abc1234"
 
-        resolver_fn = MagicMock(return_value=None)
-        tool = GitCommitTool(manager=mock_git_manager, commit_type_resolver=resolver_fn)
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
         params = GitCommitInput(
             message="refactor cleanup",
             workflow_phase="implementation",
@@ -1208,17 +1201,18 @@ class TestGitCommitBranchMismatch:
             cycle_number=2,
         )
 
-        result = await tool.execute(params, NoteContext())
+        with pytest.raises(StateBranchMismatchError) as caught:
+            await tool.execute(params, NoteContext())
 
-        assert isinstance(result, GitCommitOutput)
-        assert result.success is True
-        assert result.commit_hash == "abc1234"
+        assert caught.value is state_error
+        mock_state_engine.record_sub_phase.assert_not_called()
+        mock_git_manager.commit_with_scope.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_get_parent_branch_handles_branch_mismatch(
         self, mock_git_manager: MagicMock
     ) -> None:
-        """GetParentBranchTool.execute() returns error on StateBranchMismatchError."""
+        """GetParentBranchTool preserves the original state error for the wrapper."""
 
         mock_state_engine = MagicMock()
         mock_state_engine.get_state.side_effect = StateBranchMismatchError(
@@ -1229,12 +1223,8 @@ class TestGitCommitBranchMismatch:
         tool = GetParentBranchTool(manager=mock_git_manager, state_engine=mock_state_engine)
         params = GetParentBranchInput()
 
-        result = await tool.execute(params, NoteContext())
-
-        assert isinstance(result, GetParentBranchOutput)
-        assert not result.success
-        assert result.error_message is not None
-        assert "does not match requested branch" in result.error_message
+        with pytest.raises(StateBranchMismatchError, match="does not match requested branch"):
+            await tool.execute(params, NoteContext())
 
 
 # ---------------------------------------------------------------------------
@@ -1338,13 +1328,22 @@ class TestGitCommitToolRecordSubPhase:
         assert calls.index("record_sub_phase") < calls.index("commit_with_scope")
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("rollback_fails", [False, True])
     async def test_git_commit_tool_rolls_back_sub_phase_on_commit_failure(
-        self, mock_git_manager: MagicMock
+        self, mock_git_manager: MagicMock, rollback_fails: bool
     ) -> None:
         """If the commit fails, GitCommitTool must roll back the sub_phase to its original value."""
         mock_state_engine = MagicMock()
         mock_state_engine.get_state.return_value.current_sub_phase = "green"
-        mock_git_manager.commit_with_scope.side_effect = Exception("Commit failed!")
+        original_error = ExecutionError("Commit failed!")
+        native_cause = OSError("Native write failed")
+        original_error.__cause__ = native_cause
+        mock_git_manager.commit_with_scope.side_effect = original_error
+        if rollback_fails:
+            mock_state_engine.record_sub_phase.side_effect = [
+                None,
+                RuntimeError("Rollback failed!"),
+            ]
         mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
 
         tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
@@ -1354,11 +1353,16 @@ class TestGitCommitToolRecordSubPhase:
             sub_phase="refactor",
             message="clean up code",
         )
-        result = await tool.execute(params, NoteContext())
+        with pytest.raises(ExecutionError, match="Commit failed!") as caught:
+            await tool.execute(params, NoteContext())
 
-        assert isinstance(result, GitCommitOutput)
-        assert result.success is False
-        assert result.error_message is not None and "Commit failed!" in result.error_message
+        assert caught.value is original_error
+        assert caught.value.__cause__ is native_cause
+        if rollback_fails:
+            assert any(
+                "RuntimeError: Rollback failed!" in note and "Traceback" in note
+                for note in caught.value.__notes__
+            )
 
         # Assert sequence:
         # 1. get_state called to retrieve original subphase ("green")
@@ -1570,18 +1574,15 @@ async def test_check_merge_sha_not_ancestor(mock_git_manager: MagicMock) -> None
 
 @pytest.mark.asyncio
 async def test_check_merge_git_error_raises(mock_git_manager: MagicMock) -> None:
-    """Git command fails -> execute returns CheckMergeOutput with success=False."""
+    """Git execution errors propagate unchanged to the outer wrapper."""
 
     mock_git_manager.is_ancestor.side_effect = ExecutionError("git error status 2")
     tool = CheckMergeTool(manager=mock_git_manager)
 
     params = CheckMergeInput(merge_sha="abc1234")
-    result = await tool.execute(params, NoteContext())
-
-    assert isinstance(result, CheckMergeOutput)
-    assert not result.success
-    assert result.error_message is not None
-    assert "git error status 2" in result.error_message
+    with pytest.raises(ExecutionError, match="git error status 2") as caught:
+        await tool.execute(params, NoteContext())
+    assert caught.value is mock_git_manager.is_ancestor.side_effect
 
 
 @pytest.mark.asyncio

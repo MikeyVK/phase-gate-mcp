@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -29,6 +30,7 @@ from mcp_server.execution.models import (
     AdapterUnavailableReason,
     CheckFailed,
     CheckUnavailable,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     InvalidCheckRequest,
     InvocationCancelled,
@@ -57,6 +59,8 @@ from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.services.artifact_target_resolver import ArtifactTargetResolver
 from mcp_server.services.template_catalog import TemplateCatalog
 from mcp_server.utils.path_resolver import ArtifactTargetError
+
+logger = logging.getLogger(__name__)
 
 ValidationPolicy = Literal["enforce", "report"]
 ValidationStatus = Literal["passed", "failed", "unavailable", "not_executed"]
@@ -110,6 +114,8 @@ def project_mutation_check(
         AdapterUnavailableReason | AdapterCallFailureReason | ConsumerNotExecutedReason | None
     ) = "not_started"
     message: str | None = "Check was not started because the operation stopped."
+    if row.not_executed == "configuration_choice_required":
+        reason, message = "configuration_choice_required", None
     if observation is not None:
         response = (
             observation.response.root if isinstance(observation, InvocationCompleted) else None
@@ -171,6 +177,14 @@ def mutation_execution_blocker(
     execution: ContentExecution,
     checks: tuple[MutationCheck, ...],
 ) -> tuple[MutationErrorCode | None, MutationErrorDetails | None]:
+    if execution.stop_reason == "configuration_choice_required":
+        return "configuration_choice_required", ConfigurationChoiceDetails(
+            binding_ids=tuple(
+                check.check_id
+                for check in checks
+                if check.reason == "configuration_choice_required"
+            )
+        )
     if execution.stop_reason == "adapter_request_rejected":
         rejected = next(check for check in checks if check.request_rejection is not None)
         return "adapter_request_rejected", RejectedRequestDetails(check_id=rejected.check_id)
@@ -304,6 +318,10 @@ class ScaffoldOperation:
             cause = exc.__cause__
             if not isinstance(cause, ScratchPreparationError):
                 raise
+            # Preserve exception causes and rollback notes before outcome conversion.
+            logger.exception(
+                "Scaffold validation input preparation failed for %s", target.output_path
+            )
             checks = tuple(
                 project_mutation_check(
                     row,

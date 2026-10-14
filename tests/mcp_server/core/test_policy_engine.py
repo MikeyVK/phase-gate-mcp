@@ -6,6 +6,9 @@ Tests Phase 4: Policy decision engine with config integration
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.core.policy_engine
 """
 
+from unittest.mock import patch
+
+from mcp_server.config.schemas.operation_policies_config import OperationPoliciesConfig
 from tests.mcp_server.test_support import make_policy_engine
 
 
@@ -94,13 +97,16 @@ class TestPolicyEngineConfigDriven:
         assert trail[0]["allowed"] is True
 
     def test_error_handling_denies_by_default(self) -> None:
-        """Test errors result in denied decision (fail-safe)."""
+        """Evaluation faults deny execution and retain original diagnosis."""
         engine = make_policy_engine()
-        decision = engine.decide(
-            operation="invalid_operation",
-            phase="implementation",
-            context={},
-        )
-        # Invalid operation should be denied or require approval
-        # Config-driven engine should handle gracefully
-        assert decision is not None
+        with patch.object(
+            OperationPoliciesConfig,
+            "get_operation_policy",
+            side_effect=RuntimeError("policy evaluation failed"),
+        ):
+            decision = engine.decide(operation="scaffold", phase="implementation", context={})
+        assert decision.allowed is False
+        assert decision.diagnostic is not None
+        assert decision.diagnostic.traceback is not None
+        assert "RuntimeError: policy evaluation failed" in decision.diagnostic.traceback
+        assert engine.get_audit_trail()[-1]["allowed"] is False

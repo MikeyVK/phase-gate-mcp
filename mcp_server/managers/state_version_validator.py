@@ -88,9 +88,9 @@ class StateVersionValidator:
                 try:
                     backup_path.unlink()
                 except OSError as e:
-                    logger.warning(f"Failed to delete existing backup file: {e}")
+                    logger.warning("Failed to delete existing backup file: %s", e)
             try:
                 file_path.rename(backup_path)
             except OSError as e:
-                logger.error(f"Failed to rename file {file_path} to {backup_path}: {e}")
+                logger.error("Failed to rename file %s to %s: %s", file_path, backup_path, e)
                 raise

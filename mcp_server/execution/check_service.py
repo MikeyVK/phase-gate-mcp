@@ -43,7 +43,12 @@ from mcp_server.execution.protocol import (
 
 TRequest = TypeVar("TRequest", bound=BaseModel)
 TCheck = TypeVar("TCheck", ContentCheckResponse, SelectionCheckResponse)
-StopReason = Literal["adapter_request_rejected", "operation_interrupted", "termination_unconfirmed"]
+StopReason = Literal[
+    "adapter_request_rejected",
+    "operation_interrupted",
+    "termination_unconfirmed",
+    "configuration_choice_required",
+]
 SelectionStatus = Literal["passed", "failed", "incomplete", "empty_selection", "not_applicable"]
 
 
@@ -57,7 +62,7 @@ class CheckExecution(Generic[TCheck]):
     args_source: ArgsSource
     timeout_seconds: int
     invocation: InvocationCompleted[TCheck] | InvocationFailed | InvocationCancelled | None
-    not_executed: Literal["not_started", "not_applicable"] | None
+    not_executed: Literal["not_started", "not_applicable", "configuration_choice_required"] | None
 
 
 @dataclass(frozen=True)
@@ -182,7 +187,14 @@ class CheckService:
         if not plan.checks:
             raise ValueError("nonempty_check_obligations_required")
         rows: list[CheckExecution[SelectionCheckResponse]] = []
-        stop: StopReason | None = None
+        declarations = dict(self._config.checks)
+        unresolved = frozenset(
+            call.check_id
+            for call in plan.checks
+            if not isinstance(call, NotApplicableCheck)
+            and declarations[call.check_id].configuration_choice is None
+        )
+        stop: StopReason | None = "configuration_choice_required" if unresolved else None
         for call in plan.checks:
             if isinstance(call, NotApplicableCheck):
                 rows.append(
@@ -219,7 +231,13 @@ class CheckService:
                     args_source=call.args_source,
                     timeout_seconds=call.timeout_seconds,
                     invocation=invocation,
-                    not_executed="not_started" if invocation is None else None,
+                    not_executed=(
+                        "configuration_choice_required"
+                        if call.check_id in unresolved
+                        else "not_started"
+                        if invocation is None
+                        else None
+                    ),
                 )
             )
         results = tuple(rows)
@@ -252,7 +270,14 @@ class CheckService:
         if any("content" not in binding.capability.inputs for _, _, binding in calls):
             raise ValueError("content_input_not_supported")
         rows: list[ContentCheckExecution] = []
-        stop: StopReason | Literal["content_preparation_failed"] | None = None
+        unresolved = frozenset(
+            check_id
+            for check_id, declaration, _ in calls
+            if declaration.configuration_choice is None
+        )
+        stop: StopReason | Literal["content_preparation_failed"] | None = (
+            "configuration_choice_required" if unresolved else None
+        )
         preparation_failure: tuple[str, Exception] | None = None
         for check_id, declaration, binding in calls:
             invocation = None
@@ -294,7 +319,13 @@ class CheckService:
                     args_source="configured",
                     timeout_seconds=declaration.timeout_seconds,
                     invocation=invocation,
-                    not_executed="not_started" if invocation is None else None,
+                    not_executed=(
+                        "configuration_choice_required"
+                        if check_id in unresolved
+                        else "not_started"
+                        if invocation is None
+                        else None
+                    ),
                     cleanup_problem=cleanup,
                 )
             )

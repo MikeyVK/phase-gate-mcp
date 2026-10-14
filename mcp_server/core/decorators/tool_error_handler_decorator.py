@@ -13,14 +13,13 @@ Outermost decorator that traps unhandled exceptions and converts them to error D
 
 # Standard library
 import logging
-import traceback
 from typing import Any, Generic, TypeVar
 
 # Third-party
 from pydantic import BaseModel
 
 # Project modules
-from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.tool_input_contract import JsonObject
 from mcp_server.core.operation_notes import NoteContext
@@ -62,13 +61,6 @@ class ToolErrorHandlerDecorator(
         return getattr(self._inner_tool, "enforcement_event", self.name)
 
     @property
-    def _tool(self) -> object:
-        inner = self._inner_tool
-        while hasattr(inner, "_inner_tool"):
-            inner = inner._inner_tool
-        return inner
-
-    @property
     def input_schema(self) -> dict[str, Any]:
         return self._inner_tool.input_schema
 
@@ -77,17 +69,7 @@ class ToolErrorHandlerDecorator(
     ) -> ToolExecution[TOutput | ConfigErrorOutput | ExecutionErrorOutput]:
         try:
             return await self._inner_tool.execute(params, context)
-        except ConfigError as exc:
-            return ToolExecution(
-                operation=ConfigErrorOutput(
-                    error_message=exc.message,
-                    file_path=exc.file_path,
-                    params={"code": exc.code},
-                ),
-                attachments=(),
-            )
         except Exception as exc:
-            # Log traceback to stderr
             logger.error(
                 "Unhandled exception during tool execution for %s: %s",
                 self.name,
@@ -95,10 +77,6 @@ class ToolErrorHandlerDecorator(
                 exc_info=True,
             )
             return ToolExecution(
-                operation=ExecutionErrorOutput(
-                    error_message=f"{exc.__class__.__name__}: {str(exc)}",
-                    traceback=traceback.format_exc(),
-                    params=params,
-                ),
+                operation=capture_exception(exc, params=params),
                 attachments=(),
             )

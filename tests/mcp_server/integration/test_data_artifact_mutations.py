@@ -62,7 +62,6 @@ def data_environment(
     )
     loader = ConfigLoader(
         pytestconfig.rootpath / ".pgmcp/config",
-        source_suite,
     )
     catalog = AdapterCatalogLoader(
         pytestconfig.rootpath / "mcp_server/bundled_adapters",

@@ -333,10 +333,7 @@ class TestTargetStartup:
 
     def test_installed_candidate_init_migration_and_mcp_handshake(self, tmp_path: Path) -> None:
         """Rehearse one installed V3 candidate across fresh and owner-migrated roots."""
-        try:
-            distribution = _installed_candidate(tmp_path)
-        except Exception as exc:
-            pytest.fail(f"candidate_build_rehearsal_failed:{exc!r}")
+        distribution = _installed_candidate(tmp_path)
         assert distribution.root.resolve().is_relative_to(tmp_path.resolve())
         assert not distribution.root.resolve().is_relative_to(REPO_ROOT.resolve())
         launcher_python, _ = _active_launcher_runtime()

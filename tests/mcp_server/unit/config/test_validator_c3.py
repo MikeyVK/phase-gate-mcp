@@ -3,7 +3,7 @@
 """
 Unit tests for mcp_server.config.validator.
 
-Tests for ConfigValidator._validate_merge_policy_phase cross-validation (C3 issue #283)
+Tests public startup cross-validation of the merge-policy phase.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.config.validator, mcp_server.schemas]
@@ -32,7 +32,7 @@ from mcp_server.schemas import (
 )
 
 
-def _workphases(phases: list[str] = None, terminal: str = "ready") -> WorkphasesConfig:  # type: ignore[assignment]
+def _workphases(phases: list[str] | None = None, terminal: str = "ready") -> WorkphasesConfig:
     phase_dict: dict[str, PhaseDefinition] = {}
     for p in phases or ["planning", "implementation"]:
         phase_dict[p] = PhaseDefinition(display_name=p.capitalize())
@@ -60,36 +60,11 @@ def _stub_validate_startup_args(
 
 
 class TestConfigValidatorC3:
-    """Test suite for ConfigValidator._validate_merge_policy_phase (C3 issue #283)."""
+    """Test public startup validation of merge-policy phase references."""
 
-    def test_validate_merge_policy_phase_raises_for_unknown_phase(
-        self,
-    ) -> None:
-        """_validate_merge_policy_phase raises ConfigError for unknown pr_allowed_phase."""
-        # Arrange
-        phase_contracts = _contracts(pr_allowed_phase="nonexistent_phase")
-        workphases = _workphases()
-
-        # Act / Assert
-        with pytest.raises(ConfigError, match="nonexistent_phase"):
-            ConfigValidator()._validate_merge_policy_phase(  # pyright: ignore[reportPrivateUsage]
-                contracts=phase_contracts,
-                known_phases=set(workphases.phases),
-            )
-
-    def test_validate_merge_policy_phase_ok_for_known_phase(
-        self,
-    ) -> None:
-        """_validate_merge_policy_phase does not raise for a known workphase."""
-        # Arrange
-        phase_contracts = _contracts(pr_allowed_phase="ready")
-        workphases = _workphases()
-
-        # Act (no exception expected)
-        ConfigValidator()._validate_merge_policy_phase(  # pyright: ignore[reportPrivateUsage]
-            contracts=phase_contracts,
-            known_phases=set(workphases.phases),
-        )
+    def test_validate_startup_accepts_known_merge_policy_phase(self) -> None:
+        """A known merge-policy phase passes startup cross-validation."""
+        ConfigValidator().validate_startup(**_stub_validate_startup_args())
 
     def test_validate_startup_raises_for_invalid_merge_policy_phase(
         self,

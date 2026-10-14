@@ -366,11 +366,7 @@ class ServerBootstrapper:
         settings = self._settings
         server_root = settings.server.resolved_server_root
         config_root = settings.server.resolved_config_root
-        template_root = (
-            Path(settings.server.template_root)
-            if settings.server.template_root is not None
-            else server_root / "template_suite"
-        )
+        template_root = settings.server.resolved_template_root
         workspace_root = Path(settings.server.workspace_root)
 
         # 1. DI-06 Startup Lock Check and Acquisition
@@ -408,7 +404,6 @@ class ServerBootstrapper:
             contracts_loader = TemplateContractLoader(template_root)
             config_loader = ConfigLoader(
                 config_root=config_root,
-                template_root=template_root,
                 context_schema_reader=contracts_loader.load_context_schema,
             )
 
@@ -439,10 +434,9 @@ class ServerBootstrapper:
             assert isinstance(provenance_schema, FrozenJsonObject)
             package_root = Path(__file__).resolve().parent
 
-            def create_config(effective_root: Path, suite_root: Path) -> ConfigLoader:
+            def create_config(effective_root: Path, _suite_root: Path) -> ConfigLoader:
                 return ConfigLoader(
                     effective_root,
-                    suite_root,
                     context_schema_reader=contracts_loader.load_context_schema,
                 )
 
@@ -726,49 +720,6 @@ class ServerBootstrapper:
             bypass_version_check=self._settings.server.bypass_version_check,
         )
 
-    def _build_config_layer(self) -> ConfigLayer:
-        """Load and validate all configurations."""
-        config_root = self._settings.server.resolved_config_root
-
-        config_loader = ConfigLoader(
-            config_root=config_root,
-            template_root=self._settings.server.resolved_template_root,
-        )
-        git_config = config_loader.load_git_config()
-        workflow_config = config_loader.load_workflow_config()
-        workphases_config = config_loader.load_workphases_config()
-        label_config = config_loader.load_label_config()
-        issue_config = config_loader.load_issue_config()
-        scope_config = config_loader.load_scope_config()
-        milestone_config = config_loader.load_milestone_config()
-        contributor_config = config_loader.load_contributor_config()
-        operation_policies_config = config_loader.load_operation_policies_config()
-        enforcement_config = config_loader.load_enforcement_config()
-        contracts_config = config_loader.load_contracts_config()
-        presentation_config = config_loader.load_presentation_config()
-
-        ConfigValidator().validate_startup(
-            policies=operation_policies_config,
-            workflow=workflow_config,
-            contracts=contracts_config,
-            workphases=workphases_config,
-        )
-
-        return ConfigLayer(
-            git_config=git_config,
-            workflow_config=workflow_config,
-            workphases_config=workphases_config,
-            label_config=label_config,
-            issue_config=issue_config,
-            scope_config=scope_config,
-            milestone_config=milestone_config,
-            contributor_config=contributor_config,
-            operation_policies_config=operation_policies_config,
-            enforcement_config=enforcement_config,
-            contracts_config=contracts_config,
-            presentation_config=presentation_config,
-        )
-
     def _build_manager_graph(self, configs: ConfigLayer) -> ManagerGraph:
         """Instantiate all managers and services."""
         workspace_root = Path(self._settings.server.workspace_root)
@@ -823,6 +774,7 @@ class ServerBootstrapper:
             server_root=server_root,
         )
         github_manager = GitHubManager(
+            github_settings=self._settings.github,
             issue_config=configs.issue_config,
             label_config=configs.label_config,
             scope_config=configs.scope_config,
@@ -1061,11 +1013,16 @@ class ServerBootstrapper:
         resources: list[BaseResource] = []
         if standards is not None:
             resources.append(standards)
-        resources.append(StatusResource())
+        resources.append(
+            StatusResource(
+                git_context_reader=managers.git_manager,
+                state_reader=BranchValidatedStateReader(inner=managers.state_repository),
+            )
+        )
         resources.append(CachedResponseResource(cache=managers.response_cache))
         resources.append(CacheReadGuideResource())
 
         if self._settings.github.token:
-            resources.append(GitHubIssuesResource())
+            resources.append(GitHubIssuesResource(manager=managers.github_manager))
 
         return resources

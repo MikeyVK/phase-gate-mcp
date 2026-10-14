@@ -2,7 +2,7 @@
 
 **Status:** Binding contract for all implementation work
 **Read when:** Before production or test code changes that can affect an architectural boundary
-**Last updated:** 2026-10-11
+**Last updated:** 2026-10-13
 
 ---
 
@@ -337,6 +337,18 @@ Classify a failure by its meaning before adding presentation machinery:
 | Policy blockages, interventions, and recovery guidance | Return a stable error code and relevant structured facts. Author the explanation and any recovery instruction in external presentation configuration; use the existing generic presenter to select and render it. |
 | Input schema failures | Reuse the existing schema validator's diagnostics and schema feedback. Do not invent a separate code or template for every type or format error. |
 | System and developer exceptions | Preserve the original exception or native diagnostic text through the existing error boundary and generic configured fallback. Dedicated templates are unnecessary unless there is a distinct policy intervention to explain. |
+
+Exception ownership follows the existing entrypoint boundaries. Managers and services
+preserve original exceptions, causes and domain facts; tools do not reduce them to
+replacement failure strings or tool-specific error DTOs. Necessary cleanup may catch
+an exception, attach secondary diagnostics and re-raise the original exception. The
+existing MCP wrapper or terminal CLI boundary captures complete diagnostic facts;
+the existing presenter owns their readable projection. Factual operation outcomes
+remain outcomes. If a service deliberately converts an exception to an outcome, it
+must retain the complete diagnostic alongside the outcome. A local broad-catch lint
+exception is justified only for necessary cleanup or an explicit boundary that
+preserves diagnosis, including a fail-closed decision. Reuse the existing models,
+wrappers and presenters; do not add another exception framework.
 
 Diagnostic text is evidence, not automatically presentation debt. Retain useful
 `error_message` values, native messages, stderr and tracebacks according to the

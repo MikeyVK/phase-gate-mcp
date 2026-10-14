@@ -3,5 +3,6 @@ tests:
     adapter_id: pytest
     capability: tests
     timeout_seconds: 300
+    configuration_choice: native_discovery
     default_args: []
     active: true

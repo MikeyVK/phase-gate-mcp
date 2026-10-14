@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 """Unit tests for issue_tools.py.
 
 @layer: Tests (Unit)
@@ -9,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from mcp_server.config.schemas.milestone_config import MilestoneConfig, MilestoneEntry
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.github_models import IssueReadModel
 from mcp_server.schemas.tool_outputs import CloseIssueOutput, IssueOutput, ListIssuesOutput
@@ -81,14 +81,8 @@ async def test_create_issue_tool_forwards_milestone(mock_github_manager: MagicMo
     issue_mock = {"number": 7, "url": "http://github.com/issues/7", "title": "Milestone Issue"}
     mock_github_manager.create_issue.return_value = issue_mock
 
-    milestone_entry = MagicMock()
-    milestone_entry.title = "v2.0"
-    milestone_entry.number = 2
-    milestone_config = MagicMock()
-    milestone_config.milestones = [milestone_entry]
-
-    tool = make_create_issue_tool(mock_github_manager)
-    tool._milestone_config = milestone_config
+    milestone_config = MilestoneConfig(milestones=[MilestoneEntry(title="v2.0", number=2)])
+    tool = make_create_issue_tool(mock_github_manager, milestone_config=milestone_config)
 
     params = CreateIssueInput(
         issue_type="feature",

@@ -199,15 +199,16 @@ class TestInitializeProjectToolMode1:
     async def test_error_handling_git_failure(self, tool: InitializeProjectTool) -> None:
         """Test error handling when GitManager fails to get branch."""
         with patch.object(tool.git_manager, "get_current_branch") as mock_git:
-            mock_git.side_effect = RuntimeError("Not a git repository")
+            failure = RuntimeError("Not a git repository")
+            mock_git.side_effect = failure
 
             params = InitializeProjectInput(
                 issue_number=39, issue_title="Test error", workflow_name="bug"
             )
-            result = await tool.execute(params, NoteContext())
+            with pytest.raises(RuntimeError) as rejected:
+                await tool.execute(params, NoteContext())
 
-            # Should return error result
-            assert not result.success
+            assert rejected.value is failure
 
     @pytest.mark.asyncio
     async def test_error_handling_state_creation_failure(
@@ -220,15 +221,16 @@ class TestInitializeProjectToolMode1:
             mock_git.return_value = "bug/39-test"
 
             with patch.object(tool.state_engine, "initialize_branch") as mock_init:
-                mock_init.side_effect = OSError("Permission denied")
+                failure = OSError("Permission denied")
+                mock_init.side_effect = failure
 
                 params = InitializeProjectInput(
                     issue_number=39, issue_title="Test error", workflow_name="bug"
                 )
-                result = await tool.execute(params, NoteContext())
+                with pytest.raises(OSError) as rejected:
+                    await tool.execute(params, NoteContext())
 
-                # Should return error result
-                assert not result.success
+                assert rejected.value is failure
 
     @pytest.mark.asyncio
     async def test_no_breaking_changes_to_projects_json(

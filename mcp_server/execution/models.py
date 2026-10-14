@@ -417,7 +417,25 @@ class AdapterRunIdentity(_TestModel):
     contract_version: Literal[1]
 
 
-ConsumerNotExecutedReason = Literal["not_started", "interrupted", "invalid_request"]
+class ConfigurationChoiceDetails(_TestModel):
+    """Unresolved owner acknowledgements; these are binding IDs, not native evidence."""
+
+    binding_ids: Annotated[tuple[AdapterId, ...], Field(min_length=1)]
+
+    @model_validator(mode="after")
+    def validate_unique_bindings(self) -> ConfigurationChoiceDetails:
+        if len(set(self.binding_ids)) != len(self.binding_ids):
+            raise ValueError("duplicate_unresolved_binding")
+        return self
+
+    def validate_refusal(self, refused_ids: tuple[str, ...], *, attempted: bool) -> None:
+        if self.binding_ids != refused_ids or attempted:
+            raise ValueError("configuration_refusal_must_match_unattempted_rows")
+
+
+ConsumerNotExecutedReason = Literal[
+    "not_started", "interrupted", "invalid_request", "configuration_choice_required"
+]
 TestScope = Literal["configured", "workspace", "targets"]
 
 
@@ -439,17 +457,20 @@ class PublicTestResult(_TestModel):
     def validate_observation(self) -> PublicTestResult:
         if (self.args_source is None) != (self.effective_args is None):
             raise ValueError("argument_facts_must_agree")
-        not_started = self.status == "not_executed" and self.reason == "not_started"
+        not_started = self.status == "not_executed" and self.reason in {
+            "not_started",
+            "configuration_choice_required",
+        }
         if not_started:
             if self.adapter is not None or self.capture is not None:
                 raise ValueError("not_started_attempt_forbidden")
         elif self.adapter is None or self.capture is None:
             raise ValueError("attempt_identity_and_capture_required")
         if self.status == "not_executed":
-            if self.reason not in {"not_started", "interrupted", "invalid_request"}:
+            if self.reason not in get_args(ConsumerNotExecutedReason):
                 raise ValueError("invalid_not_executed_reason")
             if (
-                (self.reason == "not_started" and self.message is not None)
+                (not_started and self.message is not None)
                 or self.evidence is not None
                 or self.external_tools is not None
             ):
@@ -528,6 +549,7 @@ class TestTerminationDetails(_TestModel):
 
 
 RunTestsErrorCode = Literal[
+    "configuration_choice_required",
     "no_configured_tests",
     "no_active_tests",
     "selection_invalid",
@@ -548,6 +570,7 @@ class RunTestsOutput(_TestModel):
     error_details: (
         TestSelectionDetails
         | ScopeDetails
+        | ConfigurationChoiceDetails
         | RejectedTestRequestDetails
         | TestTerminationDetails
         | None
@@ -562,6 +585,7 @@ class RunTestsOutput(_TestModel):
         if tuple(row.test_id for row in self.results) != self.selected_tests:
             raise ValueError("result_obligations_must_match_selection")
         detail_types = {
+            "configuration_choice_required": ConfigurationChoiceDetails,
             "selection_invalid": TestSelectionDetails,
             "scope_resolution_failed": ScopeDetails,
             "adapter_request_rejected": RejectedTestRequestDetails,
@@ -573,6 +597,17 @@ class RunTestsOutput(_TestModel):
                 raise ValueError("unexpected_error_details")
         elif not isinstance(self.error_details, expected):
             raise ValueError("error_details_type_mismatch")
+        refused = tuple(
+            row.test_id for row in self.results if row.reason == "configuration_choice_required"
+        )
+        if self.error_code == "configuration_choice_required":
+            if not isinstance(self.error_details, ConfigurationChoiceDetails):
+                raise ValueError("configuration_refusal_requires_details")
+            self.error_details.validate_refusal(
+                refused, attempted=any(row.adapter is not None for row in self.results)
+            )
+        elif refused:
+            raise ValueError("configuration_refusal_requires_operation_error")
         rejected = tuple(row.test_id for row in self.results if row.reason == "invalid_request")
         if isinstance(self.error_details, RejectedTestRequestDetails):
             if self.success or rejected != (self.error_details.test_id,):
@@ -703,17 +738,20 @@ class PublicFixResult(_FixModel):
     def validate_observation(self) -> PublicFixResult:
         if (self.args_source is None) != (self.effective_args is None):
             raise ValueError("argument_facts_must_agree")
-        not_started = self.status == "not_executed" and self.reason == "not_started"
+        not_started = self.status == "not_executed" and self.reason in {
+            "not_started",
+            "configuration_choice_required",
+        }
         if not_started:
             if self.adapter is not None or self.capture is not None:
                 raise ValueError("not_started_attempt_forbidden")
         elif self.adapter is None or self.capture is None:
             raise ValueError("attempt_identity_and_capture_required")
         if self.status == "not_executed":
-            if self.reason not in {"not_started", "interrupted", "invalid_request"}:
+            if self.reason not in get_args(ConsumerNotExecutedReason):
                 raise ValueError("invalid_not_executed_reason")
             if (
-                (self.reason == "not_started" and self.message is not None)
+                (not_started and self.message is not None)
                 or self.evidence is not None
                 or self.external_tools is not None
             ):
@@ -788,6 +826,7 @@ class FixTerminationDetails(_FixModel):
 
 
 ApplyFixesErrorCode = Literal[
+    "configuration_choice_required",
     "no_configured_fixes",
     "selection_invalid",
     "scope_resolution_failed",
@@ -807,6 +846,7 @@ class ApplyFixesOutput(_FixModel):
     error_details: (
         FixSelectionDetails
         | FixScopeDetails
+        | ConfigurationChoiceDetails
         | RejectedFixRequestDetails
         | FixTerminationDetails
         | None
@@ -822,6 +862,7 @@ class ApplyFixesOutput(_FixModel):
         if unresolved != (not self.selected_fixes):
             raise ValueError("selection_must_resolve_before_results")
         detail_types = {
+            "configuration_choice_required": ConfigurationChoiceDetails,
             "selection_invalid": FixSelectionDetails,
             "scope_resolution_failed": FixScopeDetails,
             "adapter_request_rejected": RejectedFixRequestDetails,
@@ -833,6 +874,17 @@ class ApplyFixesOutput(_FixModel):
                 raise ValueError("unexpected_error_details")
         elif not isinstance(self.error_details, expected):
             raise ValueError("error_details_type_mismatch")
+        refused = tuple(
+            row.fix_id for row in self.results if row.reason == "configuration_choice_required"
+        )
+        if self.error_code == "configuration_choice_required":
+            if not isinstance(self.error_details, ConfigurationChoiceDetails):
+                raise ValueError("configuration_refusal_requires_details")
+            self.error_details.validate_refusal(
+                refused, attempted=any(row.adapter is not None for row in self.results)
+            )
+        elif refused:
+            raise ValueError("configuration_refusal_requires_operation_error")
         rejected = tuple(row.fix_id for row in self.results if row.reason == "invalid_request")
         if self.success == bool(rejected):
             raise ValueError("internal_rejection_determines_operational_failure")

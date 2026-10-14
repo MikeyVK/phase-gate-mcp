@@ -254,6 +254,16 @@ Resulting paths:
 
 ---
 
+## Quality binding acknowledgement
+
+Workspace checks.yaml, tests.yaml and fixes.yaml bindings carry configuration_choice:
+null/omitted is unresolved; native_discovery, configured_arguments and not_applicable
+are deliberate owner declarations. Startup accepts unresolved choices, but relevant
+execution requires acknowledgement. These declarations do not identify or verify the
+effective native config source. Fresh --init clears inherited choices; existing roots
+remain owner-managed. Follow the [central quality setup guide](../setup/README.md#choose-the-workspace-quality-policy)
+and [execution outcomes](tools/quality.md#deliberate-binding-setup).
+
 ## Related Documentation
 
 - [Config Loading Architecture](config-loading-architecture.md) — how `Settings.from_env()` resolves config roots and merges YAML overlays

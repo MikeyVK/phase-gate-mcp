@@ -49,8 +49,9 @@ def compose(
     outcomes: tuple[str, ...] = ("passed",),
     *,
     has_profile: bool = True,
+    unresolved: bool = False,
 ) -> Composition:
-    service, _ = build_operation(root, outcomes, has_profile=has_profile)
+    service, _ = build_operation(root, outcomes, has_profile=has_profile, unresolved=unresolved)
     core = SafeEditTool(operation=service, catalog=catalog)
     wrapped = ToolErrorHandlerDecorator(
         InputValidationDecorator(
@@ -60,6 +61,7 @@ def compose(
     )
     data = ConfigLoader(pytestconfig.rootpath / ".pgmcp/config").load_presentation_config()
     config = data.model_dump(mode="json", by_alias=True)
+    enum_cases = config["tools"]["safe_edit_file"]["enum_cases"]
     summary = (
         "{path}: written={written}; changed={content_changed}; policy={validation_policy}; "
         "validation={validation_status}; profile={profile_id}; source={selected_source}; "
@@ -70,27 +72,7 @@ def compose(
             "max_items": 5,
             "template_success": summary,
             "template_failure": summary,
-            "enum_cases": [
-                {
-                    "field": "error_code",
-                    "cases": {
-                        "context_invalid": "The selected context was rejected.",
-                        "target_invalid": "The requested target was rejected.",
-                        "target_exists": "The output already exists.",
-                        "render_failed": "Rendering failed.",
-                        "preparation_failed": "Mutation preparation failed.",
-                        "validation_blocked": "Output checks prevented persistence.",
-                        "persistence_failed": "The output could not be saved.",
-                        "adapter_request_rejected": "An adapter rejected the check request.",
-                        "termination_unconfirmed": "Process termination was not confirmed.",
-                        "operation_interrupted": "The operation was interrupted.",
-                        "original_unreadable": "The original file could not be read.",
-                        "original_changed": "The original file changed.",
-                        "original_missing": "The original file is missing.",
-                        "edit_invalid": "The requested edit could not be constructed.",
-                    },
-                }
-            ],
+            "enum_cases": enum_cases,
             "collections": [
                 {
                     "field": "checks",
@@ -128,9 +110,10 @@ async def edit(
     *,
     policy: str = "enforce",
     template_id: str | None = None,
+    path: str = "notes.md",
 ) -> EditOperationOutput:
     arguments: dict[str, JsonValue] = {
-        "path": "notes.md",
+        "path": path,
         "operation": command,
         "validation": policy,
     }
@@ -215,34 +198,96 @@ async def test_public_operations_preserve_binding_and_actual_write_facts(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("has_profile", [True, False], ids=["failed-check", "no-profile"])
-async def test_default_enforce_preserves_original_and_selection(
+@pytest.mark.parametrize(
+    ("has_profile", "unresolved", "policy"),
+    [
+        (True, False, "enforce"),
+        (False, False, "enforce"),
+        (True, True, "enforce"),
+        (True, True, "report"),
+    ],
+    ids=["failed-check", "no-profile", "setup-enforce", "setup-report"],
+)
+async def test_public_policy_preserves_selection_and_reports_unvalidated_setup_edits(
     tmp_path: Path,
     pytestconfig: pytest.Config,
     catalog: TemplateCatalog,
     has_profile: bool,
+    unresolved: bool,
+    policy: Literal["enforce", "report"],
 ) -> None:
-    target = tmp_path / "notes.md"
-    target.write_bytes(b"original")
+    relative_path = ".pgmcp/config/checks.yaml" if unresolved else "notes.md"
+    target = tmp_path / relative_path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    original = (
+        (pytestconfig.rootpath / ".pgmcp/config/checks.yaml")
+        .read_text(encoding="utf-8")
+        .replace("configuration_choice: not_applicable", "configuration_choice: null", 1)
+        if unresolved
+        else "original"
+    )
+    target.write_bytes(original.encode("utf-8"))
+    command: dict[str, JsonValue] = (
+        {
+            "op": "replace",
+            "target_content": "configuration_choice: null",
+            "replacement": "configuration_choice: not_applicable",
+        }
+        if unresolved
+        else {"op": "rewrite", "content": "proposed"}
+    )
     composition = compose(
         tmp_path,
         pytestconfig,
         catalog,
-        ("failed",),
+        ("failed", "passed") if unresolved else ("failed",),
         has_profile=has_profile,
+        unresolved=unresolved,
     )
-    response, cached = await invoke(
-        composition,
-        "safe_edit_file",
-        {"path": target.name, "operation": {"op": "rewrite", "content": "proposed"}},
-    )
+    arguments: dict[str, JsonValue] = {"path": relative_path, "operation": command}
+    if policy == "report":
+        arguments["validation"] = policy
+    response, cached = await invoke(composition, "safe_edit_file", arguments)
     result = composition.text.present_text.call_args.kwargs["data"]
     assert isinstance(result, EditOperationOutput) and cached == result.model_dump(mode="json")
-    assert response.isError and result.error_code == "validation_blocked"
-    assert result.validation_policy == "enforce" and result.error_details is None
-    assert result.content_changed is None and target.read_bytes() == b"original"
+    written = policy == "report"
+    assert result.success is written and result.written is written
+    assert response.isError is not written
+    assert result.error_code == (
+        None if written else "configuration_choice_required" if unresolved else "validation_blocked"
+    )
+    assert result.validation_policy == policy
+    assert result.content_changed is (True if written else None)
+    expected = (
+        original.replace("configuration_choice: null", "configuration_choice: not_applicable")
+        if written
+        else original
+    )
+    assert target.read_bytes() == expected.encode("utf-8")
     assert result.selected_source == ("extension" if has_profile else "none")
-    assert result.validation_status == ("failed" if has_profile else "not_executed")
+    assert result.validation_status == (
+        "failed" if has_profile and not unresolved else "not_executed"
+    )
+    if unresolved:
+        assert [(row.check_id, row.status, row.reason) for row in result.checks] == [
+            ("check_0", "not_executed", "configuration_choice_required"),
+            ("check_1", "not_executed", "not_started"),
+        ]
+        assert all(row.invocation is None and row.evidence is None for row in result.checks)
+        assert (result.error_details is None) is written
+        assert not (tmp_path / "scratch").exists()
+        presentation = ConfigLoader(
+            pytestconfig.rootpath / ".pgmcp/config"
+        ).load_presentation_config()
+        warning = next(
+            case.cases["not_executed"]
+            for case in presentation.tools["safe_edit_file"].enum_cases
+            if case.field == "validation_status"
+        )
+        summary = response.content[0]
+        assert isinstance(summary, TextContent) and warning in summary.text
+    else:
+        assert result.error_details is None
 
 
 @pytest.mark.asyncio

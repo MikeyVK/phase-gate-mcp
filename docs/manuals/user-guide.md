@@ -53,9 +53,8 @@ logging:
   # (default: .pgmcp/logs/mcp_audit.log)
 
 github:
-  owner: "MikeyVK"
-  repo: "phase-gate-mcp"
-  project_number: 1
+  owner: "your-org"
+  repo: "your-repository"
 ```
 
 ## 4. Running the Server

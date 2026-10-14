@@ -13,7 +13,6 @@ import pytest
 from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
-    resolve_config_root,
 )
 from mcp_server.config.schemas import WorkflowConfig
 from mcp_server.core.exceptions import ConfigError
@@ -51,55 +50,6 @@ def test_normalize_config_root_handles_workspace_and_phase_gate_paths(tmp_path: 
         == (workspace_root / get_default_server_root()).resolve()
     )
     assert normalize_config_root(config_root) == config_root.resolve()
-
-
-def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> None:
-    workspace_root = tmp_path / "workspace"
-    config_root = workspace_root / get_default_server_root() / "config"
-    _write_yaml(config_root / "git.yaml", "branch_types: []\n")
-
-    # Since C3 strips _probe_candidates,resolve_config_root will not look in .pgmcp/config/
-    # and should raise FileNotFoundError.
-    with pytest.raises(FileNotFoundError, match="Could not locate canonical phase-gate config"):
-        resolve_config_root(
-            preferred_root=workspace_root,
-            required_files=("git.yaml",),
-        )
-
-
-def test_resolve_config_root_returns_explicit_root_when_required_files_exist(
-    tmp_path: Path,
-) -> None:
-    config_root = tmp_path / get_default_server_root() / "config"
-    _write_yaml(config_root / "workflows.yaml", "version: '1.0.0'\nworkflows: {}\n")
-
-    assert (
-        resolve_config_root(
-            explicit_root=config_root,
-            required_files=("workflows.yaml",),
-        )
-        == config_root.resolve()
-    )
-
-
-def test_resolve_config_root_raises_for_missing_required_file_in_explicit_root(
-    tmp_path: Path,
-) -> None:
-    config_root = tmp_path / get_default_server_root() / "config"
-    config_root.mkdir(parents=True)
-
-    with pytest.raises(FileNotFoundError, match="missing required files"):
-        resolve_config_root(
-            explicit_root=config_root,
-            required_files=("workflows.yaml",),
-        )
-
-
-def test_resolve_config_root_raises_for_nonexistent_explicit_root(tmp_path: Path) -> None:
-    missing_root = tmp_path / get_default_server_root() / "config"
-
-    with pytest.raises(FileNotFoundError, match="does not exist"):
-        resolve_config_root(explicit_root=missing_root)
 
 
 def test_real_enforcement_config_declares_chore_branch_policy() -> None:

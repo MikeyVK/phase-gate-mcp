@@ -56,10 +56,11 @@ run_checks:
 
 def test_explicit_loader_keeps_order_and_exact_empty_or_nonempty_defaults(tmp_path: Path) -> None:
     root = write_package_tree(tmp_path / "config", {"checks.yaml": VALID_CHECKS.encode()})
-    config = ConfigLoader(root, tmp_path / "templates").load_checks_config()
+    config = ConfigLoader(root).load_checks_config()
     assert tuple(dict(config.checks)) == ("first", "second")
     assert dict(config.checks)["first"].default_args == ("--literal", "", "a b")
     assert dict(config.checks)["second"].default_args == ()
+    assert all(binding.configuration_choice is None for _, binding in config.checks)
     assert dict(config.profiles)["preflight"].checks == ("second", "first")
     assert config.run_checks.default_profile == "explicit"
     assert config.model_dump(mode="json")["profiles_by_extension"] == {".py": "preflight"}
@@ -67,7 +68,7 @@ def test_explicit_loader_keeps_order_and_exact_empty_or_nonempty_defaults(tmp_pa
 
 def load_text(root: Path, text: str) -> ChecksConfig:
     directory = write_package_tree(root, {"checks.yaml": text.encode()})
-    return ConfigLoader(directory, root / "templates").load_checks_config()
+    return ConfigLoader(directory).load_checks_config()
 
 
 def catalog() -> AdapterCatalog:
@@ -188,7 +189,7 @@ def test_empty_config_is_explicit_and_missing_file_never_loads_legacy_quality(
     ConfigValidator().validate_checks_config(config, catalog(), template_profiles=frozenset())
     root = write_package_tree(tmp_path / "legacy", {"quality.yaml": b"gates: {}"})
     with pytest.raises(ConfigError, match="checks.yaml"):
-        ConfigLoader(root, tmp_path / "templates").load_checks_config()
+        ConfigLoader(root).load_checks_config()
 
 
 @pytest.mark.parametrize("capability", ["missing", "test_only", "fix_only"])

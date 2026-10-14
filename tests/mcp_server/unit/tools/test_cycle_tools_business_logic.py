@@ -13,9 +13,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.schemas.deliverables import PlanningMutationError, SavePlanningModel
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -90,7 +92,12 @@ class TestTransitionCycleTool:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         # Initialize project
         project_manager.initialize_project(
@@ -144,7 +151,7 @@ class TestTransitionCycleTool:
         )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=1)
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -190,10 +197,15 @@ class TestTransitionCycleTool:
 
         # Set current cycle to 2
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=2)
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         #  Mock git
         with (
@@ -250,10 +262,15 @@ class TestTransitionCycleTool:
 
         # Change phase to design
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_phase="design")
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         # Mock git
         with (
@@ -296,7 +313,12 @@ class TestForceCycleTransitionTool:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         # Initialize project
         project_manager.initialize_project(
@@ -362,7 +384,7 @@ class TestForceCycleTransitionTool:
             last_cycle=1,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -498,7 +520,12 @@ class TestForceCycleAuditSchema:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         project_manager.initialize_project(
             issue_number=issue_number,
@@ -555,7 +582,7 @@ class TestForceCycleAuditSchema:
             last_cycle=1,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -703,7 +730,12 @@ class TestTransitionCycleHistory:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         project_manager.initialize_project(
             issue_number=issue_number,
@@ -749,7 +781,7 @@ class TestTransitionCycleHistory:
             last_cycle=None,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root, issue_number
 
@@ -862,7 +894,12 @@ class TestTransitionCycleExitCriteria:
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
-        state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
+        state_repository = FileStateRepository(
+            state_file=workspace_root / get_default_server_root() / "state.json"
+        )
+        state_engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=state_repository
+        )
 
         project_manager.initialize_project(
             issue_number=issue_number,
@@ -904,7 +941,7 @@ class TestTransitionCycleExitCriteria:
             last_cycle=None,
             cycle_history=[],
         )
-        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
+        state_repository.save(state)
 
         return workspace_root
 
@@ -949,24 +986,23 @@ class TestTransitionCycleExitCriteria:
             ],
         )
 
-        with (
-            patch("mcp_server.tools.cycle_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git_class.return_value = mock_git
+        state_reader = make_phase_state_engine(_workspace_root)
+        branch = "feature/146-tdd-cycle-tracking"
+        before = state_reader.get_state(branch)
+        assert before.current_cycle == 1
 
-            result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
+        with pytest.raises(PlanningMutationError) as rejected:
+            await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert not result.success, "Must block when exit_criteria is empty"
-        text = result.error_message or ""
-        assert "planning_stored_invalid" in text
-        assert (
-            make_phase_state_engine(_workspace_root)
-            .get_state("feature/146-tdd-cycle-tracking")
-            .current_cycle
-            == 1
+        assert rejected.value.code == "planning_stored_invalid"
+        cause = rejected.value.__cause__
+        assert isinstance(cause, ValidationError)
+        assert any(
+            error["loc"] == ("cycles", "cycles", 0, "exit_criteria")
+            and error["type"] == "string_too_short"
+            for error in cause.errors()
         )
+        assert state_reader.get_state(branch) == before
 
     @pytest.mark.asyncio()
     async def test_transition_blocked_when_current_cycle_missing_exit_criteria(
@@ -1009,24 +1045,22 @@ class TestTransitionCycleExitCriteria:
             ],
         )
 
-        with (
-            patch("mcp_server.tools.cycle_tools.GitManager") as mock_git_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git_class.return_value = mock_git
+        state_reader = make_phase_state_engine(_workspace_root)
+        branch = "feature/146-tdd-cycle-tracking"
+        before = state_reader.get_state(branch)
+        assert before.current_cycle == 1
 
-            result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
+        with pytest.raises(PlanningMutationError) as rejected:
+            await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert not result.success, "Must block when exit_criteria key is missing"
-        text = result.error_message or ""
-        assert "planning_stored_invalid" in text
-        assert (
-            make_phase_state_engine(_workspace_root)
-            .get_state("feature/146-tdd-cycle-tracking")
-            .current_cycle
-            == 1
+        assert rejected.value.code == "planning_stored_invalid"
+        cause = rejected.value.__cause__
+        assert isinstance(cause, ValidationError)
+        assert any(
+            error["loc"] == ("cycles", "cycles", 0, "exit_criteria") and error["type"] == "missing"
+            for error in cause.errors()
         )
+        assert state_reader.get_state(branch) == before
 
     @pytest.mark.asyncio()
     async def test_transition_succeeds_when_exit_criteria_present(

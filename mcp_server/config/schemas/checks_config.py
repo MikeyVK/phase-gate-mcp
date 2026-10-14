@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import (
     AfterValidator,
@@ -27,6 +27,7 @@ from mcp_server.config.schemas.adapter_manifest import (
 
 CheckId = AdapterId
 ProfileId = AdapterId
+ConfigurationChoice = Literal["native_discovery", "configured_arguments", "not_applicable"]
 
 
 def _sequence(value: object) -> object:
@@ -108,6 +109,7 @@ class ConfiguredCheck(_ChecksBase):
     capability: CapabilityId
     timeout_seconds: Annotated[StrictInt, Field(gt=0)]
     default_args: StrictStringTuple
+    configuration_choice: ConfigurationChoice | None = None
 
 
 class CheckProfile(_ChecksBase):

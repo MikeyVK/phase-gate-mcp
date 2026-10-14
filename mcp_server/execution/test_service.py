@@ -22,6 +22,7 @@ from mcp_server.execution.models import (
     AdapterExitCode,
     AdapterRunIdentity,
     AdapterUnavailableReason,
+    ConfigurationChoiceDetails,
     ConsumerNotExecutedReason,
     ExternalToolIdentity,
     InvalidCheckRequest,
@@ -163,11 +164,12 @@ def _expected_exit(response: TestResponse) -> AdapterExitCode:
 def _project(
     selected: _SelectedTest,
     invocation: InvocationCompleted[TestResponse] | InvocationFailed | InvocationCancelled | None,
+    not_executed_reason: Literal["not_started", "configuration_choice_required"] = "not_started",
 ) -> PublicTestResult:
     status: Literal["passed", "failed", "unavailable", "not_executed"] = "not_executed"
     reason: (
         AdapterUnavailableReason | AdapterCallFailureReason | ConsumerNotExecutedReason | None
-    ) = "not_started"
+    ) = not_executed_reason
     message: str | None = None
     evidence: NativeEvidence | None = None
     external_tools: tuple[ExternalToolIdentity, ...] | None = None
@@ -303,6 +305,28 @@ class TestRunManager:
                 results=tuple(_project(item, None) for item in selected),
                 error_code="scope_resolution_failed",
                 error_details=ScopeDetails(issues=scope_issues),
+            )
+        unresolved = tuple(
+            test_id for test_id in selected_ids if definitions[test_id].configuration_choice is None
+        )
+        if unresolved:
+            return RunTestsOutput(
+                success=True,
+                requested_scope=request.scope,
+                requested_targets=request.targets or (),
+                selected_tests=selected_ids,
+                results=tuple(
+                    _project(
+                        item,
+                        None,
+                        "configuration_choice_required"
+                        if item.test_id in unresolved
+                        else "not_started",
+                    )
+                    for item in selected
+                ),
+                error_code="configuration_choice_required",
+                error_details=ConfigurationChoiceDetails(binding_ids=unresolved),
             )
         rows: list[PublicTestResult] = []
         stop: RunTestsErrorCode | None = None

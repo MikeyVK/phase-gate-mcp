@@ -46,6 +46,7 @@ def operation(
     render: Callable[[str, object, FrozenJsonObject], str] | None = None,
     write_scratch: Callable[[Path, bytes], int] | None = None,
     remove_scratch: Callable[[Path], None] = shutil.rmtree,
+    unresolved: bool = False,
 ) -> tuple[ScaffoldOperation, RecordingRuntime]:
     profile = delivered.catalog.get("issue").policy.output_profile
     checks, _, runtime = compose(
@@ -55,6 +56,7 @@ def operation(
         file_content=write_scratch is not None,
         write_bytes=write_scratch if write_scratch is not None else Path.write_bytes,
         remove_tree=remove_scratch,
+        unresolved_checks=frozenset({"check_0"}) if unresolved else frozenset(),
     )
     locations = ArtifactLocationsConfig.model_validate(
         {"version": "2.0.0", "artifacts": {"issue": {"default_root": "outputs"}}}
@@ -287,12 +289,16 @@ async def test_staging_failures_keep_write_and_cleanup_facts_separate(
 async def test_preparation_failure_retains_its_stage_without_writing(
     tmp_path: Path,
     delivered: DeliveredTemplate,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
+    primary = OSError("scratch write refused")
+    secondary = PermissionError("scratch cleanup refused")
+
     def failed_write(_path: Path, _content: bytes) -> int:
-        raise PermissionError("scratch write refused")
+        raise primary
 
     def failed_cleanup(_path: Path) -> None:
-        raise PermissionError("scratch cleanup refused")
+        raise secondary
 
     service, runtime = operation(
         tmp_path,
@@ -317,6 +323,19 @@ async def test_preparation_failure_retains_its_stage_without_writing(
     assert result.checks[0].housekeeping[0].path == "scratch/one"
     assert (tmp_path / "scratch" / "one").is_dir()
     assert not (tmp_path / "outputs" / "result.md").exists()
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "mcp_server.services.scaffold_operation"
+    ]
+    assert len(records) == 1
+    assert records[0].exc_info is not None
+    boundary_error = records[0].exc_info[1]
+    assert boundary_error is not None and boundary_error.__cause__ is not None
+    assert boundary_error.__cause__.__cause__ is primary
+    assert "OSError: scratch write refused" in caplog.text
+    assert "PermissionError: scratch cleanup refused" in caplog.text
+    assert "failed_cleanup" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -372,3 +391,24 @@ async def test_postcommit_result_failure_does_not_undo_created_bytes(
     assert (tmp_path / "outputs" / "result.md").read_bytes() == delivered.renderer.render(
         "issue", context, delivered.provenance
     ).encode("utf-8")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("policy", ["enforce", "report"])
+async def test_unresolved_content_choice_refuses_creation_without_scratch(
+    tmp_path: Path, delivered: DeliveredTemplate, policy: Literal["enforce", "report"]
+) -> None:
+    service, runtime = operation(tmp_path, delivered, ("passed",), unresolved=True)
+    result = await service.execute(
+        artifact_type="issue",
+        file_name="refused.md",
+        context={"problem": "Example"},
+        validation=policy,
+    )
+    assert result.error_code == "configuration_choice_required"
+    assert result.validation_status == "not_executed" and not result.written
+    assert result.checks[0].reason == "configuration_choice_required"
+    assert result.checks[0].invocation is None and result.checks[0].evidence is None
+    assert runtime.requests == [] and not (tmp_path / "outputs" / "refused.md").exists()
+    assert not (tmp_path / "scratch").exists()
+    assert ScaffoldOperationOutput.model_validate_json(result.model_dump_json()) == result

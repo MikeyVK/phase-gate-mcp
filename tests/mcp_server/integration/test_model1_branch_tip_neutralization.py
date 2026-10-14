@@ -125,21 +125,9 @@ def _make_commit_tool(repo_dir: Path) -> GitCommitTool:
 
 def _has_net_diff(repo: GitRepo, path: str, base: str) -> bool:
     """Return True if path has a net delta between merge-base and HEAD."""
-    try:
-        merge_base_sha = repo.git.merge_base("HEAD", base).strip()
-    except Exception:
-        return False
+    merge_base_sha = repo.git.merge_base("HEAD", base).strip()
     diff_output = repo.git.diff("--name-only", f"{merge_base_sha}..HEAD", "--", path)
     return bool(diff_output.strip())
-
-
-def _path_in_head_tree(repo: GitRepo, path: str) -> bool:
-    """Return True if path exists in the HEAD commit tree."""
-    try:
-        repo.git.show(f"HEAD:{path}")
-        return True
-    except Exception:
-        return False
 
 
 # ---------------------------------------------------------------------------

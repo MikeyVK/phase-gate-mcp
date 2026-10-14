@@ -144,6 +144,7 @@ def compose(
     branch: IBranchChangeReader | None = None,
     filtered_checks: frozenset[str] = frozenset(),
     remove_tree: Callable[[Path], None] = shutil.rmtree,
+    unresolved_checks: frozenset[str] = frozenset(),
 ) -> tuple[CheckService, CheckSelector, RecordingRuntime]:
     names = tuple(f"check_{index}" for index in range(len(outcomes)))
     config = ChecksConfig.model_validate(
@@ -158,6 +159,9 @@ def compose(
                     "capability": "filtered" if name in filtered_checks else "check",
                     "timeout_seconds": index + 3,
                     "default_args": [name],
+                    "configuration_choice": None
+                    if name in unresolved_checks
+                    else "configured_arguments",
                 }
                 for index, name in enumerate(names)
             },
@@ -264,7 +268,9 @@ async def test_blocker_keeps_prior_facts_and_unstarted_obligations(
 
 @pytest.mark.asyncio
 async def test_empty_branch_does_not_turn_into_native_discovery(tmp_path: Path) -> None:
-    service, selector, runtime = compose(tmp_path, ("passed",))
+    service, selector, runtime = compose(
+        tmp_path, ("passed",), unresolved_checks=frozenset({"check_0"})
+    )
     result = await service.run_selection(selector.select(CheckSelectionRequest(scope="branch")))
     assert result.run_status == "empty_selection"
     assert result.results == ()
@@ -355,3 +361,32 @@ async def test_later_content_preparation_failure_preserves_prior_results(tmp_pat
         row.invocation is None and row.not_executed == "not_started" for row in result.results[1:]
     )
     assert not (tmp_path / "scratch" / "one").exists()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["selection", "content"])
+async def test_unresolved_choice_refuses_the_complete_batch_before_effects(
+    tmp_path: Path, route: str
+) -> None:
+    service, selector, runtime = compose(
+        tmp_path,
+        ("passed", "passed"),
+        file_content=True,
+        unresolved_checks=frozenset({"check_1"}),
+    )
+    if route == "selection":
+        plan = selector.select(
+            CheckSelectionRequest(scope="configured", args={"check_1": ["caller"]})
+        )
+        result = await service.run_selection(plan)
+    else:
+        result = await service.run_content(
+            "renamed", target_path=str(tmp_path / "input.py"), content="proposed\r\n"
+        )
+    assert result.stop_reason == "configuration_choice_required"
+    assert [(row.check_id, row.not_executed) for row in result.results] == [
+        ("check_0", "not_started"),
+        ("check_1", "configuration_choice_required"),
+    ]
+    assert all(row.invocation is None for row in result.results)
+    assert runtime.requests == [] and not (tmp_path / "scratch").exists()

@@ -14,6 +14,7 @@
 # Standard library
 import json
 from typing import Any, ClassVar
+from unittest.mock import patch
 
 # Third-party
 import pytest
@@ -178,21 +179,35 @@ class TestTextPresenter:
 
         assert text == "📋 Success: Operation completed\n\n🚀 TEST ADVISORY WARNING"
 
-    def test_present_text_failure(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting failure output with custom template and emoji prefix."""
+    @pytest.mark.parametrize("request_params", [{}, {"value": 3}])
+    def test_present_text_failure(
+        self, mock_yaml_config: dict[str, Any], request_params: dict[str, Any]
+    ) -> None:
+        """Configured failures project domain facts before conflicting request values."""
+        mock_yaml_config["global"]["failures"] = {
+            "domain_failure": "Failed: {error_message}; value={value}"
+        }
         presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = ExecutionErrorOutput(error_message="Operation failed")
+        dto = ExecutionErrorOutput(
+            error_message="Operation failed",
+            error_code="domain_failure",
+            error_params={"value": "domain fact"},
+            params=request_params,
+        )
 
         text = presenter.present_text(tool_name="dummy_tool", success=False, data=dto)
 
-        assert text == "❌ Error: Operation failed"
+        assert text == "❌ Failed: Operation failed; value=domain fact"
 
-    def test_present_text_default_failure_template(self, mock_yaml_config: dict[str, Any]) -> None:
+    @pytest.mark.parametrize("tool_name", ["dummy_no_model", "dummy_tool"])
+    def test_present_text_default_failure_template(
+        self, mock_yaml_config: dict[str, Any], tool_name: str
+    ) -> None:
         """Test presenting failure using default failure template when no specific one exists."""
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = ExecutionErrorOutput(error_message="Something crashed")
 
-        text = presenter.present_text(tool_name="dummy_no_model", success=False, data=dto)
+        text = presenter.present_text(tool_name=tool_name, success=False, data=dto)
 
         assert text == "❌ Failed: Something crashed"
 
@@ -204,18 +219,44 @@ class TestTextPresenter:
 
         assert text == "📋 No model success message"
 
-    def test_present_text_with_notes(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting with operation notes."""
+    @pytest.mark.parametrize(
+        ("template", "parse_error"),
+        [
+            ("Try {action}", None),
+            ("Try {action", None),
+            ("Try {action}", RuntimeError("parser failure")),
+        ],
+    )
+    def test_present_notes_handles_format_syntax(
+        self,
+        mock_yaml_config: dict[str, Any],
+        template: str,
+        parse_error: Exception | None,
+    ) -> None:
+        """Note syntax errors remain visible; unexpected parser faults propagate."""
+        mock_yaml_config["global"]["notes"]["templates"]["suggestions"]["try_this"] = template
         presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, result="Done")
-        notes = [
-            Note(key="try_this", params={"action": "re-running the test"}),
-        ]
+        notes = [Note(key="try_this", params={"action": "re-running the test"})]
 
-        text = presenter.present_text(tool_name="dummy_tool", success=True, data=dto, notes=notes)
+        if parse_error is not None:
+            with (
+                patch(
+                    "mcp_server.presenters.text_presenter.SafeNoneFormatter.parse",
+                    side_effect=parse_error,
+                ),
+                pytest.raises(type(parse_error)) as raised,
+            ):
+                presenter.present_notes("dummy_tool", notes)
+            assert raised.value is parse_error
+            return
 
+        text = presenter.present_notes("dummy_tool", notes)
+        assert text is not None
         assert "💡 Suggestions" in text
-        assert "Try re-running the test" in text
+        if template == "Try {action":
+            assert "Format error:" in text
+        else:
+            assert "Try re-running the test" in text
 
     def test_present_text_fallback_run_id_none_validation_error(
         self, mock_yaml_config: dict[str, Any]
@@ -302,19 +343,46 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
 
-    def test_present_text_cache_publication_failure(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting with CachePublication indicating failure."""
+    @pytest.mark.parametrize("format_stage", ["main", "instruction", "note"])
+    def test_present_text_cache_publication_failure(
+        self,
+        mock_yaml_config: dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+        format_stage: str,
+    ) -> None:
+        """Formatting faults retain the outcome fallback and full logged diagnosis."""
+        notes: list[Note] = []
+        if format_stage == "main":
+            mock_yaml_config["tools"]["dummy_tool"]["template_success"] = "Success: {result"
+        elif format_stage == "instruction":
+            mock_yaml_config["global"]["next_instruction_texts"]["test_advisory"] = "Try {action"
+        else:
+            mock_yaml_config["global"]["notes"]["templates"]["suggestions"]["try_this"] = (
+                "Try {action"
+            )
+            notes = [Note(key="try_this", params={"action": "retry"})]
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, result="Fallback JSON test")
         cache_pub = CachePublication(success=False, error_code="write_failed")
         text = presenter.present_text(
             tool_name="dummy_tool",
             data=dto,
-            notes=[],
+            notes=notes,
             cache_pub=cache_pub,
         )
+        assert "Format error" in text
         assert "*(Cache publication failed. Full details dumped inline)*" in text
-        assert "```json" in text
+        fallback = json.loads(text.split("```json\n", 1)[1].split("\n```", 1)[0])
+        assert fallback == dto.model_dump()
+        records = [
+            record
+            for record in caplog.records
+            if record.name == "mcp_server.presenters.text_presenter"
+        ]
+        assert len(records) == 1
+        assert records[0].exc_info is not None
+        assert records[0].exc_info[0] is ValueError
+        assert records[0].exc_info[2] is not None
 
     def test_present_text_dynamic_category_emoji(self) -> None:
         """Verify that custom categories and emojis configured in YAML are resolved dynamically."""

@@ -347,7 +347,7 @@ class EnforcementRunner:
         )
         try:
             current_phase: str | None = self._state_reader.load(branch).current_phase
-        except Exception:
+        except (FileNotFoundError, StateNotFoundError):
             current_phase = None
         if current_phase != required_phase:
             note_context.produce(
@@ -406,9 +406,6 @@ class EnforcementRunner:
                 return
         except (FileNotFoundError, StateNotFoundError):
             return  # Bootstrap: no state.json means gate is inactive
-            return  # Bootstrap: no state.json means gate is inactive
-        except Exception:
-            pass
 
         if self._context_loaded_reader is None:
             raise ConfigError(

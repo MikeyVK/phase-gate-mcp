@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import string
 from collections.abc import Sequence
 from enum import Enum
@@ -36,6 +37,7 @@ from mcp_server.presenters.collection_text_renderer import (
 )
 from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 
 if TYPE_CHECKING:
     from mcp_server.bootstrap import SupportedToolContract
@@ -47,6 +49,8 @@ class SafeNoneFormatter(SequenceSafeNoneFormatter):
 
 # Legacy note mapping removed
 
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_RUN_ID = "DEFAULT_RUN_ID_SENTINEL"
 
@@ -123,12 +127,15 @@ class TextPresenter(ITextPresenter):
             if field_name is not None
         ]
         params = data.get("params", {}) or {}
+        error_params = data.get("error_params", {}) or {}
         values: dict[str, object] = {}
         for placeholder in placeholders:
             if placeholder == "run_id" and run_id is not None:
                 values[placeholder] = run_id
             elif placeholder in data:
                 values[placeholder] = data[placeholder]
+            elif isinstance(error_params, dict) and placeholder in error_params:
+                values[placeholder] = error_params[placeholder]
             elif isinstance(params, dict) and placeholder in params:
                 values[placeholder] = params[placeholder]
             elif placeholder == "error_message" and "message" in data:
@@ -153,7 +160,11 @@ class TextPresenter(ITextPresenter):
         resolved_success = success if success is not None else getattr(data, "success", True)
 
         # Resolve category internally based on tool config to decouple transport
-        tool_cfg = self.tools_config.get(tool_name)
+        tool_cfg = (
+            None
+            if isinstance(data, (ConfigErrorOutput, ExecutionErrorOutput))
+            else self.tools_config.get(tool_name)
+        )
         resolved_cat = "query"
         if tool_cfg is not None:
             if isinstance(tool_cfg, ToolPresentationConfig):
@@ -217,35 +228,14 @@ class TextPresenter(ITextPresenter):
         # Format template if we have one, otherwise dump/default representation
         if template:
             try:
-                # Fill missing keys in data_dict with None to trigger SafeNoneFormatter
-                # Parse all placeholders in the template
-                placeholders = []
-                none_val = self.get_none_value()
-                formatter = SafeNoneFormatter(
-                    none_val,
-                    formatting=self.global_config.formatting,
+                text = self._format_data_template(
+                    template,
+                    data_dict,
                     max_items=tool_cfg.max_items if tool_cfg else None,
                 )
-                for _, field_name, _, _ in formatter.parse(template):
-                    if field_name is not None:
-                        placeholders.append(field_name.split(".")[0].split("[")[0])
-
-                format_dict = {}
-                params_dict = data_dict.get("params", {}) or {}
-                for key in placeholders:
-                    val = None
-                    if key in data_dict:
-                        val = data_dict[key]
-                    elif isinstance(params_dict, dict) and key in params_dict:
-                        val = params_dict[key]
-                    elif key == "error_message" and "message" in data_dict:
-                        val = data_dict["message"]
-                    elif key == "message" and "error_message" in data_dict:
-                        val = data_dict["error_message"]
-                    format_dict[key] = val
-
-                text = formatter.format(template, **format_dict)
             except Exception as exc:
+                # Preserve the published outcome while retaining presentation diagnostics.
+                logger.exception("Main template formatting failed for %s", tool_name)
                 text = f"Format error: {exc}"
         else:
             # If no template is found, use a fallback text or DTO string
@@ -322,6 +312,8 @@ class TextPresenter(ITextPresenter):
                         formatted_instruction = formatter.format(raw_text, **format_dict)
                         text = f"{text}\n\n{formatted_instruction}"
                     except Exception as exc:
+                        # Optional guidance must not replace the operation's readable result.
+                        logger.exception("Instruction %s formatting failed for %s", key, tool_name)
                         text = f"{text}\n\nFormat error in instruction '{key}': {exc}"
 
         # 7. Append formatted notes if provided
@@ -425,7 +417,7 @@ class TextPresenter(ITextPresenter):
                     for _, field_name, _, _ in formatter.parse(found_template):
                         if field_name is not None:
                             placeholders.append(field_name.split(".")[0].split("[")[0])
-                except Exception:
+                except ValueError:
                     pass
 
                 format_dict = {}
@@ -436,6 +428,8 @@ class TextPresenter(ITextPresenter):
                     formatted_text = formatter.format(found_template, **format_dict)
                     grouped_texts[found_group].append(formatted_text)
                 except Exception as exc:
+                    # One malformed note must not hide the remaining operation evidence.
+                    logger.exception("Note %s formatting failed for %s", key, tool_name)
                     grouped_texts[found_group].append(f"Format error: {exc}")
         lines = []
         for group in group_names:

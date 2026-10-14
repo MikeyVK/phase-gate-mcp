@@ -62,7 +62,7 @@ def lychee_runtime(tmp_path: Path, pytestconfig: pytest.Config) -> LycheeRuntime
 def package_for(runtime: LycheeRuntime, tmp_path: Path, repo_root: Path) -> LycheePackage:
     root = tmp_path / "official packages" / "lychee"
     copytree(repo_root / "mcp_server/bundled_adapters/lychee", root)
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",

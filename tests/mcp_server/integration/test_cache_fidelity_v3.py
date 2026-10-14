@@ -94,13 +94,54 @@ async def test_operation_roundtrip_retains_required_null_and_presence(
 
 
 @pytest.mark.asyncio
-async def test_legacy_error_cache_keeps_defaults_and_omits_absent_null(tmp_path: Path) -> None:
-    text = await _read_cached_operation(tmp_path, ExecutionErrorOutput(error_message="Failed"))
-    assert json.loads(text) == {
+@pytest.mark.parametrize("serialization_fails", [False, True])
+async def test_error_cache_preserves_diagnosis_and_json_fallback(
+    tmp_path: Path,
+    serialization_fails: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    cause = OSError("serialization storage unavailable")
+    failure = RuntimeError("serialization failed")
+
+    class BrokenErrorOutput(ExecutionErrorOutput):
+        pass
+
+    if serialization_fails:
+
+        def fail_serialization(*_args: object, **_kwargs: object) -> str:
+            raise failure from cause
+
+        monkeypatch.setattr(BrokenErrorOutput, "model_dump_json", fail_serialization)
+
+    operation = (
+        BrokenErrorOutput(error_message="Failed", traceback="Original tool traceback")
+        if serialization_fails
+        else ExecutionErrorOutput(error_message="Failed")
+    )
+    text = await _read_cached_operation(tmp_path, operation)
+    result = json.loads(text)
+    if serialization_fails:
+        assert result["success"] is False
+        assert result["error_type"] == "SerializationError"
+        assert result["dto_type"] == "BrokenErrorOutput"
+        assert result["error_message"] == "Failed"
+        assert result["traceback"] == "Original tool traceback"
+        assert "serialization failed" in result["message"]
+        record = caplog.records[-1]
+        assert record.exc_info is not None
+        assert record.exc_info[1] is failure
+        assert failure.__cause__ is cause
+        assert "OSError: serialization storage unavailable" in caplog.text
+        assert "RuntimeError: serialization failed" in caplog.text
+        return
+
+    assert result == {
         "success": False,
         "error_type": "ExecutionError",
         "error_message": "Failed",
         "params": {},
+        "error_params": {},
     }
 
 

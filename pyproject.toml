@@ -109,6 +109,7 @@ extend-exclude = [
 
 [tool.ruff.lint]
 # Native Ruff settings shared by editor and adapter consumers.
+extend-select = ["G004", "BLE001", "SLF001"]
 select = [
     "E",   # pycodestyle errors - includes E501 (line-too-long)
     "W",   # pycodestyle warnings - includes W291/W292/W293 (whitespace)

@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.interfaces import ICoreTool
+from mcp_server.core.interfaces import ICoreTool, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.state_repository import InMemoryStateRepository
@@ -38,6 +38,7 @@ from mcp_server.tools.pr_tools import SubmitPRTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
     get_default_server_root,
+    make_dispatch_dependencies,
     make_dispatch_server,
     make_phase_state_engine,
     make_project_manager,
@@ -64,25 +65,6 @@ def _bootstrap_workspace_configs(workspace_root: Path) -> None:
         source_file = source_root / file_name
         if source_file.exists():
             shutil.copy2(source_file, target_root / file_name)
-    deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
-    if deliverables_file.exists():
-        try:
-            data = json.loads(deliverables_file.read_text(encoding="utf-8"))
-            if "schema_version" not in data:
-                payload = {"schema_version": "1.0.0", "projects": data.get("projects", data)}
-                deliverables_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        except Exception:
-            pass
-
-    state_file = workspace_root / get_default_server_root() / "state.json"
-    if state_file.exists():
-        try:
-            data = json.loads(state_file.read_text(encoding="utf-8"))
-            if "schema_version" not in data:
-                data["schema_version"] = "1.0.0"
-                state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        except Exception:
-            pass
 
 
 def _patch_server_settings(
@@ -112,14 +94,6 @@ def _patch_server_settings(
 
     mock.return_value = settings
     mock.from_env.return_value = settings
-
-
-def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
-    bootstrapper = ServerBootstrapper(settings)
-    configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
-    workspace_root = Path(settings.server.workspace_root)
-    managers = bootstrapper._build_manager_graph(configs)  # type: ignore[reportPrivateUsage]
-    return managers, workspace_root
 
 
 def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
@@ -288,9 +262,8 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
 
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -355,9 +328,8 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
 
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             manager = MagicMock()
@@ -389,6 +361,10 @@ class TestServerToolRegistration:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Dispatch pre-hook should return a phase error and never reach GitHub PR creation."""
+        monkeypatch.setattr(
+            "mcp_server.managers.github_manager.GitHubManager.get_pr_status",
+            MagicMock(return_value=PRStatus.ABSENT),
+        )
         monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
         _bootstrap_workspace_configs(tmp_path)
         _write_phase_state(tmp_path, "documentation")
@@ -406,9 +382,8 @@ class TestServerToolRegistration:
                 token="test-token",
             )
 
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             server.tools = [
                 ToolFactory(managers.enforcement_runner, workspace_root).create_tool(
@@ -467,9 +442,8 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
 
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -524,9 +498,8 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
 
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -600,9 +573,8 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
 
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -654,9 +626,8 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            managers, workspace_root = _get_test_bootstrap_context(
-                mock_settings_cls.from_env.return_value
-            )
+            managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+            workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
 
             server = make_dispatch_server(mock_settings_cls.from_env.return_value)
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -790,9 +761,8 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
             resource_presenter=SchemaResourcePresenter(),
         )
 
-        managers, workspace_root = _get_test_bootstrap_context(
-            mock_settings_cls.from_env.return_value
-        )
+        managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
+        workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
         server = make_dispatch_server(mock_settings_cls.from_env.return_value)
         server.presenter = presenter
         tool = DummyTool()

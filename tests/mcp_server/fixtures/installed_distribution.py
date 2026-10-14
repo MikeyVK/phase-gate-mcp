@@ -128,7 +128,7 @@ package = Path(mcp_server.__file__).resolve().parent
 suite = package / "assets/template_suite"
 config_root = package / "assets/config"
 contracts = TemplateContractLoader(suite)
-loader = ConfigLoader(config_root, suite, context_schema_reader=contracts.load_context_schema)
+loader = ConfigLoader(config_root, context_schema_reader=contracts.load_context_schema)
 validator = ConfigValidator()
 checks = loader.load_checks_config()
 parser = Environment()

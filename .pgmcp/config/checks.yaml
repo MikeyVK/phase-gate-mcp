@@ -36,56 +36,67 @@ checks:
     adapter_id: python_syntax
     capability: syntax
     timeout_seconds: 30
+    configuration_choice: not_applicable
     default_args: []
   typescript_syntax:
     adapter_id: typescript_syntax
     capability: syntax
     timeout_seconds: 30
+    configuration_choice: not_applicable
     default_args: []
   commit_message:
     adapter_id: commitlint
     capability: message
     timeout_seconds: 30
+    configuration_choice: native_discovery
     default_args: []
   python_format:
     adapter_id: ruff
     capability: format
     timeout_seconds: 60
+    configuration_choice: native_discovery
     default_args: []
   python_lint:
     adapter_id: ruff
     capability: lint
     timeout_seconds: 60
+    configuration_choice: native_discovery
     default_args: []
   python_types:
     adapter_id: mypy
     capability: types
     timeout_seconds: 120
+    configuration_choice: native_discovery
     default_args: []
   python_pyright:
     adapter_id: pyright
     capability: types
     timeout_seconds: 120
+    configuration_choice: native_discovery
     default_args: ["--level","warning","--warnings"]
   markdown_links:
     adapter_id: lychee
     capability: links
     timeout_seconds: 60
+    configuration_choice: configured_arguments
     default_args: ["--offline","--cache=false","--include-fragments"]
   yaml_configuration:
     adapter_id: check_jsonschema
     capability: yaml_configuration
     timeout_seconds: 60
+    configuration_choice: configured_arguments
     default_args: ["--schemafile", ".pgmcp/config/check_schemas/yaml_configuration.schema.json", "--force-filetype", "yaml", "--output-format", "JSON"]
   json_schema_shape:
     adapter_id: check_jsonschema
     capability: json_schema
     timeout_seconds: 60
+    configuration_choice: configured_arguments
     default_args: ["--schemafile", ".pgmcp/config/check_schemas/json_schema_source.schema.json", "--force-filetype", "json", "--output-format", "JSON"]
   json_schema_metaschema:
     adapter_id: check_jsonschema
     capability: json_schema
     timeout_seconds: 60
+    configuration_choice: configured_arguments
     default_args: ["--check-metaschema", "--force-filetype", "json", "--output-format", "JSON"]
 profiles:
   python_preflight:

@@ -8,7 +8,7 @@ Tests for CLI.
 
 # Standard library
 import contextlib
-from importlib import metadata
+import json
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
 
@@ -16,9 +16,11 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 
 from mcp_server.cli import main
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+from mcp_server.services.template_renewal import RenewalOutcome, RenewalResult
 
 
 def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -57,7 +59,10 @@ def test_cli_run() -> None:
         mock_asyncio_run.assert_called_once_with(mock_server.run())
 
 
-def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+@pytest.mark.parametrize("outcome", ["fresh_installed", "candidate_invalid", "upgrade_busy"])
+def test_cli_init_result(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], outcome: RenewalOutcome
+) -> None:
     """Initialization copies assets and delegates checkpoint creation to renewal."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -68,6 +73,26 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     (mock_assets / "config").mkdir(parents=True)
     (mock_assets / "template_suite").mkdir(parents=True)
     (mock_assets / "config" / "workflows.yaml").touch()
+    binding = {
+        "adapter_id": "fixture",
+        "capability": "check",
+        "timeout_seconds": 9,
+        "default_args": ["--literal", "two words"],
+        "configuration_choice": "configured_arguments",
+    }
+    copied_config = {
+        "checks": {
+            "configured_targets": {},
+            "checks": {"chosen": binding},
+            "profiles": {"preflight": {"checks": ["chosen"]}},
+            "profiles_by_extension": {".py": "preflight"},
+            "run_checks": {},
+        },
+        "tests": {"tests": {"chosen": {**binding, "active": True}}},
+        "fixes": {"fixes": {"chosen": binding}},
+    }
+    for section, data in copied_config.items():
+        (mock_assets / "config" / f"{section}.yaml").write_text(json.dumps(data), encoding="utf-8")
     import shutil  # noqa: PLC0415
 
     original_copytree = shutil.copytree
@@ -80,10 +105,10 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
             shutil.copytree = mock_copytree
 
     operation = MagicMock()
-    operation.last_result.exit_code = 0
+    operation.last_result = RenewalResult(outcome=outcome, failure_code="fixture_result")
     with (
         patch("sys.argv", ["mcp-server", "--init"]),
-        patch("sys.exit", side_effect=SystemExit(0)),
+        patch("sys.exit", side_effect=SystemExit(operation.last_result.exit_code)) as exit_process,
         patch("shutil.copytree", side_effect=mock_copytree),
         patch("mcp_server.cli_renewal.build_default_operation", return_value=operation),
         contextlib.suppress(SystemExit),
@@ -94,8 +119,30 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert (server_root / "config/workflows.yaml").is_file()
     assert (server_root / "template_suite").is_dir()
     assert not (server_root / ".version").exists()
+    installed = ConfigLoader(server_root / "config")
+    reset_models = (
+        ("checks", installed.load_checks_config()),
+        ("tests", installed.load_tests_config()),
+        ("fixes", installed.load_fixes_config()),
+    )
+    for section, model in reset_models:
+        result = model.model_dump(mode="json", exclude_unset=True)
+        assert result[section]["chosen"]["configuration_choice"] is None
+        result[section]["chosen"]["configuration_choice"] = "configured_arguments"
+        assert result == copied_config[section]
+        assert (
+            json.loads((mock_assets / "config" / f"{section}.yaml").read_text(encoding="utf-8"))
+            == copied_config[section]
+        )
     operation.execute.assert_called_once_with()
-    assert "Successfully initialized" in capsys.readouterr().out
+    exit_process.assert_called_once_with(operation.last_result.exit_code)
+    captured = capsys.readouterr()
+    if outcome == "fresh_installed":
+        assert "Successfully initialized" in captured.out
+        assert not captured.err
+    else:
+        assert "fixture_result" in captured.err
+        assert not captured.out
 
 
 def test_cli_fails_fast_when_state_dir_missing(
@@ -135,6 +182,8 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
     workspace.mkdir()
     server_root = workspace / ".pgmcp"
     server_root.mkdir()
+    owner_config = server_root / "checks.yaml"
+    owner_config.write_bytes(b"owner choices")
 
     settings = Settings(
         server=ServerSettings(
@@ -155,6 +204,7 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
     captured = capsys.readouterr()
     assert "already exists" in captured.err or "already exists" in captured.out
+    assert owner_config.read_bytes() == b"owner choices"
 
 
 def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
@@ -278,30 +328,38 @@ def test_cli_upgrade_failure_exits_1(tmp_path: Path) -> None:
         exit_process.assert_called_once_with(1)
 
 
-def test_version_consistency() -> None:
-    """Verify version parity across SSOT files (pyproject.toml, manifest, settings.py)."""
-    import yaml  # noqa: PLC0415
+def test_cli_init_exception_preserves_diagnostic(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Initialization failures expose the original chained exception and facts."""
+    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
 
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
+    settings = Settings(server=ServerSettings(workspace_root=str(tmp_path)))
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    cause = OSError("fixture source unreadable")
 
-    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    def fail_copy(*_args: object, **_kwargs: object) -> None:
+        try:
+            raise cause
+        except OSError as error:
+            raise ConfigError(
+                "fixture invalid assets",
+                file_path=str(assets),
+            ) from error
 
-    # 1. pyproject.toml
-    pyproject_path = repo_root / "pyproject.toml"
-    assert pyproject_path.exists()
-    pyproject_text = pyproject_path.read_text(encoding="utf-8")
-    assert 'version = "3.0.0"' in pyproject_text
-
-    # 2. release_manifest.yaml
-    manifest_path = repo_root / ".pgmcp" / "config" / "release_manifest.yaml"
-    assert manifest_path.exists()
-    manifest_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    assert manifest_data.get("version") == "3.0.0"
-
-    # Repository parity observes the manifest fallback, not the host installation.
-    with patch(
-        "mcp_server.config.settings.metadata.version",
-        side_effect=metadata.PackageNotFoundError,
+    with (
+        patch("sys.argv", ["pgmcp", "--init"]),
+        patch("shutil.copytree", side_effect=fail_copy),
+        pytest.raises(SystemExit) as exited,
     ):
-        settings = Settings()
-        assert settings.server.version == "3.0.0"
+        main(settings)
+
+    assert exited.value.code == 1
+    err = capsys.readouterr().err
+    assert "fixture source unreadable" in err
+    assert "fixture invalid assets" in err
+    assert "ERR_CONFIG" in err
+    assert str(assets) in err
+    assert "Traceback" in err
+    assert "fail_copy" in err
