@@ -2,13 +2,27 @@
 
 # Issue 319 — completed workspace validation
 
-**Status:** VALIDATION COMPLETE — INDEPENDENT REVIEW REQUIRED  
-**Version:** 0.2  
-**Last Updated:** 2026-10-13
+**Status:** CURRENT VALIDATION FAILED — TARGETED IMPLEMENTATION REPAIR REQUIRED  
+**Version:** 0.3  
+**Last Updated:** 2026-10-14
 
 ## Purpose
 
-Record current workspace evidence at a5cdbcaa1faf1287dc5a92fc747cd6e57583b374 after independent GO to re-enter Validation. Retain the earlier failed attempt as history; the seven consumer failures were repaired in Implementation. This producer report does not grant independent QA approval.
+Record the current ce6a76b7 implementation attempt and preserve earlier checkpoint evidence as history. This producer report does not grant independent QA approval.
+
+## Current attempt — 2026-10-14
+
+Independent entry GO covered ce6a76b7d2f7c7c00ecd53054dfb3b902ab96bc1. run_tests(scope='configured', timeout_seconds=1200), without caller filters/argument overrides: 2936 items; 6 failed, 2928 passed, 1 skipped, 1 xpassed, 275 warnings; 321.22 seconds; native exit 1, no termination problem. Receipt e780297a74f0469a8708b945abc7a5ab is supplementary. Read the collection header and diagnostic windows after inspecting the 884584-character size.
+
+Failures: test_c_loader_schema_structural.test_no_manager_imports_config_schema_directly flags GitHubManager importing GitHubSettings outside the established schema facade. Four test_project_plan_readback normal/forced cycle/phase cases reach the real PR-status gate with settings lacking credentials. test_server.test_call_tool_pre_enforcement_blocks_submit_pr_outside_ready_phase uses a dispatch helper that did not inject the new GitHub settings and also leaves PR status external. These cases fail before their intended deliverable/phase assertions. Proposed bounded repair: use the existing schema export, complete test-helper injection and explicitly isolate the external PR lookup in these existing tests. Do not weaken PR enforcement or restore identity/settings fallbacks.
+
+run_checks(scope='branch', timeout_seconds=600) passed python_format, python_lint, python_types and python_pyright, native exit 0 each. Ruff0.15.6: 110 files formatted; Mypy1.19.1: 38 source files; Pyright1.1.408: 38 files, zero errors/warnings. Native configured arguments unchanged. Receipt 18d8546dea4542da9ddc25468cb5af96 is supplementary. This passing gate does not waive the six suite failures.
+
+No production or test repair occurred in Validation. Return to Implementation after independent entry review; a fresh configured suite is required after correction. The new release remains explicitly postponed. Parent/head/PR-base and package-content changes remain deferred.
+
+## Historical checkpoint — a5cdbcaa
+
+The remaining revision-0.2 sections describe only the earlier a5cdbcaa snapshot, not the current failed attempt.
 
 ## Scope Out
 
@@ -179,3 +193,4 @@ Existing warnings, the non-strict xpass and mocked restart-task diagnostics do n
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-13 | @imp validator | Record completed full native suite, passing branch and configured lint gates, seven remaining failures and bounded follow-up. |
 | 0.2 | 2026-10-13 | @imp validator | Record current passed configured suite and branch gates after seven targeted consumer repairs; preserve failed-attempt history and diagnostic limitations. |
+| 0.3 | 2026-10-14 | @imp validator | Record six current suite failures and passing branch checks at ce6a76b7; bound proposed schema/test-wiring repair and distinguish historical evidence. |
