@@ -35,7 +35,7 @@ All tools:
 - ✅ Support Unicode content (emojis, non-ASCII characters)
 - ✅ Validate inputs before API calls
 - ✅ Return structured responses with detailed error messages
-- ✅ Require `GITHUB_TOKEN` environment variable
+- ✅ Require a token in resolved settings, supplied through the environment or settings overlay
 - ✅ Use explicitly supplied repository owner/name from resolved settings; no git-remote inference
 
 ### Presentation and Cache Contract
@@ -59,11 +59,16 @@ Check the returned fields and any explicit failure status before reporting an ou
 
 ## Environment Variables
 
+These variables override the corresponding github fields in the optional
+PGMCP_CONFIG_PATH settings overlay. GitHub use requires resolved token, owner and repo
+values; the environment variables are not separately required when the overlay
+already supplies those values.
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GITHUB_TOKEN` | **Yes** | None | GitHub personal access token (classic or fine-grained) |
-| `GITHUB_OWNER` | **Yes for GitHub use** | None | Repository owner; may also be supplied in the settings overlay |
-| `GITHUB_REPO` | **Yes for GitHub use** | None | Repository name, separate from owner; may also be supplied in the settings overlay |
+| `GITHUB_TOKEN` | If absent from overlay | None | Token required for GitHub use; classic or fine-grained |
+| `GITHUB_OWNER` | If absent from overlay | None | Owner required for GitHub use |
+| `GITHUB_REPO` | If absent from overlay | None | Repository name required for GitHub use, separate from owner |
 
 **Token Permissions (minimum):**
 - Issues: `repo` scope or fine-grained `issues:write`
