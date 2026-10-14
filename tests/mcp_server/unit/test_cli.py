@@ -119,7 +119,7 @@ def test_cli_init_result(
     assert (server_root / "config/workflows.yaml").is_file()
     assert (server_root / "template_suite").is_dir()
     assert not (server_root / ".version").exists()
-    installed = ConfigLoader(server_root / "config", server_root / "template_suite")
+    installed = ConfigLoader(server_root / "config")
     reset_models = (
         ("checks", installed.load_checks_config()),
         ("tests", installed.load_tests_config()),

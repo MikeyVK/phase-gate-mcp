@@ -41,7 +41,7 @@ def checker_package(tmp_path: Path, pytestconfig: pytest.Config) -> CheckerPacka
         pytestconfig.rootpath / ".pgmcp/config/check_schemas",
         workspace / ".pgmcp/config/check_schemas",
     )
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",

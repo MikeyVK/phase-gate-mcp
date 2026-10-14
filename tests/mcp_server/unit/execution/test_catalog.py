@@ -60,7 +60,7 @@ def package(root: Path, name: str = "directory label", manifest: str = MANIFEST)
 
 def catalog_loader(root: Path, trusted: tuple[str, ...] = ()) -> AdapterCatalogLoader:
     """Inject actual config/file readers and an explicit startup program selection."""
-    config = ConfigLoader(root / "config", root / "templates")
+    config = ConfigLoader(root / "config")
     return AdapterCatalogLoader(
         root / "official",
         root / "workspace",
@@ -82,9 +82,7 @@ def test_real_loader_preserves_descriptors_and_catalog_identity(tmp_path: Path) 
     assert binding.capability.inputs == ("content", "selection")
     assert catalog.get_test("sample", "suite").launch.executable is None
     assert catalog.get_fix("sample", "repair").capability.addresses[0].capability == "syntax"
-    manifest = ConfigLoader(tmp_path / "config", tmp_path / "templates").load_adapter_manifest(
-        directory / "manifest.yaml"
-    )
+    manifest = ConfigLoader(tmp_path / "config").load_adapter_manifest(directory / "manifest.yaml")
     assert manifest.roles.check is not None
     assert isinstance(manifest.roles.check.capabilities, tuple)
     assert isinstance(manifest.roles.check.entrypoint.args, tuple)
@@ -114,9 +112,7 @@ def test_real_loader_preserves_descriptors_and_catalog_identity(tmp_path: Path) 
 def test_invalid_manifest_is_rejected_by_config_loader(tmp_path: Path, old: str, new: str) -> None:
     directory = package(tmp_path / "official", manifest=MANIFEST.replace(old, new, 1))
     with pytest.raises(ConfigError):
-        ConfigLoader(tmp_path / "config", tmp_path / "templates").load_adapter_manifest(
-            directory / "manifest.yaml"
-        )
+        ConfigLoader(tmp_path / "config").load_adapter_manifest(directory / "manifest.yaml")
 
 
 @pytest.mark.parametrize("reference", ["../outside", "missing.ps1", "folder", "undeclared.ps1"])
@@ -153,7 +149,7 @@ def test_resolved_escape_and_windows_batch_are_rejected(tmp_path: Path) -> None:
         link.symlink_to(outside, target_is_directory=True)
     with pytest.raises(ConfigError):
         reader.resolve_file(directory, "escape/check.ps1")
-    config = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    config = ConfigLoader(tmp_path / "config")
     with pytest.raises(ConfigError):
         AdapterCatalogLoader(
             tmp_path / "official",
@@ -192,14 +188,14 @@ def test_invalid_or_missing_trust_has_no_fallback(tmp_path: Path, text: str | No
     if text is not None:
         write_package_tree(tmp_path / "custom_config", {"adapters.yaml": text.encode()})
     with pytest.raises(ConfigError):
-        ConfigLoader(tmp_path / "custom_config", tmp_path / "templates").load_adapter_trust()
+        ConfigLoader(tmp_path / "custom_config").load_adapter_trust()
 
 
 def test_empty_and_explicit_trust_from_selected_config_root(tmp_path: Path) -> None:
     config_root = write_package_tree(
         tmp_path / "selected", {"adapters.yaml": b"trusted_adapter_ids: []"}
     )
-    loader = ConfigLoader(config_root, tmp_path / "templates")
+    loader = ConfigLoader(config_root)
     assert loader.load_adapter_trust().trusted_adapter_ids == ()
     config_root.joinpath("adapters.yaml").write_text("trusted_adapter_ids: [sample]")
     assert loader.load_adapter_trust().trusted_adapter_ids == ("sample",)

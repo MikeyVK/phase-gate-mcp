@@ -60,7 +60,7 @@ class ServerSettings(BaseModel):
     def resolved_template_root(self) -> Path:
         if self.template_root:
             return Path(self.template_root)
-        return self.resolved_server_root / "templates"
+        return self.resolved_server_root / "template_suite"
 
     @computed_field  # type: ignore[prop-decorator]
     @property

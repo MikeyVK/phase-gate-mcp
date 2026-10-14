@@ -226,7 +226,7 @@ def create_process_fixture(root: Path, node: Path) -> ProcessFixture:
     )
     workspace = root / "logical workspace"
     workspace.mkdir()
-    config = ConfigLoader(root / "config", root / "templates")
+    config = ConfigLoader(root / "config")
     catalog = AdapterCatalogLoader(
         root / "official",
         root / "workspace-adapters",

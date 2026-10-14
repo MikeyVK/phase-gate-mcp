@@ -60,9 +60,7 @@ def package_files(directory: str, template_id: str) -> dict[str, bytes]:
 
 def catalog_loader(roots: SuiteRoots) -> TemplateCatalogLoader:
     reader = TemplateContractLoader(roots.templates)
-    config = ConfigLoader(
-        roots.config, roots.templates, context_schema_reader=reader.load_context_schema
-    )
+    config = ConfigLoader(roots.config, context_schema_reader=reader.load_context_schema)
     validator = ConfigValidator()
     environment = Environment()
     graph = TemplateGraphResolver(roots.templates, environment.parse)

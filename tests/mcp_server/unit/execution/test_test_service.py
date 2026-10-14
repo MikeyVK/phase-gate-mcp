@@ -410,7 +410,7 @@ def test_required_config_loads_strictly_and_validates_catalog_without_launch(
     pytestconfig: pytest.Config,
 ) -> None:
     root = pytestconfig.rootpath
-    loader = ConfigLoader(tmp_path, root / ".pgmcp/templates")
+    loader = ConfigLoader(tmp_path)
     authored = (root / ".pgmcp/config/tests.yaml").read_text(encoding="utf-8")
     config_file = tmp_path / "tests.yaml"
     with pytest.raises(ConfigError):

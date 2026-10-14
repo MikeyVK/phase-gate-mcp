@@ -72,11 +72,7 @@ def build_default_operation(
 
     server_root = Path(settings.server.resolved_server_root).resolve()
     managed_root = server_root / "template_suite"
-    actual_root = (
-        Path(settings.server.resolved_template_root).resolve()
-        if settings.server.template_root is not None
-        else managed_root
-    )
+    actual_root = Path(settings.server.resolved_template_root).resolve()
     legacy_root = server_root / "templates" if actual_root == managed_root else None
     legacy_version_path = server_root / ".version" if actual_root == managed_root else None
     candidate_root = server_root / "upgrade"
@@ -95,7 +91,6 @@ def build_default_operation(
         contracts = TemplateContractLoader(suite_root)
         return ConfigLoader(
             effective_config_root,
-            suite_root,
             context_schema_reader=contracts.load_context_schema,
         )
 

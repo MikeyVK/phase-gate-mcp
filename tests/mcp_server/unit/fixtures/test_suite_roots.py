@@ -41,8 +41,8 @@ def test_config_loaders_remain_isolated_from_cwd_and_environment(
     )
     write_package_tree(first.config, {"workflows.yaml": first_bytes})
     write_package_tree(second.config, {"workflows.yaml": second_bytes})
-    first_loader = ConfigLoader(first.config, first.templates)
-    second_loader = ConfigLoader(second.config, second.templates)
+    first_loader = ConfigLoader(first.config)
+    second_loader = ConfigLoader(second.config)
     with monkeypatch.context() as ambient:
         ambient.chdir(second.workspace)
         ambient.setenv("PGMCP_CONFIG_ROOT", str(second.config))
@@ -121,7 +121,7 @@ def test_delivered_suite_preserves_workflow_plugin_contract(
 ) -> None:
     """The real isolated loader retains existing workflow fixture semantics."""
     source = pytestconfig.rootpath / legacy_suite_roots.server.name
-    loader = ConfigLoader(legacy_suite_roots.config, legacy_suite_roots.templates)
+    loader = ConfigLoader(legacy_suite_roots.config)
     assert loader.load_contracts_config().get_phases("feature") == feature_phases
     assert legacy_suite_roots.config != source / "config"
     assert legacy_suite_roots.templates != source / "template_suite"

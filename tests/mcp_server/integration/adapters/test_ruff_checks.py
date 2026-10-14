@@ -40,7 +40,7 @@ def ruff_package(tmp_path: Path, pytestconfig: pytest.Config) -> RuffPackage:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     (workspace / "pyproject.toml").write_text(NATIVE_CONFIG, encoding="utf-8")
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",

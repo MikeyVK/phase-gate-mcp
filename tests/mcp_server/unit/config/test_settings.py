@@ -245,7 +245,7 @@ def test_resolved_paths_properties(tmp_path: Path) -> None:
 
     server_root = workspace / ".pgmcp"
     config_dir = server_root / "config"
-    templates_dir = server_root / "templates"
+    templates_dir = server_root / "template_suite"
 
     config_dir.mkdir(parents=True)
     templates_dir.mkdir(parents=True)
@@ -267,15 +267,17 @@ def test_resolved_paths_properties(tmp_path: Path) -> None:
     )
     assert (
         s_fallback.resolved_template_root
-        == (non_existent_workspace / ".pgmcp" / "templates").resolve()
+        == (non_existent_workspace / ".pgmcp" / "template_suite").resolve()
     )
     # 3. With explicit config_root
     s_explicit = ServerSettings(
         workspace_root=str(workspace),
         server_root_dir=".pgmcp",
         config_root=str(tmp_path / "custom"),
+        template_root=str(tmp_path / "custom-suite"),
     )
     assert s_explicit.resolved_config_root == (tmp_path / "custom").resolve()
+    assert s_explicit.resolved_template_root == (tmp_path / "custom-suite").resolve()
 
 
 def test_bypass_version_check_default(monkeypatch: pytest.MonkeyPatch) -> None:

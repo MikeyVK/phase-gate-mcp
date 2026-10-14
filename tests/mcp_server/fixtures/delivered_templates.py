@@ -45,9 +45,7 @@ def load_delivered_template(
     copytree(source_suite / "shared", destination / "shared")
     copytree(source_package, destination / "opaque package location")
     contracts = TemplateContractLoader(destination)
-    config = ConfigLoader(
-        config_root, destination, context_schema_reader=contracts.load_context_schema
-    )
+    config = ConfigLoader(config_root, context_schema_reader=contracts.load_context_schema)
     validator = ConfigValidator()
     parser = Environment()
     register_template_filters(parser)

@@ -165,9 +165,9 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
             "PGMCP_SERVER_NAME": "phase-gate-mcp",
             "PGMCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
             "PGMCP_SERVER_PROJECT_DIR": ".pgmcp",
-           "GITHUB_OWNER": "MikeyVK",
-           "GITHUB_REPO": "phase-gate-mcp",
-           "GITHUB_PROJECT_NUMBER": "1"
+           "GITHUB_OWNER": "${env:GITHUB_OWNER}",
+           "GITHUB_REPO": "${env:GITHUB_REPO}",
+           "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
          }
        }
      }
@@ -212,17 +212,17 @@ This tracked setup policy and the tracked AGENTS.md instructions survive cloning
 
 All core files defining the agent behaviors, constraints, workflows, and role prompts are fully tracked in Git and immediately available when cloning the repository. 
 
-Verify that the following files are present in your workspace:
-* **Project Rules (Always-on instructions):** [AGENTS.md](file:///c:/temp/pgmcp/AGENTS.md)
+Verify that the following files are present in your workspace; links show their tracked product sources:
+* **Project Rules (Always-on instructions):** [AGENTS.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/AGENTS.md)
 * **Custom Slash Commands / Workflows:**
-  * [create-issue.md](file:///c:/temp/pgmcp/.agents/workflows/create-issue.md)
-  * [end-issue.md](file:///c:/temp/pgmcp/.agents/workflows/end-issue.md)
-  * [go.md](file:///c:/temp/pgmcp/.agents/workflows/go.md)
-  * [start-issue.md](file:///c:/temp/pgmcp/.agents/workflows/start-issue.md)
+  * [create-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/create-issue.md)
+  * [end-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/end-issue.md)
+  * [go.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/go.md)
+  * [start-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/start-issue.md)
 * **Specialized Agent Roles:**
-  * **Coordination Authority (@co):** [.github/agents/co.agent.md](file:///c:/temp/pgmcp/.github/agents/co.agent.md) (VS Code) & [.agents/rules/co.agent.md](file:///c:/temp/pgmcp/.agents/rules/co.agent.md) (Antigravity)
-  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](file:///c:/temp/pgmcp/.github/agents/imp.agent.md) (VS Code) & [.agents/rules/imp.agent.md](file:///c:/temp/pgmcp/.agents/rules/imp.agent.md) (Antigravity)
-  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](file:///c:/temp/pgmcp/.github/agents/qa.agent.md) (VS Code) & [.agents/rules/qa.agent.md](file:///c:/temp/pgmcp/.agents/rules/qa.agent.md) (Antigravity)
+  * **Coordination Authority (@co):** [.github/agents/co.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/co.agent.md) (VS Code) & [.agents/rules/co.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/co.agent.md) (Antigravity)
+  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/imp.agent.md) (VS Code) & [.agents/rules/imp.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/imp.agent.md) (Antigravity)
+  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/qa.agent.md) (VS Code) & [.agents/rules/qa.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/qa.agent.md) (Antigravity)
 
 *To activate an agent role in VS Code, load `@file:.github/agents/<role>.agent.md` (e.g., `@file:.github/agents/co.agent.md`). In Google Antigravity, load `@file:.agents/rules/<role>.agent.md` (e.g., `@file:.agents/rules/co.agent.md`).*
 

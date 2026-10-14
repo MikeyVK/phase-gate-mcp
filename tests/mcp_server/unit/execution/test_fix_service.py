@@ -471,7 +471,7 @@ class NativeRuntime(AdapterProcessRuntime):
 
 
 def catalog(root: Path, config_root: Path):
-    loader = ConfigLoader(config_root, root / ".pgmcp/templates")
+    loader = ConfigLoader(config_root)
     return AdapterCatalogLoader(
         root / "mcp_server/bundled_adapters",
         config_root / "adapters",
@@ -580,7 +580,7 @@ def test_required_fix_config_and_catalog_admission_without_execution(
     tmp_path: Path,
     pytestconfig: pytest.Config,
 ) -> None:
-    loader = ConfigLoader(tmp_path, pytestconfig.rootpath / ".pgmcp/templates")
+    loader = ConfigLoader(tmp_path)
     config_file = tmp_path / "fixes.yaml"
     authored = (pytestconfig.rootpath / ".pgmcp/config/fixes.yaml").read_text(encoding="utf-8")
     with pytest.raises(ConfigError):

@@ -3,8 +3,8 @@
 import json
 import time
 
-from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.exceptions import MCPSystemError
+from mcp_server.core.interfaces import IGitContextReader, IStateReader
 from mcp_server.resources.base import BaseResource
 
 
@@ -14,21 +14,16 @@ class StatusResource(BaseResource):
     uri_pattern = "pgmcp://status/phase"
     description = "Current development phase and git status"
 
-    def __init__(self, git_adapter: GitAdapter | None = None) -> None:
-        self.git = git_adapter or GitAdapter()
+    def __init__(self, git_context_reader: IGitContextReader, state_reader: IStateReader) -> None:
+        self._git = git_context_reader
+        self._state_reader = state_reader
 
     async def read(self, uri: str) -> str:  # noqa: ARG002
         """Read status."""
         try:
-            git_status = self.git.get_status()
-
-            # Simple logic to determine phase based on branch
+            git_status = self._git.get_status()
             branch = git_status["branch"]
-            phase = "Implementation"  # Default
-            if branch == "main":
-                phase = "Maintenance"
-            elif branch.startswith("docs/"):
-                phase = "Documentation"
+            phase = self._state_reader.load(branch).current_phase
 
             data = {
                 "current_phase": phase,

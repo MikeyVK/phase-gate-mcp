@@ -3,8 +3,8 @@
 # Issue 319 — native policy findings and deliberate workspace quality setup
 
 **Status:** APPROVED STRATEGY — COMPACT DESIGN FOR REVIEW  
-**Version:** 0.9  
-**Last Updated:** 2026-10-13
+**Version:** 0.11  
+**Last Updated:** 2026-10-14
 
 ## Purpose
 
@@ -260,6 +260,8 @@ a separate owner discussion; it is not implemented by this revision.
 
 Owner-approved GitHub identity repair, 2026-10-13: remove concrete owner/repository defaults and the unused implicit project-board number; unset values remain None. Preserve startup/health/local editing without GitHub setup, but refuse GitHub use before client construction when credentials or repository identity are incomplete. Config resolution belongs exclusively to the existing entrypoint/composition root. GitHubAdapter requires injected GitHubSettings and reads no environment/YAML; GitHubManager receives that narrow value and retains lazy adapter construction. Bootstrap supplies its resolved settings.github and the existing GitHub resource receives the same manager through its existing constructor parameter. Standalone callers must resolve/inject settings explicitly. Internal constructor consumers make a clean break, without compatibility paths or new error/presenter architecture. Adapt existing behavioral tests proportionally. Independent QA corrected the originally proposed adapter-owned settings reload and gave entry GO for this corrected boundary. Additional PR-base/state-inference/template-root findings and wheel-content/manifest candidates are investigation/proposals only; no packaging-content choices are approved by this repair.
 
+Owner-directed final scope cap, 2026-10-14: retain the implemented native lint/configuration-choice maintenance, exception diagnostics, safe-edit report recovery and GitHub identity repair. The owner explicitly includes the investigated status-phase fallback, unused template/configuration paths and document-portability repairs (including the stale S1mpleTrader instruction). Use existing read-only state/configuration contracts, remove proven unused paths and adapt existing behavior tests without a new architecture or compatibility route. New explicit parent/head initialization and PR contracts, state-mutator changes, release-manifest/build content policy and test-harness housekeeping remain deferred. A new release, version bump, package build, tagging and publication are explicitly postponed; earlier provisional v3.1.0 preparation language is superseded for this closeout. The investigated directions, consumer inventory and bounded closeout are recorded once in [Scope closure and deferred work](deferred.md). This decision supersedes any reading of earlier investigation/proposals as authorization to implement them on this branch. Current implementation still needs fresh final Validation and independent review after the identity repair.
+
 ## Expected Results
 
 The selected strict lint policy passes after bounded justified repairs. Existing command/error/cleanup/cancellation behavior remains correct. Valid binding choices permit existing native calls with unchanged argument selection; unresolved choices produce a factual configured diagnostic before applicable adapter execution or fix mutation. Startup remains usable for setup/recovery. No implicit source/policy guarantee is claimed. Setup instructions explain all nine tools and demonstrate a deliberate initial scoped verification. No expanded asset builder/distribution scope.
@@ -330,4 +332,5 @@ adding native exclusions or force-exclude. Git history preserves the old code.
 | 0.7 | 2026-10-13 | @imp implementer | Record owner-approved removal of the unused old supervisor archive instead of adding exclusions. |
 | 0.8 | 2026-10-13 | @imp implementer | Record owner-approved safe-edit report setup exception with truthful unexecuted-check facts; keep deployment strategy separate. |
 | 0.9 | 2026-10-13 | @imp implementer | Record approved GitHub identity removal and explicit narrow settings/resource injection; keep further fallback and distribution candidates pending owner decisions. |
-
+| 0.10 | 2026-10-14 | @imp implementer | Record owner-directed Chore scope cap and link investigated follow-up work; retain implemented identity repair and require current final validation. |
+| 0.11 | 2026-10-14 | @imp implementer | Include owner-selected fallback/document-portability repairs and explicitly defer the new release, while preserving parent/head and package-content deferrals. |

@@ -36,7 +36,7 @@ def syntax_package(tmp_path: Path, pytestconfig: pytest.Config) -> SyntaxPackage
     source = pytestconfig.rootpath / "mcp_server/bundled_adapters/python_syntax"
     root = tmp_path / "official packages" / "python_syntax"
     copytree(source, root)
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",

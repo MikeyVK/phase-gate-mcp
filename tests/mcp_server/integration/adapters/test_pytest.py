@@ -62,7 +62,7 @@ def native_case(tmp_path: Path, pytestconfig: pytest.Config) -> NativeCase:
 
 
 def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
-    loader = ConfigLoader(case.repo_root / ".pgmcp/config", case.repo_root / ".pgmcp/templates")
+    loader = ConfigLoader(case.repo_root / ".pgmcp/config")
     catalog = AdapterCatalogLoader(
         case.adapter_root or case.repo_root / "mcp_server/bundled_adapters",
         case.workspace / "no workspace adapters",

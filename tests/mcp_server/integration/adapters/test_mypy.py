@@ -38,7 +38,7 @@ def mypy_package(tmp_path: Path, pytestconfig: pytest.Config) -> MypyPackage:
     (workspace / "pyproject.toml").write_bytes(
         (pytestconfig.rootpath / "pyproject.toml").read_bytes()
     )
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",

@@ -541,7 +541,6 @@ def make_dispatch_server(settings: Settings) -> MCPServer:
     server_root = Path(settings.server.workspace_root) / settings.server.server_root_dir
     presentation = ConfigLoader(
         config_root=server_root / "config",
-        template_root=server_root / "template_suite",
     ).load_presentation_config()
     return MCPServer(
         settings=settings,
@@ -603,9 +602,7 @@ def make_template_suite_admission(
 
     def create_config(config_path: Path, suite_path: Path) -> ConfigLoader:
         contracts = TemplateContractLoader(suite_path)
-        return ConfigLoader(
-            config_path, suite_path, context_schema_reader=contracts.load_context_schema
-        )
+        return ConfigLoader(config_path, context_schema_reader=contracts.load_context_schema)
 
     def create_catalog(
         suite_path: Path, config: ConfigLoader, profiles: frozenset[str]

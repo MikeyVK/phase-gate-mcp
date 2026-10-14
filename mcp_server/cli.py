@@ -51,7 +51,7 @@ def _capture_startup_diagnostic(
 
 def _reset_binding_choices(server_root: Path) -> None:
     """Clear inherited acknowledgements only in fresh-init configuration."""
-    loader = ConfigLoader(server_root / "config", server_root / "template_suite")
+    loader = ConfigLoader(server_root / "config")
     declarations = (
         ("checks", loader.load_checks_config()),
         ("tests", loader.load_tests_config()),

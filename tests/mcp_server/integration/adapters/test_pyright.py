@@ -59,7 +59,7 @@ def pyright_package(
     copytree(pytestconfig.rootpath / "mcp_server/bundled_adapters/pyright", root)
     workspace = native_pyright.root / tmp_path.name
     workspace.mkdir()
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",

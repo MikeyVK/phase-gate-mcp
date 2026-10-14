@@ -14,7 +14,7 @@
 
 Complete reference documentation for all 17 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
 
-All GitHub operations require a `GITHUB_TOKEN` to execute. The five issue tools remain
+GitHub operations require a token and explicit repository owner/name in resolved settings. Local startup, health and editing remain available without GitHub setup. The five issue tools remain
 registered without a token so their schemas are discoverable; the twelve PR, label, and
 milestone tools are active only when credentials are configured.
 
@@ -36,7 +36,7 @@ All tools:
 - ✅ Validate inputs before API calls
 - ✅ Return structured responses with detailed error messages
 - ✅ Require `GITHUB_TOKEN` environment variable
-- ✅ Detect repository from git remote or `GITHUB_REPO` env var
+- ✅ Use explicitly supplied repository owner/name from resolved settings; no git-remote inference
 
 ### Presentation and Cache Contract
 
@@ -62,7 +62,8 @@ Check the returned fields and any explicit failure status before reporting an ou
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `GITHUB_TOKEN` | **Yes** | None | GitHub personal access token (classic or fine-grained) |
-| `GITHUB_REPO` | No | Auto-detected from git remote | Repository in `owner/repo` format |
+| `GITHUB_OWNER` | **Yes for GitHub use** | None | Repository owner; may also be supplied in the settings overlay |
+| `GITHUB_REPO` | **Yes for GitHub use** | None | Repository name, separate from owner; may also be supplied in the settings overlay |
 
 **Token Permissions (minimum):**
 - Issues: `repo` scope or fine-grained `issues:write`

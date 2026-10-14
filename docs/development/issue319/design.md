@@ -3,8 +3,8 @@
 # Issue 319 — bounded quality configuration choice
 
 **Status:** DRAFT — INDEPENDENT REVIEW REQUIRED  
-**Version:** 0.5  
-**Last Updated:** 2026-10-13
+**Version:** 0.6  
+**Last Updated:** 2026-10-14
 
 ## Purpose
 
@@ -126,6 +126,14 @@ attachments and JSON fallbacks available; no new DTO or presenter pipeline is ad
 The owner-approved unused label-sync method/helper and their ten exclusive tests are
 removed from the configuration model. Metadata validation, lookups and conversion remain.
 
+### Owner-retained fallback and portability repair boundary — 2026-10-14
+
+StatusResource receives the existing read-only IGitContextReader and IStateReader interfaces. Bootstrap supplies the existing Git manager and a BranchValidatedStateReader around the existing repository. The resource reads current_phase from the matching persisted state; missing/mismatched state remains an error. There is no branch-name phase policy or new state contract.
+
+ConfigLoader accepts config_root and the active keyword-only context_schema_reader; its unused template_root argument/attribute and incidental Settings reload are removed. Remove the unused production resolve_config_root helper and bootstrap _build_config_layer method plus their exclusive helper tests. Existing optional-root callers need no new argument; explicit unused arguments are mechanically removed. ServerSettings owns the default template_suite root; startup and renewal use that property while preserving intentional legacy-suite migration. No root probing or compatibility shim is added.
+
+Correct existing active identity examples, machine-local source links and the stale S1mpleTrader reboot instruction. Preserve product provenance. The owner explicitly postpones any new release, version bump, package build, tagging or publication. Parent/head registration and manifest/content design remain deferred in [the scope record](deferred.md).
+
 ## Test Design
 
 Adapt existing public configuration/execution tests with a small parametrized set across check/test/fix/content routes: unresolved setup refuses with zero invocations/side effects, all admitted choices retain native args/args_source, caller args cannot acknowledge an unresolved binding, and empty/not-applicable branch selection remains neutral. Verify scaffold and edit-enforce setup refusal, edit-report guarded writes with truthful unexecuted-check facts, and preserved original-file/persistence blockers. Use existing native-lint/CLI/setup behavior tests for repairs; avoid testing literal YAML/doc text. Reuse fresh evidence and keep the required full configured suite in Validation.
@@ -145,3 +153,4 @@ Adapt existing public configuration/execution tests with a small parametrized se
 | 0.3 | 2026-10-13 | @imp implementer | Specify approved exception ownership using existing wrapper/error DTOs and renewal presenter; preserve domain and post-write diagnosis without a new architecture. |
 | 0.4 | 2026-10-13 | @imp implementer | Keep scratch and fallback diagnostics in existing boundaries; record approved unused label-sync and test cleanup. |
 | 0.5 | 2026-10-13 | @imp implementer | Define approved safe-edit report continuation for unresolved setup, preserving validation facts and all write guards. |
+| 0.6 | 2026-10-14 | @imp implementer | Bound retained state/config fallback and document-portability repairs to existing contracts; explicitly postpone release and preserve parent/head/manifest deferrals. |

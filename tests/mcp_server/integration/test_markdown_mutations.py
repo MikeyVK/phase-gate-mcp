@@ -56,9 +56,7 @@ def markdown_environment(
     monkeypatch.setenv(
         "PATH", str(lychee_runtime.executable.parent) + os.pathsep + os.environ.get("PATH", "")
     )
-    loader = ConfigLoader(
-        pytestconfig.rootpath / ".pgmcp/config", pytestconfig.rootpath / ".pgmcp/template_suite"
-    )
+    loader = ConfigLoader(pytestconfig.rootpath / ".pgmcp/config")
     catalog = AdapterCatalogLoader(
         pytestconfig.rootpath / "mcp_server/bundled_adapters",
         tmp_path / "workspace adapters",

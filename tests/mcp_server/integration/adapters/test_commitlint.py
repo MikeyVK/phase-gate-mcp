@@ -71,7 +71,7 @@ def commitlint_runtime(
 def package_for(runtime: CommitlintRuntime, tmp_path: Path, repo_root: Path) -> CommitlintPackage:
     root = tmp_path / "official packages" / "commitlint"
     copytree(repo_root / "mcp_server/bundled_adapters/commitlint", root)
-    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+    loader = ConfigLoader(tmp_path / "config")
     catalog = AdapterCatalogLoader(
         root.parent,
         tmp_path / "workspace adapters",
