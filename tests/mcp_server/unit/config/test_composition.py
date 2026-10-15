@@ -7,6 +7,7 @@ from copy import deepcopy
 
 # Third party
 import pytest
+from pydantic import ValidationError
 from pydantic_settings import (
     DotEnvSettingsSource,
     EnvSettingsSource,
@@ -16,6 +17,7 @@ from pydantic_settings import (
 
 # Project
 from mcp_server.config.composition import compose_configuration
+from mcp_server.config.schemas.checks_config import ConfiguredCheck
 
 
 def test_updates_nested_fields_and_adds_objects_without_losing_inheritance() -> None:
@@ -92,13 +94,12 @@ def test_external_settings_sources_are_not_executed(monkeypatch: pytest.MonkeyPa
         "setting": "workspace"
     }
 
+
 def test_deletes_only_the_requested_inherited_member() -> None:
     defaults = {"checks": {"lint": {"timeout": 60}, "format": {"timeout": 30}}}
     override = {"checks": {"format": {"$delete": True}, "lint": {"timeout": 90}}}
     before = deepcopy((defaults, override))
-    assert compose_configuration(defaults, override) == {
-        "checks": {"lint": {"timeout": 90}}
-    }
+    assert compose_configuration(defaults, override) == {"checks": {"lint": {"timeout": 90}}}
     assert (defaults, override) == before
 
 
@@ -123,10 +124,6 @@ def test_rejects_invalid_deletion_without_mutating_inputs(
 
 
 def test_deleted_fields_follow_existing_model_required_and_default_rules() -> None:
-    from pydantic import ValidationError
-
-    from mcp_server.config.schemas.checks_config import ConfiguredCheck
-
     defaults = {
         "adapter_id": "ruff",
         "capability": "lint",
@@ -134,9 +131,7 @@ def test_deleted_fields_follow_existing_model_required_and_default_rules() -> No
         "default_args": [],
         "configuration_choice": "native_discovery",
     }
-    optional = compose_configuration(
-        defaults, {"configuration_choice": {"$delete": True}}
-    )
+    optional = compose_configuration(defaults, {"configuration_choice": {"$delete": True}})
     assert ConfiguredCheck.model_validate(optional).configuration_choice is None
     required = compose_configuration(defaults, {"timeout_seconds": {"$delete": True}})
     with pytest.raises(ValidationError, match="timeout_seconds"):
