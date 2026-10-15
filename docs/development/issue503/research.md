@@ -3,7 +3,7 @@
 # Issue 503 — explicit branch registration and PR target authority
 
 **Status:** RESEARCH DRAFT — OWNER CHOICES PENDING  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -60,7 +60,17 @@ Project metadata and state are persisted separately today. Research does not cla
 
 The existing read has a concrete side effect: FileStateRepository.load catches malformed/version-invalid state and calls StateVersionValidator.backup_file, which **renames** the active file to .bak; an existing backup is overwritten. The repository test explicitly expects the original file to disappear. Source-derived sequence: the first read fails after moving the file; a later initialization sees absence and can proceed. This is a code-path finding, not a destructive live reproduction. The validator also wraps read OSError as StateCorruptedError, retaining its cause; those failures can enter this backup path.
 
-The bounded proposal is to make branch-state reads leave the original untouched and propagate the diagnostic. Only genuine absence admits initialization; schema/I/O failures must not be caught as absence by the initialization guard or ordinary mutator. This needs owner agreement below. Do not change the shared backup command globally: ProjectManager invokes it explicitly in planning **command** paths, and its separate semantics are outside #503. Sources: [repository](../../../mcp_server/managers/state_repository.py):79–91, [validator](../../../mcp_server/managers/state_version_validator.py):56–101, [repository test](../../../tests/mcp_server/unit/managers/test_state_repository.py):100–118, [planning commands](../../../mcp_server/managers/project_manager.py):305–314 and 574–587.
+The bounded proposal is to make branch-state reads leave the original untouched and propagate the diagnostic. Only genuine absence admits initialization; schema/I/O failures must not be caught as absence by the initialization guard or ordinary mutator. The owner requested further discussion before deciding this change. No backup change is approved. Do not change the shared backup command globally: ProjectManager invokes it explicitly in planning **command** paths, and its separate semantics are outside #503. Sources: [repository](../../../mcp_server/managers/state_repository.py):79–91, [validator](../../../mcp_server/managers/state_version_validator.py):56–101, [repository test](../../../tests/mcp_server/unit/managers/test_state_repository.py):100–118, [planning commands](../../../mcp_server/managers/project_manager.py):305–314 and 574–587.
+
+No production consumer of state.json.bak or deliverables.json.bak was found in the bounded source search. The current command preserves invalid bytes but does not restore, repair or migrate them; the subsequent absence is not successful recovery. This differs from template-activation backups, which have their own unrelated lifecycle. Compare the viable strategies:
+
+| Read-error strategy | Benefit | Cost / risk |
+| --- | --- | --- |
+| Retain automatic rename | Keeps the existing observable behavior and leaves one invalid-file backup. | A read removes the active registration; later initialization can treat it as absent. The query still mutates files and replaces prior backup evidence. |
+| Copy a backup and keep the active file | Preserves the blocking file while retaining a separate diagnostic copy. | Adds write/failure policy to a read and needs backup-overwrite handling; no actual repair is provided. |
+| Leave the active file untouched and raise | Preserves original evidence and repeats the same blocking condition until deliberate repair; follows CQS. | Automatic .bak creation is removed at this read boundary. Recovery must be deliberate with existing edit/Git facilities; no new repair tool is proposed. |
+
+The third option remains the producer recommendation, pending the owner's decision. This research has not demonstrated an actual #503 data-loss incident.
 
 ### Bounded production seams
 
@@ -126,7 +136,7 @@ The last durable full-suite evidence is #319 at production snapshot 18095d0e: ru
 | Warning group / current source | Relation to #503 | Proposed treatment |
 | --- | --- | --- |
 | AnyIO cancellable=True in project_tools.py:209 | The deprecated argument is inside the parent-reflog helper being removed. | Disappears with the approved clean break; no separate API migration or test. |
-| Module-wide asyncio mark in test_context_loaded_enforcement.py:59 | Marks seven synchronous and two asynchronous tests; this file already needs registration-fixture migration. | If the file is changed, restrict marking to its two async tests. Small adjacent test-metadata repair, subject to scope agreement. |
+| Module-wide asyncio mark in test_context_loaded_enforcement.py:59 | Marks seven synchronous and two asynchronous tests; this file already needs registration-fixture migration. | If the file is changed, restrict marking to its two async tests. Small adjacent test-metadata repair, approved by the owner with the bounded test-coupling work. |
 | Resource-return deprecation, server.py:95–100 returning str | Shared MCP resource boundary; repeated callers can multiply occurrences. | Separate maintenance; do not change the resource protocol under branch-registration work. |
 | Pydantic SchemaAttachment.schema shadowing, core/tool_execution.py:40–46 | Existing comment records an intentionally chosen field name. | Do not rename this independent public contract opportunistically. |
 | Pytest collection-name collisions | Current candidates include imported TestsConfig in unit/resources/test_standards.py:7 and TestCapability in integration/adapters/test_pytest.py:21. | Separate test housekeeping; no complete per-class warning count is claimed. |
@@ -144,10 +154,9 @@ Bounded delegated research supplied findings for test coupling and warning relev
 
 ## Questions
 
-Two bounded strategy additions await the owner before Research can close:
+One strategy choice remains before Research can close: how branch-state reads handle invalid files. The owner requested discussion of the existing automatic rename and recovery consequences before deciding. The source facts and three bounded alternatives are recorded above; no change to backup behavior is authorized.
 
-1. Leave invalid branch-state files untouched on reads and block with the existing diagnosis, rather than automatically moving them to .bak. Keep explicit planning-command backups outside this change.
-2. Permit consolidation of only affected incidental test setup through existing fixtures/factories and at most one explicit preparation helper; replace/remove weak source assertions in the directly changed area and correct the adjacent asyncio marker if that fixture file changes.
+The owner approved the limited reduction of test coupling, including affected incidental preparation, directly affected weak source assertions and the adjacent asyncio marker. That decision is now part of Approved Strategy.
 
 Other operational details belong to Design within the already approved boundaries: concrete input/model signatures, exact identity checks, existing diagnostic projection and validation order. They do not require a new state framework, transaction layer or compatibility decision.
 
@@ -166,7 +175,7 @@ Other operational details belong to Design within the already approved boundarie
 
 ## Approved Strategy
 
-Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. The two additional proposals in Questions are pending owner decisions, not approved scope. Research remains open and no transition to Design is authorized by this document.
+Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. Additional owner decision, 2026-10-15: consolidate only affected incidental test preparation through existing fixtures/factories and at most one helper with explicit parent/context; retain direct registration-contract tests, replace/remove weak source assertions within directly changed tests, and restrict the context module's asyncio marker if that file changes. No suite-wide cleanup or production fallback is authorized. The branch-state backup strategy remains pending discussion. Research remains open and no transition to Design is authorized by this document.
 
 ## Expected Results
 
@@ -234,4 +243,6 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-15 | @imp researcher | Refresh deferred #319 source observations, consumer counts and approved direction for the bounded #503 Research; no production/test changes. |
 | 0.2 | 2026-10-15 | @imp researcher | Identify branch-state read/rename effects, bound production seams, classify necessary versus incidental test coupling and historical warning relevance; record two pending owner choices. |
+| 0.3 | 2026-10-15 | @imp researcher | Capture owner approval for bounded test decoupling and document existing backup/recovery behavior and alternatives for the remaining owner discussion. |
+
 
