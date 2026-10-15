@@ -3,7 +3,7 @@
 # Issue 504 — Configuration basis and workspace override research
 
 **Status:** RESEARCH COMPLETE — INDEPENDENT REVIEW PENDING  
-**Version:** 0.15  
+**Version:** 0.16  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -80,19 +80,19 @@ External evidence remains bounded: mergedeep recursively combines mappings and r
 
 Demonstrated needs are workspace check arguments/acknowledgements, production and artifact roots, local identities/trust, and targeted policy additions, changes or removals without copying unrelated inherited defaults. Earlier whole-object-list replacement and omission-only removal restrictions were evaluated and superseded by the owner's canonical id/order decision.
 
-Scalar/null values retain literal meaning. Ordinary value sequences must preserve order and duplicates where meaningful. The concrete choice between whole-value replacement and any justified set-like operation belongs to Design; no positional patch language or inference from arbitrary YAML shape is required by Research.
+Scalar/null values retain literal meaning. The final owner clarification below settles nonidentified sequences as whole field values. Earlier set-like operation proposals are superseded; no positional patching or inference from tool-specific list contents is authorized.
 
 ### Approved composition and source-admission boundaries
 
 Approved source invariants: canonical id for addressable objects; explicit order, independent of YAML position; targeted addition/change and explicit deletion; unrelated basis entries continue inheriting. Null remains a value. Existing object updates can inherit order; new objects require it; effective sibling ID/order collisions are errors. No implicit append, tie-break or renumbering. New ID-bearing entries must become complete valid objects after composition.
 
-### Removal semantics: approved requirement, Design-owned notation
+### Identity-based addressability: final owner clarification
 
-The owner requires targeted object addition/change, explicit removal and retained inheritance for unrelated objects. Null is a value, not an implicit deletion signal. The exact removal representation belongs to Design, not another Research approval gate.
+The owner defines addressability through explicit identity, not YAML list syntax or tool-specific semantics. An id-bearing object is independently addressable; its named fields and nested fields can be mutated. Nested id-bearing objects are independently addressable in their own parent collection. Elements without their own id are not individually targeted; their containing field value is the mutation unit.
 
-Research compared an inline remove marker, separate target paths and standard patch operations. Inline removal remains a candidate; neither remove: true nor $remove: true is approved syntax. Design must assess target identity, unknown/conflicting targets, malformed operations, required/referenced objects, and isolation from opaque native/user data. These are validity questions to resolve in the concrete contract, not a preselected marker schema.
+Do not introduce argv-aware merging, set-like scalar-list operations, positional selectors or type-specific list policies. A declared object collection identifies objects by id; an ordinary field containing a list is one whole value. The generic configuration contract distinguishes declared identities from opaque user data; it never invents identity from a field spelling, array index, dispatch type or domain selector.
 
-Ordered argv/reference/value sequences and genuinely set-like values require distinct treatment; the generic layer must not infer set semantics from a YAML list. Concrete collection operation syntax and its proportional scope belong to Design.
+Explicit removal remains required. Its notation belongs to Design. This clarification supersedes earlier discussion of optional set-like value-list operations; it does not reopen the approved canonical id/order or consumer normalization strategy.
 
 ### Approved uniform id contract: concrete impact inventory
 
@@ -441,7 +441,7 @@ Bundled assets are generated from the active source suite by the unchanged manif
 
 No unresolved owner strategy choice remains after the directed identity-impact analysis. The owner approved id/order through affected models and consumers, generic contract-driven composition, and explicit removal. The concrete removal notation is a Design decision.
 
-Design owns the exact source/operation grammar, metadata storage and types, configuration-owned component interfaces, ID-keyed runtime representation and proportional scalar/value-list treatment. The alternatives already researched are inputs, not approved syntax. Required nonoptional configuration remains required; optional overrides and optional enforcement preserve the approved absence behavior; malformed present input is an error. Explicit complete-file and standalone package reads remain distinct from workspace layering.
+Design owns the exact source/operation grammar, metadata storage and types, configuration-owned component interfaces, ID-keyed runtime representation and identity-based field-value handling. The alternatives already researched are inputs, not approved syntax. Required nonoptional configuration remains required; optional overrides and optional enforcement preserve the approved absence behavior; malformed present input is an error. Explicit complete-file and standalone package reads remain distinct from workspace layering.
 
 Research is complete and prepared for owner-coordinated independent review. No QA message or phase transition is performed here. If Design discovers a need for different reference values, public state/tool DTO changes, bespoke per-file transformation algorithms or build/upgrade machinery, reopen that boundary with the owner rather than silently expanding scope.
 
@@ -565,3 +565,4 @@ Preserve current consumer-facing loader calls; source-layout choices must fit th
 
 | 0.14 | 2026-10-15 | @imp researcher | Record directed id normalization through runtime consumers; withdraw id-to-name preservation; reserve removal notation for Design and reopen bounded consumer/test impact research. |
 | 0.15 | 2026-10-15 | @imp researcher | Complete identity-model/consumer/test impact evidence; preserve external/reference contracts, identify shared fixture coupling, reconcile superseded wording and close Research for independent review. |
+| 0.16 | 2026-10-15 | @imp designer | Record owner clarification: identity determines addressability; unidentifiable elements are whole field values; discard tool-specific/set-like list mutation proposals. |

@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 504,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "skip_reason": null,
   "issue_title": "refactor: Define portable configs and manifest-driven distribution",
   "created_at": "2026-10-15T08:51:59.483302+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-15T17:47:38.004840+00:00",
+      "human_approval_message": "Go voor design, wat moet er concreet ontworpen worden en welke vragen liggen hieraan ten grondslag.",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
