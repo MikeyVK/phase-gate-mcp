@@ -3,20 +3,20 @@
 # Issue 504 — Configuration basis and workspace override research
 
 **Status:** RESEARCH COMPLETE — INDEPENDENT REVIEW PENDING  
-**Version:** 0.17  
+**Version:** 0.19  
 **Last Updated:** 2026-10-15
 
 ## Purpose
 
-Reuse #319 findings to investigate a bounded configuration-source refactor. Preserve behavior and unrelated consumer contracts; carry canonical id into directly affected runtime models/consumers rather than translating it to a legacy name-as-identifier field.
+Reuse #319 findings to investigate a bounded configuration-source refactor. Preserve behavior and unrelated consumer contracts; use canonical mapping-key identities through directly affected configuration models/consumers rather than translating them to legacy technical-name fields.
 
 ## Scope In
 
-Separate canonical product configuration from workspace differences; compose and validate them within the loader boundary; preserve existing public loader calls and complete typed results; adapt focused loader/configuration tests and directly affected test preparation. In Documentation, also correct the active/bundled-source PR template's operative issue-closing output with focused rendering evidence. Retain the previously approved removal of the temporary initialization-time configuration_choice reset as a narrow configuration-write cleanup, not a redesign of initialization. The owner now explicitly extends scope to move GitHub repository identity into workspace configuration, retain environment-first token delivery with an explicit workspace-token alternative, remove old launcher/settings identity sources and correct directly affected documentation. Composition-root changes required for this new source contract are authorized exceptions. The owner additionally permits carrying canonical id through directly affected runtime models and consumers; unrelated consumers remain unchanged. This removes the earlier blanket prohibition on identity-contract consumer changes, not the prohibition on general architecture expansion.
+Separate canonical product configuration from workspace differences; compose and validate them within the loader boundary; preserve existing public loader calls and complete typed results; adapt focused loader/configuration tests and directly affected test preparation. In Documentation, also correct the active/bundled-source PR template's operative issue-closing output with focused rendering evidence. Retain the previously approved removal of the temporary initialization-time configuration_choice reset as a narrow configuration-write cleanup, not a redesign of initialization. The owner now explicitly extends scope to move GitHub repository identity into workspace configuration, retain environment-first token delivery with an explicit workspace-token alternative, remove old launcher/settings identity sources and correct directly affected documentation. Composition-root changes required for this new source contract are authorized exceptions. The final owner decision selects mapping-key identity and native deep merge; directly affected configuration containers/consumers may change, unrelated consumers remain unchanged. This removes the earlier blanket prohibition on identity-contract consumer changes, not the prohibition on general architecture expansion.
 
 ## Scope Out
 
-Package-builder code and content transformations, release-manifest redesign, #505 assembly reliability, wheel/sdist distribution acceptance, managed-basis activation and upgrade/recovery machinery, installation-state extensions, releases, deployment, #506 and #508 implementation, broad test cleanup, and consumer changes unrelated to the approved identity normalization or GitHub source composition. QA orchestration remains owner-controlled. Earlier combined execution of #504/#505 is superseded by the owner's narrower scope; neither issue is closed by this research decision.
+Package-builder code and content transformations, all release_manifest.yaml changes, #505 assembly reliability, wheel/sdist distribution acceptance, managed-basis activation and upgrade/recovery machinery, installation-state extensions, releases, deployment, #506 and #508 implementation, broad test cleanup, and consumer changes unrelated to the approved identity normalization or GitHub source composition. The owner now authorizes producer-monitored external QA through Planning, then interactive Implementation. Earlier combined execution of #504/#505 is superseded by the owner's narrower scope; neither issue is closed by this research decision.
 
 ## Problem Statement
 
@@ -31,7 +31,7 @@ Current configuration combines product policy with workspace paths, choices and 
 
 ## Background
 
-The owner directs an interactive process and coordinates QA. No independent review has been requested by the producer. #319's final strategy superseded native-config sample/export proposals: configuration_choice is an owner acknowledgement, not effective-source proof; unresolved choices refuse applicable use while setup/health remain available. Its fresh-init reset is implemented, while DF-319.2 deliberately left manifest content policy unapproved. Existing workspace settings and template-only renewal were preserved. Those findings are reused, not researched from zero. The owner subsequently narrowed #504 to configuration and loader refactoring, deferring the previously combined distribution/build work. The subsequent owner instruction explicitly restores the narrowly bounded PR-template closing fix for Documentation. Online issue bodies still describe the older combined scope; administrative reconciliation belongs to Coordination.
+The owner initially coordinated QA directly; the latest instruction authorizes producer-monitored independent Research/Design/Planning reviews and requires interactive Implementation thereafter. #319's final strategy superseded native-config sample/export proposals: configuration_choice is an owner acknowledgement, not effective-source proof; unresolved choices refuse applicable use while setup/health remain available. Its fresh-init reset is implemented, while DF-319.2 deliberately left manifest content policy unapproved. Existing workspace settings and template-only renewal were preserved. Those findings are reused, not researched from zero. The owner subsequently narrowed #504 to configuration and loader refactoring, deferring the previously combined distribution/build work. The subsequent owner instruction explicitly restores the narrowly bounded PR-template closing fix for Documentation. Online issue bodies still describe the older combined scope; administrative reconciliation belongs to Coordination.
 
 ## Findings
 
@@ -72,94 +72,45 @@ Multiple sources can own different facts without duplicating authority. Product 
 
 ### Composition evidence and approved boundary
 
-Whole-file/list replacement and deep mapping overlays were investigated but do not satisfy the later requirement for targeted inherited-object changes/removal. The owner now approved canonical id/order and generic contract-driven translation. Earlier alternatives are superseded by the approved id/order and explicit-removal strategy. Concrete operation notation and materialization contracts belong to Design.
-
-External evidence remains bounded: mergedeep recursively combines mappings and replaces lists without supplying stable item identity; RFC7396 uses null for deletion, which conflicts with literal-null acknowledgement semantics; RFC6902 provides explicit operations but addresses current anonymous arrays positionally. No merge dependency has been selected or locally probed. Pydantic's existing model/field metadata and before-validators supply reusable admission seams, not automatic source-identity semantics.
-
-### Concrete override needs, without a general patch language
-
-Demonstrated needs are workspace check arguments/acknowledgements, production and artifact roots, local identities/trust, and targeted policy additions, changes or removals without copying unrelated inherited defaults. Earlier whole-object-list replacement and omission-only removal restrictions were evaluated and superseded by the owner's canonical id/order decision.
-
-Scalar/null values retain literal meaning. The final owner clarification below settles nonidentified sequences as whole field values. Earlier set-like operation proposals are superseded; no positional patching or inference from tool-specific list contents is authorized.
-
-### Approved composition and source-admission boundaries
-
-Approved source invariants: canonical id for addressable objects; explicit order, independent of YAML position; targeted addition/change and explicit deletion; unrelated basis entries continue inheriting. Null remains a value. Existing object updates can inherit order; new objects require it; effective sibling ID/order collisions are errors. No implicit append, tie-break or renumbering. New ID-bearing entries must become complete valid objects after composition.
+The owner's final decision supersedes the earlier list-id matching and generic materializer proposal. Use native Pydantic Settings deep merge for additions/field changes; own composition extensions are limited to $delete and explicit order. release_manifest.yaml and its consumers remain excluded.
 
 ### Identity-based addressability: final owner clarification
 
-The owner defines addressability through explicit identity, not YAML list syntax or tool-specific semantics. An id-bearing object is independently addressable; its named fields and nested fields can be mutated. Nested id-bearing objects are independently addressable in their own parent collection. Elements without their own id are not individually targeted; their containing field value is the mutation unit.
+An object collection is a mapping with one canonical key identifier per object, including nested object collections. No repeated authored id, name alias or selector matching. An object with only scalar fields is still an object. Singleton records, references and real domain fields retain their meaning.
 
-Do not introduce argv-aware merging, set-like scalar-list operations, positional selectors or type-specific list policies. A declared object collection identifies objects by id; an ordinary field containing a list is one whole value. The generic configuration contract distinguishes declared identities from opaque user data; it never invents identity from a field spelling, array index, dispatch type or domain selector.
+Scalar/value lists are whole field values, preserve order/duplicates, and allow either dashes or brackets. Empty object collections are {}, empty value lists are []. Omission inherits; null remains literal; deletion uses the reserved singleton {$delete: true}. No positional/set/argv operations.
 
-Explicit removal remains required. Its notation belongs to Design. This clarification supersedes earlier discussion of optional set-like value-list operations; it does not reopen the approved canonical id/order or consumer normalization strategy.
+Formerly ordered object collections have strict integer order, inherited for partial updates and required on complete/new members, unique among siblings. No auto-append/renumber/tie-break. Lookup-only catalogs need no artificial execution order.
 
-### Approved uniform id contract: concrete impact inventory
+### Concrete object-collection inventory
 
-The owner approved one consistent id for independently addressable configuration objects and requested impact review before Design. Named source mapping entries and list name fields that currently carry identity must use the same canonical source identity. Structural singleton fields and scalar/value dictionaries do not all become objects. Classification must be explicit in the config contract, not guessed from arbitrary YAML shape.
+Read-only inspection of every root config YAML and the empty-catalog schemas establishes:
 
-Read-only source inventory: 18 current top-level YAML files = 17 runtime configuration files plus release_manifest build input; two additional JSON quality-policy assets. Fourteen runtime files contain affected object collections. Three have scalar/value-only contents. Empty contributor/milestone lists still have affected populated source contracts even though today's documents have no entries to annotate.
+| Files | Normalization |
+| --- | --- |
+| enforcement | Rules/actions to keyed ordered maps; tool/category/exemption/pattern values remain lists |
+| contracts | Phases, exit requirements, cycle exit check entries and branch-local artifacts to keyed ordered maps |
+| presentation | Collections, children and enum declarations to keyed ordered maps; templates/cases/references stay payload |
+| issues / labels | Issue types, labels and label patterns to maps; retain actual label.name and scalar categories/exceptions |
+| contributors / milestones | Empty maps and populated object maps; retain login/name/number/title |
+| checks / tests / fixes / artifacts | Already keyed; argument/root/pattern/reference lists remain whole values |
+| workflows / workphases / policies | Retain keyed catalogs, remove redundant technical identities; typed nested object declarations follow same rule |
+| adapters / git / scopes | Existing value lists remain |
+| release_manifest / check_schemas | Explicitly outside composition; manifest/build and JSON Schema semantics unchanged |
 
-| File | Addressable source collections and observed population | Existing runtime baseline; identity names now subject to directed change |
-| --- | --- | --- |
-| artifacts.yaml | artifacts: 23 keyed location objects | Existing keyed location collection / tuple representation and default_root/additional_roots values. |
-| checks.yaml | configured_targets: 6; checks: 11; profiles: 7 | Current keyed tuple collections, exact arguments, choice admission and profile references. profiles_by_extension stays a scalar lookup map. |
-| contracts.yaml | workflows: 7; phases: 39; exit_requires: 17; branch_local_artifacts: 2; schema also admits cycle_exit_requires lists | ID-keyed workflow lookup; phase technical name becomes id. CheckSpec.id already has correct semantics. Branch-local artifacts need identity independent of path; numeric cycle keys and artifact path/reason remain domain data. |
-| contributors.yaml | contributors: currently 0, populated schema has login/name | ContributorEntry login and optional human name. A display name is not blindly renamed to id. |
-| enforcement.yaml | enforcement: 6; actions: 6 | Ordered EnforcementRule/Action objects gain explicit configuration identity; existing type/tool/category/policy fields keep their dispatch meaning. The runner does not interpret source operations. |
-| fixes.yaml | fixes: 2 keyed binding objects | Existing keyed binding collection; arguments and acknowledgement behavior. |
-| issues.yaml | issue_types: 7; optional_label_inputs: 2 policy objects | Existing name-bearing issue entries and keyed input-policy payload. |
-| labels.yaml | labels: 18; label_patterns: 2 | Existing GitHub label name and existing pattern/color/description fields. |
-| milestones.yaml | milestones: currently 0, populated schema has number/title/state | Remote milestone number remains domain data, independent of any source collection identifier. |
-| policies.yaml | operations: 3 keyed policy objects | Existing operation map and operation_id; currently loaded, #506 removal not absorbed. |
-| presentation.yaml | tools: 49; global note groups: 4; collections: 24 direct + 1 child; enum cases: 7 | Existing tool/group dictionaries and collection/enum tuples, field selectors, placeholders and render order. Note-template/enum-case text lookup maps remain data, not object identity inferred from their values. |
-| tests.yaml | tests: 1 keyed binding | Existing keyed test collection and active/choice semantics. |
-| workflows.yaml | workflows: 7 keyed objects with name | Existing workflow dictionary and WorkflowTemplate.name duplicate technical identity. Carry id into the model and its consumers; do not preserve name via a source-id projection. |
-| workphases.yaml | phases: 8 keyed objects; schema also admits entry/exit expectation objects | Same phase dictionary, codec vocabulary, terminal detection and metadata. No new workflow semantics or completion mechanism. |
-
-adapters.yaml (trusted ID values), git.yaml (conventions) and scopes.yaml (strings) need C ownership/location handling but no object-ID wrappers for their current fields. New github.yaml is a singleton integration declaration, not an addressable object collection. release_manifest.yaml and its asset list, adapter manifests, template manifests/policies/context schemas and the two check_schemas files keep their separate contracts; the ID rule does not silently rewrite all YAML/JSON in the repository.
+[Existing schemas](../../../mcp_server/config/schemas/) own field/object types. Strings containing Markdown/Jinja/YAML are data, not recursively parsed structures.
 
 ### Completed runtime identity and consumer impact analysis
 
-The owner approved carrying id through directly affected models and consumers, with no id-to-name compatibility projection. This table records source inspection, not implemented behavior. Existing string identity values remain stable, so the change is field/representation normalization rather than renaming configured workflows or phases.
+The prior list-id census is a historical baseline, not the chosen representation. The final mapping-key contract changes affected config containers/iterations. It does not inject duplicate id fields into every model or translate source identity back to name.
 
-| Boundary | Observed current dependency | Directed consequence and preservation limit |
-| --- | --- | --- |
-| WorkflowTemplate.name / workflows.py | get_workflow returns the catalog entry; production lookup uses workflow dictionary keys, not the entry's name attribute | Replace the technical identity field with id. Preserve ID-keyed catalog lookup and execution-mode values. Direct entry-name reads found only in tests. |
-| WorkflowPhaseEntry.name / contracts_config.py | Cycle-owner validation, first/last phase checks, ordered phase lookup and get_phase_names read name | Use id throughout this model/helper boundary. The name-specific helper has one direct production caller in discovery_tools and two test callers; do not preserve a name alias. |
-| Phase references outside the contract model | ConfigValidator._validate_phase_contracts reads phase_entry.name; ProjectManager._validate_planning reads phase.name | These two direct consumers change to id. Preserve unknown-phase rejection, cycle ownership and planning validation behavior. |
-| IssueTypeEntry.name / issue_config.py | _index is built from entry.name; GitHubManager.validate_issue_params and CreateIssueTool.input_schema read it | Use id for indexing, valid-type errors and schema enum generation. Existing issue_type values and tool input field stay unchanged. |
-| OperationPolicy.operation_id / operation_policies_config.py | ConfigLoader injects the field from a mapping key. No direct production attribute read was found; two tests read it | Replace the technical field with id and remove the special injection. Preserve policy lookup/decisions. Do not absorb #506's assessment/removal. |
-| Existing keyed object collections | Workflow/phase catalogs, checks/targets/profiles, fixes/tests, artifact locations, operation maps and presentation tool/group maps already use stable keys | Source id remains canonical through object models and ID-keyed runtime lookup. A key is an index of that same identity, not another authored identity. Design may retain useful dictionary/keyed-tuple interfaces; no legacy field alias or implicit second identity. |
-| Currently anonymous objects | EnforcementRule/Action, BranchLocalArtifact, LabelPattern, presentation Collection/EnumCase declarations, and populated contributor/label/milestone entries lack independent configuration identity | Add explicit identity at the configuration model boundary. Keep payload/selector/external-domain fields. Most consumers use those fields and iteration, so adding identity does not imply changing execution logic. |
-| Existing runtime CheckSpec.id | Shared by configured gates and deliverables.json admission; PhaseContractResolver merges checks by id, WorkflowGateRunner executes them | Already canonical. Preserve its shared planning/deliverable contract; source composition metadata must not introduce required order/removal fields into planning input. |
+Direct seams: config models/loader/validator; EnforcementRunner; workflow/phase helpers and ProjectManager/discovery; IssueConfig/GitHubManager/CreateIssueTool; label/contributor/milestone lookups; TextPresenter/collection renderer; PhaseContractResolver and bootstrap merge-readiness projection. Consumers use keys for identity and explicit validated order; they do not merge layers.
 
-Direct production identity-reading changes outside schema classes are confined to ConfigLoader, ConfigValidator, ProjectManager, GitHubManager and CreateIssueTool; DiscoveryTools is additionally affected by normalization of the get_phase_names helper. This is the identified direct set, not a guarantee that every file in the wider configuration-source refactor is listed here.
+WorkflowTemplate.name, WorkflowPhaseEntry.name, IssueTypeEntry.name and OperationPolicy.operation_id are redundant technical identities and are removed without aliases. Preserve real label.name, login/name, milestone number/title, presentation field/type and existing reference values.
 
-The model population remains the 14 inventoried runtime configuration contracts. In particular: PhaseDefinition/WorkflowEntry and binding/location/profile models need consistent identity handling; EnforcementRule/Action and presentation declarations need independent id rather than reusing dispatch type or DTO field. IssueConfig.optional_label_inputs and workphase expectation payloads currently use broad dictionaries; Design must declare their object-versus-opaque role and validate the supported structure without filename branches. Adding identity must not silently turn the materializer into another domain validator.
+Shared CheckSpec.id is a planning/runtime contract and stays unchanged. Config requirement maps supply key identity and ordered payloads; existing PhaseContractResolver constructs CheckSpec without config order. Reuse shared payload constraints rather than duplicate validation. This directed projection and both resolution paths are in scope; planning/state/commit/tool DTO redesign is excluded.
 
-| Preserve as real domain/reference data | Reason |
-| --- | --- |
-| Label.name, ContributorEntry.login/name, MilestoneEntry.number/title | External GitHub names/numbers or human-readable content; lookup by an external value is not the configuration object's override identity. Preserve those lookup functions. |
-| Presentation field, cases, templates and tool registration names | DTO selection, text data and MCP tool identity; do not substitute a newly invented configuration id into a DTO property path or tool API. |
-| adapter_id, capability, workflow and phase references | References keep their meaning and existing target values. A reference field need not be called plain id; id defines the referenced object. |
-| State workflow_name/current_phase, planning phase keys and commit scope values | These store/carry references. Unchanged target values allow preserving state schema, tool DTOs, encoder/decoder and Git history. No new state migration is justified. |
-| CheckSpec.id and existing cycle/deliverable identifiers | Already defined shared domain contracts; do not widen this config refactor into planning identifiers or cycle rules. |
-
-Data-shape consumers inspected beyond the direct rename set include PhaseStateEngine and PhaseContractResolver (get_phase and unchanged payload fields), EnforcementRunner (rule/action fields), PR submission (artifact.path), check/test/fix execution selectors (ID-keyed binding collections), ArtifactTargetResolver (template-ID-keyed locations), StandardsResource (explicit policy projection) and TextPresenter/collection renderer (tool-ID lookup and field selectors). Preserve their behavior; only actual changed identity access/representation warrants edits. No consumer receives layer merge logic.
-
-Primary navigation:
-- [Workflow identity](<../../../mcp_server/config/schemas/workflows.py>)
-- [Phase and shared gate identities](<../../../mcp_server/config/schemas/contracts_config.py>)
-- [Issue identity](<../../../mcp_server/config/schemas/issue_config.py>)
-- [Operation identity](<../../../mcp_server/config/schemas/operation_policies_config.py>)
-- [Cross-config references](<../../../mcp_server/config/validator.py>)
-- [Planning phase consumer](<../../../mcp_server/managers/project_manager.py>)
-- [Issue manager consumer](<../../../mcp_server/managers/github_manager.py>)
-- [Issue enum consumer](<../../../mcp_server/tools/issue_tools.py>)
-- [Discovery helper consumer](<../../../mcp_server/tools/discovery_tools.py>)
-- [Unchanged shared gate merge](<../../../mcp_server/managers/phase_contract_resolver.py>)
-- [Explicit resource projection](<../../../mcp_server/resources/standards.py>)
+[Loader](../../../mcp_server/config/loader.py), [contract models](../../../mcp_server/config/schemas/contracts_config.py), [resolver](../../../mcp_server/managers/phase_contract_resolver.py), [runner](../../../mcp_server/managers/enforcement_runner.py), [presenter](../../../mcp_server/presenters/text_presenter.py) and [validator](../../../mcp_server/config/validator.py) are primary seams. Counts below remain preparation candidates, not edit quotas.
 
 ### Test impact: source-boundary preparation versus runtime behavior
 
@@ -197,7 +148,7 @@ Read-only Python AST inspection of tests/**/*.py resolved directly imported clas
 - For WorkflowTemplate, WorkflowPhaseEntry, IssueTypeEntry and OperationPolicy, 20 direct calls occur in 8 files: test_workflow_config.py, test_workflow_config_c6.py, test_contracts_config.py, test_contracts_loader.py, test_consumers_c4.py, test_phase_contract_resolver_c3.py, test_discovery_tools.py and config/test_operation_policies.py. No direct IssueTypeEntry construction was found; its nested dictionary preparation is affected separately.
 - Across the 14 affected root-model class names, the same AST screen found 109 direct construction/validation sites in 45 unique test files. This is a static preparation candidate set, not 109 tests, 45 failures or 45 mandatory edits. It overlaps the earlier ConfigLoader inventory; do not add the counts. Dynamic imports, embedded subprocess scripts and indirect dictionaries are not comprehensively classified by that screen.
 - Nested issue-type name dictionaries are confirmed in test_github_manager.py and YAML in test_issue_config.py. Assertions reading workflow.name, phase.name and operation_id occur in the config tests; get_phase_names callers also occur in test_discovery_tools.py and test_phase_contract_resolver.py.
-- tests/mcp_server/test_support.py::_NopGateRunner.is_cycle_based_phase directly reads p.name. Update this existing shared preparation seam for id rather than patching every consumer test or installing a compatibility converter.
+- tests/mcp_server/test_support.py::_NopGateRunner.is_cycle_based_phase directly reads p.name. Update this shared preparation seam for key-based phase identity rather than patching every consumer test or installing a compatibility converter.
 - New identity-bearing anonymous model construction is concentrated in existing helper/fixture seams: enforcement runner/schema tests, _collection in test_collection_text_renderer.py, branch-artifact fixtures in test_submit_pr_atomic_flow.py and phase-contract tests, and populated label/contributor/milestone tests. Empty catalogs do not need invented entries.
 - workflow_fixtures.py has an obsolete workflow_phases fixture accessing WorkflowTemplate.phases; repository search found no fixture request or other use. It is not a reason to restore that removed model field. Assess removal only when touching this fixture; no broad fixture cleanup is authorized.
 
@@ -214,11 +165,9 @@ Reproduction route for this static evidence: search active mcp_server Python for
 - [Presentation preparation seam](<../../../tests/mcp_server/unit/presenters/test_collection_text_renderer.py>)
 - [PR artifact preparation seam](<../../../tests/mcp_server/integration/test_submit_pr_atomic_flow.py>)
 
-### Explicit order: requirement, options and limits
+### Explicit order: requirement and chosen limits
 
-The owner approved id/order. Source order uses integer ranks local to sibling objects; initial ranks preserve current runtime order. YAML physical position is not execution order. New objects require order; partial overrides inherit it unless they explicitly move the object; duplicate effective ranks fail. Gaps permit insertion but are not unlimited; explicit rank updates are needed if necessary. No automatic renumbering or alphabetical tie-break.
-
-The rejected alternatives remain separate global ID-order lists (duplicated references and inherited additions problem) and before/after graphs (references/cycles/ambiguous placements). Native argv and other ordered values are data sequences, not id-bearing policy objects; their handling is called out separately rather than silently resorted.
+Explicit order belongs to formerly ordered object collections and other execution/presentation sequences. Native mapping merge inherits/updates the order field but does not sort or reject collisions. Existing model-declared ordered collections use one reusable config-owned strict-integer/rank helper; partial overrides inherit order, new members provide it and final sibling ranks must be unique. Physical YAML order, alphabetical sorting and implicit append are not substitutes. Value lists retain their own sequence. No extra per-file representation metadata is selected.
 
 ### Pydantic facilities and limits
 
@@ -245,9 +194,9 @@ Inspected installed code: pydantic/main.py::BaseModel.model_copy and __delattr__
 
 The remaining custom semantics are narrowly defined by the owner: resolve a nested object by id; add/update it while retaining unmentioned objects; interpret the reserved $delete command with strict target/conflict errors; preserve literal field values; and enforce explicit ordering. Existing Pydantic model validation should retain type/required/domain validation. Ordinary dictionary traversal can be part of the same small operation function rather than introducing a second library/source framework.
 
-Recommendation for the next Design revision: use existing BaseModel admission and field information first; evaluate only the missing identity/command semantics. Do not claim Pydantic is a ready-made complete override engine, and do not use that absence to justify a generic translator, per-file metadata, dynamic partial-model family or wholesale BaseSettings migration. No dependency change is selected here.
+Recommendation for the next Design revision: use existing BaseModel admission and field information first; evaluate only the missing identity/command semantics. Do not claim Pydantic is a ready-made complete override engine, and do not use that absence to justify a generic translator, per-file metadata, dynamic partial-model family or wholesale BaseSettings migration. This historical facility audit did not select a dependency; the final native route and concrete dependency are specified in Design.
 
-Reproduction: inspect pyproject.toml; query importlib.metadata for package versions using both python and .venv/Scripts/python.exe; read the named package source methods. No models were mutated, no probe tests or suite were executed, and no server configuration or installed package was changed.
+Reproduction: inspect pyproject.toml; query importlib.metadata for package versions using both python and .venv/Scripts/python.exe; read the named package source methods. This facility audit mutated no models or packages and ran no suite. The later native-source demonstration below is separate evidence.
 
 - [Dependency declaration](<../../../pyproject.toml>)
 - [Current complete-model admission](<../../../mcp_server/config/loader.py>)
@@ -259,33 +208,87 @@ Reproduction: inspect pyproject.toml; query importlib.metadata for package versi
 - [Versioned recursive-dictionary helper](<https://github.com/pydantic/pydantic/blob/v2.12.5/pydantic/_internal/_utils.py>)
 - [Experimental feature limits](<https://docs.pydantic.dev/latest/concepts/experimental/>)
 
-### Generically materialize source contracts without file dispatch
+### Native-first YAML alternatives after owner reopening
 
-The owner approved generic contract-driven translation. Design must assign one config-owned materialization component explicitly. The loader retains file IO, source/target selection and Pydantic model construction; a pure materializer returns ordinary runtime-input data. Managers/presenters/tools never see source directives or perform projection.
+The owner explicitly asks to reconsider the earlier mutation/YAML strategy rather than evaluating native facilities only against the previously chosen id/order/$delete design. Those representation/operation choices are reopened for comparison; source ownership and bounded issue scope remain. The later final owner decision selects native deep-merged mappings with explicit delete/order; other alternatives below remain comparison evidence.
 
-Two bounded storage choices remain:
+BaseModel itself has no declarative configuration-source merge/add/delete API. The official separate pydantic-settings package provides deterministic multi-file shallow/deep combination followed by model validation. The source constructor, not an ordinary YAML field, chooses deep_merge. The following are actual native alternatives rather than custom ID semantics.
 
-| Contract storage | Benefits | Cost |
-| --- | --- | --- |
-| Typed immutable metadata beside existing model fields, e.g. Annotated metadata (recommended) | Mapping facts beside their fields; reuse actual model types/aliases and existing validators; no copied domain schema | Existing schema modules gain metadata declarations. Identity fields may change under the owner-approved directed consumer expansion; unrelated types/validators/behavior remain stable. |
-| Separate typed Python contract registry referencing models | Runtime schema declarations physically untouched | A second location tracks field paths; validate bindings against model_fields to catch drift. It remains declarative, not one callback/converter per file. |
+Shared base fragment, omitting unrelated checks.yaml sections for readability:
 
-A user-editable translation YAML and duplicate source model families are not recommended. Runtime models stay the single authority for field types, allowed values and domain validators; metadata states source representation only. All declarations remain pure and immutable, with no loader/file/env/secret IO in schema classes or import-time initialization.
+```yaml
+# defaults/checks.yaml
+checks:
+  python_lint:
+    adapter_id: ruff
+    capability: lint
+    timeout_seconds: 60
+    configuration_choice: null
+    default_args: []
+  python_format:
+    adapter_id: ruff
+    capability: format
+    timeout_seconds: 60
+    configuration_choice: null
+    default_args: []
+```
 
-Minimum metadata identifies: addressable collection versus record/atomic or opaque value data; item model/contract for otherwise untyped payloads; representation as a list or ID-keyed mapping input; nested collection relationships. Canonical identity stays id across the affected source/model/consumer boundary; no metadata binding turns id into name to preserve an old technical field. id/order operation semantics are uniform rather than repeated in each file. Existing aliases such as global/global_settings come from model_fields. Reflection supplies structure but never guesses identity from a field's spelling.
+With YamlConfigSettingsSource(..., yaml_file=[base, workspace], deep_merge=True), a workspace fragment can update a leaf and add an object:
 
-A useful simplification follows from current code: ChecksConfig, TestsConfig, FixesConfig and ArtifactLocationsConfig already accept mapping inputs through before-validators and produce their keyed tuple runtime values. The new materializer can emit dictionaries for those collections; it need not implement a bespoke tuple-pair protocol or change the validators. List consumers receive ordered list input. The previous proposal to map workflow/phase id to existing technical name fields is withdrawn. The completed identity inventory above distinguishes technical fields from domain data and identifies the directly affected consumers. Existing mapping-admission validators are reuse candidates, not a reason to preserve obsolete identity names.
+```yaml
+# checks.yaml
+checks:
+  python_lint:
+    timeout_seconds: 120
+  python_types:
+    adapter_id: mypy
+    capability: types
+    timeout_seconds: 120
+    configuration_choice: null
+    default_args: []
+```
 
-Code may branch/dispatch on finite generic node/operation kinds (object collection, mapping/list projection, deletion), never on a filename, tool, phase or policy. A file/model registration is expected; 14 handwritten conversion functions behind a registry would still fail the generic requirement. Another supported-shape config should add declarations/registration without editing materialization algorithms.
+Result: python_lint inherits adapter/capability/arguments/choice but changes timeout; python_format remains; python_types is added. Mapping keys are the natural identifiers in this native format. No extra id property, command or model-shape description is required by the merge library. This mapping form is now selected by the owner; duplicate authored IDs are not introduced.
 
-Expected impact: the 14 inventoried runtime config contracts remain the starting population. They may gain representation metadata and directed identity changes; the completed inventory identifies direct consumers and model-construction preparation, while unrelated runtime interfaces remain unchanged. This refines the earlier claim that those schema files could stay textually untouched. Source representation necessarily needs declarations somewhere; co-location avoids copying domain constraints. No new package dependency has been established as necessary for this finite traversal.
+Native deep merge cannot delete the inherited python_format key by omission. checks: {} leaves the inherited mapping intact. python_format: null replaces that value with None; it does not remove the key. A nullable value schema could admit it as data, but filtering/disable interpretation would be an additional explicit domain decision. $delete is not a native operator.
 
-No prototype or runtime proof was produced. Public Pydantic metadata supports the proposed seam; preservation must be proved through focused source-contract tests and the existing runtime consumer behavior tests during implementation.
+With the same base but deep_merge=False on that one multi-file YAML source, this complete replacement of the top-level checks member is native:
 
-- [Existing keyed-mapping admission](<../../../mcp_server/config/schemas/checks_config.py>)
-- [Test-binding mapping admission](<../../../mcp_server/config/schemas/tests_config.py>)
-- [Fix-binding mapping admission](<../../../mcp_server/config/schemas/fixes_config.py>)
-- [Pydantic field metadata](<https://docs.pydantic.dev/latest/concepts/fields/#inspecting-model-fields>)
+```yaml
+# checks.yaml
+checks:
+  python_lint:
+    adapter_id: ruff
+    capability: lint
+    timeout_seconds: 120
+    configuration_choice: null
+    default_args: []
+```
+
+Result: checks contains only python_lint; python_format is absent. The operation is replacement of the entire top-level checks value, not key-targeted deletion or nested field inheritance. Unmentioned top-level sections still come from the base. To retain other checks, repeat their complete definitions (except values supplied by the final schema's own defaults). Future base additions inside this replaced group are not inherited.
+
+A list-valued section also replaces as a whole under native deep merge. For example enforcement: [] produces an empty enforcement list; retaining all but one rule means supplying the complete remaining rule list. id/order fields in list entries are ordinary data; native merge does not match or sort them. If explicit ranks remain a requirement, their validation/use must be designed separately rather than attributed to the library.
+
+| Native route | Add/update | Actual removal | Cost to workspace/base behavior |
+| --- | --- | --- | --- |
+| Deep-merged mappings | Add key or patch named nested fields | No directed removal of an inherited key | Compact differences, future base keys inherited |
+| Shallow multi-file source | Supply a complete top-level member | Omit an item from that member's replacement | Repeat retained content; no future inheritance inside that member |
+| Whole-list replacement (also within deep merge) | Supply full desired list | Omit an item or use [] | Repeat retained objects; no item-level inheritance |
+| Nullable map values | Replace a key's value with null | Key remains present | Requires schema/domain agreement; not native deletion |
+
+These are source-level capabilities verified in installed pydantic-settings 2.13.1 and public source/docs. They are not an end-to-end pgmcp integration run. A native adoption still requires an explicit dependency/version decision and bounded integration with ConfigLoader's required-source/invalid-input rules. Standard settings file loading skips nonexistent files and must not silently weaken those existing rules or introduce ambient settings sources.
+
+The owner selects native mapping inheritance, explicit deletion and order; shallow group replacement and custom list-ID matching are rejected. Leaf value-list replacement is retained.
+
+- [Public file-source and merge options](<https://docs.pydantic.dev/latest/concepts/pydantic_settings/>)
+- [Versioned YAML source read/merge implementation](<https://github.com/pydantic/pydantic-settings/blob/v2.13.1/pydantic_settings/sources/base.py>)
+- [Native dictionary/list replacement behavior](<https://github.com/pydantic/pydantic/blob/v2.12.5/pydantic/_internal/_utils.py>)
+
+### Generic native composition without file dispatch
+
+The earlier metadata/materializer alternative is withdrawn. ConfigLoader keeps strict safe parsing/source selection, public Pydantic Settings source composition supplies recursive mapping merge, a pure config wrapper handles explicit tombstones on copies, and existing models/shared helpers own order and domain admission.
+
+No filename/tool/phase if-chain, bespoke converters, list-ID matching, second schema family or private deep_update API. Existing mapping admission remains reusable; direct map consumers change as inventoried. See [Design](design.md) for dependency, source precedence, errors and CheckSpec boundaries.
 
 ### Concrete source and consumer seams
 
@@ -425,7 +428,7 @@ Focused inspection confirms SubmitPRTool uses registered branch/head and parent/
 
 Local drafting/scaffolding of a PR body is possible; it creates a text artifact, not a hosted PR with number/status/reviews. Git request-pull generates a textual request referring to a repository URL; it is not a local GitHub PR implementation. No local-PR subsystem, automatic remote inference, new startup probe or GitHub readiness gate is included.
 
-Keep two dependencies distinct: PR operations inherently need the configured hosted service; the optional check_pr_status workspace rule can also make local branch mutations depend on that service. Moving this rule into workspace policy preserves current repository behavior without imposing it on every new target.
+Keep two dependencies distinct: PR operations inherently need the configured hosted service; the optional check_pr_status workspace rule can also make local branch mutations depend on that service. The final owner choice retains this protection in strict defaults; workspace removal must be explicit and missing credentials never imply bypass.
 
 - [PR submission orchestration](<../../../mcp_server/tools/pr_tools.py>)
 - [GitHub repository API adapter](<../../../mcp_server/adapters/github_adapter.py>)
@@ -478,11 +481,7 @@ Bundled assets are generated from the active source suite by the unchanged manif
 
 ## Questions
 
-No unresolved owner strategy choice remains after the directed identity-impact analysis. The owner approved id/order through affected models and consumers, generic contract-driven composition, and explicit removal. The concrete removal notation is a Design decision.
-
-Design owns the exact source/operation grammar, metadata storage and types, configuration-owned component interfaces, ID-keyed runtime representation and identity-based field-value handling. The alternatives already researched are inputs, not approved syntax. Required nonoptional configuration remains required; optional overrides and optional enforcement preserve the approved absence behavior; malformed present input is an error. Explicit complete-file and standalone package reads remain distinct from workspace layering.
-
-Research is complete and prepared for owner-coordinated independent review. No QA message or phase transition is performed here. If Design discovers a need for different reference values, public state/tool DTO changes, bespoke per-file transformation algorithms or build/upgrade machinery, reopen that boundary with the owner rather than silently expanding scope.
+No owner strategy question remains. The owner authorizes producer-monitored independent Research/Design/Planning QA, followed by a stop before Implementation for interactive execution. New operators, materializers, public DTO changes, migration or release/build work require renewed discussion.
 
 ## References
 
@@ -500,22 +499,24 @@ Research is complete and prepared for owner-coordinated independent review. No Q
 
 | Boundary | Owner-approved strategy |
 | --- | --- |
-| Source ownership | C: product defaults under config_root/defaults; workspace differences at config_root. Existing effective repository values preserved through deliberate source separation. |
-| Configuration objects | One canonical id and explicit order; targeted addition/change and explicit removal retain unrelated inheritance. Physical YAML order is not runtime order. Concrete directive and metadata storage are Design-owned decisions. |
-| Runtime consumer interface | Preserve loader entry points, operational/reference behavior and unrelated contracts. Carry canonical id into affected runtime models and direct consumers; no id-to-name compatibility projection, duplicate authored technical identity or consumer-owned composition. Completed direct impact inventory constrains Design. |
-| Generic implementation | Contract-driven materialization, with no filename if/else or registry of bespoke per-file algorithms. Design must name its config-owned responsibility. |
-| Enforcement | Optional without placeholders; useful strict defaults include open-PR protection. Preserve current repository protections; missing credentials are no automatic bypass. |
-| GitHub sources | github.yaml owns repository identity and explicit token alternative; normal token source is environment. Remove old owner/repo launcher/env/settings fallbacks, no remote inference or personal defaults. Narrow Settings/bootstrap registration changes and documentation are approved exceptions. |
-| Existing acknowledgement semantics | Keep configuration_choice valid-null-at-startup/use-time refusal and current safe-edit report behavior; no new NULL mechanisms. |
-| Initialization | Remove the temporary configuration_choice rewrite; no broader init/upgrade lifecycle. |
-| Documentation | Correct affected configuration/setup descriptions and the operative multi-issue PR closing template; targeted evidence. |
-| Deferred | Builder/content transforms, packaging proof, upgrades, release, #505, #506/#508 implementation and broad test cleanup. No automatic migration/legacy bridge or new generic readiness/vault framework. |
+| Sources | C: defaults/<file>.yaml plus optional root override; external root self-contained; complete-file/package routes separate |
+| Identity | Object collections use one mapping-key ID, including nested objects; no duplicate authored id or technical-name aliases |
+| Native merge | Public Pydantic Settings owns add/update/inheritance and scalar/null/value-list replacement |
+| Extensions | Only explicit $delete preprocessing and order validation/use; no list matcher/materializer/metadata registry |
+| Lists | Scalar/value lists remain whole values; dashes/brackets equal; preserve order/duplicates |
+| Runtime | Existing Pydantic validation; directed config-map consumers change; reference values and shared CheckSpec/planning/state/commit/tool DTOs stay stable |
+| Enforcement | Optional with no placeholder; strict reusable guards including PR lock; no credential bypass |
+| GitHub | github.yaml identity/project_number/explicit token alternative; environment-first GITHUB_TOKEN; old owner/repo launcher/env fallbacks removed |
+| Acknowledgements/init | Null startup/use-time/report behavior preserved; remove temporary init rewrite |
+| Documentation | Correct active config/setup/launcher descriptions and multi-issue PR close output |
+| Exclusions | release_manifest.yaml and builders/distribution/upgrades/releases; #505/#506/#508 work; compat bridges and broad test cleanup |
+| Progression | Independent QA for revised Research, Design and Planning; stop at Implementation boundary for interactive work |
 
-The owner-approved directed runtime identity expansion is now supported by model/consumer/test evidence. Removal notation, metadata placement and concrete operation contracts remain Design choices. No owner strategy question remains; QA stays owner-coordinated and Design has not started.
+This strategy supersedes earlier list-id and generic translation alternatives. Exact operational contracts and dependency choices belong to Design.
 
 ## Expected Results
 
-Canonical basis and workspace differences resolve to complete, validated configuration through preserved loader entry points. Affected model/consumer identity contracts use id consistently. Current repository settings retain their effective values. Invalid source/composition data produces actionable diagnostics without modifying either source. Focused behavior evidence demonstrates inheritance, precedence, list/null handling and unaffected standalone package reads. The two bounded exceptions are deletion of the temporary init reset and operative PR-closing output in Documentation. Unrelated consumer changes or a need for build/upgrade machinery fail the agreed scope boundary. Approved identity-consumer changes remain directed and evidence-backed.
+Native mapping inheritance resolves the canonical basis and compact workspace differences into complete validated config. Meaningful object order is explicit; leaf lists and null stay literal. Existing loader/package routes remain, directed config-container consumers change without aliases, and invalid input leaves sources intact. GitHub source changes, init-reset removal and Documentation PR closing correction remain bounded obligations. No packaging/portability claim is made.
 
 ## Evidence
 
@@ -551,12 +552,20 @@ The loader has existing no-path workspace reads and explicit complete-file reads
 
 ### Existing evidence infrastructure is reusable.
 
-Read-only inspection found loader callers, fresh-init choice tests, shared installed-wheel construction and renewal integration tests. The broader build/renewal inventory is background for deferred work; it does not expand this refactor's test surface. No tests or builds were executed for this Research.
+Read-only inspection found loader callers, fresh-init choice tests, shared installed-wheel construction and renewal integration tests. The broader build/renewal inventory is background for deferred work; it does not expand this refactor's test surface. No full suite/builds were executed; the later directed native probe is exploratory evidence.
 
 - [Builder behavior](<../../../tests/mcp_server/unit/test_build_package.py>)
 - [CLI behavior](<../../../tests/mcp_server/unit/test_cli.py>)
 - [Installed fixture](<../../../tests/mcp_server/fixtures/installed_distribution.py>)
 - [Renewal behavior](<../../../tests/mcp_server/integration/test_renewal_cli.py>)
+
+### Executed native-source demonstration
+
+A read-only exploratory probe used actual checks.yaml/enforcement.yaml with in-memory overrides, public BaseSettings settings_customise_sources, higher-priority InitSettingsSource and a basis YamlConfigSettingsSource, omitting env/dotenv/secrets. Versions: Pydantic 2.12.5, pydantic-settings 2.13.1, PyYAML 6.0.3. No private merge/custom recursive add-update code.
+
+Observed: python_lint timeout 60 to 90 retained remaining fields; adding demo_lint increased checks 11 to 12 with all unrelated content retained; ChecksConfig validated. One enforcement override replaced six rules with one while categories survived; EnforcementConfig validated. python_pyright.default_args changed from [--level, warning, --warnings] to [--level, error]. Both source byte sequences remained unchanged; native process exit 0.
+
+Reproduction: use these actual sources; provide the nested timeout/new-binding, single-rule and default_args overrides as higher-priority public sources; validate through existing models and compare source bytes. This is library behavior evidence, not implemented pgmcp layering. The future enforcement map resolves the demonstrated list limitation. The inspected multi-file YAML deep_merge=True API was not the executed route.
 
 ## Risks
 
@@ -601,9 +610,10 @@ Preserve current consumer-facing loader calls; source-layout choices must fit th
 | 0.11 | 2026-10-15 | @imp researcher | Record approved canonical ID strategy; inventory 14 affected runtime source contracts, unchanged output boundaries and concrete fixture/raw-reader impact; identify ordering as the remaining material contract choice. |
 | 0.12 | 2026-10-15 | @imp researcher | Require explicit order and generic translation; compare placement strategies and finite typed-contract materialization, preserve existing runtime validation, and reserve concrete ownership/interfaces for Design. |
 | 0.13 | 2026-10-15 | @imp researcher | Record approved id/order and generic translation; present inline removal/error semantics and model-adjacent metadata versus registry; separate ordered values from set-like mutations and consolidate current strategy. |
-
 | 0.14 | 2026-10-15 | @imp researcher | Record directed id normalization through runtime consumers; withdraw id-to-name preservation; reserve removal notation for Design and reopen bounded consumer/test impact research. |
 | 0.15 | 2026-10-15 | @imp researcher | Complete identity-model/consumer/test impact evidence; preserve external/reference contracts, identify shared fixture coupling, reconcile superseded wording and close Research for independent review. |
 | 0.16 | 2026-10-15 | @imp designer | Record owner clarification: identity determines addressability; unidentifiable elements are whole field values; discard tool-specific/set-like list mutation proposals. |
-
 | 0.17 | 2026-10-15 | @imp designer | Audit existing Pydantic/settings copy, presence, serialization, source merge and experimental facilities; bound the remaining id/$delete semantics without selecting new machinery. |
+| 0.18 | 2026-10-15 | @imp designer | Reopen mutation/YAML strategy for native-first evaluation; show deep mapping merge versus native block/list replacement and exact deletion/null consequences. |
+
+| 0.19 | 2026-10-15 | @imp designer | Apply final mapping-key/native-merge decision; reconcile obsolete metadata/identity alternatives, retain leaf lists, record actual probe, exclude manifest and require interactive Implementation. |
