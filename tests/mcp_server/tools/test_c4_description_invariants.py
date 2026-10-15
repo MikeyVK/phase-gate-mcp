@@ -4,7 +4,6 @@ Each test asserts that the tool or field description contains the required
 new content. Tests are RED until the descriptions are updated (GREEN phase).
 
 Covers:
-- SubmitPRTool.base: 3-tier cascade documentation
 - AddLabelsInput.labels: label naming constraints
 - CreateMilestoneInput.due_on: ISO 8601 datetime format
 - ValidateDTOTool: file-exists scope clarification
@@ -17,19 +16,10 @@ Covers:
 from mcp_server.tools.label_tools import AddLabelsInput
 from mcp_server.tools.milestone_tools import CreateMilestoneInput
 from mcp_server.tools.phase_tools import ForcePhaseTransitionInput, TransitionPhaseInput
-from mcp_server.tools.pr_tools import SubmitPRInput
 
 
 class TestC4DescriptionInvariants:
     """A1 description enrichments — C4."""
-
-    def test_submit_pr_base_documents_cascade(self) -> None:
-        """SubmitPRInput.base documents the 3-tier fallback cascade."""
-        field_info = SubmitPRInput.model_fields["base"]
-        desc = field_info.description or ""
-        assert "state.json" in desc or "parent_branch" in desc or "git_config" in desc, (
-            f"SubmitPRInput.base description must document cascade: {desc!r}"
-        )
 
     def test_add_labels_mentions_naming_constraints(self) -> None:
         """AddLabelsInput.labels mentions label naming constraints."""

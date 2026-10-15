@@ -225,30 +225,6 @@ class TestWorkflowStatusResolver:
         assert result.current_cycle == 2
         assert result.sub_phase is None
 
-    def test_resolve_raises_state_not_found_on_branch_mismatch(self) -> None:
-        """After #298: resolver raises StateNotFoundError when no state for current branch."""
-        git_reader = MagicMock()
-        git_reader.get_current_branch.return_value = "feature/99-other"
-        git_reader.get_recent_commits.return_value = []
-
-        state_repo = InMemoryStateRepository()
-        state_repo.save(
-            BranchState(
-                branch="feature/50-test",  # mismatch Ã¢â‚¬â€ different branch
-                current_phase="research",
-                workflow_name="feature",
-                issue_number=50,
-                parent_branch="main",
-            )
-        )
-
-        resolver = WorkflowStatusResolver(
-            git_context_reader=git_reader,
-            state_reader=state_repo,
-        )
-        with pytest.raises(StateNotFoundError):
-            resolver.resolve_current()
-
 
 # ---------------------------------------------------------------------------
 # C2 RED Ã¢â‚¬â€ WorkflowStatusDTO Literal narrowing (issue #298)

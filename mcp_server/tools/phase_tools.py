@@ -26,7 +26,7 @@ from mcp_server.managers.phase_state_engine import PhaseEntryError, PhaseStateEn
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas import WorkphasesConfig
-from mcp_server.schemas.deliverables import CycleRef, PlanningMutationError
+from mcp_server.schemas.deliverables import CycleRef
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
 
 
@@ -232,7 +232,7 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
                 from_phase="",
                 to_phase=params.to_phase,
             )
-        except (PhaseEntryError, PlanningMutationError) as e:
+        except PhaseEntryError as e:
             return PhaseTransitionOutput(
                 success=False,
                 error_message=str(e),
@@ -329,7 +329,7 @@ class ForcePhaseTransitionTool(
                 skip_reason=params.skip_reason,
                 human_approval_message=params.human_approval_message,
             )
-        except (PhaseEntryError, PlanningMutationError) as e:
+        except PhaseEntryError as e:
             return ForcePhaseTransitionOutput(
                 success=False,
                 error_message=str(e),

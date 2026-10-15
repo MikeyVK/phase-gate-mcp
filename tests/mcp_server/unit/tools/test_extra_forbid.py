@@ -110,7 +110,7 @@ class TestExtraForbidOnAllInputModels:
             # pr
             (ListPRsInput, {}),
             (MergePRInput, {"pr_number": 1}),
-            (SubmitPRInput, {"head": "feature/1-x", "title": "PR", "body": "desc"}),
+            (SubmitPRInput, {"title": "PR", "body": "desc"}),
             # project
             (GetProjectPlanInput, {"issue_number": 1}),
             (
