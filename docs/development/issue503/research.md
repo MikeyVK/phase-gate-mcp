@@ -3,7 +3,7 @@
 # Issue 503 — explicit branch registration and PR target authority
 
 **Status:** RESEARCH — INDEPENDENT REVIEW REQUESTED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -287,6 +287,14 @@ Use refreshed counts plus raw/embedded inventory; adapt existing public behavior
 
 Treat those as excluded unless a concrete in-scope invariant proves the existing seam insufficient; reopen strategy explicitly rather than growing the design.
 
+## Owner-approved Validation repair amendment
+
+The complete Validation run on the C_1 implementation found three missed test consumers and two configured Mypy errors in the unchanged phase-tool catches; exact observations are in [Validation](validation.md). GitHub main has the same phase-tool catch and PlanningMutationError definition. This is a concrete existing diagnostic defect, not attributed to #503.
+
+The owner explicitly approved one bounded repair cycle and return to Planning. The additional boundary is solely PlanningMutationError propagation through normal/forced phase tools: remove the two incorrect tool-level catches and reuse the existing outer exception wrapper, capture_exception and presenter. Preserve the original domain code, parameters, exception type and traceback. Preserve the separate PhaseEntryError policy outcome. No public DTO, new dispatch/helper, compatibility attribute, formatter or broader exception refactor is authorized.
+
+The test boundary remains a clean break: correct the existing generic valid-input fixture and retire directly obsolete duplicate/content assertions; one focused public wrapper behavior matrix may prove the uncovered diagnosis obligation. C_1 and its phase deliverables remain unchanged. Broad warnings, releases and unrelated failure paths remain excluded.
+
 ## Related Documents
 
 - [Issue 503](<https://github.com/MikeyVK/phase-gate-mcp/issues/503>)
@@ -304,3 +312,4 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | 0.5 | 2026-10-15 | @imp researcher | Compare retained planning-command quarantine with pure-read policy; distinguish failed-precondition effects from successful writes and propose a bounded, unapproved scope amendment. |
 | 0.6 | 2026-10-15 | @imp researcher | Capture owner approval for route 3 and the targeted planning-command correction; explain the existing plan-query phase-enrichment path without adding a third repair. |
 | 1.0 | 2026-10-15 | @imp researcher | Close owner choices, consolidate strategy per boundary and the indirect-mutation rationale, and request focused independent Research-to-Design review; no implementation or suite execution. |
+| 1.1 | 2026-10-15 | @imp planner | Record the owner's bounded Validation repair amendment: three test consumers and existing phase-tool domain-error propagation; retain C_1 and all other scope exclusions. |

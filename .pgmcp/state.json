@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 503,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "planning",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -18,7 +18,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Owner-approved bounded repair after complete Validation: three missed test consumers and two pre-existing main phase-tool domain-error catches; preserve committed C_1 and append C_2.",
   "issue_title": "refactor: Require branch registration and state-derived PR targets",
   "created_at": "2026-10-15T04:46:50.733861+00:00",
   "transitions": [
@@ -53,6 +53,14 @@
       "human_approval_message": "Owner authorized monitoring independent QA and continuing on GO. Independent GO Implementation \u2192 Validation on b8f72b099f759113499b9b716d4ce2ac83ec6d49; no remaining blockers.",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-10-15T07:59:53.995730+00:00",
+      "human_approval_message": "Owner explicitly approved: 'Ja, voer deze afgebakende herstelroute uit.' in response to returning Validation\u2192Planning, retaining C_1, adding one compact repair cycle for the three test consumers and two existing Mypy/diagnostic errors through the existing exception wrapper, then targeted QA/implementation/renewed Validation.",
+      "forced": true,
+      "skip_reason": "Owner-approved bounded repair after complete Validation: three missed test consumers and two pre-existing main phase-tool domain-error catches; preserve committed C_1 and append C_2."
     }
   ],
   "reconstructed": false,

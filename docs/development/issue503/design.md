@@ -3,7 +3,7 @@
 # Issue 503 — explicit registration, state-derived PR targets and non-mutating validation
 
 **Status:** DESIGN — INDEPENDENT REVIEW REQUESTED  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -348,6 +348,12 @@ Document-only verification: run_checks(scope="targets", targets=["docs/developme
 - [Git config](<../../../mcp_server/config/schemas/git_config.py>)
 - [Existing test support](<../../../tests/mcp_server/test_support.py>)
 
+## Owner-approved repair contract supplement
+
+C_2 repairs the concrete failures recorded in [Validation](validation.md) under Research's approved amendment. In TransitionPhaseTool.execute and ForcePhaseTransitionTool.execute, retain the existing PhaseEntryError branch and remove PlanningMutationError from that branch. Let the original PlanningMutationError propagate to the already composed ToolErrorHandlerDecorator/capture_exception path. The wrapper already reads MCPError.code and error_params and captures the original traceback; the existing presenter formats that result. Remove the now-unused import.
+
+No method signature, error DTO, wrapper/presenter configuration or registration/state contract changes. No compatibility error_code alias, getattr fallback, per-type code extractor or new error framework. Existing public wrapped normal/forced calls are the evidence boundary; one focused matrix in an existing phase-tool test file proves code/parameters/type/traceback preservation. Retire the obsolete branch-keyed resolver expectation only because an existing exact-branch wrapper test already proves the supported mismatch contract; preserve that evidence.
+
 ## Related Documents
 
 - [Issue 503](<https://github.com/MikeyVK/phase-gate-mcp/issues/503>)
@@ -359,3 +365,4 @@ Document-only verification: run_checks(scope="targets", targets=["docs/developme
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-15 | @imp designer | Specify target responsibilities, concrete contracts, preservation, bounded test architecture and clean cutover within approved Research. |
+| 0.2 | 2026-10-15 | @imp planner | Bound the owner-approved existing phase-tool diagnostic repair to the current outer wrapper; no new contract or architecture, C_1 unchanged. |

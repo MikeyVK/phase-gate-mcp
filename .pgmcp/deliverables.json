@@ -19,7 +19,7 @@
       "created_at": "2026-10-15T04:46:50.722540+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 1,
+          "total": 2,
           "cycles": [
             {
               "cycle_id": "C_1",
@@ -65,6 +65,32 @@
                 }
               ],
               "exit_criteria": "All four deliverables satisfy Design v0.1; meaningful source-preservation RED is confirmed before implementation, remaining structural coverage is reused; relevant focused test families and type-specific gates pass without known in-scope failures; no retired production authority remains; the active new runtime reads state2.0.0 with preserved identity/audit and the stored plan remains readable. No full suite, broad warning repair, release, compatibility bridge or phase progression without independent review."
+            },
+            {
+              "cycle_id": "C_2",
+              "cycle_number": 2,
+              "cycle_name": "Bounded validation-consumer and phase-diagnostic repair",
+              "deliverables": [
+                {
+                  "deliverable_name": "Complete remaining test consumer migration",
+                  "description": "Remove the duplicate branch-keyed resolver expectation in favor of existing exact-branch coverage, correct the generic SubmitPR valid-input fixture and retire the obsolete base-cascade content test; add no replacement content or legacy-rejection tests.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/unit/tools/test_extra_forbid.py"
+                  },
+                  "deliverable_id": "D_2.1"
+                },
+                {
+                  "deliverable_name": "Preserve planning-domain diagnosis through existing wrappers",
+                  "description": "Remove PlanningMutationError from the two phase-tool catches and its exhausted import, retain PhaseEntryError handling, and prove normal/forced public wrapped calls preserve the original domain code, parameters and traceback using one focused behavior matrix in an existing test file.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/tools/phase_tools.py"
+                  },
+                  "deliverable_id": "D_2.2"
+                }
+              ],
+              "exit_criteria": "The three reported test-consumer failures are resolved under the current contract, normal and forced planning-domain errors reach the existing exception wrapper with original diagnostic facts, focused affected tests and type-specific gates pass, no new error architecture or compatibility path is introduced, and committed C_1 plus phase deliverables remain unchanged. Full configured suite and branch/configured gates are rerun only in renewed Validation after independent review."
             }
           ]
         },
