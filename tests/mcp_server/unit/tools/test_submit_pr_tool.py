@@ -8,18 +8,19 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.config.loader import ConfigLoader
-from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter
+from mcp_server.core.exceptions import PreflightError, StateNotFoundError
+from mcp_server.core.interfaces import IPRStatusWriter, IStateReader
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
+from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
 from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.schemas.tool_outputs import PROutput
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
@@ -29,16 +30,8 @@ from tests.mcp_server.test_support import get_default_server_root
 class TestSubmitPRInput:
     """SubmitPRInput Pydantic model has the required fields per design 3.2."""
 
-    def test_head_field_required(self) -> None:
-        assert "head" in SubmitPRInput.model_fields
-
     def test_title_field_required(self) -> None:
         assert "title" in SubmitPRInput.model_fields
-
-    def test_base_field_optional(self) -> None:
-        field = SubmitPRInput.model_fields.get("base")
-        assert field is not None
-        assert not field.is_required()
 
     def test_draft_field_optional(self) -> None:
         field = SubmitPRInput.model_fields.get("draft")
@@ -60,19 +53,36 @@ class TestSubmitPRTool:
         assert "submit_pr" in config.categories.get("branch_mutating", [])
 
     def test_name_is_submit_pr(self) -> None:
-        tool = SubmitPRTool(MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        tool = SubmitPRTool(
+            MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock()
+        )
         assert tool.name == "submit_pr"
 
     def test_args_model_is_submit_pr_input(self) -> None:
-        tool = SubmitPRTool(MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        tool = SubmitPRTool(
+            MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock()
+        )
         assert tool.args_model is SubmitPRInput
 
 
-def _make_tool_for_lod(
+def _make_tool(
     git_manager: GitManager,
     github_manager: GitHubManager,
     pr_status_writer: IPRStatusWriter,
+    state_reader: IStateReader | None = None,
 ) -> SubmitPRTool:
+    if state_reader is None:
+        reader = MagicMock(spec=IStateReader)
+        reader.load.return_value = BranchState(
+            branch="feature/42-test",
+            issue_number=42,
+            workflow_name="feature",
+            current_phase="ready",
+            parent_branch="main",
+        )
+        state_reader = reader
+    repo_root = Path(__file__).parents[4]
+    git_config = ConfigLoader(repo_root / get_default_server_root() / "config").load_git_config()
     mock_pr = PRReadModel(
         pr_number=1,
         title="Test PR",
@@ -95,7 +105,8 @@ def _make_tool_for_lod(
         github_manager=github_manager,
         pr_status_writer=pr_status_writer,
         merge_readiness_context=merge_readiness_context,
-        branch_parent_reader=MagicMock(spec=IBranchParentReader),
+        state_reader=state_reader,
+        git_config=git_config,
     )
 
 
@@ -107,7 +118,7 @@ class TestSubmitPRToolLoD:
     ) -> None:
         """execute() must only call GitManager.prepare_submission, not lower-level methods."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -115,8 +126,8 @@ class TestSubmitPRToolLoD:
             "url": "https://github.com/x/y/pull/1",
         }
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
-        tool = _make_tool_for_lod(git_manager, github_manager, pr_status_writer)
-        params = SubmitPRInput(head="feature/42-test", base="main", title="Test PR")
+        tool = _make_tool(git_manager, github_manager, pr_status_writer)
+        params = SubmitPRInput(title="Test PR")
 
         asyncio.run(tool.execute(params, NoteContext()))
 
@@ -126,115 +137,76 @@ class TestSubmitPRToolLoD:
         git_manager.push.assert_not_called()
         git_manager.has_net_diff_for_path.assert_not_called()
 
-    def test_submit_pr_execute_does_not_access_adapter(
-        self,
-    ) -> None:
-        """execute() must not call self._git_manager.adapter directly."""
-        source = inspect.getsource(SubmitPRTool.execute)
-        assert "_git_manager.adapter" not in source, (
-            "SubmitPRTool.execute() must not access GitAdapter directly. "
-            "Use GitManager methods instead (Law of Demeter)."
-        )
 
+class TestSubmitPRRegistration:
+    """Registration authorizes targets before the existing submission effects."""
 
-def _make_tool_with_reader(
-    git_manager: GitManager,
-    github_manager: GitHubManager,
-    pr_status_writer: IPRStatusWriter,
-    branch_parent_reader: IBranchParentReader,
-) -> SubmitPRTool:
-    """Build SubmitPRTool with branch_parent_reader for C4 base-resolution tests."""
-    mock_pr = PRReadModel(
-        pr_number=1,
-        title="Test PR",
-        state="open",
-        base_branch="main",
-        head_branch="feature/42-test",
-        merged_at=None,
-        merge_sha=None,
-        body="",
-        html_url="https://github.com/x/y/pull/1",
-    )
-    github_manager.get_pr.return_value = mock_pr
-    merge_readiness_context = MergeReadinessContext(
-        terminal_phase="ready",
-        pr_allowed_phase="ready",
-        branch_local_artifacts=[],
-    )
-    return SubmitPRTool(
-        git_manager=git_manager,
-        github_manager=github_manager,
-        pr_status_writer=pr_status_writer,
-        merge_readiness_context=merge_readiness_context,
-        branch_parent_reader=branch_parent_reader,
-    )
-
-
-class TestSubmitPRToolBaseResolution:
-    """C4: SubmitPRTool.execute() resolves base via params.base → reader → default."""
-
-    def _make_git_manager(self, default_base: str = "main") -> MagicMock:
+    def test_registered_parent_supplies_submission_base(self) -> None:
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
-        git_manager.git_config = MagicMock()
-        git_manager.git_config.default_base_branch = default_base
-        return git_manager
-
-    def _make_github_manager(self) -> MagicMock:
         github_manager = MagicMock(spec=GitHubManager)
-        github_manager.create_pr.return_value = {
-            "number": 1,
-            "url": "https://github.com/x/y/pull/1",
-        }
-        return github_manager
+        github_manager.create_pr.return_value = {"number": 1}
+        reader = MagicMock(spec=IStateReader)
+        reader.load.return_value = BranchState(
+            branch="feature/42-test",
+            issue_number=42,
+            workflow_name="feature",
+            current_phase="ready",
+            parent_branch="epic/320-production-readiness",
+        )
+        writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_tool(git_manager, github_manager, writer, reader)
 
-    def test_params_base_wins_over_reader(self) -> None:
-        """C4.D3: params.base takes priority; reader.get_parent_branch is not called."""
-        git_manager = self._make_git_manager()
-        github_manager = self._make_github_manager()
-        reader = MagicMock(spec=IBranchParentReader)
-        pr_status_writer = MagicMock(spec=IPRStatusWriter)
-        tool = _make_tool_with_reader(git_manager, github_manager, pr_status_writer, reader)
-        params = SubmitPRInput(head="feature/42-test", base="my-explicit-base", title="Test PR")
+        asyncio.run(tool.execute(SubmitPRInput(title="Test PR"), NoteContext()))
 
-        asyncio.run(tool.execute(params, NoteContext()))
+        reader.load.assert_called_once_with("feature/42-test")
+        assert git_manager.prepare_submission.call_args.args[1] == "epic/320-production-readiness"
+        assert github_manager.create_pr.call_args.kwargs["head"] == "feature/42-test"
+        assert github_manager.create_pr.call_args.kwargs["base"] == "epic/320-production-readiness"
+        writer.set_pr_status.assert_called_once()
 
-        reader.get_parent_branch.assert_not_called()
-        _, kwargs = github_manager.create_pr.call_args
-        assert kwargs["base"] == "my-explicit-base"
+    @pytest.mark.parametrize(
+        "failure", ["missing", "branch", "issue", "unreadable", "unidentified"]
+    )
+    def test_invalid_registration_prevents_submission_effects(self, failure: str) -> None:
+        branch = "feature/no-issue" if failure == "unidentified" else "feature/42-test"
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.require_attached_branch.return_value = branch
+        github_manager = MagicMock(spec=GitHubManager)
+        writer = MagicMock(spec=IPRStatusWriter)
+        reader = MagicMock(spec=IStateReader)
+        expected: type[Exception] = PreflightError
+        original: Exception | None = None
+        if failure == "missing":
+            original = StateNotFoundError("Registration absent")
+            reader.load.side_effect = original
+            expected = StateNotFoundError
+        elif failure == "unreadable":
+            original = PermissionError("Registration unreadable")
+            reader.load.side_effect = original
+            expected = PermissionError
+        else:
+            reader.load.return_value = BranchState(
+                branch="feature/42-other" if failure == "branch" else branch,
+                issue_number=99 if failure == "issue" else 42,
+                workflow_name="feature",
+                current_phase="ready",
+                parent_branch="main",
+            )
+            if failure == "branch":
+                expected = StateBranchMismatchError
+        tool = _make_tool(git_manager, github_manager, writer, reader)
 
-    def test_reader_used_when_params_base_none(self) -> None:
-        """C4.D3: reader.get_parent_branch result used when params.base is None."""
-        git_manager = self._make_git_manager()
-        github_manager = self._make_github_manager()
-        reader = MagicMock(spec=IBranchParentReader)
-        reader.get_parent_branch.return_value = "epic/320-production-readiness"
-        pr_status_writer = MagicMock(spec=IPRStatusWriter)
-        tool = _make_tool_with_reader(git_manager, github_manager, pr_status_writer, reader)
-        params = SubmitPRInput(head="feature/42-test", title="Test PR")
+        with pytest.raises(expected) as captured:
+            asyncio.run(tool.execute(SubmitPRInput(title="Test PR"), NoteContext()))
 
-        asyncio.run(tool.execute(params, NoteContext()))
-
-        reader.get_parent_branch.assert_called_once_with("feature/42-test")
-        _, kwargs = github_manager.create_pr.call_args
-        assert kwargs["base"] == "epic/320-production-readiness"
-
-    def test_fallback_to_default_when_reader_returns_none(self) -> None:
-        """C4.D3: default_base_branch used when params.base and reader both return None."""
-        git_manager = self._make_git_manager(default_base="main")
-        github_manager = self._make_github_manager()
-        reader = MagicMock(spec=IBranchParentReader)
-        reader.get_parent_branch.return_value = None
-        pr_status_writer = MagicMock(spec=IPRStatusWriter)
-        tool = _make_tool_with_reader(git_manager, github_manager, pr_status_writer, reader)
-        params = SubmitPRInput(head="feature/42-test", title="Test PR")
-
-        asyncio.run(tool.execute(params, NoteContext()))
-
-        reader.get_parent_branch.assert_called_once_with("feature/42-test")
-        _, kwargs = github_manager.create_pr.call_args
-        assert kwargs["base"] == "main"
+        if original is not None:
+            assert captured.value is original
+        git_manager.prepare_submission.assert_not_called()
+        git_manager.rollback_push.assert_not_called()
+        github_manager.create_pr.assert_not_called()
+        writer.set_pr_status.assert_not_called()
 
 
 class TestSubmitPRToolExecute:
@@ -243,7 +215,7 @@ class TestSubmitPRToolExecute:
     @pytest.mark.asyncio
     async def test_submit_pr_returns_dto(self) -> None:
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
         github_manager = MagicMock(spec=GitHubManager)
 
@@ -265,8 +237,8 @@ class TestSubmitPRToolExecute:
         github_manager.get_pr.return_value = mock_pr
 
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
-        tool = _make_tool_for_lod(git_manager, github_manager, pr_status_writer)
-        params = SubmitPRInput(head="feature/42-test", base="main", title="Test PR")
+        tool = _make_tool(git_manager, github_manager, pr_status_writer)
+        params = SubmitPRInput(title="Test PR")
 
         result = await tool.execute(params, NoteContext())
         assert isinstance(result, PROutput)

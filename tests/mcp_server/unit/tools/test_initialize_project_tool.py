@@ -1,9 +1,9 @@
-"""Tests for InitializeProjectTool with atomic state initialization.
+"""Tests for InitializeProjectTool with explicit state registration.
 
 Issue #39: Mode 1 - Atomic initialization of deliverables.json + state.json.
 
 Tests verify:
-1. Both files created atomically
+1. Both files created in sequence
 2. Branch name auto-detected from git
 3. First phase determined from workflow
 4. state.json properly initialized with correct structure
@@ -60,12 +60,15 @@ class TestInitializeProjectToolMode1:
         After fix: Must create both files in single operation.
         """
         # Mock git to return branch name on tool's git_manager instance
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             mock_git.return_value = "bug/39-initialize-project-tool"
 
             # Execute initialization
             params = InitializeProjectInput(
-                issue_number=39, issue_title="Fix initialization gap", workflow_name="bug"
+                issue_number=39,
+                issue_title="Fix initialization gap",
+                workflow_name="bug",
+                parent_branch="main",
             )
             result = await tool.execute(params, NoteContext())
 
@@ -105,11 +108,14 @@ class TestInitializeProjectToolMode1:
         self, tool: InitializeProjectTool, workspace_root: Path
     ) -> None:
         """Test that branch name is auto-detected from GitManager."""
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             mock_git.return_value = "feature/42-user-auth"
 
             params = InitializeProjectInput(
-                issue_number=42, issue_title="Add user authentication", workflow_name="feature"
+                issue_number=42,
+                issue_title="Add user authentication",
+                workflow_name="feature",
+                parent_branch="main",
             )
             result = await tool.execute(params, NoteContext())
 
@@ -128,11 +134,14 @@ class TestInitializeProjectToolMode1:
         self, tool: InitializeProjectTool, workspace_root: Path
     ) -> None:
         """Test that initial phase is set to workflow's first phase."""
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             mock_git.return_value = "hotfix/99-security"
 
             params = InitializeProjectInput(
-                issue_number=99, issue_title="Security fix", workflow_name="hotfix"
+                issue_number=99,
+                issue_title="Security fix",
+                workflow_name="hotfix",
+                parent_branch="main",
             )
             result = await tool.execute(params, NoteContext())
 
@@ -177,13 +186,14 @@ class TestInitializeProjectToolMode1:
             if state_file.exists():
                 state_file.unlink()
 
-            with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+            with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
                 mock_git.return_value = branch
 
                 params = InitializeProjectInput(
                     issue_number=issue_num,
                     issue_title=f"Test {workflow_name}",
                     workflow_name=workflow_name,
+                    parent_branch="main",
                 )
                 result = await tool.execute(params, NoteContext())
 
@@ -198,12 +208,12 @@ class TestInitializeProjectToolMode1:
     @pytest.mark.asyncio
     async def test_error_handling_git_failure(self, tool: InitializeProjectTool) -> None:
         """Test error handling when GitManager fails to get branch."""
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             failure = RuntimeError("Not a git repository")
             mock_git.side_effect = failure
 
             params = InitializeProjectInput(
-                issue_number=39, issue_title="Test error", workflow_name="bug"
+                issue_number=39, issue_title="Test error", workflow_name="bug", parent_branch="main"
             )
             with pytest.raises(RuntimeError) as rejected:
                 await tool.execute(params, NoteContext())
@@ -217,7 +227,7 @@ class TestInitializeProjectToolMode1:
         workspace_root: Path,  # noqa: ARG002
     ) -> None:
         """Test error handling when state.json creation fails."""
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             mock_git.return_value = "bug/39-test"
 
             with patch.object(tool.state_engine, "initialize_branch") as mock_init:
@@ -225,7 +235,10 @@ class TestInitializeProjectToolMode1:
                 mock_init.side_effect = failure
 
                 params = InitializeProjectInput(
-                    issue_number=39, issue_title="Test error", workflow_name="bug"
+                    issue_number=39,
+                    issue_title="Test error",
+                    workflow_name="bug",
+                    parent_branch="main",
                 )
                 with pytest.raises(OSError) as rejected:
                     await tool.execute(params, NoteContext())
@@ -237,11 +250,14 @@ class TestInitializeProjectToolMode1:
         self, tool: InitializeProjectTool, workspace_root: Path
     ) -> None:
         """Test that deliverables.json format has core expected fields."""
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             mock_git.return_value = "bug/39-test"
 
             params = InitializeProjectInput(
-                issue_number=39, issue_title="Test format", workflow_name="bug"
+                issue_number=39,
+                issue_title="Test format",
+                workflow_name="bug",
+                parent_branch="main",
             )
             result = await tool.execute(params, NoteContext())
 
@@ -263,11 +279,14 @@ class TestInitializeProjectToolMode1:
         self, tool: InitializeProjectTool, workspace_root: Path
     ) -> None:
         """Test that state.json is separate file, not embedded in deliverables.json."""
-        with patch.object(tool.git_manager, "get_current_branch") as mock_git:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
             mock_git.return_value = "bug/39-test"
 
             params = InitializeProjectInput(
-                issue_number=39, issue_title="Test separation", workflow_name="bug"
+                issue_number=39,
+                issue_title="Test separation",
+                workflow_name="bug",
+                parent_branch="main",
             )
             result = await tool.execute(params, NoteContext())
 
@@ -285,3 +304,43 @@ class TestInitializeProjectToolMode1:
             assert "state.json" not in projects_content
             # State field, not policy field
             assert "current_phase" not in projects_content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("branch", "issue_number", "parent"),
+    [
+        ("HEAD", 42, "main"),
+        ("feature/42-work", 43, "main"),
+        ("feature/no-issue", 42, "main"),
+        ("feature/42-work", 42, "feature/42-work"),
+    ],
+)
+async def test_invalid_identity_refuses_before_any_project_write(
+    tmp_path: Path, branch: str, issue_number: int, parent: str
+) -> None:
+    from mcp_server.core.exceptions import PreflightError  # noqa: PLC0415
+
+    manager = make_project_manager(tmp_path)
+    git = make_git_manager(tmp_path)
+    tool = InitializeProjectTool(
+        workspace_root=tmp_path,
+        manager=manager,
+        git_manager=git,
+        state_engine=make_phase_state_engine(tmp_path, project_manager=manager),
+    )
+    with (
+        patch.object(git, "get_current_branch", return_value=branch),
+        pytest.raises(PreflightError),
+    ):
+        await tool.execute(
+            InitializeProjectInput(
+                issue_number=issue_number,
+                issue_title="Identity admission",
+                workflow_name="feature",
+                parent_branch=parent,
+            ),
+            NoteContext(),
+        )
+    assert not (tmp_path / get_default_server_root() / "deliverables.json").exists()
+    assert not (tmp_path / get_default_server_root() / "state.json").exists()

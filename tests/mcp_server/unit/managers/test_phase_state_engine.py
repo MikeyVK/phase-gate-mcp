@@ -46,6 +46,7 @@ class TestCyclePhaseEntry:
             issue_number=issue_number,
             issue_title="TDD Cycle Tracking",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         # Save planning deliverables (4 cycles)
@@ -129,6 +130,7 @@ class TestCyclePhaseEntry:
                 last_cycle=3,
                 current_sub_phase="green",
                 cycle_history=cycle_history or [],
+                parent_branch="main",
             )
         )
         writer = MagicMock(spec=IContextLoadedWriter)
@@ -332,6 +334,7 @@ class TestPhaseStateEngineCleanBreak:
             current_cycle=None,
             required_phases=["implementation"],
             transitions=[],
+            parent_branch="release/base",
         )
         engine = make_phase_state_engine(
             workspace_root=tmp_path,
@@ -395,6 +398,7 @@ class TestTransitionHooksWiring:
             issue_number=issue_number,
             issue_title="Hook Wiring Test",
             workflow_name="feature",
+            parent_branch="main",
         )
         project_manager.save_planning_deliverables(
             issue_number=issue_number,
@@ -431,7 +435,7 @@ class TestTransitionHooksWiring:
 
         # Initialize branch in design phase (one step before implementation)
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="design"
+            branch=branch, issue_number=issue_number, initial_phase="design", parent_branch="main"
         )
 
         # Verify no active cycle before transition
@@ -463,7 +467,10 @@ class TestTransitionHooksWiring:
 
         # Initialize branch in implementation phase at cycle 2
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="implementation"
+            branch=branch,
+            issue_number=issue_number,
+            initial_phase="implementation",
+            parent_branch="main",
         )
         state = state_engine.get_state(branch)
         state_repository.save(state.with_updates(current_cycle=2))
@@ -497,7 +504,10 @@ class TestTransitionHooksWiring:
         )
 
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="implementation"
+            branch=branch,
+            issue_number=issue_number,
+            initial_phase="implementation",
+            parent_branch="main",
         )
         state = state_engine.get_state(branch)
         state_repository.save(state.with_updates(current_cycle=2))
@@ -530,45 +540,26 @@ class TestPhaseStateEngineMutatorRoutingC6:
 
         def __init__(self, repo: InMemoryStateRepository) -> None:
             self._repo = repo
+            self.initialize_calls: list[BranchState] = []
             self.apply_calls: list[str] = []
 
-        def apply(self, branch: str, mutate: object) -> None:
+        def initialize(self, state: BranchState) -> None:
+            self.initialize_calls.append(state)
+            self._repo.save(state)
+
+        def apply(self, branch: str, mutate: Callable[[BranchState], BranchState]) -> None:
             self.apply_calls.append(branch)
-            try:
-                state = self._repo.load(branch)
-            except KeyError:
-                state = BranchState(
-                    branch=branch,
-                    workflow_name="",
-                    current_phase="",
-                )
-            new_state = mutate(state)  # type: ignore[operator]
-            self._repo.save(new_state)
-
-    def test_phase_state_engine_accepts_workflow_state_mutator_kwarg(self, tmp_path: Path) -> None:
-        """PhaseStateEngine accepts workflow_state_mutator kwarg.
-
-        RED: make_phase_state_engine does not have this param -> TypeError.
-        """
-        repo = InMemoryStateRepository()
-        mutator = self._TrackingMutator(repo)
-        engine = make_phase_state_engine(
-            tmp_path,
-            state_repository=repo,
-            workflow_state_mutator=mutator,
-        )
-        assert engine is not None
+            state = self._repo.load(branch)
+            self._repo.save(mutate(state))
 
     def test_initialize_branch_routes_through_mutator(self, tmp_path: Path) -> None:
-        """initialize_branch() calls workflow_state_mutator.apply().
-
-        RED: fails until GREEN routes initialize_branch through mutator.
-        """
+        """Initialization supplies complete state to the injected command boundary."""
         project_manager = make_project_manager(tmp_path)
         project_manager.initialize_project(
             issue_number=231,
             issue_title="State Split",
             workflow_name="feature",
+            parent_branch="main",
         )
         repo = InMemoryStateRepository()
         mutator = self._TrackingMutator(repo)
@@ -582,8 +573,15 @@ class TestPhaseStateEngineMutatorRoutingC6:
             branch="feature/231-test",
             issue_number=231,
             initial_phase="research",
+            parent_branch="main",
         )
-        assert mutator.apply_calls == ["feature/231-test"]
+        assert len(mutator.initialize_calls) == 1
+        initial = mutator.initialize_calls[0]
+        assert initial.branch == "feature/231-test"
+        assert initial.issue_number == 231
+        assert initial.parent_branch == "main"
+        assert repo.load("feature/231-test") == initial
+        assert mutator.apply_calls == []
 
     def test_transition_routes_through_mutator(self, tmp_path: Path) -> None:
         """transition() calls workflow_state_mutator.apply().
@@ -595,6 +593,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
             issue_number=231,
             issue_title="State Split",
             workflow_name="feature",
+            parent_branch="main",
         )
         repo = InMemoryStateRepository()
         mutator = self._TrackingMutator(repo)
@@ -609,6 +608,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
             issue_number=231,
             workflow_name="feature",
             current_phase="research",
+            parent_branch="main",
         )
         repo.save(seed)
         mutator.apply_calls.clear()
@@ -631,6 +631,7 @@ class TestPhaseStateEngineRecordSubPhase:
             issue_number=298,
             issue_title="Sub-phase persistence",
             workflow_name="feature",
+            parent_branch="main",
         )
         repo = InMemoryStateRepository()
         engine = make_phase_state_engine(
@@ -645,6 +646,7 @@ class TestPhaseStateEngineRecordSubPhase:
             current_phase="implementation",
             current_cycle=1,
             current_sub_phase=sub_phase,
+            parent_branch="main",
         )
         repo.save(seed)
         return engine, repo, branch
@@ -692,6 +694,7 @@ class TestPhaseStateEngineRecordSubPhase:
             issue_number=298,
             issue_title="Sub-phase persistence",
             workflow_name="feature",
+            parent_branch="main",
         )
         project_manager.save_planning_deliverables(
             issue_number=298,
@@ -731,6 +734,7 @@ class TestPhaseStateEngineRecordSubPhase:
                 current_phase="implementation",
                 current_cycle=1,
                 current_sub_phase="refactor",
+                parent_branch="main",
             )
         )
         engine.transition_cycle(branch=branch, to_cycle=2)
@@ -789,6 +793,7 @@ class TestContextLoadedWriterReset:
             issue_number=issue_number,
             issue_title="Context loaded writer test",
             workflow_name="feature",
+            parent_branch="main",
         )
         pm.save_planning_deliverables(
             issue_number=issue_number,
@@ -825,7 +830,9 @@ class TestContextLoadedWriterReset:
             state_repository=InMemoryStateRepository(),
             context_loaded_writer=writer,
         )
-        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
+        engine.initialize_branch(
+            branch=branch, issue_number=issue_number, initial_phase="design", parent_branch="main"
+        )
         engine.transition(branch=branch, to_phase="implementation")
 
         writer.set_context_loaded.assert_called_with(branch, value=False)
@@ -844,7 +851,9 @@ class TestContextLoadedWriterReset:
             state_repository=InMemoryStateRepository(),
             context_loaded_writer=writer,
         )
-        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
+        engine.initialize_branch(
+            branch=branch, issue_number=issue_number, initial_phase="design", parent_branch="main"
+        )
         engine.force_transition(
             branch=branch,
             to_phase="validation",
@@ -874,6 +883,7 @@ class TestContextLoadedWriterReset:
                 workflow_name="feature",
                 current_phase="implementation",
                 current_cycle=1,
+                parent_branch="main",
             )
         )
         writer.reset_mock()
@@ -892,7 +902,9 @@ class TestContextLoadedWriterReset:
             state_repository=InMemoryStateRepository(),
             context_loaded_writer=None,
         )
-        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
+        engine.initialize_branch(
+            branch=branch, issue_number=issue_number, initial_phase="design", parent_branch="main"
+        )
         # Must not raise AttributeError when writer is None
         engine.transition(branch=branch, to_phase="implementation")
 
@@ -922,6 +934,7 @@ class TestContextLoadedWriterReset:
                 workflow_name="feature",
                 current_phase="implementation",
                 current_cycle=1,
+                parent_branch="main",
             )
         )
         writer.reset_mock()
@@ -959,8 +972,8 @@ class TestPhaseStateFreshSLambdaC1:
             self._fresh_s = fresh_s
             self.results: list[BranchState] = []
 
-        def apply(self, _branch: str, mutate: object) -> None:
-            result = mutate(self._fresh_s)  # type: ignore[operator]
+        def apply(self, _branch: str, mutate: Callable[[BranchState], BranchState]) -> None:
+            result = mutate(self._fresh_s)
             self._repo.save(result)
             self.results.append(result)
 
@@ -1004,7 +1017,10 @@ class TestPhaseStateFreshSLambdaC1:
         )
         pm = make_project_manager(tmp_path)
         pm.initialize_project(
-            issue_number=292, issue_title="Concurrent mutations", workflow_name="bug"
+            issue_number=292,
+            issue_title="Concurrent mutations",
+            workflow_name="bug",
+            parent_branch="main",
         )
         pm.save_planning_deliverables(
             issue_number=292,
@@ -1042,7 +1058,9 @@ class TestPhaseStateFreshSLambdaC1:
         uses fresh _s (1 concurrent entry) -> 2 transitions saved.
         """
         pm = make_project_manager(tmp_path)
-        pm.initialize_project(issue_number=292, issue_title="Test", workflow_name="feature")
+        pm.initialize_project(
+            issue_number=292, issue_title="Test", workflow_name="feature", parent_branch="main"
+        )
         repo = InMemoryStateRepository()
         concurrent_entry = {
             "from_phase": "concurrent",
@@ -1058,6 +1076,7 @@ class TestPhaseStateFreshSLambdaC1:
             workflow_name="feature",
             current_phase="research",
             transitions=[],
+            parent_branch="main",
         )
         repo.save(seed)
         # fresh_s has 1 extra transition simulating a concurrent write under lock
@@ -1091,7 +1110,9 @@ class TestPhaseStateFreshSLambdaC1:
         Same stale-lambda pattern as transition(); verified independently.
         """
         pm = make_project_manager(tmp_path)
-        pm.initialize_project(issue_number=292, issue_title="Test", workflow_name="feature")
+        pm.initialize_project(
+            issue_number=292, issue_title="Test", workflow_name="feature", parent_branch="main"
+        )
         repo = InMemoryStateRepository()
         concurrent_entry = {
             "from_phase": "concurrent",
@@ -1107,6 +1128,7 @@ class TestPhaseStateFreshSLambdaC1:
             workflow_name="feature",
             current_phase="research",
             transitions=[],
+            parent_branch="main",
         )
         repo.save(seed)
         fresh_s = seed.with_updates(transitions=[concurrent_entry])
@@ -1162,6 +1184,7 @@ class TestPhaseStateFreshSLambdaC1:
             current_cycle=None,
             last_cycle=0,
             cycle_history=[],
+            parent_branch="main",
         )
         repo.save(seed)
         # fresh_s has 1 pre-existing history entry from a concurrent cycle write
@@ -1224,6 +1247,7 @@ class TestPhaseStateFreshSLambdaC1:
             current_cycle=1,
             last_cycle=0,
             cycle_history=[c1_history],
+            parent_branch="main",
         )
         repo.save(seed)
         # fresh_s has 2 entries: the concurrent write added one between load and lock
@@ -1255,28 +1279,6 @@ class TestPhaseStateFreshSLambdaC1:
         )
 
 
-# C2 RED — _save_state() dead method removal (issue #292)
-
-
-class TestSaveStateMethodRemoved:
-    """C2 (#292): _save_state() must be deleted from PhaseStateEngine.
-
-    C2 removes this dead method. All state writes now go through
-    WorkflowStateMutator.apply() or IStateRepository.save() directly.
-
-    RED: test fails because _save_state() still exists.
-    GREEN: test passes after _save_state() is deleted from PhaseStateEngine.
-    """
-
-    def test_save_state_method_deleted(self) -> None:
-        """_save_state() must not exist on PhaseStateEngine (C2-D1)."""
-        assert not hasattr(PhaseStateEngine, "_save_state"), (
-            "_save_state() still exists on PhaseStateEngine. "
-            "C2 removes this dead method — all state writes go through "
-            "WorkflowStateMutator.apply() or IStateRepository.save() directly."
-        )
-
-
 # C1 RED — human_approval_message migration and deprecated fallback (issue #430)
 
 
@@ -1291,7 +1293,7 @@ class TestHumanApprovalMessageMigration:
 
         # Setup branch
         branch = "feature/430-test"
-        pm.initialize_project(430, "Test issue", "feature")
+        pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         state = BranchState(
             branch=branch,
             issue_number=430,
@@ -1305,6 +1307,7 @@ class TestHumanApprovalMessageMigration:
                 "documentation",
                 "ready",
             ],
+            parent_branch="main",
         )
         repo.save(state)
 
@@ -1325,7 +1328,7 @@ class TestHumanApprovalMessageMigration:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
         branch = "feature/430-test"
-        pm.initialize_project(430, "Test issue", "feature")
+        pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         state = BranchState(
             branch=branch,
             issue_number=430,
@@ -1339,6 +1342,7 @@ class TestHumanApprovalMessageMigration:
                 "documentation",
                 "ready",
             ],
+            parent_branch="main",
         )
         repo.save(state)
 
@@ -1357,7 +1361,7 @@ class TestHumanApprovalMessageMigration:
 
         # Setup branch
         branch = "feature/430-test"
-        pm.initialize_project(430, "Test issue", "feature")
+        pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         state = BranchState(
             branch=branch,
             issue_number=430,
@@ -1371,6 +1375,7 @@ class TestHumanApprovalMessageMigration:
                 "documentation",
                 "ready",
             ],
+            parent_branch="main",
         )
         repo.save(state)
 
@@ -1396,7 +1401,7 @@ class TestHumanApprovalMessageMigration:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
         branch = "feature/430-test"
-        pm.initialize_project(430, "Test issue", "feature")
+        pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         state = BranchState(
             branch=branch,
             issue_number=430,
@@ -1410,6 +1415,7 @@ class TestHumanApprovalMessageMigration:
                 "documentation",
                 "ready",
             ],
+            parent_branch="main",
         )
         repo.save(state)
 
@@ -1426,7 +1432,7 @@ class TestHumanApprovalMessageMigration:
     def test_force_cycle_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-        pm.initialize_project(430, "Test issue", "feature")
+        pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         planning_deliverables = SavePlanningModel.model_validate(
             {
                 "cycles": {
@@ -1462,6 +1468,7 @@ class TestHumanApprovalMessageMigration:
                 "documentation",
                 "ready",
             ],
+            parent_branch="main",
         )
         repo.save(state)
 
@@ -1486,7 +1493,7 @@ class TestHumanApprovalMessageMigration:
         """C3: Parameter 'human_approval' is removed from force_cycle_transition()."""
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-        pm.initialize_project(430, "Test issue", "feature")
+        pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         planning_deliverables = SavePlanningModel.model_validate(
             {
                 "cycles": {
@@ -1522,6 +1529,7 @@ class TestHumanApprovalMessageMigration:
                 "documentation",
                 "ready",
             ],
+            parent_branch="main",
         )
         repo.save(state)
 
@@ -1538,7 +1546,8 @@ class TestHumanApprovalMessageMigration:
     def test_load_legacy_state_with_human_approval(self, tmp_path: Path) -> None:
         state_file = tmp_path / "state.json"
         legacy_data = {
-            "schema_version": "1.0.0",
+            "schema_version": "2.0.0",
+            "parent_branch": "main",
             "branch": "feature/430-test",
             "workflow_name": "feature",
             "current_phase": "planning",
@@ -1579,7 +1588,7 @@ def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> 
     """Missing approval must not change exit pointers, audit or loaded context."""
     branch = "refactor/491-entry"
     manager = make_project_manager(tmp_path)
-    manager.initialize_project(491, "Explicit entry", "refactor")
+    manager.initialize_project(491, "Explicit entry", "refactor", parent_branch="main")
     state_file = tmp_path / get_default_server_root() / "state.json"
     repository = FileStateRepository(state_file=state_file)
     initial = BranchState(
@@ -1591,6 +1600,7 @@ def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> 
         last_cycle=1,
         current_sub_phase="green",
         cycle_history=[{"cycle_number": 2}],
+        parent_branch="main",
     )
     repository.save(initial)
     before = state_file.read_bytes()

@@ -371,6 +371,32 @@ def make_phase_state_engine(
     )
 
 
+def prepare_branch_registration(
+    *,
+    project_manager: ProjectManager,
+    state_engine: PhaseStateEngine,
+    issue_number: int,
+    issue_title: str,
+    workflow_name: str,
+    branch: str,
+    initial_phase: str,
+    parent_branch: str,
+) -> None:
+    """Prepare explicit registration for tests of unrelated workflow behavior."""
+    project_manager.initialize_project(
+        issue_number,
+        issue_title,
+        workflow_name,
+        parent_branch=parent_branch,
+    )
+    state_engine.initialize_branch(
+        branch=branch,
+        issue_number=issue_number,
+        initial_phase=initial_phase,
+        parent_branch=parent_branch,
+    )
+
+
 def make_phase_config_context(
     workspace_root: Path | str,
 ) -> PhaseConfigContext:

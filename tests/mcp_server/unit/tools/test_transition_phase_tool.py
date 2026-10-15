@@ -10,14 +10,21 @@ Enforces strict sequential phase transitions per workflow definition.
 """
 
 from pathlib import Path
+from typing import cast
+from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
+from mcp_server.core.decorators.input_validation_decorator import InputValidationDecorator
+from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHandlerDecorator
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.interfaces.tool_input_contract import JsonObject
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.deliverables import PlanningMutationError, SavePlanningModel
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionInput,
@@ -26,6 +33,41 @@ from mcp_server.tools.phase_tools import (
     TransitionPhaseTool,
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("forced", [False, True], ids=["normal", "forced"])
+async def test_wrapped_transition_preserves_planning_domain_diagnosis(
+    tmp_path: Path, forced: bool
+) -> None:
+    """Both public transition routes retain the original planning failure facts."""
+    engine = MagicMock(spec=PhaseStateEngine)
+    failure = PlanningMutationError("planning_stored_invalid", params={"issue_number": 503})
+    transition = engine.force_transition if forced else engine.transition
+    transition.side_effect = failure
+    tool_type = ForcePhaseTransitionTool if forced else TransitionPhaseTool
+    core = tool_type(
+        workspace_root=tmp_path,
+        project_manager=MagicMock(spec=ProjectManager),
+        state_engine=engine,
+        server_root=tmp_path,
+    )
+    params: JsonObject = {"branch": "refactor/503-example", "to_phase": "planning"}
+    if forced:
+        params.update(skip_reason="Repair planning", human_approval_message="Approved repair")
+
+    # Input validation bridges the typed core to the public dictionary boundary.
+    validated = InputValidationDecorator(cast(ICoreTool[BaseModel, BaseModel], core))
+    wrapped = ToolErrorHandlerDecorator(validated)
+    result = await wrapped.execute(params, NoteContext())
+
+    diagnostic = result.operation
+    assert isinstance(diagnostic, ExecutionErrorOutput)
+    assert diagnostic.error_code == failure.code
+    assert diagnostic.error_params == failure.params
+    assert diagnostic.traceback is not None
+    assert type(failure).__name__ in diagnostic.traceback
+    transition.assert_called_once()
 
 
 class TestTransitionPhaseTool:
@@ -71,13 +113,19 @@ class TestTransitionPhaseTool:
         """Initialize a project and branch for testing."""
         # Initialize project with feature workflow
         project_manager.initialize_project(
-            issue_number=42, issue_title="Test feature", workflow_name="feature"
+            issue_number=42,
+            issue_title="Test feature",
+            workflow_name="feature",
+            parent_branch="main",
         )
 
         # Initialize branch in first phase of feature workflow
         branch = "feature/42-test-feature"
         phase_engine.initialize_branch(
-            branch=branch, issue_number=42, initial_phase=feature_phases[0]
+            branch=branch,
+            issue_number=42,
+            initial_phase=feature_phases[0],
+            parent_branch="main",
         )
 
         return branch
@@ -127,12 +175,14 @@ class TestTransitionPhaseTool:
             issue_number=446,
             issue_title="Compact workflow",
             workflow_name=workflow,
+            parent_branch="main",
         )
         branch = f"{workflow}/446-compact-workflow"
         phase_engine.initialize_branch(
             branch=branch,
             issue_number=446,
             initial_phase=initial,
+            parent_branch="main",
         )
 
         next_result = await tool.execute(
@@ -291,7 +341,7 @@ class TestTransitionPhaseTool:
 async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, forced: bool) -> None:
     """Both public tools carry selection and structured rejection without writes."""
     manager = make_project_manager(tmp_path)
-    manager.initialize_project(491, "Cycle selection", "feature")
+    manager.initialize_project(491, "Cycle selection", "feature", parent_branch="main")
     manager.save_planning_deliverables(
         491,
         SavePlanningModel.model_validate(
@@ -316,7 +366,7 @@ async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, for
     )
     engine = make_phase_state_engine(tmp_path, project_manager=manager)
     branch = "feature/491-selection"
-    engine.initialize_branch(branch, 491, "planning")
+    engine.initialize_branch(branch, 491, "planning", parent_branch="main")
     engine.transition(branch, "implementation")
     engine.transition_cycle(branch, 2)
     engine.force_transition(branch, "planning", "Revise the plan", "Owner approval")

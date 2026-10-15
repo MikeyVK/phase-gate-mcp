@@ -31,11 +31,13 @@ class TestPhaseStateEnginePersistence:
             issue_number=1,
             issue_title="First feature",
             workflow_name="feature",
+            parent_branch="main",
         )
         manager.initialize_project(
             issue_number=2,
             issue_title="Second feature",
             workflow_name="feature",
+            parent_branch="main",
         )
         return manager
 
@@ -55,7 +57,9 @@ class TestPhaseStateEnginePersistence:
         state_engine: PhaseStateEngine,
         workspace_root: Path,
     ) -> None:
-        state_engine.initialize_branch("feature/1-first-feature", 1, "research")
+        state_engine.initialize_branch(
+            "feature/1-first-feature", 1, "research", parent_branch="main"
+        )
 
         state_file = workspace_root / get_default_server_root() / "state.json"
         assert state_file.exists()
@@ -70,8 +74,12 @@ class TestPhaseStateEnginePersistence:
         state_engine: PhaseStateEngine,
         workspace_root: Path,
     ) -> None:
-        state_engine.initialize_branch("feature/1-first-feature", 1, "research")
-        state_engine.initialize_branch("feature/2-second-feature", 2, "research")
+        state_engine.initialize_branch(
+            "feature/1-first-feature", 1, "research", parent_branch="main"
+        )
+        state_engine.initialize_branch(
+            "feature/2-second-feature", 2, "research", parent_branch="main"
+        )
 
         state_file = workspace_root / get_default_server_root() / "state.json"
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
@@ -85,7 +93,7 @@ class TestPhaseStateEnginePersistence:
         workspace_root: Path,
     ) -> None:
         branch = "feature/1-first-feature"
-        state_engine.initialize_branch(branch, 1, "research")
+        state_engine.initialize_branch(branch, 1, "research", parent_branch="main")
 
         result = state_engine.transition(branch=branch, to_phase="design")
         state_file = workspace_root / get_default_server_root() / "state.json"
@@ -103,7 +111,11 @@ class TestPhaseStateEnginePersistence:
         self,
         state_engine: PhaseStateEngine,
     ) -> None:
-        state_engine.initialize_branch("feature/1-first-feature", 1, "research")
+        state_engine.initialize_branch(
+            "feature/1-first-feature", 1, "research", parent_branch="main"
+        )
 
         with pytest.raises(StateAlreadyExistsError, match="feature/1-first-feature"):
-            state_engine.initialize_branch("feature/1-first-feature", 1, "research")
+            state_engine.initialize_branch(
+                "feature/1-first-feature", 1, "research", parent_branch="main"
+            )

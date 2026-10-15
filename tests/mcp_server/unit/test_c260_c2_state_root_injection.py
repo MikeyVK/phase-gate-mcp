@@ -88,7 +88,6 @@ class TestPhaseStateEngineStateRoot:
             contracts_config=MagicMock(),
             state_repository=MagicMock(),
             workflow_gate_runner=MagicMock(),
-            state_reconstructor=MagicMock(),
             workflow_state_mutator=MagicMock(),
         )
 
@@ -370,7 +369,6 @@ class TestPhaseStateEngineNoFallback:
                 contracts_config=MagicMock(),
                 state_repository=MagicMock(),
                 workflow_gate_runner=MagicMock(),
-                state_reconstructor=MagicMock(),
                 workflow_state_mutator=MagicMock(),
                 # server_root omitted — must raise, not default to workspace/.pgmcp
             )

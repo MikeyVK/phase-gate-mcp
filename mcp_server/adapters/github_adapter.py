@@ -142,7 +142,7 @@ class GitHubAdapter:
         return list(self.repo.get_issues(**kwargs))
 
     def create_pr(
-        self, title: str, body: str, head: str, base: str = "main", draft: bool = False
+        self, title: str, body: str, head: str, base: str, draft: bool = False
     ) -> PullRequest:
         """Create a new pull request."""
         try:

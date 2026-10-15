@@ -44,7 +44,6 @@ def _git_config_payload(**overrides: object) -> dict[str, object]:
             "build",
             "revert",
         ],
-        "default_base_branch": "main",
         "issue_title_max_length": 72,
     }
     payload.update(overrides)
@@ -69,7 +68,6 @@ class TestGitConfig:
         ]
         assert config.protected_branches == ["main", "master", "develop"]
         assert config.branch_name_pattern == r"^[a-z0-9-]+$"
-        assert config.default_base_branch == "main"
 
     def test_git_yaml_not_found(self) -> None:
         """Test ConfigError when git.yaml doesn't exist."""

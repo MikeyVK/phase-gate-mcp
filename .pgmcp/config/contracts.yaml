@@ -462,8 +462,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -943,8 +943,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -1197,8 +1197,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -1668,8 +1668,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -1861,8 +1861,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -2102,8 +2102,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |
@@ -2449,8 +2449,8 @@ workflows:
                 message='chore: update branch state before PR').
                 Recheck git_status() and stop unless the branch is clean.
 
-            [ ] Submit the PR:
-                submit_pr(head='<branch>', title='<title>', body='<scaffolded PR body>').
+            [ ] Submit the PR using the registered branch and its parent:
+                submit_pr(title='<title>', body='<scaffolded PR body>').
 
             [ ] Produce the outcome-neutral hand-over below.
           handover_template: |

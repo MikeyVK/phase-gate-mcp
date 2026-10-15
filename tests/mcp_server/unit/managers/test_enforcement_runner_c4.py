@@ -36,7 +36,6 @@ _GIT_CONFIG = GitConfig(
     protected_branches=["main"],
     branch_name_pattern=r"^[a-z0-9-]+$",
     commit_types=["feat", "fix", "docs", "chore"],
-    default_base_branch="main",
     issue_title_max_length=72,
 )
 
@@ -79,7 +78,7 @@ def _write_state_json(tmp_path: Path) -> None:
     server_root = tmp_path / get_default_server_root()
     server_root.mkdir(parents=True, exist_ok=True)
     (server_root / "state.json").write_text(
-        '{"schema_version": "1.0.0", "branch": "feature/42-test", '
+        '{"schema_version": "2.0.0", "branch": "feature/42-test", "parent_branch": "main", '
         '"current_phase": "implementation", "issue_number": 42, '
         '"workflow_name": "feature"}',
         encoding="utf-8",

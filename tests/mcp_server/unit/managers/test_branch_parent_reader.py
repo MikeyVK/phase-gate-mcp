@@ -20,7 +20,6 @@ class TestBranchStateParentReader:
             protected_branches=["main", "master", "develop"],
             branch_name_pattern=r"^[a-z0-9-]+$",
             commit_types=["feat", "fix", "docs", "style", "refactor", "test", "chore"],
-            default_base_branch="main",
             issue_title_max_length=72,
         )
 
@@ -61,17 +60,17 @@ class TestBranchStateParentReader:
         result = reader.get_parent_branch("bug/357-fix-test")
         assert result is None
 
-    def test_get_parent_branch_returns_none_when_parent_branch_field_is_none(
+    def test_get_parent_branch_returns_none_on_exact_branch_mismatch(
         self, git_config: GitConfig
     ) -> None:
-        """Edge case: issue matches but parent_branch field is None -> return None."""
+        """Another registration for the same issue is not the requested branch basis."""
         mock_reader = MagicMock(spec=IStateReader)
         mock_reader.load.return_value = BranchState(
-            branch="bug/357-fix-test",
+            branch="bug/357-other-work",
             issue_number=357,
             workflow_name="bug",
             current_phase="implementation",
-            parent_branch=None,
+            parent_branch="main",
         )
         reader = BranchStateParentReader(
             state_reader=mock_reader,

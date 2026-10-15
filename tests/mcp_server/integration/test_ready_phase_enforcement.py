@@ -68,8 +68,9 @@ def _write_state(tmp_path: Path, current_phase: str) -> None:
     (state_dir / "state.json").write_text(
         json.dumps(
             {
-                "schema_version": "1.0.0",
+                "schema_version": "2.0.0",
                 "branch": "refactor/283-test",
+                "parent_branch": "main",
                 "workflow_name": "refactor",
                 "current_phase": current_phase,
             }

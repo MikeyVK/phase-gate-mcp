@@ -56,7 +56,6 @@ def config_root(tmp_path: Path) -> Path:
             "protected_branches": ["main"],
             "branch_name_pattern": "^[a-z0-9-]+$",
             "commit_types": ["feat", "fix", "test"],
-            "default_base_branch": "main",
             "issue_title_max_length": 72,
         },
     )

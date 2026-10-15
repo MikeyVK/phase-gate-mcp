@@ -104,6 +104,7 @@ class TestTransitionCycleTool:
             issue_number=issue_number,
             issue_title="TDD Cycle Tracking",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         # Save planning deliverables (4 cycles)
@@ -148,6 +149,7 @@ class TestTransitionCycleTool:
             branch="feature/146-tdd-cycle-tracking",
             issue_number=issue_number,
             initial_phase="implementation",
+            parent_branch="main",
         )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=1)
@@ -325,6 +327,7 @@ class TestForceCycleTransitionTool:
             issue_number=issue_number,
             issue_title="TDD Cycle Tracking",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         # Save planning deliverables (4 cycles)
@@ -376,6 +379,7 @@ class TestForceCycleTransitionTool:
             branch=branch,
             issue_number=issue_number,
             initial_phase="implementation",
+            parent_branch="main",
         )
         state = state_engine.get_state(branch)
         state = state.with_updates(
@@ -531,6 +535,7 @@ class TestForceCycleAuditSchema:
             issue_number=issue_number,
             issue_title="TDD Cycle Tracking",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         planning_deliverables = SavePlanningModel.model_validate(
@@ -574,6 +579,7 @@ class TestForceCycleAuditSchema:
             branch=branch,
             issue_number=issue_number,
             initial_phase="implementation",
+            parent_branch="main",
         )
         state = state_engine.get_state(branch)
         state = state.with_updates(
@@ -741,6 +747,7 @@ class TestTransitionCycleHistory:
             issue_number=issue_number,
             issue_title="TDD Cycle Tracking",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         planning_deliverables = SavePlanningModel.model_validate(
@@ -773,6 +780,7 @@ class TestTransitionCycleHistory:
             branch=branch,
             issue_number=issue_number,
             initial_phase="implementation",
+            parent_branch="main",
         )
         state = state_engine.get_state(branch)
         state = state.with_updates(
@@ -905,6 +913,7 @@ class TestTransitionCycleExitCriteria:
             issue_number=issue_number,
             issue_title="TDD Cycle Tracking",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         branch = "feature/146-tdd-cycle-tracking"
@@ -912,6 +921,7 @@ class TestTransitionCycleExitCriteria:
             branch=branch,
             issue_number=issue_number,
             initial_phase="implementation",
+            parent_branch="main",
         )
 
         if bypass_validation:

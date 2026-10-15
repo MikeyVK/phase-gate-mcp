@@ -20,7 +20,11 @@ import pytest
 
 from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+from tests.mcp_server.test_support import (
+    make_phase_state_engine,
+    make_project_manager,
+    prepare_branch_registration,
+)
 
 if TYPE_CHECKING:
     from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -55,13 +59,15 @@ class TestPhaseStateEngineTransitions:
     ) -> None:
         """Test valid sequential transition (phase[0] ÔåÆ phase[1])."""
         # Initialize project with feature workflow
-        project_manager.initialize_project(
-            issue_number=42, issue_title="Test feature", workflow_name="feature"
-        )
-
-        # Initialize branch state (current_phase = first phase)
-        phase_engine.initialize_branch(
-            branch="feature/42-test", issue_number=42, initial_phase=feature_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=42,
+            issue_title="Test feature",
+            workflow_name="feature",
+            parent_branch="main",
+            branch="feature/42-test",
+            initial_phase=feature_phases[0],
         )
 
         # Valid transition: phase[0] ÔåÆ phase[1] (next phase in workflow)
@@ -83,13 +89,15 @@ class TestPhaseStateEngineTransitions:
     ) -> None:
         """Test invalid transition (phase[0] ÔåÆ phase[2], skips phase[1])."""
         # Initialize project
-        project_manager.initialize_project(
-            issue_number=43, issue_title="Test feature", workflow_name="feature"
-        )
-
-        # Initialize branch state
-        phase_engine.initialize_branch(
-            branch="feature/43-test", issue_number=43, initial_phase=feature_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=43,
+            issue_title="Test feature",
+            workflow_name="feature",
+            parent_branch="main",
+            branch="feature/43-test",
+            initial_phase=feature_phases[0],
         )
 
         # Invalid transition: phase[0] ÔåÆ phase[2] (skips phase[1])
@@ -113,13 +121,15 @@ class TestPhaseStateEngineTransitions:
     ) -> None:
         """Test force_transition allows non-sequential jumps."""
         # Initialize project
-        project_manager.initialize_project(
-            issue_number=44, issue_title="Test feature", workflow_name="feature"
-        )
-
-        # Initialize branch state
-        phase_engine.initialize_branch(
-            branch="feature/44-test", issue_number=44, initial_phase=feature_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=44,
+            issue_title="Test feature",
+            workflow_name="feature",
+            parent_branch="main",
+            branch="feature/44-test",
+            initial_phase=feature_phases[0],
         )
 
         # Force transition: phase[0] ÔåÆ phase[2] (skip phase[1])
@@ -141,9 +151,15 @@ class TestPhaseStateEngineTransitions:
     ) -> None:
         """Test get_current_phase returns correct phase."""
         # Initialize project and branch
-        project_manager.initialize_project(issue_number=45, issue_title="Test", workflow_name="bug")
-        phase_engine.initialize_branch(
-            branch="bug/45-test", issue_number=45, initial_phase=bug_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=45,
+            issue_title="Test",
+            workflow_name="bug",
+            parent_branch="main",
+            branch="bug/45-test",
+            initial_phase=bug_phases[0],
         )
 
         # Get current phase
@@ -158,11 +174,15 @@ class TestPhaseStateEngineTransitions:
     ) -> None:
         """Test workflow_name cached in state.json for performance."""
         # Initialize project and branch
-        project_manager.initialize_project(
-            issue_number=46, issue_title="Test", workflow_name="hotfix"
-        )
-        phase_engine.initialize_branch(
-            branch="hotfix/46-test", issue_number=46, initial_phase=hotfix_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=46,
+            issue_title="Test",
+            workflow_name="hotfix",
+            parent_branch="main",
+            branch="hotfix/46-test",
+            initial_phase=hotfix_phases[0],
         )
 
         # Get state (should include cached workflow_name)
@@ -177,11 +197,15 @@ class TestPhaseStateEngineTransitions:
     ) -> None:
         """Test transition history marks forced transitions."""
         # Initialize project and branch
-        project_manager.initialize_project(
-            issue_number=47, issue_title="Test", workflow_name="feature"
-        )
-        phase_engine.initialize_branch(
-            branch="feature/47-test", issue_number=47, initial_phase=feature_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=47,
+            issue_title="Test",
+            workflow_name="feature",
+            parent_branch="main",
+            branch="feature/47-test",
+            initial_phase=feature_phases[0],
         )
 
         # Normal transition
@@ -216,7 +240,10 @@ class TestPhaseStateEngineTransitions:
         """Test initialize_branch fails if project not initialized."""
         with pytest.raises(ValueError) as exc_info:
             phase_engine.initialize_branch(
-                branch="feature/99-test", issue_number=99, initial_phase=feature_phases[0]
+                branch="feature/99-test",
+                issue_number=99,
+                initial_phase=feature_phases[0],
+                parent_branch="main",
             )
 
         error_msg = str(exc_info.value)
@@ -237,11 +264,15 @@ class TestPhaseStateEngineTransitions:
         feature_phases: list[str],
     ) -> None:
         """Test get_state fails for unknown branch."""
-        project_manager.initialize_project(
-            issue_number=50, issue_title="Test", workflow_name="feature"
-        )
-        phase_engine.initialize_branch(
-            branch="feature/50-test", issue_number=50, initial_phase=feature_phases[0]
+        prepare_branch_registration(
+            project_manager=project_manager,
+            state_engine=phase_engine,
+            issue_number=50,
+            issue_title="Test",
+            workflow_name="feature",
+            parent_branch="main",
+            branch="feature/50-test",
+            initial_phase=feature_phases[0],
         )
 
         with pytest.raises(StateBranchMismatchError, match="Branch state"):

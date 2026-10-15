@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError, PreflightError
-from mcp_server.core.interfaces import IBranchParentReader, ICoreTool, IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import ICoreTool, IPRStatusWriter, IStateReader, PRStatus
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import GitConfig
 from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput, PROutput, PRSummaryDTO
@@ -201,15 +202,7 @@ class SubmitPRInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    head: str = Field(..., description="Source branch name (e.g. feature/42-name)")
     title: str = Field(..., description="PR title")
-    base: str | None = Field(
-        default=None,
-        description=(
-            "Target branch (defaults to main). "
-            "Cascade: explicit value -> state.json parent_branch -> git_config.default_base_branch."
-        ),
-    )
     body: str | None = Field(default=None, description="PR description (markdown)")
     draft: bool = Field(default=False, description="Create as draft PR")
 
@@ -244,13 +237,15 @@ class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
         github_manager: GitHubManager,
         pr_status_writer: IPRStatusWriter,
         merge_readiness_context: MergeReadinessContext,
-        branch_parent_reader: IBranchParentReader,
+        state_reader: IStateReader,
+        git_config: GitConfig,
     ) -> None:
         self._git_manager = git_manager
         self._github_manager = github_manager
         self._pr_status_writer = pr_status_writer
         self._merge_readiness_context = merge_readiness_context
-        self._branch_parent_reader = branch_parent_reader
+        self._state_reader = state_reader
+        self._git_config = git_config
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -258,12 +253,20 @@ class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
         return self.args_model.model_json_schema()
 
     async def execute(self, params: SubmitPRInput, context: NoteContext) -> PROutput:
-        branch = self._git_manager.get_current_branch()
-        base = (
-            params.base
-            or self._branch_parent_reader.get_parent_branch(branch)
-            or self._git_manager.git_config.default_base_branch
-        )
+        branch = self._git_manager.require_attached_branch()
+        state = self._state_reader.load(branch)
+        if state.branch != branch:
+            raise StateBranchMismatchError(
+                f"Loaded state branch '{state.branch}' does not match requested branch '{branch}'"
+            )
+        issue_number = self._git_config.extract_issue_number(branch)
+        if issue_number is None or issue_number < 1 or state.issue_number != issue_number:
+            raise PreflightError(
+                f"Registered issue '{state.issue_number}' does not match the positive issue "
+                f"identity of branch '{branch}'."
+            )
+        branch = state.branch
+        base = state.parent_branch
         artifact_paths = frozenset(
             a.path for a in self._merge_readiness_context.branch_local_artifacts
         )
@@ -277,7 +280,7 @@ class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
             result = self._github_manager.create_pr(
                 title=params.title,
                 body=params.body or "",
-                head=params.head,
+                head=branch,
                 base=base,
                 draft=params.draft,
             )

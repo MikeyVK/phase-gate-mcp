@@ -2,15 +2,10 @@
 
 Phase 0.5: Project initialization with workflow selection.
 Issue #39: Project and branch-state initialization.
-Issue #79: Parent branch tracking with auto-detection.
+Explicit parent registration from the actual attached worktree branch.
 Issue #229 Cycle 4: SavePlanningDeliverablesTool with Layer 2 validates schema validation.
 """
 
-import contextlib
-import logging
-import os
-import re
-import subprocess
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -38,8 +33,6 @@ from mcp_server.schemas.tool_outputs import (
 )
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
-logger = logging.getLogger(__name__)
-
 
 class InitializeProjectInput(BaseModel):
     """Input for initialize_project tool."""
@@ -52,13 +45,11 @@ class InitializeProjectInput(BaseModel):
         ...,
         description="Workflow name; valid values are injected from contracts.yaml",
     )
-    parent_branch: str | None = Field(
-        default=None,
-        description=(
-            "Parent branch this feature/bug branches from. "
-            "If not provided, attempts auto-detection from git reflog. "
-            "Example: 'epic/76-quality-gates-tooling'"
-        ),
+    parent_branch: str = Field(
+        ...,
+        min_length=1,
+        pattern=r"^\S+$",
+        description="Explicit parent branch for this registration; no inference or normalization.",
     )
     custom_phases: tuple[str, ...] | None = Field(
         default=None,
@@ -120,95 +111,6 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
             )
         return schema
 
-    def _detect_parent_branch_from_reflog_sync(self, current_branch: str) -> str | None:
-        """Detect parent branch from git reflog.
-
-        This is intentionally synchronous and must run in a worker thread. On Windows
-        we've observed that long-running git subprocesses can make MCP (stdio) look
-        "hung"; doing the subprocess work in a thread plus using robust kill logic
-        keeps the server responsive.
-
-        To keep reconciliation accurate without producing huge output, we read only
-        the reflog *subject* lines via `--pretty=%gs`.
-        """
-        max_entries = 5000
-        timeout_s = 5.0
-
-        cmd = [
-            "git",
-            "--no-pager",
-            "reflog",
-            "show",
-            "--all",
-            "-n",
-            str(max_entries),
-            "--pretty=%gs",
-        ]
-
-        def kill_tree(pid: int) -> None:
-            if os.name == "nt":
-                # Kill the entire tree so `git` doesn't linger.
-                subprocess.run(
-                    ["taskkill", "/F", "/T", "/PID", str(pid)],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=2,
-                )
-                return
-            try:
-                os.kill(pid, 9)
-            except OSError:
-                return
-
-        try:
-            with subprocess.Popen(
-                cmd,
-                cwd=str(self.workspace_root),
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-            ) as proc:
-                try:
-                    stdout, _stderr = proc.communicate(timeout=timeout_s)
-                except subprocess.TimeoutExpired:
-                    kill_tree(proc.pid)
-                    with contextlib.suppress(OSError, subprocess.TimeoutExpired, ValueError):
-                        proc.communicate(timeout=1)
-                    logger.warning(
-                        "Git reflog failed: Command timed out after %ss",
-                        timeout_s,
-                    )
-                    return None
-
-                if proc.returncode:
-                    logger.warning("Git reflog failed (exit %s)", proc.returncode)
-                    return None
-
-            pattern = f"checkout: moving from (.+?) to {re.escape(current_branch)}"
-            for line in stdout.splitlines():
-                match = re.search(pattern, line)
-                if match:
-                    parent = match.group(1)
-                    logger.info("Detected parent branch from reflog: %s", parent)
-                    return parent
-
-            logger.warning("No parent branch found in reflog for %s", current_branch)
-            return None
-
-        except (OSError, ValueError) as e:
-            logger.warning("Git reflog failed: %s", e)
-            return None
-
-    async def _detect_parent_branch_from_reflog(self, current_branch: str) -> str | None:
-        return await anyio.to_thread.run_sync(
-            lambda: self._detect_parent_branch_from_reflog_sync(current_branch),
-            cancellable=True,
-        )
-
     async def execute(
         self,
         params: InitializeProjectInput,
@@ -217,7 +119,6 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         """Admit the branch, then initialize project metadata and branch state.
 
         Project and state are persisted separately.
-        Issue #79: Auto-detects parent_branch if not provided.
 
         Args:
             params: InitializeProjectInput with issue details
@@ -227,29 +128,18 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         """
         # Step 0: Get current branch once and reuse
         with anyio.fail_after(5):
-            branch = await anyio.to_thread.run_sync(self.git_manager.get_current_branch)
+            branch = await anyio.to_thread.run_sync(self.git_manager.require_attached_branch)
 
         await anyio.to_thread.run_sync(
-            lambda: self.state_engine.validate_branch_initialization(branch)
+            lambda: self.state_engine.validate_branch_initialization(
+                branch, params.issue_number, params.parent_branch
+            )
         )
 
-        # Step 1: Determine parent_branch
-        parent_branch = params.parent_branch
-
-        if parent_branch is None:
-            # Auto-detect from git reflog
-            parent_branch = await self._detect_parent_branch_from_reflog(branch)
-            if parent_branch:
-                logger.info("Auto-detected parent_branch: %s for %s", parent_branch, branch)
-
-        # Step 2: Create deliverables.json (workflow definition)
-        options = None
-        if params.custom_phases or params.skip_reason or parent_branch:
-            options = ProjectInitOptions(
-                custom_phases=params.custom_phases,
-                skip_reason=params.skip_reason,
-                parent_branch=parent_branch,
-            )
+        options = ProjectInitOptions(
+            custom_phases=params.custom_phases,
+            skip_reason=params.skip_reason,
+        )
 
         with anyio.fail_after(20):
             result = await anyio.to_thread.run_sync(
@@ -257,6 +147,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
                     issue_number=params.issue_number,
                     issue_title=params.issue_title,
                     workflow_name=params.workflow_name,
+                    parent_branch=params.parent_branch,
                     options=options,
                 )
             )
@@ -271,6 +162,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
                     branch=branch,
                     issue_number=params.issue_number,
                     initial_phase=first_phase,
+                    parent_branch=params.parent_branch,
                 )
             )
 
@@ -280,7 +172,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
             workflow_name=params.workflow_name,
             branch=branch,
             initial_phase=first_phase,
-            parent_branch=parent_branch,
+            parent_branch=params.parent_branch,
             required_phases=result["required_phases"],
             execution_mode=result["execution_mode"],
             files_created=[

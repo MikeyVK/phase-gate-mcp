@@ -222,6 +222,7 @@ def test_transition_phase_raises_when_gate_blocks(
         issue_number=257,
         issue_title="Cycle 2 strict gate test",
         workflow_name="feature",
+        parent_branch="main",
     )
     engine = make_phase_state_engine(
         workspace_root,
@@ -233,6 +234,7 @@ def test_transition_phase_raises_when_gate_blocks(
         branch="feature/257-c2-blocking",
         issue_number=257,
         initial_phase="research",
+        parent_branch="main",
     )
 
     with pytest.raises(GateViolation, match="missing research document"):
@@ -250,6 +252,7 @@ def test_force_phase_transition_returns_gate_report_with_blocked_checks(
         issue_number=257,
         issue_title="Cycle 2 force inspection test",
         workflow_name="feature",
+        parent_branch="main",
     )
     engine = make_phase_state_engine(
         workspace_root,
@@ -261,6 +264,7 @@ def test_force_phase_transition_returns_gate_report_with_blocked_checks(
         branch="feature/257-c2-force",
         issue_number=257,
         initial_phase="planning",
+        parent_branch="main",
     )
 
     result = engine.force_transition(
@@ -289,6 +293,7 @@ def test_transition_phase_enforces_contracts_from_phase_contracts_yaml(
         issue_number=257,
         issue_title="Cycle 2 live resolver test",
         workflow_name="feature",
+        parent_branch="main",
     )
     loader = ConfigLoader(workspace_root / get_default_server_root() / "config")
     resolver = PhaseContractResolver(
@@ -309,7 +314,9 @@ def test_transition_phase_enforces_contracts_from_phase_contracts_yaml(
         workflow_gate_runner=real_gate_runner,
     )
     branch = "feature/257-c2-live-resolver"
-    engine.initialize_branch(branch=branch, issue_number=257, initial_phase="research")
+    engine.initialize_branch(
+        branch=branch, issue_number=257, initial_phase="research", parent_branch="main"
+    )
 
     with pytest.raises(GateViolation) as exc_info:
         engine.transition(branch=branch, to_phase="planning")

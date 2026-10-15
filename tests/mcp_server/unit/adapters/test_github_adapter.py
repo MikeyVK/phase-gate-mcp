@@ -368,7 +368,7 @@ def test_list_issues_with_labels(adapter: GitHubAdapter) -> None:
 def test_create_pr_error(adapter: GitHubAdapter) -> None:
     adapter.client.get_repo.return_value.create_pull.side_effect = GithubException(500, "Error")
     with pytest.raises(ExecutionError, match="Failed to create PR"):
-        adapter.create_pr("T", "B", "H")
+        adapter.create_pr("T", "B", "H", base="main")
 
 
 def test_add_labels_error(adapter: GitHubAdapter) -> None:

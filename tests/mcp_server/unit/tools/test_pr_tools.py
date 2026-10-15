@@ -24,9 +24,7 @@ from mcp_server.tools.pr_tools import (
 
 @pytest.fixture
 def mock_git_config() -> MagicMock:
-    git_config = MagicMock()
-    git_config.default_base_branch = "main"
-    return git_config
+    return MagicMock()
 
 
 @pytest.fixture

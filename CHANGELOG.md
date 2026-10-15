@@ -8,6 +8,14 @@ All notable changes to Phase-Gate MCP Server are documented here, following
 
 ## Unreleased
 
+- Require explicit coordination-supplied parent registration on the attached branch;
+  `submit_pr` accepts title/body/draft and takes both PR targets from matching state
+  before submission effects. Remove the default-base authority. Branch state now uses
+  schema `2.0.0`; deliverables remain `1.0.0`, with deliberate owner adoption and no
+  automatic migration. Invalid/unreadable state and planning validation preserve the
+  original source and prior backups; existing wrappers retain planning-domain diagnosis.
+  See the [workspace contract update](docs/setup/workspace-upgrade.md#unreleased-branch-registration-contract).
+
 - Require deliberate configuration_choice for applicable check/test/fix bindings,
   including content preflight. Missing choices permit startup for setup but refuse
   execution; native discovery and caller argument semantics remain unchanged.
@@ -175,3 +183,4 @@ Historical wheel/sdist reconstruction retains this source and its declared asset
 with the same limited hidden-asset packaging correction as v2. Preparation does
 not certify compatibility with every current dependency environment or rerun old
 full suites. Final artifact evidence and actual publication remain separate.
+

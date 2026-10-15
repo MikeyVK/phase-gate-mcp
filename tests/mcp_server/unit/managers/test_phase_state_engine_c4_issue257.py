@@ -159,6 +159,7 @@ def _create_cycle_engine(
         issue_number=issue_number,
         issue_title="Cycle orchestration",
         workflow_name="feature",
+        parent_branch="main",
     )
     project_manager.save_planning_deliverables(
         issue_number,
@@ -201,6 +202,7 @@ def _create_cycle_engine(
         branch=branch,
         issue_number=issue_number,
         initial_phase="implementation",
+        parent_branch="main",
     )
     repository.save(engine.get_state(branch).with_updates(current_cycle=1, last_cycle=None))
     return engine, branch
@@ -292,6 +294,7 @@ def _create_config_driven_cycle_engine(
         issue_number=issue_number,
         issue_title="Config-driven cycle phase",
         workflow_name="feature",
+        parent_branch="main",
     )
     project_manager.save_planning_deliverables(
         issue_number,
@@ -327,6 +330,7 @@ def _create_config_driven_cycle_engine(
         branch=branch,
         issue_number=issue_number,
         initial_phase=initial_phase,
+        parent_branch="main",
     )
     state = engine.get_state(branch)
     repository.save(state.with_updates(current_cycle=1, last_cycle=0))

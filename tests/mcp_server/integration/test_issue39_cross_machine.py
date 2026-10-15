@@ -93,7 +93,10 @@ class TestIssue39CrossMachine:
 
         # Initialize project atomically (Mode 1)
         project_manager.initialize_project(
-            issue_number=42, issue_title="Cross-machine test", workflow_name="bug"
+            issue_number=42,
+            issue_title="Cross-machine test",
+            workflow_name="bug",
+            parent_branch="main",
         )
 
         # Get first phase from workflow
@@ -103,7 +106,10 @@ class TestIssue39CrossMachine:
 
         # Initialize state
         state_engine.initialize_branch(
-            branch="bug/42-cross-machine-test", issue_number=42, initial_phase=first_phase
+            branch="bug/42-cross-machine-test",
+            issue_number=42,
+            initial_phase=first_phase,
+            parent_branch="main",
         )
 
         # Verify deliverables register and branch state were created

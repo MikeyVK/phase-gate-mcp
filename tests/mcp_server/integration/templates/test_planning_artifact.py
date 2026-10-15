@@ -370,7 +370,7 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
         if any(phase.cycle_based for phase in definition.phases)
     )
     manager = make_project_manager(legacy_suite_roots.workspace, contracts_config=contracts)
-    manager.initialize_project(71, "Explicit planning projection", workflow)
+    manager.initialize_project(71, "Explicit planning projection", workflow, parent_branch="main")
     manager.save_planning_deliverables(71, payload)
     reader = make_project_manager(legacy_suite_roots.workspace, contracts_config=contracts)
     restored = reader.get_project_plan(71)

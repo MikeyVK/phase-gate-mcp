@@ -56,8 +56,6 @@ from tests.mcp_server.test_support import (
     make_project_manager,
 )
 
-pytestmark = pytest.mark.asyncio
-
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 _BRANCH = "feature/268-test"
 
@@ -82,6 +80,7 @@ def _make_state(server_root: Path) -> None:
             issue_number=268,
             workflow_name="feature",
             current_phase="implementation",
+            parent_branch="main",
         )
     )
 
@@ -228,7 +227,8 @@ class TestContextLoadedGate:
         """C3.D5: gate inactive when state.json present but issue_number mismatches branch."""
         # state.json exists but belongs to a DIFFERENT issue (999 vs branch issue 357)
         (tmp_path / "state.json").write_text(
-            '{"schema_version": "1.0.0", "branch": "feature/999-other", "issue_number": 999,'
+            '{"schema_version": "2.0.0", "branch": "feature/999-other", "parent_branch": "main",'
+            ' "issue_number": 999,'
             ' "workflow_name": "feature", "current_phase": "implementation"}',
             encoding="utf-8",
         )
@@ -238,7 +238,6 @@ class TestContextLoadedGate:
             protected_branches=["main"],
             branch_name_pattern=r"^[a-z0-9-]+$",
             commit_types=["feat", "fix", "docs", "chore"],
-            default_base_branch="main",
             issue_title_max_length=72,
         )
         loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
@@ -271,6 +270,7 @@ class TestContextLoadedGate:
 class TestContextLoadedResets:
     """GitCheckoutTool and GitPullTool clear context-loaded after execution."""
 
+    @pytest.mark.asyncio
     async def test_checkout_resets_context_loaded(self) -> None:
         cache = ContextLoadedCache()
         cache.set_context_loaded("feature/checkout-test", value=True)
@@ -281,7 +281,7 @@ class TestContextLoadedResets:
         mock_manager.get_current_branch.return_value = "main"
         mock_state_engine = MagicMock()
         mock_state_engine.get_state.return_value = SimpleNamespace(
-            current_phase="implementation", parent_branch=None
+            current_phase="implementation", parent_branch="main"
         )
 
         tool = GitCheckoutTool(
@@ -296,6 +296,7 @@ class TestContextLoadedResets:
 
         assert not cache.is_context_loaded("feature/checkout-test")
 
+    @pytest.mark.asyncio
     async def test_pull_resets_context_loaded(self) -> None:
         cache = ContextLoadedCache()
         cache.set_context_loaded("feature/pull-test", value=True)
@@ -355,11 +356,14 @@ class TestContextLoadedResets:
             issue_number=issue_number,
             issue_title="Phase reset integration test",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         cache = ContextLoadedCache()
         engine = make_phase_state_engine(tmp_path, project_manager=pm, context_loaded_writer=cache)
-        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="research")
+        engine.initialize_branch(
+            branch=branch, issue_number=issue_number, initial_phase="research", parent_branch="main"
+        )
 
         cache.set_context_loaded(branch, value=True)
         assert cache.is_context_loaded(branch)  # precondition

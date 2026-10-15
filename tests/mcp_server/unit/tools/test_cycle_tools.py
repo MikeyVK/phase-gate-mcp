@@ -153,6 +153,7 @@ class TestCycleTools:
             issue_number=257,
             issue_title="Cycle 5.1 enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         project_manager.save_planning_deliverables(
             257,
@@ -188,6 +189,7 @@ class TestCycleTools:
             branch=branch,
             issue_number=257,
             initial_phase="implementation",
+            parent_branch="main",
         )
 
         with (
@@ -341,6 +343,7 @@ class TestCycleTools:
             issue_number=257,
             issue_title="Cycle 5.1 enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         project_manager.save_planning_deliverables(
             257,
@@ -376,6 +379,7 @@ class TestCycleTools:
             branch=branch,
             issue_number=257,
             initial_phase="implementation",
+            parent_branch="main",
         )
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:

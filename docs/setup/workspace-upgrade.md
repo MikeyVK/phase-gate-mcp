@@ -22,6 +22,37 @@ A new release is explicitly postponed. These are development upgrade notes, not 
 published version or instruction to replace owner-managed native configs. The 3.0.0
 release and its artifacts remain unchanged.
 
+## Unreleased branch registration contract
+
+The unreleased #503 change requires an explicit `parent_branch` on every
+`initialize_project` call. Coordination knows the branch's intended parent and performs
+`create_branch`, checkout and initialization before handing work to implementation.
+The attached Git branch supplies the head identity; neither reflog nor a default base
+is an authority. `submit_pr` now accepts title, body and draft only and uses matching
+registered branch/parent identity before submission effects.
+
+Branch state uses schema `2.0.0`; the deliverables envelope remains `1.0.0`.
+Existing workspaces must deliberately reconcile valid state with required distinct,
+nonblank branch/parent references and the actual branch/positive issue identity before
+using the new runtime. Preserve progress and audit fields; changing the schema marker
+alone does not repair invalid content. There is no automatic migration or compatibility
+reader. See the [project reference](../reference/tools/project.md#pgmcpstatejson)
+and [PR reference](../reference/tools/github.md#registered-branch-authority).
+
+For corrupt, version-invalid or unreadable state/planning files, inspect the diagnostic
+and source before choosing a repair. Failed validation leaves the original source and
+any prior backup intact; retries do not silently convert the problem into absence.
+Back up files deliberately when needed, then use an authorized explicit edit or other
+owner-led repair and verify the result. Do not delete state merely to make initialization
+succeed: existing same-branch registration is deliberately rejected, and initialization
+does not unlock an open PR. The separate managed-template renewal backups described
+below remain part of that procedure.
+
+Restart after adopting the coherent source/package contract and state, then refresh
+client tool discovery. Verify `get_work_context`, `health_check` and the complete
+`get_project_plan` readback before normal workflow writes. Package installation,
+template renewal and client refresh do not themselves migrate branch state.
+
 ## Install the intended package
 
 Install the reviewed release wheel in the Python environment used by the MCP launch
@@ -128,3 +159,4 @@ an unchanged suite alone does not require a restart.
 - [Agentic Bootstrap Guide](agentic-bootstrap.md) — agent-assisted bootstrap.
 - [Server Configuration](../reference/server-configuration.md) — effective roots and declarations.
 - [Repository changelog](https://github.com/MikeyVK/phase-gate-mcp/blob/main/CHANGELOG.md) — release preparation and breaking changes.
+

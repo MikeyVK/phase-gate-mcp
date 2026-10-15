@@ -3,8 +3,8 @@
 # GitHub Integration Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.1  
-**Last Updated:** 2026-08-22  
+**Version:** 3.2  
+**Last Updated:** 2026-10-15  
 
 **Source:** [mcp_server/tools/issue_tools.py](../../../mcp_server/tools/issue_tools.py), [pr_tools.py](../../../mcp_server/tools/pr_tools.py), [label_tools.py](../../../mcp_server/tools/label_tools.py), [milestone_tools.py](../../../mcp_server/tools/milestone_tools.py)  
 **Tests:** [issue tool tests](../../../tests/mcp_server/unit/tools/test_issue_tools.py), [PR tool tests](../../../tests/mcp_server/unit/tools/test_pr_tools.py), [label tool tests](../../../tests/mcp_server/unit/tools/test_label_tools.py), and [milestone tool tests](../../../tests/mcp_server/unit/tools/test_milestone_tools.py)  
@@ -384,23 +384,25 @@ cache update in a single operation.
 |-----------|------|----------|-------------|
 | `title` | `str` | **Yes** | PR title (Unicode-safe) |
 | `body` | `str` | No | PR description (supports Markdown and Unicode) |
-| `head` | `str` | **Yes** | Source branch (e.g., `"feature/123-my-feature"`) |
-| `base` | `str` | No | Target branch. Resolution chain when omitted: (1) detected parent branch from `.pgmcp/state.json`, (2) `git_config.default_base_branch` (typically `"main"`). Pass explicitly to override. |
 | `draft` | `bool` | No | Create as draft PR (default: `False`) |
 
 
-#### Base Branch Resolution
+#### Registered Branch Authority
 
-When `base` is omitted, `submit_pr` resolves the target branch in this order:
+The current attached Git branch must match a valid registration in `.pgmcp/state.json`,
+including its positive configured issue number. The registered branch is the PR head;
+its required `parent_branch` is the PR base. Authorization occurs before artifact
+preparation, commit, push, PR creation or status update.
 
-1. **Parent branch detection:** Look up the parent branch for the source branch from `.pgmcp/state.json` via `IBranchParentReader`.
-2. **Fallback:** Use `git_config.default_base_branch` (typically `"main"`).
-
-This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...`) to automatically target their epic parent rather than `main`. Pass `base` explicitly to override the entire chain.
+A child registered against an epic parent targets that parent. The caller cannot
+override either target: `submit_pr` accepts only title, body and draft. Missing,
+mismatched or invalid registration produces the existing diagnosis without submission
+effects. There is no reflog or configured default-base fallback. Internal
+`GitHubManager.create_pr` and adapter callers must supply an explicit base.
 
 #### Atomic Execution Flow
 
-`submit_pr` executes the following steps in order, stopping on the first failure:
+After registration authorization, `submit_pr` executes the following existing steps in order, stopping on the first failure:
 
 ```
 1. Preflight and prepare branch for submission
@@ -473,9 +475,7 @@ Error result on failure:
 ```json
 {
   "title": "feat: Add OAuth2 authentication",
-  "body": "## Changes\n\n- Google OAuth2\n- GitHub OAuth2\n- Token refresh\n\nCloses #123",
-  "head": "feature/123-oauth",
-  "base": "main"
+  "body": "## Changes\n\n- Google OAuth2\n- GitHub OAuth2\n- Token refresh\n\nCloses #123"
 }
 ```
 
@@ -484,7 +484,6 @@ Error result on failure:
 {
   "title": "WIP: OAuth2 authentication",
   "body": "Early draft for feedback.",
-  "head": "feature/123-oauth",
   "draft": true
 }
 ```
@@ -1039,5 +1038,7 @@ Labels matching `freeform-*` pattern bypass pattern validation.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.2 | 2026-10-15 | @imp documenter | Replace PR target cascade/overrides with matching registered head/parent authority before lifecycle effects (#503) |
 | 3.1 | 2026-08-22 | Agent | Align credential activation, bounded list/detail projections, and cached DTO contracts |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 16 GitHub tools: issues (5), PRs (3), labels (5), milestones (3) |
+

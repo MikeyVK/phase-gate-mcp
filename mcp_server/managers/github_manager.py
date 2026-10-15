@@ -154,7 +154,7 @@ class GitHubManager:
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def create_pr(
-        self, title: str, body: str, head: str, base: str = "main", draft: bool = False
+        self, title: str, body: str, head: str, base: str, draft: bool = False
     ) -> dict[str, Any]:
         """Create a new pull request."""
         pr = self.adapter.create_pr(title=title, body=body, head=head, base=base, draft=draft)

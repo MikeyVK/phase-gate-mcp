@@ -449,6 +449,13 @@ class GitManager:
         """
         return self.adapter.get_current_branch()
 
+    def require_attached_branch(self) -> str:
+        """Return the actual attached branch or reject detached HEAD."""
+        branch = self.get_current_branch()
+        if branch == "HEAD":
+            raise PreflightError("An attached branch is required; HEAD is detached.")
+        return branch
+
     def has_net_diff_for_path(self, path: str, base: str) -> bool:
         """Return True if *path* has a net delta between the merge-base and HEAD.
 
