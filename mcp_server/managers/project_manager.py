@@ -28,8 +28,6 @@ from typing import TYPE_CHECKING, Any
 from pydantic import ValidationError
 
 from mcp_server.core.exceptions import (
-    PlanningVersionMismatchError,
-    StateCorruptedError,
     StateNotFoundError,
 )
 
@@ -67,13 +65,9 @@ if TYPE_CHECKING:
 # _known_phase_keys is removed (obsolete)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProjectInitOptions:
-    """Optional parameters for project initialization.
-
-    Reduces initialize_project() from 7 to 4 parameters.
-    Field order: overrides → customizations → metadata
-    """
+    """Optional execution/customization values, separate from required identity."""
 
     # Overrides
     execution_mode: str | None = None
@@ -82,11 +76,8 @@ class ProjectInitOptions:
     custom_phases: tuple[str, ...] | None = None
     skip_reason: str | None = None
 
-    # Branch metadata
-    parent_branch: str | None = None
 
-
-@dataclass
+@dataclass(frozen=True)
 class ProjectPlan:
     """Project phase plan data structure.
 
@@ -105,9 +96,10 @@ class ProjectPlan:
     execution_mode: str
     required_phases: tuple[str, ...]
 
+    parent_branch: str
+
     # Optional fields
     skip_reason: str | None = None
-    parent_branch: str | None = None
     created_at: str | None = None
 
 
@@ -150,6 +142,8 @@ class ProjectManager:
         issue_number: int,
         issue_title: str,
         workflow_name: str,
+        *,
+        parent_branch: str,
         options: ProjectInitOptions | None = None,
     ) -> dict[str, Any]:
         """Initialize project with workflow selection.
@@ -158,8 +152,8 @@ class ProjectManager:
             issue_number: GitHub issue number
             issue_title: Issue title
             workflow_name: Workflow from contracts.yaml (feature, bug, hotfix, etc.)
-            options: Optional parameters (execution_mode, custom_phases, skip_reason,
-                    parent_branch)
+            parent_branch: Explicit nonblank parent reference
+            options: Optional execution_mode, custom_phases and skip_reason
 
         Returns:
             dict with success, workflow_name, execution_mode, required_phases,
@@ -170,8 +164,8 @@ class ProjectManager:
         """
         opts = options or ProjectInitOptions()
 
-        # Extract parent_branch from options
-        parent_branch = opts.parent_branch
+        if not parent_branch or any(character.isspace() for character in parent_branch):
+            raise ValueError("parent_branch must be a nonblank reference without whitespace")
 
         # Validate workflow exists
         if workflow_name not in self._contracts_config.workflows:
@@ -307,11 +301,7 @@ class ProjectManager:
         if not self.deliverables_file.exists():
             raise PlanningMutationError("planning_project_missing")
         snapshot = self.deliverables_file.read_bytes()
-        try:
-            projects = self._read_projects()
-        except (PlanningVersionMismatchError, StateCorruptedError):
-            self._state_version_validator.backup_file(self.deliverables_file)
-            raise
+        projects = self._read_projects()
         if self.deliverables_file.read_bytes() != snapshot:
             raise PlanningMutationError("planning_snapshot_conflict")
         project = projects.get(str(issue_number))
@@ -580,11 +570,7 @@ class ProjectManager:
         self.deliverables_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing projects
-        try:
-            projects = self._read_projects()
-        except (PlanningVersionMismatchError, StateCorruptedError):
-            self._state_version_validator.backup_file(self.deliverables_file)
-            raise
+        projects = self._read_projects()
 
         # Store plan (convert tuple to list for JSON)
         projects[str(plan.issue_number)] = {

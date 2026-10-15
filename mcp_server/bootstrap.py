@@ -770,6 +770,7 @@ class ServerBootstrapper:
             contracts_config=configs.contracts_config,
             state_repository=state_repository,
             workflow_gate_runner=workflow_gate_runner,
+            workflow_state_mutator=workflow_state_mutator,
             context_loaded_writer=context_loaded_cache,
             server_root=server_root,
         )
@@ -962,10 +963,8 @@ class ServerBootstrapper:
                 github_manager=managers.github_manager,
                 pr_status_writer=managers.pr_status_cache,
                 merge_readiness_context=merge_readiness_context,
-                branch_parent_reader=BranchStateParentReader(
-                    state_reader=managers.state_repository,
-                    git_config=configs.git_config,
-                ),
+                state_reader=BranchValidatedStateReader(inner=managers.state_repository),
+                git_config=configs.git_config,
             ),
             AddLabelsTool(
                 manager=managers.github_manager,

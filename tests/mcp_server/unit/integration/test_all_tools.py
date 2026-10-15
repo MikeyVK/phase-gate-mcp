@@ -48,7 +48,6 @@ from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 
 def make_mock_git_config() -> MagicMock:
     git_config = MagicMock()
-    git_config.default_base_branch = "main"
     git_config.issue_title_max_length = 72
     git_config.branch_types = ["feature", "bug", "docs", "refactor", "hotfix", "epic"]
     git_config.commit_types = ["feat", "fix", "docs", "refactor", "test", "chore"]

@@ -1,8 +1,6 @@
 """Tests for PhaseStateEngine with parent_branch tracking.
 
-Issue #79: Tests for parent_branch in state management.
-- initialize_branch with parent_branch
-- Auto-recovery includes parent_branch from deliverables.json
+Explicit parent admission and configured cycle behavior through public state operations.
 
 @layer: Tests (Unit)
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.phase_state_engine
@@ -11,14 +9,16 @@ Issue #79: Tests for parent_branch in state management.
 from __future__ import annotations
 
 from pathlib import Path
+from subprocess import CompletedProcess
 from typing import TYPE_CHECKING
 
 import pytest
 
-from mcp_server.managers.project_manager import ProjectInitOptions
-from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.core.exceptions import PreflightError, StateNotFoundError
+from mcp_server.managers.state_repository import BranchState, InMemoryStateRepository
 from mcp_server.schemas.deliverables import SavePlanningModel
 from tests.mcp_server.test_support import (
+    get_default_server_root,
     make_phase_state_engine,
     make_project_manager,
 )
@@ -73,96 +73,86 @@ class TestPhaseStateEngineParentBranch:
         )
 
     def test_initialize_branch_with_explicit_parent_branch(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
+        self, workspace_root: Path, project_manager: ProjectManager
     ) -> None:
-        """Test initializing branch with explicit parent_branch.
-
-        Issue #79: parent_branch can be passed explicitly to override project's value.
-        """
-        # Setup - create project with one parent
+        """Handover registers explicit identity without carrying prior branch progress."""
+        repository = InMemoryStateRepository()
+        repository.save(
+            BranchState(
+                branch="feature/78-previous",
+                parent_branch="main",
+                issue_number=78,
+                workflow_name="feature",
+                current_phase="implementation",
+                current_cycle=2,
+                last_cycle=1,
+                cycle_history=[{"cycle_number": 1}],
+                transitions=[{"from_phase": "research", "to_phase": "implementation"}],
+                skip_reason="Previous branch decision",
+                current_sub_phase="red",
+            )
+        )
+        engine = make_phase_state_engine(
+            workspace_root, project_manager=project_manager, state_repository=repository
+        )
         project_manager.initialize_project(
             issue_number=79,
-            issue_title="Test",
+            issue_title="Explicit parent",
             workflow_name="feature",
-            options=ProjectInitOptions(parent_branch="main"),
+            parent_branch="epic/76-qa",
         )
 
-        # Execute - initialize branch with different parent (override)
         result = engine.initialize_branch(
             branch="feature/79-test",
             issue_number=79,
             initial_phase="research",
-            parent_branch="epic/76-qa",  # Override project's "main"
+            parent_branch="epic/76-qa",
         )
 
-        # Verify
         assert result["success"] is True
         assert result["parent_branch"] == "epic/76-qa"
-
-        # Verify persisted to state.json
         state = engine.get_state("feature/79-test")
         assert state.parent_branch == "epic/76-qa"
+        assert state.issue_number == 79
+        assert state.current_cycle is None
+        assert state.last_cycle is None
+        assert state.cycle_history == []
+        assert state.transitions == []
+        assert state.skip_reason is None
+        assert state.current_sub_phase is None
+        plan = project_manager.get_project_plan(79)
+        assert plan is not None
+        assert plan["parent_branch"] == "epic/76-qa"
 
-    def test_initialize_branch_inherits_parent_from_project(
+    def test_parent_mismatch_preserves_registration_absence(
         self, engine: PhaseStateEngine, project_manager: ProjectManager
     ) -> None:
-        """Test initializing branch inherits parent_branch from project.
-
-        Issue #79: If parent_branch not provided, inherit from deliverables.json.
-        """
-        # Setup - create project with parent
+        """A different supplied parent cannot register inconsistent branch state."""
         project_manager.initialize_project(
             issue_number=80,
-            issue_title="Test",
+            issue_title="Parent admission",
             workflow_name="bug",
-            options=ProjectInitOptions(parent_branch="epic/76-qa"),
+            parent_branch="epic/76-qa",
         )
+        before = project_manager.get_project_plan(80)
 
-        # Execute - initialize branch WITHOUT parent_branch parameter
-        result = engine.initialize_branch(
-            branch="bug/80-test",
-            issue_number=80,
-            initial_phase="implementation",
-            # No parent_branch - should inherit from project
-        )
+        with pytest.raises(PreflightError):
+            engine.initialize_branch(
+                branch="bug/80-test",
+                issue_number=80,
+                initial_phase="implementation",
+                parent_branch="main",
+            )
 
-        # Verify
-        assert result["success"] is True
-        assert result["parent_branch"] == "epic/76-qa"
-
-        # Verify persisted to state.json
-        state = engine.get_state("bug/80-test")
-        assert state.parent_branch == "epic/76-qa"
-
-    def test_initialize_branch_with_none_parent_branch(
-        self, engine: PhaseStateEngine, project_manager: ProjectManager
-    ) -> None:
-        """Test initializing branch when project has no parent_branch.
-
-        Issue #79: Backward compatibility - parent_branch can be None.
-        """
-        # Setup - create project WITHOUT parent_branch
-        project_manager.initialize_project(
-            issue_number=81, issue_title="Old Project", workflow_name="docs"
-        )
-
-        # Execute - initialize branch
-        result = engine.initialize_branch(
-            branch="docs/81-test", issue_number=81, initial_phase="documentation"
-        )
-
-        # Verify
-        assert result["success"] is True
-        assert result["parent_branch"] is None
-
-        # Verify persisted to state.json
-        state = engine.get_state("docs/81-test")
-        assert state.parent_branch is None
+        with pytest.raises(StateNotFoundError):
+            engine.get_state("bug/80-test")
+        assert project_manager.get_project_plan(80) == before
 
     def test_initialize_branch_returns_warning_for_uncommitted_state_changes(
         self,
         engine: PhaseStateEngine,
         project_manager: ProjectManager,
+        workspace_root: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """initialize_branch warns explicitly when tracked state.json has local changes."""
@@ -170,13 +160,32 @@ class TestPhaseStateEngineParentBranch:
             issue_number=84,
             issue_title="Warn on dirty state",
             workflow_name="feature",
+            parent_branch="main",
         )
-        monkeypatch.setattr(engine, "_has_uncommitted_state_changes", lambda: True)
+        state_file = workspace_root / get_default_server_root() / "state.json"
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text(
+            BranchState(
+                branch="feature/83-previous",
+                issue_number=83,
+                workflow_name="feature",
+                current_phase="ready",
+                parent_branch="main",
+            ).model_dump_json(),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            "mcp_server.managers.phase_state_engine.subprocess.run",
+            lambda *args, **kwargs: CompletedProcess(
+                args=[], returncode=0, stdout=" M state.json\n"
+            ),
+        )
 
         result = engine.initialize_branch(
             branch="feature/84-dirty-state",
             issue_number=84,
             initial_phase="research",
+            parent_branch="main",
         )
 
         assert result["warnings"] == ["state.json has uncommitted local changes"]
@@ -238,12 +247,18 @@ class TestTddCycleTrackingFields:
         """
         # Setup - create project
         project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
+            issue_number=146,
+            issue_title="TDD Cycle Tracking",
+            workflow_name="feature",
+            parent_branch="main",
         )
 
         # Execute - initialize branch
         result = engine.initialize_branch(
-            branch="feature/146-tdd-cycle-tracking", issue_number=146, initial_phase="research"
+            branch="feature/146-tdd-cycle-tracking",
+            issue_number=146,
+            initial_phase="research",
+            parent_branch="main",
         )
 
         # Verify - result contains success
@@ -272,7 +287,7 @@ class TestCycleValidationLogic:
     @pytest.fixture
     def planned_engine(self, tmp_path: Path) -> tuple[PhaseStateEngine, str]:
         manager = make_project_manager(tmp_path)
-        manager.initialize_project(146, "Cycle validation", "feature")
+        manager.initialize_project(146, "Cycle validation", "feature", parent_branch="main")
         manager.save_planning_deliverables(
             146,
             SavePlanningModel.model_validate(
@@ -299,7 +314,7 @@ class TestCycleValidationLogic:
             tmp_path, project_manager=manager, state_repository=InMemoryStateRepository()
         )
         branch = "feature/146-cycle-validation"
-        engine.initialize_branch(branch, 146, "implementation")
+        engine.initialize_branch(branch, 146, "implementation", parent_branch="main")
         return engine, branch
 
     @pytest.mark.parametrize("cycle_number", [0, -1, 5])
@@ -326,12 +341,12 @@ class TestCycleValidationLogic:
 
     def test_missing_plan_rejects_cycle_transition_without_mutation(self, tmp_path: Path) -> None:
         manager = make_project_manager(tmp_path)
-        manager.initialize_project(147, "No planning yet", "bug")
+        manager.initialize_project(147, "No planning yet", "bug", parent_branch="main")
         engine = make_phase_state_engine(
             tmp_path, project_manager=manager, state_repository=InMemoryStateRepository()
         )
         branch = "bug/147-no-plan"
-        engine.initialize_branch(branch, 147, "implementation")
+        engine.initialize_branch(branch, 147, "implementation", parent_branch="main")
         state = engine.get_state(branch)
         with pytest.raises(ValueError, match="planning_deliverables_missing"):
             engine.transition_cycle(branch, 1)

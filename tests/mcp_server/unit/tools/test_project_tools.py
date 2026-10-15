@@ -88,7 +88,7 @@ class TestInitializeProjectToolParentBranch:
     ) -> None:
         """An initialized branch retains both files when initialization is rejected."""
         branch = "feature/491-guard"
-        with patch.object(tool.git_manager, "get_current_branch", return_value=branch):
+        with patch.object(tool.git_manager, "require_attached_branch", return_value=branch):
             first = await tool.execute(
                 InitializeProjectInput(
                     issue_number=491,
@@ -123,7 +123,7 @@ class TestInitializeProjectToolParentBranch:
         from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
 
         # Mock git to return current branch
-        with patch.object(tool.git_manager, "get_current_branch") as mock_branch:
+        with patch.object(tool.git_manager, "require_attached_branch") as mock_branch:
             mock_branch.return_value = "feature/79-test"
 
             # Execute
@@ -141,93 +141,6 @@ class TestInitializeProjectToolParentBranch:
         assert isinstance(result, InitializeProjectOutput)
         assert result.success
         assert result.parent_branch == "epic/76-quality-gates"
-
-    @pytest.mark.asyncio
-    async def test_initialize_auto_detects_parent_branch(self, tool: InitializeProjectTool) -> None:
-        """Test auto-detection of parent_branch via git reflog."""
-        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
-
-        # Mock git operations
-        with (
-            patch.object(tool.git_manager, "get_current_branch") as mock_branch,
-            patch.object(tool, "_detect_parent_branch_from_reflog") as mock_detect,
-        ):
-            mock_branch.return_value = "feature/80-test"
-            mock_detect.return_value = "main"  # Auto-detected
-
-            # Execute - no parent_branch parameter
-            result = await tool.execute(
-                InitializeProjectInput(
-                    issue_number=80, issue_title="Test Auto-detect", workflow_name="bug"
-                ),
-                NoteContext(),
-            )
-
-        # Verify
-        assert isinstance(result, InitializeProjectOutput)
-        assert result.success
-        assert result.parent_branch == "main"
-        mock_detect.assert_called_once_with("feature/80-test")
-
-    @pytest.mark.asyncio
-    async def test_initialize_auto_detect_fails_gracefully(
-        self, tool: InitializeProjectTool
-    ) -> None:
-        """Test auto-detection failure results in None."""
-        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
-
-        # Mock git operations
-        with (
-            patch.object(tool.git_manager, "get_current_branch") as mock_branch,
-            patch.object(tool, "_detect_parent_branch_from_reflog") as mock_detect,
-        ):
-            mock_branch.return_value = "feature/81-test"
-            mock_detect.return_value = None  # Detection failed
-
-            # Execute
-            result = await tool.execute(
-                InitializeProjectInput(
-                    issue_number=81, issue_title="Test Failed Detect", workflow_name="docs"
-                ),
-                NoteContext(),
-            )
-
-        # Verify - no error, parent_branch is null
-        assert isinstance(result, InitializeProjectOutput)
-        assert result.success
-        assert result.parent_branch is None
-        mock_detect.assert_called_once_with("feature/81-test")
-
-    @pytest.mark.asyncio
-    async def test_explicit_parent_branch_overrides_auto_detect(
-        self, tool: InitializeProjectTool
-    ) -> None:
-        """Test explicit parent_branch skips auto-detection."""
-        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
-
-        # Mock git operations
-        with (
-            patch.object(tool.git_manager, "get_current_branch") as mock_branch,
-            patch.object(tool, "_detect_parent_branch_from_reflog") as mock_detect,
-        ):
-            mock_branch.return_value = "feature/82-test"
-
-            # Execute with explicit parent_branch
-            result = await tool.execute(
-                InitializeProjectInput(
-                    issue_number=82,
-                    issue_title="Test Override",
-                    workflow_name="feature",
-                    parent_branch="epic/special",
-                ),
-                NoteContext(),
-            )
-
-        # Verify - auto-detect NOT called
-        assert isinstance(result, InitializeProjectOutput)
-        assert result.success
-        assert result.parent_branch == "epic/special"
-        mock_detect.assert_not_called()
 
 
 class _GetProjectPlanManagerStub:
@@ -413,7 +326,7 @@ def planning_manager(legacy_suite_workspace: Path) -> ProjectManager:
     manager = make_project_manager(
         legacy_suite_workspace, cycle_evidence_reader=_CompleteEvidence()
     )
-    manager.initialize_project(229, "Planning commands", "feature")
+    manager.initialize_project(229, "Planning commands", "feature", parent_branch="main")
     return manager
 
 
@@ -712,6 +625,7 @@ class TestProjectManagerWorkflowStatusResolverC4:
             issue_number=231,
             issue_title="State Snapshot CQRS",
             workflow_name="feature",
+            parent_branch="main",
         )
         plan = manager.get_project_plan(231)
         assert plan is not None
@@ -741,6 +655,7 @@ class TestProjectManagerWorkflowStatusResolverC4:
             issue_number=231,
             issue_title="State Snapshot CQRS",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         plan = manager.get_project_plan(231)
@@ -771,6 +686,7 @@ class TestProjectManagerWorkflowStatusResolverC4:
             issue_number=231,
             issue_title="State Snapshot CQRS",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         plan = manager.get_project_plan(231)
@@ -803,6 +719,7 @@ class TestProjectManagerWorkflowStatusResolverC4:
             issue_number=231,
             issue_title="State Snapshot CQRS",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         plan = manager.get_project_plan(231)

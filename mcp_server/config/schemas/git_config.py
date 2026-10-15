@@ -47,10 +47,6 @@ class GitConfig(BaseModel):
         description="Allowed Conventional Commit types",
         min_length=1,
     )
-    default_base_branch: str = Field(
-        ...,
-        description="Default base branch for PR creation",
-    )
     issue_title_max_length: int = Field(
         ...,
         description="Maximum allowed length for issue titles",

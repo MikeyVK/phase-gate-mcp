@@ -102,7 +102,6 @@ class TestMergePRToolPRStatusWriter:
         pr_status_writer: IPRStatusWriter,
     ) -> MergePRTool:
         git_config = MagicMock(spec=GitConfig)
-        git_config.default_base_branch = "main"
         return MergePRTool(
             manager=manager,
             git_config=git_config,

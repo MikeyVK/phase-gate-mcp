@@ -49,7 +49,12 @@ async def test_status_resource(tmp_path: Path, state_branch: str | None) -> None
     repository = FileStateRepository(state_file=tmp_path / "state.json")
     if state_branch is not None:
         repository.save(
-            BranchState(branch=state_branch, workflow_name="custom", current_phase="review")
+            BranchState(
+                branch=state_branch,
+                workflow_name="custom",
+                current_phase="review",
+                parent_branch="main",
+            )
         )
     state_reader = BranchValidatedStateReader(inner=repository)
     resource = StatusResource(git_context_reader=mock_git, state_reader=state_reader)

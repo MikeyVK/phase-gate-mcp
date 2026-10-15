@@ -100,7 +100,7 @@ class TestGitHubManager:
         mock_pr.title = "New PR"
         mock_adapter.create_pr.return_value = mock_pr
 
-        result = manager.create_pr("New PR", "Body", "feat-branch")
+        result = manager.create_pr("New PR", "Body", "feat-branch", base="main")
 
         assert result["number"] == 20
         mock_adapter.create_pr.assert_called_with(
@@ -302,7 +302,6 @@ class TestGitHubManagerValidateIssueParams:
                 "build",
                 "revert",
             ],
-            default_base_branch="main",
             issue_title_max_length=72,
         )
 

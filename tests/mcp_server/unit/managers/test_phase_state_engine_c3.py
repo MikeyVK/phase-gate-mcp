@@ -201,11 +201,13 @@ class TestForceTransitionSkippedGateWarning:
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         engine_with_gates.initialize_branch(
             branch="feature/229-c3",
             issue_number=229,
             initial_phase="planning",
+            parent_branch="main",
         )
 
         with caplog.at_level(logging.WARNING, logger="mcp_server.managers.phase_state_engine"):
@@ -229,6 +231,7 @@ class TestForceTransitionSkippedGateWarning:
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         project_manager_with_gates.save_planning_deliverables(
             229,
@@ -252,6 +255,7 @@ class TestForceTransitionSkippedGateWarning:
             branch="feature/229-c3b",
             issue_number=229,
             initial_phase="research",
+            parent_branch="main",
         )
 
         with caplog.at_level(logging.WARNING, logger="mcp_server.managers.phase_state_engine"):
@@ -279,11 +283,13 @@ class TestForceTransitionSkippedGateWarning:
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         engine_no_gates.initialize_branch(
             branch="feature/229-c3c",
             issue_number=229,
             initial_phase="research",
+            parent_branch="main",
         )
 
         with caplog.at_level(logging.WARNING, logger="mcp_server.managers.phase_state_engine"):
@@ -318,6 +324,7 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
             issue_number=229,
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         pm.save_planning_deliverables(
             229,
@@ -338,7 +345,9 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
 
         engine = make_phase_state_engine(workspace_root, project_manager=pm)
         branch = "feature/229-bugfix"
-        engine.initialize_branch(branch=branch, issue_number=229, initial_phase=initial_phase)
+        engine.initialize_branch(
+            branch=branch, issue_number=229, initial_phase=initial_phase, parent_branch="main"
+        )
         return pm, engine, branch
 
     def test_force_transition_no_warning_when_exit_key_present(

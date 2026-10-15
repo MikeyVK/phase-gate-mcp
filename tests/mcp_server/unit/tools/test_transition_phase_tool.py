@@ -71,13 +71,19 @@ class TestTransitionPhaseTool:
         """Initialize a project and branch for testing."""
         # Initialize project with feature workflow
         project_manager.initialize_project(
-            issue_number=42, issue_title="Test feature", workflow_name="feature"
+            issue_number=42,
+            issue_title="Test feature",
+            workflow_name="feature",
+            parent_branch="main",
         )
 
         # Initialize branch in first phase of feature workflow
         branch = "feature/42-test-feature"
         phase_engine.initialize_branch(
-            branch=branch, issue_number=42, initial_phase=feature_phases[0]
+            branch=branch,
+            issue_number=42,
+            initial_phase=feature_phases[0],
+            parent_branch="main",
         )
 
         return branch
@@ -127,12 +133,14 @@ class TestTransitionPhaseTool:
             issue_number=446,
             issue_title="Compact workflow",
             workflow_name=workflow,
+            parent_branch="main",
         )
         branch = f"{workflow}/446-compact-workflow"
         phase_engine.initialize_branch(
             branch=branch,
             issue_number=446,
             initial_phase=initial,
+            parent_branch="main",
         )
 
         next_result = await tool.execute(
@@ -291,7 +299,7 @@ class TestTransitionPhaseTool:
 async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, forced: bool) -> None:
     """Both public tools carry selection and structured rejection without writes."""
     manager = make_project_manager(tmp_path)
-    manager.initialize_project(491, "Cycle selection", "feature")
+    manager.initialize_project(491, "Cycle selection", "feature", parent_branch="main")
     manager.save_planning_deliverables(
         491,
         SavePlanningModel.model_validate(
@@ -316,7 +324,7 @@ async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, for
     )
     engine = make_phase_state_engine(tmp_path, project_manager=manager)
     branch = "feature/491-selection"
-    engine.initialize_branch(branch, 491, "planning")
+    engine.initialize_branch(branch, 491, "planning", parent_branch="main")
     engine.transition(branch, "implementation")
     engine.transition_cycle(branch, 2)
     engine.force_transition(branch, "planning", "Revise the plan", "Owner approval")

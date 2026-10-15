@@ -131,7 +131,6 @@ def git_repo(tmp_path: Path) -> Path:
         "protected_branches": ["main"],
         "branch_name_pattern": "^[a-z0-9-]+$",
         "commit_types": ["feat", "fix", "docs", "test", "refactor", "chore"],
-        "default_base_branch": "main",
         "issue_title_max_length": 72,
     }
     (config_dir / "git.yaml").write_text(yaml.dump(git_config), encoding="utf-8")
@@ -166,6 +165,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
         issue_number=999,
         issue_title="End-to-end workflow test",
         workflow_name="feature",
+        parent_branch="main",
     )
 
     # Create feature branch

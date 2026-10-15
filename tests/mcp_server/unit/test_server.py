@@ -61,10 +61,10 @@ def _bootstrap_workspace_configs(workspace_root: Path) -> None:
             target_root / directory_name,
             dirs_exist_ok=True,
         )
-    for file_name in ("state.json", "deliverables.json"):
-        source_file = source_root / file_name
-        if source_file.exists():
-            shutil.copy2(source_file, target_root / file_name)
+    source_file = source_root / "deliverables.json"
+    if source_file.exists():
+        shutil.copy2(source_file, target_root / "deliverables.json")
+    _write_phase_state(workspace_root, "research")
 
 
 def _patch_server_settings(
@@ -102,8 +102,9 @@ def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
     state_file.write_text(
         json.dumps(
             {
-                "schema_version": "1.0.0",
+                "schema_version": "2.0.0",
                 "branch": "refactor/283-ready-phase-enforcement",
+                "parent_branch": "main",
                 "workflow_name": "refactor",
                 "current_phase": current_phase,
                 "issue_number": 283,
@@ -155,8 +156,6 @@ def _make_submit_pr_request() -> CallToolRequest:
             arguments={
                 "title": "Test PR",
                 "body": "Test body",
-                "head": "refactor/283-ready-phase-enforcement",
-                "base": "main",
             },
         )
     )
@@ -392,7 +391,8 @@ class TestServerToolRegistration:
                         github_manager=managers.github_manager,
                         pr_status_writer=managers.pr_status_cache,
                         merge_readiness_context=MagicMock(),
-                        branch_parent_reader=MagicMock(),
+                        state_reader=MagicMock(),
+                        git_config=managers.git_manager.git_config,
                     )
                 )
             ]
@@ -424,6 +424,7 @@ class TestServerToolRegistration:
             issue_number=257,
             issue_title="Cycle 5 enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         state_engine = make_phase_state_engine(
             tmp_path,
@@ -434,6 +435,7 @@ class TestServerToolRegistration:
             branch="feature/257-reorder-workflow-phases",
             issue_number=257,
             initial_phase="research",
+            parent_branch="main",
         )
 
         research_doc = tmp_path / "docs" / "development" / "issue257" / "cycle5-research.md"
@@ -558,6 +560,7 @@ class TestServerToolRegistration:
             issue_number=257,
             issue_title="Cycle 5 enforcement",
             workflow_name="feature",
+            parent_branch="main",
         )
         state_engine = make_phase_state_engine(
             tmp_path,
@@ -569,6 +572,7 @@ class TestServerToolRegistration:
             branch=branch,
             issue_number=257,
             initial_phase="research",
+            parent_branch="main",
         )
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:

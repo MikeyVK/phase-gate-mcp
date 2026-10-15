@@ -123,7 +123,8 @@ class TestCommitPhaseDetector:
         state_dir = tmp_path / get_default_server_root()
         state_dir.mkdir()
         (state_dir / "state.json").write_text(
-            '{"branch": "main", "current_phase": "research", "workflow_name": "feature"}'
+            '{"schema_version": "2.0.0", "branch": "main", "parent_branch": "develop", '
+            '"current_phase": "research", "workflow_name": "feature"}'
         )
         detector = CommitPhaseDetector(ScopeDecoder(ScopeContract(_TEST_WORKPHASES)))
         result = detector.detect_from_commit("feat(P_IMPLEMENTATION_C3_SP_RED): add tests")

@@ -117,7 +117,10 @@ class TestProjectManagerWorkflows:
     ) -> None:
         """Test initialize_project with feature workflow."""
         result = manager.initialize_project(
-            issue_number=42, issue_title="Add user authentication", workflow_name="feature"
+            issue_number=42,
+            issue_title="Add user authentication",
+            workflow_name="feature",
+            parent_branch="main",
         )
 
         assert result["success"] is True
@@ -139,7 +142,10 @@ class TestProjectManagerWorkflows:
         contracts.yaml SSOT — execution_mode defaults to interactive.
         """
         result = manager.initialize_project(
-            issue_number=99, issue_title="Critical security fix", workflow_name="hotfix"
+            issue_number=99,
+            issue_title="Critical security fix",
+            workflow_name="hotfix",
+            parent_branch="main",
         )
 
         assert result["success"] is True
@@ -160,6 +166,7 @@ class TestProjectManagerWorkflows:
             issue_title="Test",
             workflow_name="feature",
             options=ProjectInitOptions(execution_mode="autonomous"),
+            parent_branch="main",
         )
 
         assert result["execution_mode"] == "autonomous"
@@ -188,6 +195,7 @@ class TestProjectManagerWorkflows:
             options=ProjectInitOptions(
                 custom_phases=custom_phases, skip_reason="Adding design phase for complex refactor"
             ),
+            parent_branch="main",
         )
 
         assert result["success"] is True
@@ -204,7 +212,10 @@ class TestProjectManagerWorkflows:
         """Test initialize_project rejects unknown workflow."""
         with pytest.raises(ValueError) as exc_info:
             manager.initialize_project(
-                issue_number=999, issue_title="Test", workflow_name="invalid_workflow"
+                issue_number=999,
+                issue_title="Test",
+                workflow_name="invalid_workflow",
+                parent_branch="main",
             )
 
         error_msg = str(exc_info.value)
@@ -219,6 +230,7 @@ class TestProjectManagerWorkflows:
                 issue_title="Test",
                 workflow_name="feature",
                 options=ProjectInitOptions(execution_mode="manual"),
+                parent_branch="main",
             )
 
         error_msg = str(exc_info.value)
@@ -235,6 +247,7 @@ class TestProjectManagerWorkflows:
                 issue_title="Test",
                 workflow_name="feature",
                 options=ProjectInitOptions(custom_phases=("research", "implementation")),
+                parent_branch="main",
             )
 
         error_msg = str(exc_info.value)
@@ -243,7 +256,9 @@ class TestProjectManagerWorkflows:
     def test_get_project_plan_returns_stored_plan(self, manager: ProjectManager) -> None:
         """Test get_project_plan retrieves stored project plan."""
         # Initialize project
-        manager.initialize_project(issue_number=42, issue_title="Test", workflow_name="feature")
+        manager.initialize_project(
+            issue_number=42, issue_title="Test", workflow_name="feature", parent_branch="main"
+        )
 
         # Retrieve plan
         plan = manager.get_project_plan(issue_number=42)
@@ -266,7 +281,7 @@ class TestProjectManagerWorkflows:
             issue_number=79,
             issue_title="Add parent branch tracking",
             workflow_name="feature",
-            options=ProjectInitOptions(parent_branch="epic/76-quality-gates-tooling"),
+            parent_branch="epic/76-quality-gates-tooling",
         )
 
         # Verify parent_branch in returned result
@@ -276,23 +291,6 @@ class TestProjectManagerWorkflows:
         plan = manager.get_project_plan(issue_number=79)
         assert plan is not None
         assert plan["parent_branch"] == "epic/76-quality-gates-tooling"
-
-    def test_initialize_project_without_parent_branch(self, manager: ProjectManager) -> None:
-        """Test initializing project without parent_branch (backward compat).
-
-        Issue #79: parent_branch is optional for existing workflows.
-        """
-        result = manager.initialize_project(
-            issue_number=80, issue_title="Old style project", workflow_name="bug"
-        )
-
-        # Verify parent_branch is None
-        assert result["parent_branch"] is None
-
-        # Verify persisted as None
-        plan = manager.get_project_plan(issue_number=80)
-        assert plan is not None
-        assert plan["parent_branch"] is None
 
 
 class TestProjectManagerPhaseDetection:
@@ -356,6 +354,7 @@ phases:
             issue_number=139,
             issue_title="Add current_phase to get_project_plan",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         plan = manager.get_project_plan(issue_number=139)
@@ -380,6 +379,7 @@ phases:
             issue_number=140,
             issue_title="Test unknown phase",
             workflow_name="bug",
+            parent_branch="main",
         )
 
         plan = manager.get_project_plan(issue_number=140)
@@ -436,7 +436,7 @@ def planning_manager(
     legacy_suite_workspace: Path, evidence_reader: EvidenceReader
 ) -> ProjectManager:
     manager = make_project_manager(legacy_suite_workspace, cycle_evidence_reader=evidence_reader)
-    manager.initialize_project(491, "Planning contracts", "refactor")
+    manager.initialize_project(491, "Planning contracts", "refactor", parent_branch="main")
     manager.save_planning_deliverables(
         491,
         SavePlanningModel(
@@ -681,7 +681,9 @@ class TestPlanningDeliverablesSchema:
     def test_invalid_phase_membership_rejects_save_and_update(
         self, planning_manager: ProjectManager, phase: str
     ) -> None:
-        planning_manager.initialize_project(492, "Invalid membership", "refactor")
+        planning_manager.initialize_project(
+            492, "Invalid membership", "refactor", parent_branch="main"
+        )
         before = planning_manager.deliverables_file.read_bytes()
         with pytest.raises(PlanningMutationError, match="planning_phase_invalid"):
             planning_manager.save_planning_deliverables(
@@ -707,7 +709,7 @@ class TestPlanningDeliverablesSchema:
         manager = make_project_manager(
             legacy_suite_workspace, cycle_evidence_reader=evidence_reader
         )
-        manager.initialize_project(491, "One cycle", "refactor")
+        manager.initialize_project(491, "One cycle", "refactor", parent_branch="main")
         manager.save_planning_deliverables(
             491,
             SavePlanningModel(
@@ -741,7 +743,7 @@ class TestPlanningDeliverablesSchema:
         self, legacy_suite_workspace: Path, workflow: str, authoring: SavePlanningModel, error: str
     ) -> None:
         manager = make_project_manager(legacy_suite_workspace)
-        manager.initialize_project(491, "Configured behavior", workflow)
+        manager.initialize_project(491, "Configured behavior", workflow, parent_branch="main")
         before = manager.deliverables_file.read_bytes()
         with pytest.raises(PlanningMutationError, match=error):
             manager.save_planning_deliverables(491, authoring)
@@ -758,7 +760,7 @@ class TestPlanningDeliverablesSchema:
             contracts_config=ContractsConfig.model_validate(raw),
             cycle_evidence_reader=evidence_reader,
         )
-        manager.initialize_project(491, "Alternate phase", "refactor")
+        manager.initialize_project(491, "Alternate phase", "refactor", parent_branch="main")
         manager.save_planning_deliverables(
             491, SavePlanningModel(cycles=CyclesInput(cycles=[author_cycle("Only")]))
         )
@@ -831,7 +833,7 @@ class TestProjectManagerResolverAdoption:
             phase_detection_error=None,
         )
         manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
-        manager.initialize_project(99, "Test resolver adoption", "feature")
+        manager.initialize_project(99, "Test resolver adoption", "feature", parent_branch="main")
 
         plan = manager.get_project_plan(99)
 
@@ -854,7 +856,7 @@ class TestProjectManagerResolverAdoption:
             phase_detection_error=None,
         )
         manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
-        manager.initialize_project(100, "Test sub-phase format", "feature")
+        manager.initialize_project(100, "Test sub-phase format", "feature", parent_branch="main")
 
         plan = manager.get_project_plan(100)
 
@@ -875,7 +877,7 @@ class TestProjectManagerResolverAdoption:
             phase_detection_error="Phase detection failed: no state file",
         )
         manager = make_project_manager(legacy_suite_workspace, workflow_status_resolver=resolver)
-        manager.initialize_project(101, "Test error propagation", "feature")
+        manager.initialize_project(101, "Test error propagation", "feature", parent_branch="main")
 
         plan = manager.get_project_plan(101)
 
@@ -906,6 +908,7 @@ class TestGetProjectPlanGracefulDegradation:
             issue_number=298,
             issue_title="Graceful degradation test",
             workflow_name="feature",
+            parent_branch="main",
         )
         return manager
 
@@ -987,7 +990,7 @@ class TestProjectManagerVersioning:
 
         with pytest.raises(error_type):
             if command == "initialize":
-                manager.initialize_project(42, "Readback recovery", "feature")
+                manager.initialize_project(42, "Readback recovery", "feature", parent_branch="main")
             elif command == "save":
                 manager.save_planning_deliverables(
                     42, SavePlanningModel(phases={"validation": phase_block("Report")})
@@ -1012,6 +1015,7 @@ class TestProjectManagerVersioning:
             issue_number=42,
             issue_title="Versioning test",
             workflow_name="feature",
+            parent_branch="main",
         )
 
         deliverables_file = legacy_suite_workspace / get_default_server_root() / "deliverables.json"
@@ -1023,3 +1027,29 @@ class TestProjectManagerVersioning:
         assert data.get("schema_version") == "1.0.0"
         assert "projects" in data
         assert "42" in data["projects"]
+
+
+def test_indirect_plan_status_read_preserves_invalid_state_and_backup(tmp_path: Path) -> None:
+    from mcp_server.managers.state_repository import FileStateRepository  # noqa: PLC0415
+    from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver  # noqa: PLC0415
+
+    state_file = tmp_path / get_default_server_root() / "state.json"
+    git_reader = MagicMock()
+    git_reader.get_current_branch.return_value = "feature/503-work"
+    resolver = WorkflowStatusResolver(
+        git_context_reader=git_reader, state_reader=FileStateRepository(state_file)
+    )
+    manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+    manager.initialize_project(503, "Read-only diagnosis", "feature", parent_branch="main")
+    source = b"{invalid-state"
+    state_file.write_bytes(source)
+    backup = state_file.with_suffix(".json.bak")
+    backup.write_bytes(b"prior recovery point")
+    plan_before = manager.deliverables_file.read_bytes()
+
+    for _ in range(2):
+        with pytest.raises(StateCorruptedError):
+            manager.get_project_plan(503)
+        assert state_file.read_bytes() == source
+        assert backup.read_bytes() == b"prior recovery point"
+        assert manager.deliverables_file.read_bytes() == plan_before

@@ -19,7 +19,11 @@ from typing import cast
 import pytest
 from pydantic import ValidationError
 
-from mcp_server.core.exceptions import StateCorruptedError, StateNotFoundError
+from mcp_server.core.exceptions import (
+    StateCorruptedError,
+    StateNotFoundError,
+    StateVersionMismatchError,
+)
 from mcp_server.core.interfaces import IStateReader, IStateRepository
 from mcp_server.managers.state_repository import (
     BranchState,
@@ -49,13 +53,14 @@ class TestBranchState:
             last_cycle=1,
             cycle_history=[],
             transitions=[],
+            parent_branch="main",
         )
 
         with pytest.raises(ValidationError):
             state.current_phase = "validation"
 
     def test_branch_state_includes_schema_version(self) -> None:
-        """Verify that BranchState defaults schema_version to '1.0.0'."""
+        """Verify that BranchState defaults schema_version to the current envelope."""
         state = BranchState(
             branch="feature/257-reorder-workflow-phases",
             workflow_name="feature",
@@ -64,8 +69,24 @@ class TestBranchState:
             last_cycle=1,
             cycle_history=[],
             transitions=[],
+            parent_branch="main",
         )
-        assert state.schema_version == "1.0.0"
+        assert state.schema_version == BranchState.SCHEMA_VERSION
+
+    @pytest.mark.parametrize(
+        "updates", [{"parent_branch": " "}, {"branch": "main"}, {"unknown": 1}]
+    )
+    def test_updates_validate_complete_state(self, updates: dict[str, object]) -> None:
+        state = BranchState(
+            branch="feature/257-work",
+            parent_branch="main",
+            workflow_name="feature",
+            current_phase="research",
+        )
+        with pytest.raises(ValidationError):
+            state.with_updates(**updates)
+        assert state.branch == "feature/257-work"
+        assert state.parent_branch == "main"
 
 
 class TestFileStateRepository:
@@ -78,7 +99,8 @@ class TestFileStateRepository:
         state_file.write_text(
             json.dumps(
                 {
-                    "schema_version": "1.0.0",
+                    "schema_version": "2.0.0",
+                    "parent_branch": "main",
                     "branch": "feature/257-reorder-workflow-phases",
                     "issue_number": 257,
                     "workflow_name": "feature",
@@ -100,18 +122,26 @@ class TestFileStateRepository:
         assert state.current_phase == "implementation"
         assert state.current_cycle == 2
 
-    def test_invalid_state_read_preserves_source_and_existing_backup(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize(
+        ("source", "error_type"),
+        [
+            (b"{corrupt json", StateCorruptedError),
+            (b'{"schema_version": "0.9.0"}', StateVersionMismatchError),
+        ],
+    )
+    def test_invalid_state_read_preserves_source_and_existing_backup(
+        self, tmp_path: Path, source: bytes, error_type: type[Exception]
+    ) -> None:
         """Repeated failed reads retain the invalid source and prior recovery bytes."""
         state_file = tmp_path / get_default_server_root() / "state.json"
         state_file.parent.mkdir(parents=True, exist_ok=True)
-        source = b"{corrupt json"
         state_file.write_bytes(source)
         backup_file = state_file.with_suffix(state_file.suffix + ".bak")
         backup_file.write_bytes(b"prior recovery point")
 
         repository = FileStateRepository(state_file=state_file)
         for _ in range(2):
-            with pytest.raises(StateCorruptedError):
+            with pytest.raises(error_type):
                 repository.load("feature/test")
             assert state_file.read_bytes() == source
             assert backup_file.read_bytes() == b"prior recovery point"
@@ -143,9 +173,14 @@ class TestFileStateRepository:
 class TestInMemoryStateRepository:
     """Tests for in-memory state repository used by unit tests."""
 
-    def test_save_and_load_round_trip(self) -> None:
-        """In-memory repository should support save/load without touching the filesystem."""
-        repository = InMemoryStateRepository()
+    @pytest.mark.parametrize("in_memory", [False, True])
+    def test_save_and_load_round_trip(self, tmp_path: Path, in_memory: bool) -> None:
+        """Both repositories expose the same single current-registration slot."""
+        repository = (
+            InMemoryStateRepository() if in_memory else FileStateRepository(tmp_path / "state.json")
+        )
+        with pytest.raises(StateNotFoundError):
+            repository.load("feature/257-reorder-workflow-phases")
         state = BranchState(
             branch="feature/257-reorder-workflow-phases",
             issue_number=257,
@@ -163,6 +198,14 @@ class TestInMemoryStateRepository:
         loaded = repository.load("feature/257-reorder-workflow-phases")
 
         assert loaded == state
+        replacement = state.with_updates(branch="bug/258-handover", issue_number=258)
+        repository.save(replacement)
+        assert repository.load(state.branch) == replacement
+        assert repository.load(replacement.branch) == replacement
+        invalid = BranchState.model_construct(**{**replacement.model_dump(), "parent_branch": " "})
+        with pytest.raises(ValidationError):
+            repository.save(invalid)
+        assert repository.load(replacement.branch) == replacement
 
     def test_phase_state_engine_uses_injected_repository(self, tmp_path: Path) -> None:
         """PSE should persist through the injected repository instead of direct file writes."""
@@ -171,6 +214,7 @@ class TestInMemoryStateRepository:
             issue_number=257,
             issue_title="Repository injection",
             workflow_name="feature",
+            parent_branch="main",
         )
         repository = InMemoryStateRepository()
         engine = make_phase_state_engine(
@@ -268,6 +312,7 @@ class TestBranchValidatedStateReader:
             workflow_name="feature",
             current_phase="implementation",
             transitions=[],
+            parent_branch="release/base",
         )
 
     class _FixedReader:
@@ -318,6 +363,7 @@ class TestBranchStateCurrentSubPhase:
             workflow_name="feature",
             current_phase="implementation",
             transitions=[],
+            parent_branch="main",
         )
         assert state.current_sub_phase is None
 
@@ -331,6 +377,7 @@ class TestBranchStateCurrentSubPhase:
             current_phase="implementation",
             transitions=[],
             current_sub_phase="red",
+            parent_branch="main",
         )
 
         repository.save(state)
@@ -348,6 +395,7 @@ class TestBranchStateCurrentSubPhase:
             current_phase="implementation",
             transitions=[],
             current_sub_phase=None,
+            parent_branch="main",
         )
 
         repository.save(state)
@@ -364,7 +412,8 @@ class TestBranchStateCurrentSubPhase:
         state_file.write_text(
             json.dumps(
                 {
-                    "schema_version": "1.0.0",
+                    "schema_version": "2.0.0",
+                    "parent_branch": "main",
                     "branch": "feature/298-test",
                     "workflow_name": "feature",
                     "current_phase": "implementation",
@@ -397,3 +446,34 @@ class TestStateNotFoundError:
         """StateNotFoundError must not be a FileNotFoundError (domain vs I/O error)."""
         exc = StateNotFoundError("feature/298-test")
         assert not isinstance(exc, FileNotFoundError)
+
+
+def test_unreadable_state_retains_source_backup_and_diagnostic_cause(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state_file = tmp_path / "state.json"
+    source = b'{"schema_version": "2.0.0"}'
+    state_file.write_bytes(source)
+    backup = state_file.with_suffix(".json.bak")
+    backup.write_bytes(b"prior recovery point")
+    original_read = Path.read_text
+    failure = PermissionError("state read denied")
+
+    def read_text(
+        path: Path,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> str:
+        if path == state_file:
+            raise failure
+        return original_read(path, encoding=encoding, errors=errors, newline=newline)
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    repository = FileStateRepository(state_file)
+    for _ in range(2):
+        with pytest.raises(StateCorruptedError) as rejected:
+            repository.load("feature/503-work")
+        assert rejected.value.__cause__ is failure
+        assert state_file.read_bytes() == source
+        assert backup.read_bytes() == b"prior recovery point"

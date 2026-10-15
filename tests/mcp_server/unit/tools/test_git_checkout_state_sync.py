@@ -33,6 +33,7 @@ class TestGitCheckoutStateSync:
             current_cycle=1,
             required_phases=["research", "planning", "design", "implementation"],
             transitions=[],
+            parent_branch="main",
         )
         tool = GitCheckoutTool(manager=mock_manager, state_engine=mock_engine)
 
@@ -83,6 +84,7 @@ class TestGitCheckoutStateSync:
             workflow_name="feature",
             current_phase="unknown",
             transitions=[],
+            parent_branch="develop",
         )
         tool = GitCheckoutTool(manager=mock_manager, state_engine=mock_engine)
 

@@ -29,9 +29,7 @@ _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() 
 
 @pytest.fixture
 def mock_git_config() -> Mock:
-    git_config = Mock()
-    git_config.default_base_branch = "main"
-    return git_config
+    return Mock()
 
 
 @pytest.fixture

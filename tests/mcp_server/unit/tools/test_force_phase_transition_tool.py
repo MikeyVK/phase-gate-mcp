@@ -135,7 +135,10 @@ class TestForcePhaseTransitionTool:
         """Initialize a project and branch for testing."""
         # Initialize project
         project_manager.initialize_project(
-            issue_number=42, issue_title="Test feature", workflow_name="feature"
+            issue_number=42,
+            issue_title="Test feature",
+            workflow_name="feature",
+            parent_branch="main",
         )
 
         # Initialize branch
@@ -144,6 +147,7 @@ class TestForcePhaseTransitionTool:
             branch=branch,
             issue_number=42,
             initial_phase=feature_phases[0],  # discovery
+            parent_branch="main",
         )
 
         return branch
@@ -348,9 +352,13 @@ phases:
     def _init_branch(self, workspace: Path, branch: str, phase: str) -> None:
         """Helper: initialize project + branch state."""
         pm = make_project_manager(workspace)
-        pm.initialize_project(issue_number=42, issue_title="Test", workflow_name="feature")
+        pm.initialize_project(
+            issue_number=42, issue_title="Test", workflow_name="feature", parent_branch="main"
+        )
         engine = make_phase_state_engine(workspace, project_manager=pm)
-        engine.initialize_branch(branch=branch, issue_number=42, initial_phase=phase)
+        engine.initialize_branch(
+            branch=branch, issue_number=42, initial_phase=phase, parent_branch="main"
+        )
 
     @pytest.mark.asyncio
     async def test_force_transition_tool_response_includes_skipped_gates_warning(
@@ -452,9 +460,13 @@ phases:
         )
         branch = "feature/42-test"
         pm = make_project_manager(tmp_path)
-        pm.initialize_project(issue_number=42, issue_title="Test", workflow_name="feature")
+        pm.initialize_project(
+            issue_number=42, issue_title="Test", workflow_name="feature", parent_branch="main"
+        )
         engine = make_phase_state_engine(tmp_path, project_manager=pm)
-        engine.initialize_branch(branch=branch, issue_number=42, initial_phase="planning")
+        engine.initialize_branch(
+            branch=branch, issue_number=42, initial_phase="planning", parent_branch="main"
+        )
 
         if with_gate_key:
             # Inject planning_deliverables so gate would have PASSED
@@ -565,9 +577,13 @@ phases:
         )
         branch = "feature/42-test"
         pm = make_project_manager(tmp_path)
-        pm.initialize_project(issue_number=42, issue_title="Test", workflow_name="feature")
+        pm.initialize_project(
+            issue_number=42, issue_title="Test", workflow_name="feature", parent_branch="main"
+        )
         engine = make_phase_state_engine(tmp_path, project_manager=pm)
-        engine.initialize_branch(branch=branch, issue_number=42, initial_phase="planning")
+        engine.initialize_branch(
+            branch=branch, issue_number=42, initial_phase="planning", parent_branch="main"
+        )
 
         tool = ForcePhaseTransitionTool(
             workspace_root=tmp_path,

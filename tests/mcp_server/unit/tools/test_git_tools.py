@@ -1593,7 +1593,6 @@ async def test_check_merge_manager_delegates_to_adapter() -> None:
     mock_adapter.get_current_branch.return_value = "bug/357-fix-agent-lifecycle"
 
     mock_git_config = MagicMock()
-    mock_git_config.default_base_branch = "main"
 
     real_manager = make_git_manager(git_config=mock_git_config, adapter=mock_adapter)
     result = real_manager.is_ancestor("abc1234")

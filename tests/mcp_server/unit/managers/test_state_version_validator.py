@@ -9,7 +9,6 @@ Unit tests for StateVersionValidator covering CQS validation and backup.
 @dependencies: [pytest, mcp_server.managers.state_version_validator]
 @responsibilities:
     - Test StateVersionValidator validate_file (Query)
-    - Test StateVersionValidator backup_file (Command)
 """
 
 import json
@@ -115,27 +114,3 @@ class TestStateVersionValidator:
 
         # Should not raise any exception
         validator.validate_file(valid_file, expected_version="1.0.0")
-
-    def test_state_version_validator_backup_file_renames_to_bak(
-        self, validator: StateVersionValidator, tmp_path: Path
-    ) -> None:
-        """Verify that backup_file renames the file to .bak and overwrites existing backups."""
-        test_file = tmp_path / "state.json"
-        test_file.write_text("original content", encoding="utf-8")
-
-        # Test basic rename
-        validator.backup_file(test_file)
-
-        backup_file = tmp_path / "state.json.bak"
-        assert not test_file.exists()
-        assert backup_file.exists()
-        assert backup_file.read_text(encoding="utf-8") == "original content"
-
-        # Test overwrite of existing backup
-        test_file2 = tmp_path / "state.json"
-        test_file2.write_text("new content", encoding="utf-8")
-
-        validator.backup_file(test_file2)
-        assert not test_file2.exists()
-        assert backup_file.exists()
-        assert backup_file.read_text(encoding="utf-8") == "new content"

@@ -216,7 +216,7 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     manager = make_project_manager(
         legacy_suite_roots.workspace, cycle_evidence_reader=_CompleteEvidence()
     )
-    manager.initialize_project(53, "Planning readback", "feature")
+    manager.initialize_project(53, "Planning readback", "feature", parent_branch="main")
     authored = _planning_payload(cycle_count)
     manager.save_planning_deliverables(53, authored)
     saved = manager.get_project_plan(53)
@@ -297,7 +297,7 @@ async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_updat
     first_cycle = CycleInput(
         cycle_name="Reader", deliverables=[reader], exit_criteria="Reader source present"
     )
-    manager.initialize_project(229, "Saved gate glob", "feature")
+    manager.initialize_project(229, "Saved gate glob", "feature", parent_branch="main")
     manager.save_planning_deliverables(
         229,
         SavePlanningModel(
@@ -321,6 +321,7 @@ async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_updat
         current_cycle=1,
         last_cycle=0,
         required_phases=manager.get_phases("feature"),
+        parent_branch="main",
     )
     repository.save(initial)
     context_response = await server.server.request_handlers[CallToolRequest](

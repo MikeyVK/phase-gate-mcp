@@ -24,15 +24,23 @@ class IWorkflowStateMutator(Protocol):
     concurrent write paths share one coordinated lock boundary.
     """
 
+    def initialize(self, state: BranchState) -> None:
+        """Save complete new state under the shared lock.
+
+        Admit genuine absence or valid different-branch handover. Reject
+        same-branch registration and propagate invalid or unreadable state.
+        """
+        raise NotImplementedError
+
     def apply(
         self,
         branch: str,
         mutate: Callable[[BranchState], BranchState],
     ) -> None:
-        """Apply *mutate* to the current BranchState for *branch* atomically.
+        """Mutate fresh matching state under the shared lock, without bootstrap.
 
-        Raises:
-            StateMutationConflictError: on lock timeout, branch mismatch, or
-                unrecoverable state.
+        Validate the result and preserve branch, issue and parent identity.
+        Missing, invalid and unreadable state propagate without a write;
+        identity changes and lock timeouts raise StateMutationConflictError.
         """
         raise NotImplementedError

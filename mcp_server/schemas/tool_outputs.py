@@ -99,7 +99,7 @@ class InitializeProjectOutput(BaseToolOutput):
     workflow_name: str
     branch: str
     initial_phase: str
-    parent_branch: str | None = None
+    parent_branch: str
     required_phases: list[str] = Field(default_factory=list)
     execution_mode: str
     files_created: list[str] = Field(default_factory=list)

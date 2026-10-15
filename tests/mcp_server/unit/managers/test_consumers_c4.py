@@ -100,6 +100,7 @@ class TestPhaseStateEngineTransitionC4:
             issue_number=1,
             current_phase="research",
             workflow_name="feature",
+            parent_branch="main",
         )
         workflow_gate_runner = MagicMock()
         workflow_gate_runner.enforce_phase_exit = MagicMock(return_value=None)
@@ -172,6 +173,7 @@ class TestProjectManagerPhaseDelegationC4:
             issue_number=1,
             issue_title="Test Issue",
             workflow_name="feature",
+            parent_branch="main",
         )
         deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
         assert deliverables_file.exists()

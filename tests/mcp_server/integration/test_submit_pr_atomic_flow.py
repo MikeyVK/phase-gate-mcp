@@ -8,10 +8,6 @@ Tests verify the full atomic sequence:
   4. GitHub PR creation
   5. PRStatusCache write (OPEN)
 
-Also verifies:
-  - CreatePRTool is no longer instantiated as a public MCP tool in server composition root
-  - GitCommitTool no longer contains the terminal-route neutralization path
-
 @layer: Tests (Integration)
 @dependencies: [pathlib, pytest, unittest.mock,
     mcp_server.tools.pr_tools,
@@ -24,31 +20,28 @@ Also verifies:
     - Prove atomic flow: neutralize -> commit -> push -> create_pr -> set_pr_status
     - Prove skip of neutralize when no branch-local artifacts have net diff
     - Prove partial failure produces RecoveryNote
-    - Prove CreatePRTool is not a public MCP tool in server.py
-    - Prove GitCommitTool no longer contains neutralize_to_base path
-    - Prove SubmitPRTool uses only GitManager (no adapter bypass)
+    - Prove matching registration supplies submission targets
 """
 
 from __future__ import annotations
 
 import asyncio
-import inspect
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 import yaml
 
-import mcp_server.server as server_module
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.contracts_config import BranchLocalArtifact
 from mcp_server.core.exceptions import ExecutionError, PreflightError
-from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import IPRStatusWriter, IStateReader, PRStatus
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
+from mcp_server.managers.state_repository import BranchState
 from mcp_server.schemas.github_models import PRReadModel
-from mcp_server.tools import git_tools
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -67,8 +60,20 @@ def _make_submit_pr_tool(
     github_manager: GitHubManager,
     pr_status_writer: IPRStatusWriter,
     artifacts: tuple[BranchLocalArtifact, ...] = (_STATE_ARTIFACT,),
-    branch_parent_reader: IBranchParentReader | None = None,
+    state_reader: IStateReader | None = None,
 ) -> SubmitPRTool:
+    if state_reader is None:
+        reader = MagicMock(spec=IStateReader)
+        reader.load.return_value = BranchState(
+            branch="feature/42-test",
+            issue_number=42,
+            workflow_name="feature",
+            current_phase="ready",
+            parent_branch="main",
+        )
+        state_reader = reader
+    repo_root = Path(__file__).parents[3]
+    git_config = ConfigLoader(repo_root / get_default_server_root() / "config").load_git_config()
     if isinstance(github_manager, MagicMock):
         github_manager.get_pr.return_value = PRReadModel(
             pr_number=101,
@@ -91,18 +96,17 @@ def _make_submit_pr_tool(
         github_manager=github_manager,
         pr_status_writer=pr_status_writer,
         merge_readiness_context=merge_readiness_context,
-        branch_parent_reader=branch_parent_reader or MagicMock(spec=IBranchParentReader),
+        state_reader=state_reader,
+        git_config=git_config,
     )
 
 
 def _make_params(
-    head: str = "feature/42-test",
-    base: str = "main",
     title: str = "Test PR",
     body: str = "Description",
     draft: bool = False,
 ) -> SubmitPRInput:
-    return SubmitPRInput(head=head, base=base, title=title, body=body, draft=draft)
+    return SubmitPRInput(title=title, body=body, draft=draft)
 
 
 class TestSubmitPRHappyPath:
@@ -111,7 +115,7 @@ class TestSubmitPRHappyPath:
     def test_submit_pr_happy_path(self) -> None:
         """Full atomic flow: prepare_submission -> create_pr -> set_pr_status(OPEN)."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = True
 
         github_manager = MagicMock(spec=GitHubManager)
@@ -134,7 +138,7 @@ class TestSubmitPRHappyPath:
     def test_submit_pr_skips_neutralize_when_no_exclusions(self) -> None:
         """When no branch-local artifacts are configured, prepare_submission still called."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
@@ -157,7 +161,7 @@ class TestSubmitPRHappyPath:
     def test_submit_pr_pr_status_written_open(self) -> None:
         """PRStatus.OPEN is written to the cache after successful PR creation."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "refactor/283-test"
+        git_manager.require_attached_branch.return_value = "refactor/283-test"
         git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
@@ -168,9 +172,19 @@ class TestSubmitPRHappyPath:
 
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
 
-        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+        reader = MagicMock(spec=IStateReader)
+        reader.load.return_value = BranchState(
+            branch="refactor/283-test",
+            issue_number=283,
+            workflow_name="refactor",
+            current_phase="ready",
+            parent_branch="main",
+        )
+        tool = _make_submit_pr_tool(
+            git_manager, github_manager, pr_status_writer, state_reader=reader
+        )
 
-        asyncio.run(tool.execute(_make_params(head="refactor/283-test"), NoteContext()))
+        asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         pr_status_writer.set_pr_status.assert_called_once_with("refactor/283-test", PRStatus.OPEN)
 
@@ -181,7 +195,7 @@ class TestSubmitPRPartialFailure:
     def test_push_failure_produces_recovery_note(self) -> None:
         """When prepare_submission raises ExecutionError (push failed), error returned."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.side_effect = ExecutionError("push failed: remote rejected")
 
         github_manager = MagicMock(spec=GitHubManager)
@@ -198,7 +212,7 @@ class TestSubmitPRPartialFailure:
     def test_create_pr_failure_produces_recovery_note(self) -> None:
         """When create_pr raises ExecutionError, error returned; no status written."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
@@ -213,40 +227,8 @@ class TestSubmitPRPartialFailure:
         pr_status_writer.set_pr_status.assert_not_called()
 
 
-class TestSubmitPRNoAdapterBypass:
-    """Structural contract: SubmitPRTool must not access GitAdapter directly."""
-
-    def test_submit_pr_tool_execute_has_no_adapter_calls(self) -> None:
-        """SubmitPRTool.execute() must not contain self._git_manager.adapter references.
-
-        Law of Demeter (ARCHITECTURE_PRINCIPLES Â§7): SubmitPRTool must only
-        talk to GitManager, never to GitAdapter directly.
-        """
-        source = inspect.getsource(SubmitPRTool.execute)
-        assert "_git_manager.adapter" not in source, (
-            "SubmitPRTool.execute() must not access GitAdapter directly. "
-            "Use GitManager methods instead (Law of Demeter, Â§7)."
-        )
-
-
 class TestCompositionRootContracts:
-    """Structural contracts: CreatePRTool not in public tools; no neutralize in GitCommitTool."""
-
-    def test_create_pr_tool_not_instantiated_in_server(self) -> None:
-        """server.py must not contain CreatePRTool() instantiation (design D2)."""
-        source = inspect.getsource(server_module)
-        assert "CreatePRTool(" not in source, (
-            "CreatePRTool must not be instantiated in server.py. "
-            "Use SubmitPRTool instead (design D2)."
-        )
-
-    def test_git_commit_tool_has_no_neutralize_path(self) -> None:
-        """GitCommitTool.execute() must not contain neutralize_to_base (moved to SubmitPRTool)."""
-        source = inspect.getsource(git_tools.GitCommitTool.execute)
-        assert "neutralize_to_base" not in source, (
-            "GitCommitTool must not contain neutralize_to_base path in C3+. "
-            "Neutralization is owned by SubmitPRTool."
-        )
+    """Configured admission remains attached to the public submission tool."""
 
     def test_submit_pr_tool_declares_enforcement_event(self) -> None:
         """SubmitPRTool.enforcement_event must be 'submit_pr' so phase-readiness gate fires."""
@@ -291,7 +273,7 @@ class TestSubmitPRAtomicRefactored:
     def test_failure_a_no_upstream_blocked_before_mutation(self) -> None:
         """prepare_submission raises PreflightError -> error; no create_pr; no status."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.side_effect = PreflightError("No upstream configured")
         github_manager = MagicMock(spec=GitHubManager)
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
@@ -305,7 +287,7 @@ class TestSubmitPRAtomicRefactored:
     def test_failure_b_dirty_tree_blocked_before_mutation(self) -> None:
         """prepare_submission raises PreflightError (dirty) -> error; no create_pr; no status."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.side_effect = PreflightError("Working directory not clean")
         github_manager = MagicMock(spec=GitHubManager)
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
@@ -319,7 +301,7 @@ class TestSubmitPRAtomicRefactored:
     def test_failure_c_create_pr_failure_triggers_rollback_push(self) -> None:
         """prepare_submission returns True; create_pr raises -> rollback_push + RecoveryNote."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = True
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.side_effect = ExecutionError("API 503")
@@ -342,7 +324,7 @@ class TestSubmitPRAtomicRefactored:
     def test_failure_c_no_rollback_when_no_neutralization_commit(self) -> None:
         """prepare_submission returns False (no commit); create_pr raises -> NO rollback_push."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.side_effect = ExecutionError("API 503")
@@ -357,7 +339,7 @@ class TestSubmitPRAtomicRefactored:
     def test_failure_c_meta_rollback_failure_surfaced_via_recovery_note(self) -> None:
         """create_pr raises; rollback_push raises -> error returned; set_pr_status not called."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = True
         git_manager.rollback_push.side_effect = ExecutionError("CRITICAL: reset failed")
         github_manager = MagicMock(spec=GitHubManager)
@@ -373,7 +355,7 @@ class TestSubmitPRAtomicRefactored:
     def test_failure_d_push_fails_prepare_submission_raises_execution_error(self) -> None:
         """prepare_submission raises ExecutionError (push fail) -> error, no rollback."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.side_effect = ExecutionError("push rejected")
         github_manager = MagicMock(spec=GitHubManager)
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
@@ -387,7 +369,7 @@ class TestSubmitPRAtomicRefactored:
     def test_happy_path_prepare_submission_then_create_pr_then_status(self) -> None:
         """All succeed: prepare_submission called once; set_pr_status(branch, OPEN) called."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = True
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -406,7 +388,7 @@ class TestSubmitPRAtomicRefactored:
     def test_happy_path_artifact_paths_extracted_from_merge_readiness_context(self) -> None:
         """prepare_submission called with frozenset of both artifact paths."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -433,13 +415,13 @@ class TestSubmitPRAtomicRefactored:
         )
 
 
-class TestSubmitPRBaseFromReader:
-    """C4.D7: SubmitPRTool uses reader-provided parent branch as base when params.base is None."""
+class TestSubmitPRBaseFromRegistration:
+    """Submission targets come from the matching registered branch."""
 
     def test_pr_opened_against_reader_provided_parent_branch(self) -> None:
-        """When params.base is None and reader returns a branch, create_pr uses that branch."""
+        """Neutralization and PR creation both use the registered parent."""
         git_manager = MagicMock(spec=GitManager)
-        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.require_attached_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -448,17 +430,26 @@ class TestSubmitPRBaseFromReader:
         }
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
 
-        reader = MagicMock(spec=IBranchParentReader)
-        reader.get_parent_branch.return_value = "epic/320-production-readiness-tracker"
-
-        tool = _make_submit_pr_tool(
-            git_manager, github_manager, pr_status_writer, branch_parent_reader=reader
+        reader = MagicMock(spec=IStateReader)
+        reader.load.return_value = BranchState(
+            branch="feature/42-test",
+            issue_number=42,
+            workflow_name="feature",
+            current_phase="ready",
+            parent_branch="epic/320-production-readiness-tracker",
         )
 
-        params = SubmitPRInput(head="feature/42-test", title="Test PR")  # no base
+        tool = _make_submit_pr_tool(
+            git_manager, github_manager, pr_status_writer, state_reader=reader
+        )
+
+        params = SubmitPRInput(title="Test PR")
 
         asyncio.run(tool.execute(params, NoteContext()))
 
-        reader.get_parent_branch.assert_called_once_with("feature/42-test")
+        reader.load.assert_called_once_with("feature/42-test")
+        assert git_manager.prepare_submission.call_args.args[1] == (
+            "epic/320-production-readiness-tracker"
+        )
         _, kwargs = github_manager.create_pr.call_args
         assert kwargs["base"] == "epic/320-production-readiness-tracker"

@@ -20,7 +20,6 @@ with audit trail.
 from __future__ import annotations
 
 # Standard library
-import json
 import logging
 import os
 import subprocess
@@ -31,7 +30,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from mcp_server.core.exceptions import StateNotFoundError
+from mcp_server.core.exceptions import PreflightError, StateNotFoundError
 from mcp_server.core.interfaces import (
     GateReport,
     IContextLoadedWriter,
@@ -45,7 +44,6 @@ from mcp_server.managers.state_repository import (
     StateAlreadyExistsError,
     StateBranchMismatchError,
 )
-from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.schemas import ContractsConfig, GitConfig
 from mcp_server.schemas.deliverables import StoredPlanningModel
 
@@ -97,26 +95,18 @@ class PhaseStateEngine:
         state_repository: IStateRepository,
         workflow_gate_runner: IWorkflowGateRunner,
         server_root: Path,
-        workflow_state_mutator: IWorkflowStateMutator | None = None,
-        state_reconstructor: object | None = None,
+        workflow_state_mutator: IWorkflowStateMutator,
         context_loaded_writer: IContextLoadedWriter | None = None,
     ) -> None:
-        """Initialize PhaseStateEngine."""
-        del state_reconstructor  # Retained for the public constructor contract.
+        """Initialize PhaseStateEngine with its shared mutation boundary."""
         self._workspace_root = Path(workspace_root)
         self.state_path = server_root / "state.json"
-        resolved_server_root = server_root or (self._workspace_root / ".pgmcp")
-        self.state_path = resolved_server_root / "state.json"
         self.project_manager = project_manager
-
         self._contracts_config = contracts_config
         self._git_config = git_config
         self._state_repository = state_repository
         self._workflow_gate_runner = workflow_gate_runner
-        if workflow_state_mutator is None:
-            workflow_state_mutator = WorkflowStateMutator(state_repository=state_repository)
         self._workflow_state_mutator = workflow_state_mutator
-
         self._context_loaded_writer = context_loaded_writer
 
     def _reset_context_loaded(self, branch: str) -> None:
@@ -124,79 +114,63 @@ class PhaseStateEngine:
         if self._context_loaded_writer is not None:
             self._context_loaded_writer.set_context_loaded(branch, value=False)
 
-    def validate_branch_initialization(self, branch: str) -> None:
-        """Reject existing same-branch state without project or workflow mutations."""
-        # Guard: refuse to overwrite an existing BranchState for this branch
+    def validate_branch_initialization(
+        self, branch: str, issue_number: int, parent_branch: str
+    ) -> None:
+        """Reject invalid identity or existing registration before project writes."""
+        try:
+            BranchState.validate_reference(branch)
+            BranchState.validate_reference(parent_branch)
+        except ValueError as exc:
+            raise PreflightError(str(exc)) from exc
+        if branch == parent_branch:
+            raise PreflightError("Parent branch must differ from the registered branch")
+        if issue_number < 1 or self._git_config.extract_issue_number(branch) != issue_number:
+            raise PreflightError(
+                f"Branch '{branch}' does not identify supplied issue #{issue_number}."
+            )
         try:
             loaded = self._state_repository.load(branch)
-            if loaded.branch == branch:
-                raise StateAlreadyExistsError(
-                    f"Branch '{branch}' already has an initialized state "
-                    f"(phase: {loaded.current_phase}). "
-                    "Call initialize_project only once per branch."
-                )
-        except (
-            FileNotFoundError,
-            KeyError,
-            OSError,
-            json.JSONDecodeError,
-            ValidationError,
-            StateNotFoundError,
-        ):
-            pass
+        except StateNotFoundError:
+            return
+        if loaded.branch == branch:
+            raise StateAlreadyExistsError(
+                f"Branch '{branch}' already has an initialized state "
+                f"(phase: {loaded.current_phase}). "
+                "Call initialize_project only once per branch."
+            )
 
     def initialize_branch(
-        self, branch: str, issue_number: int, initial_phase: str, parent_branch: str | None = None
+        self, branch: str, issue_number: int, initial_phase: str, parent_branch: str
     ) -> dict[str, Any]:
-        """Initialize branch state with workflow caching.
-
-        Caches workflow_name in state.json for performance optimization.
-
-        Args:
-            branch: Branch name (e.g., 'feature/42-test')
-            issue_number: GitHub issue number
-            initial_phase: Starting phase
-            parent_branch: Optional parent branch - if None, inherits from project
-
-        Returns:
-            dict with success, branch, current_phase, parent_branch
-
-        Raises:
-            ValueError: If project not initialized
-        """
-        self.validate_branch_initialization(branch)
-
+        """Initialize a complete registration using explicit identity and project values."""
+        self.validate_branch_initialization(branch, issue_number, parent_branch)
         project = self.project_manager.get_project_plan(issue_number)
         if not project:
             msg = f"Project {issue_number} not found. Initialize project first."
             raise ValueError(msg)
-
-        # Determine parent_branch: explicit param or inherit from project
-        if parent_branch is None:
-            parent_branch = project.get("parent_branch")
+        if project.get("parent_branch") != parent_branch:
+            raise PreflightError(
+                f"Explicit parent for branch '{branch}' differs from saved project metadata."
+            )
 
         warnings: list[str] = []
         if self._has_uncommitted_state_changes():
             warnings.append("state.json has uncommitted local changes")
 
-        self._workflow_state_mutator.apply(
-            branch,
-            lambda _s: _s.with_updates(
+        self._workflow_state_mutator.initialize(
+            BranchState(
                 branch=branch,
                 issue_number=issue_number,
                 workflow_name=project["workflow_name"],
                 current_phase=initial_phase,
-                current_cycle=None,
-                last_cycle=None,
-                cycle_history=[],
-                required_phases=project.get("required_phases", []),
-                execution_mode=project.get("execution_mode", "normal"),
+                required_phases=project["required_phases"],
+                execution_mode=project["execution_mode"],
+                skip_reason=project.get("skip_reason"),
                 issue_title=project.get("issue_title"),
                 parent_branch=parent_branch,
                 created_at=datetime.now(UTC).isoformat(),
-                transitions=[],
-                reconstructed=False,
-            ),
+            )
         )
 
         return {

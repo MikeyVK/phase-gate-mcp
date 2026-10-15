@@ -360,7 +360,9 @@ class TestTargetStartup:
         repo.index.add([str(marker)])
         repo.index.commit("Initialize candidate workspace")
         manager = make_project_manager(fresh)
-        manager.initialize_project(53, "Candidate planning readback", "feature")
+        manager.initialize_project(
+            53, "Candidate planning readback", "feature", parent_branch="main"
+        )
         author_plan = SavePlanningModel.model_validate(
             {
                 "cycles": {

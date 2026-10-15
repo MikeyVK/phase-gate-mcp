@@ -124,6 +124,7 @@ def test_get_state_does_not_reconstruct_or_save_on_load_failure(
         issue_number=257,
         issue_title="Cycle 3 pure query",
         workflow_name="feature",
+        parent_branch="main",
     )
     repository = RaisingRepository(FileNotFoundError("missing state"))
     engine = make_phase_state_engine(
@@ -148,6 +149,7 @@ def test_get_state_raises_when_repository_load_fails(
         issue_number=257,
         issue_title="Cycle 3 repository failure",
         workflow_name="feature",
+        parent_branch="main",
     )
     repository = RaisingRepository(OSError("disk failure"))
     engine = make_phase_state_engine(

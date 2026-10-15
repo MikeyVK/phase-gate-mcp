@@ -9,11 +9,10 @@ Validator service for dynamic state files schema versions and corruptions.
 @responsibilities:
     - Validate dynamic state file schema versions
     - Detect malformed JSON and raise corrupted errors
-    - Command file backup to a .bak suffix on error
+    - Preserve source and existing backups on validation failure
 """
 
 import json
-import logging
 from pathlib import Path
 
 from mcp_server.core.exceptions import (
@@ -22,8 +21,6 @@ from mcp_server.core.exceptions import (
     StateNotFoundError,
     StateVersionMismatchError,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class StateVersionValidator:
@@ -46,12 +43,13 @@ class StateVersionValidator:
             PlanningVersionMismatchError: If deliverables.json version does
                 not match expected_version.
         """
-        if not file_path.exists():
-            raise StateNotFoundError(f"State file does not exist: {file_path.name}", str(file_path))
-
         try:
             content = file_path.read_text(encoding="utf-8")
             data = json.loads(content)
+        except FileNotFoundError as exc:
+            raise StateNotFoundError(
+                f"State file does not exist: {file_path.name}", str(file_path)
+            ) from exc
         except (json.JSONDecodeError, OSError) as e:
             raise StateCorruptedError(
                 f"Corrupted or malformed JSON in state file: {e}", str(file_path)
@@ -76,21 +74,3 @@ class StateVersionValidator:
                 actual_version=str(actual_version),
                 expected_version=expected_version,
             )
-
-    def backup_file(self, file_path: Path) -> None:
-        """Rename the invalid file at file_path to file_path.bak (Command).
-
-        If a backup file already exists, it is overwritten.
-        """
-        if file_path.exists():
-            backup_path = file_path.with_suffix(file_path.suffix + ".bak")
-            if backup_path.exists():
-                try:
-                    backup_path.unlink()
-                except OSError as e:
-                    logger.warning("Failed to delete existing backup file: %s", e)
-            try:
-                file_path.rename(backup_path)
-            except OSError as e:
-                logger.error("Failed to rename file %s to %s: %s", file_path, backup_path, e)
-                raise
