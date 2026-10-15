@@ -2,8 +2,8 @@
 
 # Issue 503 — explicit branch registration and PR target authority
 
-**Status:** RESEARCH — STRATEGY RECORDED; CLARIFICATION IN PROGRESS  
-**Version:** 0.6  
+**Status:** RESEARCH — INDEPENDENT REVIEW REQUESTED  
+**Version:** 1.0  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -20,7 +20,7 @@ Release preparation/publication, wheel/manifest content policy, phase-owned cycl
 
 ## Problem Statement
 
-Parent authority is currently distributed across optional input, reflog inference, optional project metadata, nullable state and PR caller/config fallbacks. The existing state initializer also mutates an incomplete or previous-branch state rather than starting from a complete validated registration. These paths make lifecycle target identity harder to validate before effects.
+Parent authority is currently distributed across optional input, reflog inference, optional project metadata, nullable state and PR caller/config fallbacks. The existing state initializer also mutates an incomplete or previous-branch state rather than starting from a complete validated registration. These paths make lifecycle target identity harder to validate before effects. Failed source validation can also implicitly move state/planning files, changing what a later read or mutation observes instead of preserving the failed precondition.
 
 ## Goals
 
@@ -74,7 +74,7 @@ The original CQS argument split the validator into a query and a backup command,
 
 A later [#460 Planning prerequisite](../archive/issue460/planning.md), P2 preservation table, already required deliverables queries to preserve the invalid source and any existing backup, while retaining backups in all three planning commands. It **explicitly excluded** the existing state.json read/backup path. The [path-ownership supplement](../archive/issue460/planning-path-ownership.md), readback prerequisite, repeats that limit. Thus the remaining state behavior was knowingly left outside that earlier correction. Current manager tests distinguish pure reads from command backups.
 
-For #503, both retaining and removing the read-time backup can reject invalid registration before PR neutralization, commit, push or PR creation. Removing it is therefore an explicit **recovery-policy change**, not a prerequisite automatically implied by safe PR target selection. Route 3 preserves invalid bytes in the original location and postpones any quarantine/reset to a deliberate recovery action; it gives up the old automatic preparation for reinitialization. Preserve the diagnosis and the no-automatic-migration/no-Git-reconstruction strategy whichever route the owner chooses.
+For #503, both retaining and removing the read-time backup can reject invalid registration before PR neutralization, commit, push or PR creation. Removing it is therefore an explicit **recovery-policy change**, not a prerequisite automatically implied by safe PR target selection. Route 3 preserves invalid bytes in the original location and postpones any quarantine/reset to a deliberate recovery action; it gives up the old automatic preparation for reinitialization. The owner selected route 3 and preservation of the diagnosis and the no-automatic-migration/no-Git-reconstruction strategy.
 
 Compare the viable strategies:
 
@@ -90,7 +90,7 @@ The owner has selected the third option together with the targeted command amend
 
 Owner decision: include the targeted planning-command correction alongside route 3. The scope is the failed prerequisite-validation behavior at the existing boundaries, not a general recovery or planning redesign.
 
-The #460 deliverables query correction preserves deliverables.json on invalid-source reads. However, get_project_plan also enriches its result with the current phase: it reads the plan, calls WorkflowStatusResolver.resolve_current, and that resolver uses its injected state reader (the composed branch-validated repository reader). A malformed/version-invalid state.json can therefore be moved to state.json.bak during a planning query while deliverables.json is untouched. The first query propagates the state diagnosis; a later query can return the plan without phase fields because state is now absent. Route 3 fixes this same repository read for all consumers. No separate query repair or new dependency is required.
+The #460 deliverables query correction preserves deliverables.json on invalid-source reads. However, get_project_plan also enriches its result with the current phase: it reads the plan, calls WorkflowStatusResolver.resolve_current, and that resolver uses its injected state reader (the composed branch-validated repository reader). A malformed/version-invalid state.json can therefore be moved to state.json.bak during a planning query while deliverables.json is untouched. The first query propagates the state diagnosis; a later query can return the plan without phase fields because state is now absent. Route 3 fixes this same repository read for all consumers. This indirect mutation is an additional concrete reason for the repair: a query must expose the failure without changing its source. No separate query repair or new dependency is required.
 
 The remaining **command** paths are _save_project_plan (initialize_project) and _planning_project (shared by save/update planning). Both catch PlanningVersionMismatchError/StateCorruptedError, rename the complete deliverables file to .bak and then raise. Save/update reach this before their candidate-plan validation, and update before Git cycle-evidence protection. This is not the post-persist/readback failure case, which separately reports persisted=True.
 
@@ -102,7 +102,7 @@ The remaining **command** paths are _save_project_plan (initialize_project) and 
 | Subsequent call | Initialization can observe absent state. | Save/update report planning_project_missing; manager initialization can start a new project dictionary if its separate branch-state admission permits it. |
 | Architectural concern | A query mutates files. | A command is permitted to write, but a failed precondition implicitly performs a whole-file quarantine outside the requested plan mutation. |
 
-The planning command is not the same CQS violation merely because it writes: commands intentionally have effects. The narrower concern is whether the ordinary mutation contract should also authorize quarantine/reset on an unreadable or version-invalid source. The old #438 policy expressly allowed it; #460 preserved it. The approved common policy preserves the original and any existing backup when prerequisite validation fails, leaving quarantine/reinitialization to deliberate recovery. It would retain successful persistence and truthful post-write diagnostics.
+The planning command is not the same CQS violation merely because it writes: commands intentionally have effects. The narrower concern is whether the ordinary mutation contract should also authorize quarantine/reset on an unreadable or version-invalid source. The old #438 policy expressly allowed it; #460 preserved it. The approved common policy preserves the original and any existing backup when prerequisite validation fails, leaving quarantine/reinitialization to deliberate recovery. Successful persistence and truthful post-write diagnostics remain preservation obligations.
 
 Approved bounded scope amendment: apply that policy at the two existing planning catch sites alongside route 3, adapt the already-existing six command-backup cases to prove source/backup preservation, and remove the shared backup command only if the resulting production consumer inventory is empty. The three known production backup callers are this pair and FileStateRepository.load. No new recovery tool, flag, transaction or broad planning redesign is proposed. Existing template activation/upgrade backups are not implicated.
 
@@ -159,7 +159,7 @@ Read-only AST classification confirms that call-site counts do not predict faili
 
 The bootstrap string assertion currently passes its own predicate even though bootstrap does not inject its constructed mutator into the engine. It therefore cannot prove the wiring its docstring promises. This is a concrete example of coverage that follows source wording while missing the architectural behavior.
 
-A bounded preparation helper is proposed for tests where registration is incidental, with an **explicit parent and relevant identity**, not a compatibility default. Direct initialization, invalid-state, model/repository and PR-authority tests continue to exercise their public contracts directly. Existing integration/atomic-submission/rollback and scope-bypass tests remain valuable. Example repeated preparation: test_phase_state_engine_workflow.py:58–65 and :86–93; test_cycle_tools_business_logic.py has five variants at :103/:147, :324/:375, :530/:573, :740/:772 and :904/:911.
+The approved scope permits at most one bounded preparation helper where affected registration is incidental, with an **explicit parent and relevant identity**, not a compatibility default. Direct initialization, invalid-state, model/repository and PR-authority tests continue to exercise their public contracts directly. Existing integration/atomic-submission/rollback and scope-bypass tests remain valuable. Example repeated preparation: test_phase_state_engine_workflow.py:58–65 and :86–93; test_cycle_tools_business_logic.py has five variants at :103/:147, :324/:375, :530/:573, :740/:772 and :904/:911.
 
 One implementation change having multiple consumers is not itself a defect: shared contracts and independent integration evidence legitimately fan out. Avoidable coupling is when an unrelated test must restate all details of that contract or reproduce its implementation. Do not weaken production validation or enlarge production interfaces to accommodate test setup.
 
@@ -188,13 +188,15 @@ Research used source reads, rg searches and read-only Python AST scans over mcp_
 
 Bounded delegated research supplied findings for test coupling and warning relevance; the producer checked the decisive source paths. No delegated findings are QA approval. No production/test/config files, test suites or live registration/state were mutated for these probes.
 
+Research artifact check: run_checks(scope="targets", targets=["docs/development/issue503/research.md"], checks=["markdown_links"], timeout_seconds=120) reported passed, args_source=configured. Subsequent safe_edit_file validation also checks this document's links. These document checks do not claim Python, test-suite or implementation validation.
+
 ## Questions
 
-The owner approved route 3 and the targeted planning-command scope expansion, and requested an explanation of the planning query's phase-enrichment path before further progression. That path is documented above and shares the same repository correction. No additional policy choice has been identified from this clarification. Research has not transitioned to Design; no implementation behavior is claimed.
+No owner strategy decision remains open for Research. The owner approved the targeted scope expansion and confirmed that exposing faults without implicit file mutation is a concrete purpose of the correction.
 
-The owner approved the limited reduction of test coupling, including affected incidental preparation, directly affected weak source assertions and the adjacent asyncio marker. That decision is now part of Approved Strategy.
+Design must specify the operational contracts within that strategy: public/internal signatures, complete registration and validated updates, exact branch/issue checks, genuine-absence versus invalid/unreadable outcomes, and validation ordering before effects. It must retain the general versus branch-validated reader distinction and compatible missing-state handling at the filesystem/in-memory seams. These are Design responsibilities, not authorization for a new framework or a compatibility layer.
 
-Other operational details belong to Design within the already approved boundaries: concrete input/model signatures, exact identity checks, existing diagnostic projection and validation order. They do not require a new state framework, transaction layer or compatibility decision.
+Independent QA is requested for Research → Design on the committed snapshot. Research-source evidence and historical Validation are not implementation evidence. No Design transition or implementation is performed by this document.
 
 ## References
 
@@ -211,7 +213,19 @@ Other operational details belong to Design within the already approved boundarie
 
 ## Approved Strategy
 
-Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. Additional owner decision, 2026-10-15: consolidate only affected incidental test preparation through existing fixtures/factories and at most one helper with explicit parent/context; retain direct registration-contract tests, replace/remove weak source assertions within directly changed tests, and restrict the context module's asyncio marker if that file changes. No suite-wide cleanup or production fallback is authorized. Additional owner decision, 2026-10-15: adopt route 3 for branch-state reads and extend the same failed-prerequisite-validation preservation policy to the two existing planning-command backup sites. Preserve originals, existing backups, structured diagnosis, successful writes and truthful persisted readback failures; no automatic migration/reconstruction or new recovery architecture. Remove the backup helper only if no production consumers remain. The owner requested phase-enrichment clarification before further progression; this document is not QA approval or a phase transition.
+Owner decisions are binding per affected boundary. The initial direction was carried from #319 into #503; the owner explicitly approved the test-coupling cap and invalid-source preservation scope during this Research.
+
+| Boundary | Approved strategy | Preservation / scope limit |
+| --- | --- | --- |
+| Public initialization and project metadata | Clean break: require a supplied nonblank parent, observe the actual worktree branch and pass registration identity explicitly. Remove reflog and metadata inference. CO initializes before Imp starts. | Existing branch field remains the head identity; no duplicate head field, remote discovery or default parent. |
+| State model / initialization / ordinary mutation | Clean break: start initialization with complete valid state through the existing locked mutation boundary; validate updated state and distinguish genuine absence from invalid/unreadable state. Inject the existing constructed mutator. | Preserve valid different-branch handover and normal phase/cycle semantics; no placeholders, unchecked compatibility copies, completion register or new state framework. Pure models gain no Git/file IO. |
+| PR submission and lower GitHub calls | Clean break: remove public submit_pr head/base inputs; use matching registered branch/parent exclusively before neutralization, commit, push or PR creation. Lower create_pr requires explicit base. | Preserve configuration-driven Ready/PR admission, existing submission/rollback/status ownership and diagnosis. No fallback to default_base_branch. |
+| Read-only state / parent / check consumers | Retain narrow read-only seams and the general-repository versus branch-validated-reader distinction; require exact identity where a consumer authorizes branch-specific behavior. | Preserve branch-basis-unavailable behavior and keep parent requirements out of configured/targets/workspace checks. Do not globally tighten every general read. |
+| Failed source validation and recovery | Adopt route 3 for branch-state reads and extend the same preservation policy to both existing planning-command backup sites: retain original and existing backup bytes, propagate diagnosis, and perform no implicit quarantine/reset. | Keep successful persistence and persisted=True readback diagnosis; no automatic migration/reconstruction, new recovery tool, flag or transaction. Remove backup_file only if no production callers remain. Upgrade/activation backups are excluded. |
+| Test consumers / helpers | Clean break in affected tests: adapt valuable public behavior tests, remove obsolete inference/cascade/backup-reset expectations, and consolidate only affected incidental setup using existing fixtures/factories plus at most one explicit-parent preparation helper. Replace/remove weak source assertions only in directly changed tests. | No legacy-preservation suite, broad rewrite, content tests or production fallback to satisfy old fixtures. Keep meaningful state-freshness doubles. Restrict the context file's asyncio marking if that already-affected file changes. |
+| Active documentation and instructions | Correct affected existing tool references, Ready examples, role guidance and tracked bundled copies for the new contracts. | No instruction explosion or historical-document rewrite. Historical #438/#460 records remain evidence; package/release work and unrelated warnings stay excluded. |
+
+Research records the human strategy; independent QA alone supplies the workflow GO/NOGO.
 
 ## Expected Results
 
@@ -229,7 +243,7 @@ Provide issue/workflow/parent and initialize the checked-out worktree branch.
 
 Persist planning metadata and workflow registration through their current boundaries.
 
-**Impact:** Remove optional identity/inference paths and research complete initialization plus validated copies.
+**Impact:** Remove optional identity/inference paths; design complete initialization and validated copies within the existing boundaries.
 
 ### submit\_pr / GitHub manager and adapter
 
@@ -243,7 +257,13 @@ Read branch-specific context through existing narrow interfaces.
 
 **Impact:** Preserve unrelated scopes/general readers; strengthen exact branch identity only at appropriate consumers.
 
-### Existing tests, raw payloads, embedded scripts and instructions
+### Invalid-source validation and deliberate recovery
+
+Read the original state/planning source and refuse invalid prerequisites without changing files.
+
+**Impact:** Remove the three known automatic-backup caller paths; adapt existing preservation behavior evidence and retain post-write diagnosis. Indirect plan/status reads gain the same non-mutating error behavior.
+
+### Existing tests, raw payloads, examples and instructions
 
 Express supported behavior and construct valid inputs/state.
 
@@ -257,7 +277,7 @@ Keep the general repository read contract distinct from branch-validated consume
 
 ### Required fields alone do not protect updates that use unchecked copies or placeholders.
 
-Research the existing mutation boundary and all five callbacks; preserve normal phase/cycle behavior.
+Use the inventoried mutation boundary and all five callbacks when defining validation; preserve normal phase/cycle behavior.
 
 ### Fixture migration dominates the patch or tests continue exercising implicit defaults.
 
@@ -283,8 +303,4 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | 0.4 | 2026-10-15 | @imp researcher | Recover the explicit #438 quarantine/reset rationale and implementation evidence; record #460's deliberate query/command preservation boundary and qualify route 3 as a recovery-policy choice. |
 | 0.5 | 2026-10-15 | @imp researcher | Compare retained planning-command quarantine with pure-read policy; distinguish failed-precondition effects from successful writes and propose a bounded, unapproved scope amendment. |
 | 0.6 | 2026-10-15 | @imp researcher | Capture owner approval for route 3 and the targeted planning-command correction; explain the existing plan-query phase-enrichment path without adding a third repair. |
-
-
-
-
-
+| 1.0 | 2026-10-15 | @imp researcher | Close owner choices, consolidate strategy per boundary and the indirect-mutation rationale, and request focused independent Research-to-Design review; no implementation or suite execution. |
