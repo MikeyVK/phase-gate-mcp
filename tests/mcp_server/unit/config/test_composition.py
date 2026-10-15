@@ -1,13 +1,18 @@
 # pgmcp:v1 id=pytest_unit_test pv=1.0.0 pf=PbcHYV4rwlUcaINu sf=KoFPQ3-cAAWFeesb
 
-"Native configuration composition preserves inheritance and literal field values without external sources or input mutation."
+"""Native configuration layers inherit fields without external sources or input mutation."""
 
 # Standard library
 from copy import deepcopy
 
 # Third party
 import pytest
-from pydantic_settings import DotEnvSettingsSource, EnvSettingsSource, PydanticBaseSettingsSource, SecretsSettingsSource
+from pydantic_settings import (
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SecretsSettingsSource,
+)
 
 # Project
 from mcp_server.config.composition import compose_configuration
@@ -76,6 +81,7 @@ def test_composition_detaches_inherited_and_overridden_values() -> None:
 
 def test_external_settings_sources_are_not_executed(monkeypatch: pytest.MonkeyPatch) -> None:
     "Environment, dotenv and secret sources cannot participate in composition."
+
     def reject_source(_source: PydanticBaseSettingsSource) -> dict[str, object]:
         raise AssertionError("An external settings source was executed")
 
