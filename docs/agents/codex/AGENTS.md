@@ -62,7 +62,7 @@ reading; do not load unrelated documents by default.
 | List issues | `list_issues(state, labels)` | `run_in_terminal("gh issue list")` |
 | Update issue | `update_issue(issue_number, ...)` | `run_in_terminal("gh issue edit")` |
 | Close issue | `close_issue(issue_number, comment)` | `run_in_terminal("gh issue close")` |
-| Create PR (atomic) | `submit_pr(title, body, head, base, draft)` | `run_in_terminal("gh pr create")` |
+| Create PR (atomic) | `submit_pr(title, body, draft)` | `run_in_terminal("gh pr create")` |
 | List PRs | `list_prs(state, base, head)` | `run_in_terminal("gh pr list")` |
 | Merge PR | `merge_pr(pr_number, commit_message, merge_method)` | `run_in_terminal("gh pr merge")` |
 | Get PR | `get_pr(pr_number)` | `run_in_terminal("gh pr view")` |
@@ -87,7 +87,7 @@ reading; do not load unrelated documents by default.
 ### Project & Phase Management
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Initialize project | `initialize_project(issue_number, issue_title, workflow_name)` | Manual .pgmcp/ file creation |
+| Initialize project | `initialize_project(issue_number, issue_title, workflow_name, parent_branch)` | Manual .pgmcp/ file creation |
 | Get project plan | `get_project_plan(issue_number)` | Manual .pgmcp/ file reading |
 | Transition phase | `transition_phase(branch, to_phase)` | Manual .pgmcp/state.json edit |
 | Force phase transition | `force_phase_transition(branch, to_phase, skip_reason, human_approval_message)` | Manual .pgmcp/state.json edit |
@@ -194,7 +194,7 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 | `chore` | research, implementation, validation, documentation, ready | Lightweight maintenance and housekeeping |
 | `epic` | See `.pgmcp/config/contracts.yaml` (SSOT for epic phase order) | Large multi-issue features |
 
-**Workflow Selection:** Use `initialize_project(issue_number, issue_title, workflow_name="feature|bug|refactor|docs|hotfix|chore|epic")` to start.
+**Workflow Selection:** Use `initialize_project(issue_number, issue_title, workflow_name="feature|bug|refactor|docs|hotfix|chore|epic", parent_branch="<explicit base branch>")` to start.
 
 ---
 
@@ -308,4 +308,5 @@ delegation; epic review and lifecycle continuation remain with `@co`.
 ---
 
 **Remember: These rules are enforced. Violations will be rejected by the user. When in doubt, consult the Tool Priority Matrix or ask the user.**
+
 
