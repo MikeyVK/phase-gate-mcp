@@ -16,7 +16,122 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-15T08:51:59.474589+00:00"
+      "created_at": "2026-10-15T08:51:59.474589+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 3,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Native composition and narrow operations",
+              "deliverables": [
+                {
+                  "deliverable_name": "Native merge boundary",
+                  "description": "Native merge boundary: Use pinned public Pydantic Settings source composition for add/update/inheritance, with ambient sources excluded; strict parser remains loader-owned. Prove nested mapping preservation, whole leaf-list/null replacement and caller-data immutability.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/config/composition.py"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Explicit deletion and order",
+                  "description": "Explicit deletion and order: Implement only explicit tombstone preprocessing and shared strict order validation/use; prove unknown/mixed command rejection, inherited/new ranks, collisions and final required/reference rejection through meaningful config boundaries.",
+                  "validates": {
+                    "type": "file_glob",
+                    "dir": "tests/mcp_server/unit/config",
+                    "pattern": "test_*.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                }
+              ],
+              "exit_criteria": "Focused composition/order behavior passes, applicable Python file gates pass, no active runtime cutover or extra custom merge/materializer is introduced. Owner reviews the proposed step and actual outcome before the next implementation step."
+            },
+            {
+              "cycle_id": "C_2",
+              "cycle_number": 2,
+              "cycle_name": "Atomic configuration and consumer cutover",
+              "deliverables": [
+                {
+                  "deliverable_name": "Canonical source and model cutover",
+                  "description": "Canonical source and model cutover: Create canonical complete defaults and actual root differences, normalize object collections to key identity and explicit meaningful order, retain leaf lists and strict parsing; preserve complete-file/package routes and optional enforcement; remove redundant technical identities and ignored phase_source.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": ".pgmcp/config/defaults/contracts.yaml"
+                  },
+                  "deliverable_id": "D_2.1"
+                },
+                {
+                  "deliverable_name": "Consumer and fixture cutover",
+                  "description": "Consumer and fixture cutover: Adapt only changed map/order consumers and affected shared fixture preparation, including enforcement, presentation, issue/workflow/catalog helpers and both CheckSpec resolver paths; prove current effective policy/references/order and no live-root fixture fallback.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/managers/phase_contract_resolver.py"
+                  },
+                  "deliverable_id": "D_2.2"
+                }
+              ],
+              "exit_criteria": "The running/configured source shape and consuming models agree; focused config/enforcement/presentation/workflow/issue/resolver tests pass, applicable file gates pass and current effective policy/order/references are demonstrated. No compatibility path remains. Owner inspects each coordinated substep before further work."
+            },
+            {
+              "cycle_id": "C_3",
+              "cycle_number": 3,
+              "cycle_name": "GitHub source and initialization cleanup",
+              "deliverables": [
+                {
+                  "deliverable_name": "Single GitHub source",
+                  "description": "Single GitHub source: Resolve workspace GitHub identity and optional token alternative with environment-first GITHUB_TOKEN; remove owner/repo launcher/environment fallbacks and feed one resolved value to manager, registration and resources.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/config/github_resolution.py"
+                  },
+                  "deliverable_id": "D_3.1"
+                },
+                {
+                  "deliverable_name": "Initialization and obsolete-path cleanup",
+                  "description": "Initialization and obsolete-path cleanup: Remove temporary init acknowledgement rewriting and reset-only tests; adapt current Settings/bootstrap/init behavior evidence and finish directed obsolete identity/container preparation cleanup.",
+                  "validates": {
+                    "type": "absent_text",
+                    "file": "mcp_server/cli.py",
+                    "text": "_reset_binding_choices"
+                  },
+                  "deliverable_id": "D_3.2"
+                }
+              ],
+              "exit_criteria": "Focused GitHub/Settings/bootstrap/init tests and applicable file gates pass; no old identity fallback/reset remains; credentials are neither probed nor written to evidence; all implementation obligations are ready for phase-owned Validation after owner-controlled work."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Durable validation evidence",
+                "description": "Compact durable validation report maps native composition, deletion/order, current behavior, cleanup, full native suite and required gates to observed outcomes.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue504/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Active documentation and PR closing correction",
+                "description": "Update active configuration/setup/launcher references and PR template: every closes entry emits an operative Closes #N, proved by the adapted existing multi-issue rendering test.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/reference/server-configuration.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
