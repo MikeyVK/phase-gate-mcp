@@ -47,21 +47,44 @@ class TestEnforcementRunner:
     ) -> None:
         """Matching tool rules must dispatch their registered handlers."""
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "later_rule": EnforcementRule(
+                    order=20,
                     event_source="tool",
                     tool="create_branch",
                     timing="pre",
-                    actions=[
-                        EnforcementAction(
+                    actions={
+                        "only_action": EnforcementAction(
+                            order=10,
                             type="check_branch_policy",
-                            rules={"feature": ["main", "epic/*"]},
+                            rules={"feature": ["main"]},
+                            policy="b1",
                         )
-                    ],
-                )
-            ]
+                    },
+                ),
+                "earlier_rule": EnforcementRule(
+                    order=10,
+                    event_source="tool",
+                    tool="create_branch",
+                    timing="pre",
+                    actions={
+                        "later_action": EnforcementAction(
+                            order=20,
+                            type="check_branch_policy",
+                            rules={"feature": ["main"]},
+                            policy="a2",
+                        ),
+                        "earlier_action": EnforcementAction(
+                            order=10,
+                            type="check_branch_policy",
+                            rules={"feature": ["main"]},
+                            policy="a1",
+                        ),
+                    },
+                ),
+            }
         )
-        calls: list[tuple[str, str]] = []
+        calls: list[tuple[str | None, str]] = []
 
         def fake_handler(
             action: EnforcementAction,
@@ -69,7 +92,7 @@ class TestEnforcementRunner:
             workspace_root: Path,
             note_context: NoteContext,  # noqa: ARG001
         ) -> None:
-            calls.append((action.type, context.tool_name))
+            calls.append((action.policy, context.tool_name))
             assert workspace_root == tmp_path
 
         runner = _make_runner(
@@ -89,24 +112,26 @@ class TestEnforcementRunner:
             note_context=NoteContext(),
         )
 
-        assert calls == [("check_branch_policy", "create_branch")]
+        assert calls == [("a1", "create_branch"), ("a2", "create_branch"), ("b1", "create_branch")]
 
     def test_check_branch_policy_rejects_invalid_base_branch(self, tmp_path: Path) -> None:
         """Branch policy must block disallowed base branches."""
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     tool="create_branch",
                     timing="pre",
-                    actions=[
-                        EnforcementAction(
+                    actions={
+                        "entry_1": EnforcementAction(
+                            order=10,
                             type="check_branch_policy",
                             rules={"feature": ["main", "epic/*"]},
                         )
-                    ],
+                    },
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config)
 
@@ -129,14 +154,15 @@ class TestEnforcementRunner:
         """Runner must resolve tool category dynamically when tool_category is omitted."""
         config = EnforcementConfig(
             categories={"custom_category": ["create_branch"]},
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     tool_category="custom_category",
                     timing="pre",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ],
+            },
         )
         calls = []
 

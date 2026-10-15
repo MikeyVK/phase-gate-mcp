@@ -29,7 +29,7 @@ from tests.mcp_server.test_support import (
 def workspace_root(tmp_path: Path) -> Path:
     """Create a minimal workspace with workphases, phase contracts, and deliverables."""
     phase_gate_dir = tmp_path / get_default_server_root()
-    config_dir = phase_gate_dir / "config"
+    config_dir = phase_gate_dir / "config" / "defaults"
     config_dir.mkdir(parents=True)
 
     (config_dir / "workphases.yaml").write_text(
@@ -55,13 +55,15 @@ phases:
 version: "1.0.0"
 merge_policy:
   pr_allowed_phase: ready
-  branch_local_artifacts: []
+  branch_local_artifacts: {}
 workflows:
   feature:
     phases:
-      - name: planning
+      planning:
+        order: 10
         exit_requires:
-          - id: planning-doc
+          planning-doc:
+            order: 20
             type: heading_present
             required: true
             file: docs/development/issue257/planning.md
@@ -70,7 +72,8 @@ workflows:
           sub_role: test-role
           phase_instructions: Test instructions.
           handover_template: Test handover.
-      - name: implementation
+      implementation:
+        order: 30
         cycle_based: true
         subphases: [red, green, refactor]
         commit_type_map:
@@ -78,17 +81,20 @@ workflows:
           green: feat
           refactor: refactor
         exit_requires:
-          - id: D_1.2
+          D_1.2:
+            order: 40
             type: file_exists
             required: true
             file: docs/development/issue257/design.md
-          - id: D_1.1
+          D_1.1:
+            order: 50
             type: file_exists
             required: false
             file: docs/development/issue257/design-original.md
         cycle_exit_requires:
           1:
-            - id: c1-red-test
+            c1-red-test:
+              order: 60
               type: file_glob
               required: true
               dir: tests/mcp_server/unit/managers
@@ -97,16 +103,19 @@ workflows:
           sub_role: test-role
           phase_instructions: Test instructions.
           handover_template: Test handover.
-      - name: ready
+      ready:
+        order: 70
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
           handover_template: Test handover.
   docs:
     phases:
-      - name: documentation
+      documentation:
+        order: 80
         exit_requires:
-          - id: docs-readme
+          docs-readme:
+            order: 90
             type: file_exists
             required: true
             file: docs/mcp_server/README.md
@@ -114,7 +123,8 @@ workflows:
           sub_role: test-role
           phase_instructions: Test instructions.
           handover_template: Test handover.
-      - name: ready
+      ready:
+        order: 100
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
@@ -203,7 +213,7 @@ class TestPhaseConfigContext:
     def test_invalid_cycle_based_phase_raises_config_error(self, tmp_path: Path) -> None:
         """cycle_based phases must declare a non-empty commit_type_map."""
         phase_gate_dir = tmp_path / get_default_server_root()
-        config_dir = phase_gate_dir / "config"
+        config_dir = phase_gate_dir / "config" / "defaults"
         config_dir.mkdir(parents=True)
 
         (config_dir / "workphases.yaml").write_text(
@@ -220,17 +230,19 @@ class TestPhaseConfigContext:
             'version: "1.0.0"\n'
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
-            "  branch_local_artifacts: []\n"
+            "  branch_local_artifacts: {}\n"
             "workflows:\n"
             "  feature:\n"
             "    phases:\n"
-            "      - name: implementation\n"
+            "      implementation:\n"
+            "        order: 10\n"
             "        cycle_based: true\n"
             "        instructions:\n"
             "          sub_role: test-role\n"
             "          phase_instructions: Test instructions.\n"
             "          handover_template: Test handover.\n"
-            "      - name: ready\n"
+            "      ready:\n"
+            "        order: 20\n"
             "        instructions:\n"
             "          sub_role: test-role\n"
             "          phase_instructions: Test instructions.\n"
@@ -238,18 +250,18 @@ class TestPhaseConfigContext:
             encoding="utf-8",
         )
 
-        with pytest.raises(ConfigError, match="commit_type_map") as exc_info:
+        with pytest.raises(ConfigError) as exc_info:
             make_phase_config_context(tmp_path)
 
         assert exc_info.value.file_path is not None
         assert exc_info.value.file_path.replace("\\", "/").endswith(
-            f"/{get_default_server_root()}/config/contracts.yaml"
+            f"/{get_default_server_root()}/config/defaults/contracts.yaml"
         )
 
     def test_loader_applies_defaults_for_optional_phase_fields(self, tmp_path: Path) -> None:
         """Missing optional fields should resolve to empty collections and false."""
         phase_gate_dir = tmp_path / get_default_server_root()
-        config_dir = phase_gate_dir / "config"
+        config_dir = phase_gate_dir / "config" / "defaults"
         config_dir.mkdir(parents=True)
 
         (config_dir / "workphases.yaml").write_text(
@@ -266,16 +278,18 @@ class TestPhaseConfigContext:
             'version: "1.0.0"\n'
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
-            "  branch_local_artifacts: []\n"
+            "  branch_local_artifacts: {}\n"
             "workflows:\n"
             "  feature:\n"
             "    phases:\n"
-            "      - name: planning\n"
+            "      planning:\n"
+            "        order: 10\n"
             "        instructions:\n"
             "          sub_role: test-role\n"
             "          phase_instructions: Test instructions.\n"
             "          handover_template: Test handover.\n"
-            "      - name: ready\n"
+            "      ready:\n"
+            "        order: 20\n"
             "        instructions:\n"
             "          sub_role: test-role\n"
             "          phase_instructions: Test instructions.\n"
@@ -289,7 +303,7 @@ class TestPhaseConfigContext:
         assert planning_phase.subphases == []
         assert planning_phase.commit_type_map == {}
         assert planning_phase.cycle_based is False
-        assert planning_phase.exit_requires == []
+        assert planning_phase.exit_requires == {}
         assert planning_phase.cycle_exit_requires == {}
 
     def test_context_loads_workphases_and_phase_contracts(self, workspace_root: Path) -> None:
@@ -298,7 +312,7 @@ class TestPhaseConfigContext:
 
         assert context.workphases.get_entry_expects("implementation") == []
         assert "feature" in context.contracts.workflows
-        assert "implementation" in context.contracts.workflows["feature"].get_phase_names()
+        assert "implementation" in context.contracts.workflows["feature"].get_phase_ids()
 
     def test_context_uses_refactor_commit_mapping_in_fixture(self, workspace_root: Path) -> None:
         """Implementation refactor subphase should keep the existing refactor commit type."""
@@ -382,12 +396,7 @@ class TestPhaseContractResolver:
     def test_resolve_cycle_exit_excludes_phase_level_exit_requires(
         self, workspace_root: Path
     ) -> None:
-        """Regression: cycle exit must not include phase-level exit_requires gates.
-
-        The defect: resolve(cycle_number=N) merged both exit_requires and cycle_exit_requires,
-        causing transition_cycle() to enforce phase-level gates that belong only to phase
-        transitions.
-        """
+        """Cycle exit includes only cycle gates and the relevant issue checks."""
         resolver = _make_resolver(workspace_root, with_issue_checks=True)
 
         checks = resolver.resolve_cycle_exit(

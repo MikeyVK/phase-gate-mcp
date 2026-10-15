@@ -9,6 +9,7 @@ from typing import Any, TypeVar
 import yaml
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
+from mcp_server.config.composition import compose_configuration, validate_complete_configuration
 from mcp_server.config.schemas import (
     ChecksConfig,
     ContractsConfig,
@@ -55,6 +56,23 @@ class _AdapterYamlLoader(yaml.SafeLoader):
         return result
 
 
+class _ConfigYamlLoader(yaml.SafeLoader):
+    """Preserve typed keys while rejecting duplicates before mapping construction."""
+
+    def construct_mapping(self, node: yaml.Node, deep: bool = False) -> dict[Hashable, object]:
+        if not isinstance(node, yaml.MappingNode):
+            raise yaml.YAMLError("configuration_mapping_required")
+        self.flatten_mapping(node)
+        construct: Callable[[yaml.Node, bool], object] = self.construct_object
+        result: dict[Hashable, object] = {}
+        for key_node, value_node in node.value:
+            key = construct(key_node, deep)
+            if not isinstance(key, (str, int)) or isinstance(key, bool) or key in result:
+                raise yaml.YAMLError("duplicate_or_invalid_configuration_key")
+            result[key] = construct(value_node, deep)
+        return result
+
+
 def normalize_config_root(config_root: Path | str) -> Path:
     """Return the resolved config directory path.
 
@@ -83,33 +101,23 @@ class ConfigLoader:
 
     def load_adapter_trust(self) -> AdapterTrustConfig:
         """Read the required owner policy from the explicitly selected config root."""
-        return self._load_declaration(AdapterTrustConfig, self.config_root / "adapters.yaml")
+        return self._load_workspace(AdapterTrustConfig, "adapters.yaml")
 
     def load_checks_config(self) -> ChecksConfig:
         """Read required checks.yaml without activating or reading legacy quality config."""
-        return self._load_declaration(
-            ChecksConfig, self.config_root / "checks.yaml", description="checks configuration"
-        )
+        return self._load_workspace(ChecksConfig, "checks.yaml")
 
     def load_tests_config(self) -> TestsConfig:
         """Read required test bindings without native dependency probing."""
-        return self._load_declaration(
-            TestsConfig, self.config_root / "tests.yaml", description="tests configuration"
-        )
+        return self._load_workspace(TestsConfig, "tests.yaml")
 
     def load_artifact_locations_config(self) -> ArtifactLocationsConfig:
         """Read the required workspace artifact-location declaration."""
-        return self._load_declaration(
-            ArtifactLocationsConfig,
-            self.config_root / "artifacts.yaml",
-            description="artifact locations configuration",
-        )
+        return self._load_workspace(ArtifactLocationsConfig, "artifacts.yaml")
 
     def load_fixes_config(self) -> FixesConfig:
         """Read required fix bindings without native dependency probing."""
-        return self._load_declaration(
-            FixesConfig, self.config_root / "fixes.yaml", description="fixes configuration"
-        )
+        return self._load_workspace(FixesConfig, "fixes.yaml")
 
     def _load_declaration(
         self, schema: type[SchemaT], path: Path, *, description: str = "adapter declaration"
@@ -143,81 +151,102 @@ class ConfigLoader:
         return TypeAdapter(TemplatePackageVersion).validate_python(value)
 
     def load_git_config(self, config_path: Path | None = None) -> GitConfig:
-        data, resolved_path = self._load_yaml("git.yaml", config_path=config_path)
-        return self._validate_schema(GitConfig, data, resolved_path)
+        return self._load_workspace(GitConfig, "git.yaml", config_path=config_path)
 
     def load_label_config(self, config_path: Path | None = None) -> LabelConfig:
-        data, resolved_path = self._load_yaml("labels.yaml", config_path=config_path)
-        return self._validate_schema(LabelConfig, data, resolved_path)
+        return self._load_workspace(LabelConfig, "labels.yaml", config_path=config_path)
 
     def load_presentation_config(self, config_path: Path | None = None) -> PresentationConfig:
-        data, resolved_path = self._load_yaml("presentation.yaml", config_path=config_path)
-        return self._validate_schema(PresentationConfig, data, resolved_path)
+        return self._load_workspace(
+            PresentationConfig, "presentation.yaml", config_path=config_path
+        )
 
     def load_scope_config(self, config_path: Path | None = None) -> ScopeConfig:
-        data, resolved_path = self._load_yaml("scopes.yaml", config_path=config_path)
-        return self._validate_schema(ScopeConfig, data, resolved_path)
+        return self._load_workspace(ScopeConfig, "scopes.yaml", config_path=config_path)
 
     def load_workflow_config(self, config_path: Path | None = None) -> WorkflowConfig:
-        data, resolved_path = self._load_yaml("workflows.yaml", config_path=config_path)
-        return self._validate_schema(WorkflowConfig, data, resolved_path)
+        return self._load_workspace(WorkflowConfig, "workflows.yaml", config_path=config_path)
 
     def load_workphases_config(self, config_path: Path | None = None) -> WorkphasesConfig:
-        data, resolved_path = self._load_yaml("workphases.yaml", config_path=config_path)
-        return self._validate_schema(WorkphasesConfig, data, resolved_path)
+        return self._load_workspace(WorkphasesConfig, "workphases.yaml", config_path=config_path)
 
     def load_contributor_config(self, config_path: Path | None = None) -> ContributorConfig:
-        data, resolved_path = self._load_yaml("contributors.yaml", config_path=config_path)
-        return self._validate_schema(ContributorConfig, data, resolved_path)
+        return self._load_workspace(ContributorConfig, "contributors.yaml", config_path=config_path)
 
     def load_issue_config(self, config_path: Path | None = None) -> IssueConfig:
-        data, resolved_path = self._load_yaml("issues.yaml", config_path=config_path)
-        return self._validate_schema(IssueConfig, data, resolved_path)
+        return self._load_workspace(IssueConfig, "issues.yaml", config_path=config_path)
 
     def load_milestone_config(self, config_path: Path | None = None) -> MilestoneConfig:
-        data, resolved_path = self._load_yaml("milestones.yaml", config_path=config_path)
-        return self._validate_schema(MilestoneConfig, data, resolved_path)
+        return self._load_workspace(MilestoneConfig, "milestones.yaml", config_path=config_path)
 
     def load_operation_policies_config(
         self,
         config_path: Path | None = None,
     ) -> OperationPoliciesConfig:
-        data, resolved_path = self._load_yaml("policies.yaml", config_path=config_path)
-        operations = data.get("operations")
-        if not isinstance(operations, dict):
-            raise ConfigError(
-                f"Missing 'operations' key in {resolved_path.name}",
-                file_path=str(resolved_path),
-            )
-
-        payload = {
-            **data,
-            "operations": {
-                operation_id: {"operation_id": operation_id, **operation_data}
-                for operation_id, operation_data in operations.items()
-            },
-        }
-        return self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
+        return self._load_workspace(
+            OperationPoliciesConfig, "policies.yaml", config_path=config_path
+        )
 
     def load_enforcement_config(self, config_path: Path | None = None) -> EnforcementConfig:
-        data, resolved_path = self._load_yaml(
-            "enforcement.yaml",
-            config_path=config_path,
-            allow_missing=True,
+        return self._load_workspace(
+            EnforcementConfig, "enforcement.yaml", config_path=config_path, optional=True
         )
-        if not resolved_path.exists():
-            return EnforcementConfig(version="1.0.0")
-        return self._validate_schema(EnforcementConfig, data, resolved_path)
 
     def load_contracts_config(
         self,
         config_path: Path | None = None,
     ) -> ContractsConfig:
-        data, resolved_path = self._load_yaml(
-            "contracts.yaml",
-            config_path=config_path,
-        )
-        return self._validate_schema(ContractsConfig, data, resolved_path)
+        return self._load_workspace(ContractsConfig, "contracts.yaml", config_path=config_path)
+
+    def _load_workspace(
+        self,
+        schema: type[SchemaT],
+        file_name: str,
+        *,
+        config_path: Path | None = None,
+        optional: bool = False,
+    ) -> SchemaT:
+        """Admit one complete basis and an optional workspace difference document."""
+        if config_path is not None:
+            path = Path(config_path).resolve()
+            data, _ = self._load_yaml(file_name, config_path=path)
+            try:
+                validate_complete_configuration(data)
+            except ValueError as exc:
+                raise ConfigError(str(exc), str(path)) from exc
+            return self._admit(schema, data, path)
+
+        basis_path = self.config_root / "defaults" / file_name
+        override_path = self.config_root / file_name
+        if optional and not basis_path.exists():
+            if not override_path.exists():
+                return schema.model_validate({})
+            return self._load_workspace(schema, file_name, config_path=override_path)
+        basis, _ = self._load_yaml(file_name, config_path=basis_path)
+        try:
+            validate_complete_configuration(basis)
+            self._admit(schema, basis, basis_path)
+            changes = (
+                self._load_yaml(file_name, config_path=override_path)[0]
+                if override_path.exists()
+                else None
+            )
+            merged = compose_configuration(basis, changes)
+        except ValueError as exc:
+            raise ConfigError(str(exc), str(override_path)) from exc
+        return self._admit(schema, merged, override_path if changes is not None else basis_path)
+
+    def _admit(self, schema: type[SchemaT], data: dict[str, Any], path: Path) -> SchemaT:
+        if "version" in schema.model_fields:
+            return self._validate_schema(schema, data, path)
+        try:
+            return schema.model_validate(data)
+        except ValidationError as exc:
+            errors = [
+                (error["loc"], error["type"], error["msg"])
+                for error in exc.errors(include_input=False, include_context=False)
+            ]
+            raise ConfigError(f"Config validation failed: {errors}", str(path)) from exc
 
     def _resolve_yaml_path(self, file_name: str | Path, config_path: Path | None = None) -> Path:
         if config_path is None:
@@ -242,14 +271,14 @@ class ConfigLoader:
 
         try:
             with resolved_path.open(encoding="utf-8") as file_handle:
-                loaded = yaml.safe_load(file_handle) or {}
-        except yaml.YAMLError as exc:
+                loaded = yaml.load(file_handle, Loader=_ConfigYamlLoader)
+        except (OSError, yaml.YAMLError) as exc:
             raise ConfigError(
                 f"Invalid YAML in {resolved_path.name}: {exc}",
                 file_path=str(resolved_path),
             ) from exc
 
-        if not isinstance(loaded, dict):
+        if not isinstance(loaded, dict) or any(not isinstance(key, str) for key in loaded):
             raise ConfigError(
                 f"Invalid YAML root in {resolved_path.name}: expected mapping",
                 file_path=str(resolved_path),
@@ -294,6 +323,7 @@ class ConfigLoader:
                         file_path=str(resolved_path),
                     ) from exc
             raise ConfigError(
-                f"Config validation failed for {resolved_path.name}: {exc}",
+                f"Config validation failed for {resolved_path.name}: "
+                f"{[(err['loc'], err['type'], err['msg']) for err in errors]}",
                 file_path=str(resolved_path),
             ) from exc

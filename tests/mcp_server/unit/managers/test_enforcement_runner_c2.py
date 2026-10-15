@@ -73,14 +73,15 @@ class TestToolCategoryDispatch:
         reader.get_pr_status.return_value = PRStatus.ABSENT
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=reader)
 
@@ -100,14 +101,15 @@ class TestToolCategoryDispatch:
         reader.get_pr_status.return_value = PRStatus.OPEN  # would raise if executed
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=reader)
 
@@ -135,14 +137,19 @@ class TestToolCategoryDispatch:
             executed.append(True)
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool="submit_pr",
-                    actions=[EnforcementAction(type="check_phase_readiness", policy="ready")],
+                    actions={
+                        "entry_1": EnforcementAction(
+                            order=10, type="check_phase_readiness", policy="ready"
+                        )
+                    },
                 )
-            ]
+            }
         )
         runner = EnforcementRunner(
             workspace_root=tmp_path,
@@ -165,14 +172,15 @@ class TestToolCategoryDispatch:
     def test_unknown_tool_category_in_config_raises_config_error(self, tmp_path: Path) -> None:
         """Startup must fail fast when enforcement.yaml references an unknown tool_category."""
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="nonexistent_category",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         with pytest.raises(ConfigError):
             _make_runner(tmp_path, config)
@@ -187,14 +195,15 @@ class TestCheckPRStatusHandler:
         reader.get_pr_status.return_value = PRStatus.OPEN
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=reader)
 
@@ -213,14 +222,15 @@ class TestCheckPRStatusHandler:
         reader.get_pr_status.return_value = PRStatus.ABSENT
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=reader)
 
@@ -239,14 +249,15 @@ class TestCheckPRStatusHandler:
         reader.get_pr_status.return_value = PRStatus.ABSENT
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=reader)
         ctx = EnforcementContext(
@@ -278,14 +289,15 @@ class TestCheckPRStatusHandler:
         reader.get_pr_status.return_value = PRStatus.ABSENT
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=reader)
 
@@ -306,14 +318,15 @@ class TestCheckPRStatusHandler:
     def test_no_pr_status_reader_raises_config_error(self, tmp_path: Path) -> None:
         """check_pr_status without a pr_status_reader must raise ConfigError."""
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config, pr_status_reader=None)
 
@@ -345,14 +358,19 @@ class TestCheckPhaseReadinessHandler:
         self._make_state(tmp_path, "ready")
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool="submit_pr",
-                    actions=[EnforcementAction(type="check_phase_readiness", policy="ready")],
+                    actions={
+                        "entry_1": EnforcementAction(
+                            order=10, type="check_phase_readiness", policy="ready"
+                        )
+                    },
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config)
 
@@ -368,14 +386,19 @@ class TestCheckPhaseReadinessHandler:
         self._make_state(tmp_path, "implementation")
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool="submit_pr",
-                    actions=[EnforcementAction(type="check_phase_readiness", policy="ready")],
+                    actions={
+                        "entry_1": EnforcementAction(
+                            order=10, type="check_phase_readiness", policy="ready"
+                        )
+                    },
                 )
-            ]
+            }
         )
         runner = _make_runner(tmp_path, config)
 
@@ -405,14 +428,19 @@ class TestCheckPhaseReadinessHandler:
     ) -> None:
         """Absent state blocks by policy; reader failures retain their diagnosis."""
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool="submit_pr",
-                    actions=[EnforcementAction(type="check_phase_readiness", policy="ready")],
+                    actions={
+                        "entry_1": EnforcementAction(
+                            order=10, type="check_phase_readiness", policy="ready"
+                        )
+                    },
                 )
-            ]
+            }
         )
         reader = None
         if load_error is not None:
@@ -451,14 +479,15 @@ class TestColdStartWiring:
         cache = PRStatusCache(github_manager=github_manager)
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = EnforcementRunner(
             workspace_root=tmp_path,
@@ -485,14 +514,15 @@ class TestColdStartWiring:
         cache = PRStatusCache(github_manager=github_manager)
 
         config = EnforcementConfig(
-            enforcement=[
-                EnforcementRule(
+            enforcement={
+                "entry_1": EnforcementRule(
+                    order=10,
                     event_source="tool",
                     timing="pre",
                     tool_category="branch_mutating",
-                    actions=[EnforcementAction(type="check_pr_status")],
+                    actions={"entry_1": EnforcementAction(order=10, type="check_pr_status")},
                 )
-            ]
+            }
         )
         runner = EnforcementRunner(
             workspace_root=tmp_path,

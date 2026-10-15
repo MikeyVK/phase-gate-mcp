@@ -97,10 +97,8 @@ class _NopGateRunner:
         wf = self._contracts_config.workflows.get(workflow_name)
         if not wf:
             return False
-        for p in wf.phases:
-            if p.name == phase:
-                return p.cycle_based
-        return False
+        entry = wf.phases.get(phase)
+        return entry.cycle_based if entry is not None else False
 
     def enforce_phase_exit(
         self,
@@ -179,18 +177,14 @@ def resolve_config_root(
     required_paths: tuple[str | Path, ...] = (),
 ) -> Path:
     """Resolve the best config root for one workspace under test."""
+    del required_paths
     settings = RealSettings.from_env()
     if workspace_root is not None:
         candidate = Path(workspace_root)
         if candidate.name != "config":
             candidate = candidate / settings.server.server_root_dir / "config"
-
-        def _file_exists(f: str | Path) -> bool:
-            if str(f) == "artifacts.yaml":
-                return (candidate.parent / "templates" / "config" / "artifacts.yaml").exists()
-            return (candidate / f).exists()
-
-        if candidate.exists() and all(_file_exists(f) for f in required_paths):
+        if candidate.exists():
+            # An explicitly provided config root is authoritative, even when incomplete.
             return candidate
     return settings.server.resolved_config_root
 

@@ -119,12 +119,14 @@ class TestLabelConfigLoading:
 
     def test_load_valid_yaml(self, tmp_path: Path) -> None:
         """Load simple valid YAML configuration."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:test"
-    color: "ff0000"
-    description: "Test label"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:test\n"
+            "    color: ff0000\n"
+            "    description: Test label\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -133,20 +135,24 @@ labels:
         config = _load_label_config(yaml_file)
         assert config.version == "1.0.0"
         assert len(config.labels) == 1
-        assert config.labels[0].name == "type:test"
-        assert config.labels[0].color == "ff0000"
+        assert config.labels["label_1"].name == "type:test"
+        assert config.labels["label_1"].color == "ff0000"
 
     def test_load_multiple_labels(self, tmp_path: Path) -> None:
         """Load YAML with multiple labels."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-  - name: "type:bug"
-    color: "D73A4A"
-  - name: "priority:high"
-    color: "D93F0B"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+            "  label_2:\n"
+            "    name: type:bug\n"
+            "    color: D73A4A\n"
+            "  label_3:\n"
+            "    name: priority:high\n"
+            "    color: D93F0B\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -155,14 +161,16 @@ labels:
 
     def test_load_with_freeform_exceptions(self, tmp_path: Path) -> None:
         """Load YAML with freeform_exceptions list."""
-        yaml_content = """version: "1.0.0"
-freeform_exceptions:
-  - "good first issue"
-  - "help wanted"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "freeform_exceptions:\n"
+            "- good first issue\n"
+            "- help wanted\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -192,10 +200,7 @@ labels:
 
     def test_load_missing_version_field(self, tmp_path: Path) -> None:
         """Raise ValidationError for missing version."""
-        yaml_content = """labels:
-  - name: "type:test"
-    color: "ff0000"
-"""
+        yaml_content = "labels:\n  label_1:\n    name: type:test\n    color: ff0000\n"
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -216,11 +221,9 @@ labels:
 
     def test_load_invalid_color_in_yaml(self, tmp_path: Path) -> None:
         """Raise ValueError for invalid color in YAML."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:test"
-    color: "#ff0000"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:test\n    color: '#ff0000'\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -229,13 +232,16 @@ labels:
 
     def test_load_duplicate_label_names(self, tmp_path: Path) -> None:
         """Raise ValidationError for duplicate label names."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:test"
-    color: "ff0000"
-  - name: "type:test"
-    color: "00ff00"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:test\n"
+            "    color: ff0000\n"
+            "  label_2:\n"
+            "    name: type:test\n"
+            "    color: 00ff00\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -244,11 +250,9 @@ labels:
 
     def test_load_singleton_pattern(self, tmp_path: Path) -> None:
         """Verify singleton pattern returns same instance."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:test"
-    color: "ff0000"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:test\n    color: ff0000\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -258,9 +262,7 @@ labels:
 
     def test_load_empty_labels_list(self, tmp_path: Path) -> None:
         """Load YAML with empty labels list."""
-        yaml_content = """version: "1.0.0"
-labels: []
-"""
+        yaml_content = "version: 1.0.0\nlabels: {}\n"
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -273,11 +275,9 @@ class TestLabelValidation:
 
     def test_validate_label_name_type_valid(self, tmp_path: Path) -> None:
         """Accept valid type: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -288,11 +288,9 @@ labels:
 
     def test_validate_label_name_priority_valid(self, tmp_path: Path) -> None:
         """Accept valid priority: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "priority:high"
-    color: "D93F0B"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: priority:high\n    color: D93F0B\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -303,11 +301,9 @@ labels:
 
     def test_validate_label_name_status_valid(self, tmp_path: Path) -> None:
         """Accept valid status: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "status:in-progress"
-    color: "FFA500"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: status:in-progress\n    color: FFA500\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -318,11 +314,9 @@ labels:
 
     def test_validate_label_name_phase_valid(self, tmp_path: Path) -> None:
         """Accept valid phase: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "phase:design"
-    color: "0E8A16"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: phase:design\n    color: 0E8A16\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -333,11 +327,9 @@ labels:
 
     def test_validate_label_name_scope_valid(self, tmp_path: Path) -> None:
         """Accept valid scope: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "scope:backend"
-    color: "5319E7"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: scope:backend\n    color: 5319E7\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -348,11 +340,9 @@ labels:
 
     def test_validate_label_name_component_valid(self, tmp_path: Path) -> None:
         """Accept valid component: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "component:api"
-    color: "D4C5F9"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: component:api\n    color: D4C5F9\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -363,11 +353,9 @@ labels:
 
     def test_validate_label_name_effort_valid(self, tmp_path: Path) -> None:
         """Accept valid effort: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "effort:small"
-    color: "C2E0C6"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: effort:small\n    color: C2E0C6\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -378,11 +366,9 @@ labels:
 
     def test_validate_label_name_parent_valid(self, tmp_path: Path) -> None:
         """Accept valid parent: label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "parent:epic-42"
-    color: "B60205"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: parent:epic-42\n    color: B60205\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -393,11 +379,9 @@ labels:
 
     def test_validate_label_name_invalid_pattern(self, tmp_path: Path) -> None:
         """Reject label that doesn't match pattern."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -408,13 +392,15 @@ labels:
 
     def test_validate_label_name_freeform_exception(self, tmp_path: Path) -> None:
         """Accept freeform label in exceptions list."""
-        yaml_content = """version: "1.0.0"
-freeform_exceptions:
-  - "good first issue"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "freeform_exceptions:\n"
+            "- good first issue\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -425,11 +411,9 @@ labels:
 
     def test_label_exists_true(self, tmp_path: Path) -> None:
         """Return True for defined label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -438,11 +422,9 @@ labels:
 
     def test_label_exists_false(self, tmp_path: Path) -> None:
         """Return False for undefined label."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -455,12 +437,14 @@ class TestLabelQueries:
 
     def test_get_label_found(self, tmp_path: Path) -> None:
         """Return label when found by name."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-    description: "New feature"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+            "    description: New feature\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -472,11 +456,9 @@ labels:
 
     def test_get_label_not_found(self, tmp_path: Path) -> None:
         """Return None when label not found."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -486,11 +468,9 @@ labels:
 
     def test_get_label_case_sensitive(self, tmp_path: Path) -> None:
         """Label lookup is case-sensitive."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -500,15 +480,19 @@ labels:
 
     def test_get_labels_by_category_type(self, tmp_path: Path) -> None:
         """Return all type: labels."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-  - name: "type:bug"
-    color: "D73A4A"
-  - name: "priority:high"
-    color: "D93F0B"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+            "  label_2:\n"
+            "    name: type:bug\n"
+            "    color: D73A4A\n"
+            "  label_3:\n"
+            "    name: priority:high\n"
+            "    color: D93F0B\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -520,15 +504,19 @@ labels:
 
     def test_get_labels_by_category_priority(self, tmp_path: Path) -> None:
         """Return all priority: labels."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "priority:high"
-    color: "D93F0B"
-  - name: "priority:low"
-    color: "0E8A16"
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: priority:high\n"
+            "    color: D93F0B\n"
+            "  label_2:\n"
+            "    name: priority:low\n"
+            "    color: 0E8A16\n"
+            "  label_3:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -540,11 +528,9 @@ labels:
 
     def test_get_labels_by_category_empty(self, tmp_path: Path) -> None:
         """Return empty list for unknown category."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
+        yaml_content = (
+            "version: 1.0.0\nlabels:\n  label_1:\n    name: type:feature\n    color: 1D76DB\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
@@ -554,15 +540,19 @@ labels:
 
     def test_get_labels_by_category_cache_correct(self, tmp_path: Path) -> None:
         """Verify category grouping is correct."""
-        yaml_content = """version: "1.0.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-  - name: "priority:high"
-    color: "D93F0B"
-  - name: "type:bug"
-    color: "D73A4A"
-"""
+        yaml_content = (
+            "version: 1.0.0\n"
+            "labels:\n"
+            "  label_1:\n"
+            "    name: type:feature\n"
+            "    color: 1D76DB\n"
+            "  label_2:\n"
+            "    name: priority:high\n"
+            "    color: D93F0B\n"
+            "  label_3:\n"
+            "    name: type:bug\n"
+            "    color: D73A4A\n"
+        )
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 

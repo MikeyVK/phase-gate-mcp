@@ -3,9 +3,11 @@
 """Validate and order identified configuration objects without IO."""
 
 from collections.abc import Mapping
-from typing import TypeVar
+from typing import Annotated, TypeVar
 
-from pydantic import BaseModel, ConfigDict, StrictInt
+from pydantic import BaseModel, ConfigDict, StrictInt, StringConstraints
+
+ConfigId = Annotated[str, StringConstraints(strict=True, min_length=1)]
 
 
 class OrderedConfigEntry(BaseModel):

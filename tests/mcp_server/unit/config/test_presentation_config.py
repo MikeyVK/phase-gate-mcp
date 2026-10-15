@@ -107,25 +107,28 @@ class TestPresentationConfig:
                     "sample": _tool_config(
                         max_items=3,
                         template_success="{title}: {labels} / {codes}",
-                        collections=[
-                            {
+                        collections={
+                            "entry_1": {
+                                "order": 10,
                                 "field": "children",
                                 "heading": "Children",
                                 "item_template": "- {name}: {tags}",
-                                "children": [
-                                    {
+                                "children": {
+                                    "entry_1": {
+                                        "order": 10,
                                         "field": "grandchildren",
                                         "item_template": "  - {code}",
                                     }
-                                ],
+                                },
                             }
-                        ],
-                        enum_cases=[
-                            {
+                        },
+                        enum_cases={
+                            "entry_1": {
+                                "order": 10,
                                 "field": "status",
                                 "cases": {"missing": "Missing: {title}"},
                             }
-                        ],
+                        },
                     )
                 },
             }
@@ -133,8 +136,8 @@ class TestPresentationConfig:
 
         tool = config.tools["sample"]
         assert tool.max_items == 3
-        assert tool.collections[0].children[0].field == "grandchildren"
-        assert tool.enum_cases[0].cases == {"missing": "Missing: {title}"}
+        assert tool.collections["entry_1"].children["entry_1"].field == "grandchildren"
+        assert tool.enum_cases["entry_1"].cases == {"missing": "Missing: {title}"}
         with pytest.raises(ValidationError):
             tool.max_items = 4  # type: ignore[misc]
 
@@ -226,25 +229,28 @@ class TestPresentationAlignment:
                 "sample": _tool_config(
                     max_items=2,
                     template_success="{title}: {labels} / {codes}",
-                    collections=[
-                        {
+                    collections={
+                        "entry_1": {
+                            "order": 10,
                             "field": "children",
                             "heading": "Children",
                             "item_template": "- {name}: {tags}",
-                            "children": [
-                                {
+                            "children": {
+                                "entry_1": {
+                                    "order": 10,
                                     "field": "grandchildren",
                                     "item_template": "  - {code}",
                                 }
-                            ],
+                            },
                         }
-                    ],
-                    enum_cases=[
-                        {
+                    },
+                    enum_cases={
+                        "entry_1": {
+                            "order": 10,
                             "field": "status",
                             "cases": {"missing": "Missing: {title}"},
                         }
-                    ],
+                    },
                 ),
                 "other": {"template_success": "{value}"},
             }
@@ -259,38 +265,48 @@ class TestPresentationAlignment:
             _tool_config(max_items=2),
             _tool_config(
                 max_items=2,
-                collections=[{"field": "title", "item_template": "{item}"}],
+                collections={"entry_1": {"order": 10, "field": "title", "item_template": "{item}"}},
             ),
             _tool_config(
                 max_items=2,
-                collections=[{"field": "children.name", "item_template": "{item}"}],
+                collections={
+                    "entry_1": {"order": 10, "field": "children.name", "item_template": "{item}"}
+                },
             ),
             _tool_config(
                 max_items=2,
-                collections=[{"field": "children", "item_template": "{unknown}"}],
+                collections={
+                    "entry_1": {"order": 10, "field": "children", "item_template": "{unknown}"}
+                },
             ),
             _tool_config(max_items=2, template_success="{children}"),
             _tool_config(
                 max_items=2,
-                collections=[{"field": "unsupported", "item_template": "{item}"}],
+                collections={
+                    "entry_1": {"order": 10, "field": "unsupported", "item_template": "{item}"}
+                },
             ),
             _tool_config(
                 max_items=2,
-                collections=[
-                    {
+                collections={
+                    "entry_1": {
+                        "order": 10,
                         "field": "labels",
                         "item_template": "{item}",
-                        "children": [{"field": "anything", "item_template": "{item}"}],
+                        "children": {
+                            "entry_1": {"order": 10, "field": "anything", "item_template": "{item}"}
+                        },
                     }
-                ],
+                },
             ),
             _tool_config(
-                enum_cases=[
-                    {
+                enum_cases={
+                    "entry_1": {
+                        "order": 10,
                         "field": "status",
                         "cases": {"unknown": "Unknown: {title}"},
                     }
-                ]
+                }
             ),
         ],
     )

@@ -38,7 +38,6 @@ class TestOperationPoliciesConfig:
         assert "commit" in config.operations
 
         scaffold = config.operations["scaffold"]
-        assert scaffold.operation_id == "scaffold"
         assert scaffold.description == "Create new component from template"
         assert "design" in scaffold.allowed_phases
         assert "implementation" in scaffold.allowed_phases
@@ -67,7 +66,6 @@ class TestOperationPoliciesConfig:
         """Test get_operation_policy with valid operation."""
         config = _load_operation_policies()
         scaffold = config.get_operation_policy("scaffold")
-        assert scaffold.operation_id == "scaffold"
         assert "design" in scaffold.allowed_phases
 
     def test_get_operation_policy_invalid(self) -> None:
@@ -120,7 +118,6 @@ class TestOperationPoliciesConfig:
     def test_is_extension_allowed_without_restrictions(self) -> None:
         """Policies with no extension restrictions should allow any suffix."""
         policy = OperationPolicy(
-            operation_id="create_file",
             description="Create file",
         )
 
@@ -130,7 +127,6 @@ class TestOperationPoliciesConfig:
         """Extensions without a leading dot must be rejected."""
         with pytest.raises(ValueError, match="must start with dot"):
             OperationPolicy(
-                operation_id="create_file",
                 description="Create file",
                 allowed_extensions=["py"],
             )

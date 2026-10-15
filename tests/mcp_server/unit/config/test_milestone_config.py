@@ -17,14 +17,14 @@ from tests.mcp_server.test_support import get_default_server_root
 
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
-_EMPTY_MILESTONES_YAML = {"version": "1.0.0", "milestones": []}
+_EMPTY_MILESTONES_YAML = {"version": "1.0.0", "milestones": {}}
 
 _POPULATED_MILESTONES_YAML = {
     "version": "1.0.0",
-    "milestones": [
-        {"number": 1, "title": "v1.0", "state": "open"},
-        {"number": 2, "title": "v2.0", "state": "closed"},
-    ],
+    "milestones": {
+        "milestone_1": {"number": 1, "title": "v1.0", "state": "open"},
+        "milestone_2": {"number": 2, "title": "v2.0", "state": "closed"},
+    },
 }
 
 
@@ -64,12 +64,12 @@ class TestMilestoneConfigFromFile:
     """Loading behaviour through ConfigLoader."""
 
     def test_from_file_loads_empty_list(self, empty_milestone_config: MilestoneConfig) -> None:
-        assert empty_milestone_config.milestones == []
+        assert empty_milestone_config.milestones == {}
 
     def test_from_file_loads_populated_list(
         self, populated_milestone_config: MilestoneConfig
     ) -> None:
-        titles = [m.title for m in populated_milestone_config.milestones]
+        titles = [m.title for m in populated_milestone_config.milestones.values()]
         assert "v1.0" in titles
         assert "v2.0" in titles
 

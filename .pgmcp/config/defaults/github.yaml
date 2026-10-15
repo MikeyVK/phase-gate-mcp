@@ -1,0 +1,8 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"owner": null
+"repo": null
+"project_number": null
+"token": null

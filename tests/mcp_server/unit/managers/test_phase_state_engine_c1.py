@@ -8,6 +8,7 @@ Cycle 1 goals covered here:
 from __future__ import annotations
 
 from pathlib import Path
+from shutil import copy2
 from unittest.mock import MagicMock
 
 import pytest
@@ -79,8 +80,11 @@ class FakeGateRunner:
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Temporary workspace with minimal local config for gate-runner tests."""
-    config_dir = tmp_path / get_default_server_root() / "config"
+    config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
     config_dir.mkdir(parents=True)
+    source = Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+    for file_name in ("git.yaml", "workphases.yaml"):
+        copy2(source / file_name, config_dir / file_name)
     (config_dir / "workphases.yaml").write_text(
         """
 version: "1.0.0"
@@ -95,28 +99,34 @@ phases:
         encoding="utf-8",
     )
     (config_dir / "contracts.yaml").write_text(
-        """
-version: "1.0.0"
+        r"""
+version: 1.0.0
 merge_policy:
   pr_allowed_phase: ready
-  branch_local_artifacts: []
+  branch_local_artifacts: {}
 workflows:
   feature:
     phases:
-      - name: implementation
+      implementation:
+        order: 10
         cycle_based: true
-        subphases: [red, green, refactor]
+        subphases:
+        - red
+        - green
+        - refactor
         commit_type_map:
           red: test
           green: feat
           refactor: refactor
         cycle_exit_requires:
           1:
-            - id: cycle-docs
+            cycle-docs:
+              order: 10
               type: file_glob
               dir: docs/development
               pattern: issue*/research_*.md
-            - id: cycle-docs-b
+            cycle-docs-b:
+              order: 20
               type: file_glob
               dir: docs/development
               pattern: issue*/missing_b_*.md
@@ -124,7 +134,8 @@ workflows:
           sub_role: test-role
           phase_instructions: Test instructions.
           handover_template: Test handover.
-      - name: ready
+      ready:
+        order: 20
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.

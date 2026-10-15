@@ -41,7 +41,6 @@ class TestConfigValidator:
         return OperationPoliciesConfig(
             operations={
                 "create_file": {
-                    "operation_id": "create_file",
                     "description": "Create file",
                     "allowed_phases": ["planning"],
                     "blocked_patterns": [],
@@ -58,7 +57,6 @@ class TestConfigValidator:
             version="1.0.0",
             workflows={
                 "feature": {
-                    "name": "feature",
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
@@ -81,19 +79,19 @@ class TestConfigValidator:
     def phase_contracts(self) -> ContractsConfig:
         return ContractsConfig.model_validate(
             {
-                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": {}},
                 "workflows": {
                     "feature": {
-                        "phases": [
-                            {
-                                "name": "implementation",
+                        "phases": {
+                            "implementation": {
+                                "order": 10,
                                 "cycle_based": True,
                                 "subphases": ["red", "green"],
                                 "commit_type_map": {"red": "test", "green": "feat"},
                                 "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready", "instructions": _STUB_INSTR},
-                        ]
+                            "ready": {"order": 20, "instructions": _STUB_INSTR},
+                        }
                     }
                 },
             }
@@ -129,18 +127,18 @@ class TestConfigValidator:
     ) -> None:
         contracts = ContractsConfig.model_validate(
             {
-                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": {}},
                 "workflows": {
                     "bug": {
-                        "phases": [
-                            {
-                                "name": "implementation",
+                        "phases": {
+                            "implementation": {
+                                "order": 10,
                                 "cycle_based": True,
                                 "commit_type_map": {"red": "test"},
                                 "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready", "instructions": _STUB_INSTR},
-                        ]
+                            "ready": {"order": 20, "instructions": _STUB_INSTR},
+                        }
                     }
                 },
             }
@@ -163,18 +161,18 @@ class TestConfigValidator:
     ) -> None:
         contracts = ContractsConfig.model_validate(
             {
-                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": {}},
                 "workflows": {
                     "feature": {
-                        "phases": [
-                            {
-                                "name": "validation",
+                        "phases": {
+                            "validation": {
+                                "order": 10,
                                 "cycle_based": True,
                                 "commit_type_map": {"red": "test"},
                                 "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready", "instructions": _STUB_INSTR},
-                        ]
+                            "ready": {"order": 20, "instructions": _STUB_INSTR},
+                        }
                     }
                 },
             }
@@ -197,7 +195,6 @@ class TestConfigValidator:
             version="1.0.0",
             workflows={
                 "feature": {
-                    "name": "feature",
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
@@ -205,18 +202,18 @@ class TestConfigValidator:
         )
         contracts = ContractsConfig.model_validate(
             {
-                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": {}},
                 "workflows": {
                     "feature": {
-                        "phases": [
-                            {
-                                "name": "validation",
+                        "phases": {
+                            "validation": {
+                                "order": 10,
                                 "cycle_based": True,
                                 "commit_type_map": {"red": "test"},
                                 "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready", "instructions": _STUB_INSTR},
-                        ]
+                            "ready": {"order": 20, "instructions": _STUB_INSTR},
+                        }
                     }
                 },
             }
@@ -247,7 +244,6 @@ class TestConfigValidator:
         operation_policies = OperationPoliciesConfig(
             operations={
                 "create_file": {
-                    "operation_id": "create_file",
                     "description": "Create file",
                     "allowed_phases": ["validation"],
                     "blocked_patterns": [],

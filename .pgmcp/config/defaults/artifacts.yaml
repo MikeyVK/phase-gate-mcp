@@ -1,0 +1,84 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "2.0.0"
+"artifacts":
+  "architecture":
+    "default_root": "docs/architecture"
+    "additional_roots":
+    - "docs/reference"
+  "commit":
+    "default_root": ".pgmcp/temp/artifacts"
+  "design":
+    "default_root": "docs/development"
+    "additional_roots":
+    - "docs"
+  "generic_doc":
+    "default_root": "docs"
+    "additional_roots":
+    - "docs/reference"
+    - "docs/manuals"
+  "issue":
+    "default_root": ".pgmcp/temp/artifacts"
+  "planning":
+    "default_root": "docs/development"
+    "additional_roots":
+    - "docs"
+  "pr":
+    "default_root": ".pgmcp/temp/artifacts"
+  "pytest_integration_test":
+    "default_root": "tests/integration"
+  "pytest_unit_test":
+    "default_root": "tests/unit"
+  "python_adapter":
+    "default_root": "src"
+  "python_class":
+    "default_root": "src"
+  "python_protocol":
+    "default_root": "src"
+  "python_pydantic_config":
+    "default_root": "src"
+  "python_pydantic_dto":
+    "default_root": "src"
+  "python_worker":
+    "default_root": "src"
+  "reference":
+    "default_root": "docs/reference"
+    "additional_roots":
+    - "docs/architecture"
+    - "docs/manuals"
+    - "docs/coding_standards"
+  "research":
+    "default_root": "docs/development"
+    "additional_roots":
+    - "docs"
+  "typescript_dto":
+    "default_root": "src"
+  "validation_report":
+    "default_root": "docs/development"
+  "yaml_configuration":
+    "default_root": "config"
+    "additional_roots":
+    - ".pgmcp/config"
+    - "locales"
+    - ".github"
+    - "mcp_server/bundled_adapters"
+    - ".pgmcp/temp"
+  "json_schema":
+    "default_root": "schemas"
+    "additional_roots":
+    - ".pgmcp/template_suite"
+    - "mcp_server/execution/contracts"
+    - ".pgmcp/config/check_schemas"
+    - ".pgmcp/temp"
+  "adr":
+    "default_root": "docs/architecture/decisions"
+    "additional_roots":
+    - "docs/development"
+    - ".pgmcp/temp"
+  "sad":
+    "default_root": "docs/architecture"
+    "additional_roots":
+    - "docs/development"
+    - ".pgmcp/temp"

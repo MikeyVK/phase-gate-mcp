@@ -1,0 +1,40 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "1.0.0"
+"issue_types":
+  "feature":
+    "workflow": "feature"
+    "label": "type:feature"
+  "bug":
+    "workflow": "bug"
+    "label": "type:bug"
+  "hotfix":
+    "workflow": "hotfix"
+    "label": "type:bug"
+  "refactor":
+    "workflow": "refactor"
+    "label": "type:refactor"
+  "docs":
+    "workflow": "docs"
+    "label": "type:docs"
+  "chore":
+    "workflow": "chore"
+    "label": "type:chore"
+  "epic":
+    "workflow": "epic"
+    "label": "type:epic"
+"required_label_categories":
+- "type"
+- "priority"
+- "scope"
+"optional_label_inputs":
+  "is_epic":
+    "type": "bool"
+    "label": "type:epic"
+    "behavior": "Overrides type:* label from issue_type"
+  "parent_issue":
+    "type": "int"
+    "label_pattern": "parent:{value}"
+    "description": "Applies parent:{issue_number} label (e.g., parent:91)"

@@ -106,16 +106,16 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
             {
                 "template_success": "{title}: {count}; {labels}",
                 "max_items": 1,
-                "collections": [{"field": "rows", "item_template": "{label}: {args}"}],
-                "enum_cases": [
-                    {
+                "collections": {
+                    "entry_1": {"order": 10, "field": "rows", "item_template": "{label}: {args}"}
+                },
+                "enum_cases": {
+                    "entry_1": {
+                        "order": 10,
                         "field": "status",
-                        "cases": {
-                            "complete": "COMPLETE",
-                            "None": "UNKNOWN",
-                        },
+                        "cases": {"complete": "COMPLETE", "None": "UNKNOWN"},
                     }
-                ],
+                },
             }
         ),
     )

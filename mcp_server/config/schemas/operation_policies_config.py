@@ -19,13 +19,15 @@ import fnmatch
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from mcp_server.config.ordering import ConfigId
 
 
 class OperationPolicy(BaseModel):
     """Single operation policy definition."""
 
-    operation_id: str = Field(..., description="Operation identifier")
+    model_config = ConfigDict(frozen=True, extra="forbid")
     description: str = Field(..., description="Human-readable description of operation")
     allowed_phases: list[str] = Field(default_factory=list)
     blocked_patterns: list[str] = Field(default_factory=list)
@@ -63,8 +65,10 @@ class OperationPolicy(BaseModel):
 class OperationPoliciesConfig(BaseModel):
     """Operation policies configuration value object."""
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
-    operations: dict[str, OperationPolicy] = Field(...)
+    operations: dict[ConfigId, OperationPolicy] = Field(...)
 
     def get_operation_policy(self, operation_id: str) -> OperationPolicy:
         if operation_id not in self.operations:

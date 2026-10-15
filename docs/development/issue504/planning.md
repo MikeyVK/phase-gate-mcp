@@ -282,7 +282,7 @@ Focused GitHub/Settings/bootstrap/init tests and applicable file gates pass; no 
 
 **Deliverable Name:** Durable validation evidence
 
-Compact durable validation report maps native composition, deletion/order, current behavior, cleanup, full native suite and required gates to observed outcomes.
+Compact durable validation report maps native composition, deletion/order, current behavior, cleanup and focused checks to observed outcomes, explicitly recording the owner-directed exclusion of broad scopes.
 
 **Owner:** @imp validator
 
@@ -308,11 +308,9 @@ Update active configuration/setup/launcher references and PR template: every clo
 
 **File:** "docs/reference/server-configuration.md"
 
-## Interactive Execution Contract
+## Execution Contract
 
-This preparation run ends in Planning after independent QA GO. It must not transition to Implementation, edit dependencies/config sources/production/tests, start C_1 or execute implementation checks.
-
-When the owner starts interactive Implementation, explain the next bounded change and expected observable behavior, then agree the step before editing. Present the actual result and focused evidence before the next step. The owner may agree several steps at once; preserve that authorization without asking repeatedly. These are implementation checkpoints, not a new architecture or duplicated phase-GO ceremony.
+The owner has authorized autonomous execution through Ready and a merge request to Coordination. The earlier per-deliverable interactive checkpoints are superseded. Preserve the approved design and raise real policy choices or scope contradictions; do not add new architecture.
 
 C_2 source/model/direct-consumer edits form one coordinated cutover. Discuss and inspect them in small substeps, but do not activate a half-converted server or commit a knowingly unusable mixed contract. Establish isolated fixture behavior before the agreed activation, restart with the existing tool when needed, and refresh tool schemas if the client requires it. Recover only the current agreed step from its known commit; do not overwrite user work or restore an old format as a compatibility feature.
 
@@ -343,57 +341,7 @@ The stored file_exists/file_glob/absent_text validators are navigation/structura
 
 ### Validation
 
-After all cycles and cleanup are complete, the active Refactor Validation contract owns these broad runs:
-
-```json
-{
-  "scope": "configured",
-  "tests": ["python_tests"],
-  "timeout_seconds": 1200
-}
-```
-
-This is one full native-configured suite, not a collection of narrow replacements. Retain native arguments and required coverage. Use the prescribed 1800-second client window with this 1200-second native suite budget, according to [setup](../../setup/README.md), preserving margin for stopping and result delivery. If actual workload requires more execution time, explicitly arrange and activate a larger client window before increasing the tool budget; do not split the full suite just to fit. Incomplete/time-out/unconfirmed termination is missing evidence, not PASS.
-
-```json
-{
-  "scope": "branch",
-  "checks": [
-    "python_format",
-    "python_lint",
-    "python_pyright",
-    "markdown_links",
-    "yaml_configuration",
-    "json_schema_shape",
-    "json_schema_metaschema"
-  ],
-  "timeout_seconds": 1200
-}
-```
-
-Current branch selection filters each check's candidates separately using configured_targets. Confirm the resolved lists after source cutover; Python tools must not receive Markdown/YAML/JSON. A neutral not_applicable result is not an executed pass.
-
-Production typing uses the separate native-configured Mypy route:
-
-```json
-{
-  "scope": "configured",
-  "checks": ["python_types"],
-  "timeout_seconds": 1200
-}
-```
-
-Complete the agreed workspace check with configured Python format/lint/pyright discovery, separately from branch selection:
-
-```json
-{
-  "scope": "configured",
-  "checks": ["python_format", "python_lint", "python_pyright"],
-  "timeout_seconds": 1200
-}
-```
-
-No caller args weaken these gates. Record exact requests, native outcomes and meaningful failures in one compact durable validation report, including evidence for each deliverable, preserved invariant and removed path. Do not repair during Validation: discuss policy/scope choices and return to the owning phase if needed. Independent QA reviews the evidence; no duplicate full run without invalidation.
+Owner direction during Implementation supersedes the broad Validation requests in v0.2: continue autonomously through Ready, use only focused target scopes, and request independent QA only at phase boundaries. Do not run the full suite, branch-wide checks or configured workspace gates. The report must identify each selected behavior module, file gate and native outcome, reuse valid evidence, and state that workspace-wide coverage has not been established. This is an explicit execution-scope exception, not equivalent evidence for a full suite.
 
 ### Documentation
 
@@ -405,7 +353,7 @@ Independent QA chat: QA (the existing review authority previously referred to as
 
 save_planning_deliverables created three cycles and eight deliverables. Full get_project_plan readback confirmed C_1/D_1.1–D_1.2, C_2/D_2.1–D_2.2, C_3/D_3.1–D_3.2, and phase-local D_1 in Validation and Documentation, with matching names, descriptions, validation targets and exit criteria. Total and IDs are server-derived. This paragraph records the durable outcome rather than treating transient run IDs as evidence.
 
-Planning-to-Implementation independent GO is requested on the committed plan. Even when granted, the required next action is to stop in Planning and return control to the owner.
+Independent QA granted Planning-to-Implementation GO on 5ac30a4a2226a51961fd205fb04e09ad884292c0. Subsequent owner authorization permits autonomous continuation; independent GO remains required at phase boundaries.
 
 ## Related Documents
 
@@ -420,3 +368,4 @@ Planning-to-Implementation independent GO is requested on the committed plan. Ev
 | 0.1 | 2026-10-15 | @imp planner | Sequence native composition and clean source/consumer cutover with interactive checkpoints; reserve full suite/gates for Validation and stop before Implementation. |
 
 | 0.2 | 2026-10-15 | @imp planner | Fix QA P2: suite budget 1200 seconds inside prescribed client window 1800; add literal phase deliverable names for exact readback parity. |
+

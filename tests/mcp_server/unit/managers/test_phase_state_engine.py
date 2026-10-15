@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from shutil import copy2
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -352,43 +353,57 @@ class TestTransitionHooksWiring:
         """Create project with planning deliverables."""
         workspace_root = tmp_path
         issue_number = 999
-        config_dir = workspace_root / get_default_server_root() / "config"
+        config_dir = workspace_root / get_default_server_root() / "config" / "defaults"
         config_dir.mkdir(parents=True, exist_ok=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "workphases.yaml"):
+            copy2(source / file_name, config_dir / file_name)
         (config_dir / "contracts.yaml").write_text(
             (
-                'version: "1.0.0"\n'
-                "merge_policy:\n"
-                "  pr_allowed_phase: ready\n"
-                "  branch_local_artifacts: []\n"
-                "workflows:\n"
-                "  feature:\n"
-                "    phases:\n"
-                "      - name: design\n"
-                "        instructions:\n"
-                "          sub_role: test-role\n"
-                "          phase_instructions: Test instructions.\n"
-                "          handover_template: Test handover.\n"
-                "      - name: implementation\n"
-                "        cycle_based: true\n"
-                "        subphases: [red, green, refactor]\n"
-                "        commit_type_map:\n"
-                "          red: test\n"
-                "          green: feat\n"
-                "          refactor: refactor\n"
-                "        instructions:\n"
-                "          sub_role: test-role\n"
-                "          phase_instructions: Test instructions.\n"
-                "          handover_template: Test handover.\n"
-                "      - name: validation\n"
-                "        instructions:\n"
-                "          sub_role: test-role\n"
-                "          phase_instructions: Test instructions.\n"
-                "          handover_template: Test handover.\n"
-                "      - name: ready\n"
-                "        instructions:\n"
-                "          sub_role: test-role\n"
-                "          phase_instructions: Test instructions.\n"
-                "          handover_template: Test handover.\n"
+                r"""
+version: 1.0.0
+merge_policy:
+  pr_allowed_phase: ready
+  branch_local_artifacts: {}
+workflows:
+  feature:
+    phases:
+      design:
+        order: 10
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      implementation:
+        order: 20
+        cycle_based: true
+        subphases:
+        - red
+        - green
+        - refactor
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      validation:
+        order: 30
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      ready:
+        order: 40
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+"""
             ),
             encoding="utf-8",
         )
@@ -744,47 +759,59 @@ class TestPhaseStateEngineRecordSubPhase:
 class TestContextLoadedWriterReset:
     """C5: IContextLoadedWriter injected into PhaseStateEngine clears flag on state changes."""
 
-    _CONTRACTS_YAML = (
-        "version: '1.0.0'\n"
-        "merge_policy:\n"
-        "  pr_allowed_phase: ready\n"
-        "  branch_local_artifacts: []\n"
-        "workflows:\n"
-        "  feature:\n"
-        "    phases:\n"
-        "      - name: design\n"
-        "        instructions:\n"
-        "          sub_role: test-role\n"
-        "          phase_instructions: Test instructions.\n"
-        "          handover_template: Test handover.\n"
-        "      - name: implementation\n"
-        "        cycle_based: true\n"
-        "        subphases: [red, green, refactor]\n"
-        "        commit_type_map:\n"
-        "          red: test\n"
-        "          green: feat\n"
-        "          refactor: refactor\n"
-        "        instructions:\n"
-        "          sub_role: test-role\n"
-        "          phase_instructions: Test instructions.\n"
-        "          handover_template: Test handover.\n"
-        "      - name: validation\n"
-        "        instructions:\n"
-        "          sub_role: test-role\n"
-        "          phase_instructions: Test instructions.\n"
-        "          handover_template: Test handover.\n"
-        "      - name: ready\n"
-        "        instructions:\n"
-        "          sub_role: test-role\n"
-        "          phase_instructions: Test instructions.\n"
-        "          handover_template: Test handover.\n"
-    )
+    _CONTRACTS_YAML = r"""
+version: 1.0.0
+merge_policy:
+  pr_allowed_phase: ready
+  branch_local_artifacts: {}
+workflows:
+  feature:
+    phases:
+      design:
+        order: 10
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      implementation:
+        order: 20
+        cycle_based: true
+        subphases:
+        - red
+        - green
+        - refactor
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      validation:
+        order: 30
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      ready:
+        order: 40
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+"""
 
     @pytest.fixture()
     def project(self, tmp_path: Path) -> tuple[Path, int]:
         """Set up project with two TDD cycles for reset-writer tests."""
-        config_dir = tmp_path / get_default_server_root() / "config"
+        config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
         config_dir.mkdir(parents=True, exist_ok=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "workphases.yaml"):
+            copy2(source / file_name, config_dir / file_name)
         (config_dir / "contracts.yaml").write_text(self._CONTRACTS_YAML, encoding="utf-8")
 
         issue_number = 268
@@ -980,38 +1007,51 @@ class TestPhaseStateFreshSLambdaC1:
     @pytest.fixture()
     def cycle_project(self, tmp_path: Path) -> tuple[Path, int]:
         """Workspace with a cycle-based implementation phase and 2 planned cycles."""
-        config_dir = tmp_path / get_default_server_root() / "config"
+        config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
         config_dir.mkdir(parents=True, exist_ok=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "workphases.yaml"):
+            copy2(source / file_name, config_dir / file_name)
         (config_dir / "contracts.yaml").write_text(
             (
-                'version: "1.0.0"\n'
-                "merge_policy:\n"
-                "  pr_allowed_phase: ready\n"
-                "  branch_local_artifacts: []\n"
-                "workflows:\n"
-                "  bug:\n"
-                "    phases:\n"
-                "      - name: research\n"
-                "        instructions:\n"
-                "          sub_role: researcher\n"
-                "          phase_instructions: Research.\n"
-                "          handover_template: Handover.\n"
-                "      - name: implementation\n"
-                "        cycle_based: true\n"
-                "        subphases: [red, green, refactor]\n"
-                "        commit_type_map:\n"
-                "          red: test\n"
-                "          green: feat\n"
-                "          refactor: refactor\n"
-                "        instructions:\n"
-                "          sub_role: implementer\n"
-                "          phase_instructions: Implement.\n"
-                "          handover_template: Handover.\n"
-                "      - name: ready\n"
-                "        instructions:\n"
-                "          sub_role: releaser\n"
-                "          phase_instructions: Ready.\n"
-                "          handover_template: Handover.\n"
+                r"""
+version: 1.0.0
+merge_policy:
+  pr_allowed_phase: ready
+  branch_local_artifacts: {}
+workflows:
+  bug:
+    phases:
+      research:
+        order: 10
+        instructions:
+          sub_role: researcher
+          phase_instructions: Research.
+          handover_template: Handover.
+      implementation:
+        order: 20
+        cycle_based: true
+        subphases:
+        - red
+        - green
+        - refactor
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        instructions:
+          sub_role: implementer
+          phase_instructions: Implement.
+          handover_template: Handover.
+      ready:
+        order: 30
+        instructions:
+          sub_role: releaser
+          phase_instructions: Ready.
+          handover_template: Handover.
+"""
             ),
             encoding="utf-8",
         )

@@ -1,47 +1,38 @@
 # mcp_server/config/schemas/contracts_config.py
-# template=dto version=manual created=2026-05-02T00:00Z updated=
-"""
-Contracts config schema definitions.
-
-Defines typed value objects for contracts.yaml (formerly phase_contracts.yaml).
-Replaces PhaseContractsConfig with ContractsConfig, adding explicit workflow-phase
-ordering via WorkflowEntry + WorkflowPhaseEntry (issue #271).
-
-@layer: Backend (Config)
-@dependencies: [pydantic, typing]
-@responsibilities:
-    - Define phase contract and check schema contracts
-    - Provide ContractsConfig as single SSOT for workflow-phase membership and ordering
-    - Expose get_first_phase, get_phases, validate_transition API
-"""
+"""Typed workflow contracts with canonical mapping identities and explicit order."""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+
+from mcp_server.config.ordering import ConfigId, OrderedConfigEntry, ordered_mapping
 
 
-class BranchLocalArtifact(BaseModel):
-    """Single branch-local artifact definition from merge_policy."""
+class BranchLocalArtifact(OrderedConfigEntry):
+    """One identified artifact excluded by merge policy."""
 
     path: str
     reason: str
 
 
 class MergePolicy(BaseModel):
-    """Merge policy configuration from contracts.yaml."""
+    """Merge policy resolved from configuration."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     pr_allowed_phase: str
-    branch_local_artifacts: list[BranchLocalArtifact] = Field(default_factory=list)
+    branch_local_artifacts: Annotated[
+        dict[ConfigId, BranchLocalArtifact], AfterValidator(ordered_mapping)
+    ] = Field(default_factory=dict)
 
 
-class CheckSpec(BaseModel):
-    """Typed phase check specification loaded from YAML or deliverables.json."""
+class CheckPayload(BaseModel):
+    """Shared requirement fields for config and planning/runtime checks."""
 
     model_config = ConfigDict(extra="forbid")
 
-    id: str
     type: str
     required: bool = True
     file: str | None = None
@@ -52,14 +43,27 @@ class CheckSpec(BaseModel):
     path: str | None = None
 
 
+class CheckSpec(CheckPayload):
+    """Public planning/runtime check retaining its explicit domain identifier."""
+
+    id: str
+
+
+class ConfigCheckRequirement(CheckPayload, OrderedConfigEntry):
+    """Ordered config payload whose identifier is its containing mapping key."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+OrderedRequirements = Annotated[
+    dict[ConfigId, ConfigCheckRequirement], AfterValidator(ordered_mapping)
+]
+
+
 class PhaseInstructionsSpec(BaseModel):
-    """Role-specific instructions for a workflow phase (frozen config value object).
+    """Role-specific instructions for one workflow phase."""
 
-    Sub-field of WorkflowPhaseEntry.instructions. Populated in contracts.yaml per
-    workflow+phase combination. Stage 2 of issue #268.
-    """
-
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     sub_role: str
     phase_instructions: str
@@ -67,15 +71,15 @@ class PhaseInstructionsSpec(BaseModel):
 
 
 class PhaseContractPhase(BaseModel):
-    """Per-workflow phase contract entry. Frozen config value object (§5 CQS)."""
+    """Phase behavior and identified requirements."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     subphases: list[str] = Field(default_factory=list)
     commit_type_map: dict[str, str] = Field(default_factory=dict)
     cycle_based: bool = False
-    exit_requires: list[CheckSpec] = Field(default_factory=list)
-    cycle_exit_requires: dict[int, list[CheckSpec]] = Field(default_factory=dict)
+    exit_requires: OrderedRequirements = Field(default_factory=dict)
+    cycle_exit_requires: dict[int, OrderedRequirements] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_cycle_based_commit_map(self) -> PhaseContractPhase:
@@ -84,63 +88,54 @@ class PhaseContractPhase(BaseModel):
         return self
 
 
-class WorkflowPhaseEntry(PhaseContractPhase):
-    """Single phase entry in a workflow's ordered phase list.
+class WorkflowPhaseEntry(PhaseContractPhase, OrderedConfigEntry):
+    """One ranked phase; the containing key is the phase identifier."""
 
-    Extends PhaseContractPhase with a required name field. Inherits
-    frozen=True and extra='forbid' from parent. The schema is generic:
-    any phase name may be cycle_based — no fasename-checks on 'implementation'.
-    """
-
-    # inherits model_config = ConfigDict(extra="forbid", frozen=True) from PhaseContractPhase
-
-    name: str = Field(..., description="Phase name; must exist in workphases.yaml catalog")
     instructions: PhaseInstructionsSpec
 
 
 class WorkflowEntry(BaseModel):
-    """Single workflow definition in contracts.yaml. Frozen config value object (§5 CQS)."""
+    """A workflow with explicit phase ordering and one possible cycle owner."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    phases: list[WorkflowPhaseEntry] = Field(..., min_length=1)
+    phases: Annotated[dict[ConfigId, WorkflowPhaseEntry], AfterValidator(ordered_mapping)] = Field(
+        ..., min_length=1
+    )
 
     @model_validator(mode="after")
     def validate_cycle_owner(self) -> WorkflowEntry:
-        """A single persisted cycle sequence has at most one configured phase owner."""
-        cycle_phases = [phase.name for phase in self.phases if phase.cycle_based]
+        cycle_phases = [key for key, phase in self.phases.items() if phase.cycle_based]
         if len(cycle_phases) > 1:
             raise ValueError(f"workflow_cycle_based_conflict: {', '.join(cycle_phases)}")
         return self
 
-    def get_phase_names(self) -> list[str]:
-        return [p.name for p in self.phases]
+    def get_phase_ids(self) -> list[str]:
+        """Return canonical phase identifiers in configured rank order."""
+        return list(self.phases)
 
-    def get_phase(self, name: str) -> WorkflowPhaseEntry:
-        for p in self.phases:
-            if p.name == name:
-                return p
-        raise ValueError(f"Phase '{name}' not in workflow")
+    def get_phase(self, phase_id: str) -> WorkflowPhaseEntry:
+        """Look up one phase by its canonical key."""
+        try:
+            return self.phases[phase_id]
+        except KeyError:
+            raise ValueError(f"Phase '{phase_id}' not in workflow") from None
 
 
 class ContractsConfig(BaseModel):
-    """Typed root object for contracts.yaml. Frozen config value object (§5 CQS).
-
-    Replaces PhaseContractsConfig. Provides explicit workflow-phase ordering
-    and transition-validation API (get_first_phase, get_phases, validate_transition).
-    """
+    """Resolved workflow membership, ordering and transition contracts."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
     merge_policy: MergePolicy
-    workflows: dict[str, WorkflowEntry] = Field(default_factory=dict)
+    workflows: dict[ConfigId, WorkflowEntry] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_terminal_phase(self) -> ContractsConfig:
         terminal = self.merge_policy.pr_allowed_phase
         for name, workflow in self.workflows.items():
-            last = workflow.phases[-1].name
+            last = workflow.get_phase_ids()[-1]
             if last != terminal:
                 raise ValueError(
                     f"Workflow '{name}': last phase must be '{terminal}' "
@@ -152,18 +147,12 @@ class ContractsConfig(BaseModel):
         return self.merge_policy.pr_allowed_phase
 
     def get_first_phase(self, workflow_name: str) -> str:
-        """Return the name of the first phase in the workflow.
-
-        Raises ValueError if workflow_name is unknown.
-        """
-        return self._get_workflow(workflow_name).phases[0].name
+        """Return the first ranked phase identifier."""
+        return self._get_workflow(workflow_name).get_phase_ids()[0]
 
     def get_phases(self, workflow_name: str) -> list[str]:
-        """Return ordered list of phase names for the workflow.
-
-        Raises ValueError if workflow_name is unknown.
-        """
-        return self._get_workflow(workflow_name).get_phase_names()
+        """Return phase identifiers in explicit configured order."""
+        return self._get_workflow(workflow_name).get_phase_ids()
 
     def validate_transition(
         self,
@@ -171,13 +160,9 @@ class ContractsConfig(BaseModel):
         current_phase: str,
         target_phase: str,
     ) -> bool:
-        """Validate sequential phase transition.
-
-        Returns True on valid transition. Raises ValueError with descriptive
-        message matching the current WorkflowConfig error contract on failure.
-        """
+        """Validate sequential phase transition."""
         workflow = self._get_workflow(workflow_name)
-        names = workflow.get_phase_names()
+        names = workflow.get_phase_ids()
         if current_phase not in names:
             raise ValueError(
                 f"Current phase '{current_phase}' not in workflow '{workflow_name}'\n"
@@ -202,7 +187,7 @@ class ContractsConfig(BaseModel):
 
     def _get_workflow(self, workflow_name: str) -> WorkflowEntry:
         if workflow_name not in self.workflows:
-            available = ", ".join(sorted(self.workflows.keys()))
+            available = ", ".join(sorted(self.workflows))
             raise ValueError(
                 f"Unknown workflow: '{workflow_name}'\nAvailable workflows: {available}"
             )

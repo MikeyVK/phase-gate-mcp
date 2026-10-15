@@ -1,0 +1,31 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "1.0.0"
+"workflows":
+  "feature":
+    "description": "Full development workflow with all phases (research → design →\
+      \ planning → implementation → validation → docs)"
+    "default_execution_mode": "interactive"
+  "bug":
+    "description": "Bug fix workflow (research → design → planning → implementation\
+      \ → validation → docs)"
+    "default_execution_mode": "interactive"
+  "hotfix":
+    "description": "Emergency fix workflow (implementation → validation → docs only)"
+    "default_execution_mode": "autonomous"
+  "refactor":
+    "description": "Code refactoring workflow (research → design (optional) → planning\
+      \ → implementation → validation → docs)"
+    "default_execution_mode": "interactive"
+  "docs":
+    "description": "Documentation-only workflow (planning → docs)"
+    "default_execution_mode": "interactive"
+  "chore":
+    "description": "Lightweight maintenance workflow"
+    "default_execution_mode": "interactive"
+  "epic":
+    "description": "Epic workflow for large initiatives (research → planning → design\
+      \ → coordination → documentation)"
+    "default_execution_mode": "interactive"

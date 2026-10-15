@@ -44,7 +44,7 @@ def config_root(tmp_path: Path) -> Path:
     config_dir = tmp_path / get_default_server_root() / "config"
 
     def write_yaml(relative_path: str, data: dict[str, Any]) -> None:
-        target = config_dir / relative_path
+        target = config_dir / "defaults" / relative_path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
@@ -63,15 +63,11 @@ def config_root(tmp_path: Path) -> Path:
         "labels.yaml",
         {
             "version": "1.0.0",
-            "labels": [
-                {
-                    "name": "type:feature",
-                    "color": "1D76DB",
-                    "description": "Feature",
-                }
-            ],
+            "labels": {
+                "label_1": {"name": "type:feature", "color": "1D76DB", "description": "Feature"}
+            },
             "freeform_exceptions": [],
-            "label_patterns": [],
+            "label_patterns": {},
         },
     )
     write_yaml("scopes.yaml", {"version": "1.0.0", "scopes": ["architecture", "workflow"]})
@@ -81,7 +77,6 @@ def config_root(tmp_path: Path) -> Path:
             "version": "1.0.0",
             "workflows": {
                 "feature": {
-                    "name": "feature",
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
@@ -98,8 +93,8 @@ def config_root(tmp_path: Path) -> Path:
                     "description": "Implementation phase",
                     "commit_type_hint": None,
                     "subphases": ["red", "green", "refactor"],
-                    "exit_requires": [],
-                    "entry_expects": [],
+                    "exit_requires": {},
+                    "entry_expects": {},
                 },
                 "ready": {
                     "display_name": "Ready",
@@ -112,14 +107,14 @@ def config_root(tmp_path: Path) -> Path:
         "contributors.yaml",
         {
             "version": "1.0.0",
-            "contributors": [{"login": "alice", "name": "Alice Doe"}],
+            "contributors": {"contributor_1": {"login": "alice", "name": "Alice Doe"}},
         },
     )
     write_yaml(
         "issues.yaml",
         {
             "version": "1.0.0",
-            "issue_types": [{"name": "feature", "workflow": "feature", "label": "type:feature"}],
+            "issue_types": {"feature": {"workflow": "feature", "label": "type:feature"}},
             "required_label_categories": ["type", "priority", "scope"],
             "optional_label_inputs": {},
         },
@@ -128,7 +123,7 @@ def config_root(tmp_path: Path) -> Path:
         "milestones.yaml",
         {
             "version": "1.0.0",
-            "milestones": [{"number": 1, "title": "v1.0", "state": "open"}],
+            "milestones": {"milestone_1": {"number": 1, "title": "v1.0", "state": "open"}},
         },
     )
     write_yaml(
@@ -147,20 +142,20 @@ def config_root(tmp_path: Path) -> Path:
             },
         },
     )
-    write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": []})
+    write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": {}})
     write_yaml(
         "contracts.yaml",
         {
             "version": "1.0.0",
             "merge_policy": {
                 "pr_allowed_phase": "ready",
-                "branch_local_artifacts": [],
+                "branch_local_artifacts": {},
             },
             "workflows": {
                 "feature": {
-                    "phases": [
-                        {
-                            "name": "implementation",
+                    "phases": {
+                        "implementation": {
+                            "order": 10,
                             "subphases": ["red", "green", "refactor"],
                             "commit_type_map": {
                                 "red": "test",
@@ -168,7 +163,7 @@ def config_root(tmp_path: Path) -> Path:
                                 "refactor": "refactor",
                             },
                             "cycle_based": True,
-                            "exit_requires": [],
+                            "exit_requires": {},
                             "cycle_exit_requires": {},
                             "instructions": {
                                 "sub_role": "test-role",
@@ -176,15 +171,15 @@ def config_root(tmp_path: Path) -> Path:
                                 "handover_template": "Test handover.",
                             },
                         },
-                        {
-                            "name": "ready",
+                        "ready": {
+                            "order": 20,
                             "instructions": {
                                 "sub_role": "test-role",
                                 "phase_instructions": "Test instructions.",
                                 "handover_template": "Test handover.",
                             },
                         },
-                    ]
+                    }
                 }
             },
         },
@@ -352,7 +347,7 @@ def test_schema_package_contains_no_local_config_error_class() -> None:
 
 
 def test_no_tool_calls_from_file() -> None:
-    """No tool may call Config.from_file() — all configs must be injected via DI.
+    """No tool may call Config.from_file() â€” all configs must be injected via DI.
 
     C_LOADER.3 rewired all 14 entry-point tools; this guard prevents regression.
     Zone 1: source-code inspection only, no YAML or filesystem access.
@@ -365,7 +360,7 @@ def test_no_tool_calls_from_file() -> None:
             if ".from_file(" in line and not line.strip().startswith("#"):
                 violations.append(f"{py_file.name}:{lineno}: {line.strip()}")
     assert not violations, (
-        "Tools must not call Config.from_file() — configs are injected via DI.\n"
+        "Tools must not call Config.from_file() â€” configs are injected via DI.\n"
         + "\n".join(violations)
     )
 

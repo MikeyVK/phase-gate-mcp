@@ -19,14 +19,14 @@ from tests.mcp_server.test_support import get_default_server_root
 
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
-_EMPTY_CONTRIBUTORS_YAML = {"version": "1.0.0", "contributors": []}
+_EMPTY_CONTRIBUTORS_YAML = {"version": "1.0.0", "contributors": {}}
 
 _POPULATED_CONTRIBUTORS_YAML = {
     "version": "1.0.0",
-    "contributors": [
-        {"login": "alice", "name": "Alice Doe"},
-        {"login": "bob"},
-    ],
+    "contributors": {
+        "contributor_1": {"login": "alice", "name": "Alice Doe"},
+        "contributor_2": {"login": "bob"},
+    },
 }
 
 
@@ -66,12 +66,12 @@ class TestContributorConfigFromFile:
     """Loading behaviour through ConfigLoader."""
 
     def test_from_file_loads_empty_list(self, empty_contributor_config: ContributorConfig) -> None:
-        assert empty_contributor_config.contributors == []
+        assert empty_contributor_config.contributors == {}
 
     def test_from_file_loads_populated_list(
         self, populated_contributor_config: ContributorConfig
     ) -> None:
-        logins = [c.login for c in populated_contributor_config.contributors]
+        logins = [c.login for c in populated_contributor_config.contributors.values()]
         assert "alice" in logins
         assert "bob" in logins
 
@@ -79,7 +79,9 @@ class TestContributorConfigFromFile:
         self, populated_contributor_config: ContributorConfig
     ) -> None:
         """name field is optional; bob has no name."""
-        bob = next(c for c in populated_contributor_config.contributors if c.login == "bob")
+        bob = next(
+            c for c in populated_contributor_config.contributors.values() if c.login == "bob"
+        )
         assert bob.name is None
 
     def test_from_file_raises_on_missing_file(self) -> None:

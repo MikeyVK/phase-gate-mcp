@@ -253,7 +253,7 @@ class CollectionTextRenderer:
                         f"Collection runtime item '{item_path}' is missing field '{exc.args[0]}'"
                     ) from exc
 
-                for child in declaration.children:
+                for child in declaration.children.values():
                     lines.extend(
                         self._render_collection(
                             item,

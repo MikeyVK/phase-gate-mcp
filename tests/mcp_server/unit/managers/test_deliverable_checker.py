@@ -38,7 +38,7 @@ class TestWorkphasesConfigSchema:
     """Verify exit_requires / entry_expects fields parse correctly."""
 
     def test_workphases_schema_exit_requires_field_is_parsed(self, tmp_path: Path) -> None:
-        """Phase with exit_requires list is parsed into WorkphasesConfig.
+        """Phase with identified exit requirements is parsed into WorkphasesConfig.
 
         Issue #229 C1: exit_requires must be readable per phase.
         """
@@ -50,7 +50,9 @@ phases:
   planning:
     display_name: "Planning"
     exit_requires:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "TDD cycle breakdown"
   ready:
     display_name: "Ready"
@@ -65,7 +67,7 @@ phases:
         assert exit_requires[0]["key"] == "planning_deliverables"
 
     def test_workphases_schema_entry_expects_field_is_parsed(self, tmp_path: Path) -> None:
-        """Phase with entry_expects list is parsed into WorkphasesConfig.
+        """Phase with identified entry expectations is parsed into WorkphasesConfig.
 
         Issue #229 C1: entry_expects must be readable per phase.
         """
@@ -77,7 +79,9 @@ phases:
   implementation:
     display_name: "Implementation"
     entry_expects:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "Expected from planning phase"
   ready:
     display_name: "Ready"
@@ -91,7 +95,7 @@ phases:
         assert len(entry_expects) == 1
         assert entry_expects[0]["key"] == "planning_deliverables"
 
-    def test_workphases_schema_backward_compat_phases_without_field(self, tmp_path: Path) -> None:
+    def test_workphases_schema_absent_optional_requirements(self, tmp_path: Path) -> None:
         """Phases without exit_requires/entry_expects return empty list.
 
         Issue #229 C1: existing phases must not break when fields are absent.
@@ -107,7 +111,9 @@ phases:
   planning:
     display_name: "Planning"
     exit_requires:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "TDD cycle breakdown"
   ready:
     display_name: "Ready"

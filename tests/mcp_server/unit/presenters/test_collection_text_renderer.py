@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from mcp_server.config.schemas.presentation_config import (
     CollectionPresentationConfig,
     FormattingConfig,
+    ToolPresentationConfig,
 )
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.presenters.collection_text_renderer import (
@@ -58,16 +59,18 @@ def _formatting() -> FormattingConfig:
 
 def _collection(**overrides: Any) -> CollectionPresentationConfig:
     values: dict[str, Any] = {
+        "order": 10,
         "field": "phases",
         "heading": "Phases",
         "item_template": "- {name}",
-        "children": [
-            {
+        "children": {
+            "entry_1": {
+                "order": 10,
                 "field": "tasks",
                 "heading": "  Tasks",
                 "item_template": "  - {name}: {tags}",
             }
-        ],
+        },
     }
     values.update(overrides)
     return CollectionPresentationConfig.model_validate(values)
@@ -168,17 +171,17 @@ class TestCollectionTextRenderer:
 
     def test_renders_sibling_scalar_collections_with_independent_limits(self) -> None:
         renderer = CollectionTextRenderer(_formatting())
-        collections = (
-            CollectionPresentationConfig(
-                field="labels",
-                heading="Labels",
-                item_template="- {item}",
-            ),
-            CollectionPresentationConfig(
-                field="codes",
-                heading="Codes",
-                item_template="- {item}",
-            ),
+        collections = tuple(
+            ToolPresentationConfig(
+                collections={
+                    "codes": CollectionPresentationConfig(
+                        order=20, field="codes", heading="Codes", item_template="- {item}"
+                    ),
+                    "labels": CollectionPresentationConfig(
+                        order=10, field="labels", heading="Labels", item_template="- {item}"
+                    ),
+                }
+            ).collections.values()
         )
 
         text = renderer.render(
@@ -206,9 +209,7 @@ class TestCollectionTextRenderer:
                 {"labels": []},
                 collections=(
                     CollectionPresentationConfig(
-                        field="labels",
-                        heading="Labels",
-                        item_template="- {item}",
+                        order=10, field="labels", heading="Labels", item_template="- {item}"
                     ),
                 ),
                 max_items=2,
@@ -223,10 +224,7 @@ class TestCollectionTextRenderer:
             ({"phases": {"not": "ordered"}}, _collection(), "phases"),
             (
                 {"labels": ["ok", {"wrong": "type"}]},
-                CollectionPresentationConfig(
-                    field="labels",
-                    item_template="- {item}",
-                ),
+                CollectionPresentationConfig(order=10, field="labels", item_template="- {item}"),
                 r"labels\[1\]",
             ),
             (

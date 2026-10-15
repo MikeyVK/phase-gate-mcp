@@ -1,0 +1,31 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "1.0.0"
+"branch_types":
+- "feature"
+- "bug"
+- "refactor"
+- "docs"
+- "hotfix"
+- "chore"
+- "epic"
+"protected_branches":
+- "main"
+- "master"
+- "develop"
+"branch_name_pattern": "^[a-z0-9-]+$"
+"commit_types":
+- "feat"
+- "fix"
+- "docs"
+- "style"
+- "refactor"
+- "test"
+- "chore"
+- "perf"
+- "ci"
+- "build"
+- "revert"
+"issue_title_max_length": 72

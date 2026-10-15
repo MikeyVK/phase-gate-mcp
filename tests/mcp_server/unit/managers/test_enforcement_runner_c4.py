@@ -91,20 +91,22 @@ def _make_check_context_loaded_config(
     enabled: bool = True,
 ) -> EnforcementConfig:
     return EnforcementConfig(
-        enforcement=[
-            EnforcementRule(
+        enforcement={
+            "entry_1": EnforcementRule(
+                order=10,
                 event_source="tool",
                 tool=tool,
                 timing="pre",
-                actions=[
-                    EnforcementAction(
+                actions={
+                    "entry_1": EnforcementAction(
+                        order=10,
                         type="check_context_loaded",
                         exempt_tools=exempt_tools or [],
                         enabled=enabled,
                     )
-                ],
+                },
             )
-        ]
+        }
     )
 
 

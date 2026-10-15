@@ -10,6 +10,7 @@ Issue #229 Cycle 10: GAP-17 — blocking deliverables must appear BEFORE OK in r
 
 import json
 from pathlib import Path
+from shutil import copy2
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,33 +36,43 @@ from tests.mcp_server.test_support import (
 @pytest.fixture(autouse=True)
 def cycle_based_phase_contracts(tmp_path: Path) -> None:
     """Provide minimal phase contracts so implementation remains cycle_based in temp workspaces."""
-    config_dir = tmp_path / get_default_server_root() / "config"
+    config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
     config_dir.mkdir(parents=True, exist_ok=True)
+    source = Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+    for file_name in ("git.yaml", "workphases.yaml"):
+        copy2(source / file_name, config_dir / file_name)
     (config_dir / "contracts.yaml").write_text(
         (
-            "version: '1.0.0'\n"
-            "merge_policy:\n"
-            "  pr_allowed_phase: ready\n"
-            "  branch_local_artifacts: []\n"
-            "workflows:\n"
-            "  feature:\n"
-            "    phases:\n"
-            "      - name: implementation\n"
-            "        cycle_based: true\n"
-            "        subphases: [red, green, refactor]\n"
-            "        commit_type_map:\n"
-            "          red: test\n"
-            "          green: feat\n"
-            "          refactor: refactor\n"
-            "        instructions:\n"
-            "          sub_role: test-role\n"
-            "          phase_instructions: Test instructions.\n"
-            "          handover_template: Test handover.\n"
-            "      - name: ready\n"
-            "        instructions:\n"
-            "          sub_role: test-role\n"
-            "          phase_instructions: Test instructions.\n"
-            "          handover_template: Test handover.\n"
+            r"""
+version: 1.0.0
+merge_policy:
+  pr_allowed_phase: ready
+  branch_local_artifacts: {}
+workflows:
+  feature:
+    phases:
+      implementation:
+        order: 10
+        cycle_based: true
+        subphases:
+        - red
+        - green
+        - refactor
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      ready:
+        order: 20
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+"""
         ),
         encoding="utf-8",
     )

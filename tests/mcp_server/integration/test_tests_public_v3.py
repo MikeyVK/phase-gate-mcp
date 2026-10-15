@@ -74,15 +74,17 @@ def compose(
             "max_items": 5,
             "template_success": "{requested_scope}",
             "template_failure": "{requested_scope}: {error_code}",
-            "collections": [
-                {
+            "collections": {
+                "entry_1": {
+                    "order": 10,
                     "field": "results",
                     "heading": "Tests",
                     "item_template": "{test_id}: {status}; args_source={args_source}",
                 }
-            ],
-            "enum_cases": [
-                {
+            },
+            "enum_cases": {
+                "entry_1": {
+                    "order": 10,
                     "field": "error_code",
                     "cases": {
                         "no_configured_tests": "No test bindings configured.",
@@ -95,7 +97,7 @@ def compose(
                         "termination_unconfirmed": "Test termination unconfirmed.",
                     },
                 }
-            ],
+            },
         }
     }
     presenter = TextPresenter(config_data=presentation)

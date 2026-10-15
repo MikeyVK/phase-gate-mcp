@@ -1,0 +1,185 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"configured_targets":
+  "python_format_sources":
+    "include":
+    - "**/*.py"
+    - "**/*.pyi"
+    - "**/*.ipynb"
+    "exclude":
+    - "**/.pytest_cache*/**"
+    - "**/__pycache__/**"
+  "python_lint_sources":
+    "include":
+    - "**/*.py"
+    - "**/*.pyi"
+    - "**/*.ipynb"
+    - "**/pyproject.toml"
+    "exclude":
+    - "**/.pytest_cache*/**"
+    - "**/__pycache__/**"
+  "python_production_sources":
+    "include":
+    - "src/**/*.py"
+    - "src/**/*.pyi"
+    "exclude":
+    - "**/__pycache__/**"
+    - "**/.pytest_cache*/**"
+  "markdown_sources":
+    "include":
+    - "**/*.md"
+    "exclude": []
+  "yaml_sources":
+    "include":
+    - "**/*.yaml"
+    - "**/*.yml"
+    "exclude":
+    - ".pgmcp/temp/**"
+    - "**/__pycache__/**"
+    - "**/.pytest_cache*/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/node_modules/**"
+    - "build/**"
+    - "dist/**"
+    - "**/*.egg-info/**"
+  "json_schema_sources":
+    "include":
+    - "**/*.schema.json"
+    "exclude":
+    - ".pgmcp/temp/**"
+    - "**/__pycache__/**"
+    - "**/.pytest_cache*/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/node_modules/**"
+    - "build/**"
+    - "dist/**"
+    - "**/*.egg-info/**"
+"checks":
+  "python_syntax":
+    "adapter_id": "python_syntax"
+    "capability": "syntax"
+    "timeout_seconds": 30
+    "configuration_choice": null
+    "default_args": []
+  "typescript_syntax":
+    "adapter_id": "typescript_syntax"
+    "capability": "syntax"
+    "timeout_seconds": 30
+    "configuration_choice": null
+    "default_args": []
+  "commit_message":
+    "adapter_id": "commitlint"
+    "capability": "message"
+    "timeout_seconds": 30
+    "configuration_choice": null
+    "default_args": []
+  "python_format":
+    "adapter_id": "ruff"
+    "capability": "format"
+    "timeout_seconds": 60
+    "configuration_choice": null
+    "default_args": []
+  "python_lint":
+    "adapter_id": "ruff"
+    "capability": "lint"
+    "timeout_seconds": 60
+    "configuration_choice": null
+    "default_args": []
+  "python_types":
+    "adapter_id": "mypy"
+    "capability": "types"
+    "timeout_seconds": 120
+    "configuration_choice": null
+    "default_args": []
+  "python_pyright":
+    "adapter_id": "pyright"
+    "capability": "types"
+    "timeout_seconds": 120
+    "configuration_choice": null
+    "default_args":
+    - "--level"
+    - "warning"
+    - "--warnings"
+  "markdown_links":
+    "adapter_id": "lychee"
+    "capability": "links"
+    "timeout_seconds": 60
+    "configuration_choice": null
+    "default_args":
+    - "--offline"
+    - "--cache=false"
+    - "--include-fragments"
+  "yaml_configuration":
+    "adapter_id": "check_jsonschema"
+    "capability": "yaml_configuration"
+    "timeout_seconds": 60
+    "configuration_choice": null
+    "default_args":
+    - "--schemafile"
+    - ".pgmcp/config/check_schemas/yaml_configuration.schema.json"
+    - "--force-filetype"
+    - "yaml"
+    - "--output-format"
+    - "JSON"
+  "json_schema_shape":
+    "adapter_id": "check_jsonschema"
+    "capability": "json_schema"
+    "timeout_seconds": 60
+    "configuration_choice": null
+    "default_args":
+    - "--schemafile"
+    - ".pgmcp/config/check_schemas/json_schema_source.schema.json"
+    - "--force-filetype"
+    - "json"
+    - "--output-format"
+    - "JSON"
+  "json_schema_metaschema":
+    "adapter_id": "check_jsonschema"
+    "capability": "json_schema"
+    "timeout_seconds": 60
+    "configuration_choice": null
+    "default_args":
+    - "--check-metaschema"
+    - "--force-filetype"
+    - "json"
+    - "--output-format"
+    - "JSON"
+"profiles":
+  "python_preflight":
+    "checks":
+    - "python_syntax"
+  "typescript_preflight":
+    "checks":
+    - "typescript_syntax"
+  "commit_preflight":
+    "checks":
+    - "commit_message"
+  "python_review":
+    "checks":
+    - "python_format"
+    - "python_lint"
+    - "python_types"
+    - "python_pyright"
+  "markdown_link_review":
+    "checks":
+    - "markdown_links"
+  "yaml_configuration_review":
+    "checks":
+    - "yaml_configuration"
+  "json_schema_review":
+    "checks":
+    - "json_schema_shape"
+    - "json_schema_metaschema"
+"profiles_by_extension":
+  ".py": "python_preflight"
+  ".ts": "typescript_preflight"
+  ".md": "markdown_link_review"
+  ".yaml": "yaml_configuration_review"
+  ".yml": "yaml_configuration_review"
+  ".schema.json": "json_schema_review"
+"run_checks":
+  "default_profile": "python_review"

@@ -1,0 +1,65 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "1.0.0"
+"phases":
+  "research":
+    "display_name": "Research"
+    "description": "Problem analysis, requirements gathering, technical exploration"
+    "commit_type_hint": "docs"
+    "subphases": []
+  "planning":
+    "display_name": "Planning"
+    "description": "TDD cycle breakdown, task decomposition, dependency analysis"
+    "commit_type_hint": "docs"
+    "subphases":
+    - "c1"
+    - "c2"
+    - "c3"
+    - "c4"
+  "design":
+    "display_name": "Design"
+    "description": "Interface contracts, data flows, schemas, architecture decisions"
+    "commit_type_hint": "docs"
+    "subphases":
+    - "contracts"
+    - "flows"
+    - "schemas"
+  "implementation":
+    "display_name": "Implementation"
+    "description": "Implementation cycle (red → green → refactor)"
+    "commit_type_hint": null
+    "subphases":
+    - "red"
+    - "green"
+    - "refactor"
+  "validation":
+    "display_name": "Validation"
+    "description": "End-to-end testing, acceptance testing, system integration"
+    "commit_type_hint": "test"
+    "subphases":
+    - "e2e"
+    - "acceptance"
+  "documentation":
+    "display_name": "Documentation"
+    "description": "Reference documentation, guides, agent instructions"
+    "commit_type_hint": "docs"
+    "subphases":
+    - "reference"
+    - "guides"
+    - "agent"
+  "coordination":
+    "display_name": "Coordination"
+    "description": "Epic-level work, child issue delegation, cross-issue synchronization"
+    "commit_type_hint": "chore"
+    "subphases":
+    - "delegation"
+    - "sync"
+    - "review"
+  "ready":
+    "display_name": "Ready"
+    "description": "Terminal phase — merge readiness verified, PR allowed"
+    "commit_type_hint": null
+    "subphases": []
+    "terminal": true

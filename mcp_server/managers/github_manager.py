@@ -76,7 +76,7 @@ class GitHubManager:
         if self._issue_config is None:
             raise ValueError("IssueConfig must be injected for validate_issue_params")
         if not self._issue_config.has_issue_type(issue_type):
-            valid = sorted(t.name for t in self._issue_config.issue_types)
+            valid = sorted(self._issue_config.issue_types)
             raise ValueError(f"Unknown issue type: '{issue_type}'. Valid types: {valid}")
 
         if self._label_config is not None:

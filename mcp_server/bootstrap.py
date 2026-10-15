@@ -823,7 +823,7 @@ class ServerBootstrapper:
             terminal_phase=configs.workphases_config.get_terminal_phase(),
             pr_allowed_phase=configs.contracts_config.get_pr_allowed_phase(),
             branch_local_artifacts=tuple(
-                configs.contracts_config.merge_policy.branch_local_artifacts
+                configs.contracts_config.merge_policy.branch_local_artifacts.values()
             ),
         )
 

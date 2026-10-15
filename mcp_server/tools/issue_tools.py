@@ -163,9 +163,7 @@ class CreateIssueTool(ICoreTool[CreateIssueInput, IssueOutput]):
     def input_schema(self) -> dict[str, Any]:
         assert self.args_model is not None
         schema = self.args_model.model_json_schema()
-        schema["properties"]["issue_type"]["enum"] = [
-            e.name for e in self._issue_config.issue_types
-        ]
+        schema["properties"]["issue_type"]["enum"] = list(self._issue_config.issue_types)
         if self._label_config is not None:
             priority_labels = self._label_config.get_labels_by_category("priority")
             schema["properties"]["priority"]["enum"] = [
@@ -223,7 +221,7 @@ class CreateIssueTool(ICoreTool[CreateIssueInput, IssueOutput]):
                 milestone_number = next(
                     (
                         milestone.number
-                        for milestone in self._milestone_config.milestones
+                        for milestone in self._milestone_config.milestones.values()
                         if milestone.title == params.milestone
                     ),
                     None,

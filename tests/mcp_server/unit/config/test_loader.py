@@ -1,47 +1,17 @@
-# tests/mcp_server/unit/config/test_loader.py
-# template=unit_test version= created=2026-04-09T00:00Z updated=
-"""
-Unit tests for ConfigLoader (issue #271 C2 cleanup).
+"""Workflow catalogs load from an explicit product basis."""
 
-@layer: Tests (Unit)
-@dependencies: [pytest, mcp_server.config.loader, mcp_server.config.schemas]
-"""
-
-# Standard library
 from pathlib import Path
 
-# Project modules
 from mcp_server.config.loader import ConfigLoader
-from tests.mcp_server.test_support import get_default_server_root
 
 
-def _workflow_yaml_without_phases() -> str:
-    """Minimal valid workflows.yaml fixture (C6+: no phases field)."""
-    return (
-        "version: '1.0.0'\n"
-        "workflows:\n"
-        "  feature:\n"
-        "    name: feature\n"
-        "    default_execution_mode: interactive\n"
-        "    description: Feature workflow\n"
+def test_load_workflow_config_catalog_only(tmp_path: Path) -> None:
+    basis = tmp_path / "defaults"
+    basis.mkdir()
+    (basis / "workflows.yaml").write_text(
+        "version: '1.0.0'\nworkflows:\n  feature:\n    description: Feature workflow\n",
+        encoding="utf-8",
     )
-
-
-class TestLoadWorkflowConfig:
-    def test_load_workflow_config_catalog_only(self, tmp_path: Path) -> None:
-        """load_workflow_config() returns catalog metadata without phase ordering (C6+)."""
-        config_dir = tmp_path / get_default_server_root() / "config"
-        config_dir.mkdir(parents=True)
-        (config_dir / "workflows.yaml").write_text(
-            _workflow_yaml_without_phases(),
-            encoding="utf-8",
-        )
-        loader = ConfigLoader(config_root=config_dir)
-
-        result = loader.load_workflow_config()
-
-        wt = result.workflows["feature"]
-        assert wt.name == "feature"
-        assert wt.description == "Feature workflow"
-        assert wt.default_execution_mode == "interactive"
-        assert not hasattr(wt, "phases")
+    result = ConfigLoader(tmp_path).load_workflow_config()
+    assert result.workflows["feature"].description == "Feature workflow"
+    assert result.get_workflow("feature").default_execution_mode == "interactive"

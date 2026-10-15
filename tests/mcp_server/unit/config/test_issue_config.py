@@ -21,13 +21,13 @@ _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() 
 
 _MINIMAL_ISSUES_YAML = {
     "version": "1.0.0",
-    "issue_types": [
-        {"name": "feature", "workflow": "feature", "label": "type:feature"},
-        {"name": "bug", "workflow": "bug", "label": "type:bug"},
-        {"name": "hotfix", "workflow": "hotfix", "label": "type:bug"},
-        {"name": "chore", "workflow": "chore", "label": "type:chore"},
-        {"name": "epic", "workflow": "epic", "label": "type:epic"},
-    ],
+    "issue_types": {
+        "feature": {"workflow": "feature", "label": "type:feature"},
+        "bug": {"workflow": "bug", "label": "type:bug"},
+        "hotfix": {"workflow": "hotfix", "label": "type:bug"},
+        "chore": {"workflow": "chore", "label": "type:chore"},
+        "epic": {"workflow": "epic", "label": "type:epic"},
+    },
     "required_label_categories": ["type", "priority", "scope"],
     "optional_label_inputs": {
         "is_epic": {"type": "bool", "label": "type:epic", "behavior": "Overrides type:*"},
@@ -60,7 +60,7 @@ class TestIssueConfigFromFile:
     """Loading behaviour through ConfigLoader."""
 
     def test_from_file_loads_issue_types(self, issue_config: IssueConfig) -> None:
-        names = [entry.name for entry in issue_config.issue_types]
+        names = list(issue_config.issue_types)
         assert "feature" in names
         assert "hotfix" in names
         assert "chore" in names

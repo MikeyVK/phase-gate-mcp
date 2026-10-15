@@ -1,68 +1,111 @@
-version: "1.0.0"
-categories:
-  branch_mutating:
-    - create_branch
-    - git_add_or_commit
-    - git_restore
-    - git_checkout
-    - git_push
-    - git_merge
-    - git_delete_branch
-    - git_stash
-    - git_pull
-    - transition_phase
-    - force_phase_transition
-    - submit_pr
-    - initialize_project
-    - save_planning_deliverables
-    - update_planning_deliverables
-    - safe_edit_file
-    - scaffold_artifact
-    - transition_cycle
-    - force_cycle_transition
-enforcement:
-  - event_source: tool
-    tool: create_branch
-    timing: pre
-    actions:
-      - type: check_branch_policy
-        policy: base_restriction
-        rules:
-          hotfix: [main]
-          epic: [main]
-          feature: [main, "epic/*", "refactor/*"]
-          bug: [main, "epic/*"]
-          refactor: [main, "epic/*"]
-          docs: [main, "epic/*"]
-          chore: [main, "epic/*"]
-  - event_source: tool
-    tool_category: branch_mutating
-    timing: pre
-    actions:
-      - type: check_pr_status
-  - event_source: tool
-    tool: save_planning_deliverables
-    timing: pre
-    actions:
-      - type: check_phase_readiness
-        policy: planning
-  - event_source: tool
-    tool: update_planning_deliverables
-    timing: pre
-    actions:
-      - type: check_phase_readiness
-        policy: planning
-  - event_source: tool
-    tool: submit_pr
-    timing: pre
-    actions:
-      - type: check_phase_readiness
-        policy: ready
-  - event_source: tool
-    tool_category: branch_mutating
-    timing: pre
-    actions:
-      - type: check_context_loaded
-        exempt_tools:
-          - force_phase_transition
-          - force_cycle_transition
+# Workspace policy retains every existing workflow guard explicitly.
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "1.0.0"
+"categories":
+  "branch_mutating":
+  - "create_branch"
+  - "git_add_or_commit"
+  - "git_restore"
+  - "git_checkout"
+  - "git_push"
+  - "git_merge"
+  - "git_delete_branch"
+  - "git_stash"
+  - "git_pull"
+  - "transition_phase"
+  - "force_phase_transition"
+  - "submit_pr"
+  - "initialize_project"
+  - "save_planning_deliverables"
+  - "update_planning_deliverables"
+  - "safe_edit_file"
+  - "scaffold_artifact"
+  - "transition_cycle"
+  - "force_cycle_transition"
+"enforcement":
+  "rule_1":
+    "event_source": "tool"
+    "tool": "create_branch"
+    "timing": "pre"
+    "actions":
+      "action_1":
+        "type": "check_branch_policy"
+        "policy": "base_restriction"
+        "rules":
+          "hotfix":
+          - "main"
+          "epic":
+          - "main"
+          "feature":
+          - "main"
+          - "epic/*"
+          - "refactor/*"
+          "bug":
+          - "main"
+          - "epic/*"
+          "refactor":
+          - "main"
+          - "epic/*"
+          "docs":
+          - "main"
+          - "epic/*"
+          "chore":
+          - "main"
+          - "epic/*"
+        "order": 10
+    "order": 10
+  "rule_2":
+    "event_source": "tool"
+    "tool_category": "branch_mutating"
+    "timing": "pre"
+    "actions":
+      "action_1":
+        "type": "check_pr_status"
+        "order": 10
+    "order": 20
+  "rule_3":
+    "event_source": "tool"
+    "tool": "save_planning_deliverables"
+    "timing": "pre"
+    "actions":
+      "action_1":
+        "type": "check_phase_readiness"
+        "policy": "planning"
+        "order": 10
+    "order": 30
+  "rule_4":
+    "event_source": "tool"
+    "tool": "update_planning_deliverables"
+    "timing": "pre"
+    "actions":
+      "action_1":
+        "type": "check_phase_readiness"
+        "policy": "planning"
+        "order": 10
+    "order": 40
+  "rule_5":
+    "event_source": "tool"
+    "tool": "submit_pr"
+    "timing": "pre"
+    "actions":
+      "action_1":
+        "type": "check_phase_readiness"
+        "policy": "ready"
+        "order": 10
+    "order": 50
+  "rule_6":
+    "event_source": "tool"
+    "tool_category": "branch_mutating"
+    "timing": "pre"
+    "actions":
+      "action_1":
+        "type": "check_context_loaded"
+        "exempt_tools":
+        - "force_phase_transition"
+        - "force_cycle_transition"
+        "order": 10
+    "order": 60
+

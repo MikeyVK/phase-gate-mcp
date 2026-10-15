@@ -73,18 +73,20 @@ def compose(
             "template_success": summary,
             "template_failure": summary,
             "enum_cases": enum_cases,
-            "collections": [
-                {
+            "collections": {
+                "entry_1": {
+                    "order": 10,
                     "field": "checks",
                     "heading": "Checks",
                     "item_template": "{check_id}: {status}; args_source={args_source}",
                 },
-                {
+                "entry_2": {
+                    "order": 20,
                     "field": "housekeeping",
                     "heading": "Cleanup",
                     "item_template": "{purpose}: {path}; {message}",
                 },
-            ],
+            },
         }
     }
     presenter = TextPresenter(config_data=config)
@@ -281,7 +283,7 @@ async def test_public_policy_preserves_selection_and_reports_unvalidated_setup_e
         ).load_presentation_config()
         warning = next(
             case.cases["not_executed"]
-            for case in presentation.tools["safe_edit_file"].enum_cases
+            for case in presentation.tools["safe_edit_file"].enum_cases.values()
             if case.field == "validation_status"
         )
         summary = response.content[0]

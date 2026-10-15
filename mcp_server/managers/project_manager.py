@@ -326,7 +326,7 @@ class ProjectManager:
         workflow = self._contracts_config.workflows.get(workflow_name)
         if workflow is None:
             raise PlanningMutationError("planning_workflow_invalid")
-        execution_phases = [phase.name for phase in workflow.phases if phase.cycle_based]
+        execution_phases = [key for key, phase in workflow.phases.items() if phase.cycle_based]
         if len(execution_phases) > 1:
             raise PlanningMutationError("planning_workflow_invalid")
         execution_phase = execution_phases[0] if execution_phases else None

@@ -248,10 +248,10 @@ class TestGitHubManagerValidateIssueParams:
     def issue_config(self) -> IssueConfig:
         return IssueConfig(
             version="1.0.0",
-            issue_types=[
-                {"name": "feature", "workflow": "feature", "label": "type:feature"},
-                {"name": "bug", "workflow": "bug", "label": "type:bug"},
-            ],
+            issue_types={
+                "feature": {"workflow": "feature", "label": "type:feature"},
+                "bug": {"workflow": "bug", "label": "type:bug"},
+            },
             required_label_categories=["type", "priority", "scope"],
             optional_label_inputs={},
         )
@@ -260,12 +260,20 @@ class TestGitHubManagerValidateIssueParams:
     def label_config(self) -> LabelConfig:
         return LabelConfig(
             version="1.0.0",
-            labels=[
-                {"name": "priority:high", "color": "D93F0B", "description": "High priority"},
-                {"name": "priority:low", "color": "0E8A16", "description": "Low priority"},
-            ],
+            labels={
+                "label_1": {
+                    "name": "priority:high",
+                    "color": "D93F0B",
+                    "description": "High priority",
+                },
+                "label_2": {
+                    "name": "priority:low",
+                    "color": "0E8A16",
+                    "description": "Low priority",
+                },
+            },
             freeform_exceptions=[],
-            label_patterns=[],
+            label_patterns={},
         )
 
     @pytest.fixture
@@ -274,13 +282,15 @@ class TestGitHubManagerValidateIssueParams:
 
     @pytest.fixture
     def milestone_config(self) -> MilestoneConfig:
-        return MilestoneConfig(version="1.0.0", milestones=[{"number": 1, "title": "v1.0"}])
+        return MilestoneConfig(
+            version="1.0.0", milestones={"milestone_1": {"number": 1, "title": "v1.0"}}
+        )
 
     @pytest.fixture
     def contributor_config(self) -> ContributorConfig:
         return ContributorConfig(
             version="1.0.0",
-            contributors=[{"login": "alice", "name": "Alice"}],
+            contributors={"contributor_1": {"login": "alice", "name": "Alice"}},
         )
 
     @pytest.fixture

@@ -509,7 +509,7 @@ class TestGetWorkContextC1Restructuring:
         assert result.workflow_state_status is WorkflowStateStatus.INVALID_PHASE
         assert result.phase_instructions == ""
         contracts = load_contracts_config()
-        assert result.valid_phases == tuple(contracts.workflows["feature"].get_phase_names())
+        assert result.valid_phases == tuple(contracts.workflows["feature"].get_phase_ids())
 
     @pytest.mark.asyncio
     async def test_get_work_context_does_not_synthesize_invalid_phase_prose(self) -> None:
@@ -629,24 +629,24 @@ def _make_c7_contracts(
         merge_policy=MergePolicy(pr_allowed_phase="ready"),
         workflows={
             workflow: WorkflowEntry(
-                phases=[
-                    WorkflowPhaseEntry(
-                        name=phase,
+                phases={
+                    phase: WorkflowPhaseEntry(
+                        order=10,
                         instructions=PhaseInstructionsSpec(
                             sub_role=sub_role,
                             phase_instructions=phase_instructions,
                             handover_template=handover_template,
                         ),
                     ),
-                    WorkflowPhaseEntry(
-                        name="ready",
+                    "ready": WorkflowPhaseEntry(
+                        order=20,
                         instructions=PhaseInstructionsSpec(
                             sub_role="documenter",
                             phase_instructions="Create PR.",
                             handover_template=None,
                         ),
                     ),
-                ]
+                }
             ),
         },
     )
