@@ -3,7 +3,7 @@
 # Issue 504 — Interactive native configuration refactor
 
 **Status:** PLANNING — INDEPENDENT REVIEW REQUESTED  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -280,6 +280,8 @@ Focused GitHub/Settings/bootstrap/init tests and applicable file gates pass; no 
 
 #### D\_1
 
+**Deliverable Name:** Durable validation evidence
+
 Compact durable validation report maps native composition, deletion/order, current behavior, cleanup, full native suite and required gates to observed outcomes.
 
 **Owner:** @imp validator
@@ -293,6 +295,8 @@ Compact durable validation report maps native composition, deletion/order, curre
 ### Documentation
 
 #### D\_1
+
+**Deliverable Name:** Active documentation and PR closing correction
 
 Update active configuration/setup/launcher references and PR template: every closes entry emits an operative Closes #N, proved by the adapted existing multi-issue rendering test.
 
@@ -345,11 +349,11 @@ After all cycles and cleanup are complete, the active Refactor Validation contra
 {
   "scope": "configured",
   "tests": ["python_tests"],
-  "timeout_seconds": 1800
+  "timeout_seconds": 1200
 }
 ```
 
-This is one full native-configured suite, not a collection of narrow replacements. Retain native arguments and required coverage. Configure the client window according to [setup](../../setup/README.md) to allow execution, stopping and delivery. Incomplete/time-out/unconfirmed termination is missing evidence, not PASS.
+This is one full native-configured suite, not a collection of narrow replacements. Retain native arguments and required coverage. Use the prescribed 1800-second client window with this 1200-second native suite budget, according to [setup](../../setup/README.md), preserving margin for stopping and result delivery. If actual workload requires more execution time, explicitly arrange and activate a larger client window before increasing the tool budget; do not split the full suite just to fit. Incomplete/time-out/unconfirmed termination is missing evidence, not PASS.
 
 ```json
 {
@@ -415,3 +419,4 @@ Planning-to-Implementation independent GO is requested on the committed plan. Ev
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-15 | @imp planner | Sequence native composition and clean source/consumer cutover with interactive checkpoints; reserve full suite/gates for Validation and stop before Implementation. |
 
+| 0.2 | 2026-10-15 | @imp planner | Fix QA P2: suite budget 1200 seconds inside prescribed client window 1800; add literal phase deliverable names for exact readback parity. |
