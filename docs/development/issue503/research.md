@@ -2,8 +2,8 @@
 
 # Issue 503 — explicit branch registration and PR target authority
 
-**Status:** RESEARCH DRAFT — INITIAL SOURCE INVENTORY  
-**Version:** 0.1  
+**Status:** RESEARCH DRAFT — OWNER CHOICES PENDING  
+**Version:** 0.2  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -30,7 +30,7 @@ Parent authority is currently distributed across optional input, reflog inferenc
 
 ## Background
 
-The owner moved this work out of #319 and Coordination opened #503 on refactor/503-branch-registration-and-pr-targets, parent main, Refactor/Research. Initial worktree contains the two newly initialized untracked workflow files; the first Research commit will track them with the document. The #319 deferred record is an input, not a completed #503 design. Prior owner decisions put create/checkout/initialize at CO and require Imp to receive an initialized branch.
+The owner moved this work out of #319 and Coordination opened #503 on refactor/503-branch-registration-and-pr-targets, parent main, Refactor/Research. Initial commit defda419 tracked the newly initialized workflow files with the Research document; the source inventory was conducted on that clean, pushed baseline. The #319 deferred record is an input, not a completed #503 design. Prior owner decisions put create/checkout/initialize at CO and require Imp to receive an initialized branch.
 
 ## Findings
 
@@ -56,7 +56,23 @@ BranchStateParentReader has exactly two production consumers: submit_pr and bran
 
 IWorkflowStateMutator is the existing lock/write seam. PhaseStateEngine has five mutation callbacks: initialization, phase transition, normal cycle, forced cycle and subphase. Their inventory does not authorize a cycle redesign. The mutator is the only production caller of repository.save found in the bounded source scan; all five production with_updates calls are in the state engine. Existing Git submission separately neutralizes configured branch-local artifacts. The current lock is in-process/per-instance, not a Git-worktree, cross-process or cross-file transaction guarantee. A distinct complete-initialization operation is a candidate seam for Design, not an approved method signature.
 
-Project metadata and state are persisted separately today. Research does not claim a cross-file transaction. Required early identity/registration refusal must be distinguished from a later I/O failure. FileStateRepository currently backs up malformed/version-invalid state before re-raising; that pre-existing diagnostic read behavior needs explicit consideration rather than silently removing backups under a broad side-effect claim.
+Project metadata and state are persisted separately today. Research does not claim a cross-file transaction. Required early identity/registration refusal must be distinguished from a later I/O failure or a concurrent external modification.
+
+The existing read has a concrete side effect: FileStateRepository.load catches malformed/version-invalid state and calls StateVersionValidator.backup_file, which **renames** the active file to .bak; an existing backup is overwritten. The repository test explicitly expects the original file to disappear. Source-derived sequence: the first read fails after moving the file; a later initialization sees absence and can proceed. This is a code-path finding, not a destructive live reproduction. The validator also wraps read OSError as StateCorruptedError, retaining its cause; those failures can enter this backup path.
+
+The bounded proposal is to make branch-state reads leave the original untouched and propagate the diagnostic. Only genuine absence admits initialization; schema/I/O failures must not be caught as absence by the initialization guard or ordinary mutator. This needs owner agreement below. Do not change the shared backup command globally: ProjectManager invokes it explicitly in planning **command** paths, and its separate semantics are outside #503. Sources: [repository](../../../mcp_server/managers/state_repository.py):79–91, [validator](../../../mcp_server/managers/state_version_validator.py):56–101, [repository test](../../../tests/mcp_server/unit/managers/test_state_repository.py):100–118, [planning commands](../../../mcp_server/managers/project_manager.py):305–314 and 574–587.
+
+### Bounded production seams
+
+| Existing seam | Evidence | Research implication |
+| --- | --- | --- |
+| Initializer / manager / state engine | One production call to each initialize operation. | The registration-contract change is a small production chain; it does not justify a new orchestration layer. |
+| State writes / validated copies | One ordinary repository.save caller; five with_updates callbacks in one engine. | Complete initialization and validated normal mutation can remain within the existing model, mutator and lock boundaries. |
+| Composition root | One production PhaseStateEngine constructor; it omits the already constructed mutator. Other direct constructors found are four test locations, including the shared helper. | Repair the existing dependency injection. No second lock owner or new coordinator is needed. |
+| State read versus parent lookup | Existing IStateReader and BranchValidatedStateReader already express read-only state and exact-branch validation. Parent-only lookup has two consumers. | Design can reuse these narrow interfaces for PR authority rather than enlarging a parent-only reader into a new lifecycle service. Preserve branch-check absence behavior. |
+| GitHub create_pr | Two production callers already supply base explicitly. | Removing the lower default has local impact; authentication and unrelated adapter behavior need no change. |
+
+The minimum identity boundary for Design is an explicit nonblank parent, the actual attached worktree branch, exact matching registration for submission and the existing configured issue-identity rule. Detached HEAD is not a usable branch registration. Do not add remote discovery, ancestry-based parent inference, a second head field or hardcoded branch-name conventions. Persisted project metadata may describe the supplied parent; it must not become a fallback authority for registration or submission. A metadata/state pair is not made transactional by these validations.
 
 ### Refreshed consumer inventory
 
@@ -76,21 +92,64 @@ Read-only Python AST scan over mcp_server, tests and scripts, excluding generate
 
 BranchState's prior 43/9 inventory is now 44/10 because #319 added meaningful status-resource setup to an existing test. Reusing the old count as current would be inaccurate.
 
-Non-AST consumers include raw head/base JSON in unit/test_server.py, embedded initialization in integration/test_target_startup.py and raw state dictionaries in repository/context/Ready tests. Existing mutator test doubles also depend on the placeholder/apply contract. Scan those directly during Design/Planning; do not rely only on call-name counts.
+The secondary scan found five raw state dictionaries carrying branch, workflow_name and current_phase in four files: integration/test_ready_phase_enforcement.py:70, unit/test_server.py:104, unit/managers/test_phase_state_engine.py:1540 and unit/managers/test_state_repository.py:80/367. None supplies parent_branch. Context enforcement uses a BranchState constructor instead and is included in the table above. Raw head/base tool-request fields also occur in unit/test_server.py:158–159. Treat deliberately invalid payloads separately from valid setup.
+
+Correction to the initial inventory: integration/test_target_startup.py:363 is a normal Python initialization call, already included in the AST count, not an additional embedded Python call. The AST string scan found an initialization example in the ProjectInitOptions docstring, not another executable test script. Keep raw serialized requests and documentation examples in the migration inventory without double-counting ordinary calls. Existing mutator doubles also depend on the placeholder/apply contract.
 
 Active instructions include seven submit_pr(head=...) Ready examples in contracts.yaml, AGENTS tool signatures and bundled host copies, project/GitHub references and setup calls. Start-issue flows already pass CO's selected parent; they do not need a role redesign. Update existing relevant text rather than adding instruction blocks everywhere.
 
-### Test structure and evidence boundary
+### Test blast radius: contract versus preparation
 
-Existing parent/reflog/cascade tests encode behavior that the clean break removes; they are not preservation obligations. Valuable repository, admission, atomic submission/rollback, state and check-scope tests already exist. Adapt those for the new input/invariant contract and meaningful failure-before-effects evidence. Mechanically repair fixtures and embedded payloads without adding production defaults or compatibility test shims.
+Read-only AST classification confirms that call-site counts do not predict failing test counts. Of 97 test initialize_project calls, 74 are inside test functions and 23 inside fixtures/helpers; of 57 initialize_branch calls, 44 are inside test functions and 13 inside fixtures/helpers. Only seven project calls supply options, three branch calls supply parent_branch and nine of 44 BranchState constructors supply parent_branch. Supplying options alone does not prove that options contains a parent.
 
-The issue's phrase 'behavioral regression coverage' is read as durable behavior evidence for the intended new contract, consistent with the owner's earlier direction: no legacy-preservation campaign, content snapshots or generic test expansion. Research runs no test suite and claims no #503 implementation evidence.
+| Category | Concrete evidence | Appropriate boundary |
+| --- | --- | --- |
+| Necessary contract migration | Public initialization/PR DTOs, reflog/nullable-parent/cascade expectations, state validation and handover tests. | Adapt valuable tests to the new contract; remove obsolete expectations rather than retaining legacy coverage. |
+| Incidental setup coupling | Outside project-manager, phase-engine and initialization-test files: 25 project calls / 13 files and 20 branch calls / 9 files. Cycle, context, transition and readback tests often register only to establish their starting condition. | Consolidate only affected uninteresting setup; keep the behavior under test visible. |
+| Existing reusable construction | test_support.py:289/335 factories have 124 project-manager calls / 26 files and 92 engine calls / 21 files. They construct dependencies but do not establish a registered project/branch. | Extend existing test support only if it reduces duplicated affected preparation; at most one explicit registration preparation helper, not a new fixture framework. |
+| Duplicated implementation in doubles | _TrackingMutator at test_phase_state_engine.py:528 recreates the placeholder fallback. | Do not reproduce removed production bootstrap logic in a fake. Preserve narrow spies that prove delegation. |
+| Valuable narrow doubles | ChangedPlanMutator:279 and _FreshSMutator:950 deliberately supply fresh changed state to mutation callbacks. | Retain meaningful evidence for state freshness and planning checks; multiple test consumers are justified here. |
+| Weak source/absence assertions | Mutator test:195 searches for Lock text; :210 searches bootstrap for WorkflowStateMutator. PR test:130 searches for an internal adapter expression. Engine test:1260 checks that a former private save method stays absent. | Within directly changed tests, replace or remove assertions according to observable behavioral value. Do not start a suite-wide campaign. |
+
+The bootstrap string assertion currently passes its own predicate even though bootstrap does not inject its constructed mutator into the engine. It therefore cannot prove the wiring its docstring promises. This is a concrete example of coverage that follows source wording while missing the architectural behavior.
+
+A bounded preparation helper is proposed for tests where registration is incidental, with an **explicit parent and relevant identity**, not a compatibility default. Direct initialization, invalid-state, model/repository and PR-authority tests continue to exercise their public contracts directly. Existing integration/atomic-submission/rollback and scope-bypass tests remain valuable. Example repeated preparation: test_phase_state_engine_workflow.py:58–65 and :86–93; test_cycle_tools_business_logic.py has five variants at :103/:147, :324/:375, :530/:573, :740/:772 and :904/:911.
+
+One implementation change having multiple consumers is not itself a defect: shared contracts and independent integration evidence legitimately fan out. Avoidable coupling is when an unrelated test must restate all details of that contract or reproduce its implementation. Do not weaken production validation or enlarge production interfaces to accommodate test setup.
+
+The issue's phrase 'behavioral regression coverage' means durable evidence for the intended new contract, consistent with the owner's direction: no legacy-preservation tests, content snapshots or generic test expansion. No new test files are presumed necessary. Sources: [shared test support](../../../tests/mcp_server/test_support.py), [mutator tests](../../../tests/mcp_server/unit/managers/test_workflow_state_mutator.py), [state-engine tests](../../../tests/mcp_server/unit/managers/test_phase_state_engine.py), [PR tests](../../../tests/mcp_server/unit/tools/test_submit_pr_tool.py).
+
+### Remaining warning signal and relevance
+
+The last durable full-suite evidence is #319 at production snapshot 18095d0e: run_tests(scope="configured", timeout_seconds=1200), **2934 passed, one skipped, one xpassed, 283 warning occurrences, native exit 0**, recorded in [Validation](../issue319/validation.md). There is no fresh #503 suite run. The transient receipt has expired, so exact historical category counts are unavailable; current source candidates below do not establish current frequencies or a complete warning inventory.
+
+| Warning group / current source | Relation to #503 | Proposed treatment |
+| --- | --- | --- |
+| AnyIO cancellable=True in project_tools.py:209 | The deprecated argument is inside the parent-reflog helper being removed. | Disappears with the approved clean break; no separate API migration or test. |
+| Module-wide asyncio mark in test_context_loaded_enforcement.py:59 | Marks seven synchronous and two asynchronous tests; this file already needs registration-fixture migration. | If the file is changed, restrict marking to its two async tests. Small adjacent test-metadata repair, subject to scope agreement. |
+| Resource-return deprecation, server.py:95–100 returning str | Shared MCP resource boundary; repeated callers can multiply occurrences. | Separate maintenance; do not change the resource protocol under branch-registration work. |
+| Pydantic SchemaAttachment.schema shadowing, core/tool_execution.py:40–46 | Existing comment records an intentionally chosen field name. | Do not rename this independent public contract opportunistically. |
+| Pytest collection-name collisions | Current candidates include imported TestsConfig in unit/resources/test_standards.py:7 and TestCapability in integration/adapters/test_pytest.py:21. | Separate test housekeeping; no complete per-class warning count is claimed. |
+| Pathlib is_reserved deprecation, utils/path_resolver.py:135 | Path validation, unrelated to registered branch authority. | Separate maintenance. |
+| PyGithub token-constructor deprecation, adapters/github_adapter.py:34 | Same adapter file as the explicit-base change, but different authentication responsibility. | Separate maintenance; shared filename is insufficient scope justification. |
+| Unawaited restart-test coroutine and mocked SystemExit(42) diagnostics | admin_tools delayed_exit/create_task and tests/mcp_server/tools/test_admin_tools.py; already disclosed in #319. | Separate async-harness maintenance, not a new branch-registration failure. |
+
+The manual proxy skip (core/test_proxy.py:199, RUN_MANUAL_TESTS) and non-strict XPASS are **outcomes, not warnings**. The XPASS marker in unit/managers/test_enforcement_runner_unit.py:49 still cites missing GitCommitTool neutralization, while the body tests NoteContext rendering. That reason/body mismatch deserves separate correction; it is not evidence that #503 admission is broken. The existing [deferred index](../issue319/deferred.md) retains general warning housekeeping.
+
+### Evidence limits
+
+Research used source reads, rg searches and read-only Python AST scans over mcp_server, tests and scripts, excluding generated assets and __pycache__. The baseline was defda4198dd6a275c6953af194383af6a61a719d. Scans classified call symbols, enclosing test/helper functions and supplied keyword names; a secondary scan identified raw dictionaries, example strings and direct engine constructors. These are source inventories, not execution/coverage measurements.
+
+Bounded delegated research supplied findings for test coupling and warning relevance; the producer checked the decisive source paths. No delegated findings are QA approval. No production/test/config files, test suites or live registration/state were mutated for these probes.
 
 ## Questions
 
-- Complete the raw/embedded-fixture and error-contract inventory beyond the confirmed single ordinary state-save path before declaring Research complete.
-- Design must state the minimum identity validation and observable failure outcomes without assuming Git ancestry/ref discovery or introducing a second head field.
-- Specify the preservation boundary for diagnostic backups versus forbidden lifecycle effects and for existing separate metadata/state writes; do not imply cross-file transactional guarantees.
+Two bounded strategy additions await the owner before Research can close:
+
+1. Leave invalid branch-state files untouched on reads and block with the existing diagnosis, rather than automatically moving them to .bak. Keep explicit planning-command backups outside this change.
+2. Permit consolidation of only affected incidental test setup through existing fixtures/factories and at most one explicit preparation helper; replace/remove weak source assertions in the directly changed area and correct the adjacent asyncio marker if that fixture file changes.
+
+Other operational details belong to Design within the already approved boundaries: concrete input/model signatures, exact identity checks, existing diagnostic projection and validation order. They do not require a new state framework, transaction layer or compatibility decision.
 
 ## References
 
@@ -107,7 +166,7 @@ The issue's phrase 'behavioral regression coverage' is read as durable behavior 
 
 ## Approved Strategy
 
-Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. This initial draft is not phase approval; current code observations and the remaining contract details below must be reviewed before Research is declared complete.
+Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. The two additional proposals in Questions are pending owner decisions, not approved scope. Research remains open and no transition to Design is authorized by this document.
 
 ## Expected Results
 
@@ -174,3 +233,5 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-15 | @imp researcher | Refresh deferred #319 source observations, consumer counts and approved direction for the bounded #503 Research; no production/test changes. |
+| 0.2 | 2026-10-15 | @imp researcher | Identify branch-state read/rename effects, bound production seams, classify necessary versus incidental test coupling and historical warning relevance; record two pending owner choices. |
+
