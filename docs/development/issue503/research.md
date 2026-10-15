@@ -3,7 +3,7 @@
 # Issue 503 — explicit branch registration and PR target authority
 
 **Status:** RESEARCH DRAFT — OWNER CHOICES PENDING  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -85,6 +85,28 @@ Compare the viable strategies:
 | Leave the active file untouched and raise | Preserves original evidence and repeats the same blocking condition until deliberate repair; follows CQS. | Automatic .bak creation is removed at this read boundary. Recovery must be deliberate with existing edit/Git facilities; no new repair tool is proposed. |
 
 The third option remains a bounded pure-read proposal, pending the owner's informed decision on the historical recovery trade-off. It must not be described as simply removing an unintended side effect. No backup/initialization behavior has been changed, and this research has not demonstrated an actual #503 data-loss incident.
+
+### Comparable planning-command backup boundary
+
+Owner follow-up: route 3 is preferred in principle; examine the analogous deliverables command behavior before closing the decision. This is research authorization, not authorization to expand implementation scope.
+
+The #460 deliverables query correction is clean at its own file boundary: _read_projects/get_project_plan do not quarantine invalid deliverables. The phase-enrichment resolver can still reach the existing state repository read/backup path; that is the same state path already under discussion, not a second deliverables-query backup.
+
+The remaining **command** paths are _save_project_plan (initialize_project) and _planning_project (shared by save/update planning). Both catch PlanningVersionMismatchError/StateCorruptedError, rename the complete deliverables file to .bak and then raise. Save/update reach this before their candidate-plan validation, and update before Git cycle-evidence protection. This is not the post-persist/readback failure case, which separately reports persisted=True.
+
+| Comparison | State repository read | Planning commands |
+| --- | --- | --- |
+| Requested operation | Read existing registration. | Initialize project metadata or save/update a specific plan. |
+| Backup trigger | JSON/version validation failure. | JSON/version validation failure while loading the existing file. |
+| Failure effect | Active state file moved; previous backup can be replaced. | Entire multi-project deliverables file moved; previous backup can be replaced, although the requested plan change is refused. |
+| Subsequent call | Initialization can observe absent state. | Save/update report planning_project_missing; manager initialization can start a new project dictionary if its separate branch-state admission permits it. |
+| Architectural concern | A query mutates files. | A command is permitted to write, but a failed precondition implicitly performs a whole-file quarantine outside the requested plan mutation. |
+
+The planning command is not the same CQS violation merely because it writes: commands intentionally have effects. The narrower concern is whether the ordinary mutation contract should also authorize quarantine/reset on an unreadable or version-invalid source. The old #438 policy expressly allowed it; #460 preserved it. A unified proposed policy would preserve the original and any existing backup when prerequisite validation fails, leaving quarantine/reinitialization to deliberate recovery. It would retain successful persistence and truthful post-write diagnostics.
+
+Potential scope amendment, pending owner decision: apply that policy at the two existing planning catch sites alongside route 3, adapt the already-existing six command-backup cases to prove source/backup preservation, and remove the shared backup command only if the resulting production consumer inventory is empty. The three known production backup callers are this pair and FileStateRepository.load. No new recovery tool, flag, transaction or broad planning redesign is proposed. Existing template activation/upgrade backups are not implicated.
+
+Sources: [planning commands](../../../mcp_server/managers/project_manager.py):237–314 and 573–587; [query/readback](../../../mcp_server/managers/project_manager.py):292–304 and 503–563; [query-versus-command behavior tests](../../../tests/mcp_server/unit/managers/test_project_manager.py):943–1003. Findings are source-derived; no corrupt-file live probe or test run was performed.
 
 ### Bounded production seams
 
@@ -168,7 +190,7 @@ Bounded delegated research supplied findings for test coupling and warning relev
 
 ## Questions
 
-One strategy choice remains before Research can close: how branch-state reads handle invalid files. The owner requested discussion of the existing automatic rename and recovery consequences before deciding. The source facts and three bounded alternatives are recorded above; no change to backup behavior is authorized.
+The owner now prefers route 3 in principle and requested comparison with the remaining planning-command backups. Before Research closes, confirm the invalid-file recovery policy and whether the two planning command catch sites should be included as a narrowly defined scope amendment. The historical rationale, observable differences and proposed common validation-failure policy are recorded above. No backup behavior change or implementation-scope expansion has yet been authorized.
 
 The owner approved the limited reduction of test coupling, including affected incidental preparation, directly affected weak source assertions and the adjacent asyncio marker. That decision is now part of Approved Strategy.
 
@@ -259,6 +281,8 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | 0.2 | 2026-10-15 | @imp researcher | Identify branch-state read/rename effects, bound production seams, classify necessary versus incidental test coupling and historical warning relevance; record two pending owner choices. |
 | 0.3 | 2026-10-15 | @imp researcher | Capture owner approval for bounded test decoupling and document existing backup/recovery behavior and alternatives for the remaining owner discussion. |
 | 0.4 | 2026-10-15 | @imp researcher | Recover the explicit #438 quarantine/reset rationale and implementation evidence; record #460's deliberate query/command preservation boundary and qualify route 3 as a recovery-policy choice. |
+| 0.5 | 2026-10-15 | @imp researcher | Compare retained planning-command quarantine with pure-read policy; distinguish failed-precondition effects from successful writes and propose a bounded, unapproved scope amendment. |
+
 
 
 
