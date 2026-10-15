@@ -1,6 +1,7 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "2.0.0",
   "branch": "refactor/503-branch-registration-and-pr-targets",
+  "parent_branch": "main",
   "issue_number": 503,
   "workflow_name": "refactor",
   "current_phase": "implementation",
@@ -19,7 +20,6 @@
   "execution_mode": "interactive",
   "skip_reason": null,
   "issue_title": "refactor: Require branch registration and state-derived PR targets",
-  "parent_branch": "main",
   "created_at": "2026-10-15T04:46:50.733861+00:00",
   "transitions": [
     {
