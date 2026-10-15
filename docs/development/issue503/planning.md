@@ -3,7 +3,7 @@
 # Issue 503 — planning the explicit registration contract cutover
 
 **Status:** PLANNING — INDEPENDENT REVIEW REQUESTED  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -122,7 +122,7 @@ Migrate affected code/fixtures/raw requests/Ready examples with at most one expl
 
 #### Exit Criteria
 
-All four deliverables satisfy Design v0.1; meaningful source-preservation RED is confirmed before implementation, remaining structural coverage is reused; relevant focused test families and type-specific gates pass without known in-scope failures; no retired production authority remains; the active new runtime reads state 2.0.0 with preserved identity/audit and the stored plan remains readable. No full suite, broad warning repair, release, compatibility bridge or phase progression without independent review.
+All four deliverables satisfy Design v0.1; meaningful source-preservation RED is confirmed before implementation, remaining structural coverage is reused; relevant focused test families and type-specific gates pass without known in-scope failures; no retired production authority remains; the active new runtime reads state2.0.0 with preserved identity/audit and the stored plan remains readable. No full suite, broad warning repair, release, compatibility bridge or phase progression without independent review.
 
 #### Dependencies
 
@@ -197,7 +197,7 @@ Record final native-configured full suite, branch gates, configured production M
 
 **Type:** file_exists
 
-**File:** "docs/development/issue #503/validation.md"
+**File:** "docs/development/issue503/validation.md"
 
 ### Documentation
 
@@ -318,4 +318,4 @@ All 17 existing test targets above were checked for existence. run_checks(scope=
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-15 | @imp planner | Define one coherent cycle, exact focused evidence groups, native gate scopes and reviewed live-schema activation/reversal order; mirror saved C\_1 and phase references. |
-
+| 0.2 | 2026-10-15 | @imp planner | Correct the Validation path and restore literal C_1 exit-criteria parity after independent Planning review; no stored plan or execution scope change. |
