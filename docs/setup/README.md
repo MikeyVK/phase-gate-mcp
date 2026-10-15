@@ -75,6 +75,10 @@ Renewal preserves owner-managed configuration. If it reports
 `checkpoint_required`, review the local suite and follow the owner-led procedure in
 the [Workspace Upgrade Guide](workspace-upgrade.md) before choosing an action.
 
+For the unreleased branch registration contract, coordination must supply the explicit
+parent at initialization. Existing workspaces must reconcile branch state and refresh
+client discovery deliberately; follow the [registration and recovery guidance](workspace-upgrade.md#unreleased-branch-registration-contract).
+
 ### Choose the workspace quality policy
 
 Provision each required adapter's pinned native dependencies, then choose the native
@@ -247,3 +251,4 @@ Verify that the MCP server is active by running the following command in the cha
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+

@@ -3,8 +3,8 @@
 # Project & Phase Management Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.4  
-**Last Updated:** 2026-10-10  
+**Version:** 3.5  
+**Last Updated:** 2026-10-15  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../mcp_server/tools/phase_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_project_tools.py](../../../tests/mcp_server/unit/tools/test_project_tools.py), [tests/mcp_server/unit/tools/test_transition_phase_tool.py](../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py), [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py)  
@@ -57,7 +57,7 @@ Initialize project with phase plan selection. The configured `workflow_name` sel
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `issue_title` | `str` | **Yes** | Issue title |
 | `workflow_name` | `str` | **Yes** | Workflow name. Valid values are populated at runtime from `contracts.yaml` via enum injection (C3 A4 override). Examples: `"feature"`, `"bug"`, `"docs"`, `"refactor"`, `"hotfix"`, `"chore"`, `"epic"`. |
-| `parent_branch` | `str` | No | Parent branch this feature/bug branches from (auto-detected from git reflog if not provided) |
+| `parent_branch` | `str` | **Yes** | Explicit nonblank parent reference, without whitespace and distinct from the checked-out branch. Supplied by coordination; no inference or default. |
 | `custom_phases` | `list[str]` | No | Optional required-phase override stored in the selected configured project plan. It does not register a workflow or change strict contract transition order. |
 | `skip_reason` | `str` | **Conditional** | Required audit justification when `custom_phases` is provided |
 
@@ -107,9 +107,9 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 #### Behavior Notes
 
 - **State Persistence:** Writes project metadata and branch state separately. Each file uses its existing persistence path; there is no transaction spanning both files.
-- **Parent Branch Auto-Detection:** If `parent_branch` not provided, attempts detection via `git reflog`
+- **Explicit Registration:** The attached checked-out branch supplies head identity. Its positive configured issue number must match `issue_number`; coordination supplies `parent_branch` explicitly. Detached HEAD, equal head/parent and invalid references are rejected before project writes.
 - **Branch Validation:** Current branch must match pattern `<type>/<issue_number>-*`
-- **Same-Branch Guard:** Existing same-branch state is rejected before project metadata can be overwritten. The direct branch initializer uses the same guard. Absent/other-branch state and the existing recovery route after PR closure remain supported; initialization does not unlock an open PR.
+- **Initialization Admission:** Genuine absence or a valid other-branch registration permits fresh initialization; existing same-branch state is rejected before project metadata can be overwritten. Invalid or unreadable state is an error, never treated as absence. Fresh registration replaces prior progress through the injected state mutation boundary; ordinary mutations require existing matching state and retain branch/issue/parent identity. The existing owner-led recovery route after PR closure remains supported; initialization does not unlock an open PR.
 - **Configured workflow required:** `custom_phases` does not create an arbitrary workflow; `workflow_name` must exist in `contracts.yaml`, and strict transitions use that configured contract
 
 #### Workflow Responsibility
@@ -511,7 +511,7 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
 
 ```json
 {
-  "schema_version": "1.0.0",
+  "schema_version": "2.0.0",
   "branch": "feature/123-oauth",
   "issue_number": 123,
   "workflow_name": "feature",
@@ -537,9 +537,9 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
 ```
 
 **Behavior:**
-- Validated at load-time by `StateVersionValidator` against expected SemVer `1.0.0`.
-- Updated by `initialize_project`, `transition_phase`, and `force_phase_transition`.
-- On schema version mismatch or file corruption, `StateVersionValidator` performs a Clean Break: backs up the file to `state.json.bak` and raises a `ConfigError` without fallback git-log reconstruction.
+- Version/syntax validation uses `StateVersionValidator`; the complete immutable `BranchState` validates the `2.0.0` envelope and distinct required branch/parent references. State stores one current registration, not a branch-keyed archive.
+- Initialization and ordinary workflow updates use one injected mutation boundary and lock. Updates validate the complete candidate and preserve registration identity; only initialization can create a registration.
+- Invalid-version, corrupt and unreadable source raises the existing diagnostic without changing the source or any prior backup. Reads do not rename, quarantine, reconstruct or reset state. Recovery is an explicit owner action; see the [workspace upgrade guide](../../setup/workspace-upgrade.md#unreleased-branch-registration-contract).
 - Synchronized by `git_checkout` (loads state when switching branches).
 - Treated as a branch-local artifact and neutralized before `submit_pr`.
 ---
@@ -607,7 +607,7 @@ Workflow definition and planning deliverables (branch-local artifact):
 - Wrapped in a top-level `"schema_version": "1.0.0"` envelope and validated by `StateVersionValidator` on load.
 - Initialized by `initialize_project`.
 - Initial planning is saved once; updates replace or explicitly remove complete blocks and derive references/totals before persistence.
-- On schema version mismatch or corruption, `StateVersionValidator` backs up to `deliverables.json.bak` and raises `ConfigError`.
+- Invalid-version, corrupt or unreadable source raises the existing diagnostic without moving the source or altering a prior backup, including failed planning-command validation. Successful writes retain their existing atomic persistence. If persistence succeeds but readback fails, `planning_readback_failed` and `persisted=true` distinguish that result from a rejected write.
 - Treated as a branch-local artifact and neutralized before `submit_pr`.
 ---
 ---
@@ -697,6 +697,7 @@ Use `get_work_context` and the current project, phase, and cycle tool schemas fo
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.5 | 2026-10-15 | @imp documenter | Document required explicit parent, state2.0.0 registration and source-preserving validation/recovery (#503) |
 | 3.4 | 2026-10-10 | @imp implementer | Reflect owner-approved prohibition of complete-cycle replacement after qualifying execution commits (#491) |
 | 3.3 | 2026-10-10 | @imp documenter | Reconcile complete-block planning, persisted references, Git protection, explicit cycle resumption and initialization guard (#491) |
 | 3.1 | 2026-08-22 | Agent | Align project, transition, and planning output projections with structured DTOs |
@@ -704,4 +705,5 @@ Use `get_work_context` and the current project, phase, and cycle tool schemas fo
 | 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
+
 

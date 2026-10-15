@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.2  
-**Last Updated:** 2026-10-10  
+**Version:** 3.3  
+**Last Updated:** 2026-10-15  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_git_tools.py](../../../tests/mcp_server/unit/tools/test_git_tools.py)  
@@ -613,9 +613,8 @@ Detect parent branch for a branch (via PhaseStateEngine state).
 
 #### Behavior Notes
 
-- **State Source:** Reads `parent_branch` from `.pgmcp/state.json` (set during `initialize_project`)
-- **Fallback:** If no state found, attempts detection via git reflog
-- **Returns Null:** If parent cannot be determined, returns `parent_branch: null`
+- **State Source:** Reads the required `parent_branch` from the exact matching current registration in `.pgmcp/state.json`, explicitly supplied during `initialize_project`.
+- **Missing/Mismatched/Invalid State:** Returns the existing diagnostic through the normal wrapper. It does not infer a parent from reflog, create a registration or change the source. The stored registration is not a branch-history database.
 
 ---
 
@@ -934,9 +933,6 @@ commit_types:
   - build
   - revert
 
-# Default base branch for PR creation
-default_base_branch: main
-
 # Maximum length for issue titles
 issue_title_max_length: 72
 ```
@@ -965,6 +961,8 @@ Both `git_fetch` and `git_pull` execute potentially blocking GitPython network o
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.3 | 2026-10-15 | @imp documenter | Document registered parent reads without reflog inference and remove retired default-base config example (#503) |
 | 3.2 | 2026-10-10 | @imp documenter | Document shared independent phase/cycle/sub-phase scope fields and first-line issue normalization (#491) |
 | 3.1 | 2026-08-22 | Agent | Document bounded Git projections and current-branch semantics |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 14 Git tools: workflow (10), sync (2), analysis (2) |
+
