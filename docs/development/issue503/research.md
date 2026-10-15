@@ -2,8 +2,8 @@
 
 # Issue 503 — explicit branch registration and PR target authority
 
-**Status:** RESEARCH DRAFT — OWNER CHOICES PENDING  
-**Version:** 0.5  
+**Status:** RESEARCH — STRATEGY RECORDED; CLARIFICATION IN PROGRESS  
+**Version:** 0.6  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -12,7 +12,7 @@ Refresh the bounded #319 deferred investigation against the initialized #503 bra
 
 ## Scope In
 
-Explicit parent registration; persisted branch/head identity; fail-closed PR admission before lifecycle effects; complete validated state initialization through existing mutation boundaries; direct create_pr base requirement; affected existing consumers, fixtures, embedded requests, active instructions and references.
+Explicit parent registration; persisted branch/head identity; fail-closed PR admission before lifecycle effects; complete validated state initialization through existing mutation boundaries; direct create_pr base requirement; preserve original files and existing backups on failed prerequisite validation in branch-state reads and the two planning-command backup sites; affected existing consumers, fixtures, embedded requests, active instructions and references.
 
 ## Scope Out
 
@@ -60,7 +60,7 @@ Project metadata and state are persisted separately today. Research does not cla
 
 The existing read has a concrete side effect: FileStateRepository.load catches malformed/version-invalid state and calls StateVersionValidator.backup_file, which **renames** the active file to .bak; an existing backup is overwritten. The repository test explicitly expects the original file to disappear. Source-derived sequence: the first read fails after moving the file; a later initialization sees absence and can proceed. This is a code-path finding, not a destructive live reproduction. The validator also wraps read OSError as StateCorruptedError, retaining its cause; those failures can enter this backup path.
 
-The bounded proposal is to make branch-state reads leave the original untouched and propagate the diagnostic. Only genuine absence admits initialization; schema/I/O failures must not be caught as absence by the initialization guard or ordinary mutator. The owner requested further discussion before deciding this change. No backup change is approved. Do not change the shared backup command globally: ProjectManager invokes it explicitly in planning **command** paths, and its separate semantics are outside #503. Sources: [repository](../../../mcp_server/managers/state_repository.py):79–91, [validator](../../../mcp_server/managers/state_version_validator.py):56–101, [repository test](../../../tests/mcp_server/unit/managers/test_state_repository.py):100–118, [planning commands](../../../mcp_server/managers/project_manager.py):305–314 and 574–587.
+The owner approved route 3 and the targeted planning-command scope amendment after the historical recovery rationale was examined: failed prerequisite validation leaves original files and existing backups untouched and propagates the diagnostic. Only genuine absence admits initialization; schema/I/O failures must not be caught as absence by the initialization guard or ordinary mutator. The agreed scope includes the two ProjectManager command backup sites. Unrelated upgrade/activation backups remain outside #503. Sources: [repository](../../../mcp_server/managers/state_repository.py):79–91, [validator](../../../mcp_server/managers/state_version_validator.py):56–101, [repository test](../../../tests/mcp_server/unit/managers/test_state_repository.py):100–118, [planning commands](../../../mcp_server/managers/project_manager.py):305–314 and 574–587.
 
 No production consumer automatically restoring state.json.bak or deliverables.json.bak was found. **Historical correction:** this absence is expected under the original design, which deliberately prepared a subsequent human/agent-requested reinitialization. It does not establish that the backup was accidental or an unfinished automated recovery route. Template-activation backups have a separate unrelated lifecycle.
 
@@ -84,13 +84,13 @@ Compare the viable strategies:
 | Copy a backup and keep the active file | Preserves the blocking file while retaining a separate diagnostic copy. | Adds write/failure policy to a read and needs backup-overwrite handling; no actual repair is provided. |
 | Leave the active file untouched and raise | Preserves original evidence and repeats the same blocking condition until deliberate repair; follows CQS. | Automatic .bak creation is removed at this read boundary. Recovery must be deliberate with existing edit/Git facilities; no new repair tool is proposed. |
 
-The third option remains a bounded pure-read proposal, pending the owner's informed decision on the historical recovery trade-off. It must not be described as simply removing an unintended side effect. No backup/initialization behavior has been changed, and this research has not demonstrated an actual #503 data-loss incident.
+The owner has selected the third option together with the targeted command amendment below. This changes the historical recovery contract; it is not simply removal of an unintended side effect. Implementation has not begun, and this research has not demonstrated an actual #503 data-loss incident.
 
 ### Comparable planning-command backup boundary
 
-Owner follow-up: route 3 is preferred in principle; examine the analogous deliverables command behavior before closing the decision. This is research authorization, not authorization to expand implementation scope.
+Owner decision: include the targeted planning-command correction alongside route 3. The scope is the failed prerequisite-validation behavior at the existing boundaries, not a general recovery or planning redesign.
 
-The #460 deliverables query correction is clean at its own file boundary: _read_projects/get_project_plan do not quarantine invalid deliverables. The phase-enrichment resolver can still reach the existing state repository read/backup path; that is the same state path already under discussion, not a second deliverables-query backup.
+The #460 deliverables query correction preserves deliverables.json on invalid-source reads. However, get_project_plan also enriches its result with the current phase: it reads the plan, calls WorkflowStatusResolver.resolve_current, and that resolver uses its injected state reader (the composed branch-validated repository reader). A malformed/version-invalid state.json can therefore be moved to state.json.bak during a planning query while deliverables.json is untouched. The first query propagates the state diagnosis; a later query can return the plan without phase fields because state is now absent. Route 3 fixes this same repository read for all consumers. No separate query repair or new dependency is required.
 
 The remaining **command** paths are _save_project_plan (initialize_project) and _planning_project (shared by save/update planning). Both catch PlanningVersionMismatchError/StateCorruptedError, rename the complete deliverables file to .bak and then raise. Save/update reach this before their candidate-plan validation, and update before Git cycle-evidence protection. This is not the post-persist/readback failure case, which separately reports persisted=True.
 
@@ -102,9 +102,9 @@ The remaining **command** paths are _save_project_plan (initialize_project) and 
 | Subsequent call | Initialization can observe absent state. | Save/update report planning_project_missing; manager initialization can start a new project dictionary if its separate branch-state admission permits it. |
 | Architectural concern | A query mutates files. | A command is permitted to write, but a failed precondition implicitly performs a whole-file quarantine outside the requested plan mutation. |
 
-The planning command is not the same CQS violation merely because it writes: commands intentionally have effects. The narrower concern is whether the ordinary mutation contract should also authorize quarantine/reset on an unreadable or version-invalid source. The old #438 policy expressly allowed it; #460 preserved it. A unified proposed policy would preserve the original and any existing backup when prerequisite validation fails, leaving quarantine/reinitialization to deliberate recovery. It would retain successful persistence and truthful post-write diagnostics.
+The planning command is not the same CQS violation merely because it writes: commands intentionally have effects. The narrower concern is whether the ordinary mutation contract should also authorize quarantine/reset on an unreadable or version-invalid source. The old #438 policy expressly allowed it; #460 preserved it. The approved common policy preserves the original and any existing backup when prerequisite validation fails, leaving quarantine/reinitialization to deliberate recovery. It would retain successful persistence and truthful post-write diagnostics.
 
-Potential scope amendment, pending owner decision: apply that policy at the two existing planning catch sites alongside route 3, adapt the already-existing six command-backup cases to prove source/backup preservation, and remove the shared backup command only if the resulting production consumer inventory is empty. The three known production backup callers are this pair and FileStateRepository.load. No new recovery tool, flag, transaction or broad planning redesign is proposed. Existing template activation/upgrade backups are not implicated.
+Approved bounded scope amendment: apply that policy at the two existing planning catch sites alongside route 3, adapt the already-existing six command-backup cases to prove source/backup preservation, and remove the shared backup command only if the resulting production consumer inventory is empty. The three known production backup callers are this pair and FileStateRepository.load. No new recovery tool, flag, transaction or broad planning redesign is proposed. Existing template activation/upgrade backups are not implicated.
 
 Sources: [planning commands](../../../mcp_server/managers/project_manager.py):237–314 and 573–587; [query/readback](../../../mcp_server/managers/project_manager.py):292–304 and 503–563; [query-versus-command behavior tests](../../../tests/mcp_server/unit/managers/test_project_manager.py):943–1003. Findings are source-derived; no corrupt-file live probe or test run was performed.
 
@@ -190,7 +190,7 @@ Bounded delegated research supplied findings for test coupling and warning relev
 
 ## Questions
 
-The owner now prefers route 3 in principle and requested comparison with the remaining planning-command backups. Before Research closes, confirm the invalid-file recovery policy and whether the two planning command catch sites should be included as a narrowly defined scope amendment. The historical rationale, observable differences and proposed common validation-failure policy are recorded above. No backup behavior change or implementation-scope expansion has yet been authorized.
+The owner approved route 3 and the targeted planning-command scope expansion, and requested an explanation of the planning query's phase-enrichment path before further progression. That path is documented above and shares the same repository correction. No additional policy choice has been identified from this clarification. Research has not transitioned to Design; no implementation behavior is claimed.
 
 The owner approved the limited reduction of test coupling, including affected incidental preparation, directly affected weak source assertions and the adjacent asyncio marker. That decision is now part of Approved Strategy.
 
@@ -211,11 +211,11 @@ Other operational details belong to Design within the already approved boundarie
 
 ## Approved Strategy
 
-Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. Additional owner decision, 2026-10-15: consolidate only affected incidental test preparation through existing fixtures/factories and at most one helper with explicit parent/context; retain direct registration-contract tests, replace/remove weak source assertions within directly changed tests, and restrict the context module's asyncio marker if that file changes. No suite-wide cleanup or production fallback is authorized. The branch-state backup strategy remains pending discussion. Research remains open and no transition to Design is authorized by this document.
+Previously explicit owner choices carried into #503: public initialization requires a supplied nonempty parent; Git supplies the actual branch stored in the existing branch field; CO initializes before Imp starts. PR targets derive from matching registration, with no caller head/base or default-base cascade; lower create_pr requires base. Clean break at affected public/internal contracts, without a compatibility bridge. Preserve existing single-statefile handover, general versus validated readers, configuration-driven Ready/admission, normal phase/cycle behavior and unrelated check scopes. Use existing state/mutator/composition seams; no new state framework or general transaction layer. Adapt valuable existing behavior tests and only the affected active instructions. Additional owner decision, 2026-10-15: consolidate only affected incidental test preparation through existing fixtures/factories and at most one helper with explicit parent/context; retain direct registration-contract tests, replace/remove weak source assertions within directly changed tests, and restrict the context module's asyncio marker if that file changes. No suite-wide cleanup or production fallback is authorized. Additional owner decision, 2026-10-15: adopt route 3 for branch-state reads and extend the same failed-prerequisite-validation preservation policy to the two existing planning-command backup sites. Preserve originals, existing backups, structured diagnosis, successful writes and truthful persisted readback failures; no automatic migration/reconstruction or new recovery architecture. Remove the backup helper only if no production consumers remain. The owner requested phase-enrichment clarification before further progression; this document is not QA approval or a phase transition.
 
 ## Expected Results
 
-A complete valid registration has one actual branch and one explicit parent. Missing, corrupt, unreadable or mismatched registration prevents PR lifecycle effects. Initialization refuses invalid identity before project/state writes and does not carry unrelated old-branch fields forward. Normal mutations retain registration validity. Branch check behavior and other scopes retain their established contracts. Error diagnosis and production admission remain intact; no release is authorized.
+A complete valid registration has one actual branch and one explicit parent. Missing, corrupt, unreadable or mismatched registration prevents PR lifecycle effects. Initialization refuses invalid identity before project/state writes and does not carry unrelated old-branch fields forward. Normal mutations retain registration validity. Branch check behavior and other scopes retain their established contracts. Failed prerequisite validation retains the source and existing backup bytes for both affected file boundaries; subsequent reads do not silently convert invalid source into absence. Successful writes and persisted=True readback diagnostics remain intact. Error diagnosis and production admission remain intact; no release is authorized.
 
 ## Consumers
 
@@ -282,6 +282,8 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | 0.3 | 2026-10-15 | @imp researcher | Capture owner approval for bounded test decoupling and document existing backup/recovery behavior and alternatives for the remaining owner discussion. |
 | 0.4 | 2026-10-15 | @imp researcher | Recover the explicit #438 quarantine/reset rationale and implementation evidence; record #460's deliberate query/command preservation boundary and qualify route 3 as a recovery-policy choice. |
 | 0.5 | 2026-10-15 | @imp researcher | Compare retained planning-command quarantine with pure-read policy; distinguish failed-precondition effects from successful writes and propose a bounded, unapproved scope amendment. |
+| 0.6 | 2026-10-15 | @imp researcher | Capture owner approval for route 3 and the targeted planning-command correction; explain the existing plan-query phase-enrichment path without adding a third repair. |
+
 
 
 
