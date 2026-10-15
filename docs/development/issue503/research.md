@@ -3,7 +3,7 @@
 # Issue 503 — explicit branch registration and PR target authority
 
 **Status:** RESEARCH DRAFT — OWNER CHOICES PENDING  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -62,15 +62,29 @@ The existing read has a concrete side effect: FileStateRepository.load catches m
 
 The bounded proposal is to make branch-state reads leave the original untouched and propagate the diagnostic. Only genuine absence admits initialization; schema/I/O failures must not be caught as absence by the initialization guard or ordinary mutator. The owner requested further discussion before deciding this change. No backup change is approved. Do not change the shared backup command globally: ProjectManager invokes it explicitly in planning **command** paths, and its separate semantics are outside #503. Sources: [repository](../../../mcp_server/managers/state_repository.py):79–91, [validator](../../../mcp_server/managers/state_version_validator.py):56–101, [repository test](../../../tests/mcp_server/unit/managers/test_state_repository.py):100–118, [planning commands](../../../mcp_server/managers/project_manager.py):305–314 and 574–587.
 
-No production consumer of state.json.bak or deliverables.json.bak was found in the bounded source search. The current command preserves invalid bytes but does not restore, repair or migrate them; the subsequent absence is not successful recovery. This differs from template-activation backups, which have their own unrelated lifecycle. Compare the viable strategies:
+No production consumer automatically restoring state.json.bak or deliverables.json.bak was found. **Historical correction:** this absence is expected under the original design, which deliberately prepared a subsequent human/agent-requested reinitialization. It does not establish that the backup was accidental or an unfinished automated recovery route. Template-activation backups have a separate unrelated lifecycle.
+
+### Original backup rationale and later preservation boundary
+
+[Issue #438](https://github.com/MikeyVK/phase-gate-mcp/issues/438), July 2026, introduced independent dynamic-state schema versions rather than coupling data validity to every package version. Its [approved Research strategy](../archive/issue438/research.md), items 2–4, deliberately removed silent Git-history reconstruction and chose defensive backup/reset instead of maintaining data migrations: quarantine the invalid file, return a structured error, then let the agent/user explicitly reinitialize. Only transient quality-state cache was allowed an automatic empty reset.
+
+The [Design](../archive/issue438/design.md), requirements DFV.2/DFV.3 and sections 3.1, 4.2 and 6.1, explicitly required the rename during repository load. Keeping the invalid bytes and clearing the canonical path served that restart-from-clean-state policy. A single filename.bak, overwriting its predecessor, was deliberately preferred over timestamped history to avoid disk clutter; this final Design superseded the Research's timestamp example. The implementation patch [6e3f1479](https://github.com/MikeyVK/phase-gate-mcp/commit/6e3f14798c6f347d747e8999bdfdd8a88db96c30) adds the present repository catch/backup/reraise and its test. The preceding Design commits 6525cbcc and 39d3e477 respectively record CQS refinement and the explicit clean-break strategy.
+
+The original CQS argument split the validator into a query and a backup command, while explicitly allowing repositories to orchestrate both inside load. The current architecture's pure-reader rule applies to the whole read operation. This is a tension in the historical orchestration contract, not evidence that the rename was an implementation accident.
+
+A later [#460 Planning prerequisite](../archive/issue460/planning.md), P2 preservation table, already required deliverables queries to preserve the invalid source and any existing backup, while retaining backups in all three planning commands. It **explicitly excluded** the existing state.json read/backup path. The [path-ownership supplement](../archive/issue460/planning-path-ownership.md), readback prerequisite, repeats that limit. Thus the remaining state behavior was knowingly left outside that earlier correction. Current manager tests distinguish pure reads from command backups.
+
+For #503, both retaining and removing the read-time backup can reject invalid registration before PR neutralization, commit, push or PR creation. Removing it is therefore an explicit **recovery-policy change**, not a prerequisite automatically implied by safe PR target selection. Route 3 preserves invalid bytes in the original location and postpones any quarantine/reset to a deliberate recovery action; it gives up the old automatic preparation for reinitialization. Preserve the diagnosis and the no-automatic-migration/no-Git-reconstruction strategy whichever route the owner chooses.
+
+Compare the viable strategies:
 
 | Read-error strategy | Benefit | Cost / risk |
 | --- | --- | --- |
-| Retain automatic rename | Keeps the existing observable behavior and leaves one invalid-file backup. | A read removes the active registration; later initialization can treat it as absent. The query still mutates files and replaces prior backup evidence. |
+| Retain automatic rename | Preserves #438's explicit quarantine/error/subsequent-reinitialization policy and one invalid-file backup. | A read removes the active registration; later initialization can treat it as absent. The query still mutates files and replaces prior backup evidence. |
 | Copy a backup and keep the active file | Preserves the blocking file while retaining a separate diagnostic copy. | Adds write/failure policy to a read and needs backup-overwrite handling; no actual repair is provided. |
 | Leave the active file untouched and raise | Preserves original evidence and repeats the same blocking condition until deliberate repair; follows CQS. | Automatic .bak creation is removed at this read boundary. Recovery must be deliberate with existing edit/Git facilities; no new repair tool is proposed. |
 
-The third option remains the producer recommendation, pending the owner's decision. This research has not demonstrated an actual #503 data-loss incident.
+The third option remains a bounded pure-read proposal, pending the owner's informed decision on the historical recovery trade-off. It must not be described as simply removing an unintended side effect. No backup/initialization behavior has been changed, and this research has not demonstrated an actual #503 data-loss incident.
 
 ### Bounded production seams
 
@@ -244,5 +258,7 @@ Treat those as excluded unless a concrete in-scope invariant proves the existing
 | 0.1 | 2026-10-15 | @imp researcher | Refresh deferred #319 source observations, consumer counts and approved direction for the bounded #503 Research; no production/test changes. |
 | 0.2 | 2026-10-15 | @imp researcher | Identify branch-state read/rename effects, bound production seams, classify necessary versus incidental test coupling and historical warning relevance; record two pending owner choices. |
 | 0.3 | 2026-10-15 | @imp researcher | Capture owner approval for bounded test decoupling and document existing backup/recovery behavior and alternatives for the remaining owner discussion. |
+| 0.4 | 2026-10-15 | @imp researcher | Recover the explicit #438 quarantine/reset rationale and implementation evidence; record #460's deliberate query/command preservation boundary and qualify route 3 as a recovery-policy choice. |
+
 
 
