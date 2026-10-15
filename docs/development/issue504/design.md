@@ -2,8 +2,8 @@
 
 # Issue 504 — Identity-based configuration composition
 
-**Status:** DESIGN PROPOSED — INDEPENDENT REVIEW PENDING  
-**Version:** 0.2  
+**Status:** DESIGN REOPENED — RUNTIME REPRESENTATION RESPONSIBILITY UNDER DISCUSSION  
+**Version:** 0.4  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -22,6 +22,20 @@ Builder or release-manifest changes, distribution/upgrade/adoption mechanisms, r
 
 - Owner-approved Research strategy and the final identity-addressability clarification.
 - Existing runtime model validation, direct consumer inventory and focused test seams recorded in Research.
+
+## Owner Review — Superseding Clarification
+
+The owner requested an explicit audit of native Pydantic mutation/merge facilities before further Design work. [The supplemental findings](research.md#pydantic-facilities-and-limits) document model-copy/presence/serialization APIs and pydantic-settings deep merge, with their concrete limits. The target Design remains open; no further architecture or dependency choice follows automatically.
+
+The owner approves $delete as the explicit deletion command. Plain remove: true, empty-value deletion and YAML custom tags are not selected. Identity-based field addressing and literal null semantics remain binding.
+
+The owner questions why the composition feature needs runtime representation distinctions. Distinguish existing consumer implementation from new requirements: ChecksConfig currently uses keyed tuples, WorkflowConfig uses dictionaries and EnforcementConfig uses a list. These are existing model choices, not new configuration semantics.
+
+The earlier draft itself introduced a source/runtime shape difference by selecting canonical source lists with id while insisting on preserving all old runtime containers. That preservation choice is not a reason to add a generic runtime-shape description layer. The composition responsibility is to resolve source objects/fields, not to choose Python containers. Existing model admission already normalizes YAML mappings/lists into typed values.
+
+Runtime consumers need identity lookup and meaningful iteration order. Their particular container spelling is an implementation detail to justify at the model boundary. Keep useful existing indexes where inexpensive, but do not require separate item_model/output metadata or a representation engine merely to preserve them. No runtime-container redesign is approved by this clarification; the responsibility split remains under discussion before further Design work.
+
+Unchanged sections below remain design input. Extra metadata is not selected, and any earlier blanket obligation to preserve every container is superseded by this clarification.
 
 ## Problem Statement
 
@@ -81,7 +95,7 @@ Use handwritten converters, path/index operations or set-like value-list policie
 
 - Adds duplicated knowledge and authoring machinery beyond the demonstrated need. Rejected.
 
-### 3. Identity-based composition with model-adjacent metadata
+### 3. Identity-based composition; metadata proposal reopened
 
 One pure composition function, existing domain models and finite collection metadata. Source id/order determine addressing/ordering; resolved objects retain id.
 
@@ -91,11 +105,11 @@ One pure composition function, existing domain models and finite collection meta
 
 **Cons:**
 
-- Requires deliberate source splitting and the inventoried model/test updates. Selected.
+- Requires deliberate source splitting and the inventoried model/test updates. Identity-based composition remains selected; additional metadata is reopened.
 
 ## Decision
 
-Select identity-based composition. ConfigLoader owns source selection, file IO and model construction. The composition function owns structural composition and representation. Existing configuration models and ConfigValidator own domain and cross-configuration validity. Metadata is immutable and colocated with the relevant model fields.
+Select identity-based composition. ConfigLoader owns source selection, file IO and model construction. The composition function owns structural composition and representation. Existing configuration models and ConfigValidator own domain and cross-configuration validity. Additional metadata is no longer selected: determine which facts the model types already supply before adding declarations.
 
 ## Rationale
 
@@ -107,25 +121,15 @@ Identity supplies the required mutation boundary. Ordinary field values need no 
 
 The owner's final clarification supersedes type-specific scalar-list handling. No anonymous list element is independently mutated.
 
-### One reserved removal instruction
+### Explicit deletion command; extra metadata not selected
 
-Design selects remove: true as a reserved override instruction. Its placement identifies the target; no selector-path language or null deletion is added.
+The owner selects $delete. A normal field called remove or delete is not an instruction. Empty values keep their normal data meaning.
 
-**Alternatives:**
-
-- A prefixed marker adds spelling without a current collision; separate deletion paths duplicate addressing; positional JSON Patch is unnecessary.
-
-### Representation metadata lives beside model fields
-
-Use immutable Annotated metadata referencing the existing item model and its output shape. Keep domain constraints in that model; no second complete source-model hierarchy.
-
-**Alternatives:**
-
-- A separate model-linked registry would create another field-path maintenance location.
+Additional item_model/output metadata is not selected. Existing model types and admission behavior must be considered first; structural composition and runtime model representation are separate responsibilities.
 
 ### Preserve useful runtime indexes
 
-Source identity remains id in models. Dictionaries/keyed tuples can index the same identity without a second authored name. Index/object mismatches must be rejected by shared identity validation invoked from the affected root models, using their declared collection metadata rather than filename or field-name dispatch. This applies to direct model admission as well as loader output.
+Source identity remains id in models. Dictionaries/keyed tuples can index the same identity without a second authored name. Index/object mismatches must be rejected by shared identity validation invoked from the affected root models, using their model-declared structure and identity contract rather than filename or field-name dispatch. This applies to direct model admission as well as loader output.
 
 ### No extra policy for nonidentified lists
 
@@ -133,7 +137,10 @@ A supplied ordinary field value replaces that field as a whole. The composer nev
 
 ## Questions
 
-- No unresolved owner strategy choice. Concrete decisions here are within the approved scope; independent QA review has not yet been requested by the producer.
+- Explain and settle responsibility for model normalization without introducing a generic runtime-shape translation layer. Existing container forms are not new product requirements.
+- Keep the two broad payload areas explicit; they do not by themselves justify per-collection representation metadata.
+
+Deletion spelling is resolved: $delete. No implementation or phase progression is authorized while the remaining design responsibility discussion is open.
 
 ## Production Design
 
@@ -141,13 +148,13 @@ A supplied ordinary field value replaces that field as a whole. The composer nev
 | --- | --- | --- |
 | ConfigLoader | Select the explicit sources, parse YAML, invoke composition, construct/validate the model and attach file context to errors | Write sources, discover another root, merge package declarations |
 | compose_configuration in config/composition.py | Compose structured fields and identified collections; validate identity/order/operation structure; return model-input data | File/env/Git IO, model instantiation, domain validation or filename dispatch |
-| ObjectCollection metadata in config/composition_contract.py | Immutable declaration of item model and runtime input shape | Load configuration or implement callbacks |
+| Existing model types / explicit id fields | Authoritative structural and identity information; additional metadata is under reassessment | Infer identity from arbitrary opaque data or duplicate already available facts |
 | Existing config schemas | Canonical identity and existing domain constraints/helpers | Source IO or inheritance |
 | ConfigValidator | Existing cross-config references/capabilities after model loading | Reimplement composition |
 | Bootstrap | Supply one resolved GitHub configuration to manager and token-dependent registrations | Infer owner/repo or probe credentials |
 | Runtime consumers | Read resolved models and identity-based indexes | Interpret remove/order directives or combine sources |
 
-No new service container, repository abstraction, mutable registry, config writer or general transformation engine is introduced. New files describing supported structures add metadata/loader entry points, not algorithms.
+No new service container, repository abstraction, mutable registry, config writer or general transformation engine is introduced. New supported structures must fit the generic model/identity contract rather than adding per-file algorithms. A separate collection-metadata layer is not currently selected.
 
 The supported structural vocabulary is named records, declared identified collections and ordinary field values. Named record fields merge recursively; scalar/null/nonidentified sequence values replace. Declared collections merge by id. Existing mapping-valued data keeps its named-key addressing; a key does not make an untyped value an inferred object.
 
@@ -197,8 +204,8 @@ An external config_root is self-contained. There is no fallback to installed ass
 | Identified collection | Entries with id | Apply each entry to that id; unmentioned objects inherit |
 | Existing id | Fields and optional order | Update only supplied fields; inherited fields/order remain |
 | New id | Complete object plus order | Add after existing model validation succeeds |
-| Existing object | id and remove: true only | Remove that object |
-| Existing field | {remove: true} only | Remove the field; model omission/default/required rules then apply |
+| Existing object | id plus $delete: true only | Remove that object |
+| Existing field | {$delete: true} only | Remove the field; model omission/default/required rules then apply |
 
 An id is an exact, nonempty strict string, without case conversion or trimming. Existing narrower ID constraints still apply at domain admission. Identity is unique among siblings; a nested collection is addressed through its parent object/field. Two unrelated collections may use the same id.
 
@@ -208,49 +215,27 @@ Known schema/model structure determines which collections declare identity. Do n
 
 An empty identified-collection override supplies zero operations and therefore inherits all entries. Clearing requires explicit removal (individual IDs, or the collection field where omission is valid). An empty ordinary list replaces the field with an empty list. This follows identity addressability, not the contents or tool meaning.
 
-### 3. Canonical examples and removal
+### 3. Canonical values and approved deletion command
 
-Complete basis:
+Complete source and partial overrides retain their identity-based form. Literal clearing remains separate: default_args: [] stores an empty list; configuration_choice: null stores null.
 
-```yaml
-checks:
-  - id: python_lint
-    order: 100
-    adapter_id: ruff
-    capability: lint
-    timeout_seconds: 60
-    configuration_choice: null
-    default_args: []
-```
-
-Partial workspace override:
-
-```yaml
-checks:
-  - id: python_lint
-    configuration_choice: native_discovery
-    default_args: ["--output-format", "json"]
-```
-
-Object removal and field removal:
+The owner approves an explicitly reserved command:
 
 ```yaml
 enforcement:
   - id: open_pr_lock
-    remove: true
+    $delete: true
 ```
 
 ```yaml
 run_checks:
   default_profile:
-    remove: true
+    $delete: true
 ```
 
-remove is reserved for structural instructions in overrides. Only exact boolean true is admitted; false, extra tombstone fields and malformed shapes fail. Identified-object tombstones allow only id/remove; field tombstones only remove. Defaults/standalone documents cannot carry remove instructions. Do not scan ordinary string/argument payloads for markers.
+Object deletion contains only id/$delete; field deletion contains only $delete. Only exact boolean true is admitted. Commands are allowed only in overrides and interpreted only at structural configuration targets, not inside opaque literal payloads. Ordinary fields called remove or delete remain data. No null-as-delete, custom YAML tag or selector-path language is introduced.
 
-Removing an absent object/field fails. Duplicate IDs in either individual source and conflicting duplicate operations fail. A referenced object's removal still fails final reference validation. Required field removal fails existing model validation. Removing a field can activate an existing model default; it does not promise removal of a runtime attribute. No remove/re-add of the same id in one override.
-
-This reserved name is checked when compiling a structural contract; a future structural model cannot silently introduce an ordinary remove field into the same operation namespace.
+Keep strict unknown-target, duplicate/conflict and required/reference rejection. Removing a field makes it absent before model admission; existing omission/default rules determine the runtime result. Do not dump source contents or secrets in diagnostics.
 
 ### 4. Ordering and representation
 
@@ -260,20 +245,15 @@ Initial ranks use explicit spaced values preserving today's order in each collec
 
 order is source metadata, removed before domain model construction. id remains in the addressed runtime object. Ordinary value sequences are passed through in exactly the supplied order, including duplicates.
 
-Runtime input projection has only sequence or mapping forms. For existing keyed-tuple models, emit an ID-keyed mapping accepted by their current before-validator. The mapping key is derived from the object's canonical id, not authored a second time. Retain id on the object and validate key/id consistency for direct model construction too. No id-to-name/operation_id projection.
+The earlier generic sequence/mapping runtime projection is reopened. Composition resolves canonical source objects and order. Model admission owns any justified Python-container normalization, reusing existing admission seams. A derived index must agree with id and cannot create another authored technical identity. No id-to-name/operation_id projection is allowed.
 
 CheckSpec already has id and is shared with planning input. Its source order is processed at the configuration boundary; do not add required order or removal fields to CheckSpec or planning tools.
 
-### 5. Concrete component contracts
+### 5. Concrete component boundary and structural reassessment
 
-Declarations below specify interfaces, not method implementations.
+The pure function boundary remains:
 
 ```python
-@dataclass(frozen=True)
-class ObjectCollection:
-    item_model: type[BaseModel] | None
-    output: Literal["sequence", "mapping"]
-
 def compose_configuration(
     schema: type[BaseModel],
     defaults: ConfigDocument,
@@ -284,39 +264,13 @@ class ConfigLoader:
     def load_github_config(self) -> GitHubSettings: ...
 ```
 
-ConfigDocument denotes parsed structured configuration with string record keys, existing typed mapping keys where admitted, and ordinary YAML scalar/list/mapping values. It is not an alternative schema system.
+ConfigDocument denotes parsed configuration data, not another domain schema. Existing annotations supply candidate model types, sequence/mapping/keyed-tuple shapes and aliases. Explicit id fields supply technical identity. Examine these facts before introducing any separate item_model/output declarations. The prior ObjectCollection interface is withdrawn as a selected contract.
 
-ObjectCollection metadata is colocated in Annotated declarations on the existing collection fields, or the corresponding typed map value for cycle_exit_requires. item_model points to the existing value model; None is limited to already supported dictionary payload entries whose domain is intentionally open. output declares sequence versus ID-keyed mapping model input. Nested model fields/aliases come from model_fields; no duplicated domain constraints, expressions or callbacks.
+Known difficult cases are optional_label_inputs and phase expectation dictionaries currently typed with Any. A small explicitly identified model shape is a candidate; metadata or arbitrary-dictionary identity inference must not be introduced silently. No extra IO, mutable registry, converter callbacks or per-file dispatch follows from this reassessment.
 
-The metadata compiler rejects bindings inconsistent with the field's sequence/mapping/keyed-tuple annotation or lacking the declared id contract. Typed object models require id; intentionally open dictionary entries receive the same structural id/order admission without introducing a copied domain model. Ordinary dictionaries/records are traversed by their named fields; unidentified list elements are never positional targets. Unknown fields in closed model records fail; intentionally open mapping payloads retain their contract.
+Canonical runtime field deltas remain WorkflowTemplate.name to id, WorkflowPhaseEntry.name to id, IssueTypeEntry.name to id and OperationPolicy.operation_id to id. Other addressable models gain explicit identity; real payload fields and shared CheckSpec remain. The corresponding get_phase_ids helper replaces get_phase_names. Runtime indexes must agree with their canonical object IDs.
 
-Call this stateless pure function from ConfigLoader; no composer instance, injection interface or service lifecycle is needed. It has no runtime IO dependency. Keep the public ConfigLoader constructor unchanged. The loader supplies parsed selected sources, constructs the complete basis model and final model, and retains existing version diagnostics. Use the existing ConfigError boundary for source/operation/model errors; no new public result DTO, operation API or config-writing tool is introduced.
-
-Identity is an explicit model field, never an alias or computed name. Use a shared strict nonempty ConfigId value type, preserving any existing narrower domain constraint. Directly changed value objects remain frozen as required by the architecture contract. Metadata order is not a runtime model field.
-
-| Model contract delta | Exact target |
-| --- | --- |
-| WorkflowTemplate.name | id: ConfigId; unchanged execution-mode/description fields |
-| WorkflowPhaseEntry.name | id: ConfigId; unchanged inherited contract/instructions |
-| IssueTypeEntry.name | id: ConfigId; unchanged workflow/label references |
-| OperationPolicy.operation_id | id: ConfigId; unchanged policy payload |
-| Other identified value models | Required id field; existing payload fields retained |
-| Shared CheckSpec | Existing id retained; no required source metadata |
-
-```python
-def validate_identity_indexes(config: BaseModel) -> None: ...
-
-class WorkflowEntry:
-    def get_phase_ids(self) -> list[str]: ...
-    def get_phase(self, phase_id: str) -> WorkflowPhaseEntry: ...
-
-class WorkflowConfig:
-    def get_workflow(self, workflow_id: str) -> WorkflowTemplate: ...
-```
-
-The validation helper belongs beside the immutable composition contracts, operates only on resolved values and declared metadata, and performs no composition or IO. Existing root model validators invoke it to reject duplicate object IDs and derived-key mismatches during direct model admission. Existing call signatures not bound to technical name terminology retain their current public spelling and reference semantics.
-
-Explicit standalone workspace reads use compose_configuration(schema, document, None). Package readers keep their existing direct admission path; the fact that a package contains id is not permission to compose it.
+The loader keeps its constructor and entry points, owns model construction and errors with source context, and validates complete defaults plus the final result. Standalone complete sources use the same identity rules without an override; package readers stay separate. Direct model validation remains responsible for identity consistency without learning source commands.
 
 ### 6. Model and consumer cutover
 
@@ -388,7 +342,7 @@ Preserve current startup-valid neutral integration, lazy API failure and token-p
 flowchart TD
     A[Explicit config_root or complete-file path] --> L[ConfigLoader selects and parses sources]
     L --> C[composition function validates source structure and resolves identity operations]
-    M[Model-adjacent immutable collection metadata] --> C
+    M[Existing model types and explicit identity contract] --> C
     C --> P[Ordinary model-input data with canonical id]
     P --> V[Existing model and cross-config validation]
     V --> R[Resolved models and derived identity indexes]
@@ -520,3 +474,7 @@ Planning must cover the generic configuration boundary, canonical source split, 
 | 0.1 | 2026-10-15 | @imp designer | Define identity-based generic composition, source/runtime contracts, removal, ownership, GitHub composition and focused preservation evidence. |
 | 0.2 | 2026-10-15 | @imp designer | Simplify the composition component to one pure function; clarify direct-model identity checks and complete producer review. |
 
+
+| 0.3 | 2026-10-15 | @imp designer | Reopen owner-rejected unprefixed removal and question extra metadata; compare literal clearing, explicit commands and model-derived structure before revising the contract. |
+
+| 0.4 | 2026-10-15 | @imp designer | Record owner-approved $delete; separate existing runtime container choices from new requirements and reopen normalization responsibility without extra representation metadata. |

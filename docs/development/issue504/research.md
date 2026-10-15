@@ -3,7 +3,7 @@
 # Issue 504 — Configuration basis and workspace override research
 
 **Status:** RESEARCH COMPLETE — INDEPENDENT REVIEW PENDING  
-**Version:** 0.16  
+**Version:** 0.17  
 **Last Updated:** 2026-10-15
 
 ## Purpose
@@ -219,6 +219,45 @@ Reproduction route for this static evidence: search active mcp_server Python for
 The owner approved id/order. Source order uses integer ranks local to sibling objects; initial ranks preserve current runtime order. YAML physical position is not execution order. New objects require order; partial overrides inherit it unless they explicitly move the object; duplicate effective ranks fail. Gaps permit insertion but are not unlimited; explicit rank updates are needed if necessary. No automatic renumbering or alphabetical tie-break.
 
 The rejected alternatives remain separate global ID-order lists (duplicated references and inherited additions problem) and before/after graphs (references/cycles/ambiguous placements). Native argv and other ordered values are data sequences, not id-bearing policy objects; their handling is called out separately rather than silently resorted.
+
+### Pydantic facilities and limits
+
+Supplemental investigation during Design, requested by the owner after questioning extra merge/translation machinery. This is library/source evidence, not a runtime prototype or a new implementation decision.
+
+Dependency contract: pyproject.toml declares pydantic>=2.5.0, with no exact pin and no direct pydantic-settings dependency. Metadata inspection found Pydantic 2.12.5 / pydantic-settings 2.13.1 in .venv and Pydantic 2.11.7 / pydantic-settings 2.12.0 under the default python command. These are inspected environments, not proof of which interpreter the live server process uses. No package was installed or changed.
+
+| Existing facility | Observed semantics | Fit for the approved configuration contract |
+| --- | --- | --- |
+| BaseModel.model_validate and field/model validators | Construct/validate complete data; existing schemas already perform domain/reference checks and input normalization | Reuse as complete configuration authority. No parallel domain-validation schema or generic runtime-shape metadata is justified merely by their existence. |
+| model_fields / model_fields_set | Authoritative declared fields/types and the fields explicitly set on an admitted model | Reuse structural information and omission-versus-explicit-null distinctions where models are already admitted. A complete model does not automatically become a partial override model. |
+| model_dump(exclude_unset=True) | Serialize only explicitly supplied fields | Useful for an already valid partial-input representation, not native merge or removal. Do not substitute exclude_none, because explicit null is meaningful. |
+| model_dump(exclude=...) | Supports nested field/position exclusions in the exported data | A serialization facility; it does not interpret $delete, select list objects by id, validate missing targets or remove fields from the source/model itself. |
+| model_copy(update=..., deep=True) | Deep-copy existing model, then update the outer copied dictionary without validating new values | Not recursive validated configuration merging; deep means copying, not recursive patch semantics. Revalidating a plain complete result remains necessary. |
+| del model.field / assignment | Ordinary mutation facilities, with frozen-model checks | Not a validated removal protocol. Preserve frozen config objects and create a newly validated result rather than deleting fields from them. |
+| pydantic-settings sources | Separate public package supports multiple YAML files and deep_merge=True in inspected 2.13.1 | It does provide ordinary nested dictionary combination; this should have been explicitly compared earlier. It does not supply the approved identity/deletion/order policy. |
+| Settings nested_model_default_partial_update | Allows field updates on nested default model objects when explicitly enabled | Useful nested-default behavior, not a universal partial-override schema or identified-list/$delete operation. |
+| Settings deep_update behavior | Recurse only when both old/new values are dictionaries; otherwise replace the value, including lists | Does not merge identified list objects, handle $delete, check ranks/unknown targets or maintain the custom operation invariants. This is supported by the versioned source, not just absence from an example. |
+| Settings YAML file discovery | Inspected _read_files skips a nonexistent file before merge | Cannot be adopted unchanged for required defaults/invalid-presence admission. Our explicit selected-root and required-source contracts still need ownership. |
+| Experimental partial validation | A facility for incomplete input and trailing errors; not universal optional-field patch validation | Not the override contract and unsuitable as a way to ignore invalid patch input. |
+| Experimental MISSING sentinel | Available in inspected 2.12.5 to represent absent/unset data | Not $delete and not an ID-aware mutation operation. It is not guaranteed by the declared >=2.5.0 minimum; do not add an experimental dependency assumption. |
+
+Inspected installed code: pydantic/main.py::BaseModel.model_copy and __delattr__; pydantic/_internal/_utils.py::deep_update; pydantic_settings/sources/providers/yaml.py::YamlConfigSettingsSource; pydantic_settings/sources/base.py::ConfigFileSourceMixin._read_files; and the settings source-combination call in main.py. The private deep_update function is evidence about behavior, not a proposed import. The public YAML source has a deep_merge argument; a claim that the ecosystem only offers shallow replacement would be incorrect.
+
+The remaining custom semantics are narrowly defined by the owner: resolve a nested object by id; add/update it while retaining unmentioned objects; interpret the reserved $delete command with strict target/conflict errors; preserve literal field values; and enforce explicit ordering. Existing Pydantic model validation should retain type/required/domain validation. Ordinary dictionary traversal can be part of the same small operation function rather than introducing a second library/source framework.
+
+Recommendation for the next Design revision: use existing BaseModel admission and field information first; evaluate only the missing identity/command semantics. Do not claim Pydantic is a ready-made complete override engine, and do not use that absence to justify a generic translator, per-file metadata, dynamic partial-model family or wholesale BaseSettings migration. No dependency change is selected here.
+
+Reproduction: inspect pyproject.toml; query importlib.metadata for package versions using both python and .venv/Scripts/python.exe; read the named package source methods. No models were mutated, no probe tests or suite were executed, and no server configuration or installed package was changed.
+
+- [Dependency declaration](<../../../pyproject.toml>)
+- [Current complete-model admission](<../../../mcp_server/config/loader.py>)
+- [Existing presence/null distinction](<../../../mcp_server/config/schemas/checks_config.py>)
+- [Pydantic 2.12 model-copy API](<https://docs.pydantic.dev/2.12/api/base_model/#pydantic.BaseModel.model_copy>)
+- [Pydantic serialization/presence](<https://docs.pydantic.dev/2.11/concepts/serialization/>)
+- [Public settings file/deep-merge support](<https://docs.pydantic.dev/latest/concepts/pydantic_settings/>)
+- [Versioned settings file-source implementation](<https://github.com/pydantic/pydantic-settings/blob/v2.13.1/pydantic_settings/sources/base.py>)
+- [Versioned recursive-dictionary helper](<https://github.com/pydantic/pydantic/blob/v2.12.5/pydantic/_internal/_utils.py>)
+- [Experimental feature limits](<https://docs.pydantic.dev/latest/concepts/experimental/>)
 
 ### Generically materialize source contracts without file dispatch
 
@@ -566,3 +605,5 @@ Preserve current consumer-facing loader calls; source-layout choices must fit th
 | 0.14 | 2026-10-15 | @imp researcher | Record directed id normalization through runtime consumers; withdraw id-to-name preservation; reserve removal notation for Design and reopen bounded consumer/test impact research. |
 | 0.15 | 2026-10-15 | @imp researcher | Complete identity-model/consumer/test impact evidence; preserve external/reference contracts, identify shared fixture coupling, reconcile superseded wording and close Research for independent review. |
 | 0.16 | 2026-10-15 | @imp designer | Record owner clarification: identity determines addressability; unidentifiable elements are whole field values; discard tool-specific/set-like list mutation proposals. |
+
+| 0.17 | 2026-10-15 | @imp designer | Audit existing Pydantic/settings copy, presence, serialization, source merge and experimental facilities; bound the remaining id/$delete semantics without selecting new machinery. |
