@@ -974,10 +974,10 @@ class TestProjectManagerVersioning:
             ("{invalid-json", StateCorruptedError),
         ],
     )
-    def test_commands_preserve_invalid_planning_backup_behavior(
+    def test_commands_preserve_invalid_source_and_existing_backup(
         self, legacy_suite_workspace: Path, command: str, source: str, error_type: type[Exception]
     ) -> None:
-        """All existing write entry points still back up an invalid envelope."""
+        """Failed source validation preserves both source and existing recovery bytes."""
         manager = make_project_manager(legacy_suite_workspace)
         deliverables_file = manager.deliverables_file
         deliverables_file.parent.mkdir(parents=True, exist_ok=True)
@@ -999,8 +999,8 @@ class TestProjectManagerVersioning:
                     context=NoteContext(),
                 )
 
-        assert not deliverables_file.exists()
-        assert backup_file.read_bytes() == source.encode("utf-8")
+        assert deliverables_file.read_bytes() == source.encode("utf-8")
+        assert backup_file.read_bytes() == b"prior recovery point"
 
     def test_project_manager_write_deliverables_saves_envelope(
         self, legacy_suite_workspace: Path

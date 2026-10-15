@@ -100,22 +100,21 @@ class TestFileStateRepository:
         assert state.current_phase == "implementation"
         assert state.current_cycle == 2
 
-    def test_file_state_repository_load_orchestrates_cqs_backup_on_error(
-        self, tmp_path: Path
-    ) -> None:
-        """Loading a corrupt or version mismatched state file backs up file and raises exception."""
+    def test_invalid_state_read_preserves_source_and_existing_backup(self, tmp_path: Path) -> None:
+        """Repeated failed reads retain the invalid source and prior recovery bytes."""
         state_file = tmp_path / get_default_server_root() / "state.json"
         state_file.parent.mkdir(parents=True, exist_ok=True)
-        # Write corrupted JSON
-        state_file.write_text("{corrupt json", encoding="utf-8")
+        source = b"{corrupt json"
+        state_file.write_bytes(source)
+        backup_file = state_file.with_suffix(state_file.suffix + ".bak")
+        backup_file.write_bytes(b"prior recovery point")
 
         repository = FileStateRepository(state_file=state_file)
-        with pytest.raises(StateCorruptedError):
-            repository.load("feature/test")
-
-        backup_file = state_file.with_suffix(state_file.suffix + ".bak")
-        assert not state_file.exists()
-        assert backup_file.exists()
+        for _ in range(2):
+            with pytest.raises(StateCorruptedError):
+                repository.load("feature/test")
+            assert state_file.read_bytes() == source
+            assert backup_file.read_bytes() == b"prior recovery point"
 
     def test_save_persists_branch_state(self, tmp_path: Path) -> None:
         """Saving BranchState should write state.json through the shared atomic writer."""
