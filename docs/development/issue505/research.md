@@ -59,7 +59,7 @@ The asset directory is generated and ignored except .gitkeep. That identifies in
 
 | Surface | Direct relationship | Expected scope |
 | --- | --- | --- |
-| scripts/build_package.py | Sole assembly orchestrator and four helper functions | Required-data admission, failure propagation and disposable-target safety |
+| scripts/build_package.py | Three helpers and the sole assembly orchestrator | Required-data admission, failure propagation and disposable-target safety |
 | tests/mcp_server/unit/test_build_package.py | Six current tests | Adapt/add behavior evidence by failure family; preserve valuable copy/dotfile behavior |
 | tests/mcp_server/fixtures/installed_distribution.py | Imports read_manifest and copy_assets; builds only in isolated source/staging trees | Preserve valid helper call contract; inspect focused fixture consumer if admission changes |
 | tests/mcp_server/integration/test_target_startup.py | Reads manifest and stages current sources | Preserve valid manifest data shape; do not invoke full wheel scenarios merely for Research |
