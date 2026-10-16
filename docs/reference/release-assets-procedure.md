@@ -3,8 +3,8 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.2  
-**Last Updated:** 2026-10-11
+**Version:** 1.3  
+**Last Updated:** 2026-10-16
 
 ---
 
@@ -26,7 +26,7 @@ Defines a strict build-time copy regime from the workspace sources (including do
 
 - Define docs/agents/ as the SSOT for rules and slash commands
 - Introduce release_manifest.yaml to declare release-bound files
-- Automate assets folder compilation in the package build pipeline
+- Explicitly assemble and verify declared assets before the package build
 
 ---
 
@@ -112,19 +112,42 @@ workspace-owned configuration remain outside the build input.
 
 ## 3. Build-Time Assembly Procedure
 
-During the Python wheel compilation step:
-1. The packaging utility clears `mcp_server/assets/` completely.
-2. It parses `release_manifest.yaml`.
-3. It copies specified paths from the repository sources to the subdirectories under `mcp_server/assets/`.
-4. The `pyproject.toml` file bundles `mcp_server/assets/` and `mcp_server/bundled_adapters/` via `package-data`, including nested files and dotfiles, resulting in a clean standalone wheel.
+Run `python scripts/build_package.py` explicitly. The utility assembles assets and
+then invokes `python -m build`; a direct build or editable install does not invoke
+this assembly utility automatically.
+
+1. Read `.pgmcp/config/release_manifest.yaml` and validate the complete mapping
+   collection: a nonempty assets list with nonblank source and target strings.
+2. Before changing output, admit every mapping and inspect the relevant filesystem
+   paths. Sources must exist inside the explicit project root. Targets must be
+   relative descendants of the asset root. Absolute paths, parent traversal and
+   source/output overlap are rejected. Symlinks, Windows reparse points and
+   unsupported filesystem nodes are rejected; existing output files with multiple
+   hard links are also rejected.
+3. Clear the explicitly designated disposable output root. The normal script uses
+   `mcp_server/assets/`. Direct helpers may receive a separate staging root;
+   their caller must designate generated output, never source, workspace state
+   or recovery material.
+4. Copy all admitted sources, including nested files and dotfiles, into that root.
+5. Only after successful assembly, report success and invoke the package build.
+   `pyproject.toml` includes `mcp_server/assets/` and
+   `mcp_server/bundled_adapters/` as package data.
+
+Invalid manifests or failed preflight leave output untouched. Required read,
+cleanup and copy failures abort assembly; cleanup errors are not ignored. Native
+IO exceptions retain their original diagnosis and receive operation/path notes.
+Assembly failure never produces an assembly-success message or invokes the
+external build. A later cleanup/copy failure may leave disposable partial output;
+there is no rollback or transaction guarantee. These preflight checks do not
+claim protection against hostile concurrent filesystem changes.
 
 ### 3.1 Prepare reviewable release artifacts
 
 GitHub Releases is the selected publication destination for 1.0.0, 2.0.0 and 3.0.0.
 Prepare a wheel and source distribution (sdist) for each version. PyPI publication
 is outside this procedure's approved scope. Run the existing
-`scripts/build_package.py` assembly before building; the sdist must retain the
-assembled assets so it can rebuild a complete wheel.
+`scripts/build_package.py` utility to assemble assets and build; the sdist must
+retain the assembled assets so it can rebuild a complete wheel.
 
 Reconstruct notes from the selected Git revision, merged PRs and durable issue
 evidence. The mixed `docs/development/` inventory is not a release-change source
@@ -247,3 +270,4 @@ part of this procedure.
 | 1.0.0 | 2026-07-08 | Agent | Document build automation, manifest paths, and schema matching implementation #420 |
 | 1.1 | 2026-10-07 | @imp documenter | Include the active template maintenance guide as one asset and connect package review to distribution without changing activation behavior. |
 | 1.2 | 2026-10-11 | @imp documenter | Define bounded GitHub release preparation, historical reconstruction provenance, exact-artifact verification and separate publication approval. |
+| 1.3 | 2026-10-16 | @imp documenter | Correct explicit assembly ordering, disposable-root boundaries and fail-closed diagnostics/build behavior for #505. |
