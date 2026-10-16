@@ -206,3 +206,39 @@ The active configuration/setup/GitHub references and three launcher examples now
 The PR package's authored version remains 1.0.0; this branch changes only pr/template.jinja2 and its existing consumer test. The context schema, Markdown tracking base and shared issue_refs macro are unchanged. The closes array now emits one operative Closes #N paragraph per entry, preserving integer normalization, order and explicit-empty structure. The existing delivered-package module tests/mcp_server/integration/templates/test_pr.py passed under run_tests(scope='targets', targets=['tests/mcp_server/integration/templates/test_pr.py'], tests=['python_tests'], timeout_seconds=180); Ruff format/lint and Pyright passed on that test file. Native caller arguments were not weakened. Source paths and the eventual PR's Documentation commit identify this unreleased package change; it is not a new published package release or a claim about every valid context.
 
 Reviewed unchanged: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md remains applicable without new architectural exceptions; authoritative agent instructions contain no superseded GitHub identity/reset claims in the scoped search; docs/reference/mcp_vision_reference.md is explicitly historical context and retains that distinction. release_manifest, build/distribution and upgrade implementation remain excluded. The independent Documentation review is the remaining package-source review before Ready.
+
+### Documentation Review Repairs and Actual PR Outputs
+
+Independent Documentation review returned NOGO on 830257407f7677b02991c0da0b4c6cba27f3fb3c for the missed explicitly scoped userguide passage, an ambiguous release/source boundary in the bootstrapguide, and missing native checks on inspectable package outputs. The userguide now requires explicit PGMCP_CONFIG_PATH and excludes GitHub identity from the launcher overlay. The bootstrapguide separates unchanged 3.0.0-wheel setup from deliberate adoption of the unreleased #504 contract; no assembled new wheel or migration is claimed.
+
+After a normal restart the source server admitted healthy. The existing scaffold_artifact route rendered the following exact contexts with artifact_type='pr', target_path='.pgmcp/temp/artifacts/issue504', force_target=true and validation='enforce': pr-minimal.md with {"changes":"","deferred_work":[]} and pr-multi.md with {"changes":"Verify ordered issue-closing output.","deferred_work":[],"closes":[42.0,7]}. Both scaffolds passed their declared markdown_link_review obligation. A separate run_checks(scope='targets', targets=['.pgmcp/temp/artifacts/issue504/pr-minimal.md','.pgmcp/temp/artifacts/issue504/pr-multi.md'], checks=['markdown_links'], timeout_seconds=120) also passed. I inspected both generated files. They carry template id pr, authored version1.0.0, package fingerprint pgtLHy3YYnG_d0Pd and suite fingerprint WI5iXHBKVOU91bYE. Package source is the PR template introduced at 830257407f7677b02991c0da0b4c6cba27f3fb3c. Temporary files are supplementary; the complete rendered bodies below preserve the evidence after temporary cleanup.
+
+Minimal body, excluding only its technical provenance marker:
+
+```markdown
+## Changes
+
+## Deferred Work
+
+No deferred work identified.
+```
+
+Representative multi-issue body, excluding only its technical provenance marker:
+
+```markdown
+## Changes
+
+Verify ordered issue-closing output.
+
+## Deferred Work
+
+No deferred work identified.
+
+## Closes
+
+Closes #42
+
+Closes #7
+```
+
+The minimal context has no closing section; the representative context preserves order and integer normalization. These native outputchecks supplement the already passed existing PR behavior module; no new test module or general package audit was added.

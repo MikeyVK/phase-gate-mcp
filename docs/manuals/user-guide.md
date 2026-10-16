@@ -28,7 +28,7 @@ pip install -e ".[dev]"
 
 ## 3. Configuration
 
-The server is configured via a YAML file (`mcp_config.yaml`) or environment variables.
+Runtime server/logging settings use supported environment variables and an optional launcher overlay selected explicitly by PGMCP_CONFIG_PATH. There is no automatic mcp_config.yaml selection. Current workspace policy and GitHub identity use the [configuration layers](../reference/config-loading-architecture.md).
 
 ### 3.1 Environment Variables
 | Variable | Description | Default |
@@ -37,8 +37,8 @@ The server is configured via a YAML file (`mcp_config.yaml`) or environment vari
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
 | `PGMCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.pgmcp` |
 | `PGMCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
-| `PGMCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
-### 3.2 Configuration File (`mcp_config.yaml`)
+| `PGMCP_CONFIG_PATH` | Explicit optional server/logging overlay path | unset |
+### 3.2 Explicit launcher overlay
 
 Example configuration:
 
@@ -52,10 +52,13 @@ logging:
   # audit_log is auto-derived as <server_root>/<logs_dir>/mcp_audit.log
   # (default: .pgmcp/logs/mcp_audit.log)
 
-github:
-  owner: "your-org"
-  repo: "your-repository"
 ```
+
+Select that file explicitly with PGMCP_CONFIG_PATH. In the unreleased configuration
+contract, owner/repo and optional project metadata belong in layered github.yaml;
+a nonempty GITHUB_TOKEN takes precedence over its configured token alternative.
+Use the [current source contract](../reference/config-loading-architecture.md), not
+this legacy guide, for complete setup instructions.
 
 ## 4. Running the Server
 
