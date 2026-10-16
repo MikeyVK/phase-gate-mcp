@@ -20,7 +20,6 @@ from mcp_server.config.schemas import (
     IssueConfig,
     LabelConfig,
     MilestoneConfig,
-    OperationPoliciesConfig,
     PresentationConfig,
     ScopeConfig,
     TestsConfig,
@@ -179,14 +178,6 @@ class ConfigLoader:
 
     def load_milestone_config(self, config_path: Path | None = None) -> MilestoneConfig:
         return self._load_workspace(MilestoneConfig, "milestones.yaml", config_path=config_path)
-
-    def load_operation_policies_config(
-        self,
-        config_path: Path | None = None,
-    ) -> OperationPoliciesConfig:
-        return self._load_workspace(
-            OperationPoliciesConfig, "policies.yaml", config_path=config_path
-        )
 
     def load_enforcement_config(self, config_path: Path | None = None) -> EnforcementConfig:
         return self._load_workspace(

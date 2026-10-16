@@ -21,10 +21,6 @@ from mcp_server.config.schemas.git_config import GitConfig
 from mcp_server.config.schemas.issue_config import IssueConfig, IssueTypeEntry
 from mcp_server.config.schemas.label_config import Label, LabelConfig, LabelPattern
 from mcp_server.config.schemas.milestone_config import MilestoneConfig, MilestoneEntry
-from mcp_server.config.schemas.operation_policies_config import (
-    OperationPoliciesConfig,
-    OperationPolicy,
-)
 from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.tests_config import TestBinding, TestId, TestsConfig
@@ -56,8 +52,6 @@ __all__ = [
     "MergePolicy",
     "MilestoneConfig",
     "MilestoneEntry",
-    "OperationPoliciesConfig",
-    "OperationPolicy",
     "PhaseContractPhase",
     "PhaseDefinition",
     "PresentationConfig",

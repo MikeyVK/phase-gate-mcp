@@ -19,7 +19,6 @@ from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
     ContractsConfig,
-    OperationPoliciesConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -35,21 +34,6 @@ class TestConfigValidator:
     @pytest.fixture
     def validator(self) -> ConfigValidator:
         return ConfigValidator()
-
-    @pytest.fixture
-    def operation_policies(self) -> OperationPoliciesConfig:
-        return OperationPoliciesConfig(
-            operations={
-                "create_file": {
-                    "description": "Create file",
-                    "allowed_phases": ["planning"],
-                    "blocked_patterns": [],
-                    "allowed_extensions": [".py"],
-                    "require_tdd_prefix": False,
-                    "allowed_prefixes": [],
-                }
-            }
-        )
 
     @pytest.fixture
     def workflow_config(self) -> WorkflowConfig:
@@ -106,13 +90,11 @@ class TestConfigValidator:
     def test_validate_startup_accepts_valid_config(
         self,
         validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
         phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         validator.validate_startup(
-            policies=operation_policies,
             workflow=workflow_config,
             contracts=phase_contracts,
             workphases=workphases_config,
@@ -121,7 +103,6 @@ class TestConfigValidator:
     def test_validate_startup_raises_on_unknown_phase_contract_workflow(
         self,
         validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
@@ -146,7 +127,6 @@ class TestConfigValidator:
 
         with pytest.raises(ConfigError, match="unknown workflow"):
             validator.validate_startup(
-                policies=operation_policies,
                 workflow=workflow_config,
                 contracts=contracts,
                 workphases=workphases_config,
@@ -155,7 +135,6 @@ class TestConfigValidator:
     def test_validate_startup_raises_on_unknown_phase_contract_phase(
         self,
         validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
@@ -180,7 +159,6 @@ class TestConfigValidator:
 
         with pytest.raises(ConfigError, match="missing from workphases"):
             validator.validate_startup(
-                policies=operation_policies,
                 workflow=workflow_config,
                 contracts=contracts,
                 workphases=workphases_config,
@@ -189,7 +167,6 @@ class TestConfigValidator:
     def test_validate_startup_raises_when_phase_missing_from_workphases(
         self,
         validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
     ) -> None:
         workflow_config = WorkflowConfig(
             version="1.0.0",
@@ -228,36 +205,7 @@ class TestConfigValidator:
 
         with pytest.raises(ConfigError, match="missing from workphases"):
             validator.validate_startup(
-                policies=operation_policies,
                 workflow=workflow_config,
                 contracts=contracts,
-                workphases=workphases_config,
-            )
-
-    def test_validate_startup_raises_on_unknown_policy_phase(
-        self,
-        validator: ConfigValidator,
-        workflow_config: WorkflowConfig,
-        phase_contracts: ContractsConfig,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        operation_policies = OperationPoliciesConfig(
-            operations={
-                "create_file": {
-                    "description": "Create file",
-                    "allowed_phases": ["validation"],
-                    "blocked_patterns": [],
-                    "allowed_extensions": [".py"],
-                    "require_tdd_prefix": False,
-                    "allowed_prefixes": [],
-                }
-            }
-        )
-
-        with pytest.raises(ConfigError, match="Operation 'create_file' references unknown phases"):
-            validator.validate_startup(
-                policies=operation_policies,
-                workflow=workflow_config,
-                contracts=phase_contracts,
                 workphases=workphases_config,
             )

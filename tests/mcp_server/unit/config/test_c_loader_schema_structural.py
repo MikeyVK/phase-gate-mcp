@@ -27,7 +27,6 @@ from mcp_server.config.schemas import (
     IssueConfig,
     LabelConfig,
     MilestoneConfig,
-    OperationPoliciesConfig,
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
@@ -39,7 +38,7 @@ from tests.mcp_server.test_support import get_default_server_root
 
 @pytest.fixture
 def config_root(tmp_path: Path) -> Path:
-    """Create a minimal config root covering all 11 retained schemas."""
+    """Create a minimal config root covering retained schemas."""
 
     config_dir = tmp_path / get_default_server_root() / "config"
 
@@ -126,22 +125,6 @@ def config_root(tmp_path: Path) -> Path:
             "milestones": {"milestone_1": {"number": 1, "title": "v1.0", "state": "open"}},
         },
     )
-    write_yaml(
-        "policies.yaml",
-        {
-            "version": "1.0.0",
-            "operations": {
-                "create_file": {
-                    "description": "Create file",
-                    "allowed_phases": ["planning"],
-                    "blocked_patterns": [],
-                    "allowed_extensions": [".py"],
-                    "require_tdd_prefix": False,
-                    "allowed_prefixes": [],
-                }
-            },
-        },
-    )
     write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": {}})
     write_yaml(
         "contracts.yaml",
@@ -201,8 +184,8 @@ def test_loader_raises_on_missing_git_yaml(tmp_path: Path) -> None:
         loader.load_git_config()
 
 
-def test_loader_exposes_all_eleven_schema_methods() -> None:
-    """C_LOADER.2 requires explicit load_* coverage for all 11 retained schemas."""
+def test_loader_exposes_retained_schema_methods() -> None:
+    """C_LOADER.2 requires explicit load_* coverage for retained schemas."""
     for method_name in (
         "load_git_config",
         "load_label_config",
@@ -212,15 +195,14 @@ def test_loader_exposes_all_eleven_schema_methods() -> None:
         "load_contributor_config",
         "load_issue_config",
         "load_milestone_config",
-        "load_operation_policies_config",
         "load_enforcement_config",
         "load_contracts_config",
     ):
         assert hasattr(ConfigLoader, method_name), f"Missing ConfigLoader.{method_name}()"
 
 
-def test_loader_loads_all_eleven_migrated_schema_instances(config_root: Path) -> None:
-    """ConfigLoader must construct all 11 retained schema types."""
+def test_loader_loads_retained_migrated_schema_instances(config_root: Path) -> None:
+    """ConfigLoader must construct retained schema types."""
     loader = ConfigLoader(config_root=config_root)
     workflow_config = loader.load_workflow_config()
 
@@ -232,10 +214,6 @@ def test_loader_loads_all_eleven_migrated_schema_instances(config_root: Path) ->
     assert isinstance(loader.load_contributor_config(), ContributorConfig)
     assert isinstance(loader.load_issue_config(), IssueConfig)
     assert isinstance(loader.load_milestone_config(), MilestoneConfig)
-    assert isinstance(
-        loader.load_operation_policies_config(),
-        OperationPoliciesConfig,
-    )
     assert isinstance(loader.load_enforcement_config(), EnforcementConfig)
     assert isinstance(loader.load_contracts_config(), ContractsConfig)
 
@@ -250,7 +228,6 @@ def _assert_no_self_loading_methods() -> None:
         ContributorConfig,
         IssueConfig,
         MilestoneConfig,
-        OperationPoliciesConfig,
         EnforcementConfig,
         ContractsConfig,
     ):
@@ -280,7 +257,7 @@ def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
         )
 
 
-def test_all_eleven_schema_classes_have_no_self_loading_methods() -> None:
+def test_retained_schema_classes_have_no_self_loading_methods() -> None:
     """Pure schema classes must not contain self-loading or singleton state."""
     _assert_no_self_loading_methods()
 
@@ -316,20 +293,6 @@ def test_config_package_contains_no_legacy_wrapper_modules() -> None:
 def test_no_hardcoded_config_paths_in_schema_package() -> None:
     """Schema package must not embed canonical config-root path knowledge."""
     _assert_schema_package_has_no_hardcoded_config_paths()
-
-
-def test_no_cross_config_dependency_fields_on_schema_roots() -> None:
-    """Root config schemas must not carry cross-config dependency state."""
-    assert "workflow_config" not in OperationPoliciesConfig.model_fields
-
-
-def test_no_schema_orchestration_methods_on_schema_roots() -> None:
-    """Cross-config orchestration belongs in ConfigLoader, not schema value objects."""
-    for schema_cls, forbidden_methods in ((OperationPoliciesConfig, ("validate_phases",)),):
-        for method_name in forbidden_methods:
-            assert method_name not in schema_cls.__dict__, (
-                f"{schema_cls.__name__}.{method_name}() must live in loader/validator layer"
-            )
 
 
 def test_extracted_schema_classes_no_longer_defined_in_manager_modules() -> None:

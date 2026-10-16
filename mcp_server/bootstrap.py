@@ -45,7 +45,6 @@ from mcp_server.config.schemas import (
     IssueConfig,
     LabelConfig,
     MilestoneConfig,
-    OperationPoliciesConfig,
     PresentationConfig,
     ScopeConfig,
     WorkflowConfig,
@@ -213,7 +212,6 @@ class ConfigLayer:
     scope_config: ScopeConfig
     milestone_config: MilestoneConfig
     contributor_config: ContributorConfig
-    operation_policies_config: OperationPoliciesConfig
     enforcement_config: EnforcementConfig
     contracts_config: ContractsConfig
     presentation_config: PresentationConfig
@@ -426,7 +424,6 @@ class ServerBootstrapper:
             tests_config = config_loader.load_tests_config()
             fixes_config = config_loader.load_fixes_config()
             locations_config = config_loader.load_artifact_locations_config()
-            operation_policies_config = config_loader.load_operation_policies_config()
             enforcement_config = config_loader.load_enforcement_config()
             contracts_config = config_loader.load_contracts_config()
             presentation_config = config_loader.load_presentation_config()
@@ -493,7 +490,6 @@ class ServerBootstrapper:
 
             # Preserve the shared workflow validation without legacy artifact inputs.
             validator.validate_startup(
-                policies=operation_policies_config,
                 workflow=workflow_config,
                 contracts=contracts_config,
                 workphases=workphases_config,
@@ -535,7 +531,6 @@ class ServerBootstrapper:
                 scope_config=scope_config,
                 milestone_config=milestone_config,
                 contributor_config=contributor_config,
-                operation_policies_config=operation_policies_config,
                 enforcement_config=enforcement_config,
                 contracts_config=contracts_config,
                 presentation_config=presentation_config,

@@ -33,7 +33,6 @@ from mcp_server.config.schemas.workphases import PhaseDefinition
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
-    OperationPoliciesConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -89,7 +88,6 @@ def _stub_validate_startup_args(
     workphases: WorkphasesConfig,
 ) -> dict[str, Any]:
     return {
-        "policies": OperationPoliciesConfig(version="1.0.0", operations={}),  # type: ignore[call-arg]
         "workflow": _minimal_workflow_config(),
         "contracts": contracts,
         "workphases": workphases,

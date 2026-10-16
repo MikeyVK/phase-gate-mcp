@@ -29,7 +29,6 @@ from mcp_server.core.interfaces.git import ICycleEvidenceReader
 from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.phase_detection import ScopeDecoder
-from mcp_server.core.policy_engine import PolicyEngine
 from mcp_server.core.scope_contract import ScopeContract
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
@@ -424,20 +423,6 @@ def make_phase_contract_resolver(
         else make_project_manager(workspace_root)
     )
     return PhaseContractResolver(make_phase_config_context(workspace_root), reader)
-
-
-def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine:
-    """Build a PolicyEngine with explicit config objects."""
-    config_root = resolve_config_root(
-        workspace_root,
-        required_paths=("policies.yaml", "git.yaml", "workflows.yaml"),
-    )
-    loader = ConfigLoader(config_root)
-    return PolicyEngine(
-        config_root=config_root,
-        operation_config=loader.load_operation_policies_config(),
-        git_config=loader.load_git_config(),
-    )
 
 
 def make_create_issue_tool(
