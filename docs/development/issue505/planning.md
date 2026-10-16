@@ -3,16 +3,16 @@
 # Issue 505 — Bounded assembly safety planning
 
 **Status:** PLANNING — QA REQUESTED  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-16
 
 ## Purpose
 
-Execute the approved Design in one coherent behavior-correction cycle.
+Execute the approved builder Design in C_1 and the owner-approved bounded test-consumer repair in C_2.
 
 ## Scope In
 
-scripts/build_package.py, its existing unit test module, phase evidence and the active release-assets procedure.
+scripts/build_package.py, its existing unit test module, phase evidence and the active release-assets procedure, plus the specifically approved existing test preparations/consumers listed for C_2.
 
 ## Scope Out
 
@@ -20,7 +20,7 @@ Manifest/content routing changes, runtime consumers, new error/transaction frame
 
 ## Summary
 
-One cycle C_1 keeps the inseparable admission, cleanup/copy and orchestration invariants together. No migration or general fixture refactor is required. The existing isolated-staging caller remains unchanged.
+C_1 keeps the inseparable builder invariants together and is complete. After the required full-suite FAIL, the owner approved the separate bounded C_2 test preparation/consumer repair. The builder implementation and its valid isolated-staging caller remain unchanged; no general fixture refactor is authorized.
 
 ## Dependencies
 
@@ -123,6 +123,85 @@ All planned admission, ownership and IO-failure behavior is implemented; focused
 - An apparent test failure comes from the harness rather than corrected behavior; repair setup before claiming RED.
 - Any real repository source, state or recovery material changes during scratch proof.
 
+### C_2 — current_config_test_consumers
+
+**Goal:** Complete the owner-approved adoption of existing config contracts in the failed test preparations/consumers, with no production redesign.
+
+**Cycle Number:** 2
+
+**Owner decisions:** The owner directly approved the bounded repair in Coordination on 2026-10-16, then explicitly approved force_phase_transition to Planning in the implementation chat. No gate exception. C_1 and the complete failed Validation run remain unchanged.
+
+#### Deliverables
+
+- **D_2.1 — explicit_fixture_and_consumer_adoption:** Repair existing failed test preparations and keyed/id/order consumers, using an explicit config-only configured_workspace fixture where delivered config is intended; preserve synthetic defaults and absence tests.
+- **D_2.2 — cli_and_handshake_diagnosis:** Record the seven in-process CLI admission causes and the unreproduced source handshake; repair proven fixture causes only and verify existing lifecycle tests without speculative production or timeout changes.
+
+#### Scope and preparation ownership
+
+| Group | Planned correction |
+| --- | --- |
+| Workflow/state/tool setups | Request explicit config-only configured_workspace preparation for delivered-contract scenarios. Keep factories and loader queries read-only. Preserve existing complete synthetic defaults and missing-config negative tests. |
+| Custom gate tests | Author intended complete bases in defaults; convert nested ordered objects to keyed/order form. Do not use deep-merged overrides as complete replacement fixtures. |
+| Label/milestone/id consumers | Key authorable objects by id, retain legitimate payload/API names, use milestones={} for an empty collection and values() when examining phase objects. Keep the behavior asserted by each test. |
+| Selected catalog/artifact roots | Place complete synthetic bases under defaults. Ensure invalid-value/duplicate tests reach the defect they intend, rather than passing on an unrelated missing file. |
+| Proposal/activation/renewal | Prepare complete checks/adapters bases and explicit configuration_choice in the existing setup commands. Do not replace public services, CLI composition or diagnostics. |
+| Startup | Copy the whole config tree in isolated_target_env. The separate subprocess helper already does so; its unchanged targeted diagnostic returned passed. Its original timeout is unexplained, and receives no speculative timeout/environment/production patch. |
+
+**Permitted files:** the existing fixture module tests/mcp_server/fixtures/suite_roots.py and only these recorded failed test modules (not every source-discovery candidate):
+
+- tests/mcp_server/unit/managers/test_phase_state_engine.py
+- tests/mcp_server/unit/managers/test_phase_state_engine_c3_issue257.py
+- tests/mcp_server/unit/managers/test_phase_state_engine_c4_issue257.py
+- tests/mcp_server/unit/managers/test_phase_state_engine_parent_branch.py
+- tests/mcp_server/unit/managers/test_phase_state_engine_persistence.py
+- tests/mcp_server/unit/managers/test_phase_state_engine_workflow.py
+- tests/mcp_server/unit/managers/test_project_manager.py
+- tests/mcp_server/unit/managers/test_state_repository.py
+- tests/mcp_server/unit/tools/test_c7_tool_conflict_handling.py
+- tests/mcp_server/unit/tools/test_force_phase_transition_tool.py
+- tests/mcp_server/unit/tools/test_initialize_project_tool.py
+- tests/mcp_server/unit/tools/test_transition_phase_tool.py
+- tests/mcp_server/unit/tools/test_cycle_tools.py
+- tests/mcp_server/unit/tools/test_github_extras.py
+- tests/mcp_server/unit/tools/test_label_tools.py
+- tests/mcp_server/unit/tools/test_label_tools_integration.py
+- tests/mcp_server/unit/execution/test_catalog.py
+- tests/mcp_server/unit/services/test_artifact_target_resolver.py
+- tests/mcp_server/tools/test_a4_schema_overrides.py
+- tests/mcp_server/integration/test_issue39_cross_machine.py
+- tests/mcp_server/integration/test_create_issue_e2e.py
+- tests/mcp_server/integration/templates/test_planning_artifact.py
+- tests/mcp_server/integration/test_renewal_cli.py
+- tests/mcp_server/integration/test_template_activation.py
+- tests/mcp_server/integration/test_template_proposal.py
+- tests/mcp_server/integration/test_target_startup.py
+
+No new test module or suite-wide autouse setup. No production file, native config, timeout policy, release or #506–508 work is authorized by C_2. No obsolete behavior-preservation/negative-legacy tests are added.
+
+#### Dependencies and test mode
+
+- Depends on completed C_1 and the recorded Validation FAIL at f20966e6.
+- Existing full-run failures provide the failing evidence; this is test-maintenance/consumer adoption, so no artificial RED or duplicate permanent regressions.
+- After independent QA GO, re-enter Implementation with resume_cycle='C_2' from get_project_plan readback.
+- Commit bounded actual repair chunks with workflow_phase='implementation', cycle_number=2 and sub_phase='refactor'. Producer owns integration and commits; any bounded delegates edit only assigned files and return findings, never workflow approval.
+- No broad configured test run during Implementation. Group narrow runs by state/tool setup, keyed/model consumers and lifecycle fixtures; select only affected existing modules from the inventory above. Use run_tests(scope='targets', targets=<affected modules>, tests=['python_tests'], timeout_seconds=300), preserving native arguments.
+- For the repaired Python files use run_checks(scope='targets', targets=<changed Python files>, checks=['python_format','python_lint','python_pyright'], timeout_seconds=600). Do not send docs/JSON to Python gates.
+- Keep the seven CLI cases distinct: fresh install; checkpointless baseline; external checkpoint/force refusal; verified backup force; conflict resolution; completed recovery; first legacy migration. Their shared initial missing-defaults cause is evidenced by the real admission call chain; post-repair outcomes must still pass.
+- The one unchanged handshake diagnostic used run_tests targets=[tests/mcp_server/integration/test_target_startup.py], python_tests args=['-k','test_real_server_process_handshake_default_target','--tb=long'], timeout180. Returned tool summary: passed/reason=-/args_source=caller. Native counts, timing and exit details were not available; do not reconstruct them from the summary or depend on its expired cache.
+- Do not repeat focused evidence after unrelated changes. No blanket skip, selection/coverage reduction or broad suppression.
+
+#### Exit Criteria
+
+Existing affected behavioral modules pass without added skips/suppressions or weakened assertions; explicit config preparation and keyed/id/order consumers match current contracts; seven CLI cases reach their intended behaviors; unchanged handshake is rechecked without speculative timeout changes. Relevant changed-file format/lint/Pyright pass. No production change or gate exception.
+
+#### Stops and resumed Validation
+
+- Stop for an actual new production behavior/architecture cause or an unanticipated scope expansion; investigate/read-only evidence first and request an owner decision only where necessary.
+- If a targeted test still fails after admission repair, diagnose its intended existing contract; do not weaken its behavioral assertions merely to pass.
+- If the source-handshake timeout recurs, preserve exact stderr and locate the stalled startup stage. No increased timeout or production workaround without causal evidence and the required scope decision.
+- Independent QA must review C_2 Implementation → Validation. Then repeat the required complete native suite once after these relevant changes: run_tests(scope='configured', tests=['python_tests'], timeout_seconds=1200), within the unchanged1800-second client window. Preserve native args/coverage.
+- Repeat the existing planned filtered branch gates and configured Mypy after the repair. Update Validation with the new outcome while retaining the original full FAIL and its diagnosis. Progress only on actual independent GO.
+
 ## Phase Deliverables
 
 ### Validation
@@ -163,4 +242,6 @@ Reconcile the active release-assets assembly procedure with admission order, dis
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp planner | Plan one focused RED/GREEN cycle and phase-owned validation/documentation. |
 | 0.2 | 2026-10-16 | @imp planner | Correct the full-suite execution budget to 1200 seconds within the approved 1800-second client window; selection unchanged. |
+| 0.3 | 2026-10-16 | @imp planner | Preserve C_1 and add the owner-approved bounded C_2 test-consumer repair, diagnosis and unchanged full Validation gates. |
+
 

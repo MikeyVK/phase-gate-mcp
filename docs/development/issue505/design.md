@@ -3,7 +3,7 @@
 # Issue 505 — Fail-closed asset assembly
 
 **Status:** DESIGN — QA REQUESTED  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -33,7 +33,7 @@ The builder skips malformed mappings, suppresses cleanup failures and trusts pat
 
 ## Nonfunctional Requirements
 
-- Keep the change in scripts/build_package.py and the existing builder unit test module; use standard-library validation helpers and PyYAML already in use.
+- Keep the C_1 production correction in scripts/build_package.py and its behavior evidence in the existing builder unit module; use standard-library validation helpers and PyYAML already in use. The separately approved test-only repair is bounded below.
 - No Pydantic/runtime loader, presenter, new error framework, configurable safety bypass, automatic backup or rollback subsystem.
 - No production/test private helper calls in durable tests. Test behavior through read_manifest, clean_assets, copy_assets or build_package.
 - Static boundary checks do not claim protection against hostile concurrent filesystem replacement. No ACL/sandbox or filesystem transaction is introduced.
@@ -112,7 +112,7 @@ Read and admit manifest → prepare all source/target pairs and inspect ownershi
 
 ## Preservation
 
-Current eleven records, direct valid helper signatures, dictionary shape, staged external output roots and hidden-file copying remain supported. Workspace/state/recovery sentinels are not disposable. No manifest or fixture consumer rewrite is planned.
+Current eleven records, direct valid helper signatures, dictionary shape, staged external output roots and hidden-file copying remain supported. Workspace/state/recovery sentinels are not disposable. No manifest or builder helper signature rewrite is needed. The owner-approved repair below adopts already-existing configuration contracts in affected test consumers.
 
 ## Validation
 
@@ -150,6 +150,19 @@ Keep roots explicit and test the existing fixture's separate source/stage topolo
 
 State the non-concurrent mutation boundary; native subsequent IO errors remain failures. Do not claim a transactional security sandbox.
 
+## Test repair addendum
+
+The owner-approved repair adopts the existing configuration architecture; it does not change the production design above.
+
+| Test seam | Contract |
+| --- | --- |
+| Delivered workflow configuration | Add one explicit config-only configured_workspace(tmp_path: Path, pytestconfig: pytest.Config) -> Path fixture in the existing suite_roots fixture module. It copies the current config tree, including defaults and overrides, into that test's temporary workspace. Only tests requesting it receive prepared configuration; no autouse seeding. |
+| Synthetic configuration | Test setup owns complete minimal defaults when testing a custom basis; root files remain genuine overrides. Preserve intentional absent-config tests and already-migrated synthetic defaults. |
+| Current consumers | Use keyed collections and id for configuration identity, values() for phase objects and explicit order for ordered entries. Label.name remains a real payload; GitHub API names do not become config IDs. |
+| CLI/activation/proposal | Existing setup helpers create complete check/adapter bases and explicit check configuration_choice. Public CLI/services, exit codes, diagnostics and native tool execution policy remain unchanged. |
+| Source startup | Fix the proven root-YAML-only in-process fixture by copying the whole config tree. Keep the separate successful source-handshake path unchanged unless a concrete fixture cause is demonstrated; do not increase timeouts speculatively. |
+| Proof | Reuse existing failing behavioral tests as repair evidence; no duplicate regression suite or source-string assertions. Existing failure reports remain inspectable. A new production cause is a stop, not permission to redesign. |
+
 ## Planning Consequences
 
 One compact implementation cycle can own production and corresponding behavioral tests. Use strict RED/GREEN for changed behavior as required by the bug workflow. Focus implementation tests/checks; reserve the required native-configured full suite and branch checks for Validation. Do not import the #504 waiver. Stop for a real strategy contradiction rather than broadening into a filesystem framework.
@@ -166,3 +179,5 @@ One compact implementation cycle can own production and corresponding behavioral
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp designer | Define bounded admission, path ownership and original-exception contracts. |
+| 0.2 | 2026-10-16 | @imp planner | Bound the owner-approved test-only adoption of existing config contracts; production design unchanged. |
+

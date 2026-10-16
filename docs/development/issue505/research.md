@@ -3,7 +3,7 @@
 # Issue 505 — Fail-closed asset assembly
 
 **Status:** RESEARCH — STRATEGY APPROVED, QA REQUESTED  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -12,7 +12,7 @@ Establish bounded defect evidence and a small existing-builder safety strategy b
 
 ## Scope In
 
-Malformed required mapping data, required source/cleanup failures, truthful assembly outcome, disposable output ownership and direct helper/test consumers.
+Malformed required mapping data, required source/cleanup failures, truthful assembly outcome, disposable output ownership and direct helper/test consumers. The owner-approved repair below additionally covers test preparations and consumers of the existing configuration contracts.
 
 ## Scope Out
 
@@ -113,6 +113,20 @@ Approved by the owner on 2026-10-16: "pak de fixes die je nu voorstelde gericht 
 
 This approval authorizes bounded implementation through the normal independently reviewed phase gates; it does not grant a new full-suite waiver.
 
+### Owner-approved bounded test repair after Validation FAIL
+
+On 2026-10-16 the owner explicitly approved repairing fixtures/consumers and investigating the seven CLI exit failures plus one source-handshake timeout, with independent QA and no gate exception. The owner separately approved force_phase_transition back to Planning after the ordinary backwards transition was rejected. The force operation skipped zero gates; it does not waive the failed suite.
+
+| Boundary | Additional binding decision |
+| --- | --- |
+| Current configuration consumers in tests | Adopt the existing defaults, keyed collections, id and order contracts directly; no support for old shapes. Keep runtime behavior and the C_1 builder implementation unchanged. |
+| Test filesystem preparation | Provision config explicitly in opted-in fixture/setup commands. Loaders, read helpers and factories do not acquire implicit writes or fallback roots. Keep intentional absence and synthetic complete bases intact. |
+| Seven CLI failures | They are in-process RenewalCli calls, not subprocess failures. Their common renewal_case fixture copies only checks/adapters overrides; real admission first requires defaults/checks.yaml. Repair that explicit preparation and retain each scenario's behavioral assertions; a post-repair pass is still required. |
+| Source handshake | The source process helper already copies config recursively, including defaults. One delegated targeted run of the unchanged test returned python_tests: passed (caller selection); detailed native counts/timing were unavailable. Original full-suite timeout remains unexplained. No timeout, production or environment workaround is justified by that observation. The required full rerun remains the decisive check. |
+| Scope and stops | Repair existing failing fixture/consumer surfaces only. No new production behavior/architecture, gate exception, reduced native selection, skip, broad suppression or general warnings cleanup. A newly demonstrated production cause outside scope requires an owner decision. |
+
+The complete failed suite remains historical evidence in [Validation](validation.md). There is no main-baseline comparison and no blanket claim that every failure predated #505. No additional tests are required solely to record this repair; preserve valuable existing behavioral coverage.
+
 ## Expected Results
 
 Malformed required data and unsafe paths fail explicitly; a required cleanup/copy failure preserves its primary cause and prevents assembly success/build invocation. Valid current mappings retain copy behavior and dotfiles. Source/workspace/recovery material remains untouched. Claims are limited to this assembly entrypoint; direct external builds and distribution content policy are outside this issue.
@@ -155,4 +169,6 @@ Present explicit partial-output/failure semantics; defer staging, recovery and n
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp researcher | Record existing-builder failure evidence, direct impact and bounded strategy options for owner decision. |
 | 0.2 | 2026-10-16 | @imp researcher | Capture direct owner approval for the targeted fail-closed, path-safety and partial-output strategy. |
+| 0.3 | 2026-10-16 | @imp planner | Record owner-authorized bounded test repair and the separate force re-entry, with no gate exception. |
+
 
