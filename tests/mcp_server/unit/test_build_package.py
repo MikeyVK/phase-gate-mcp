@@ -88,8 +88,16 @@ def test_read_manifest_preserves_valid_metadata(tmp_path: Path) -> None:
         {"assets": [{"source": 7, "target": "bundle"}]},
         {"assets": [{"source": "input", "target": "  "}]},
     ],
-    ids=["top-level", "absent", "empty", "collection-type", "record-type", "required",
-         "field-type", "blank"],
+    ids=[
+        "top-level",
+        "absent",
+        "empty",
+        "collection-type",
+        "record-type",
+        "required",
+        "field-type",
+        "blank",
+    ],
 )
 def test_invalid_manifest_preserves_output_and_blocks_build(
     assembly_root: Path, monkeypatch: pytest.MonkeyPatch, manifest: object
@@ -146,9 +154,7 @@ def test_missing_source_blocks_cleanup_and_build(
 
 @pytest.mark.parametrize("side", ["source", "target"])
 @pytest.mark.parametrize("kind", ["parent", "absolute"])
-def test_copy_refuses_paths_outside_roots(
-    tmp_path: Path, side: str, kind: str
-) -> None:
+def test_copy_refuses_paths_outside_roots(tmp_path: Path, side: str, kind: str) -> None:
     source = tmp_path / "source"
     source.mkdir()
     (source / "input.txt").write_text("replacement", encoding="utf-8")
@@ -228,7 +234,9 @@ def test_copy_refuses_hardlinked_output(tmp_path: Path) -> None:
     (output / "copy.txt").hardlink_to(outside)
 
     with pytest.raises(ValueError):
-        builder.copy_assets(root, output, {"assets": [{"source": "input.txt", "target": "copy.txt"}]})
+        builder.copy_assets(
+            root, output, {"assets": [{"source": "input.txt", "target": "copy.txt"}]}
+        )
 
     assert outside.read_text() == "preserve"
 
@@ -260,8 +268,10 @@ def test_cleanup_failure_keeps_original_diagnosis(
 
 @pytest.mark.parametrize("operation", ["cleanup", "copy"])
 def test_io_failure_blocks_success_and_build(
-    assembly_root: Path, monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture, operation: str
+    assembly_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    operation: str,
 ) -> None:
     failure = PermissionError("injected assembly denial")
     if operation == "cleanup":
