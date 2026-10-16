@@ -96,10 +96,14 @@ def test_external_settings_sources_are_not_executed(monkeypatch: pytest.MonkeyPa
 
 
 def test_deletes_only_the_requested_inherited_member() -> None:
-    defaults = {"checks": {"lint": {"timeout": 60}, "format": {"timeout": 30}}}
+    shared = {"lint": {"timeout": 60}, "format": {"timeout": 30}}
+    defaults = {"checks": shared, "unchanged": shared}
     override = {"checks": {"format": {"$delete": True}, "lint": {"timeout": 90}}}
     before = deepcopy((defaults, override))
-    assert compose_configuration(defaults, override) == {"checks": {"lint": {"timeout": 90}}}
+    assert compose_configuration(defaults, override) == {
+        "checks": {"lint": {"timeout": 90}},
+        "unchanged": shared,
+    }
     assert (defaults, override) == before
 
 

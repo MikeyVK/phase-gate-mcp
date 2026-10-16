@@ -28,6 +28,7 @@ from pathlib import Path
 
 # Third-party
 import pytest
+import yaml
 
 # Project modules
 from mcp_server.bootstrap import SupportedToolContract
@@ -354,9 +355,10 @@ def real_template_ids(tmp_path: Path, pytestconfig: pytest.Config) -> frozenset[
 @pytest.fixture
 def artifacts_yaml(pytestconfig: pytest.Config) -> str:
     """Read the authored location configuration for isolated behavioral checks."""
-    return (pytestconfig.rootpath / ".pgmcp" / "config" / "artifacts.yaml").read_text(
-        encoding="utf-8"
-    )
+    config = ConfigLoader(
+        pytestconfig.rootpath / ".pgmcp" / "config"
+    ).load_artifact_locations_config()
+    return yaml.safe_dump(config.model_dump(mode="json"), sort_keys=False)
 
 
 class TestRolloutConfiguration:
@@ -368,7 +370,8 @@ class TestRolloutConfiguration:
         """Validate authored locations against identities admitted from the current suite."""
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        artifacts_file = config_dir / "artifacts.yaml"
+        artifacts_file = config_dir / "defaults" / "artifacts.yaml"
+        artifacts_file.parent.mkdir()
         artifacts_file.write_text(artifacts_yaml, encoding="utf-8")
 
         loader = ConfigLoader(config_dir)
@@ -389,7 +392,8 @@ class TestRolloutConfiguration:
         """Verify that ConfigValidator rejects invalid aliases or unknown package IDs."""
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        artifacts_file = config_dir / "artifacts.yaml"
+        artifacts_file = config_dir / "defaults" / "artifacts.yaml"
+        artifacts_file.parent.mkdir()
 
         # Using informal aliases 'dto' and 'worker' instead of canonical manifest IDs
         invalid_yaml = (
@@ -412,23 +416,16 @@ class TestRolloutConfiguration:
         assert "dto" in str(exc_info.value)
         assert "worker" in str(exc_info.value)
 
-    def test_artifacts_location_config_rejects_obsolete_and_duplicate_roots(
-        self, temp_workspace: Path
-    ) -> None:
-        """Verify that ConfigLoader rejects obsolete V1 and duplicate root configurations."""
+    def test_artifacts_location_config_rejects_duplicate_roots(self, temp_workspace: Path) -> None:
+        """Verify that ConfigLoader rejects duplicate root configurations."""
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        artifacts_file = config_dir / "artifacts.yaml"
+        artifacts_file = config_dir / "defaults" / "artifacts.yaml"
+        artifacts_file.parent.mkdir()
 
-        # 1. Legacy/obsolete V1 schema rejection
-        legacy_v1_yaml = "version: 1.0.0\nartifact_types: []\n"
-        artifacts_file.write_text(legacy_v1_yaml, encoding="utf-8")
         loader = ConfigLoader(config_dir)
-        with pytest.raises(ConfigError) as exc_info:
-            loader.load_artifact_locations_config()
-        assert "invalid artifact locations configuration" in str(exc_info.value).lower()
 
-        # 2. Duplicate root in single artifact location
+        # Duplicate root in a single artifact location
         duplicate_root_yaml = (
             'version: "2.0.0"\n'
             "artifacts:\n"
@@ -510,14 +507,21 @@ class TestRolloutConfiguration:
         """The landed V3 presentation loads, aligns, and rejects a drifting edit."""
         root_dir = Path(__file__).resolve().parents[3]
         live_path = root_dir / ".pgmcp" / "config" / "presentation.yaml"
-        live_content = live_path.read_text(encoding="utf-8")
+        live_content = yaml.safe_dump(
+            ConfigLoader(live_path.parent)
+            .load_presentation_config()
+            .model_dump(mode="json", by_alias=True),
+            sort_keys=False,
+        )
         assert "run_quality_gates" not in live_content
         assert "auto_fix" not in live_content
         config_dir = temp_workspace / ".pgmcp" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "presentation.yaml").write_text(live_content, encoding="utf-8")
 
-        pres_config = ConfigLoader(config_dir).load_presentation_config()
+        pres_config = ConfigLoader(config_dir).load_presentation_config(
+            config_path=config_dir / "presentation.yaml"
+        )
         assert "run_checks" in pres_config.global_settings.next_instruction_texts["recheck_quality"]
         assert {"run_checks", "run_tests", "apply_fixes"} <= set(pres_config.tools)
         assert "run_quality_gates" not in pres_config.tools

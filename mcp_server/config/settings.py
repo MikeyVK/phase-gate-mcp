@@ -3,7 +3,7 @@
 Configuration settings for the MCP server.
 
 Defines runtime settings loaded from environment variables and optional YAML
-overrides for server, logging, and GitHub integration.
+overrides for server and logging configuration.
 
 @layer: Backend (Config)
 @dependencies: [importlib.metadata, os, pathlib, pydantic, yaml]
@@ -70,20 +70,23 @@ class ServerSettings(BaseModel):
 
 
 class GitHubSettings(BaseModel):
-    """GitHub integration settings."""
+    """Pure GitHub integration configuration shared by runtime consumers."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True, hide_input_in_errors=True)
 
     owner: str | None = None
     repo: str | None = None
     project_number: int | None = None
-    token: str | None = Field(default=None, validate_default=True)
+    token: str | None = Field(default=None, validate_default=True, repr=False)
 
 
 class Settings(BaseModel):
-    """Main settings container."""
+    """Launcher settings for server and logging configuration."""
+
+    model_config = ConfigDict(extra="forbid")
 
     server: ServerSettings = Field(default_factory=ServerSettings)
     logging: LogSettings = Field(default_factory=LogSettings)
-    github: GitHubSettings = Field(default_factory=GitHubSettings)
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -97,7 +100,6 @@ class Settings(BaseModel):
                 with path.open(encoding="utf-8") as file_handle:
                     config_data = yaml.safe_load(file_handle) or {}
         server_data = config_data.setdefault("server", {})
-        github_data = config_data.setdefault("github", {})
         logging_data = config_data.setdefault("logging", {})
 
         if env_name := os.environ.get("PGMCP_SERVER_NAME"):
@@ -120,15 +122,6 @@ class Settings(BaseModel):
                 "y",
                 "yes",
             )
-
-        if env_owner := os.environ.get("GITHUB_OWNER"):
-            github_data["owner"] = env_owner
-        if env_repo := os.environ.get("GITHUB_REPO"):
-            github_data["repo"] = env_repo
-        if env_project_number := os.environ.get("GITHUB_PROJECT_NUMBER"):
-            github_data["project_number"] = int(env_project_number)
-        if env_token := os.environ.get("GITHUB_TOKEN"):
-            github_data["token"] = env_token
 
         if env_log_level := os.environ.get("LOG_LEVEL"):
             logging_data["level"] = env_log_level

@@ -37,9 +37,6 @@ def _patch_server_settings(mock: MagicMock, workspace_root: Path) -> None:
     settings.server.template_root = str(repo_root / ".pgmcp" / "template_suite")
     settings.server.bypass_version_check = True
     settings.server.server_root_dir = server_root_dir
-    settings.github.token = None
-    settings.github.owner = "test"
-    settings.github.repo = "test-repo"
     settings.logging.level = "WARNING"
     settings.server.logs_dir = "logs"
     settings.logging.audit_log = None

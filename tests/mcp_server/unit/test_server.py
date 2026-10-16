@@ -70,7 +70,6 @@ def _bootstrap_workspace_configs(workspace_root: Path) -> None:
 def _patch_server_settings(
     mock: MagicMock,
     workspace_root: str | None = None,
-    token: str | None = None,
 ) -> None:
     """Configure a Settings class mock for server tests."""
     from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
@@ -86,9 +85,6 @@ def _patch_server_settings(
         Path(__file__).resolve().parents[3] / ".pgmcp" / "template_suite"
     )
     settings.server.server_root_dir = server_root_dir
-    settings.github.token = token
-    settings.github.owner = "test"
-    settings.github.repo = "repo"
     settings.logging.level = "INFO"
     settings.logging.audit_log = None
 
@@ -185,8 +181,11 @@ def _make_transition_advisory_execute(
 class TestServerToolRegistration:
     """Tests for server tool registration."""
 
-    def test_github_tools_always_registered(self, tmp_path: Path) -> None:
+    def test_github_tools_always_registered(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """GitHub tools should always be registered, even without token."""
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
             settings = mock_settings_cls.from_env.return_value
@@ -203,17 +202,18 @@ class TestServerToolRegistration:
             assert "close_issue" in tool_names
             assert "get_pr" not in tool_names
 
-    def test_github_tools_registered_with_token(self, tmp_path: Path) -> None:
+    def test_github_tools_registered_with_token(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """GitHub tools should be registered when token is configured."""
+        monkeypatch.setenv("GITHUB_TOKEN", "test-token")
         with (
             patch("mcp_server.config.settings.Settings") as mock_settings_cls,
             patch("mcp_server.resources.github.GitHubManager") as mock_res_manager,
             patch("mcp_server.tools.pr_tools.GitHubManager") as mock_pr_manager,
             patch("mcp_server.tools.label_tools.GitHubManager") as mock_label_manager,
         ):
-            _patch_server_settings(
-                mock_settings_cls, workspace_root=str(tmp_path), token="test-token"
-            )
+            _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
             settings = mock_settings_cls.from_env.return_value
             settings.server.config_root = str(
                 Path(__file__).resolve().parents[3] / ".pgmcp" / "config"
@@ -378,7 +378,6 @@ class TestServerToolRegistration:
             _patch_server_settings(
                 mock_settings_cls,
                 workspace_root=str(tmp_path),
-                token="test-token",
             )
 
             managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TypeVar
 
 import pytest
+import yaml
 from pydantic import BaseModel, ValidationError
 
 from mcp_server.config.loader import ConfigLoader
@@ -581,8 +582,14 @@ def test_required_fix_config_and_catalog_admission_without_execution(
     pytestconfig: pytest.Config,
 ) -> None:
     loader = ConfigLoader(tmp_path)
-    config_file = tmp_path / "fixes.yaml"
-    authored = (pytestconfig.rootpath / ".pgmcp/config/fixes.yaml").read_text(encoding="utf-8")
+    config_file = tmp_path / "defaults" / "fixes.yaml"
+    config_file.parent.mkdir()
+    authored = yaml.safe_dump(
+        ConfigLoader(pytestconfig.rootpath / ".pgmcp/config")
+        .load_fixes_config()
+        .model_dump(mode="json"),
+        sort_keys=False,
+    )
     with pytest.raises(ConfigError):
         loader.load_fixes_config()
     config_file.write_text(authored, encoding="utf-8")

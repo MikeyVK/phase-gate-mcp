@@ -84,5 +84,11 @@ def _prepare_deletions(
             del basis[key]
             del changes[key]
         else:
+            # Detach each addressed path: deepcopy alone preserves YAML alias sharing.
+            value = deepcopy(value)
+            changes[key] = value
             inherited = basis.get(key)
+            if isinstance(inherited, dict):
+                inherited = deepcopy(inherited)
+                basis[key] = inherited
             _prepare_deletions(inherited if isinstance(inherited, dict) else {}, value, target)

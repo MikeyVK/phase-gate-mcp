@@ -30,7 +30,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-import yaml
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.contracts_config import BranchLocalArtifact
@@ -46,10 +45,12 @@ from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 from tests.mcp_server.test_support import get_default_server_root
 
 _STATE_ARTIFACT = BranchLocalArtifact(
+    order=10,
     path=f"{get_default_server_root()}/state.json",
     reason="branch-local workflow state",
 )
 _DELIVERABLES_ARTIFACT = BranchLocalArtifact(
+    order=20,
     path=f"{get_default_server_root()}/deliverables.json",
     reason="branch-local deliverables",
 )
@@ -249,13 +250,13 @@ class TestCompositionRootContracts:
         """
         workspace_root = Path(__file__).parents[3]
         config_path = workspace_root / get_default_server_root() / "config" / "enforcement.yaml"
-        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        config = ConfigLoader(config_path.parent).load_enforcement_config()
 
         submit_pr_actions = [
-            action["type"]
-            for rule in config["enforcement"]
-            if rule.get("tool") == "submit_pr" and rule.get("timing") == "pre"
-            for action in rule.get("actions", [])
+            action.type
+            for rule in config.enforcement.values()
+            if rule.tool == "submit_pr" and rule.timing == "pre"
+            for action in rule.actions.values()
         ]
 
         assert "exclude_branch_local_artifacts" not in submit_pr_actions, (

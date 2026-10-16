@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 
 from jinja2 import Environment
 
+from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
@@ -519,7 +520,9 @@ def make_dispatch_dependencies(settings: Settings) -> DispatchDependencies:
         workflow_gate_runner=workflow_gate_runner,
     )
     github_manager = GitHubManager(
-        github_settings=settings.github,
+        github_settings=resolve_github_settings(
+            loader.load_github_config(), os.environ.get("GITHUB_TOKEN")
+        ),
         issue_config=loader.load_issue_config(),
         label_config=loader.load_label_config(),
         scope_config=loader.load_scope_config(),

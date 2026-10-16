@@ -34,6 +34,7 @@ from mcp_server.config.schemas.template_suite import (
     TemplatePackageVersion,
     TemplatePolicy,
 )
+from mcp_server.config.settings import GitHubSettings
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 
@@ -197,6 +198,10 @@ class ConfigLoader:
         config_path: Path | None = None,
     ) -> ContractsConfig:
         return self._load_workspace(ContractsConfig, "contracts.yaml", config_path=config_path)
+
+    def load_github_config(self, config_path: Path | None = None) -> GitHubSettings:
+        """Load workspace GitHub identity and optional explicit token alternative."""
+        return self._load_workspace(GitHubSettings, "github.yaml", config_path=config_path)
 
     def _load_workspace(
         self,

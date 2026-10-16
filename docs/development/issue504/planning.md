@@ -2,9 +2,9 @@
 
 # Issue 504 — Interactive native configuration refactor
 
-**Status:** PLANNING — INDEPENDENT REVIEW REQUESTED  
-**Version:** 0.2  
-**Last Updated:** 2026-10-15
+**Status:** IMPLEMENTATION — PHASE REVIEW REQUESTED  
+**Version:** 0.3  
+**Last Updated:** 2026-10-16
 
 ## Purpose
 
@@ -369,3 +369,15 @@ Independent QA granted Planning-to-Implementation GO on 5ac30a4a2226a51961fd205f
 
 | 0.2 | 2026-10-15 | @imp planner | Fix QA P2: suite budget 1200 seconds inside prescribed client window 1800; add literal phase deliverable names for exact readback parity. |
 
+
+## Implementation Checkpoint
+
+The owner authorized autonomous execution through Ready, focused target scopes only (including Validation), and independent QA exclusively at phase boundaries. Earlier interactive stops and broad Validation commands are superseded; source strategy and exclusions are unchanged.
+
+C_1 delivered public native Pydantic Settings composition, strict tombstones and model-owned explicit order. Its focused 16-case composition and seven-case ordering tests passed; the existing deletion case now also proves that aliased source objects do not redirect a deletion to an unaddressed sibling. Input trees remain unchanged. Production typing and file gates passed.
+
+C_2 is committed at cce658f6ffa2da4302b8cac338eb23eb021e71a8. Complete product sources live under defaults/; root files are workspace overrides. Canonical keyed/order-aware models and direct consumers were cut over together. Targeted loader, catalog, contract/resolver, enforcement, presentation, public execution and startup/resource behavior passed. Native YAML checks passed on all 36 changed source documents. The workspace enforcement override explicitly retains all current guards as a conservative local policy; the complete product basis independently supplies those guards, proved through the public loader. No guard is removed.
+
+C_3 uses one resolved GitHubSettings from layered github.yaml and the nonempty environment token, shared by the manager and registration/resource decisions. Settings no longer owns GitHub identity; initialization no longer resets copied choices. Focused Settings/bootstrap/CLI modules passed (53 cases), direct server/discovery/argument/lifecycle modules passed (52), and six affected PR/rollout/fixture/execution modules passed (81). Settings was rerun after extending its existing secret-safe validation test to malformed YAML: 27 passed. Both model and parser diagnostics excluded the fixture token; no speculative parser refactor was needed. Ruff format/lint and Pyright passed on the 21 changed Python files; Mypy passed on six affected production files.
+
+The full suite and workspace/branch-wide gates were intentionally not executed. Existing SchemaAttachment.schema-shadow and previously observed MCP resource/Windows path deprecation warnings remain outside scope. No release_manifest, package-builder, distribution or upgrade behavior is changed; follow-up #505 and other deferred work are not delivered by this branch.

@@ -31,16 +31,16 @@ def test_config_loaders_remain_isolated_from_cwd_and_environment(
     second = create_suite_roots(tmp_path / "second", "owned")
     first_bytes = (
         b"version: '1.0.0'\nworkflows:\n  alpha:\n"
-        b"    name: alpha\n    default_execution_mode: interactive\n"
+        b"    default_execution_mode: interactive\n"
         b"    description: First root\n"
     )
     second_bytes = (
         b"version: '1.0.0'\nworkflows:\n  beta:\n"
-        b"    name: beta\n    default_execution_mode: autonomous\n"
+        b"    default_execution_mode: autonomous\n"
         b"    description: Second root\n"
     )
-    write_package_tree(first.config, {"workflows.yaml": first_bytes})
-    write_package_tree(second.config, {"workflows.yaml": second_bytes})
+    write_package_tree(first.config, {"defaults/workflows.yaml": first_bytes})
+    write_package_tree(second.config, {"defaults/workflows.yaml": second_bytes})
     first_loader = ConfigLoader(first.config)
     second_loader = ConfigLoader(second.config)
     with monkeypatch.context() as ambient:
@@ -53,11 +53,11 @@ def test_config_loaders_remain_isolated_from_cwd_and_environment(
         assert left.get_workflow("alpha").description == "First root"
         assert set(right.workflows) == {"beta"}
         assert right.get_workflow("beta").default_execution_mode == "autonomous"
-        (first.config / "workflows.yaml").unlink()
+        (first.config / "defaults" / "workflows.yaml").unlink()
         with pytest.raises(ConfigError):
             first_loader.load_workflow_config()
         assert second_loader.load_workflow_config() == right
-        assert (second.config / "workflows.yaml").read_bytes() == second_bytes
+        assert (second.config / "defaults" / "workflows.yaml").read_bytes() == second_bytes
         assert Path.cwd() == second.workspace
     assert Path.cwd() == original_cwd
     assert dict(os.environ) == original_environment
@@ -125,8 +125,8 @@ def test_delivered_suite_preserves_workflow_plugin_contract(
     assert loader.load_contracts_config().get_phases("feature") == feature_phases
     assert legacy_suite_roots.config != source / "config"
     assert legacy_suite_roots.templates != source / "template_suite"
-    assert (legacy_suite_roots.config / "contracts.yaml").read_bytes() == (
-        source / "config" / "contracts.yaml"
+    assert (legacy_suite_roots.config / "defaults" / "contracts.yaml").read_bytes() == (
+        source / "config" / "defaults" / "contracts.yaml"
     ).read_bytes()
 
 

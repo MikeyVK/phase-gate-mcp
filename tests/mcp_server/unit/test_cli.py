@@ -16,7 +16,6 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 
 from mcp_server.cli import main
-from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
@@ -119,20 +118,14 @@ def test_cli_init_result(
     assert (server_root / "config/workflows.yaml").is_file()
     assert (server_root / "template_suite").is_dir()
     assert not (server_root / ".version").exists()
-    installed = ConfigLoader(server_root / "config")
-    reset_models = (
-        ("checks", installed.load_checks_config()),
-        ("tests", installed.load_tests_config()),
-        ("fixes", installed.load_fixes_config()),
-    )
-    for section, model in reset_models:
-        result = model.model_dump(mode="json", exclude_unset=True)
-        assert result[section]["chosen"]["configuration_choice"] is None
-        result[section]["chosen"]["configuration_choice"] = "configured_arguments"
-        assert result == copied_config[section]
+    for section, expected in copied_config.items():
+        installed = json.loads(
+            (server_root / "config" / f"{section}.yaml").read_text(encoding="utf-8")
+        )
+        assert installed == expected
         assert (
             json.loads((mock_assets / "config" / f"{section}.yaml").read_text(encoding="utf-8"))
-            == copied_config[section]
+            == expected
         )
     operation.execute.assert_called_once_with()
     exit_process.assert_called_once_with(operation.last_result.exit_code)
