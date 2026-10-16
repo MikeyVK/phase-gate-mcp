@@ -2,8 +2,8 @@
 
 # Issue 506 — Unused operation-policy infrastructure
 
-**Status:** RESEARCH — OWNER STRATEGY DECISION PENDING  
-**Version:** 0.1  
+**Status:** RESEARCH — QA REVIEW REQUESTED  
+**Version:** 0.2  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -85,18 +85,27 @@ Implementation: narrow existing loader/validator/bootstrap modules plus public e
 
 - Issue/branch/parent: #506; chore/506-unused-operation-policy; main.
 - Phase/baseline: Research; b42b43d696ab12bb85dbb8fbf639e68569aaeee0.
-- Scope/owner decisions: bounded unused-route investigation authorized; removal strategy above still pending human decision.
+- Scope/owner decisions: bounded unused-route investigation authorized; owner explicitly approved the proposed clean break on 2026-10-16 ("Akkoord!").
 - Code/tests: unchanged; no tests executed during Research.
-- QA boundary/verdict: Research → Implementation; not requested before owner strategy is captured.
-- Blocker/next action: obtain the explicit Python/config clean-break decision, record it and request independent phase-boundary QA. Stop before implementation.
+- QA boundary/verdict: Research → Implementation; independent review requested on the completed Research commit.
+- Blocker/next action: no owner decision remains; request independent Research → Implementation GO/NOGO and wait before production edits.
 
 ## Questions
 
-- Approve coherent clean removal of these unused importable Python/config interfaces, with no compatibility bridge and no automatic existing-workspace migration?
+None remaining within the approved boundary.
 
 ## Approved Strategy
 
-PENDING HUMAN DECISION. Proposal per boundary: cleanly remove engine/models/exports/loader/bootstrap without compatibility aliases; remove both shipped YAML sources with explicit manual cleanup guidance and no automatic mutation of existing workspaces; remove dead tests and adapt direct retained tests only; preserve all live enforcement/workflow/template/check admission. Queue/merge authorization is not treated as approval of this Python/config break.
+The human owner explicitly approved the complete proposal on 2026-10-16: "Akkoord!" This is the removal-strategy decision, separate from queue/merge authorization.
+
+| Boundary | Approved strategy |
+| --- | --- |
+| Engine, importable models/exports and loader/bootstrap contract | Clean removal; no compatibility aliases, deprecated stubs or replacement framework. Unknown direct importers must move explicitly. |
+| Shipped YAML / existing workspaces | Remove both shipped policies.yaml sources. Document deliberate owner cleanup; no automatic deletion/migration of existing workspace files. |
+| Tests/helpers | Remove dead route-only tests and its factory; adapt direct retained consumers and preserve meaningful behavior. No extra legacy/deletion regression tests or suite-wide cleanup. |
+| Active admission and safety | Preserve EnforcementRunner, decorators, enforcement config, workflow contracts/gates, template and check/test/fix policy without semantic changes. |
+
+Stop and reopen scope if a supported live consumer appears or implementation requires changes to active enforcement, a replacement framework, automatic migration or a broader config refactor.
 
 ## Expected Results
 
@@ -148,3 +157,4 @@ Pin new evidence links to baseline; preserve historical reports rather than dead
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp researcher | Trace operation-policy consumers, preserved enforcement and bounded clean-break proposal; human strategy pending. |
+| 0.2 | 2026-10-16 | @imp researcher | Capture explicit owner approval per affected boundary; close open strategy question and request independent Research review. |
