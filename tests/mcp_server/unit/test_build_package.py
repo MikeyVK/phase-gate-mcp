@@ -250,11 +250,12 @@ def test_cleanup_failure_keeps_original_diagnosis(
     item = output / "old"
     if directory:
         item.mkdir()
+        (item / "child.txt").write_text("old", encoding="utf-8")
     else:
         item.write_text("old", encoding="utf-8")
     failure = PermissionError("injected required cleanup denial")
     if directory:
-        monkeypatch.setattr(builder.shutil, "rmtree", Mock(side_effect=failure))
+        monkeypatch.setattr(builder.shutil.os, "unlink", Mock(side_effect=failure))
     else:
         monkeypatch.setattr(Path, "unlink", Mock(side_effect=failure))
 
