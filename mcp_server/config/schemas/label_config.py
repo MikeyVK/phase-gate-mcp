@@ -14,18 +14,20 @@ Defines typed label and pattern metadata loaded by the configuration layer.
 
 import re
 from dataclasses import FrozenInstanceError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.workphases import WorkphasesConfig
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, PrivateAttr, field_validator
+
+from mcp_server.config.ordering import ConfigId, OrderedConfigEntry, ordered_mapping
 
 
 class Label(BaseModel):
     """Immutable label definition from labels.yaml."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     name: str
     color: str
@@ -49,7 +51,7 @@ class Label(BaseModel):
         return {"name": self.name, "color": self.color, "description": self.description}
 
 
-class LabelPattern(BaseModel):
+class LabelPattern(OrderedConfigEntry):
     """Dynamic label pattern definition."""
 
     pattern: str
@@ -64,10 +66,14 @@ class LabelPattern(BaseModel):
 class LabelConfig(BaseModel):
     """Label configuration value object."""
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
-    labels: list[Label] = Field(..., description="Label definitions")
+    labels: dict[ConfigId, Label] = Field(..., description="Label definitions")
     freeform_exceptions: list[str] = Field(default_factory=list)
-    label_patterns: list[LabelPattern] = Field(default_factory=list)
+    label_patterns: Annotated[dict[ConfigId, LabelPattern], AfterValidator(ordered_mapping)] = (
+        Field(default_factory=dict)
+    )
 
     _labels_by_name: dict[str, Label] = PrivateAttr(default_factory=dict)
     _labels_by_category: dict[str, list[Label]] = PrivateAttr(default_factory=dict)
@@ -76,9 +82,9 @@ class LabelConfig(BaseModel):
         self._build_caches()
 
     def _build_caches(self) -> None:
-        self._labels_by_name = {label.name: label for label in self.labels}
+        self._labels_by_name = {label.name: label for label in self.labels.values()}
         self._labels_by_category = {}
-        for label in self.labels:
+        for label in self.labels.values():
             if ":" in label.name:
                 category = label.name.split(":", 1)[0]
                 self._labels_by_category.setdefault(category, []).append(label)
@@ -88,11 +94,13 @@ class LabelConfig(BaseModel):
             return (True, "")
         if name in self._labels_by_name:
             return (True, "")
-        for pattern in self.label_patterns:
+        for pattern in self.label_patterns.values():
             if pattern.matches(name):
                 return (True, "")
 
-        pattern_examples = [pattern.example for pattern in self.label_patterns if pattern.example]
+        pattern_examples = [
+            pattern.example for pattern in self.label_patterns.values() if pattern.example
+        ]
         examples_str = (
             f" Dynamic patterns: {', '.join(pattern_examples)}." if pattern_examples else ""
         )
@@ -113,8 +121,8 @@ class LabelConfig(BaseModel):
 
     @field_validator("labels")
     @classmethod
-    def validate_no_duplicates(cls, labels: list[Label]) -> list[Label]:
-        names = [label.name for label in labels]
+    def validate_no_duplicates(cls, labels: dict[ConfigId, Label]) -> dict[ConfigId, Label]:
+        names = [label.name for label in labels.values()]
         duplicates = [name for name in names if names.count(name) > 1]
         if duplicates:
             raise ValueError(f"Duplicate label names: {set(duplicates)}")

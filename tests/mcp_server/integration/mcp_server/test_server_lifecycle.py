@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mcp_server.config.settings import GitHubSettings, LogSettings, ServerSettings, Settings
+from mcp_server.config.settings import LogSettings, ServerSettings, Settings
 from tests.mcp_server.test_support import make_test_server
 
 
@@ -26,7 +26,6 @@ def _make_test_settings(audit_log: Path, workspace_root: Path) -> Settings:
             bypass_version_check=True,
         ),
         logging=LogSettings(level="INFO", audit_log=str(audit_log)),
-        github=GitHubSettings(owner="test", repo="repo", token=None),
     )
 
 

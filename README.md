@@ -50,7 +50,7 @@ mcp_server/
 └── assets/        # Packaged release assets (templates, configs, docs)
 ```
 
-Workspace declarations normally live under the selected server root's `config/` directory (commonly `.pgmcp/config/`). An explicit `PGMCP_CONFIG_ROOT` remains owner-controlled and is not overwritten by template renewal.
+Workspace policy uses complete `config/defaults/<file>.yaml` bases and optional root `config/<file>.yaml` overrides. The selected config root is self-contained and owner-controlled. See [configuration composition](docs/reference/config-loading-architecture.md); template renewal does not overwrite workspace policy.
 
 | File | Purpose |
 | :--- | :--- |
@@ -59,6 +59,7 @@ Workspace declarations normally live under the selected server root's `config/` 
 | `checks.yaml` / `tests.yaml` / `fixes.yaml` | Configured check, test, and fix selections |
 | `adapters.yaml` / `artifacts.yaml` | Adapter trust and artifact locations |
 | `git.yaml` | Branch naming conventions |
+| `github.yaml` | Explicit repository owner/name, optional project metadata and token alternative |
 
 ---
 
@@ -71,8 +72,6 @@ Workspace declarations normally live under the selected server root's `config/` 
 | `PGMCP_CONFIG_ROOT` | No | Owner-controlled configuration-root override. |
 | `PGMCP_TEMPLATE_ROOT` | No | Template-suite-root override. |
 | `GITHUB_TOKEN` | No | Credential for token-dependent GitHub tools and resources. |
-| `GITHUB_OWNER` / `GITHUB_REPO` | For GitHub use | Explicit repository owner/name; no identity defaults or remote inference. May also be supplied in the settings overlay. |
-| `GITHUB_PROJECT_NUMBER` | No | Optional project number; no default. |
 | `PGMCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`). |
 | `LOG_LEVEL` | No | Logging verbosity (default: `INFO`). |
 
@@ -132,3 +131,4 @@ pytest tests/mcp_server/ --cov=mcp_server --cov-branch --cov-fail-under=90
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+

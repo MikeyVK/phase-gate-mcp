@@ -61,7 +61,10 @@ def _workphases(phases: list[str]) -> WorkphasesConfig:
 
 
 def _contracts(workflow_phases: list[str], pr_allowed_phase: str = "ready") -> ContractsConfig:
-    phases = [WorkflowPhaseEntry(name=p, instructions=_STUB_INSTRUCTIONS) for p in workflow_phases]
+    phases = {
+        phase_id: WorkflowPhaseEntry(order=index, instructions=_STUB_INSTRUCTIONS)
+        for index, phase_id in enumerate(workflow_phases)
+    }
     return ContractsConfig(
         merge_policy=MergePolicy(pr_allowed_phase=pr_allowed_phase),
         workflows={"feature": WorkflowEntry(phases=phases)},
@@ -74,7 +77,6 @@ def _minimal_workflow_config() -> WorkflowConfig:
         version="1.0.0",
         workflows={
             "feature": WorkflowTemplate(
-                name="feature",
                 description="Feature workflow",
                 default_execution_mode="interactive",
             )
@@ -112,17 +114,15 @@ class TestWorkflowTemplateCleanup:
     def test_workflow_template_valid_without_phases(self) -> None:
         """WorkflowTemplate can be constructed without phases after C6."""
         wt = WorkflowTemplate(
-            name="feature",
             description="Feature workflow",
             default_execution_mode="interactive",
         )
-        assert wt.name == "feature"
+        assert wt.default_execution_mode == "interactive"
 
     def test_workflow_template_rejects_phases_as_extra_field(self) -> None:
         """WorkflowTemplate rejects 'phases' as an extra field (extra='forbid' enforcement)."""
         with pytest.raises(ValidationError):
             WorkflowTemplate(  # type: ignore[call-arg]
-                name="feature",
                 description="Feature workflow",
                 default_execution_mode="interactive",
                 phases=["research"],
@@ -162,7 +162,7 @@ class TestWorkflowConfigCleanup:
         config = _minimal_workflow_config()
         wt = config.get_workflow("feature")
         assert isinstance(wt, WorkflowTemplate)
-        assert wt.name == "feature"
+        assert wt.default_execution_mode == "interactive"
         assert wt.description == "Feature workflow"
 
 

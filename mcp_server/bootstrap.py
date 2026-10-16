@@ -23,6 +23,7 @@ Dependency injection and bootstrap orchestration layer.
 
 from __future__ import annotations
 
+import os
 import shutil
 import sys
 from dataclasses import dataclass, field
@@ -34,6 +35,7 @@ from jinja2 import DictLoader, Environment
 from pydantic import BaseModel
 
 from mcp_server.adapters.git_adapter import GitAdapter
+from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
     ContractsConfig,
@@ -49,7 +51,7 @@ from mcp_server.config.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.config.settings import Settings
+from mcp_server.config.settings import GitHubSettings, Settings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError, MCPError
 from mcp_server.core.interfaces import ICoreTool
@@ -202,6 +204,7 @@ lifecycle_logger = get_logger("server_lifecycle")
 class ConfigLayer:
     """Immutable layer containing all validated configurations."""
 
+    github_settings: GitHubSettings
     git_config: GitConfig
     workflow_config: WorkflowConfig
     workphases_config: WorkphasesConfig
@@ -408,6 +411,9 @@ class ServerBootstrapper:
             )
 
             # Load V2/V3 configurations
+            github_settings = resolve_github_settings(
+                config_loader.load_github_config(), os.environ.get("GITHUB_TOKEN")
+            )
             git_config = config_loader.load_git_config()
             workflow_config = config_loader.load_workflow_config()
             workphases_config = config_loader.load_workphases_config()
@@ -520,6 +526,7 @@ class ServerBootstrapper:
 
             # 5. Build the unrelated workflow, Git, GitHub, and enforcement managers.
             configs = ConfigLayer(
+                github_settings=github_settings,
                 git_config=git_config,
                 workflow_config=workflow_config,
                 workphases_config=workphases_config,
@@ -775,7 +782,7 @@ class ServerBootstrapper:
             server_root=server_root,
         )
         github_manager = GitHubManager(
-            github_settings=self._settings.github,
+            github_settings=configs.github_settings,
             issue_config=configs.issue_config,
             label_config=configs.label_config,
             scope_config=configs.scope_config,
@@ -823,7 +830,7 @@ class ServerBootstrapper:
             terminal_phase=configs.workphases_config.get_terminal_phase(),
             pr_allowed_phase=configs.contracts_config.get_pr_allowed_phase(),
             branch_local_artifacts=tuple(
-                configs.contracts_config.merge_policy.branch_local_artifacts
+                configs.contracts_config.merge_policy.branch_local_artifacts.values()
             ),
         )
 
@@ -995,7 +1002,9 @@ class ServerBootstrapper:
 
         all_base = (*unchanged_base_tools, *target_v3_tools)
         supported_tools = (*all_base, *issue_tools, *credential_tools)
-        active_tools = supported_tools if settings.github.token else (*all_base, *issue_tools)
+        active_tools = (
+            supported_tools if configs.github_settings.token else (*all_base, *issue_tools)
+        )
         return ToolAssembly.create(
             supported_tools=supported_tools,
             active_tools=active_tools,
@@ -1003,7 +1012,7 @@ class ServerBootstrapper:
 
     def _build_resources(
         self,
-        configs: ConfigLayer,  # noqa: ARG002
+        configs: ConfigLayer,
         managers: ManagerGraph,
         *,
         standards: StandardsResource | None = None,
@@ -1021,7 +1030,7 @@ class ServerBootstrapper:
         resources.append(CachedResponseResource(cache=managers.response_cache))
         resources.append(CacheReadGuideResource())
 
-        if self._settings.github.token:
+        if configs.github_settings.token:
             resources.append(GitHubIssuesResource(manager=managers.github_manager))
 
         return resources

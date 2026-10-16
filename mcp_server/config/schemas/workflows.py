@@ -18,6 +18,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.config.ordering import ConfigId
+
 
 class WorkflowTemplate(BaseModel):
     """Single workflow definition — catalog metadata only.
@@ -27,7 +29,6 @@ class WorkflowTemplate(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    name: str = Field(..., description="Workflow name")
     default_execution_mode: Literal["interactive", "autonomous"] = Field(
         default="interactive",
         description="Default execution mode for this workflow",
@@ -41,8 +42,10 @@ class WorkflowConfig(BaseModel):
     Transition validation and phase ordering are delegated to ContractsConfig.
     """
 
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
     version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
-    workflows: dict[str, WorkflowTemplate] = Field(..., description="Workflow definitions")
+    workflows: dict[ConfigId, WorkflowTemplate] = Field(..., description="Workflow definitions")
 
     def get_workflow(self, name: str) -> WorkflowTemplate:
         workflows_dict: dict[str, WorkflowTemplate] = dict(self.workflows)

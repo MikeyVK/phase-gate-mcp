@@ -98,17 +98,19 @@ def compose(
             "max_items": 5,
             "template_success": "{requested_scope}: {run_status}; profile={selected_profile}",
             "template_failure": "{requested_scope}: {run_status}; error={error_code}",
-            "collections": [
-                {
+            "collections": {
+                "entry_1": {
+                    "order": 10,
                     "field": "results",
                     "heading": "Checks",
                     "item_template": (
                         "{check_id}: {status}; reason={reason}; args_source={args_source}"
                     ),
                 }
-            ],
-            "enum_cases": [
-                {
+            },
+            "enum_cases": {
+                "entry_1": {
+                    "order": 10,
                     "field": "error_code",
                     "cases": {
                         "no_configured_checks": "No checks are configured.",
@@ -122,7 +124,7 @@ def compose(
                         "termination_unconfirmed": "Process termination was not confirmed.",
                     },
                 }
-            ],
+            },
         }
     }
     presenter = TextPresenter(config_data=presentation)

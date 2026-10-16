@@ -81,9 +81,8 @@ def _write_state(tmp_path: Path, current_phase: str) -> None:
 
 def _make_runner(tmp_path: Path) -> EnforcementRunner:
     """Build EnforcementRunner backed by the live enforcement.yaml."""
-    enforcement_yaml = _REPO_ROOT / get_default_server_root() / "config" / "enforcement.yaml"
     loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
-    config = loader.load_enforcement_config(config_path=enforcement_yaml)
+    config = loader.load_enforcement_config()
 
     pr_reader = MagicMock(spec=IPRStatusReader)
     pr_reader.get_pr_status.return_value = PRStatus.ABSENT

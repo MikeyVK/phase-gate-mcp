@@ -35,6 +35,7 @@ Verifies that:
 from __future__ import annotations
 
 from pathlib import Path
+from shutil import copy2
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -324,28 +325,36 @@ class TestContextLoadedResets:
             'version: "1.0.0"\n'
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
-            "  branch_local_artifacts: []\n"
+            "  branch_local_artifacts: {}\n"
             "workflows:\n"
             "  feature:\n"
             "    phases:\n"
-            "      - name: research\n"
+            "      research:\n"
+            "        order: 10\n"
             "        instructions:\n"
             "          sub_role: researcher\n"
             "          phase_instructions: Research phase.\n"
             "          handover_template: Co to Imp.\n"
-            "      - name: design\n"
+            "      design:\n"
+            "        order: 20\n"
             "        instructions:\n"
             "          sub_role: designer\n"
             "          phase_instructions: Design phase.\n"
             "          handover_template: Co to Imp.\n"
-            "      - name: ready\n"
+            "      ready:\n"
+            "        order: 30\n"
             "        instructions:\n"
             "          sub_role: implementer\n"
             "          phase_instructions: Ready phase.\n"
             "          handover_template: Imp to QA.\n"
         )
-        config_dir = tmp_path / get_default_server_root() / "config"
+        config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
         config_dir.mkdir(parents=True)
+        for file_name in ("git.yaml", "workphases.yaml"):
+            copy2(
+                _REPO_ROOT / get_default_server_root() / "config" / "defaults" / file_name,
+                config_dir / file_name,
+            )
         (config_dir / "contracts.yaml").write_text(contracts_yaml, encoding="utf-8")
 
         issue_number = 268

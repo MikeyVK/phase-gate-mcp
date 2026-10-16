@@ -6,10 +6,7 @@ import shutil
 import sys
 from pathlib import Path
 
-import yaml
-
 from mcp_server.bootstrap import ServerBootstrapper
-from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import Settings
 from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.exceptions import ConfigError, MCPError
@@ -47,23 +44,6 @@ def _capture_startup_diagnostic(
             else None
         ),
     )
-
-
-def _reset_binding_choices(server_root: Path) -> None:
-    """Clear inherited acknowledgements only in fresh-init configuration."""
-    loader = ConfigLoader(server_root / "config")
-    declarations = (
-        ("checks", loader.load_checks_config()),
-        ("tests", loader.load_tests_config()),
-        ("fixes", loader.load_fixes_config()),
-    )
-    for section, declaration in declarations:
-        data = declaration.model_dump(mode="json", exclude_unset=True)
-        for binding in data[section].values():
-            binding["configuration_choice"] = None
-        (loader.config_root / f"{section}.yaml").write_text(
-            yaml.safe_dump(data, sort_keys=False), encoding="utf-8", newline="\n"
-        )
 
 
 def main(settings: Settings | None = None) -> None:
@@ -114,8 +94,6 @@ def main(settings: Settings | None = None) -> None:
                 resolved_server_root,
                 dirs_exist_ok=True,
             )
-
-            _reset_binding_choices(resolved_server_root)
 
             from mcp_server.cli_renewal import build_default_operation  # noqa: PLC0415
 

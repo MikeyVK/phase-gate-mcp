@@ -147,10 +147,10 @@ class ConfigValidator:
             if workflow_name not in known_workflows:
                 raise ConfigError(f"contracts references unknown workflow: '{workflow_name}'")
 
-            for phase_entry in workflow_entry.phases:
-                if phase_entry.name not in known_phases:
+            for phase_id in workflow_entry.phases:
+                if phase_id not in known_phases:
                     raise ConfigError(
-                        f"contracts reference phase '{phase_entry.name}' "
+                        f"contracts reference phase '{phase_id}' "
                         "that is missing from workphases.yaml"
                     )
 

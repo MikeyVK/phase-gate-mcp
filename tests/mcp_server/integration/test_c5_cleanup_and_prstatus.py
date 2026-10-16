@@ -17,9 +17,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-import yaml
 
 import mcp_server.tools.pr_tools as pr_tools_module
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext
@@ -50,10 +50,8 @@ class TestCreatePRToolRemoval:
 
     def test_enforcement_yaml_has_no_create_pr_rule(self) -> None:
         """The create_pr enforcement rule must be removed (dead config for removed tool)."""
-        config = yaml.safe_load(_ENFORCEMENT_YAML.read_text(encoding="utf-8"))
-        create_pr_rules = [
-            rule for rule in config["enforcement"] if rule.get("tool") == "create_pr"
-        ]
+        config = ConfigLoader(_ENFORCEMENT_YAML.parent).load_enforcement_config()
+        create_pr_rules = [rule for rule in config.enforcement.values() if rule.tool == "create_pr"]
         assert create_pr_rules == [], (
             "enforcement.yaml must not contain a rule for create_pr — tool is removed"
         )

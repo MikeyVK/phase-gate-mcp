@@ -15,8 +15,7 @@ import string
 from pathlib import Path
 from typing import TypeAlias
 
-import yaml
-
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.presentation_config import (
     CollectionPresentationConfig,
     PresentationConfig,
@@ -50,8 +49,7 @@ def _placeholders(template: str) -> PlaceholderSet:
 
 
 def _load_config() -> PresentationConfig:
-    raw = yaml.safe_load(_PRESENTATION_PATH.read_text(encoding="utf-8"))
-    return PresentationConfig.model_validate(raw)
+    return ConfigLoader(_PRESENTATION_PATH.parent).load_presentation_config()
 
 
 def _collection_shape(
@@ -59,7 +57,7 @@ def _collection_shape(
 ) -> CollectionExpectation:
     child = None
     if declaration.children:
-        nested = declaration.children[0]
+        nested = next(iter(declaration.children.values()))
         child = (nested.field, _placeholders(nested.item_template))
     return declaration.field, _placeholders(declaration.item_template), child
 
@@ -173,16 +171,16 @@ class TestToolPresentationRollout:
         for tool_name, (max_items, collections) in _MECHANICS.items():
             tool = config.tools[tool_name]
             assert tool.max_items == max_items, tool_name
-            assert tuple(_collection_shape(item) for item in tool.collections) == collections, (
-                tool_name
-            )
+            assert (
+                tuple(_collection_shape(item) for item in tool.collections.values()) == collections
+            ), tool_name
 
         for tool_name, field in _INLINE_SEQUENCE_FIELDS.items():
             tool = config.tools[tool_name]
             templates = [tool.template_success or ""]
             templates.extend(
                 case_template
-                for enum_case in tool.enum_cases
+                for enum_case in tool.enum_cases.values()
                 for case_template in enum_case.cases.values()
             )
             assert any(field in _placeholders(template) for template in templates), tool_name

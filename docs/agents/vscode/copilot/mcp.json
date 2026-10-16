@@ -3,7 +3,10 @@
     "phase-gate-mcp": {
       "type": "stdio",
       "command": "python",
-      "args": ["-m", "mcp_server.core.proxy"],
+      "args": [
+        "-m",
+        "mcp_server.core.proxy"
+      ],
       "cwd": "${workspaceFolder}",
       "env": {
         "PYTHONPATH": "${workspaceFolder}",
@@ -11,9 +14,6 @@
         "PGMCP_SERVER_NAME": "phase-gate-mcp",
         "PGMCP_WORKSPACE_ROOT": "${workspaceFolder}",
         "PGMCP_SERVER_PROJECT_DIR": ".pgmcp",
-        "GITHUB_OWNER": "<YOUR_GITHUB_OWNER>",
-        "GITHUB_REPO": "<YOUR_GITHUB_REPO>",
-        "GITHUB_PROJECT_NUMBER": "<YOUR_PROJECT_NUMBER>",
         "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
       }
     }

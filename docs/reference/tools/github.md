@@ -57,18 +57,15 @@ Check the returned fields and any explicit failure status before reporting an ou
 
 ---
 
-## Environment Variables
+## GitHub Configuration
 
-These variables override the corresponding github fields in the optional
-PGMCP_CONFIG_PATH settings overlay. GitHub use requires resolved token, owner and repo
-values; the environment variables are not separately required when the overlay
-already supplies those values.
+Owner, repo and optional project_number come from effective github.yaml.
+Bootstrap prefers a nonempty GITHUB_TOKEN over the explicit configured token.
+These are not launcher Settings fields. See [GitHub setup](../../manuals/github-setup.md)
+and the [composition contract](../config-loading-architecture.md).
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `GITHUB_TOKEN` | If absent from overlay | None | Token required for GitHub use; classic or fine-grained |
-| `GITHUB_OWNER` | If absent from overlay | None | Owner required for GitHub use |
-| `GITHUB_REPO` | If absent from overlay | None | Repository name required for GitHub use, separate from owner |
+GitHub operations require the resolved identity/token appropriate to their operation.
+Neutral settings permit startup/health; existing registration and enforcement apply.
 
 **Token Permissions (minimum):**
 - Issues: `repo` scope or fine-grained `issues:write`
@@ -1041,4 +1038,5 @@ Labels matching `freeform-*` pattern bypass pattern validation.
 | 3.2 | 2026-10-15 | @imp documenter | Replace PR target cascade/overrides with matching registered head/parent authority before lifecycle effects (#503) |
 | 3.1 | 2026-08-22 | Agent | Align credential activation, bounded list/detail projections, and cached DTO contracts |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 16 GitHub tools: issues (5), PRs (3), labels (5), milestones (3) |
+
 

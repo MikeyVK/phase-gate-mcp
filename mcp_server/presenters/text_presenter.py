@@ -251,7 +251,7 @@ class TextPresenter(ITextPresenter):
             text = f"{emoji} {text}"
 
         if tool_cfg is not None:
-            for enum_case in tool_cfg.enum_cases:
+            for enum_case in tool_cfg.enum_cases.values():
                 raw_value = data_dict.get(enum_case.field)
                 if raw_value is None:
                     continue
@@ -267,7 +267,7 @@ class TextPresenter(ITextPresenter):
                     )
                     text = f"{text}\n\n{enum_text}"
 
-            collections = tool_cfg.collections
+            collections = tuple(tool_cfg.collections.values())
             if not resolved_success:
                 collections = tuple(
                     declaration for declaration in collections if declaration.field in data_dict
@@ -683,7 +683,7 @@ def validate_presentation_alignment(
                     f"cannot inline structured field '{placeholder}'"
                 )
 
-        for child in declaration.children:
+        for child in declaration.children.values():
             validate_collection(
                 child,
                 model=item_model,
@@ -844,7 +844,7 @@ def validate_presentation_alignment(
                 or uses_bounded_sequence
             )
 
-        for collection in tool_cfg.collections:
+        for collection in tool_cfg.collections.values():
             uses_bounded_sequence = (
                 validate_collection(
                     collection,
@@ -854,7 +854,7 @@ def validate_presentation_alignment(
                 or uses_bounded_sequence
             )
 
-        for enum_case in tool_cfg.enum_cases:
+        for enum_case in tool_cfg.enum_cases.values():
             uses_bounded_sequence = (
                 validate_enum_case(
                     enum_case,

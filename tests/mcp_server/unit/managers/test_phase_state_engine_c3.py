@@ -11,6 +11,7 @@ C3 Deliverables:
 
 import logging
 from pathlib import Path
+from shutil import copy2
 
 import pytest
 
@@ -95,8 +96,11 @@ def workspace_root(tmp_path: Path) -> Path:
     """Workspace root with .pgmcp/config/workphases.yaml
     containing exit_requires + entry_expects.
     """
-    config_dir = tmp_path / get_default_server_root() / "config"
+    config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
     config_dir.mkdir(parents=True)
+    source = Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+    for file_name in ("git.yaml", "contracts.yaml"):
+        copy2(source / file_name, config_dir / file_name)
     (config_dir / "workphases.yaml").write_text(
         """
 version: "1.0.0"
@@ -104,12 +108,16 @@ phases:
   planning:
     display_name: "Planning"
     exit_requires:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "TDD cycle breakdown"
   implementation:
     display_name: "Implementation"
     entry_expects:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "Expected from planning"
   design:
     display_name: "Design"
@@ -126,8 +134,11 @@ phases:
 @pytest.fixture
 def workspace_root_no_gates(tmp_path: Path) -> Path:
     """Workspace root with .pgmcp/config/workphases.yaml where phases have no gates."""
-    config_dir = tmp_path / get_default_server_root() / "config"
+    config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
     config_dir.mkdir(parents=True)
+    source = Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+    for file_name in ("git.yaml", "contracts.yaml"):
+        copy2(source / file_name, config_dir / file_name)
     (config_dir / "workphases.yaml").write_text(
         """
 version: "1.0.0"

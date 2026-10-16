@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from shutil import copy2
 
 import pytest
 
@@ -210,15 +211,18 @@ def _create_cycle_engine(
 
 def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
     """Write a minimal workflow where implementation is cycle-based (config-driven)."""
-    config_dir = workspace_root / get_default_server_root() / "config"
+    config_dir = workspace_root / get_default_server_root() / "config" / "defaults"
     config_dir.mkdir(parents=True, exist_ok=True)
+    source = Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+    for file_name in ("git.yaml", "workphases.yaml"):
+        copy2(source / file_name, config_dir / file_name)
     (config_dir / "workflows.yaml").write_text(
         (
-            "version: '1.0.0'\n"
-            "workflows:\n"
-            "  feature:\n"
-            "    name: feature\n"
-            "    phases: [planning, implementation, documentation]\n"
+            r"""
+version: 1.0.0
+workflows:
+  feature: {}
+"""
         ),
         encoding="utf-8",
     )
@@ -241,39 +245,48 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
     )
     (config_dir / "contracts.yaml").write_text(
         (
-            "version: '1.0.0'\n"
-            "merge_policy:\n"
-            "  pr_allowed_phase: ready\n"
-            "  branch_local_artifacts: []\n"
-            "workflows:\n"
-            "  feature:\n"
-            "    phases:\n"
-            "      - name: planning\n"
-            "        instructions:\n"
-            "          sub_role: test-role\n"
-            "          phase_instructions: Test instructions.\n"
-            "          handover_template: Test handover.\n"
-            "      - name: implementation\n"
-            "        cycle_based: true\n"
-            "        subphases: [red, green, refactor]\n"
-            "        commit_type_map:\n"
-            "          red: test\n"
-            "          green: feat\n"
-            "          refactor: refactor\n"
-            "        instructions:\n"
-            "          sub_role: test-role\n"
-            "          phase_instructions: Test instructions.\n"
-            "          handover_template: Test handover.\n"
-            "      - name: documentation\n"
-            "        instructions:\n"
-            "          sub_role: test-role\n"
-            "          phase_instructions: Test instructions.\n"
-            "          handover_template: Test handover.\n"
-            "      - name: ready\n"
-            "        instructions:\n"
-            "          sub_role: test-role\n"
-            "          phase_instructions: Test instructions.\n"
-            "          handover_template: Test handover.\n"
+            r"""
+version: 1.0.0
+merge_policy:
+  pr_allowed_phase: ready
+  branch_local_artifacts: {}
+workflows:
+  feature:
+    phases:
+      planning:
+        order: 10
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      implementation:
+        order: 20
+        cycle_based: true
+        subphases:
+        - red
+        - green
+        - refactor
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      documentation:
+        order: 30
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+      ready:
+        order: 40
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
+"""
         ),
         encoding="utf-8",
     )

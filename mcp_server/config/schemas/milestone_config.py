@@ -14,11 +14,15 @@ Defines typed value objects for milestone metadata loaded by the config layer.
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from mcp_server.config.ordering import ConfigId
 
 
 class MilestoneEntry(BaseModel):
     """Single milestone entry from milestones.yaml."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     number: int
     title: str
@@ -28,10 +32,12 @@ class MilestoneEntry(BaseModel):
 class MilestoneConfig(BaseModel):
     """Milestone validation configuration value object."""
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
-    milestones: list[MilestoneEntry] = Field(default_factory=list)
+    milestones: dict[ConfigId, MilestoneEntry] = Field(default_factory=dict)
 
     def validate_milestone(self, title: str) -> bool:
         if not self.milestones:
             return True
-        return any(milestone.title == title for milestone in self.milestones)
+        return any(milestone.title == title for milestone in self.milestones.values())

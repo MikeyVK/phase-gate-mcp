@@ -8,9 +8,11 @@
 from __future__ import annotations
 
 import string
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+
+from mcp_server.config.ordering import ConfigId, OrderedConfigEntry, ordered_mapping
 
 
 def _validate_placeholders(
@@ -91,7 +93,7 @@ class GlobalNotesConfig(BaseModel):
     templates: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
-class CollectionPresentationConfig(BaseModel):
+class CollectionPresentationConfig(OrderedConfigEntry):
     """Declarative rendering policy for one direct ordered-sequence field."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -99,18 +101,20 @@ class CollectionPresentationConfig(BaseModel):
     field: str = Field(min_length=1)
     heading: str | None = None
     item_template: str
-    children: tuple[CollectionPresentationConfig, ...] = ()
+    children: Annotated[
+        dict[ConfigId, CollectionPresentationConfig], AfterValidator(ordered_mapping)
+    ] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_children(self) -> CollectionPresentationConfig:
         """Require unique direct child declarations."""
-        child_fields = [child.field for child in self.children]
+        child_fields = [child.field for child in self.children.values()]
         if len(child_fields) != len(set(child_fields)):
             raise ValueError(f"Collection '{self.field}' has duplicate child field declarations")
         return self
 
 
-class EnumCasePresentationConfig(BaseModel):
+class EnumCasePresentationConfig(OrderedConfigEntry):
     """Declarative text blocks selected by a serialized enum value."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -175,17 +179,21 @@ class ToolPresentationConfig(BaseModel):
     recoveries: dict[str, str] = Field(default_factory=dict)
     info: dict[str, str] = Field(default_factory=dict)
     max_items: int | None = Field(default=None, gt=0)
-    collections: tuple[CollectionPresentationConfig, ...] = ()
-    enum_cases: tuple[EnumCasePresentationConfig, ...] = ()
+    collections: Annotated[
+        dict[ConfigId, CollectionPresentationConfig], AfterValidator(ordered_mapping)
+    ] = Field(default_factory=dict)
+    enum_cases: Annotated[
+        dict[ConfigId, EnumCasePresentationConfig], AfterValidator(ordered_mapping)
+    ] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_declaration_identity(self) -> ToolPresentationConfig:
         """Reject ambiguous sibling declarations before runtime assembly."""
-        collection_fields = [collection.field for collection in self.collections]
+        collection_fields = [collection.field for collection in self.collections.values()]
         if len(collection_fields) != len(set(collection_fields)):
             raise ValueError("Tool has duplicate collection field declarations")
 
-        enum_fields = [enum_case.field for enum_case in self.enum_cases]
+        enum_fields = [enum_case.field for enum_case in self.enum_cases.values()]
         if len(enum_fields) != len(set(enum_fields)):
             raise ValueError("Tool has duplicate enum-case field declarations")
         return self

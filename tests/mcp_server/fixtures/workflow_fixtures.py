@@ -5,7 +5,7 @@
 @responsibilities:
   - Provide workflow-phase fixtures for tests
   - Load phase lists from .pgmcp/config/contracts.yaml via ConfigLoader (SSOT)
-  - workflows.yaml fixtures retained for backward compat with WorkflowConfig tests
+  - Provide workflow catalog metadata through the existing configuration loader
 """
 
 from pathlib import Path
@@ -35,7 +35,7 @@ def contracts_config() -> ContractsConfig:
 
 
 @pytest.fixture
-def workflow_phases(workflow_config: WorkflowConfig) -> list[str]:
+def workflow_phases(contracts_config: ContractsConfig) -> list[str]:
     """
     All unique phases across all workflows.
 
@@ -44,7 +44,7 @@ def workflow_phases(workflow_config: WorkflowConfig) -> list[str]:
     "documentation", "coordination"]
     """
     all_phases = set()
-    for workflow in workflow_config.workflows.values():
+    for workflow in contracts_config.workflows.values():
         all_phases.update(workflow.phases)
     return sorted(all_phases)
 

@@ -3,8 +3,8 @@
 # Agentic Bootstrap Guide for New Projects
 
 **Status:** APPROVED  
-**Version:** 1.3  
-**Last Updated:** 2026-10-11
+**Version:** 1.4  
+**Last Updated:** 2026-10-16
 
 ---
 
@@ -67,7 +67,7 @@ For a previously absent server root:
 
 Initialization copies the packaged assets into the configured server root, normally `.pgmcp/`, and establishes the managed template state. Its materials include:
 
-- `config/` — workflow, enforcement, and execution configuration.
+- `config/` — configuration assets from the selected reviewed package; the existing 3.0.0 wheel does not gain the unreleased layered layout through this document.
 - `template_suite/` — concrete template packages and shared schema/Jinja support.
 - `agents/` — distributable host instructions and configurations.
 - `docs/` — packaged user, operator, and reference documentation.
@@ -80,6 +80,19 @@ An existing server root requires the owner-led renewal procedure:
 ```
 
 Renewal stages and validates a candidate for the managed template suite, compares it with the active suite and recorded checkpoint, and reports activation or required owner action. It does not refresh owner-managed configuration or workspace adapters. For an existing v2 workspace, explicitly reconcile effective configuration and changed tool inputs against the shipped defaults; preserve owner changes and external roots. Provision the applicable native executables/versions separately, as declared by the [adapter packages](../reference/execution-adapters.md). A missing trustworthy baseline can produce `checkpoint_required` and exit code 2; follow the explicit acceptance or verified-backup replacement procedure in the [workspace upgrade guide](workspace-upgrade.md). Restart after package, active-suite or startup-loaded configuration changes and reconnect the client to refresh tool discovery. Launch-environment changes may require closing and relaunching the client. Treat `installation.json` as the installation/checkpoint record rather than a root `.version` file. Check healthy admission after restart; an acknowledgement alone does not establish it.
+
+### Unreleased #504 — deliberate source-contract adoption
+
+The following applies only to an owner-prepared candidate containing #504. It is not
+a description of the unchanged 3.0.0 wheel, and this issue supplies no new assembled
+wheel, automatic migration or upgrade mechanism. Prepare a coherent candidate config
+root with complete defaults/ bases and optional root overrides before adoption.
+
+For that candidate, prepare repository identity in root config/github.yaml and reviewed quality choices
+in root check/test/fix overrides. Prefer host GITHUB_TOKEN delivery. Launcher settings
+have no GitHub identity; initialization preserves supplied choices. Read the
+[composition contract](../reference/config-loading-architecture.md) before adopting an
+existing root; no automatic config migration is provided.
 
 ### 4. Deploy IDE-Specific Configurations & Rules
 Based on the active IDE, copy and set up the workspace rules and configurations:
@@ -187,3 +200,6 @@ This ensures that the workflow configurations are tracked in Git, making them in
 | 1.2 | 2026-10-01 | Implementation documenter | Describe current template_suite/checkpoint renewal, owner-led baseline handling and restart; retain complete-package assumption |
 | 1.1 | 2026-07-20 | Agent | Document .version file creation during CLI init |
 | 1.0 | 2026-07-08 | Agent | Initial draft |
+
+| 1.4 | 2026-10-16 | @imp documenter | Separate unchanged 3.0.0 package setup from deliberate adoption of unreleased layered configuration. |
+

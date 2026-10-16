@@ -42,12 +42,10 @@ def valid_workflows_yaml(tmp_path: Path) -> Path:
         "version": "1.0.0",
         "workflows": {
             "feature": {
-                "name": "feature",
                 "description": "Full development workflow",
                 "default_execution_mode": "interactive",
             },
             "hotfix": {
-                "name": "hotfix",
                 "description": "Emergency fix workflow",
                 "default_execution_mode": "autonomous",
             },
@@ -122,7 +120,6 @@ class TestWorkflowTemplateValidation:
         """Test that invalid execution_mode values are rejected."""
         with pytest.raises(ValidationError) as exc_info:
             WorkflowTemplate(
-                name="test",
                 default_execution_mode="manual",  # type: ignore[arg-type]
             )
 
@@ -133,7 +130,6 @@ class TestWorkflowTemplateValidation:
         """WorkflowTemplate rejects unknown extra fields (extra='forbid')."""
         with pytest.raises(ValidationError):
             WorkflowTemplate(  # type: ignore[call-arg]
-                name="test",
                 default_execution_mode="interactive",
                 unknown_field="should_fail",
             )
@@ -149,7 +145,6 @@ class TestWorkflowLookup:
         workflow = config.get_workflow("feature")
 
         assert isinstance(workflow, WorkflowTemplate)
-        assert workflow.name == "feature"
         assert workflow.default_execution_mode == "interactive"
         assert workflow.description == "Full development workflow"
 

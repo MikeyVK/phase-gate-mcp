@@ -1,87 +1,26 @@
-version: "2.0.0"
+# Workspace overrides; inherited values are defined in defaults/.
 artifacts:
-  architecture:
-    default_root: "docs/architecture"
-    additional_roots:
-      - "docs/reference"
-  commit:
-    default_root: ".pgmcp/temp/artifacts"
-  design:
-    default_root: "docs/development"
-    additional_roots:
-      - "docs"
-  generic_doc:
-    default_root: "docs"
-    additional_roots:
-      - "docs/reference"
-      - "docs/manuals"
-  issue:
-    default_root: ".pgmcp/temp/artifacts"
-  planning:
-    default_root: "docs/development"
-    additional_roots:
-      - "docs"
-  pr:
-    default_root: ".pgmcp/temp/artifacts"
   pytest_integration_test:
-    default_root: "tests/mcp_server/integration"
+    default_root: tests/mcp_server/integration
   pytest_unit_test:
-    default_root: "tests/mcp_server/unit"
+    default_root: tests/mcp_server/unit
     additional_roots:
-      - "tests/backend"
+    - tests/backend
   python_adapter:
-    default_root: "mcp_server/adapters"
+    default_root: mcp_server/adapters
   python_class:
-    default_root: "mcp_server"
+    default_root: mcp_server
   python_protocol:
-    default_root: "mcp_server/core/interfaces"
+    default_root: mcp_server/core/interfaces
   python_pydantic_config:
-    default_root: "mcp_server/config/schemas"
+    default_root: mcp_server/config/schemas
   python_pydantic_dto:
-    default_root: "mcp_server/dtos"
+    default_root: mcp_server/dtos
     additional_roots:
-      - "backend/dtos"
+    - backend/dtos
   python_worker:
-    default_root: "mcp_server/workers"
+    default_root: mcp_server/workers
     additional_roots:
-      - "backend/workers"
-  reference:
-    default_root: "docs/reference"
-    additional_roots:
-      - "docs/architecture"
-      - "docs/manuals"
-      - "docs/coding_standards"
-  research:
-    default_root: "docs/development"
-    additional_roots:
-      - "docs"
+    - backend/workers
   typescript_dto:
-    default_root: "frontend/src/dtos"
-  validation_report:
-    default_root: "docs/development"
-
-  yaml_configuration:
-    default_root: "config"
-    additional_roots:
-      - ".pgmcp/config"
-      - "locales"
-      - ".github"
-      - "mcp_server/bundled_adapters"
-      - ".pgmcp/temp"
-  json_schema:
-    default_root: "schemas"
-    additional_roots:
-      - ".pgmcp/template_suite"
-      - "mcp_server/execution/contracts"
-      - ".pgmcp/config/check_schemas"
-      - ".pgmcp/temp"
-  adr:
-    default_root: "docs/architecture/decisions"
-    additional_roots:
-      - "docs/development"
-      - ".pgmcp/temp"
-  sad:
-    default_root: "docs/architecture"
-    additional_roots:
-      - "docs/development"
-      - ".pgmcp/temp"
+    default_root: frontend/src/dtos

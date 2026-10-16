@@ -173,6 +173,7 @@ class TestBootstrap:
     def test_config_layer_immutability(self) -> None:
         """Verify ConfigLayer is frozen and raises FrozenInstanceError on modification."""
         mock_configs = {
+            "github_settings": MagicMock(spec=GitHubSettings),
             "git_config": MagicMock(spec=GitConfig),
             "workflow_config": MagicMock(spec=WorkflowConfig),
             "workphases_config": MagicMock(spec=WorkphasesConfig),
@@ -224,12 +225,30 @@ class TestBootstrap:
             graph.git_manager = MagicMock(spec=GitManager)
 
 
-@pytest.mark.parametrize(("token", "github_enabled"), [(None, False), ("test-token", True)])
+@pytest.mark.parametrize(
+    ("configured_token", "environment_token", "expected_token"),
+    [
+        (None, None, None),
+        ("config-token", None, "config-token"),
+        ("config-token", "host-token", "host-token"),
+    ],
+)
 def test_target_startup_registers_github_tools_and_resource(
-    tmp_path: Path, token: str | None, github_enabled: bool
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    configured_token: str | None,
+    environment_token: str | None,
+    expected_token: str | None,
 ) -> None:
     """Target startup registers GitHub features according to configured credentials."""
     project_root = Path(__file__).resolve().parents[4]
+    if environment_token is None:
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    else:
+        monkeypatch.setenv("GITHUB_TOKEN", environment_token)
+    configured = GitHubSettings(owner="test-owner", repo="test-repo", token=configured_token)
+    expected = GitHubSettings(owner="test-owner", repo="test-repo", token=expected_token)
+    github_enabled = expected_token is not None
     settings = Settings(
         server=ServerSettings(
             workspace_root=str(tmp_path),
@@ -237,14 +256,15 @@ def test_target_startup_registers_github_tools_and_resource(
             template_root=str(project_root / ".pgmcp" / "template_suite"),
             bypass_version_check=True,
         ),
-        github=GitHubSettings(
-            owner="test-owner" if token else None,
-            repo="test-repo" if token else None,
-            token=token,
-        ),
     )
 
-    with patch("mcp_server.managers.github_manager.GitHubAdapter") as constructor:
+    with (
+        patch("mcp_server.managers.github_manager.GitHubAdapter") as constructor,
+        patch(
+            "mcp_server.config.loader.ConfigLoader.load_github_config",
+            return_value=configured,
+        ),
+    ):
         server = ServerBootstrapper(settings).bootstrap_target()
         constructor.assert_not_called()
 
@@ -257,7 +277,7 @@ def test_target_startup_registers_github_tools_and_resource(
                 item for item in server.resources if isinstance(item, GitHubIssuesResource)
             )
             assert resource.manager.adapter is constructor.return_value
-            constructor.assert_called_once_with(settings=settings.github)
+            constructor.assert_called_once_with(settings=expected)
         else:
             constructor.assert_not_called()
 

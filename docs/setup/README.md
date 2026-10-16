@@ -79,6 +79,10 @@ For the unreleased branch registration contract, coordination must supply the ex
 parent at initialization. Existing workspaces must reconcile branch state and refresh
 client discovery deliberately; follow the [registration and recovery guidance](workspace-upgrade.md#unreleased-branch-registration-contract).
 
+Configure owner/repo in root config/github.yaml, with optional project_number and
+token alternative. Prefer host GITHUB_TOKEN delivery; launcher settings contain no
+repository identity. See [GitHub setup](../manuals/github-setup.md).
+
 ### Choose the workspace quality policy
 
 Provision each required adapter's pinned native dependencies, then choose the native
@@ -87,12 +91,11 @@ severities, exclusions and any native CLI arguments. Native discovery, a native
 file, explicit schema/arguments or a capability requiring no extra policy are all
 legitimate; pgmcp does not determine the effective native configuration for you.
 
-Fresh `pgmcp --init` clears only `configuration_choice` in its newly copied
-`config/checks.yaml`, `config/tests.yaml` and `config/fixes.yaml` bindings. Source
-assets and existing roots are unchanged. When manually copying bindings for a new
-workspace, clear copied acknowledgements likewise. Existing installations missing
-the field remain available for health/setup, but must acknowledge every binding
-they intend to execute.
+The new defaults/checks.yaml, defaults/tests.yaml and defaults/fixes.yaml leave
+acknowledgements null. Declare reviewed choices in root workspace overrides.
+Initialization copies supplied assets without clearing choices; it does not make
+arbitrary assets neutral. Unresolved choices permit startup/health but refuse
+applicable quality execution. See [source composition](../reference/config-loading-architecture.md).
 
 | configuration_choice | Owner declaration |
 | --- | --- |
@@ -169,8 +172,6 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
             "PGMCP_SERVER_NAME": "phase-gate-mcp",
             "PGMCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
             "PGMCP_SERVER_PROJECT_DIR": ".pgmcp",
-           "GITHUB_OWNER": "${env:GITHUB_OWNER}",
-           "GITHUB_REPO": "${env:GITHUB_REPO}",
            "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
          }
        }
@@ -251,4 +252,5 @@ Verify that the MCP server is active by running the following command in the cha
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+
 

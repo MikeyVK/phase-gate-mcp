@@ -186,7 +186,7 @@ class EnforcementRunner:
                     resolved_category = cat_name
                     break
 
-        for rule in self._config.enforcement:
+        for rule in self._config.enforcement.values():
             if rule.event_source != "tool":
                 continue
             if rule.timing != timing:
@@ -198,7 +198,7 @@ class EnforcementRunner:
                 continue
             if rule.tool is None and rule.tool_category is None:
                 continue
-            for action in rule.actions:
+            for action in rule.actions.values():
                 self._registry.get(action.type)(
                     action, enforcement_ctx, self.workspace_root, note_context
                 )
@@ -208,8 +208,8 @@ class EnforcementRunner:
         unknown_actions = sorted(
             {
                 action.type
-                for rule in self._config.enforcement
-                for action in rule.actions
+                for rule in self._config.enforcement.values()
+                for action in rule.actions.values()
                 if not self._registry.has(action.type)
             }
         )
@@ -222,7 +222,7 @@ class EnforcementRunner:
         unknown_categories = sorted(
             {
                 rule.tool_category
-                for rule in self._config.enforcement
+                for rule in self._config.enforcement.values()
                 if rule.tool_category is not None
                 and rule.tool_category not in self._config.categories
             }

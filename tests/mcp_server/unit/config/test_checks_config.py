@@ -55,7 +55,7 @@ run_checks:
 
 
 def test_explicit_loader_keeps_order_and_exact_empty_or_nonempty_defaults(tmp_path: Path) -> None:
-    root = write_package_tree(tmp_path / "config", {"checks.yaml": VALID_CHECKS.encode()})
+    root = write_package_tree(tmp_path / "config", {"defaults/checks.yaml": VALID_CHECKS.encode()})
     config = ConfigLoader(root).load_checks_config()
     assert tuple(dict(config.checks)) == ("first", "second")
     assert dict(config.checks)["first"].default_args == ("--literal", "", "a b")
@@ -67,7 +67,7 @@ def test_explicit_loader_keeps_order_and_exact_empty_or_nonempty_defaults(tmp_pa
 
 
 def load_text(root: Path, text: str) -> ChecksConfig:
-    directory = write_package_tree(root, {"checks.yaml": text.encode()})
+    directory = write_package_tree(root, {"defaults/checks.yaml": text.encode()})
     return ConfigLoader(directory).load_checks_config()
 
 

@@ -4,11 +4,11 @@
 
 
 **Status:** DEFINITIVE
-**Version:** 1.2
-**Last Updated:** 2026-10-07
+**Version:** 1.3
+**Last Updated:** 2026-10-16
 
 **Source:** [mcp_server/config/settings.py](../../mcp_server/config/settings.py)
-**Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py) (12 tests)
+**Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py)
 
 ---
 
@@ -68,12 +68,7 @@ Without an explicit config/template root, each root is resolved under server_roo
 
 ### GitHub Integration
 
-| Variable | Model field | Default | Description |
-|---|---|---|---|
-| `GITHUB_TOKEN` | `github.token` | — | Personal access token or Actions `GITHUB_TOKEN`. |
-| `GITHUB_OWNER` | `github.owner` | — | Repository owner (user or organisation). |
-| `GITHUB_REPO` | `github.repo` | — | Repository name. |
-| `GITHUB_PROJECT_NUMBER` | `github.project_number` | — | GitHub Projects (v2) board number. |
+ConfigLoader composes defaults/github.yaml and optional root github.yaml. Identity and optional project metadata come only from this source. Bootstrap prefers a nonempty GITHUB_TOKEN over an explicit configured token. The launcher Settings has no GitHub section. See the [composition contract](config-loading-architecture.md).
 
 ---
 
@@ -111,18 +106,22 @@ Set to an empty string `""` to disable audit logging entirely.
 
 ### `GitHubSettings`
 
-| Field | Type | Env var | Required |
-|---|---|---|---|
-| `owner` | `str` | `GITHUB_OWNER` | Yes |
-| `repo` | `str` | `GITHUB_REPO` | Yes |
-| `project_number` | `int` | `GITHUB_PROJECT_NUMBER` | Yes |
-| `token` | `str \| None` | `GITHUB_TOKEN` | No (public repos) |
+This immutable resolved value is shared by GitHub consumers and is not a member of launcher Settings.
+
+| Field | Type | Source | Requirement |
+| --- | --- | --- | --- |
+| owner | str or null | github.yaml | Required for GitHub operations |
+| repo | str or null | github.yaml | Required for GitHub operations |
+| project_number | int or null | github.yaml | Optional |
+| token | str or null | Nonempty GITHUB_TOKEN, otherwise configured token | Required by token-dependent operations |
+
+Neutral values permit startup/health; existing registration, use-time and enforcement policy still applies.
 
 ---
 
 ## YAML Configuration Overlay
 
-Set `PGMCP_CONFIG_PATH` to the path of a YAML file to override any settings field:
+Set `PGMCP_CONFIG_PATH` to the path of a YAML file to override server or logging settings:
 
 ```yaml
 # .pgmcp/config/server.yaml  (example)
@@ -132,14 +131,9 @@ server:
 
 logging:
   level: "DEBUG"
-
-github:
-  owner: "my-org"
-  repo: "my-repo"
-  project_number: 5
 ```
 
-Environment variables always take precedence over YAML values.
+Supported server/logging environment variables take precedence over this launcher overlay. Workspace declarations use the separate [defaults/root composition](config-loading-architecture.md).
 
 ---
 
@@ -219,9 +213,7 @@ Sources: [ChecksConfig](../../mcp_server/config/schemas/checks_config.py),
 ```bash
 export PGMCP_WORKSPACE_ROOT=/repos/myproject
 export GITHUB_TOKEN=ghp_...
-export GITHUB_OWNER=my-org
-export GITHUB_REPO=my-repo
-export GITHUB_PROJECT_NUMBER=1
+# Configure owner/repo/project_number in .pgmcp/config/github.yaml instead.
 ```
 
 Resulting paths:
@@ -260,7 +252,8 @@ Workspace checks.yaml, tests.yaml and fixes.yaml bindings carry configuration_ch
 null/omitted is unresolved; native_discovery, configured_arguments and not_applicable
 are deliberate owner declarations. Startup accepts unresolved choices, but relevant
 execution requires acknowledgement. These declarations do not identify or verify the
-effective native config source. Fresh --init clears inherited choices; existing roots
+effective native config source. Base choices are null; --init preserves choices in
+supplied assets. Record reviewed choices in root workspace overrides; existing roots
 remain owner-managed. Follow the [central quality setup guide](../setup/README.md#choose-the-workspace-quality-policy)
 and [execution outcomes](tools/quality.md#deliberate-binding-setup).
 
@@ -278,3 +271,4 @@ and [execution outcomes](tools/quality.md#deliberate-binding-setup).
 | 1.1 | 2026-07-20 | Agent | Document PGMCP_BYPASS_VERSION_CHECK and bypass_version_check fields |
 | 1.0 | 2026-05-11 | Agent | Initial draft |
 | 1.2 | 2026-10-07 | @imp documenter | Document required branch-policy declarations, matching semantics, scope boundaries and clean-break admission. |
+| 1.3 | 2026-10-16 | @imp documenter | Document source layering, GitHub separation and preserved initialization choices. |

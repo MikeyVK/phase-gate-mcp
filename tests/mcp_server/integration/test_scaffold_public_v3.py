@@ -98,15 +98,17 @@ def compose(
                 "{output_path}: written={written}; policy={validation_policy}; "
                 "validation={validation_status}; profile={profile_id}; error={error_code}"
             ),
-            "collections": [
-                {
+            "collections": {
+                "entry_1": {
+                    "order": 10,
                     "field": "checks",
                     "heading": "Checks",
                     "item_template": "{check_id}: {status}; args_source={args_source}",
                 }
-            ],
-            "enum_cases": [
-                {
+            },
+            "enum_cases": {
+                "entry_1": {
+                    "order": 10,
                     "field": "error_code",
                     "cases": {
                         "context_invalid": "The selected context was rejected.",
@@ -125,7 +127,7 @@ def compose(
                         "edit_invalid": "The requested edit could not be constructed.",
                     },
                 }
-            ],
+            },
         },
         "scaffold_schema": {
             "template_success": "{template_id}: {purpose}",

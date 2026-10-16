@@ -111,9 +111,17 @@ class PhaseContractResolver:
         except ValueError:
             return []
 
-        config_checks = [*phase_entry.exit_requires]
+        config_checks = [
+            CheckSpec(id=key, **requirement.model_dump(exclude={"order"}))
+            for key, requirement in phase_entry.exit_requires.items()
+        ]
         if cycle_number is not None:
-            config_checks.extend(phase_entry.cycle_exit_requires.get(cycle_number, []))
+            config_checks.extend(
+                CheckSpec(id=key, **requirement.model_dump(exclude={"order"}))
+                for key, requirement in phase_entry.cycle_exit_requires.get(
+                    cycle_number, {}
+                ).items()
+            )
 
         issue_checks = self._resolve_issue_checks(
             workflow_name=workflow_name,
@@ -145,7 +153,10 @@ class PhaseContractResolver:
         except ValueError:
             return []
 
-        config_checks = [*phase_entry.cycle_exit_requires.get(cycle_number, [])]
+        config_checks = [
+            CheckSpec(id=key, **requirement.model_dump(exclude={"order"}))
+            for key, requirement in phase_entry.cycle_exit_requires.get(cycle_number, {}).items()
+        ]
 
         issue_checks = self._resolve_issue_checks(
             workflow_name=workflow_name,

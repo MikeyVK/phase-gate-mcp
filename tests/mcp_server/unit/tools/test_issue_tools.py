@@ -81,7 +81,9 @@ async def test_create_issue_tool_forwards_milestone(mock_github_manager: MagicMo
     issue_mock = {"number": 7, "url": "http://github.com/issues/7", "title": "Milestone Issue"}
     mock_github_manager.create_issue.return_value = issue_mock
 
-    milestone_config = MilestoneConfig(milestones=[MilestoneEntry(title="v2.0", number=2)])
+    milestone_config = MilestoneConfig(
+        milestones={"milestone_1": MilestoneEntry(title="v2.0", number=2)}
+    )
     tool = make_create_issue_tool(mock_github_manager, milestone_config=milestone_config)
 
     params = CreateIssueInput(

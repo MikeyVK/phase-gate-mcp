@@ -39,11 +39,16 @@ agent instructions, and current documentation.
 
 A workflow is a composition of related truths, not one duplicated registry.
 
+The file names below identify effective policy. Product bases live under
+config/defaults/; workspace differences belong in root overrides. Object identities
+are mapping keys; use explicit order where sequence affects behavior. See the
+[composition contract](config-loading-architecture.md).
+
 | Concern | Authoritative source | Responsibility |
 |---|---|---|
 | Issue type | `.pgmcp/config/issues.yaml` | Issue input, workflow mapping, and type label |
 | Label definition | `.pgmcp/config/labels.yaml` | Valid label metadata |
-| Workflow metadata | `.pgmcp/config/workflows.yaml` | Name, description, and execution mode |
+| Workflow metadata | `.pgmcp/config/workflows.yaml` | Mapping-key identity, description, and execution mode |
 | Executable workflow contract | `.pgmcp/config/contracts.yaml` | Ordered phases, gates, cycle behavior, instructions, and handovers |
 | Branch type | `.pgmcp/config/git.yaml` | Branch prefix and issue-number extraction namespace |
 | Allowed base branches | `.pgmcp/config/enforcement.yaml` | Branch creation policy |
@@ -112,7 +117,7 @@ membership and ordering.
 
 Add the workflow under `contracts.yaml`:
 
-1. Declare the ordered phases.
+1. Declare phases as keyed objects with unique explicit order ranks.
 2. Reuse existing phase vocabulary where possible.
 3. Define `cycle_based`, subphases, commit mappings, gates, instructions, and
    handovers only where applicable.
@@ -286,3 +291,4 @@ Confirm these relationships explicitly:
 |---|---|---|---|
 | 1.1 | 2026-10-10 | @imp documenter | Document zero/one cycle-phase admission and planning/resumption policy boundaries (#491) |
 | 1.0 | 2026-08-18 | Agent | Initial deterministic workflow-extension procedure |
+

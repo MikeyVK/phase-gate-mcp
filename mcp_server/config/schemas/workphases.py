@@ -15,30 +15,45 @@ and exit requirements loaded by the configuration layer.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
+from mcp_server.config.ordering import ConfigId, OrderedConfigEntry, ordered_mapping
 from mcp_server.core.scope_contract import validate_scope_vocabulary
+
+
+class PhaseExpectation(OrderedConfigEntry):
+    """Identified expectation with an existing state key and descriptive payload."""
+
+    key: str
+    description: str = ""
+
+
+OrderedExpectations = Annotated[dict[ConfigId, PhaseExpectation], AfterValidator(ordered_mapping)]
 
 
 class PhaseDefinition(BaseModel):
     """Single phase definition from workphases.yaml."""
 
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
     display_name: str = ""
     description: str = ""
     commit_type_hint: str | None = None
     subphases: list[str] = Field(default_factory=list)
-    exit_requires: list[dict[str, Any]] = Field(default_factory=list)
-    entry_expects: list[dict[str, Any]] = Field(default_factory=list)
+    exit_requires: OrderedExpectations = Field(default_factory=dict)
+    entry_expects: OrderedExpectations = Field(default_factory=dict)
     terminal: bool = False
 
 
 class WorkphasesConfig(BaseModel):
     """Read-only phase metadata value object."""
 
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
     version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
-    phases: dict[str, PhaseDefinition] = Field(default_factory=dict)
+    phases: dict[ConfigId, PhaseDefinition] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_single_terminal_phase(self) -> WorkphasesConfig:
@@ -68,8 +83,22 @@ class WorkphasesConfig(BaseModel):
 
     def get_exit_requires(self, phase: str) -> list[dict[str, Any]]:
         phase_definition = self.phases.get(phase)
-        return list(phase_definition.exit_requires) if phase_definition is not None else []
+        return (
+            [
+                entry.model_dump(exclude={"order"})
+                for entry in phase_definition.exit_requires.values()
+            ]
+            if phase_definition is not None
+            else []
+        )
 
     def get_entry_expects(self, phase: str) -> list[dict[str, Any]]:
         phase_definition = self.phases.get(phase)
-        return list(phase_definition.entry_expects) if phase_definition is not None else []
+        return (
+            [
+                entry.model_dump(exclude={"order"})
+                for entry in phase_definition.entry_expects.values()
+            ]
+            if phase_definition is not None
+            else []
+        )

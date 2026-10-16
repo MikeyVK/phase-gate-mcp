@@ -35,11 +35,10 @@ from tests.mcp_server.test_support import (
 )
 
 
-def make_settings(workspace_root: Path | str = ".", github_token: str | None = None) -> Settings:
+def make_settings(workspace_root: Path | str = ".") -> Settings:
     """Create explicit settings for discovery tool tests."""
     return Settings(
         server={"workspace_root": str(workspace_root)},
-        github={"token": github_token},
     )
 
 
@@ -54,11 +53,10 @@ class WorkContextCase:
 
 def make_work_context_tool(
     workspace_root: Path | str = ".",
-    github_token: str | None = None,
     contracts_config: ContractsConfig | None = None,
     context_loaded_writer: IContextLoadedWriter | None = None,
 ) -> WorkContextCase:
-    settings = make_settings(workspace_root=workspace_root, github_token=github_token)
+    settings = make_settings(workspace_root=workspace_root)
     git = MagicMock()
     state = MagicMock()
     tool = GetWorkContextTool(
@@ -253,7 +251,6 @@ class TestGetWorkContextStateCycleProjection:
         """GetWorkContextTool output reflects phase from BranchState after C1."""
         resolver = MagicMock()
         settings = make_settings()
-        settings.github.token = None
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "feature/42-test"
         mock_state_engine = MagicMock()
@@ -303,7 +300,6 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         mock_branch_state.current_phase = phase
         mock_state_engine.get_state.return_value = mock_branch_state
         settings = make_settings()
-        settings.github.token = None
         return GetWorkContextTool(
             settings=settings,
             git_manager=mock_git,
@@ -444,7 +440,7 @@ class TestGetWorkContextC1Restructuring:
             mock_github = MagicMock()
             mock_github.get_issue.return_value = github_issue
 
-        settings = make_settings(github_token=github_token)
+        settings = make_settings()
         return GetWorkContextTool(
             settings=settings,
             git_manager=mock_git,
@@ -509,7 +505,7 @@ class TestGetWorkContextC1Restructuring:
         assert result.workflow_state_status is WorkflowStateStatus.INVALID_PHASE
         assert result.phase_instructions == ""
         contracts = load_contracts_config()
-        assert result.valid_phases == tuple(contracts.workflows["feature"].get_phase_names())
+        assert result.valid_phases == tuple(contracts.workflows["feature"].get_phase_ids())
 
     @pytest.mark.asyncio
     async def test_get_work_context_does_not_synthesize_invalid_phase_prose(self) -> None:
@@ -629,24 +625,24 @@ def _make_c7_contracts(
         merge_policy=MergePolicy(pr_allowed_phase="ready"),
         workflows={
             workflow: WorkflowEntry(
-                phases=[
-                    WorkflowPhaseEntry(
-                        name=phase,
+                phases={
+                    phase: WorkflowPhaseEntry(
+                        order=10,
                         instructions=PhaseInstructionsSpec(
                             sub_role=sub_role,
                             phase_instructions=phase_instructions,
                             handover_template=handover_template,
                         ),
                     ),
-                    WorkflowPhaseEntry(
-                        name="ready",
+                    "ready": WorkflowPhaseEntry(
+                        order=20,
                         instructions=PhaseInstructionsSpec(
                             sub_role="documenter",
                             phase_instructions="Create PR.",
                             handover_template=None,
                         ),
                     ),
-                ]
+                }
             ),
         },
     )
@@ -680,7 +676,6 @@ class TestGetWorkContextC7ContractsInjection:
         mock_branch_state.current_phase = phase
         mock_state_engine.get_state.return_value = mock_branch_state
         settings = make_settings()
-        settings.github.token = None
         return GetWorkContextTool(
             settings=settings,
             git_manager=mock_git,

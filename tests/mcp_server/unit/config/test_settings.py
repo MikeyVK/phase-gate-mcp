@@ -18,7 +18,10 @@ import yaml
 from pydantic import ValidationError
 
 # Project modules
+from mcp_server.config.github_resolution import resolve_github_settings
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.exceptions import ConfigError
 from tests.mcp_server.test_support import get_default_server_root
 
 
@@ -35,16 +38,12 @@ def test_default_settings() -> None:
     assert settings.server.name == "phase-gate-mcp"
     assert settings.server.version == "3.0.0"
     assert settings.logging.level == "INFO"
-    assert settings.github.owner is None
-    assert settings.github.repo is None
-    assert settings.github.project_number is None
 
 
 def test_load_from_env(mock_env_vars: MagicMock) -> None:  # noqa: ARG001
     """Test loading settings from environment variables."""
     settings = Settings.from_env()
     assert settings.logging.level == "DEBUG"
-    assert settings.github.token == "test-token"
     assert settings.server.version == "3.0.0"
 
 
@@ -57,11 +56,6 @@ server:
   name: "yaml-server"
 logging:
   level: "WARNING"
-github:
-  owner: "yaml-owner"
-  repo: "yaml-repo"
-  project_number: 7
-  token: "yaml-token"
 """,
         encoding="utf-8",
     )
@@ -70,18 +64,12 @@ github:
     monkeypatch.delenv("PGMCP_WORKSPACE_ROOT", raising=False)
     monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
-    for variable in ("GITHUB_OWNER", "GITHUB_REPO", "GITHUB_PROJECT_NUMBER", "GITHUB_TOKEN"):
-        monkeypatch.delenv(variable, raising=False)
 
     settings = Settings.from_env()
 
     assert settings.server.name == "yaml-server"
     assert settings.server.version == "3.0.0"
     assert settings.logging.level == "WARNING"
-    assert settings.github.owner == "yaml-owner"
-    assert settings.github.repo == "yaml-repo"
-    assert settings.github.project_number == 7
-    assert settings.github.token == "yaml-token"
 
 
 @pytest.mark.parametrize("installed_version", ["3.1.0", "1.0.0"])
@@ -194,10 +182,6 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     monkeypatch.setenv("PGMCP_SERVER_NAME", "env-server")
     monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(tmp_path / "workspace"))
     monkeypatch.setenv("PGMCP_CONFIG_ROOT", str(tmp_path / ".phase-gate" / "config"))
-    monkeypatch.setenv("GITHUB_OWNER", "example-owner")
-    monkeypatch.setenv("GITHUB_REPO", "example-repo")
-    monkeypatch.setenv("GITHUB_PROJECT_NUMBER", "42")
-    monkeypatch.setenv("GITHUB_TOKEN", "secret-token")
     monkeypatch.setenv("LOG_LEVEL", "ERROR")
 
     settings = Settings.from_env()
@@ -205,9 +189,6 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     assert settings.server.name == "env-server"
     assert settings.server.workspace_root == str(tmp_path / "workspace")
     assert settings.server.config_root == str(tmp_path / ".phase-gate" / "config")
-    assert settings.github.owner == "example-owner"
-    assert settings.github.repo == "example-repo"
-    assert settings.github.project_number == 42
     assert settings.logging.level == "ERROR"
 
 
@@ -298,3 +279,66 @@ def test_bypass_version_check_from_env_var(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.setenv("PGMCP_BYPASS_VERSION_CHECK", "true")
     assert Settings.from_env().server.bypass_version_check is True
+
+
+@pytest.mark.parametrize(
+    ("configured_token", "environment_token", "expected_token"),
+    [
+        (None, None, None),
+        ("configuration-token", None, "configuration-token"),
+        ("configuration-token", "", "configuration-token"),
+        ("configuration-token", "host-token", "host-token"),
+    ],
+)
+def test_workspace_github_config_and_explicit_token_resolution(
+    tmp_path: Path,
+    configured_token: str | None,
+    environment_token: str | None,
+    expected_token: str | None,
+) -> None:
+    """Workspace identity composes normally; only a nonempty host token wins."""
+    defaults = tmp_path / "defaults"
+    defaults.mkdir()
+    (defaults / "github.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "owner": "configured-owner",
+                "repo": "basis-repo",
+                "project_number": None,
+                "token": configured_token,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "github.yaml").write_text("repo: workspace-repo\n", encoding="utf-8")
+    configured = ConfigLoader(tmp_path).load_github_config()
+
+    resolved = resolve_github_settings(configured, environment_token)
+
+    assert resolved.owner == "configured-owner"
+    assert resolved.repo == "workspace-repo"
+    assert resolved.project_number is None
+    assert resolved.token == expected_token
+    assert configured.token == configured_token
+    assert "token=" not in repr(resolved)
+    with pytest.raises(ValidationError):
+        resolved.owner = "changed"
+
+
+@pytest.mark.parametrize("malformed_yaml", [False, True])
+def test_github_config_validation_hides_input_values(tmp_path: Path, malformed_yaml: bool) -> None:
+    """Malformed configuration reports field/type facts without token disclosure."""
+    path = tmp_path / "github.yaml"
+    content = (
+        'token: "private-fixture-value" ]\n'
+        if malformed_yaml
+        else yaml.safe_dump({"owner": 7, "token": "private-fixture-value"})
+    )
+    path.write_text(content, encoding="utf-8")
+
+    with pytest.raises(ConfigError) as caught:
+        ConfigLoader(tmp_path).load_github_config(config_path=path)
+
+    assert ("line 1, column" if malformed_yaml else "owner") in str(caught.value)
+    assert "private-fixture-value" not in str(caught.value)
+    assert "private-fixture-value" not in str(caught.value.__cause__)

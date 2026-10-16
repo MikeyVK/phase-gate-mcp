@@ -48,7 +48,7 @@ def git_repo(tmp_path: Path) -> Path:
 
     # Create .pgmcp directory structure
     phase_gate_dir = tmp_path / get_default_server_root()
-    config_dir = phase_gate_dir / "config"
+    config_dir = phase_gate_dir / "config" / "defaults"
     config_dir.mkdir(parents=True)
 
     # Create workphases.yaml
@@ -102,27 +102,47 @@ def git_repo(tmp_path: Path) -> Path:
     }
     (config_dir / "workphases.yaml").write_text(yaml.dump(workphases), encoding="utf-8")
 
-    # Create workflows.yaml (feature workflow)
+    # Supply complete canonical workflow inputs to this isolated workspace.
+    phase_ids = [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready",
+    ]
     workflows = {
         "version": "1.0.0",
-        "phase_source": f"{get_default_server_root()}/workphases.yaml",
+        "workflows": {"feature": {"description": "Feature workflow"}},
+    }
+    contracts = {
+        "version": "1.0.0",
+        "merge_policy": {"pr_allowed_phase": "ready"},
         "workflows": {
             "feature": {
-                "name": "feature",
-                "description": "Feature workflow",
-                "default_execution_mode": "interactive",
-                "phases": [
-                    "research",
-                    "planning",
-                    "design",
-                    "implementation",
-                    "validation",
-                    "documentation",
-                ],
+                "phases": {
+                    phase_id: {
+                        "order": index,
+                        "cycle_based": phase_id == "implementation",
+                        "commit_type_map": {"red": "test", "green": "feat", "refactor": "refactor"}
+                        if phase_id == "implementation"
+                        else {},
+                        "subphases": ["red", "green", "refactor"]
+                        if phase_id == "implementation"
+                        else [],
+                        "instructions": {
+                            "sub_role": "test",
+                            "phase_instructions": "Execute phase.",
+                        },
+                    }
+                    for index, phase_id in enumerate(phase_ids)
+                }
             }
         },
     }
-    (config_dir / "workflows.yaml").write_text(yaml.dump(workflows), encoding="utf-8")
+    (config_dir / "workflows.yaml").write_text(yaml.safe_dump(workflows), encoding="utf-8")
+    (config_dir / "contracts.yaml").write_text(yaml.safe_dump(contracts), encoding="utf-8")
 
     # Create git.yaml (minimal config)
     git_config = {
@@ -188,12 +208,12 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     # Initialize GitManager with tmp_path and ScopeDecoder
     git_adapter = GitAdapter(repo_path=str(git_repo))
     git_config = ConfigLoader(git_repo / get_default_server_root() / "config").load_git_config(
-        config_path=git_repo / get_default_server_root() / "config" / "git.yaml"
+        config_path=git_repo / get_default_server_root() / "config" / "defaults" / "git.yaml"
     )
     _workphases_config = ConfigLoader(
         git_repo / get_default_server_root() / "config"
     ).load_workphases_config(
-        config_path=git_repo / get_default_server_root() / "config" / "workphases.yaml"
+        config_path=git_repo / get_default_server_root() / "config" / "defaults" / "workphases.yaml"
     )
     scope_contract = ScopeContract(_workphases_config)
     git_manager = GitManager(

@@ -15,15 +15,17 @@ loaded by the config layer.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+
+from mcp_server.config.ordering import ConfigId, OrderedConfigEntry, ordered_mapping
 
 
-class EnforcementAction(BaseModel):
+class EnforcementAction(OrderedConfigEntry):
     """One configured enforcement action."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     type: str
     policy: str | None = None
@@ -42,17 +44,19 @@ class EnforcementAction(BaseModel):
         return self
 
 
-class EnforcementRule(BaseModel):
+class EnforcementRule(OrderedConfigEntry):
     """One configured enforcement rule."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     event_source: str
     timing: str
     tool: str | None = None
     tool_category: str | None = None
     phase: str | None = None
-    actions: list[EnforcementAction] = Field(default_factory=list)
+    actions: Annotated[dict[ConfigId, EnforcementAction], AfterValidator(ordered_mapping)] = Field(
+        default_factory=dict
+    )
 
     @model_validator(mode="after")
     def validate_target(self) -> EnforcementRule:
@@ -69,8 +73,10 @@ class EnforcementRule(BaseModel):
 class EnforcementConfig(BaseModel):
     """Typed root object for enforcement.yaml."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
     categories: dict[str, list[str]] = Field(default_factory=dict)
-    enforcement: list[EnforcementRule] = Field(default_factory=list)
+    enforcement: Annotated[dict[ConfigId, EnforcementRule], AfterValidator(ordered_mapping)] = (
+        Field(default_factory=dict)
+    )

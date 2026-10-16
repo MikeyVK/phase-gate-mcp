@@ -79,8 +79,11 @@ def test_pr_preserves_changes_deferred_groups_check_states_and_issue_identity(
         value = context[key]
         assert isinstance(value, str) and value in output
     assert "- [x] Complete check" in output and "- [ ] Pending check" in output
-    assert "#42" in output and "#42.0" not in output
-    assert output.index("#42") < output.index("#7")
+    assert [line for line in output.splitlines() if line.startswith("Closes #")] == [
+        "Closes #42",
+        "Closes #7",
+    ]
+    assert "#42.0" not in output
     assert r"### Follow up \#" in output
     first = output.split("Follow up", 1)[1].split("Later item", 1)[0]
     second = output.split("Later item", 1)[1].split("Unlinked item", 1)[0]

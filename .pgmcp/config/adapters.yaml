@@ -1,1 +1,2 @@
-trusted_adapter_ids: []
+# Workspace overrides; inherited values are defined in defaults/.
+{}

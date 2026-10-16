@@ -1,0 +1,97 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=KoFPQ3-cAAWFeesb
+
+# Product configuration basis; workspace differences belong in the parent config directory.
+
+"version": "1.0.0"
+"freeform_exceptions":
+- "good first issue"
+- "help wanted"
+- "wontfix"
+- "duplicate"
+- "invalid"
+"label_patterns":
+  "pattern_1":
+    "pattern": "^parent:\\d+$"
+    "description": "Parent issue reference for child issues"
+    "color": "EDEDED"
+    "example": "parent:91"
+    "order": 10
+  "pattern_2":
+    "pattern": "^phase:[a-z][a-z0-9-]*$"
+    "description": "Workflow phase label — value must be a known phase from workphases.yaml"
+    "color": "C5DEF5"
+    "example": "phase:research"
+    "order": 20
+"labels":
+  "label_1":
+    "name": "type:feature"
+    "color": "1D76DB"
+    "description": "New functionality or capability"
+  "label_2":
+    "name": "type:bug"
+    "color": "D73A4A"
+    "description": "Something isn't working"
+  "label_3":
+    "name": "type:refactor"
+    "color": "0E8A16"
+    "description": "Code improvement without behavior change"
+  "label_4":
+    "name": "type:docs"
+    "color": "0075CA"
+    "description": "Documentation changes"
+  "label_5":
+    "name": "type:research"
+    "color": "1D76DB"
+    "description": "Research and exploration work"
+  "label_6":
+    "name": "type:epic"
+    "color": "5319E7"
+    "description": "Large feature with multiple sub-issues"
+  "label_7":
+    "name": "type:chore"
+    "color": "7057FF"
+    "description": "Maintenance tasks and housekeeping"
+  "label_8":
+    "name": "priority:critical"
+    "color": "B60205"
+    "description": "Must be fixed immediately"
+  "label_9":
+    "name": "priority:high"
+    "color": "D93F0B"
+    "description": "Should be addressed soon"
+  "label_10":
+    "name": "priority:medium"
+    "color": "FBCA04"
+    "description": "Normal priority"
+  "label_11":
+    "name": "priority:low"
+    "color": "BFD4F2"
+    "description": "Low priority, nice to have"
+  "label_12":
+    "name": "priority:triage"
+    "color": "EDEDED"
+    "description": "Needs prioritization"
+  "label_13":
+    "name": "scope:architecture"
+    "color": "BFD4F2"
+    "description": "Architectural changes"
+  "label_14":
+    "name": "scope:mcp-server"
+    "color": "BFD4F2"
+    "description": "MCP server internals"
+  "label_15":
+    "name": "scope:platform"
+    "color": "BFD4F2"
+    "description": "GitHub/git platform integration"
+  "label_16":
+    "name": "scope:tooling"
+    "color": "BFD4F2"
+    "description": "Development tooling"
+  "label_17":
+    "name": "scope:workflow"
+    "color": "BFD4F2"
+    "description": "Workflow/process improvements"
+  "label_18":
+    "name": "scope:documentation"
+    "color": "BFD4F2"
+    "description": "Documentation scope"

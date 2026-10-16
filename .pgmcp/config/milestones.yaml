@@ -1,4 +1,2 @@
-version: "1.0.0"
-milestones: []
-# Schema: { number: int, title: str, state: "open"|"closed" }
-# Populate manually or via future sync tooling.
+# Workspace overrides; inherited values are defined in defaults/.
+{}

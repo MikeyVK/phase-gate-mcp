@@ -29,8 +29,12 @@
 {%- set selected.parts = selected.parts + ['No deferred work identified.'] -%}
 {%- endfor -%}
 {%- if content.closes is defined -%}
+{%- set closing = namespace(parts=[]) -%}
+{%- for issue in content.closes -%}
+{%- set closing.parts = closing.parts + ['Closes #' ~ (issue | int)] -%}
+{%- endfor -%}
 {%- set selected.parts = selected.parts + [sections.join([
-    sections.heading('Closes'), sections.issue_refs(content.closes)
+    sections.heading('Closes'), sections.join(closing.parts)
 ])] -%}
 {%- endif -%}
 {{ sections.join(selected.parts) }}

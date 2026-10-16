@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 
 from jinja2 import Environment
 
+from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
@@ -97,10 +98,8 @@ class _NopGateRunner:
         wf = self._contracts_config.workflows.get(workflow_name)
         if not wf:
             return False
-        for p in wf.phases:
-            if p.name == phase:
-                return p.cycle_based
-        return False
+        entry = wf.phases.get(phase)
+        return entry.cycle_based if entry is not None else False
 
     def enforce_phase_exit(
         self,
@@ -179,19 +178,14 @@ def resolve_config_root(
     required_paths: tuple[str | Path, ...] = (),
 ) -> Path:
     """Resolve the best config root for one workspace under test."""
+    del required_paths
     settings = RealSettings.from_env()
     if workspace_root is not None:
         candidate = Path(workspace_root)
         if candidate.name != "config":
             candidate = candidate / settings.server.server_root_dir / "config"
-
-        def _file_exists(f: str | Path) -> bool:
-            if str(f) == "artifacts.yaml":
-                return (candidate.parent / "templates" / "config" / "artifacts.yaml").exists()
-            return (candidate / f).exists()
-
-        if candidate.exists() and all(_file_exists(f) for f in required_paths):
-            return candidate
+        # Explicit context is authoritative even when fixture preparation is absent.
+        return candidate
     return settings.server.resolved_config_root
 
 
@@ -209,7 +203,7 @@ def _load_config(
     load_method: str,
     **kwargs: object,
 ) -> object:
-    """Load one config file with workspace-first, file-specific fallback."""
+    """Load one config file from the explicitly selected test configuration context."""
     loader = make_config_loader(workspace_root, required_paths=(required_path,))
     return getattr(loader, load_method)(**kwargs)
 
@@ -525,7 +519,9 @@ def make_dispatch_dependencies(settings: Settings) -> DispatchDependencies:
         workflow_gate_runner=workflow_gate_runner,
     )
     github_manager = GitHubManager(
-        github_settings=settings.github,
+        github_settings=resolve_github_settings(
+            loader.load_github_config(), os.environ.get("GITHUB_TOKEN")
+        ),
         issue_config=loader.load_issue_config(),
         label_config=loader.load_label_config(),
         scope_config=loader.load_scope_config(),

@@ -84,19 +84,17 @@ def _config(
                 "max_items": 2,
                 "template_success": template_success,
                 "template_failure": "ERROR {error_message}",
-                "collections": [
-                    {
+                "collections": {
+                    "entry_1": {
+                        "order": 10,
                         "field": "items",
                         "heading": "COLLECTION",
                         "item_template": "- ITEM {name}: {tags}",
                     }
-                ],
-                "enum_cases": [
-                    {
-                        "field": "status",
-                        "cases": {"missing": "ENUM {name}"},
-                    }
-                ],
+                },
+                "enum_cases": {
+                    "entry_1": {"order": 10, "field": "status", "cases": {"missing": "ENUM {name}"}}
+                },
                 "next_instructions": ["instruction"],
                 "suggestions": {"composition_note": "NOTE {value}"},
             }
@@ -208,8 +206,8 @@ class TestTextPresenterComposition:
             tool_name=tool_name,
             template_success="UNUSED",
         )
-        config["tools"][tool_name]["collections"] = []
-        config["tools"][tool_name]["enum_cases"] = []
+        config["tools"][tool_name]["collections"] = {}
+        config["tools"][tool_name]["enum_cases"] = {}
         config["tools"][tool_name]["next_instructions"] = []
         config["tools"][tool_name]["max_items"] = None
         presenter = ResponsePresenter(

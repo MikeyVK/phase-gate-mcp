@@ -142,7 +142,7 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
                     instructions = workflow_entry.get_phase(phase).instructions
                 except ValueError:
                     workflow_state_status = WorkflowStateStatus.INVALID_PHASE
-                    valid_phases = tuple(workflow_entry.get_phase_names())
+                    valid_phases = tuple(workflow_entry.get_phase_ids())
 
         sub_role_hint = instructions.sub_role if instructions is not None else ""
         phase_instructions = instructions.phase_instructions if instructions is not None else ""

@@ -17,6 +17,7 @@ prove runtime ownership through observable outcomes, not private seam inspection
 from __future__ import annotations
 
 from pathlib import Path
+from shutil import copy2
 
 import pytest
 
@@ -106,23 +107,18 @@ class InspectingGateRunner:
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Temporary workspace with hermetic workflow and phase-contract config."""
-    config_dir = tmp_path / get_default_server_root() / "config"
+    config_dir = tmp_path / get_default_server_root() / "config" / "defaults"
     config_dir.mkdir(parents=True)
+    source = Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+    for file_name in ("git.yaml", "workphases.yaml"):
+        copy2(source / file_name, config_dir / file_name)
     (config_dir / "workflows.yaml").write_text(
-        """
-version: "1.0.0"
+        r"""
+version: 1.0.0
 workflows:
   feature:
-    name: feature
-    description: "Feature workflow"
+    description: Feature workflow
     default_execution_mode: interactive
-    phases:
-      - research
-      - planning
-      - design
-      - implementation
-      - validation
-      - documentation
 """.strip(),
         encoding="utf-8",
     )
@@ -155,32 +151,37 @@ phases:
         encoding="utf-8",
     )
     (config_dir / "contracts.yaml").write_text(
-        """
-version: "1.0.0"
+        r"""
+version: 1.0.0
 merge_policy:
   pr_allowed_phase: ready
-  branch_local_artifacts: []
+  branch_local_artifacts: {}
 workflows:
   feature:
     phases:
-      - name: research
+      research:
+        order: 10
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
         exit_requires:
-          - id: research-doc
+          research-doc:
+            order: 10
             type: file_glob
             dir: docs/development
             pattern: issue*/research*.md
-      - name: planning
+      planning:
+        order: 20
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
-      - name: design
+      design:
+        order: 30
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
-      - name: implementation
+      implementation:
+        order: 40
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
@@ -189,15 +190,18 @@ workflows:
           red: test
           green: feat
           refactor: refactor
-      - name: validation
+      validation:
+        order: 50
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
-      - name: documentation
+      documentation:
+        order: 60
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
-      - name: ready
+      ready:
+        order: 70
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.

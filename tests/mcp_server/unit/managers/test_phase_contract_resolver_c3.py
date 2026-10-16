@@ -43,18 +43,18 @@ def _minimal_contracts() -> ContractsConfig:
     return ContractsConfig(
         merge_policy=MergePolicy(
             pr_allowed_phase="ready",
-            branch_local_artifacts=[
-                BranchLocalArtifact(
-                    path=f"{get_default_server_root()}/state.json", reason="branch-local"
+            branch_local_artifacts={
+                "state": BranchLocalArtifact(
+                    order=10, path=f"{get_default_server_root()}/state.json", reason="branch-local"
                 )
-            ],
+            },
         ),
         workflows={
             "feature": WorkflowEntry(
-                phases=[
-                    WorkflowPhaseEntry(name="research", instructions=_STUB_INSTRUCTIONS),
-                    WorkflowPhaseEntry(name="ready", instructions=_STUB_INSTRUCTIONS),
-                ]
+                phases={
+                    "research": WorkflowPhaseEntry(order=10, instructions=_STUB_INSTRUCTIONS),
+                    "ready": WorkflowPhaseEntry(order=20, instructions=_STUB_INSTRUCTIONS),
+                }
             )
         },
     )

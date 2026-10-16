@@ -1,8 +1,4 @@
+# Workspace overrides; inherited values are defined in defaults/.
 tests:
   python_tests:
-    adapter_id: pytest
-    capability: tests
-    timeout_seconds: 300
     configuration_choice: native_discovery
-    default_args: []
-    active: true
