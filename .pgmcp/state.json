@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 505,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "skip_reason": null,
   "issue_title": "bug: Fail asset assembly on invalid mappings and cleanup errors",
   "created_at": "2026-10-16T05:51:25.050716+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-16T10:38:11.211029+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
