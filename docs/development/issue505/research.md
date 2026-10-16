@@ -2,8 +2,8 @@
 
 # Issue 505 — Fail-closed asset assembly
 
-**Status:** RESEARCH — HUMAN STRATEGY PENDING  
-**Version:** 0.1  
+**Status:** RESEARCH — STRATEGY APPROVED, QA REQUESTED  
+**Version:** 0.2  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -70,7 +70,7 @@ The asset directory is generated and ignored except .gitkeep. That identifies in
 
 No per-test factory rewrite or runtime dependency-injection refactor is indicated. The large #504 fixture cutover is not a precedent for this issue.
 
-## Strategy options awaiting the owner
+## Strategy assessment and owner decision
 
 | Boundary | Small proposed strategy | Larger alternative / cost |
 | --- | --- | --- |
@@ -79,16 +79,15 @@ No per-test factory rewrite or runtime dependency-injection refactor is indicate
 | Disposable filesystem boundary | Explicitly delimit generated assets; reject escaping/overlapping paths and unsafe linked cleanup endpoints; never modify source/workspace/recovery material | Defer the newly evidenced path hazard, leaving the preservation claim narrower |
 | Partial output after runtime IO failure | Stop with failure; allow disposable partial output to remain for diagnosis; do not build or report success | Full staging, atomic promotion, backups and rollback increase scope and are not proposed |
 
-The source/target escape and ownership policy is the real additional human choice. Current valid mappings and callers can remain unchanged, while unsafe formerly accepted paths deliberately fail. The smaller suppression-only repair would not establish the stated workspace-preservation expectation.
+The owner approved the small strategy, including path-boundary enforcement, on 2026-10-16 after the concrete target-escape explanation. Current valid mappings and callers remain supported; unsafe formerly accepted paths deliberately fail. The larger alternatives above are not selected.
 
 ## Research checkpoint
 
-Issue505; branch bug/505-fail-closed-asset-assembly; parent main; bug/Research; implementation baseline is merged9b17132d5fe1377860aca45b375a0b49f4ede791. No production or permanent test changes. Six existing unit cases and five isolated observational cases passed. No broad test/check run, actual package build, release or deployment. No #505 QA verdict exists yet. The strategy question was sent to Coordination for an explicit human decision; Research cannot close or enter Design before that decision. The #504 targeted-only exception is not reused as a #505 Validation waiver; later required scope must be resolved in this issue's approved plan.
+Issue505; branch bug/505-fail-closed-asset-assembly; parent main; bug/Research; implementation baseline is merged9b17132d5fe1377860aca45b375a0b49f4ede791. No production or permanent test changes. Six existing unit cases and five isolated observational cases passed. No broad test/check run, actual package build, release or deployment. No #505 QA verdict exists yet. The owner's direct instruction on 2026-10-16 approved the proposed targeted fixes; Research now awaits independent QA for Design admission. The #504 targeted-only exception is not reused as a #505 Validation waiver; later required scope must be resolved in this issue's approved plan.
 
 ## Questions
 
-- Approve the small fail-closed strategy per boundary, including the reproduced target-escape and disposable-root ownership safeguards?
-- May runtime IO failure leave only disposable partial generated assets while returning failure and never invoking the build, without adding staging/rollback?
+None requiring an owner decision. Design must specify concrete admission, path ownership and error contracts within the approved boundaries.
 
 ## References
 
@@ -102,7 +101,17 @@ Issue505; branch bug/505-fail-closed-asset-assembly; parent main; bug/Research; 
 
 ## Approved Strategy
 
-PENDING HUMAN DECISION. The strategy table contains recommendations, not an Approved Strategy. Coordination has received the exact decision request. Existing issue acceptance authorizes Research and its bounded reproduction, not silent selection of a filesystem or rollback policy.
+Approved by the owner on 2026-10-16: "pak de fixes die je nu voorstelde gericht op en ga verder", with explicit direction to reject paths outside the configured boundaries with a clear diagnostic.
+
+| Boundary | Approved decision |
+| --- | --- |
+| Manifest and helper consumers | Preserve the existing assets/source/target format and valid helper calls. Reject malformed required mappings and missing sources; no compatibility bridge for silently skipped invalid data. |
+| Failure outcome | Required cleanup/copy failures terminate assembly with operation/path context and the primary cause retained. No success message or build invocation after failure. Use ordinary script exceptions, without a new presentation framework. |
+| Filesystem ownership | Enforce source and generated-target boundaries, including escaping/overlapping paths and unsafe linked cleanup endpoints. Preserve source, workspace and recovery material. The current eleven ordinary mappings remain valid. |
+| Partial output | Runtime IO failure may leave disposable partial generated output, with an explicit failure and no build. No staging transaction, backup or rollback subsystem. |
+| Test and change scope | Focused behavioral coverage in the existing builder unit module; retain valuable valid-copy/dotfile coverage. No manifest redesign, content-routing logic, runtime consumer refactor, release or deployment. |
+
+This approval authorizes bounded implementation through the normal independently reviewed phase gates; it does not grant a new full-suite waiver.
 
 ## Expected Results
 
@@ -134,7 +143,7 @@ The five scenarios in the findings table passed as observations of the current s
 
 ### Suppressing only the two cleanup calls leaves target writes outside the disposable root possible.
 
-Ask the owner whether to include the directly evidenced containment/ownership safety boundary before Design.
+The owner approved containment/ownership safeguards; Design must make the boundary concrete without expanding into a general filesystem framework.
 
 ### Atomic assembly can turn a small safety bug into a distribution redesign.
 
@@ -145,3 +154,5 @@ Present explicit partial-output/failure semantics; defer staging, recovery and n
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp researcher | Record existing-builder failure evidence, direct impact and bounded strategy options for owner decision. |
+| 0.2 | 2026-10-16 | @imp researcher | Capture direct owner approval for the targeted fail-closed, path-safety and partial-output strategy. |
+
