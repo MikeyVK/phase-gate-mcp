@@ -1,0 +1,27 @@
+{
+  "schema_version": "2.0.0",
+  "branch": "bug/505-fail-closed-asset-assembly",
+  "parent_branch": "main",
+  "issue_number": 505,
+  "workflow_name": "bug",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "bug: Fail asset assembly on invalid mappings and cleanup errors",
+  "created_at": "2026-10-16T05:51:25.050716+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
