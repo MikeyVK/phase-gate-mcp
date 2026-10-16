@@ -198,3 +198,11 @@ Composition only receives caller-owned documents: environment/dotenv/secret sett
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp validator | Record focused behavior, quality results and explicit owner-directed coverage limitations. |
+
+## Documentation and PR Package Evidence
+
+The active configuration/setup/GitHub references and three launcher examples now follow the implemented source chain. Eleven changed Markdown documents passed the targeted markdown_links check. All three launcher examples parsed as JSON through an explicit read-only parser check; their safe-edit result was not_executed because no check profile was selected, not a native validation pass.
+
+The PR package's authored version remains 1.0.0; this branch changes only pr/template.jinja2 and its existing consumer test. The context schema, Markdown tracking base and shared issue_refs macro are unchanged. The closes array now emits one operative Closes #N paragraph per entry, preserving integer normalization, order and explicit-empty structure. The existing delivered-package module tests/mcp_server/integration/templates/test_pr.py passed under run_tests(scope='targets', targets=['tests/mcp_server/integration/templates/test_pr.py'], tests=['python_tests'], timeout_seconds=180); Ruff format/lint and Pyright passed on that test file. Native caller arguments were not weakened. Source paths and the eventual PR's Documentation commit identify this unreleased package change; it is not a new published package release or a claim about every valid context.
+
+Reviewed unchanged: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md remains applicable without new architectural exceptions; authoritative agent instructions contain no superseded GitHub identity/reset claims in the scoped search; docs/reference/mcp_vision_reference.md is explicitly historical context and retains that distinction. release_manifest, build/distribution and upgrade implementation remain excluded. The independent Documentation review is the remaining package-source review before Ready.

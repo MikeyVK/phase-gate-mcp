@@ -616,46 +616,38 @@ Workflow definition and planning deliverables (branch-local artifact):
 
 ### .pgmcp/config/workflows.yaml
 
-> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (name, description, execution mode). Phase sequences are exclusively defined in `.pgmcp/config/contracts.yaml`.
+> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (mapping-key identity, description, execution mode). Phase sequences are exclusively defined in `.pgmcp/config/contracts.yaml`.
 
 ```yaml
 # .pgmcp/config/workflows.yaml
-version: "1.0"
-phase_source: ".pgmcp/config/workphases.yaml"
+version: "1.0.0"
 
 workflows:
   feature:
-    name: feature
     description: "Full development workflow (research → design → planning → implementation → validation → docs)"
     default_execution_mode: interactive
 
   bug:
-    name: bug
     description: "Bug fix workflow (research → design → planning → implementation → validation → docs)"
     default_execution_mode: interactive
 
   hotfix:
-    name: hotfix
     description: "Emergency fix workflow (implementation → validation → docs only)"
     default_execution_mode: autonomous
 
   refactor:
-    name: refactor
     description: "Code refactoring workflow (research → design → planning → implementation → validation → docs)"
     default_execution_mode: interactive
 
   docs:
-    name: docs
     description: "Documentation-only workflow (planning → docs)"
     default_execution_mode: interactive
 
   chore:
-    name: chore
     description: "Lightweight maintenance workflow"
     default_execution_mode: interactive
 
   epic:
-    name: epic
     description: "Epic workflow for large initiatives (research → planning → design → coordination → documentation)"
     default_execution_mode: interactive
 
@@ -663,6 +655,9 @@ workflows:
 
 
 For the phase sequences per workflow, see `.pgmcp/config/contracts.yaml`. For the complete extension procedure, see [Adding a First-Class Workflow](../workflow-extension-guide.md).
+
+Product bases live under config/defaults/; workspace changes use root overrides.
+See the [composition contract](../config-loading-architecture.md).
 
 ---
 
@@ -705,5 +700,6 @@ Use `get_work_context` and the current project, phase, and cycle tool schemas fo
 | 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
+
 
 

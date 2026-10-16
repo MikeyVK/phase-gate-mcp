@@ -6,7 +6,7 @@
 **Version:** 2.3.0  
 **Last Updated:** 2026-09-24
 
-**Configuration:** [presentation.yaml](../../.pgmcp/config/presentation.yaml)  
+**Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
 **Presenter implementation:** [mcp_server/presenters](../../mcp_server/presenters)
 
@@ -135,12 +135,18 @@ list_issues:
   max_items: 10
   template_success: "Found {issues_count} issues matching criteria."
   collections:
-    - field: issues
+    issue_rows:
+      order: 10
+      field: issues
       heading: "Issues:"
       item_template: >-
         - #{number} [{state}] {title} — {html_url} |
         labels: {labels} | assignees: {assignees_summary} | created: {created_at}
 ```
+
+Collection, child and enum-case declarations use mapping-key identities and unique
+sibling order ranks. DTO item order is separate and remains unchanged. See
+[configuration composition](config-loading-architecture.md) for source overrides.
 
 When more than ten issues exist, the text adds an omission line. All issues remain in the
 cached `ListIssuesOutput` DTO.
@@ -293,4 +299,5 @@ those facts from Markdown.
 | 2.2.0 | 2026-09-13 | Agent | Document operation/attachment transport and required-null cache fidelity |
 | 2.0.0 | 2026-08-22 | Agent | Document bounded declarative projection, runtime catalog alignment, ordered collections, and final byte limiting |
 | 1.1.0 | 2026-08-19 | Agent | Document composite text and validation-resource presentation |
+
 

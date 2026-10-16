@@ -10,17 +10,25 @@ and version-specific notes from [GitHub Releases](https://github.com/MikeyVK/pha
 
 The unreleased #319 changes require a deliberate configuration_choice on each relevant
 check/test/fix binding. Existing configurations with missing/null choices can start for
-setup/health, but applicable quality execution is refused until acknowledged. Fresh
---init clears inherited choices in its newly copied bindings; template renewal does
-not refresh or overwrite owner bindings. Review the [quality setup procedure](README.md#choose-the-workspace-quality-policy)
+setup/health, but applicable quality execution is refused until acknowledged. Base choices are null; --init preserves choices in supplied assets.
+Template renewal does not refresh or overwrite owner bindings. Review the [quality setup procedure](README.md#choose-the-workspace-quality-policy)
 and perform a focused first verification. Report-mode safe-edit can retain truthful
 unexecuted-check facts while making a guarded edit; existing workspace admission and
 PR-status gates still apply. GitHub repository owner/name no longer have personal
-defaults; supply explicit settings for GitHub use.
+defaults; supply owner/repo in root github.yaml and prefer GITHUB_TOKEN for credentials.
 
 A new release is explicitly postponed. These are development upgrade notes, not a new
 published version or instruction to replace owner-managed native configs. The 3.0.0
 release and its artifacts remain unchanged.
+
+## Unreleased configuration composition
+
+Prepare a coherent self-contained config root with complete defaults/<file>.yaml
+bases and optional root workspace overrides. Object collections are keyed mappings;
+ordered collections require explicit ranks. Follow the [configuration contract](../reference/config-loading-architecture.md).
+GitHub identity/project metadata move to github.yaml. Existing roots need deliberate
+owner reconciliation; no automatic config migration or new upgrade mechanism is
+provided. Do not replace populated owner files by running initialization.
 
 ## Unreleased branch registration contract
 
@@ -159,4 +167,5 @@ an unchanged suite alone does not require a restart.
 - [Agentic Bootstrap Guide](agentic-bootstrap.md) — agent-assisted bootstrap.
 - [Server Configuration](../reference/server-configuration.md) — effective roots and declarations.
 - [Repository changelog](https://github.com/MikeyVK/phase-gate-mcp/blob/main/CHANGELOG.md) — release preparation and breaking changes.
+
 
