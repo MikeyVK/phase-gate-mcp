@@ -113,29 +113,31 @@ class TestCycleTools:
 
     def test_cycle_tools_require_workspace_root_and_define_enforcement_events(
         self,
-        tmp_path: Path,
+        configured_workspace: Path,
     ) -> None:
         """Cycle tools should use constructor-injected workspace roots and hook metadata."""
-        project_manager = make_project_manager(tmp_path)
-        state_engine = make_phase_state_engine(tmp_path, project_manager=project_manager)
-        git_manager = make_git_manager(tmp_path)
+        project_manager = make_project_manager(configured_workspace)
+        state_engine = make_phase_state_engine(
+            configured_workspace, project_manager=project_manager
+        )
+        git_manager = make_git_manager(configured_workspace)
         transition_tool = TransitionCycleTool(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             project_manager=project_manager,
             state_engine=state_engine,
             git_manager=git_manager,
-            server_root=tmp_path,
+            server_root=configured_workspace,
         )
         force_tool = ForceCycleTransitionTool(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             project_manager=project_manager,
             state_engine=state_engine,
             git_manager=git_manager,
-            server_root=tmp_path,
+            server_root=configured_workspace,
         )
 
-        assert transition_tool.workspace_root == tmp_path
-        assert force_tool.workspace_root == tmp_path
+        assert transition_tool.workspace_root == configured_workspace
+        assert force_tool.workspace_root == configured_workspace
         assert transition_tool.enforcement_event == "transition_cycle"
         assert force_tool.enforcement_event == "transition_cycle"
 

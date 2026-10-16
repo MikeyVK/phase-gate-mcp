@@ -186,14 +186,14 @@ def test_trust_reference_and_duplicate_admission(tmp_path: Path) -> None:
 )
 def test_invalid_or_missing_trust_has_no_fallback(tmp_path: Path, text: str | None) -> None:
     if text is not None:
-        write_package_tree(tmp_path / "custom_config", {"adapters.yaml": text.encode()})
+        write_package_tree(tmp_path / "custom_config", {"defaults/adapters.yaml": text.encode()})
     with pytest.raises(ConfigError):
         ConfigLoader(tmp_path / "custom_config").load_adapter_trust()
 
 
 def test_empty_and_explicit_trust_from_selected_config_root(tmp_path: Path) -> None:
     config_root = write_package_tree(
-        tmp_path / "selected", {"adapters.yaml": b"trusted_adapter_ids: []"}
+        tmp_path / "selected", {"defaults/adapters.yaml": b"trusted_adapter_ids: []"}
     )
     loader = ConfigLoader(config_root)
     assert loader.load_adapter_trust().trusted_adapter_ids == ()

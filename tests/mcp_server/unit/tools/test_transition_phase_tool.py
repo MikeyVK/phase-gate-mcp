@@ -74,9 +74,9 @@ class TestTransitionPhaseTool:
     """Test transition_phase MCP tool."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace."""
-        return tmp_path
+        return configured_workspace
 
     @pytest.fixture
     def project_manager(self, workspace_root: Path) -> ProjectManager:
@@ -338,9 +338,11 @@ class TestTransitionPhaseTool:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("forced", [False, True])
-async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, forced: bool) -> None:
+async def test_public_phase_tools_resolve_current_plan_cycle(
+    configured_workspace: Path, forced: bool
+) -> None:
     """Both public tools carry selection and structured rejection without writes."""
-    manager = make_project_manager(tmp_path)
+    manager = make_project_manager(configured_workspace)
     manager.initialize_project(491, "Cycle selection", "feature", parent_branch="main")
     manager.save_planning_deliverables(
         491,
@@ -364,7 +366,7 @@ async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, for
             }
         ),
     )
-    engine = make_phase_state_engine(tmp_path, project_manager=manager)
+    engine = make_phase_state_engine(configured_workspace, project_manager=manager)
     branch = "feature/491-selection"
     engine.initialize_branch(branch, 491, "planning", parent_branch="main")
     engine.transition(branch, "implementation")
@@ -372,10 +374,10 @@ async def test_public_phase_tools_resolve_current_plan_cycle(tmp_path: Path, for
     engine.force_transition(branch, "planning", "Revise the plan", "Owner approval")
     before = engine.get_state(branch)
     tool_kwargs = {
-        "workspace_root": tmp_path,
+        "workspace_root": configured_workspace,
         "project_manager": manager,
         "state_engine": engine,
-        "server_root": tmp_path,
+        "server_root": configured_workspace,
     }
     tool = ForcePhaseTransitionTool(**tool_kwargs) if forced else TransitionPhaseTool(**tool_kwargs)
     for selection, expected in (

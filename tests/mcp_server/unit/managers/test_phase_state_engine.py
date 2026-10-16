@@ -35,9 +35,9 @@ class TestCyclePhaseEntry:
     """Current-plan selection occurs before phase, pointer or audit writes."""
 
     @pytest.fixture()
-    def setup_project(self, tmp_path: Path) -> tuple[Path, int]:
+    def setup_project(self, configured_workspace: Path) -> tuple[Path, int]:
         """Create project with planning deliverables."""
-        workspace_root = tmp_path
+        workspace_root = configured_workspace
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
@@ -325,7 +325,9 @@ class TestPhaseStateEngineCleanBreak:
         def load(self, _branch: str) -> BranchState:
             return self._state
 
-    def test_get_state_raises_mismatch_error_not_file_not_found(self, tmp_path: Path) -> None:
+    def test_get_state_raises_mismatch_error_not_file_not_found(
+        self, configured_workspace: Path
+    ) -> None:
         """get_state() must raise StateBranchMismatchError on mismatch, not FileNotFoundError."""
         fixed_state = BranchState(
             branch="main",
@@ -338,7 +340,7 @@ class TestPhaseStateEngineCleanBreak:
             parent_branch="release/base",
         )
         engine = make_phase_state_engine(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             state_repository=self._FixedReader(fixed_state),
         )
         with pytest.raises(StateBranchMismatchError):
@@ -567,9 +569,9 @@ class TestPhaseStateEngineMutatorRoutingC6:
             state = self._repo.load(branch)
             self._repo.save(mutate(state))
 
-    def test_initialize_branch_routes_through_mutator(self, tmp_path: Path) -> None:
+    def test_initialize_branch_routes_through_mutator(self, configured_workspace: Path) -> None:
         """Initialization supplies complete state to the injected command boundary."""
-        project_manager = make_project_manager(tmp_path)
+        project_manager = make_project_manager(configured_workspace)
         project_manager.initialize_project(
             issue_number=231,
             issue_title="State Split",
@@ -579,7 +581,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo = InMemoryStateRepository()
         mutator = self._TrackingMutator(repo)
         engine = make_phase_state_engine(
-            tmp_path,
+            configured_workspace,
             project_manager=project_manager,
             state_repository=repo,
             workflow_state_mutator=mutator,
@@ -598,12 +600,12 @@ class TestPhaseStateEngineMutatorRoutingC6:
         assert repo.load("feature/231-test") == initial
         assert mutator.apply_calls == []
 
-    def test_transition_routes_through_mutator(self, tmp_path: Path) -> None:
+    def test_transition_routes_through_mutator(self, configured_workspace: Path) -> None:
         """transition() calls workflow_state_mutator.apply().
 
         RED: fails until GREEN routes transition() through mutator.
         """
-        project_manager = make_project_manager(tmp_path)
+        project_manager = make_project_manager(configured_workspace)
         project_manager.initialize_project(
             issue_number=231,
             issue_title="State Split",
@@ -613,7 +615,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo = InMemoryStateRepository()
         mutator = self._TrackingMutator(repo)
         engine = make_phase_state_engine(
-            tmp_path,
+            configured_workspace,
             project_manager=project_manager,
             state_repository=repo,
             workflow_state_mutator=mutator,
@@ -666,33 +668,33 @@ class TestPhaseStateEngineRecordSubPhase:
         repo.save(seed)
         return engine, repo, branch
 
-    def test_record_sub_phase_writes_to_state(self, tmp_path: Path) -> None:
+    def test_record_sub_phase_writes_to_state(self, configured_workspace: Path) -> None:
         """record_sub_phase(branch, 'red') must persist current_sub_phase='red'."""
-        engine, repo, branch = self._make_engine_and_state(tmp_path)
+        engine, repo, branch = self._make_engine_and_state(configured_workspace)
         engine.record_sub_phase(branch, "red")
         assert repo.load(branch).current_sub_phase == "red"
 
-    def test_record_sub_phase_none_clears_state(self, tmp_path: Path) -> None:
+    def test_record_sub_phase_none_clears_state(self, configured_workspace: Path) -> None:
         """record_sub_phase(branch, None) must set current_sub_phase=None."""
-        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="red")
+        engine, repo, branch = self._make_engine_and_state(configured_workspace, sub_phase="red")
         engine.record_sub_phase(branch, None)
         assert repo.load(branch).current_sub_phase is None
 
-    def test_transition_clears_sub_phase(self, tmp_path: Path) -> None:
+    def test_transition_clears_sub_phase(self, configured_workspace: Path) -> None:
         """transition() must clear current_sub_phase (set to None) on state write."""
-        _, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="green")
+        _, repo, branch = self._make_engine_and_state(configured_workspace, sub_phase="green")
         # transition from research so no gate enforcement needed; seed directly
         repo.save(repo.load(branch).with_updates(current_phase="research", current_cycle=None))
-        project_manager = make_project_manager(tmp_path)
+        project_manager = make_project_manager(configured_workspace)
         engine2 = make_phase_state_engine(
-            tmp_path, project_manager=project_manager, state_repository=repo
+            configured_workspace, project_manager=project_manager, state_repository=repo
         )
         engine2.transition(branch=branch, to_phase="design")
         assert repo.load(branch).current_sub_phase is None
 
-    def test_force_transition_clears_sub_phase(self, tmp_path: Path) -> None:
+    def test_force_transition_clears_sub_phase(self, configured_workspace: Path) -> None:
         """force_transition() must clear current_sub_phase on state write."""
-        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="red")
+        engine, repo, branch = self._make_engine_and_state(configured_workspace, sub_phase="red")
         repo.save(repo.load(branch).with_updates(current_phase="research", current_cycle=None))
         engine.force_transition(
             branch=branch,
@@ -702,9 +704,9 @@ class TestPhaseStateEngineRecordSubPhase:
         )
         assert repo.load(branch).current_sub_phase is None
 
-    def test_transition_cycle_clears_sub_phase(self, tmp_path: Path) -> None:
+    def test_transition_cycle_clears_sub_phase(self, configured_workspace: Path) -> None:
         """transition_cycle() must clear current_sub_phase on state write."""
-        project_manager = make_project_manager(tmp_path)
+        project_manager = make_project_manager(configured_workspace)
         project_manager.initialize_project(
             issue_number=298,
             issue_title="Sub-phase persistence",
@@ -738,7 +740,7 @@ class TestPhaseStateEngineRecordSubPhase:
         )
         repo = InMemoryStateRepository()
         engine = make_phase_state_engine(
-            tmp_path, project_manager=project_manager, state_repository=repo
+            configured_workspace, project_manager=project_manager, state_repository=repo
         )
         branch = "feature/298-test"
         repo.save(
@@ -1089,7 +1091,7 @@ workflows:
     # transition()
     # -----------------------------------------------------------------------
 
-    def test_transition_lambda_uses_s_transitions(self, tmp_path: Path) -> None:
+    def test_transition_lambda_uses_s_transitions(self, configured_workspace: Path) -> None:
         """transition() lambda appends to _s.transitions, not to pre-captured state.transitions.
 
         Before fix: ``lambda _s: state.with_updates(transitions=[*state.transitions, new])``
@@ -1097,7 +1099,7 @@ workflows:
         After fix:  ``lambda _s: _s.with_updates(transitions=[*_s.transitions, new])``
         uses fresh _s (1 concurrent entry) -> 2 transitions saved.
         """
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         pm.initialize_project(
             issue_number=292, issue_title="Test", workflow_name="feature", parent_branch="main"
         )
@@ -1123,7 +1125,7 @@ workflows:
         fresh_s = seed.with_updates(transitions=[concurrent_entry])
         mutator = self._FreshSMutator(repo, fresh_s)
         engine = make_phase_state_engine(
-            tmp_path,
+            configured_workspace,
             project_manager=pm,
             state_repository=repo,
             workflow_state_mutator=mutator,
@@ -1144,12 +1146,12 @@ workflows:
     # force_transition()
     # -----------------------------------------------------------------------
 
-    def test_force_transition_lambda_uses_s_transitions(self, tmp_path: Path) -> None:
+    def test_force_transition_lambda_uses_s_transitions(self, configured_workspace: Path) -> None:
         """force_transition() lambda appends to _s.transitions, not pre-captured state.transitions.
 
         Same stale-lambda pattern as transition(); verified independently.
         """
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         pm.initialize_project(
             issue_number=292, issue_title="Test", workflow_name="feature", parent_branch="main"
         )
@@ -1174,7 +1176,7 @@ workflows:
         fresh_s = seed.with_updates(transitions=[concurrent_entry])
         mutator = self._FreshSMutator(repo, fresh_s)
         engine = make_phase_state_engine(
-            tmp_path,
+            configured_workspace,
             project_manager=pm,
             state_repository=repo,
             workflow_state_mutator=mutator,
@@ -1327,8 +1329,8 @@ class TestHumanApprovalMessageMigration:
     in force transition tools, while keeping temporary deprecated human_approval fallback.
     """
 
-    def test_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
-        pm = make_project_manager(tmp_path)
+    def test_transition_accepts_human_approval_message(self, configured_workspace: Path) -> None:
+        pm = make_project_manager(configured_workspace)
         repo = InMemoryStateRepository()
 
         # Setup branch
@@ -1351,7 +1353,9 @@ class TestHumanApprovalMessageMigration:
         )
         repo.save(state)
 
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+        engine = make_phase_state_engine(
+            configured_workspace, project_manager=pm, state_repository=repo
+        )
 
         # Act
         engine.transition(
@@ -1363,9 +1367,11 @@ class TestHumanApprovalMessageMigration:
         assert len(state.transitions) == 1
         assert state.transitions[0]["human_approval_message"] == "Orientation approved"
 
-    def test_transition_rejects_human_approval_deprecated_fallback(self, tmp_path: Path) -> None:
+    def test_transition_rejects_human_approval_deprecated_fallback(
+        self, configured_workspace: Path
+    ) -> None:
         """C2: Parameter 'human_approval' is removed from transition()."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         repo = InMemoryStateRepository()
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
@@ -1386,7 +1392,9 @@ class TestHumanApprovalMessageMigration:
         )
         repo.save(state)
 
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+        engine = make_phase_state_engine(
+            configured_workspace, project_manager=pm, state_repository=repo
+        )
 
         with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.transition(
@@ -1395,8 +1403,10 @@ class TestHumanApprovalMessageMigration:
                 **dict[str, Any](human_approval="Orientation fallback approved"),
             )
 
-    def test_force_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
-        pm = make_project_manager(tmp_path)
+    def test_force_transition_accepts_human_approval_message(
+        self, configured_workspace: Path
+    ) -> None:
+        pm = make_project_manager(configured_workspace)
         repo = InMemoryStateRepository()
 
         # Setup branch
@@ -1419,7 +1429,9 @@ class TestHumanApprovalMessageMigration:
         )
         repo.save(state)
 
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+        engine = make_phase_state_engine(
+            configured_workspace, project_manager=pm, state_repository=repo
+        )
 
         # Act
         engine.force_transition(
@@ -1435,10 +1447,10 @@ class TestHumanApprovalMessageMigration:
         assert state.transitions[0]["human_approval_message"] == "Orientation approved"
 
     def test_force_transition_rejects_human_approval_deprecated_fallback(
-        self, tmp_path: Path
+        self, configured_workspace: Path
     ) -> None:
         """C2: Parameter 'human_approval' is removed from force_transition()."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         repo = InMemoryStateRepository()
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
@@ -1459,7 +1471,9 @@ class TestHumanApprovalMessageMigration:
         )
         repo.save(state)
 
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+        engine = make_phase_state_engine(
+            configured_workspace, project_manager=pm, state_repository=repo
+        )
 
         with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.force_transition(
@@ -1469,8 +1483,10 @@ class TestHumanApprovalMessageMigration:
                 **dict[str, Any](human_approval="Orientation fallback approved"),
             )
 
-    def test_force_cycle_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
-        pm = make_project_manager(tmp_path)
+    def test_force_cycle_transition_accepts_human_approval_message(
+        self, configured_workspace: Path
+    ) -> None:
+        pm = make_project_manager(configured_workspace)
         repo = InMemoryStateRepository()
         pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         planning_deliverables = SavePlanningModel.model_validate(
@@ -1512,7 +1528,9 @@ class TestHumanApprovalMessageMigration:
         )
         repo.save(state)
 
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+        engine = make_phase_state_engine(
+            configured_workspace, project_manager=pm, state_repository=repo
+        )
 
         # Act
         engine.force_cycle_transition(
@@ -1528,10 +1546,10 @@ class TestHumanApprovalMessageMigration:
         assert state.cycle_history[0]["human_approval_message"] == "Cycle transition approved"
 
     def test_force_cycle_transition_rejects_human_approval_deprecated_fallback(
-        self, tmp_path: Path
+        self, configured_workspace: Path
     ) -> None:
         """C3: Parameter 'human_approval' is removed from force_cycle_transition()."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         repo = InMemoryStateRepository()
         pm.initialize_project(430, "Test issue", "feature", parent_branch="main")
         planning_deliverables = SavePlanningModel.model_validate(
@@ -1573,7 +1591,9 @@ class TestHumanApprovalMessageMigration:
         )
         repo.save(state)
 
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+        engine = make_phase_state_engine(
+            configured_workspace, project_manager=pm, state_repository=repo
+        )
 
         with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.force_cycle_transition(
@@ -1624,12 +1644,12 @@ class TestHumanApprovalMessageMigration:
         assert state.cycle_history[0]["human_approval"] == "Approved"
 
 
-def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> None:
+def test_rejected_force_transition_preserves_execution_state(configured_workspace: Path) -> None:
     """Missing approval must not change exit pointers, audit or loaded context."""
     branch = "refactor/491-entry"
-    manager = make_project_manager(tmp_path)
+    manager = make_project_manager(configured_workspace)
     manager.initialize_project(491, "Explicit entry", "refactor", parent_branch="main")
-    state_file = tmp_path / get_default_server_root() / "state.json"
+    state_file = configured_workspace / get_default_server_root() / "state.json"
     repository = FileStateRepository(state_file=state_file)
     initial = BranchState(
         branch=branch,
@@ -1646,7 +1666,7 @@ def test_rejected_force_transition_preserves_execution_state(tmp_path: Path) -> 
     before = state_file.read_bytes()
     writer = MagicMock(spec=IContextLoadedWriter)
     engine = make_phase_state_engine(
-        tmp_path,
+        configured_workspace,
         project_manager=manager,
         state_repository=repository,
         context_loaded_writer=writer,

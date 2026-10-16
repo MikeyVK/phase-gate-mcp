@@ -58,7 +58,7 @@ def _write_config(
 ) -> None:
     configured = ", ".join(f"{profile}: {{checks: [syntax]}}" for profile in profiles)
     write_package_tree(
-        root,
+        root / "defaults",
         {
             "adapters.yaml": b"trusted_adapter_ids: []\n",
             "checks.yaml": (
@@ -69,6 +69,7 @@ def _write_config(
                 "    capability: syntax\n"
                 "    timeout_seconds: 30\n"
                 "    default_args: []\n"
+                "    configuration_choice: not_applicable\n"
                 f"profiles: {{{configured}}}\n"
                 "profiles_by_extension: {}\n"
                 "run_checks: {}\n"
@@ -152,7 +153,7 @@ def test_flat_supersession_and_mixed_proposal_use_complete_admitted_snapshots(
     actual_before = {
         path.relative_to(actual): path.read_bytes() for path in actual.rglob("*") if path.is_file()
     }
-    config_before = (config / "checks.yaml").read_bytes()
+    config_before = (config / "defaults" / "checks.yaml").read_bytes()
     service = _service(actual, staged, proposal, config)
     actual_snapshot = service.admit(actual)
     supplied_snapshot = _admit_suite(supplied, config)
@@ -175,7 +176,7 @@ def test_flat_supersession_and_mixed_proposal_use_complete_admitted_snapshots(
     assert actual_before == {
         path.relative_to(actual): path.read_bytes() for path in actual.rglob("*") if path.is_file()
     }
-    assert (config / "checks.yaml").read_bytes() == config_before
+    assert (config / "defaults" / "checks.yaml").read_bytes() == config_before
 
 
 def test_candidate_invalid_is_distinct_and_preserves_existing_stage(tmp_path: Path) -> None:

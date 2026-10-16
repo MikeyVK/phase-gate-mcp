@@ -143,7 +143,8 @@ def test_filename_is_a_basename_and_collision_never_overwrites(
 
 
 def test_loader_and_one_way_catalog_references(tmp_path: Path) -> None:
-    (tmp_path / "artifacts.yaml").write_text(
+    (tmp_path / "defaults").mkdir()
+    (tmp_path / "defaults/artifacts.yaml").write_text(
         'version: "2.0.0"\nartifacts:\n  design:\n'
         "    default_root: docs/./design\n    additional_roots: [notes/drafts]\n",
         encoding="utf-8",

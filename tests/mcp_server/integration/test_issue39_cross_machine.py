@@ -31,10 +31,9 @@ class TestIssue39CrossMachine:
     """Integration tests for cross-machine state recovery."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace with git repo."""
-        workspace = tmp_path / "workspace"
-        workspace.mkdir()
+        workspace = configured_workspace
 
         # Initialize git repo
         subprocess.run(["git", "init"], cwd=workspace, check=True, capture_output=True)

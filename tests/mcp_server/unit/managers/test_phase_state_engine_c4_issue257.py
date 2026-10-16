@@ -135,9 +135,9 @@ class ConfigAwareCycleGateRunner:
 
 
 @pytest.fixture
-def workspace_root(tmp_path: Path) -> Path:
+def workspace_root(configured_workspace: Path) -> Path:
     """Temporary workspace root for cycle-orchestration tests."""
-    return tmp_path
+    return configured_workspace
 
 
 @pytest.fixture
@@ -409,10 +409,10 @@ def test_force_cycle_transition_returns_gate_inspection_report(
     assert history_entry["skipped_cycles"] == [2]
 
 
-def test_cycle_transition_is_allowed_in_any_cycle_based_phase(workspace_root: Path) -> None:
+def test_cycle_transition_is_allowed_in_any_cycle_based_phase(tmp_path: Path) -> None:
     """Cycle transitions should follow cycle_based config instead of phase name."""
     engine, branch, gate_runner = _create_config_driven_cycle_engine(
-        workspace_root,
+        tmp_path,
         initial_phase="implementation",
     )
 
@@ -426,10 +426,10 @@ def test_cycle_transition_is_allowed_in_any_cycle_based_phase(workspace_root: Pa
     assert state.current_cycle == 2
 
 
-def test_cycle_transition_is_blocked_in_non_cycle_based_phase(workspace_root: Path) -> None:
+def test_cycle_transition_is_blocked_in_non_cycle_based_phase(tmp_path: Path) -> None:
     """Cycle transitions should fail generically outside cycle_based phases."""
     engine, branch, gate_runner = _create_config_driven_cycle_engine(
-        workspace_root,
+        tmp_path,
         initial_phase="planning",
     )
 

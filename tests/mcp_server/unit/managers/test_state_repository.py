@@ -207,9 +207,9 @@ class TestInMemoryStateRepository:
             repository.save(invalid)
         assert repository.load(replacement.branch) == replacement
 
-    def test_phase_state_engine_uses_injected_repository(self, tmp_path: Path) -> None:
+    def test_phase_state_engine_uses_injected_repository(self, configured_workspace: Path) -> None:
         """PSE should persist through the injected repository instead of direct file writes."""
-        project_manager = make_project_manager(tmp_path)
+        project_manager = make_project_manager(configured_workspace)
         project_manager.initialize_project(
             issue_number=257,
             issue_title="Repository injection",
@@ -218,7 +218,7 @@ class TestInMemoryStateRepository:
         )
         repository = InMemoryStateRepository()
         engine = make_phase_state_engine(
-            tmp_path,
+            configured_workspace,
             project_manager=project_manager,
             state_repository=repository,
         )
@@ -232,7 +232,7 @@ class TestInMemoryStateRepository:
 
         loaded = repository.load("feature/257-reorder-workflow-phases")
         assert loaded.current_phase == "implementation"
-        assert not (tmp_path / get_default_server_root() / "state.json").exists()
+        assert not (configured_workspace / get_default_server_root() / "state.json").exists()
 
 
 class TestAtomicJsonWriter:

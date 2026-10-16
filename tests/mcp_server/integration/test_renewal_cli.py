@@ -10,6 +10,7 @@ from io import StringIO
 from pathlib import Path
 
 import pytest
+import yaml
 
 from mcp_server.cli_renewal import RenewalCli, build_default_operation, main
 from mcp_server.config.settings import ServerSettings, Settings
@@ -56,8 +57,13 @@ def renewal_case(tmp_path: Path, pytestconfig: pytest.Config) -> RenewalCase:
     )
     config = tmp_path / "config"
     config.mkdir()
+    (config / "defaults").mkdir()
     for name in ("checks.yaml", "adapters.yaml"):
         shutil.copy2(repository / ".pgmcp" / "config" / name, config / name)
+        shutil.copy2(
+            repository / ".pgmcp" / "config" / "defaults" / name,
+            config / "defaults" / name,
+        )
     server = tmp_path / ".pgmcp"
     server.mkdir()
     return RenewalCase(
@@ -294,7 +300,11 @@ def test_busy_and_invalid_profile_are_actionable(renewal_case: RenewalCase) -> N
         renewal_case.source,
         renewal_case.workspace / "release-invalid" / "template_suite",
     )
-    _append(invalid / "issue" / "policy.yaml", b"\noutput_profile: missing_profile\n")
+    policy_path = invalid / "issue" / "policy.yaml"
+    policy = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+    assert isinstance(policy, dict)
+    policy["output_profile"] = "missing_profile"
+    policy_path.write_text(yaml.safe_dump(policy), encoding="utf-8")
     code, out, err, operation = _run(renewal_case, supplied=invalid)
     assert code == 1
     result = _result(operation)

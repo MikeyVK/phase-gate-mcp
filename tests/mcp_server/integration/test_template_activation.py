@@ -70,7 +70,7 @@ def _package_files(
 
 def _write_config(case: ActivationCase) -> None:
     write_package_tree(
-        case.config,
+        case.config / "defaults",
         {
             "adapters.yaml": b"trusted_adapter_ids: []\n",
             "checks.yaml": (
@@ -81,6 +81,7 @@ def _write_config(case: ActivationCase) -> None:
                 b"    capability: syntax\n"
                 b"    timeout_seconds: 30\n"
                 b"    default_args: []\n"
+                b"    configuration_choice: not_applicable\n"
                 b"profiles: {text: {checks: [syntax]}}\n"
                 b"profiles_by_extension: {}\n"
                 b"run_checks: {}\n"

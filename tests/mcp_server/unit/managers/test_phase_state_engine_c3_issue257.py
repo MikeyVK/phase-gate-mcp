@@ -24,9 +24,9 @@ from tests.mcp_server.test_support import make_phase_state_engine, make_project_
 
 
 @pytest.fixture
-def workspace_root(tmp_path: Path) -> Path:
+def workspace_root(configured_workspace: Path) -> Path:
     """Temporary workspace root for tests."""
-    return tmp_path
+    return configured_workspace
 
 
 @pytest.fixture
