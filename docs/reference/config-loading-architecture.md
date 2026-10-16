@@ -2,7 +2,7 @@
 # Configuration and Template Loading
 
 **Status:** DEFINITIVE  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-16
 
 Runtime settings select roots, workspace declarations select policy, and template packages own artifact contracts. Existing typed models remain authoritative for their fields.
@@ -18,6 +18,17 @@ Runtime settings select roots, workspace declarations select policy, and templat
 The basis must be a complete valid document. After composition, the result must satisfy the same domain model and cross-config references. Present empty YAML, duplicate keys, nonmapping roots, unreadable sources and invalid schema versions are errors. An absent override inherits; `{}` changes nothing.
 
 An explicit `config_path` selects exactly one complete file without companion lookup or commands. Package adapter/template declarations and check-schema JSON retain their standalone routes. Enforcement is optional: neither source means empty policy; an override without a basis must be a complete valid enforcement document. The release manifest is outside this composition route.
+
+The unused operation-policy route is removed: `PolicyEngine`, `PolicyDecision`,
+`OperationPolicy`, `OperationPoliciesConfig` and
+`ConfigLoader.load_operation_policies_config()` are no longer supported Python
+contracts. Direct importers must remove those dependencies; there are no aliases
+or compatibility loaders. Startup does not read `config_root/policies.yaml` or
+`config_root/defaults/policies.yaml`. After updating the server, workspace owners
+may explicitly remove those obsolete files; PGMCP does not delete existing
+workspace files automatically. Active tool admission remains configured through
+`enforcement.yaml` and workflow contracts; template `policy.yaml` and check/test/fix
+configuration retain their own responsibilities.
 
 ## Composition and identity
 
@@ -88,3 +99,4 @@ This refactor supplies no new build/distribution/upgrade mechanism. Existing roo
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-16 | @imp documenter | Consolidate the implemented layered-source and composition contract. |
+| 1.1 | 2026-10-16 | @imp documenter | Document removed operation-policy Python/config contracts, deliberate owner cleanup and preserved active admission for #506. |

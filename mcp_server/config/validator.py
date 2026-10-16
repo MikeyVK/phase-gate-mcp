@@ -9,7 +9,7 @@ before the MCP server starts accepting requests.
 @dependencies: [mcp_server.core.exceptions, mcp_server.schemas]
 @responsibilities:
     - Validate contracts.yaml phase references against workphases catalog
-    - Validate operation policy references across config objects
+    - Validate the merge-policy phase against the workphase catalog
 """
 
 from __future__ import annotations
@@ -30,7 +30,6 @@ from mcp_server.core.interfaces.execution import (
 )
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
-    OperationPoliciesConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
@@ -116,7 +115,6 @@ class ConfigValidator:
 
     def validate_startup(
         self,
-        policies: OperationPoliciesConfig,
         workflow: WorkflowConfig,
         contracts: ContractsConfig,
         workphases: WorkphasesConfig,
@@ -130,7 +128,6 @@ class ConfigValidator:
             known_workflows=known_workflows,
             known_phases=known_phases,
         )
-        self._validate_operation_policies(policies=policies, known_phases=known_phases)
         self._validate_merge_policy_phase(
             contracts=contracts,
             known_phases=known_phases,
@@ -153,19 +150,6 @@ class ConfigValidator:
                         f"contracts reference phase '{phase_id}' "
                         "that is missing from workphases.yaml"
                     )
-
-    def _validate_operation_policies(
-        self,
-        policies: OperationPoliciesConfig,
-        known_phases: set[str],
-    ) -> None:
-        for operation_id, policy in policies.operations.items():
-            unknown_policy_phases = set(policy.allowed_phases) - known_phases
-            if unknown_policy_phases:
-                raise ConfigError(
-                    f"Operation '{operation_id}' references unknown phases: "
-                    f"{sorted(unknown_policy_phases)}"
-                )
 
     def _validate_merge_policy_phase(
         self,

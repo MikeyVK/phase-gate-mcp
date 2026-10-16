@@ -55,7 +55,7 @@ Workspace policy uses complete `config/defaults/<file>.yaml` bases and optional 
 | File | Purpose |
 | :--- | :--- |
 | `workflows.yaml` / `workphases.yaml` / `contracts.yaml` | Workflow order, phase rules, and deliverables |
-| `policies.yaml` / `enforcement.yaml` | Operation and transition policy |
+| `enforcement.yaml` | Tool admission and pre/post enforcement |
 | `checks.yaml` / `tests.yaml` / `fixes.yaml` | Configured check, test, and fix selections |
 | `adapters.yaml` / `artifacts.yaml` | Adapter trust and artifact locations |
 | `git.yaml` | Branch naming conventions |

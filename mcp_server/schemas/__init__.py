@@ -19,7 +19,6 @@ from mcp_server.config.schemas.git_config import GitConfig
 from mcp_server.config.schemas.issue_config import IssueConfig
 from mcp_server.config.schemas.label_config import LabelConfig
 from mcp_server.config.schemas.milestone_config import MilestoneConfig
-from mcp_server.config.schemas.operation_policies_config import OperationPoliciesConfig
 from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
@@ -56,7 +55,6 @@ __all__ = [
     "LabelConfig",
     "MergePolicy",
     "MilestoneConfig",
-    "OperationPoliciesConfig",
     "ScopeConfig",
     "WorkflowConfig",
     "WorkflowEntry",
