@@ -3,7 +3,7 @@
 # Issue 505 — Bounded assembly safety planning
 
 **Status:** PLANNING — QA REQUESTED  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -40,7 +40,7 @@ Preserve exact findings; do not weaken the gate or expand into general cleanup. 
 ## Milestones
 
 - Implementation → Validation: independent QA checks C_1 completion and narrow evidence; QA does not execute the future full Validation in this gate.
-- Validation: exactly one full native-configured test suite: run_tests(scope='configured', tests=['python_tests'], timeout_seconds=1800), preserving all native defaults and coverage options. A real timeout/incomplete run is not a pass.
+- Validation: exactly one full native-configured test suite: run_tests(scope='configured', tests=['python_tests'], timeout_seconds=1200), preserving all native defaults and coverage options. A real timeout/incomplete run is not a pass.
 - Validation: run_checks(scope='branch', checks=['python_format','python_lint','python_pyright','python_types','markdown_links','yaml_configuration','json_schema_shape','json_schema_metaschema'], timeout_seconds=600). Existing per-check configured branch filtering selects appropriate file types. No branch message check is invented.
 - Validation: run_checks(scope='configured', checks=['python_types'], timeout_seconds=600) retains production-scoped Mypy. The changed builder/test files additionally retain their explicit Pyright evidence from C_1.
 - Do not repeat the focused test run if the full native run exposes all builder scenarios and no later edits invalidate it. Record exact invocations, native outcomes, warnings, residuals and source snapshot in the compact validation report.
@@ -162,3 +162,5 @@ Reconcile the active release-assets assembly procedure with admission order, dis
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp planner | Plan one focused RED/GREEN cycle and phase-owned validation/documentation. |
+| 0.2 | 2026-10-16 | @imp planner | Correct the full-suite execution budget to 1200 seconds within the approved 1800-second client window; selection unchanged. |
+
