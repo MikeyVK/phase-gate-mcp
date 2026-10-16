@@ -184,9 +184,8 @@ def resolve_config_root(
         candidate = Path(workspace_root)
         if candidate.name != "config":
             candidate = candidate / settings.server.server_root_dir / "config"
-        if candidate.exists():
-            # An explicitly provided config root is authoritative, even when incomplete.
-            return candidate
+        # Explicit context is authoritative even when fixture preparation is absent.
+        return candidate
     return settings.server.resolved_config_root
 
 
@@ -204,7 +203,7 @@ def _load_config(
     load_method: str,
     **kwargs: object,
 ) -> object:
-    """Load one config file with workspace-first, file-specific fallback."""
+    """Load one config file from the explicitly selected test configuration context."""
     loader = make_config_loader(workspace_root, required_paths=(required_path,))
     return getattr(loader, load_method)(**kwargs)
 

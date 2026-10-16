@@ -19,6 +19,7 @@ from tests.mcp_server.fixtures.suite_roots import (
     create_suite_roots,
     write_package_tree,
 )
+from tests.mcp_server.test_support import get_default_server_root, make_config_loader
 
 
 def test_config_loaders_remain_isolated_from_cwd_and_environment(
@@ -59,6 +60,14 @@ def test_config_loaders_remain_isolated_from_cwd_and_environment(
         assert second_loader.load_workflow_config() == right
         assert (second.config / "defaults" / "workflows.yaml").read_bytes() == second_bytes
         assert Path.cwd() == second.workspace
+        missing_workspace = tmp_path / "unprepared"
+        missing_config = missing_workspace / get_default_server_root() / "config"
+        for selected in (missing_workspace, missing_config):
+            isolated = make_config_loader(selected)
+            assert isolated.config_root == missing_config
+            with pytest.raises(ConfigError):
+                isolated.load_workflow_config()
+        assert not missing_workspace.exists()
     assert Path.cwd() == original_cwd
     assert dict(os.environ) == original_environment
 

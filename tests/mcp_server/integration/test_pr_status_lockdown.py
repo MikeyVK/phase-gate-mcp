@@ -123,9 +123,8 @@ def _make_pr_reader(status: PRStatus) -> IPRStatusReader:
 
 def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
     """Build an EnforcementRunner with the live enforcement.yaml and a mocked PR reader."""
-    enforcement_yaml = _REPO_ROOT / get_default_server_root() / "config" / "enforcement.yaml"
     loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
-    config = loader.load_enforcement_config(config_path=enforcement_yaml)
+    config = loader.load_enforcement_config()
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
@@ -149,8 +148,7 @@ class TestBranchMutatingToolRegistration:
         assert tool_cls.name.fget is not None
         tool_name = tool_cls.name.fget(None)
         loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
-        enforcement_yaml = _REPO_ROOT / get_default_server_root() / "config" / "enforcement.yaml"
-        config = loader.load_enforcement_config(config_path=enforcement_yaml)
+        config = loader.load_enforcement_config()
         assert tool_name in config.categories.get("branch_mutating", []), (
             f"Tool '{tool_name}' ({tool_cls.__name__}) must be configured under "
             f"categories.branch_mutating in enforcement.yaml"

@@ -3,7 +3,7 @@
 # Issue 504 — Interactive native configuration refactor
 
 **Status:** IMPLEMENTATION — PHASE REVIEW REQUESTED  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -366,8 +366,10 @@ Independent QA granted Planning-to-Implementation GO on 5ac30a4a2226a51961fd205f
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-15 | @imp planner | Sequence native composition and clean source/consumer cutover with interactive checkpoints; reserve full suite/gates for Validation and stop before Implementation. |
-
 | 0.2 | 2026-10-15 | @imp planner | Fix QA P2: suite budget 1200 seconds inside prescribed client window 1800; add literal phase deliverable names for exact readback parity. |
+
+| 0.3 | 2026-10-16 | @imp implementer | Record autonomous focused-only execution and source-bound implementation checkpoint. |
+| 0.4 | 2026-10-16 | @imp implementer | Repair both independent QA P2 findings and the directly affected policy-read fixtures. |
 
 
 ## Implementation Checkpoint
@@ -376,8 +378,12 @@ The owner authorized autonomous execution through Ready, focused target scopes o
 
 C_1 delivered public native Pydantic Settings composition, strict tombstones and model-owned explicit order. Its focused 16-case composition and seven-case ordering tests passed; the existing deletion case now also proves that aliased source objects do not redirect a deletion to an unaddressed sibling. Input trees remain unchanged. Production typing and file gates passed.
 
-C_2 is committed at cce658f6ffa2da4302b8cac338eb23eb021e71a8. Complete product sources live under defaults/; root files are workspace overrides. Canonical keyed/order-aware models and direct consumers were cut over together. Targeted loader, catalog, contract/resolver, enforcement, presentation, public execution and startup/resource behavior passed. Native YAML checks passed on all 36 changed source documents. The workspace enforcement override explicitly retains all current guards as a conservative local policy; the complete product basis independently supplies those guards, proved through the public loader. No guard is removed.
+C_2 is committed at cce658f6ffa2da4302b8cac338eb23eb021e71a8. Complete product sources live under defaults/; root files are workspace overrides. Canonical keyed/order-aware models and direct consumers were cut over together. Targeted loader, catalog, contract/resolver, enforcement, presentation, public execution and startup/resource behavior passed. Native YAML checks passed on all 36 changed source documents. After independent QA rejected a duplicated workspace policy, the root enforcement override was reduced to an empty mapping. The complete product basis independently supplies all current guards, proved through the public loader; no guard is removed. This supersedes the earlier conservative duplicate retained after automatic approval rejections.
 
 C_3 uses one resolved GitHubSettings from layered github.yaml and the nonempty environment token, shared by the manager and registration/resource decisions. Settings no longer owns GitHub identity; initialization no longer resets copied choices. Focused Settings/bootstrap/CLI modules passed (53 cases), direct server/discovery/argument/lifecycle modules passed (52), and six affected PR/rollout/fixture/execution modules passed (81). Settings was rerun after extending its existing secret-safe validation test to malformed YAML: 27 passed. Both model and parser diagnostics excluded the fixture token; no speculative parser refactor was needed. Ruff format/lint and Pyright passed on the 21 changed Python files; Mypy passed on six affected production files.
 
 The full suite and workspace/branch-wide gates were intentionally not executed. Existing SchemaAttachment.schema-shadow and previously observed MCP resource/Windows path deprecation warnings remain outside scope. No release_manifest, package-builder, distribution or upgrade behavior is changed; follow-up #505 and other deferred work are not delivered by this branch.
+
+### Independent Implementation Review Repairs
+
+Independent QA returned NOGO on 54a9551df96948117ade14d8b221831f3e88af2e for two P2 contract deviations. Both are repaired without changing strategy: enforcement.yaml is now a no-op workspace override over the unchanged guarded product basis; resolve_config_root always honors explicit context, including absent fixture preparation. The existing root-isolation test was extended with absent workspace/config selections: it failed before the helper fix and passed afterward. No general fixture rewrite or new compatibility path was introduced. The helper/loader isolation test passes. Eight selected context/server/enforcement modules exposed only three remaining test modules incorrectly reading the root override as a standalone complete policy; these now use the normal layered loader. Their focused rerun passed, as did the YAML and affected Python gates. Independent recheck is requested on the repair commit.

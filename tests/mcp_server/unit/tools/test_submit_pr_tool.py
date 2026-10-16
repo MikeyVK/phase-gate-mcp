@@ -48,8 +48,7 @@ class TestSubmitPRTool:
     def test_is_branch_mutating_in_config(self) -> None:
         repo_root = Path(__file__).parent.parent.parent.parent.parent
         loader = ConfigLoader(config_root=repo_root / get_default_server_root() / "config")
-        config_path = repo_root / get_default_server_root() / "config" / "enforcement.yaml"
-        config = loader.load_enforcement_config(config_path=config_path)
+        config = loader.load_enforcement_config()
         assert "submit_pr" in config.categories.get("branch_mutating", [])
 
     def test_name_is_submit_pr(self) -> None:
