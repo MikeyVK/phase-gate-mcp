@@ -72,9 +72,11 @@ class TestCreateLabelToolValidation:
         """CreateLabelTool creates label with valid name and color."""
         yaml_content = """version: "1.0.0"
 labels:
-  - name: "type:feature"
+  label_1:
+    name: "type:feature"
     color: "1D76DB"
-  - name: "type:bug"
+  label_2:
+    name: "type:bug"
     color: "FF0000"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
@@ -114,7 +116,8 @@ class TestAddLabelsToolValidation:
         """AddLabelsTool rejects undefined labels (strict enforcement)."""
         yaml_content = """version: "1.0.0"
 labels:
-  - name: "type:feature"
+  label_3:
+    name: "type:feature"
     color: "1D76DB"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
@@ -130,9 +133,11 @@ labels:
         """AddLabelsTool adds all labels when all are valid."""
         yaml_content = """version: "1.0.0"
 labels:
-  - name: "type:feature"
+  label_4:
+    name: "type:feature"
     color: "1D76DB"
-  - name: "priority:high"
+  label_5:
+    name: "priority:high"
     color: "D93F0B"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
@@ -156,7 +161,8 @@ labels:
         """AddLabelsTool rejects entire operation if ANY label is undefined."""
         yaml_content = """version: "1.0.0"
 labels:
-  - name: "type:feature"
+  label_6:
+    name: "type:feature"
     color: "1D76DB"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
@@ -180,9 +186,11 @@ labels:
 freeform_exceptions:
   - "good first issue"
 labels:
-  - name: "type:feature"
+  label_7:
+    name: "type:feature"
     color: "1D76DB"
-  - name: "good first issue"
+  label_8:
+    name: "good first issue"
     color: "7057FF"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
@@ -205,12 +213,15 @@ labels:
         """AddLabelsTool accepts labels matching label_patterns (e.g. parent:302)."""
         yaml_content = """version: "1.0.0"
 label_patterns:
-  - pattern: "^parent:\\\\d+$"
+  parent_reference:
+    order: 10
+    pattern: "^parent:\\\\d+$"
     description: "Parent issue reference"
     color: "EDEDED"
     example: "parent:91"
 labels:
-  - name: "type:feature"
+  label_9:
+    name: "type:feature"
     color: "1D76DB"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
@@ -289,11 +300,13 @@ class TestAddLabelsToolPhaseValidation:
         """AddLabelsTool rejects phase labels not in workphases.yaml."""
         yaml_content = """version: "1.0.0"
 label_patterns:
-  - pattern: "^phase:[a-z][a-z0-9-]*$"
+  phase_labels:
+    order: 10
+    pattern: "^phase:[a-z][a-z0-9-]*$"
     description: "Workflow phase label"
     color: "C5DEF5"
     example: "phase:research"
-labels: []
+labels: {}
 """
         label_config = _load_label_config(tmp_path, yaml_content)
         mock_manager = Mock()
@@ -313,11 +326,13 @@ labels: []
         """AddLabelsTool accepts phase:implementation as a valid phase label."""
         yaml_content = """version: "1.0.0"
 label_patterns:
-  - pattern: "^phase:[a-z][a-z0-9-]*$"
+  phase_labels:
+    order: 10
+    pattern: "^phase:[a-z][a-z0-9-]*$"
     description: "Workflow phase label"
     color: "C5DEF5"
     example: "phase:research"
-labels: []
+labels: {}
 """
         label_config = _load_label_config(tmp_path, yaml_content)
         mock_manager = Mock()

@@ -367,7 +367,7 @@ def test_explicit_projection_survives_actual_planning_save_and_readback(
     workflow = next(
         name
         for name, definition in contracts.workflows.items()
-        if any(phase.cycle_based for phase in definition.phases)
+        if any(phase.cycle_based for phase in definition.phases.values())
     )
     manager = make_project_manager(legacy_suite_roots.workspace, contracts_config=contracts)
     manager.initialize_project(71, "Explicit planning projection", workflow, parent_branch="main")

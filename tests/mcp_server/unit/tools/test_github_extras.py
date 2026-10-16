@@ -43,9 +43,11 @@ def test_label_config(tmp_path: Path) -> LabelConfig:
     """Create a temp label config with test labels."""
     yaml_content = """version: "1.0.0"
 labels:
-  - name: "bug"
+  label_1:
+    name: "bug"
     color: "d73a4a"
-  - name: "high-priority"
+  label_2:
+    name: "high-priority"
     color: "0052cc"
 """
     yaml_file = tmp_path / "labels.yaml"

@@ -76,12 +76,8 @@ def isolated_target_env(tmp_path: Path) -> tuple[Path, Path]:
     server_root.mkdir(parents=True, exist_ok=True)
 
     config_root = tmp_path / "config_root"
-    config_root.mkdir(parents=True, exist_ok=True)
-
-    # Copy existing YAML configs from live repository
     live_config = REPO_ROOT / ".pgmcp" / "config"
-    for yaml_file in live_config.glob("*.yaml"):
-        shutil.copy2(yaml_file, config_root / yaml_file.name)
+    shutil.copytree(live_config, config_root)
 
     return config_root, server_root
 

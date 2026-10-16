@@ -32,16 +32,16 @@ class TestPhaseStateEngineParentBranch:
     """Test parent_branch functionality in PhaseStateEngine."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace.
 
         Args:
-            tmp_path: Pytest tmp_path fixture
+            configured_workspace: Pytest configured_workspace fixture
 
         Returns:
             Path to temporary workspace root
         """
-        return tmp_path
+        return configured_workspace
 
     @pytest.fixture
     def project_manager(self, workspace_root: Path) -> ProjectManager:
@@ -198,16 +198,16 @@ class TestTddCycleTrackingFields:
     """
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace.
 
         Args:
-            tmp_path: Pytest tmp_path fixture
+            configured_workspace: Pytest configured_workspace fixture
 
         Returns:
             Path to temporary workspace root
         """
-        return tmp_path
+        return configured_workspace
 
     @pytest.fixture
     def project_manager(self, workspace_root: Path) -> ProjectManager:
@@ -285,8 +285,8 @@ class TestCycleValidationLogic:
     """Cycle admission is observed through complete public transitions."""
 
     @pytest.fixture
-    def planned_engine(self, tmp_path: Path) -> tuple[PhaseStateEngine, str]:
-        manager = make_project_manager(tmp_path)
+    def planned_engine(self, configured_workspace: Path) -> tuple[PhaseStateEngine, str]:
+        manager = make_project_manager(configured_workspace)
         manager.initialize_project(146, "Cycle validation", "feature", parent_branch="main")
         manager.save_planning_deliverables(
             146,
@@ -311,7 +311,9 @@ class TestCycleValidationLogic:
             ),
         )
         engine = make_phase_state_engine(
-            tmp_path, project_manager=manager, state_repository=InMemoryStateRepository()
+            configured_workspace,
+            project_manager=manager,
+            state_repository=InMemoryStateRepository(),
         )
         branch = "feature/146-cycle-validation"
         engine.initialize_branch(branch, 146, "implementation", parent_branch="main")
@@ -339,11 +341,15 @@ class TestCycleValidationLogic:
             assert result["total_cycles"] == 4
             assert engine.get_state(branch).current_cycle == number
 
-    def test_missing_plan_rejects_cycle_transition_without_mutation(self, tmp_path: Path) -> None:
-        manager = make_project_manager(tmp_path)
+    def test_missing_plan_rejects_cycle_transition_without_mutation(
+        self, configured_workspace: Path
+    ) -> None:
+        manager = make_project_manager(configured_workspace)
         manager.initialize_project(147, "No planning yet", "bug", parent_branch="main")
         engine = make_phase_state_engine(
-            tmp_path, project_manager=manager, state_repository=InMemoryStateRepository()
+            configured_workspace,
+            project_manager=manager,
+            state_repository=InMemoryStateRepository(),
         )
         branch = "bug/147-no-plan"
         engine.initialize_branch(branch, 147, "implementation", parent_branch="main")

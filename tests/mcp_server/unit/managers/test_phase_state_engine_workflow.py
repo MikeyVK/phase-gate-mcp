@@ -35,9 +35,9 @@ class TestPhaseStateEngineTransitions:
     """Test PhaseStateEngine with workflow validation."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace."""
-        return tmp_path
+        return configured_workspace
 
     @pytest.fixture
     def project_manager(self, workspace_root: Path) -> ProjectManager:

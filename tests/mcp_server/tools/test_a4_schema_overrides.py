@@ -33,9 +33,7 @@ def _make_contracts_config(workflows: dict | None = None) -> MagicMock:
 def _make_issue_config(issue_type_names: list[str] | None = None) -> MagicMock:
     config = MagicMock()
     names = issue_type_names or ["feature", "bug", "hotfix", "chore", "docs", "epic"]
-    config.issue_types = [MagicMock(name=n) for n in names]
-    for mock_type, name in zip(config.issue_types, names, strict=True):
-        mock_type.name = name
+    config.issue_types = {name: MagicMock() for name in names}
     return config
 
 

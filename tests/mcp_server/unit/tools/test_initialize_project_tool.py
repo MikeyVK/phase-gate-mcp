@@ -34,9 +34,9 @@ class TestInitializeProjectToolMode1:
     """Test atomic initialization (Mode 1) for Issue #39."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace."""
-        return tmp_path
+        return configured_workspace
 
     @pytest.fixture
     def tool(self, workspace_root: Path) -> InitializeProjectTool:
@@ -317,17 +317,17 @@ class TestInitializeProjectToolMode1:
     ],
 )
 async def test_invalid_identity_refuses_before_any_project_write(
-    tmp_path: Path, branch: str, issue_number: int, parent: str
+    configured_workspace: Path, branch: str, issue_number: int, parent: str
 ) -> None:
     from mcp_server.core.exceptions import PreflightError  # noqa: PLC0415
 
-    manager = make_project_manager(tmp_path)
-    git = make_git_manager(tmp_path)
+    manager = make_project_manager(configured_workspace)
+    git = make_git_manager(configured_workspace)
     tool = InitializeProjectTool(
-        workspace_root=tmp_path,
+        workspace_root=configured_workspace,
         manager=manager,
         git_manager=git,
-        state_engine=make_phase_state_engine(tmp_path, project_manager=manager),
+        state_engine=make_phase_state_engine(configured_workspace, project_manager=manager),
     )
     with (
         patch.object(git, "get_current_branch", return_value=branch),
@@ -342,5 +342,5 @@ async def test_invalid_identity_refuses_before_any_project_write(
             ),
             NoteContext(),
         )
-    assert not (tmp_path / get_default_server_root() / "deliverables.json").exists()
-    assert not (tmp_path / get_default_server_root() / "state.json").exists()
+    assert not (configured_workspace / get_default_server_root() / "deliverables.json").exists()
+    assert not (configured_workspace / get_default_server_root() / "state.json").exists()

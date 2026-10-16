@@ -46,13 +46,17 @@ def test_label_config(tmp_path: Path) -> Generator[LabelConfig, None, None]:
     """Create a temp label config with test labels."""
     yaml_content = """version: "1.0.0"
 labels:
-  - name: "bug"
+  label_1:
+    name: "bug"
     color: "d73a4a"
-  - name: "p1"
+  label_2:
+    name: "p1"
     color: "0052cc"
-  - name: "new-label"
+  label_3:
+    name: "new-label"
     color: "0000ff"
-  - name: "type:hotfix"
+  label_4:
+    name: "type:hotfix"
     color: "ff0000"
 """
     yaml_file = tmp_path / "labels.yaml"

@@ -103,6 +103,17 @@ def write_package_tree(root: Path, files: Mapping[str, bytes]) -> Path:
 
 
 @pytest.fixture
+def configured_workspace(tmp_path: Path, pytestconfig: pytest.Config) -> Path:
+    """Prepare delivered config explicitly, without templates or runtime state."""
+    server_name = ServerSettings().server_root_dir
+    copytree(
+        pytestconfig.rootpath / server_name / "config",
+        tmp_path / server_name / "config",
+    )
+    return tmp_path
+
+
+@pytest.fixture
 def suite_roots(tmp_path: Path) -> SuiteRoots:
     """Provide empty roots using the current legacy server directory convention."""
     return create_suite_roots(tmp_path, ServerSettings().server_root_dir)

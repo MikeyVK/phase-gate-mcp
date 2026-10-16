@@ -754,7 +754,8 @@ class TestPlanningDeliverablesSchema:
     ) -> None:
         raw = load_contracts_config(legacy_suite_workspace).model_dump()
         phases = raw["workflows"]["refactor"]["phases"]
-        next(phase for phase in phases if phase["cycle_based"])["name"] = "build"
+        execution_phase = next(key for key, phase in phases.items() if phase["cycle_based"])
+        phases["build"] = phases.pop(execution_phase)
         manager = make_project_manager(
             legacy_suite_workspace,
             contracts_config=ContractsConfig.model_validate(raw),
@@ -1029,17 +1030,19 @@ class TestProjectManagerVersioning:
         assert "42" in data["projects"]
 
 
-def test_indirect_plan_status_read_preserves_invalid_state_and_backup(tmp_path: Path) -> None:
+def test_indirect_plan_status_read_preserves_invalid_state_and_backup(
+    configured_workspace: Path,
+) -> None:
     from mcp_server.managers.state_repository import FileStateRepository  # noqa: PLC0415
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver  # noqa: PLC0415
 
-    state_file = tmp_path / get_default_server_root() / "state.json"
+    state_file = configured_workspace / get_default_server_root() / "state.json"
     git_reader = MagicMock()
     git_reader.get_current_branch.return_value = "feature/503-work"
     resolver = WorkflowStatusResolver(
         git_context_reader=git_reader, state_reader=FileStateRepository(state_file)
     )
-    manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+    manager = make_project_manager(configured_workspace, workflow_status_resolver=resolver)
     manager.initialize_project(503, "Read-only diagnosis", "feature", parent_branch="main")
     source = b"{invalid-state"
     state_file.write_bytes(source)

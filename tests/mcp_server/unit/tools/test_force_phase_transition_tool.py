@@ -11,6 +11,7 @@ Issue #229 Cycle 10: GAP-17 — blocking gates must appear BEFORE OK in response
 """
 
 from pathlib import Path
+from shutil import copy2
 
 import pytest
 from pydantic import ValidationError
@@ -96,9 +97,9 @@ class TestForcePhaseTransitionTool:
     """Test force_phase_transition MCP tool."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
+    def workspace_root(self, configured_workspace: Path) -> Path:
         """Create temporary workspace."""
-        return tmp_path
+        return configured_workspace
 
     @pytest.fixture
     def project_manager(self, workspace_root: Path) -> ProjectManager:
@@ -309,8 +310,13 @@ class TestForcePhaseTransitionToolSkippedGatesResponse:
     @pytest.fixture
     def workspace_with_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has exit_requires on planning."""
-        phase_gate_config = tmp_path / get_default_server_root() / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config" / "defaults"
         phase_gate_config.mkdir(parents=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "contracts.yaml"):
+            copy2(source / file_name, phase_gate_config / file_name)
         (phase_gate_config / "workphases.yaml").write_text(
             """
 version: "1.0.0"
@@ -318,7 +324,9 @@ phases:
   planning:
     display_name: "Planning"
     exit_requires:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "TDD cycle breakdown"
   design:
     display_name: "Design"
@@ -332,8 +340,13 @@ phases:
     @pytest.fixture
     def workspace_no_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has no gates defined."""
-        phase_gate_config = tmp_path / get_default_server_root() / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config" / "defaults"
         phase_gate_config.mkdir(parents=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "contracts.yaml"):
+            copy2(source / file_name, phase_gate_config / file_name)
         (phase_gate_config / "workphases.yaml").write_text(
             """
 version: "1.0.0"
@@ -440,8 +453,13 @@ class TestForceTransitionResponseFormat:
 
     def _setup_workspace(self, tmp_path: Path, *, with_gate_key: bool = True) -> tuple[Path, str]:
         """Build workspace with workphases.yaml gate + optional planning_deliverables key."""
-        phase_gate_config = tmp_path / get_default_server_root() / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config" / "defaults"
         phase_gate_config.mkdir(parents=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "contracts.yaml"):
+            copy2(source / file_name, phase_gate_config / file_name)
         (phase_gate_config / "workphases.yaml").write_text(
             """
 version: "1.0.0"
@@ -449,7 +467,9 @@ phases:
   planning:
     display_name: "Planning"
     exit_requires:
-      - key: "planning_deliverables"
+      planning_payload:
+        order: 10
+        key: "planning_deliverables"
         description: "TDD cycle breakdown"
   design:
     display_name: "Design"
@@ -560,8 +580,13 @@ phases:
         self, tmp_path: Path
     ) -> None:
         """No gates defined → only ✅ in response, no ⚠️ or ACTION REQUIRED (GAP-17/D10.3)."""
-        phase_gate_config = tmp_path / get_default_server_root() / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config" / "defaults"
         phase_gate_config.mkdir(parents=True)
+        source = (
+            Path(__file__).resolve().parents[4] / get_default_server_root() / "config" / "defaults"
+        )
+        for file_name in ("git.yaml", "contracts.yaml"):
+            copy2(source / file_name, phase_gate_config / file_name)
         (phase_gate_config / "workphases.yaml").write_text(
             """
 version: "1.0.0"

@@ -71,19 +71,19 @@ class TestTransitionPhaseToolConflict:
     """C7: TransitionPhaseTool surfaces StateMutationConflictError."""
 
     @pytest.fixture
-    def conflict_tool(self, tmp_path: Path) -> TransitionPhaseTool:
+    def conflict_tool(self, configured_workspace: Path) -> TransitionPhaseTool:
         """TransitionPhaseTool with an engine that raises StateMutationConflictError."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         engine = _make_conflict_engine(
-            tmp_path,
+            configured_workspace,
             diagnostic="Lock timeout on branch 'feature/42'.",
             recovery="Retry after the current operation completes.",
         )
         return TransitionPhaseTool(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             project_manager=pm,
             state_engine=engine,
-            server_root=tmp_path,
+            server_root=configured_workspace,
             workphases_config=None,
         )
 
@@ -125,19 +125,19 @@ class TestForcePhaseTransitionToolConflict:
     """C7: ForcePhaseTransitionTool surfaces StateMutationConflictError."""
 
     @pytest.fixture
-    def conflict_tool(self, tmp_path: Path) -> ForcePhaseTransitionTool:
+    def conflict_tool(self, configured_workspace: Path) -> ForcePhaseTransitionTool:
         """ForcePhaseTransitionTool with engine that raises StateMutationConflictError."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         engine = _make_conflict_engine(
-            tmp_path,
+            configured_workspace,
             diagnostic="Mutation conflict on 'feature/42': branch mismatch.",
             recovery="Ensure the mutation callback preserves branch identity.",
         )
         return ForcePhaseTransitionTool(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             project_manager=pm,
             state_engine=engine,
-            server_root=tmp_path,
+            server_root=configured_workspace,
             workphases_config=None,
         )
 
@@ -189,11 +189,11 @@ class TestTransitionCycleToolConflict:
     """C7: TransitionCycleTool surfaces StateMutationConflictError."""
 
     @pytest.fixture
-    def conflict_tool(self, tmp_path: Path) -> TransitionCycleTool:
+    def conflict_tool(self, configured_workspace: Path) -> TransitionCycleTool:
         """TransitionCycleTool with engine that raises StateMutationConflictError."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         engine = _make_conflict_engine(
-            tmp_path,
+            configured_workspace,
             diagnostic="Lock timeout acquiring mutation lock for branch 'feature/42'.",
             recovery="Another operation holds the lock. Retry after it completes.",
         )
@@ -204,16 +204,16 @@ class TestTransitionCycleToolConflict:
         git_manager.git_config = git_config
 
         # Write a minimal state.json so branch detection does not fall through
-        state_dir = tmp_path / get_default_server_root()
+        state_dir = configured_workspace / get_default_server_root()
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text('{"branch": "feature/42-test"}', encoding="utf-8")
 
         return TransitionCycleTool(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             project_manager=pm,
             state_engine=engine,
             git_manager=git_manager,
-            server_root=tmp_path,
+            server_root=configured_workspace,
         )
 
     @pytest.mark.asyncio
@@ -258,11 +258,11 @@ class TestForceCycleTransitionToolConflict:
     """C7: ForceCycleTransitionTool surfaces StateMutationConflictError."""
 
     @pytest.fixture
-    def conflict_tool(self, tmp_path: Path) -> ForceCycleTransitionTool:
+    def conflict_tool(self, configured_workspace: Path) -> ForceCycleTransitionTool:
         """ForceCycleTransitionTool with engine that raises StateMutationConflictError."""
-        pm = make_project_manager(tmp_path)
+        pm = make_project_manager(configured_workspace)
         engine = _make_conflict_engine(
-            tmp_path,
+            configured_workspace,
             diagnostic="Lock timeout acquiring mutation lock for branch 'feature/42'.",
             recovery="Retry after the current operation completes.",
         )
@@ -272,16 +272,16 @@ class TestForceCycleTransitionToolConflict:
         git_config.extract_issue_number = MagicMock(return_value=42)
         git_manager.git_config = git_config
 
-        state_dir = tmp_path / get_default_server_root()
+        state_dir = configured_workspace / get_default_server_root()
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text('{"branch": "feature/42-test"}', encoding="utf-8")
 
         return ForceCycleTransitionTool(
-            workspace_root=tmp_path,
+            workspace_root=configured_workspace,
             project_manager=pm,
             state_engine=engine,
             git_manager=git_manager,
-            server_root=tmp_path,
+            server_root=configured_workspace,
         )
 
     @pytest.mark.asyncio

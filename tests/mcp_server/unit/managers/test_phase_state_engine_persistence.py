@@ -21,8 +21,8 @@ class TestPhaseStateEnginePersistence:
     """Test persistence through explicit write operations, not query-side effects."""
 
     @pytest.fixture
-    def workspace_root(self, tmp_path: Path) -> Path:
-        return tmp_path
+    def workspace_root(self, configured_workspace: Path) -> Path:
+        return configured_workspace
 
     @pytest.fixture
     def project_manager(self, workspace_root: Path) -> ProjectManager:
