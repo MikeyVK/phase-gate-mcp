@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import anyio
 from mcp.server import Server
+from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.server.stdio import stdio_server
 from mcp.types import (
     CallToolResult,
@@ -93,11 +94,15 @@ class MCPServer:
             ]
 
         @self.server.read_resource()  # type: ignore[no-untyped-call, untyped-decorator]
-        async def handle_read_resource(uri: str) -> str:
+        async def handle_read_resource(uri: AnyUrl) -> list[ReadResourceContents]:
             uri_str = str(uri)
             for resource in self.resources:
                 if resource.matches(uri_str):
-                    return await resource.read(uri_str)
+                    return [
+                        ReadResourceContents(
+                            content=await resource.read(uri_str), mime_type="text/plain"
+                        )
+                    ]
             raise ValueError(f"Resource not found: {uri_str}")
 
         @self.server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]

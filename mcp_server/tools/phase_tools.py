@@ -14,7 +14,7 @@ phase transitions via PhaseStateEngine.
 """
 
 from pathlib import Path
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -107,11 +107,7 @@ class ForcePhaseTransitionInput(BaseModel):
         return v.strip()
 
 
-TInput = TypeVar("TInput", bound=BaseModel)
-TOutput = TypeVar("TOutput", bound=BaseModel)
-
-
-class _BaseTransitionTool(ICoreTool[TInput, TOutput], Generic[TInput, TOutput]):
+class _BaseTransitionTool[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInput, TOutput]):
     """Base class for phase transition tools implementing ILegacyTool."""
 
     enforcement_event = "transition_phase"

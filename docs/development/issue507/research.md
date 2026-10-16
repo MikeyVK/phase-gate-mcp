@@ -2,8 +2,8 @@
 
 # Issue 507 — Test-harness diagnostic classification
 
-**Status:** RESEARCH — OWNER STRATEGY APPROVED; INDEPENDENT REVIEW REQUESTED  
-**Version:** 0.4  
+**Status:** RESEARCH — APPROVED; BOUNDED CHECKER IMPLEMENTATION VERIFIED  
+**Version:** 0.9  
 **Last Updated:** 2026-10-16
 
 ## Purpose
@@ -132,20 +132,291 @@ investigate diagnostics if it recurs during required Validation.
 - Owner strategy: approved for the explicitly bounded maintenance below.
 - Production/tests: unchanged; only targeted baseline and source inspection so far.
 - QA boundary: Research to Implementation; separate independent review requested.
-- Deferred: owner authorized Coordination to create an assessment issue for SDK2.3 and
-  Python above3.13 for the next major pgmcp release. Administrative issue link pending.
+- Deferred: [issue513](https://github.com/MikeyVK/phase-gate-mcp/issues/513) records SDK2
+  and higher-Python assessment for the next major, high priority and first after508.
 - Next: commit/push Research and obtain independent QA; no phase progression on a
   producer-delegated review or an older issue's verdict.
 
 ## Questions
 
-No unresolved owner decision for the bounded #507 scope. Independent QA and the
-Coordination-issued deferred assessment link remain pending.
+Independent QA issued GO for Research to Implementation on70ee58e5. Coordination
+published [assessment issue513](https://github.com/MikeyVK/phase-gate-mcp/issues/513),
+priority high, first after the current sequence/#508 closeout, for the next major.
+
+Implementation exposed an additional Python typing boundary. With the approved3.13
+checker settings, targeted Ruff reports UP046 on ToolExecution and InputValidationDecorator;
+targeted Mypy reports "Cannot use a covariant type variable as a parameter" for
+ToolExecution.operation. An isolated diagnostic check of the same changed file with
+python_types args ["--python-version","3.11"] passes. This is comparison evidence,
+not a waiver of the3.13 gate. Static source inventory finds Generic class declarations
+in13 production files; it does not establish13 failing files or justify a broad rewrite.
+Ruff documents that PEP695 migration may change variance and marks its fix unsafe:
+[UP046](https://docs.astral.sh/ruff/rules/non-pep695-generic-class/).
+
+The owner chose to retain3.13 and investigate the smallest correct checker adjustment.
+No generic contracts or runtime compatibility code have been changed in response.
+The remaining decision is focused checker policy versus an explicitly scoped typing migration;
+the Python baseline remains3.13.
+
+A reversible native-config probe enabled Pydantic's bundled Mypy plugin. ToolExecution
+passed unchanged at3.13; all seven changed production files also passed. A further probe
+with init_typed=true and init_forbid_extra=true passed the same seven files, retaining
+typed constructors and rejecting extra constructor keywords instead of relaxing them.
+Mypy1.19.1's dataclass plugin synthesizes __replace__ for Python>=3.13; the installed
+Pydantic2.11.7 plugin replaces generic dataclass-transform handling with model-specific
+analysis. No dependency install or runtime model change is needed for the plugin.
+All temporary config edits were restored after the checks.
+
+A bounded syntax inventory used files returned by:
+rg -l 'TypeAlias|TypeVar\\(|Generic\\[' mcp_server -g '*.py'.
+Passing those29 explicit production targets to
+run_checks(scope='targets',checks=['python_lint'],
+args={'python_lint':['--select','UP040,UP046,UP047','--statistics']},
+timeout_seconds=180) reports15 UP040,13 UP046 and8 UP047:36 syntax-migration findings.
+This is not a workspace gate or a count of broken type contracts. Ruff marks these
+migrations unsafe because they can change variance and/or runtime alias behavior.
+
+Earlier unapproved option, superseded by the bounded rule proposal below:
+enable plugins=['pydantic.mypy'] with
+[tool.pydantic-mypy] init_typed=true and init_forbid_extra=true; intentionally retain
+supported explicit-TypeVar/TypeAlias syntax by excluding only UP040/UP046/UP047 in
+native Ruff config. Other rules and strict Mypy/Pyright settings remain active.
+This is an explicit syntax-policy choice, not an already approved gate waiver.
+No broad PEP695 migration, per-class suppression campaign or new framework is proposed.
+
+Probe evidence:
+- run_checks(scope='targets',targets=['mcp_server/core/tool_execution.py'],
+  checks=['python_types'],timeout_seconds=180), with temporary plugin config:
+  passed, native exit0. Supplemental917b6555ecf34da4b813a978096a622b.
+- The same check on the seven changed production files listed in Consumer and
+  verification boundary passed with the plugin alone and with both strict plugin
+  options; native exit0. Supplemental91ac61c4ff8b417682cc0ac60034c59d and
+  5ee2a6c30d5f403f86730d2db987a3b7.
+- run_checks on the18 changed Python files, checks=['python_format','python_lint'],
+  args={'python_lint':['--extend-ignore','UP040,UP046,UP047']},timeout_seconds=180:
+  both passed, native exit0. This caller-argument experiment is not a configured gate
+  pass; no permanent rule selection has yet changed. Supplemental42f8c1f3891140138cb3c01df7f81159.
+- At this checkpoint there was no additional test execution or broad check campaign;
+  the subsequent owner-requested three-case comparison is recorded below.
+
+Primary references:
+[Pydantic Mypy integration](https://docs.pydantic.dev/latest/integrations/mypy/),
+[UP040 runtime/typing caveats](https://docs.astral.sh/ruff/rules/non-pep695-type-alias/),
+[UP046 variance caveats](https://docs.astral.sh/ruff/rules/non-pep695-generic-class/).
+Workspace-wide confirmation remains for the required Validation phase.
+
+### Representative PEP695 comparison (2026-10-16)
+
+Owner request: establish contract preservation with three targeted experiments before
+approving a broader migration or a permanent Ruff policy. Temporary candidates under
+.pgmcp/temp/artifacts/test_issue507_pep695_probe.py reproduce ToolExecution,
+AdapterBinding and FrozenJsonValue with the new syntax; production declarations are
+unchanged. Runtime: Python3.13.7/Pydantic2.11.7. Static checkers: Mypy1.19.1 and
+Pyright1.1.408. The probe is not added to the durable test suite.
+
+| Case | Observed runtime comparison | Observed static comparison at3.13 |
+| --- | --- | --- |
+| ToolExecution | Construction, dumps, frozen assignment rejection, invalid operation/extra-field rejection and operation_output_model metadata/schema agree. | Both checkers accept current ToolExecution[DetailedOutput] as ToolExecution[BaseOutput]; both reject that assignment for the PEP695 candidate as invariant. Reverse assignments and the BaseModel bound remain rejected in both forms. |
+| AdapterBinding | Identity/launch/capability fields and frozen assignment rejection agree. | Both checkers accept current AdapterBinding[DetailedOutput] as AdapterBinding[BaseOutput]; both reject that assignment for the PEP695 candidate as invariant. Reverse assignments remain rejected. |
+| FrozenJsonValue | Recursive freeze/thaw, detached nested containers, invalid JSON/nonfinite numbers, immutable-entry checks, and JsonEvidence construction/JSON serialization/schema properties and definitions agree. | Both checkers accept the mixed immutable tuple/object example and reject mutable list/dict values for both aliases. No alias-contract difference in these probes. |
+
+Reproduction and observed outcomes:
+- run_tests(scope='targets',targets=[the temporary probe],tests=['python_tests'],
+  timeout_seconds=180): three cases passed in3.90s, native exit0. Supplemental
+  d6b836d59f464669889efb54b43c7176.
+- run_checks(scope='targets',targets=[the temporary probe],
+  checks=['python_types','python_pyright'],timeout_seconds=180): each reports12 errors,
+  native exit1. Ten are deliberate negative controls (four reverse assignments, four
+  mutable-alias assignments and two invalid bounds); the two additional errors are the
+  newly rejected widening assignments above. No other diagnostics.
+  Supplemental437d2210ffae4cea9fa8e950b6c9dcca. Positive assignment pattern:
+  a function receives ToolExecution[DetailedOutput] and assigns that parameter to a
+  ToolExecution[BaseOutput] variable; repeat with the candidate and AdapterBinding.
+  DetailedOutput extends BaseOutput with an extra field. Argument variables prevent
+  inferred concrete values from masking variance differences.
+- On the earlier probe revision, a reversible Mypy plugin configuration with
+  init_typed=true/init_forbid_extra=true retained both candidate widening failures.
+  It fixes the separately observed current-model declaration diagnostic, but does not
+  make the PEP695 candidate preserve covariance. Supplemental32fff1b3303d46cab501c31692b65276.
+- A diagnostic comparison of the same three-case source with only caller arguments
+  python_types=['--python-version','3.12'] and
+  python_pyright=['--pythonversion','3.12'] yielded11 errors per checker: ten deliberate
+  controls plus the ToolExecution widening failure. Candidate AdapterBinding widening
+  succeeds at3.12. This is a checker comparison, not a lowered supported baseline or
+  a3.13 gate waiver. Supplementale11db754d33d42d0a5a4a4757c13bb8d.
+- The first runtime attempt failed because the probe requested the full baseline
+  ToolExecution envelope's JSON schema, which the baseline itself cannot generate.
+  Production unwraps its operation model before schema generation (server/bootstrap).
+  Correcting the experiment to that real path passed; this was a probe error, not
+  evidence of a PEP695 regression. No production repair was made for it.
+
+PEP695 replaces explicit variance declarations with inferred variance. The dataclass
+result agrees with the installed Mypy plugin's Python>=3.13 synthesized __replace__
+and the upstream Pyright discussion. The ToolExecution result also occurs with3.12
+checker settings; do not attribute that entire result solely to the3.13 change.
+The new alias is a TypeAliasType at runtime, but no existing alias-as-isinstance use
+was found; such a hypothetical is not presented as an observed production defect.
+Sources: [PEP695 variance](https://peps.python.org/pep-0695/#variance-inference),
+[Ruff unsafe UP046 migration](https://docs.astral.sh/ruff/rules/non-pep695-generic-class/),
+[Pyright frozen dataclass discussion](https://github.com/microsoft/pyright/issues/11011).
+
+Checkpoint before the UP047 follow-up: a syntax-only migration does not preserve the two
+explicitly covariant contracts with the installed checkers. Runtime success does not
+override that finding. The alias probe supports its specific migration but is not a
+suite-wide alias guarantee; generic functions/UP047 were not tested. These findings
+justify protecting the affected class contracts, not automatically disabling all three
+Ruff rules. The earlier all-three-rule exclusion proposal remains unapproved and must
+be weighed separately. No permanent checker config, broader migration or extra suite
+tests were applied. All reversible native-config experiments were restored.
+
+### UP047 follow-up and bounded rule proposal (2026-10-16)
+
+The owner approved retaining explicit covariance and requested a targeted UP047
+investigation before a per-rule decision. No permanent Ruff exclusion or syntax
+migration was authorized by that request.
+
+Fresh rule-only inventory over the same29 explicitly selected declaration files:
+15 UP040 aliases in8 files;13 UP046 classes in12 files;8 UP047 functions in6 files.
+Invocation: run_checks(scope='targets',targets=the29-file inventory above,
+checks=['python_lint'],args={'python_lint':['--select','UP040,UP046,UP047',
+'--output-format','concise']},timeout_seconds=180). Ruff0.15.6, native exit1.
+Supplemental99f77d2234fd4da8a910407d392eab40. These are migration suggestions,
+not36 demonstrated type defects.
+
+The temporary probe is
+.pgmcp/temp/artifacts/test_issue507_up047_probe.py/test_issue507_up047_probe.py.
+It copies the existing bodies of ordered_mapping, prepare_model_input,
+tool_error_handler and _shielded, changing only the function name and local generic
+declaration. Imported exception aliases preserve the original error-handler binding.
+The private _shielded import has one probe-only reportPrivateUsage exception;
+no assignment, inference or generic-contract diagnostic is suppressed.
+Candidate declarations use Entry:OrderedConfigEntry, TModel:BaseModel, T and TCleanup,
+respectively; class declarations and their explicit TypeVars remain unchanged.
+
+| UP047 surface | Observed comparison |
+| --- | --- |
+| Bounded mapping and prepared-input closure | Both checkers preserve dict[str,DetailedEntry] and PreparedToolInputContract[DetailedOutput] via assert_type. Runtime preserves explicit ordering/identity, duplicate-rank rejection, paired schema and concrete admission, and rejection of missing/extra fields. |
+| Async exception wrapper | Both checkers preserve Callable[...,Awaitable[DetailedOutput]]. Runtime preserves the concrete returned object, functools wrapper metadata and the existing ValueError-to-ToolResult payload. |
+| Shielded task result | Both checkers preserve DetailedOutput from Task[DetailedOutput]. Runtime preserves results, exception propagation, rejection of an already-cancelled task, and continuation of inner work after outer cancellation. |
+
+Reproduction/evidence:
+- run_tests(scope='targets',targets=[the UP047 probe],tests=['python_tests'],
+  timeout_seconds=180):3 passed in4.35s, native exit0; no warnings reported.
+  Supplemental7c89d6442e2c4296869efe541d8ea9eb.
+- Eight deliberate negative assignments (current/candidate pairs for mapping,
+  admitted-model, wrapped-result and task-result types assigned to incompatible str
+  destinations) yield exactly8 diagnostics in each checker. Mypy sometimes reports
+  the task argument under contextual inference; both reject the same invalid use.
+  Supplemental3413073ed0b54ca8ac76ddae2804d33f.
+- Removing only those negative controls leaves the positive assert_type checks.
+  run_checks(scope='targets',targets=[the UP047 probe],
+  checks=['python_lint','python_types','python_pyright'],
+  args={'python_lint':['--select','UP047']},timeout_seconds=180):
+  all passed, native exit0. Supplemental2e8d913160e04f82b2299c6fed3906b6.
+  Mypy1.19.1/Pyright1.1.408; no permanent checker settings changed.
+- Runtime coverage directly compares four functions. The other inventoried functions
+  (_select, _stop_reason, _stop_protected, _stop) were source-reviewed, not independently
+  runtime-proven by this probe. Their bounded/constrained parameters must be preserved;
+  in particular TCheck remains constrained to ContentCheckResponse/SelectionCheckResponse.
+
+Proposal subsequently approved by the owner; the implementation outcome below supersedes
+the earlier all-three-rule exclusion option:
+
+| Rule | Proposed policy and bounded application |
+| --- | --- |
+| UP040 | Keep enabled. Address only the15 inventoried aliases, preserving existing consumer behavior. The FrozenJsonValue comparison supports that alias only. Check Pydantic admission/schema consumers explicitly, especially ScaffoldContentInput/ScaffoldContentRequest; do not assume a named TypeAliasType has no effect on schemas. A demonstrated contract change calls for retaining that alias with an exact local exception, not a general ignore or a schema refactor. |
+| UP046 | Keep enabled. Retain the explicitly covariant ToolExecution, AdapterBinding and PreparedToolInputContract declarations with declaration-local, reasoned UP046 exceptions. ITool already escapes this diagnostic because it has a defaulted TypeVar; retain its explicit covariance too. Do not classify the other10 findings as broken or exempt them en masse: convert only if the existing variance/bounds/consumer contract remains demonstrably identical; otherwise retain the declaration with a targeted exception. |
+| UP047 | Keep enabled; no exclusion currently justified. Convert only the8 inventoried function declarations, retaining their bounds/constraints and bodies. Remove module TypeVars only when actually unused elsewhere; do not touch generic methods which this rule does not flag or convert their owning classes. Verify changed files and existing focused behavior tests. |
+
+This proposal makes no promise that all remaining UP040/UP046 candidates can be
+mechanically converted. A changed contract or need for consumer redesign stops that
+candidate; it must not be disguised as a safe syntax update. No broad production
+rewrite, permanent diagnostic test growth, whole-suite run or phase transition was
+performed for this research. Sources:
+[typing generic functions](https://typing.python.org/en/latest/spec/generics.html),
+[Ruff UP047 scope and caveats](https://docs.astral.sh/ruff/rules/non-pep695-generic-function/).
+
+### Approved rule implementation and focused evidence (2026-10-16)
+
+The owner approved targeted execution of the per-rule proposal, followed by explicit
+approval of plugins=['pydantic.mypy'], init_typed=true, init_forbid_extra=true and one
+field-local Mypy misc exception preserving AdapterBinding covariance. No global Ruff
+ignore, weakened Pyright setting, dependency upgrade or new permanent test was added
+for this syntax work. [Issue513](https://github.com/MikeyVK/phase-gate-mcp/issues/513)
+now requires reassessment of existing/new global and local checker suppressions.
+
+| Rule | Final bounded treatment |
+| --- | --- |
+| UP040 | Convert the15 inventoried aliases in8 files. Existing schema/admission, JSON and template consumers pass the focused tests. No UP040 exception. |
+| UP047 | Convert the8 inventoried functions in6 files, preserving bodies/bounds/constraints. Keep module TypeVars still used by other methods; no UP047 exception. |
+| UP046 | Convert6 classes: InputValidationDecorator, CheckExecution, InvocationCompleted, AdapterResponseContract, _BaseIToolTransition and _BaseTransitionTool. Retain7 exact declarations with reasoned line-local exceptions; no file-wide exclusion. |
+
+Retained UP046 exceptions: ToolExecution, AdapterBinding and PreparedToolInputContract
+preserve explicit covariance; ToolErrorHandlerDecorator, ICoreTool and
+AdapterRequestContract preserve their existing invariant contracts; AdapterRole avoids
+the observed Pydantic2.11.7 validator-type-resolution failure. Existing ITool and
+IToolInputContract covariance stays unchanged. ITool now imports TypeVar from typing
+because Python3.13 natively supports its existing default parameter (UP035).
+
+Isolated copies of the actual remaining class bodies showed why three invariant
+declarations stay: the new ToolErrorHandlerDecorator is inferred covariant; ICoreTool
+becomes input-contravariant/output-covariant; AdapterRequestContract becomes contravariant.
+No such contract expansion was implemented. The final temporary static comparison
+(scope='targets', the UP047 probe, checks=['python_types','python_pyright'],
+timeout_seconds=180) reports exactly22 deliberate rejected assignments in each checker,
+with no unrelated errors. Supplemental86ac6a29113b4a3ca9d5bac565b77bd5.
+Static agreement alone did not establish runtime compatibility for AdapterRole:
+after conversion, the targeted behavior run reported19 failures/172passes, all failures
+at the catalog/manifest boundary with PydanticUserError requiring CapabilityT.
+Restore its original Generic/TypeVar declaration with the local UP046 exception:
+the27 catalog tests pass in7.38s. No model_rebuild workaround or new compatibility path.
+
+Focused implementation evidence:
+- run_tests(scope='targets',targets=[unit/config/test_ordering.py,
+  unit/execution/test_catalog.py,unit/core/test_tool_error_handler_c4.py,
+  unit/utils/test_schema_utils.py,unit/services/test_template_graph.py,
+  unit/services/test_template_components.py,unit/services/test_artifact_identity.py,
+  integration/execution/test_content_input.py,integration/test_schema_public_v3.py,
+  unit/execution/test_check_service.py,integration/execution/test_process_stopping.py,
+  integration/test_prepared_tool_contract.py,unit/tools/test_transition_phase_tool.py,
+  unit/tools/test_cycle_tools_business_logic.py,
+  unit/schemas/test_structured_tool_output_migration.py],tests=['python_tests'],
+  args={'python_tests':['-r','sxX']},timeout_seconds=300), with every target prefixed
+  tests/mcp_server/:191passed in19.77s, native exit0, no warnings/skip/XPASS reported.
+  Supplemental fd5b8844983743e48566c8c76a1b78cc.
+- run_checks(scope='targets',targets=the25 explicitly changed Python files in this
+  syntax slice,checks=['python_format','python_lint','python_pyright'],
+  timeout_seconds=180): all passed, native exit0. Supplemental2211a466257f4bcba9f90a416838460b.
+- Same targets restricted to the24 production files, checks=['python_types']:
+  passed with the approved strict plugin/one local exception, native exit0.
+  Supplemental4b78f8ad151043ab87e50708021c6385.
+- The original29-file syntax inventory, checks=['python_lint'], configured arguments:
+  passed, native exit0. Supplementale9ff183bbecb4b3f8c40cab419b0ab41.
+- Final scope covers all41 changed Python files relative to70ee58e5, selected explicitly
+  from the branch diff: python_format/python_lint/python_pyright all passed, native exit0
+  (ea118b2af74246079d1c9a9b0b4e9647). Filter that set to its29 mcp_server/ production
+  files for python_types: passed, native exit0 (c4b5a582ed0c411d88421aeb542c8672).
+  Both run_checks calls used scope='targets', configured arguments and timeout_seconds=180;
+  no Markdown, workflow JSON or test callers were sent to the production-scoped Mypy gate.
+- The first151-test run found one previously missed SchemaAttachment.schema read in
+  test_schema_public_v3.py. Correct that existing assertion to schema_document;
+  no new case or production contract change. The later191-test run includes it.
+
+All Python changes were reviewed against the pushed70ee58e5 baseline using repository
+file reads. Changes remain declarations/imports, exact diagnostic exceptions and the
+previously approved #507 maintenance; method bodies were not redesigned for PEP695.
+The native test/check outcomes above are focused implementation evidence, not a
+workspace Validation verdict. The full configured suite and phase-boundary QA remain
+owned by the later workflow gates.
 
 ## Approved Strategy
 
-APPROVED BY OWNER in the producer conversation on2026-10-16. The SDK1.30 choice and
-explicit deferred major-release assessment close the remaining Research decision.
+APPROVED BY OWNER in the producer conversation on2026-10-16 and independently reviewed
+at70ee58e5. Subsequent typing/checker impact of the Python-floor change is explicitly
+reopened under Questions. The owner subsequently approved the bounded per-rule proposal,
+retention of explicit covariance, and strict Pydantic Mypy integration plus one localized
+Mypy misc exception for AdapterBinding. Preserve existing contracts; present any intentional
+contract change before implementation. Other approved boundaries stay binding.
 
 The owner approved the focused harness repairs, removal of the empty manual placeholder
 without a replacement integration test, clean renaming of SchemaAttachment.schema to
@@ -272,5 +543,13 @@ not upgrade execution evidence.
 | 0.1 | 2026-10-16 | @imp researcher | Record targeted native baseline, causal harness findings, production warning limits and two owner choices. |
 | 0.2 | 2026-10-16 | @imp researcher | Record approved placeholder removal; reassess schema naming, Python baseline impact and verified SDK resource API history for owner discussion. |
 | 0.3 | 2026-10-16 | @imp researcher | Capture approved schema rename/Python 3.13 boundary; assess current SDK releases, SDK2 migration and host protocol independence before final SDK decision. |
-
 | 0.4 | 2026-10-16 | @imp researcher | Finalize owner-approved SDK1.30 strategy, minimal SDK2 resource-boundary preparation and deferred major-release assessment; reconcile superseded recommendations. |
+| 0.5 | 2026-10-16 | @imp implementer | Link published deferred513; explicitly reopen newly observed Python typing/checker impact without silently changing generic contracts. |
+| 0.6 | 2026-10-16 | @imp implementer | Retain owner-chosen3.13; record reversible native plugin/syntax probes and the remaining explicit checker policy choice. |
+| 0.7 | 2026-10-16 | @imp implementer | Record owner-requested three-case PEP695 behavior/type comparison, demonstrated variance changes and bounded evidence before a migration/policy decision. |
+| 0.8 | 2026-10-16 | @imp implementer | Record approved covariance retention, bounded UP047 function comparisons and a per-rule proposal without global exclusions or automatic class migration. |
+| 0.9 | 2026-10-16 | @imp implementer | Record approved per-rule execution, strict Mypy integration, exact contract-preserving exceptions and focused runtime/type evidence. |
+
+
+
+

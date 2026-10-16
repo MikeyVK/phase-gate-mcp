@@ -229,7 +229,8 @@ class TestTextPresenterComposition:
         output = presenter.present(
             attachments=(
                 SchemaAttachment(
-                    identity=WholeToolSchemaIdentity(kind="whole_tool"), schema=frozen_schema
+                    identity=WholeToolSchemaIdentity(kind="whole_tool"),
+                    schema_document=frozen_schema,
                 ),
             ),
             tool_name=tool_name,

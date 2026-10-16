@@ -18,7 +18,8 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from mcp_server.config.loader import ConfigLoader
-from mcp_server.config.schemas.adapter_manifest import AdapterTrustConfig, TestCapability
+from mcp_server.config.schemas.adapter_manifest import AdapterTrustConfig
+from mcp_server.config.schemas.adapter_manifest import TestCapability as AdapterTestCapability
 from mcp_server.core.interfaces.execution import AdapterBinding
 from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
 from mcp_server.execution.check_selection import SelectionCheckRequest
@@ -61,7 +62,7 @@ def native_case(tmp_path: Path, pytestconfig: pytest.Config) -> NativeCase:
     return NativeCase(workspace, source, pytestconfig.rootpath)
 
 
-def binding_for(case: NativeCase) -> AdapterBinding[TestCapability]:
+def binding_for(case: NativeCase) -> AdapterBinding[AdapterTestCapability]:
     loader = ConfigLoader(case.repo_root / ".pgmcp/config")
     catalog = AdapterCatalogLoader(
         case.adapter_root or case.repo_root / "mcp_server/bundled_adapters",

@@ -4,7 +4,8 @@ import json
 
 import pytest
 
-from mcp_server.config.schemas import ChecksConfig, FixesConfig, TestsConfig
+from mcp_server.config.schemas import ChecksConfig, FixesConfig
+from mcp_server.config.schemas import TestsConfig as ExecutionTestsConfig
 from mcp_server.resources.standards import StandardsResource
 
 
@@ -35,7 +36,7 @@ def resource() -> StandardsResource:
             "run_checks": {"default_profile": "review"},
         }
     )
-    tests = TestsConfig.model_validate(
+    tests = ExecutionTestsConfig.model_validate(
         {
             "tests": {
                 "unit": {

@@ -34,7 +34,7 @@ class SchemaResourcePresenter(IResourcePresenter):
                 PresentationResource(
                     uri=uri,
                     mime_type=mime_type,
-                    content=json.dumps(thaw_json(attachment.schema), ensure_ascii=False),
+                    content=json.dumps(thaw_json(attachment.schema_document), ensure_ascii=False),
                 )
             )
         return tuple(resources)

@@ -11,13 +11,12 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from math import isfinite
-from typing import TypeAlias, Union
 
 from pydantic import ConfigDict, JsonValue, RootModel
 
-FrozenJsonValue: TypeAlias = Union[
-    str, bool, int, float, None, tuple["FrozenJsonValue", ...], "FrozenJsonObject"
-]
+type FrozenJsonValue = (
+    str | bool | int | float | None | tuple[FrozenJsonValue, ...] | FrozenJsonObject
+)
 
 
 @dataclass(frozen=True)

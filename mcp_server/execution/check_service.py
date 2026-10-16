@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generic, Literal, TypeVar
+from typing import Literal, TypeVar
 
 from pydantic import BaseModel
 
@@ -53,7 +53,7 @@ SelectionStatus = Literal["passed", "failed", "incomplete", "empty_selection", "
 
 
 @dataclass(frozen=True)
-class CheckExecution(Generic[TCheck]):
+class CheckExecution[TCheck: (ContentCheckResponse, SelectionCheckResponse)]:
     """A known obligation and its optional factual invocation; no fabricated response."""
 
     check_id: str
@@ -104,7 +104,7 @@ def _expected_exit(response: ContentCheckResponse | SelectionCheckResponse) -> A
     }[response.root.decision.status]
 
 
-def _stop_reason(
+def _stop_reason[TCheck: (ContentCheckResponse, SelectionCheckResponse)](
     invocation: InvocationCompleted[TCheck] | InvocationFailed | InvocationCancelled,
 ) -> StopReason | None:
     if isinstance(invocation, (InvocationFailed, InvocationCancelled)):

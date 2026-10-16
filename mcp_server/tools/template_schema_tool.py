@@ -160,6 +160,6 @@ class ScaffoldSchemaTool(ICoreTool[ScaffoldSchemaInput, ScaffoldSchemaOutput]):
                 kind="template_context",
                 template_id=package.manifest.template_id,
             ),
-            schema=package.schema,
+            schema_document=package.schema,
         )
         return ToolExecution(operation=operation, attachments=(attachment,))

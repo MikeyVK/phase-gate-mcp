@@ -42,8 +42,7 @@ class SchemaAttachment(BaseModel):
 
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
     identity: SchemaIdentity
-    # The approved field intentionally replaces BaseModel's deprecated schema() method.
-    schema: Annotated[  # type: ignore[assignment]  # pyright: ignore[reportIncompatibleMethodOverride]
+    schema_document: Annotated[
         FrozenJsonObject,
         GetPydanticSchema(
             lambda _source, _handler: core_schema.is_instance_schema(FrozenJsonObject)
@@ -51,7 +50,7 @@ class SchemaAttachment(BaseModel):
     ]
 
 
-class ToolExecution(BaseModel, Generic[TOutput_co]):
+class ToolExecution(BaseModel, Generic[TOutput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
     """Keep the operation separate from resources attached to this execution."""
 
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")

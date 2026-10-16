@@ -8,7 +8,7 @@ import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Annotated, TypeAlias, TypeVar
+from typing import Annotated, TypeVar
 
 from pydantic import (
     AfterValidator,
@@ -90,7 +90,7 @@ class ScaffoldFileInput(BaseModel):
     input_path: AbsoluteFilePath
 
 
-ScaffoldContentInput: TypeAlias = Annotated[
+type ScaffoldContentInput = Annotated[
     ScaffoldTextInput | ScaffoldFileInput, Field(json_schema_extra=_closed_alternatives)
 ]
 
@@ -109,7 +109,7 @@ class ScaffoldFileRequest(ScaffoldFileInput):
     args: tuple[StrictStr, ...]
 
 
-ScaffoldContentRequest: TypeAlias = Annotated[
+type ScaffoldContentRequest = Annotated[
     ScaffoldTextRequest | ScaffoldFileRequest, Field(json_schema_extra=_closed_alternatives)
 ]
 

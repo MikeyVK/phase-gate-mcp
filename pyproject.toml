@@ -5,12 +5,12 @@ description = "Phase-Gate MCP Server — AI-assisted workflow orchestration with
 authors = [
     {name = "Phase Gate Team"}
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "pydantic>=2.5.0",
     "pydantic-settings==2.13.1",
     "pyyaml==6.0.3",
-    "mcp>=1.0.0,<2",
+    "mcp>=1.30.0,<2",
     "gitpython>=3.1.0",
     "PyGithub>=2.0.0",
     "jinja2>=3.1.2",
@@ -78,8 +78,13 @@ markers = [
 ]
 asyncio_mode = "strict"
 
+[tool.pydantic-mypy]
+init_typed = true
+init_forbid_extra = true
+
 [tool.mypy]
-python_version = "3.11"
+plugins = ["pydantic.mypy"]
+python_version = "3.13"
 files = ["mcp_server"]
 strict = true
 warn_return_any = true
@@ -100,7 +105,7 @@ disallow_untyped_defs = false
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 extend-exclude = [
     "tests/mcp_server/validation_fixtures",
     "docs/development/archive",
@@ -142,4 +147,5 @@ branch = true
 
 [tool.coverage.report]
 fail_under = 90
+
 

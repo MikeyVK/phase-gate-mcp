@@ -69,7 +69,7 @@ class TestSchemaResourcePresenter:
         frozen = freeze_json(schema)
         assert isinstance(frozen, FrozenJsonObject)
         attachment = SchemaAttachment(
-            identity=WholeToolSchemaIdentity(kind="whole_tool"), schema=frozen
+            identity=WholeToolSchemaIdentity(kind="whole_tool"), schema_document=frozen
         )
         resources = SchemaResourcePresenter().present_resources((attachment,))
         assert len(resources) == 1

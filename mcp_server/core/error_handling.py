@@ -14,7 +14,7 @@ import json
 import logging
 import traceback
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from mcp_server.core.exceptions import (
     ConfigError,
@@ -30,8 +30,6 @@ if TYPE_CHECKING:
     from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 
 logger = logging.getLogger(__name__)
-
-T = TypeVar("T")
 
 
 def capture_exception(
@@ -64,7 +62,7 @@ def capture_exception(
     )
 
 
-def tool_error_handler(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
+def tool_error_handler[T](func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
     """Catch expected tool exceptions and return structured errors."""
 
     @functools.wraps(func)

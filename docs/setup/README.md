@@ -4,7 +4,7 @@ This directory contains the setup guidelines and configuration files necessary t
 
 ## Prerequisites
 Before starting, ensure the following are installed:
-* **Python** (version 3.11 or 3.12 recommended)
+* **Python** (version 3.13 or later)
 * **Git**
 * **VS Code** or **Google Antigravity** desktop IDE
 * A **GitHub Personal Access Token (PAT)** with repository scopes
@@ -252,5 +252,6 @@ Verify that the MCP server is active by running the following command in the cha
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+
 
 

@@ -14,6 +14,7 @@ None
 """
 
 # Standard library
+from collections.abc import Coroutine
 from pathlib import Path
 from unittest.mock import patch
 
@@ -84,7 +85,13 @@ class TestHealthAndAdminTools:
         tool = RestartServerTool(server_root=tmp_path)
         context = NoteContext()
         params = RestartServerInput(reason="testing")
-        with patch("asyncio.create_task") as mock_create_task:
+
+        def close_scheduled_exit(coroutine: Coroutine[object, object, None]) -> None:
+            coroutine.close()
+
+        with patch(
+            "mcp_server.tools.admin_tools.asyncio.create_task", side_effect=close_scheduled_exit
+        ) as mock_create_task:
             result = await tool.execute(params, context)
 
             assert isinstance(result, RestartServerOutput)

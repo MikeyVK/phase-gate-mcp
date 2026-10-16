@@ -440,7 +440,7 @@ class AdapterProcessRuntime:
         return response_contract.complete(response, invocation.capture(accepted=True))
 
 
-async def _stop_protected(
+async def _stop_protected[TResponse: BaseModel](
     invocation: _Invocation, operation: asyncio.Task[InvocationCompleted[TResponse]]
 ) -> TerminationProblem | None:
     """Keep cancellation and all task cleanup inside one monotone stop deadline."""
@@ -449,10 +449,7 @@ async def _stop_protected(
     return await _shielded(asyncio.create_task(_stop(invocation, operation)))
 
 
-TCleanup = TypeVar("TCleanup")
-
-
-async def _shielded(task: asyncio.Task[TCleanup]) -> TCleanup:
+async def _shielded[TCleanup](task: asyncio.Task[TCleanup]) -> TCleanup:
     while True:
         try:
             return await asyncio.shield(task)
@@ -482,7 +479,7 @@ def _observe_task(task: asyncio.Future[object]) -> None:
         task.exception()
 
 
-async def _stop(
+async def _stop[TResponse: BaseModel](
     invocation: _Invocation, operation: asyncio.Task[InvocationCompleted[TResponse]]
 ) -> TerminationProblem | None:
     assert invocation.stop_deadline is not None

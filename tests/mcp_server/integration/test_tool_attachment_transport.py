@@ -86,7 +86,7 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
                 identity=TemplateContextSchemaIdentity(
                     kind="template_context", template_id="order/book"
                 ),
-                schema=schema,
+                schema_document=schema,
             ),
         ),
     )
