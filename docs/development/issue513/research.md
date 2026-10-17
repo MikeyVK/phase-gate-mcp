@@ -3,7 +3,7 @@
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
 **Status:** Research in progress — source-removal impact measured; owner policy and delivery decisions pending  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -42,7 +42,7 @@ This is the concrete proposed outcome of Research, **not owner approval or an im
 | Protocol lifecycle | Preserve the initialized2025-11-25 operation already demonstrated through SDK 2 native support. Do not add a pgmcp compatibility layer. Initialization-free2026 lifecycle/proxy support is a separate explicit scope; adopting SDK 2 does not automatically implement it. |
 | YAML installation | Use the supported PyYAML pure-Python installation route on this Windows3.15 target until a supported wheel exists. pgmcp already selects SafeLoader/SafeDumper and their own subclasses, with no C-loader/dumper selection; this does not require changing its parser implementation. Document/install the prerequisite explicitly. |
 | Type contracts / necessary cleanup | Preserve covariance and intentional protocol variance. Remove proven redundant annotations, narrow five broad ValidationError tests and make the three newly selected Ruff style corrections. Align the local GitAdapter variable annotation without changing accepted values. |
-| None input contract | Proposed clean break: remove the no-model/None admission-to-core route and its test-only consumers; use typed empty models for no-argument tools. All 49 production args_model properties already return models. This is a small but real internal contract choice requiring owner approval, not an automatic lint fix. |
+| None input contract | Owner-approved future fix direction: remove the no-model/None admission-to-core route and its test-only consumers; use typed empty models for no-argument tools. All49 production args_model properties already return models. Execute in a targeted future issue, not #513. |
 | Wider checker/test policy | Complete the removal-impact assessment for all global and local suppressions within #513, against actual affected source and the relevant baseline/candidate versions. Synthetic controls establish diagnostic sensitivity, not full source impact. Remediation may be split into later issues; neither retention nor deferral of the assessment is approved. Distinguish static test diagnostics from runtime failures. |
 
 **Why separate delivery scope:** #513 is explicitly a research/decision chore. SDK boundary and prerequisite migration are substantive refactor delivery; they should be scoped from this decision with Design/Planning and existing phase-boundary QA. This issue does not silently become an open-ended suppression-cleanup or new protocol architecture project. Follow-up issue administration remains with Coordination after owner approval.
@@ -62,7 +62,7 @@ The [actual-source measurements](suppression-inventory.md#actual-source-removal-
 | Mypy test override removal |Exactly3 extra untyped-definition diagnostics on either stack. | Small helper-annotation cleanup is a concrete alternative to retaining a test-wide relaxation. |
 | Pyright global/local removal |On191 production+10 locally suppressed tests:0/1 retained,7/8 without local directives,1294/869 after also deleting false settings (reference/candidate). | Restore basic argument/call/attribute signals through bounded delivery; classify correlated Unknown/dynamic-boundary diagnostics before committing to broader hardening. These are diagnostic counts, not runtime defects. |
 | Four Pyright native-default-none rules |Deleting their false settings does not enable them. Explicitly opting in adds195 diagnostics on either stack. | New style/construction policy must be an explicit choice, not disguised as suppression removal. |
-| Type boundary |input_validation_decorator.py:115 passes None to an ICoreTool bounded by BaseModel. Both checkers expose it once unmasked. All49 production tools already supply models; prior None consumers are tests. | Owner decision required before deleting the None-input route or widening the core contract. No implicit contract change. |
+| Type boundary |input_validation_decorator.py:115 passes None to an ICoreTool bounded by BaseModel. Both checkers expose it once unmasked. All49 production tools already supply models; prior None consumers are tests. | Owner approved the future clean break to model-only core input and typed empty argument models. No implementation in #513. |
 | Defensive runtime checks |23 unnecessary-isinstance and4 unnecessary-comparison signals remain on either stack. | Preserve actual runtime validation; choose boundary typing/scoped policy after source review rather than remove guards for a static rule. |
 
 The full explicit Mypy test survey is outside the configured production gate: retained1071 reference /618 candidate diagnostics are mostly existing test-typing findings. They are not caused by suppression removal and are not a requirement to repair1071 tests. Final details distinguish native completed diagnostic failures from outer research-probe completion and exclude preliminary wrong-CWD/stale-venv measurements.
@@ -308,7 +308,10 @@ Sources: [SDK changes](https://py.sdk.modelcontextprotocol.io/whats-new/), [SDK 
 | Latest-stable alignment | Approved research direction: use Python 3.15 as the target and select/test appropriate current dependencies and checkers together; the previous retain3.13 preliminary recommendation is superseded. No production minimum change or release authorized. |
 | Additional interpreters | Approved: investigate the newest stable Python release. Prepared standard CPython 3.15.0 and two isolated environments below .pgmcp/temp/issue513; no system/PATH/default or active-server changes. This does not authorize a higher minimum. Python 3.14 was not installed. |
 | Variance/type contracts | Carry forward the owner decision from #507 to preserve explicit covariance. No silent migration may weaken it. |
-| Production SDK, protocol/proxy, Python floor and checker remediation | No implementation choice approved yet. Discuss findings and record per-boundary strategy before Research closes. |
+| Core input contract | Approved future fix direction: remove the None/no-model core-input route; use typed empty models for tools without arguments. Adapt the direct test consumers without a compatibility path. No production implementation in #513. |
+| SDK-specific Python attributes | Approved future fix direction: adapt SDK1 Python API accesses to the SDK2 equivalents during the later SDK migration, including proxy InitializeResult.protocolVersion -> protocol_version. Keep wire naming distinct from Python attributes; no pgmcp compatibility layer. This does not approve a new protocol lifecycle or execute the SDK upgrade. |
+| Literal reason attributes / dynamic logging | Not yet decided. Owner requests a clearer explanation of current risk and the concrete small repair before choosing. |
+| Remaining SDK scope, protocol lifecycle, Python floor and checker remediation | Not yet approved. Discuss remaining findings and record per-boundary strategy before Research closes. |
 
 ## Expected Results
 
@@ -460,3 +463,4 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.5 | 2026-10-17 | @imp researcher | Consolidate owner decision proposal; finish aligned group controls and source-specific dispositions, clarify existing Python YAML route and the bounded None-input contract choice. |
 | 0.6 | 2026-10-17 | @imp researcher | Record separate migration delivery, restore complete global/local removal-impact research scope, correct evidence limits and distinguish protocol initialization from bootstrap/project initialization. |
 | 0.7 | 2026-10-17 | @imp researcher | Add actual-source global/local removal measurements, corrected reference/CWD evidence, overlapping exceptions, native-default effects and concrete owner policy questions without production changes. |
+| 0.8 | 2026-10-17 | @imp researcher | Record owner-approved future model-only input and SDK attribute fixes; keep literal-attribute and dynamic-logging proposals open pending explanation. |
