@@ -1,93 +1,77 @@
-# Setup — New Machine
+# Setup — Runtime and Host Reference
 
-This directory contains the setup guidelines and configuration files necessary to get the MCP server and agent environment running on a new machine.
+For agent-led setup or an upgrade, start with the single
+[workspace checklist](agentic-bootstrap.md). After installation, `--init` or
+`--upgrade`, explicitly give that page to the chosen agent chat; none of those
+commands launches an agent. This page supplies technical details, not a separate
+readiness procedure.
 
 ## Prerequisites
-Before starting, ensure the following are installed:
-* **Python** (version 3.13 or later)
-* **Git**
-* **VS Code** or **Google Antigravity** desktop IDE
-* A **GitHub Personal Access Token (PAT)** with repository scopes
 
----
+- Select a Python interpreter supported by the chosen package. Current source
+  requires Python 3.13+ and MCP SDK `>=1.30.0,<2`; its
+  [dependency declarations](https://github.com/MikeyVK/phase-gate-mcp/blob/main/pyproject.toml)
+  are authoritative for source installs. Read the actual artifact's metadata for
+  an older published release.
+- Choose the host and intended capabilities before installing native dependencies.
+  Git/repository/identity are prerequisites for selected Git/workflow operations;
+  GitHub identity/token/permissions are prerequisites for selected GitHub paths
+  and any enforcement that depends on them.
+- Preserve existing owner configuration, host settings and customizations. The
+  command/config examples below require chosen paths and permission; they are not
+  instructions to overwrite an existing setup.
 
-## 1. Environment Variables Setup
+## 1. Credentials and Environment
 
-The MCP server reads the GitHub API token via the `GITHUB_TOKEN` environment variable. Set this as a permanent user-level environment variable:
+For selected GitHub functionality, supply owner/repo in the effective
+`github.yaml`; prefer host delivery of `GITHUB_TOKEN` from the owner's environment
+or secret facility. See [GitHub setup](../manuals/github-setup.md) for precedence,
+permissions and the configured-token alternative. Keep token values out of tracked
+files, command history, copied transcripts and setup evidence.
 
-### Windows (PowerShell)
-```powershell
-[System.Environment]::SetEnvironmentVariable("GITHUB_TOKEN", "ghp_xxxxxxxxxxxx", "User")
-```
-*Note: Restart your IDE or terminal after setting this variable to ensure it is available.*
-
-### Linux / macOS
-Add the following to your shell configuration (e.g., `~/.bashrc`, `~/.zshrc`):
-```bash
-export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
-```
-
----
+Do not add GitHub identity to the MCP launcher. Verify the selected host actually
+delivers the intended environment to its child process; a host environment change
+may require a full relaunch. Do not assume placeholder expansion works in every
+host, and do not print the token to prove delivery.
 
 ## 2. Python Virtual Environment
 
-Clone the repository and install all dependencies:
+Use the exact interpreter chosen for the launch environment, for example
+(replace the example executable, destination and reviewed wheel path):
 
 ```powershell
-# Clone the repository
-git clone https://github.com/MikeyVK/phase-gate-mcp.git
-cd phase-gate-mcp
-
-# Create and activate virtual environment
-python -m venv .venv
-# Windows:
-.venv\Scripts\Activate.ps1
-# Linux/macOS:
-source .venv/bin/activate
-
-# Install requirements
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
-pip install -e .
+& 'C:/chosen/Python/python.exe' -m venv 'C:/chosen/pgmcp-env'
+& 'C:/chosen/pgmcp-env/Scripts/python.exe' -m pip install 'C:/reviewed/phase_gate_mcp-3.0.0-py3-none-any.whl'
 ```
 
-The current package requires Python 3.13 or later and MCP SDK `>=1.30.0,<2`;
-the declarations in [pyproject.toml](../../pyproject.toml) are authoritative.
-An existing virtual environment keeps its original interpreter: recreate it with a
-supported Python interpreter when upgrading from an older baseline, then reinstall
-the package and its dependencies before restarting the server.
+The example names a wheel, not a promise of PyPI availability or newly published
+assets. An existing virtual environment retains its original interpreter; recreate
+it when that interpreter no longer satisfies the chosen package. Install only
+native tools needed by the selected bindings, at the versions their adapters
+declare. Development requirements are for contributors who deliberately select
+that environment, not unconditional target-workspace prerequisites.
 
-The running server obtains its version exclusively from installed `phase-gate-mcp`
-package metadata. Development uses the editable installation above: source edits
-remain directly usable after a server restart, while installation metadata supplies
-the version. Re-run `pip install -e .` after changing the package version. Missing
-or unreadable package metadata is an error; repository manifests and fixed defaults
-are not runtime version sources.
+For a development checkout, the owner may choose an editable installation:
+`python -m pip install -e .`. The running server obtains its version exclusively
+from installed `phase-gate-mcp` metadata. Source edits are usable after restart;
+reinstall after changing package metadata. Missing/unreadable metadata is an error,
+not a reason to infer a version from repository files.
 
-For a new server root, `pgmcp --init` requires complete assembled package assets. A clean editable checkout installed with `pip install -e .` does not assemble those assets automatically. Release preparation requires running `scripts/build_package.py` manually before distributing the wheel; follow the [Release Assets Procedure](../reference/release-assets-procedure.md). Use initialization after provisioning a package with those assets:
+For a previously absent server root, invoke `pgmcp --init` through that installed
+environment after resolving the roots. It requires assembled package assets;
+an editable checkout does not assemble them. Package preparation remains governed
+by the [Release Assets Procedure](../reference/release-assets-procedure.md), outside
+normal target setup.
 
+For an existing root, follow the [upgrade guide](workspace-upgrade.md) and the
+checklist's delta route. `--upgrade` renews managed templates; it does not migrate
+owner config, native tool policy, state or host instructions. Do not run `--init`
+to replace an existing root.
 
-```powershell
-pgmcp --init
-```
-
-For an existing workspace, renew the managed template suite:
-
-```powershell
-pgmcp --upgrade
-```
-
-Renewal preserves owner-managed configuration. If it reports
-`checkpoint_required`, review the local suite and follow the owner-led procedure in
-the [Workspace Upgrade Guide](workspace-upgrade.md) before choosing an action.
-
-For the unreleased branch registration contract, coordination must supply the explicit
-parent at initialization. Existing workspaces must reconcile branch state and refresh
-client discovery deliberately; follow the [registration and recovery guidance](workspace-upgrade.md#unreleased-branch-registration-contract).
-
-Configure owner/repo in root config/github.yaml, with optional project_number and
-token alternative. Prefer host GITHUB_TOKEN delivery; launcher settings contain no
-repository identity. See [GitHub setup](../manuals/github-setup.md).
+The unreleased branch-registration contract requires coordination to supply an
+explicit parent for a **real** issue branch. Read the
+[registration/recovery guidance](workspace-upgrade.md#unreleased-branch-registration-contract)
+when adopting it; workspace initialization is not issue registration.
 
 ### Choose the workspace quality policy
 
@@ -136,68 +120,42 @@ acknowledgements.
 
 There are critical structural differences in how **VS Code** and **Google Antigravity** handle MCP server registration and agent rules. Choose the section below corresponding to your IDE:
 
+The host examples describe destination formats. Resolve supplied templates from
+`<server-root>/agents/` (or `docs/agents/` in a checkout); adapt the launcher to the
+chosen installed interpreter and roots. Use copies only for absent destinations.
+For existing files, review and merge the relevant fields/instructions while
+preserving unrelated settings. Do not copy a whole settings file over owner work.
+The host's actual configuration support determines environment/path expansion.
+
 ### Option A: VS Code Setup
 
-VS Code registers MCP servers at the workspace level, resolving variables dynamically based on the active project directory.
+The supplied VS Code assets use these destinations:
 
-1. **Copy the MCP configuration:**
-   Copy the `mcp.json` template from `docs/setup/mcp.json` into `.vscode/mcp.json` (which is gitignored):
-   ```powershell
-   Copy-Item docs/setup/mcp.json .vscode/mcp.json
-   ```
-   *Note: VS Code supports dynamic variables like `${workspaceFolder}` and `${env:GITHUB_TOKEN}`, allowing you to share the configuration across users without hardcoding absolute paths.*
+| Supplied material | Workspace destination / action |
+| --- | --- |
+| `agents/vscode/copilot/mcp.json` | Review/adapt the PGMCP entry in `.vscode/mcp.json`; choose the exact interpreter, working directory and roots. |
+| `agents/vscode/copilot/AGENTS.md` | Reconcile `AGENTS.md` with existing workspace rules. |
+| Selected Copilot role/prompt files | Reconcile their corresponding `.github/` destinations; preserve unrelated files. |
+| Always-on instruction setting | Add `"chat.useAgentsMdFile": true` to the existing settings object if this is the chosen instruction mechanism; do not replace the object. |
 
-2. **Configure Always-On Agent Rules:**
-   To enable VS Code to read the global instructions file (`AGENTS.md`), add the following setting to your VS Code user or workspace `settings.json`:
-   ```json
-   "chat.useAgentsMdFile": true
-   ```
-   This configuration forces the VS Code chat/agent runner to prepend the instructions from the repository's root `AGENTS.md` file to every session.
-
-3. **Reload Window:**
-   Run the `Developer: Reload Window` command in VS Code. The MCP server proxy will start automatically in the background.
-
----
+The supplied connection uses workspace/environment placeholders. Verify that the
+installed host resolves them and delivers the intended token without exposing it;
+otherwise use the owner's supported path/environment mechanism. Reload/reconnect
+as needed and inspect actual startup and tool discovery.
 
 ### Option B: Google Antigravity Setup
 
-Google Antigravity manages MCP servers either globally or via a **workspace-local configuration file**. Using a workspace-local configuration is the recommended method. Note that dynamic workspace variables (like `${workspaceFolder}`) are not supported in Antigravity; therefore, you must configure absolute paths.
+The supplied Antigravity material is under `agents/antigravity/`: review
+`mcp_config.json`, `AGENTS.md`, `rules/` and `workflows/`. The workspace-local
+example destinations are `.agents/mcp_config.json`, root `AGENTS.md`,
+`.agents/rules/` and `.agents/workflows/`.
 
-1. **Create the workspace-local configuration file:**
-   Create a file named `mcp_config.json` under the `.agents/` directory (which is gitignored):
-   ```json
-   {
-     "mcpServers": {
-       "phase-gate-mcp": {
-         "command": "C:/path/to/phase-gate-mcp/.venv/Scripts/python.exe",
-         "args": ["-m", "mcp_server.core.proxy"],
-         "cwd": "C:/path/to/phase-gate-mcp",
-         "env": {
-           "PYTHONPATH": "C:/path/to/phase-gate-mcp",
-           "LOG_LEVEL": "INFO",
-            "PGMCP_SERVER_NAME": "phase-gate-mcp",
-            "PGMCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
-            "PGMCP_SERVER_PROJECT_DIR": ".pgmcp",
-           "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
-         }
-       }
-     }
-   }
-   ```
-   *Note: Use forward slashes (`/`) even on Windows to prevent JSON escaping issues.*
-
-2. **Alternative: Global Configuration (Not Recommended):**
-   If you prefer a global installation instead of the recommended workspace-local one, you can place the exact same JSON configuration under your system-wide `mcp_config.json` file. Note that workspace-local is the standard method:
-   * **Windows:** `C:\Users\<username>\.gemini\config\mcp_config.json` (or `...\.gemini\antigravity\mcp_config.json`)
-   * **Linux / macOS:** `~/.gemini/config/mcp_config.json`
-3. **Agent Configuration & Rule Loading:**
-   Unlike VS Code, Google Antigravity natively detects and registers agent rules, workflows, and prompts from the workspace root directory without requiring any manual configurations in a settings file. When you open the cloned repository as a workspace, Antigravity automatically detects:
-   * `AGENTS.md` (Global project rules and priority matrix)
-   * `.agents/workflows/` (Custom slash commands like `/start-issue`, `/end-issue`, and `/go`)
-   * `.agents/rules/` (Specialized agent role prompts for Antigravity: `co.agent.md`, `imp.agent.md`, `qa.agent.md`)
-
-4. **Restart Antigravity:**
-   Fully restart the Google Antigravity application or reload your workspace session to apply the changes and start the MCP server.
+Replace the launch-path placeholders with the chosen absolute interpreter/workspace
+paths and use the installed host's actual MCP registration and environment delivery
+mechanism. Keep credential values outside tracked files. Reconcile existing files
+instead of overwriting them; inspect which instructions/roles the host really
+loaded. Reload/relaunch and connect explicitly when required. File presence alone
+does not prove automatic rule loading or MCP activation.
 
 ### Option C: Codex Setup
 
@@ -219,33 +177,31 @@ tool_timeout_sec = 1800
 
 This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. On every host using main, apply this policy to the local connection and activate it. A Git merge cannot update or activate a Git-ignored client configuration; retain existing machine paths and secrets.
 
-## 4. Agent Files & Git Availability
+## 4. Agent Files and Selected Host Instructions
 
-All core files defining the agent behaviors, constraints, workflows, and role prompts are fully tracked in Git and immediately available when cloning the repository. 
+The distributed source material is `docs/agents/` in a checkout and
+`<server-root>/agents/` after initialization with those assets. Review the chosen
+host's `AGENTS.md`, roles, workflows and, for Codex, supplied skills. Copy only
+absent destinations; merge into existing instructions with owner changes preserved.
+Use that host's actual invocation/discovery mechanism rather than assuming every
+file is automatically loaded.
 
-Verify that the following files are present in your workspace; links show their tracked product sources:
-* **Project Rules (Always-on instructions):** [AGENTS.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/AGENTS.md)
-* **Custom Slash Commands / Workflows:**
-  * [create-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/create-issue.md)
-  * [end-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/end-issue.md)
-  * [go.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/go.md)
-  * [start-issue.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/workflows/start-issue.md)
-* **Specialized Agent Roles:**
-  * **Coordination Authority (@co):** [.github/agents/co.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/co.agent.md) (VS Code) & [.agents/rules/co.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/co.agent.md) (Antigravity)
-  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/imp.agent.md) (VS Code) & [.agents/rules/imp.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/imp.agent.md) (Antigravity)
-  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.github/agents/qa.agent.md) (VS Code) & [.agents/rules/qa.agent.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/.agents/rules/qa.agent.md) (Antigravity)
-
-*To activate an agent role in VS Code, load `@file:.github/agents/<role>.agent.md` (e.g., `@file:.github/agents/co.agent.md`). In Google Antigravity, load `@file:.agents/rules/<role>.agent.md` (e.g., `@file:.agents/rules/co.agent.md`).*
+The repository's current agent protocol remains [AGENTS.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/AGENTS.md).
+The checklist's invocation works by giving the installed/local document to a chosen
+agent chat. A package install, copied role file or Git merge does not start that chat.
 
 ### Workspace Rule Synchronization
-Because VS Code and Google Antigravity resolve agent files and slash commands from different directory structures (under `.github/` and `.agents/` respectively), any manual modifications made to rules, prompts, or workflows must be manually synchronized between these directories to keep the workspace aligned across both IDEs.
+
+When owner changes affect equivalent instructions for more than one selected host,
+reconcile those consumers deliberately and verify the host loaded the intended
+revision. Installing all host variants or replacing their unrelated settings is not
+a setup requirement. No instruction content changes are introduced by this guide.
 
 ---
 
 ## 5. Verification
 
-Verify that the MCP server is active by running the following command in the chat:
-* **`health_check`** (or `/go` to trigger the active phase check). The server should return a healthy status.
+Return to the [authoritative checklist's verification levels](agentic-bootstrap.md#4-activate-and-verify-three-separate-levels). Record actual health, configuration completeness for selected capabilities and representative successful operations separately. `health_check` does not establish the latter two; `/go` is an issue-phase workflow, not a workspace setup test. Do not create an invented issue to make either route available.
 
 ---
 
@@ -253,11 +209,11 @@ Verify that the MCP server is active by running the following command in the cha
 
 | File | Description | Action |
 |---|---|---|
-| `.vscode/mcp.json` | VS Code MCP server config | Copy from `docs/setup/mcp.json` (VS Code only) |
+| `.vscode/mcp.json` | Selected VS Code connection | Review the supplied VS Code template; copy only if absent, otherwise reconcile the existing entry |
 | `.agents/mcp_config.json` | Antigravity local MCP config | Create under `.agents/` directory (Antigravity only) |
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
-| `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
-| `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+| `GITHUB_TOKEN` | Credential when GitHub paths are selected | Deliver through the host environment/secret facility; never track its value |
+| Launch environment | Selected Python environment | Install the chosen package and only intended native prerequisites; verify interpreter/package identity |
 
 
 
