@@ -149,6 +149,10 @@ No production edits during Validation. The two failures preserve the exact appro
 
 Only the phase transition changed tracked state before this report. Repairs must return to Implementation. A force transition requires explicit human approval; no approval is inferred from QA GO or elapsed time.
 
+## Bounded Repair — 2026-10-17
+
+The owner approved returning to Implementation (reply: "Prima"). The two-file repair isolates the existing native-versus-adapter Pyright scenario from repository defaults and removes the content-only rollout assertion. It adds no test cases and changes no production or native configuration. Focused invocation: `run_tests(scope='targets', targets=['tests/mcp_server/integration/adapters/test_pyright.py', 'tests/mcp_server/integration/test_rollout_configuration.py'], tests=['python_tests'], args={'python_tests':['-r','sxX']}, timeout_seconds=240)`. All 55 cases passed; focused formatting, lint and Pyright also passed (receipts c636eab80048463e808d2bede1f0a655 and 112102770c7b4b79813a2a077a8b2b39). Independent Implementation review and a fresh complete Validation run remain required; the earlier full-suite FAIL is retained below as historical evidence.
+
 ## Failures
 
 - tests/mcp_server/integration/adapters/test_pyright.py::test_native_configuration_preservation_and_editor_target, line577: asserts repository config pythonVersion=='3.11'. The subsequent native-versus-adapter/version-override behavior is valuable; proposed repair isolates its explicit scenario config instead of inheriting the live repository's Python baseline.
