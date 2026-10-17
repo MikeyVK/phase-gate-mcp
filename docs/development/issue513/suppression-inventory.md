@@ -3,7 +3,7 @@
 # Issue 513 — Checker Suppression Inventory
 
 **Status:** Complete baseline and executed group controls — final dispositions open  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -202,7 +202,7 @@ Neither invocation changed production, test, native configuration or checker pin
 
 ## Executed Diagnostic Controls and Provisional Dispositions
 
-All work below is Research on Python 3.13.7 with Ruff 0.15.6, Mypy 1.19.1 and Pyright 1.1.408. Source copies and fixtures live only below `.pgmcp/temp/issue513/`; no production/test/configuration remediation has been applied. Native check exit 1 is expected for deliberately bad controls and is not a Validation verdict.
+Initial controls below use Python 3.13.7 with Ruff 0.15.6, Mypy 1.19.1 and Pyright 1.1.408; the later Python 3.15 section states its distinct process/target/dependency context. Source copies and fixtures live only below `.pgmcp/temp/issue513/`; no production/test/configuration remediation has been applied. Native check exit 1 is expected for deliberately bad controls and is not a Validation verdict.
 
 ### Ruff: all ten local rule groups
 
@@ -262,7 +262,7 @@ Each pair below enables only its named report flag in the file. Fixtures contain
 
 Initial exploratory fixtures included an unsupported per-file enableTypeIgnoreComments setting; it was removed. Three initially insufficient negative examples were strengthened to actually introduce Unknown members/decorators. These preliminary runs are not the final positive/negative proof.
 
-For argument, call and attribute checks, three equivalent bad sources with **no local enabling** pass under native project policy (receipt `1162c9af3293419497935dc98bde0ced`). With SDK 2.3 selected through `--pythonpath`, old accesses to Server.list_tools, Server.request_handlers, InitializeResult.protocolVersion and Tool.inputSchema also remain silent under native policy. Enabling the relevant diagnoses yields four reportAttributeAccessIssue errors; a correct SDK2 source passes in the same call (receipt `2d438f387881425ababe2d33c929fc4d`).
+For argument, call and attribute checks, three equivalent bad sources with **no local enabling** pass under native project policy (receipt `1162c9af3293419497935dc98bde0ced`). With SDK 2.3 selected through `--pythonpath`, old accesses to Server.list_tools, Server.request_handlers, InitializeResult.protocolVersion and Tool.inputSchema also remain silent under native policy. Enabling the relevant diagnoses yields four reportAttributeAccessIssue errors; a correct SDK 2 source passes in the same call (receipt `2d438f387881425ababe2d33c929fc4d`).
 
 Proposal: restore basic call/argument/attribute signals as part of an explicitly scoped policy decision, or replace a genuinely necessary exception at the narrow source boundary. Do not enable all 23 flags by quota. Keep the four default-none policies as explicit choices unless the owner changes them. Other signal groups (unknown typing, decorators, unnecessary expressions, untyped stubs and unused private definitions) need their own cost/benefit disposition; these controls prove the signal, not workspace-wide cleanliness.
 
@@ -289,7 +289,7 @@ Six exact source copies removed all nine Mypy directive lines. Native plugin/str
 | execution.py:57 | misc: covariance used in synthetic replacement parameter | Retain exact exception with explicit covariance; recheck at Mypy/Python baseline change. |
 | git_adapter.py:175 | assignment: Commit-inferred local later receives str | Candidate for a local explicit union annotation, preserving accepted values and runtime behavior. |
 | input_validation_decorator.py:115 | arg-type: None supplied to BaseModel-bound core protocol | Genuine declared-contract mismatch with the supported no-argument path; discuss alignment instead of treating it as an SDK workaround. |
-| server.py:84/96/108/125 | Seven no-untyped-call/untyped-decorator messages | Retain for SDK1 baseline; remove along with the actual decorator API migration after typed SDK2 handlers prove the contract. |
+| server.py:84/96/108/125 | Seven no-untyped-call/untyped-decorator messages | Retain for SDK 1 baseline; remove along with the actual decorator API migration after typed SDK 2 handlers prove the contract. |
 
 ### Mypy tests and override
 
@@ -334,7 +334,7 @@ The temporary generator prepares only ignored fixtures. Run them via the existin
 
 - Ruff targets: each `<rule>_{negative,positive}.py` under `.pgmcp/temp/issue513/diagnostic-controls/ruff/`; `checks=["python_lint"]`, `args={"python_lint":["--select","PLC0415,T201,BLE001,UP046,ANN401,ARG001,ARG002,N818,SLF001,B017","--output-format","json"]}`, `scope="targets"`, timeout 120.
 - Pyright targets: each `<rule>_{negative,positive}.py` (reportIncompleteStub uses .pyi) under the sibling pyright directory. Prefix each source with `# pyright: <rule>=true`. `checks=["python_pyright"]`, `args={"python_pyright":["--outputjson"]}`, `scope="targets"`, timeout 120. No ignore directives are present.
-- SDK2 masking trio: use the four old accesses listed above in a function with Server/InitializeResult/Tool parameters, once under native policy and once with reportAttributeAccessIssue/reportCallIssue/reportArgumentType=true; positive uses Server.create_initialization_options and InitializeResult.protocol_version. Add `--pythonpath <isolated SDK2 interpreter>`.
+- SDK 2 masking trio: use the four old accesses listed above in a function with Server/InitializeResult/Tool parameters, once under native policy and once with reportAttributeAccessIssue/reportCallIssue/reportArgumentType=true; positive uses Server.create_initialization_options and InitializeResult.protocol_version. Add `--pythonpath <isolated SDK 2 interpreter>`.
 - Original Mypy test targets are exactly the 20 source files with Mypy comments in the complete index. Source-copy maps are the six production files and thirteen Pyright-bearing files in the same index; remove only relevant comment directives from copies, not source. Type-check with the exact options stated above.
 - Mypy policy fixture packages application and tests each have __init__.py and three files: typed identity function; untyped identity function; `value: int = "wrong"`. Use native `python_types` with `--follow-imports silent --show-error-codes`.
 
@@ -500,7 +500,49 @@ The temporary generator prepares only ignored fixtures. Run them via the existin
 
 </details>
 
-These are provisional research recommendations. Candidate Python execution, complete per-site test/type dispositions and the owner-approved boundary strategy are still required before Research completion.
+These are provisional research recommendations. Python 3.15 boundary execution is recorded below; complete per-site test/type dispositions and the owner-approved boundary strategy are still required before Research completion.
+
+## Python 3.15 reassessment: executed boundaries
+
+The owner approved the newest stable runtime experiment. Standard CPython 3.15.0/GIL and separate MCP 1.30/2.3 environments use Pydantic 2.14.1 below the ignored research root. The direct package set required PyYAML 6.0.3's explicit pure-Python installation variant on this Windows host; normal installation lacked a wheel and then failed without C++ Build Tools. See [Research](research.md#python-315-isolated-installation-and-actual-execution) for exact versions, commands, outcomes and scope limits.
+
+| Suppression/contract | Additional executed evidence | Provisional disposition |
+| --- | --- | --- |
+| AdapterRole UP046 | Actual retained source and all five invalid/immutable controls pass under both3.15 dependency sets. Complete PEP695 conversion still fails PydanticUserError under 2.14.1. | Retain until the full source declaration, validators, schema and invalid controls pass with a supported library/checker combination. A Python upgrade alone does not remove it. |
+| ToolExecution / AdapterBinding UP046 | Current Mypy 1.19.1/Pyright 1.1.408, target3.15, candidate Python/dependency path: both widening functions below accepted; both narrowing functions rejected; no masking diagnostic disable affects reportReturnType. | Retain explicit covariance as owner required. No broad generic-class conversion is justified by the higher runtime. |
+| Five B017 model-validation cases | Valid branch/issue inputs construct; missing base, missing issue,0/-5 issue number and dictionary body all raise ValidationError on 3.15/Pydantic 2.14.1. | Narrow to ValidationError when remediation is approved; no reason to retain Exception merely for the candidate version. |
+| SDK 1 server decorator Mypy ignores | Actual unchanged application starts healthy on 3.15/SDK 1.30; unchanged SDK 2 path fails on removed list_resources decorator. | SDK API migration owns removal of those suppressions. Raising Python does not provide the SDK 2 handler migration. |
+| Ruff current version | target py315 accepts paired PLC0415 controls but emits explicit under-development warning. | Do not equate flag acceptance with fully supported 3.15 checking; do not hide it with preview. Checker upgrade is a separate decision. |
+| Other native/local directives | No complete candidate runtime/source-site recheck in this increment. | Earlier evidence remains bounded to its stated context. Do not claim the whole inventory is resolved by these probes. |
+
+Exact covariance controls use the **actual unchanged production classes**, with no local suppressions:
+
+```python
+from pydantic import BaseModel
+from mcp_server.core.tool_execution import ToolExecution
+from mcp_server.core.interfaces.execution import AdapterBinding
+
+class Result(BaseModel):
+    value: int
+
+# Positive source
+def widen_execution(value: ToolExecution[Result]) -> ToolExecution[BaseModel]:
+    return value
+
+def widen_binding(value: AdapterBinding[Result]) -> AdapterBinding[BaseModel]:
+    return value
+
+# Separate negative source
+def narrow_execution(value: ToolExecution[BaseModel]) -> ToolExecution[Result]:
+    return value
+
+def narrow_binding(value: AdapterBinding[BaseModel]) -> AdapterBinding[Result]:
+    return value
+```
+
+Both files live temporarily under `.pgmcp/temp/issue513/diagnostic-controls/python315_variance/`. Use run_checks scope=targets with both files, checks=[python_types] and args `--python-version 3.15 --python-executable <repo>/.pgmcp/temp/issue513/sdk23-py315/Scripts/python.exe`, timeout 90: exactly two return-value errors in negative.py, zero in positive.py (supplement 00b4a05a079c42889dded64cfd8078a1). Repeat checks=[python_pyright], args `--pythonversion 3.15 --pythonpath <same interpreter> --outputjson`: exactly two reportReturnType errors in negative.py, zero in positive.py (supplement e93dcc7ceda54244ae22bc86ad7ce618).
+
+Mypy was hosted on the native 3.13 adapter; Pyright runs in Node. The Mypy process/plugin used its host Pydantic 2.11.7; the Python-executable option selected the candidate dependency path. These are3.15 target/dependency comparisons, not proof of all language features or whole-checker execution on 3.15. The Mypy/Ruff packages separately installed/imported in the3.15 lab. No checker pin, native policy, production declaration or permanent test changed.
 
 ## Related Documents
 
@@ -514,5 +556,4 @@ These are provisional research recommendations. Candidate Python execution, comp
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-17 | @imp researcher | Record token-aware exact locations, native policy and observed unused exceptions without approving removals or retained policy. |
 | 0.2 | 2026-10-17 | @imp researcher | Add all-rule paired controls, masking proof, source-copy checks, native test-policy comparison, candidate Pydantic evidence and provisional dispositions. |
-
-
+| 0.3 | 2026-10-17 | @imp researcher | Record actual 3.15/Pydantic 2.14 controls, retained covariance signal, unchanged AdapterRole limitation and checker-support evidence without broadening remediation. |
