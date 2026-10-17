@@ -1,13 +1,28 @@
 # PhaseGate MCP Server - Resources Specification
 
 **Status:** v1.0 (Foundation)
-**Last Updated:** 2025-01-21
+**Last Updated:** 2026-10-17
 
 ---
 
 ## 1. Resources
 
 Resources expose read-only data through MCP URIs. This reference distinguishes proposed resources from those currently registered; a section marked **Planned** is not an available endpoint. Current tool-result resources include `pgmcp://cache/runs/{run_id}`, and policy discovery is provided by `pgmcp://rules/coding_standards`. Resource content is not evidence that a check or test passed unless it explicitly contains that operation's result.
+
+---
+
+### Resource Transport
+
+The central server handler returns explicit MCP SDK `ReadResourceContents` values
+with `text/plain` content, preserving the requested URI in the MCP response.
+A payload described below as JSON is serialized JSON text; its data format does not
+change that transport media type. Unknown URIs and resource-read failures remain
+errors. The wrapper does not change resource matching, payloads or cache lifetime.
+
+See the [server boundary](../../mcp_server/server.py) and
+[dependency declarations](../../pyproject.toml). Embedded schema attachments in
+tool responses have their own media type and serialization owner; see
+[Presentation Architecture](presentation_architecture.md#ownership-boundaries).
 
 ---
 

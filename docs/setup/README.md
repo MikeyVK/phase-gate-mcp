@@ -51,6 +51,12 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
+The current package requires Python 3.13 or later and MCP SDK `>=1.30.0,<2`;
+the declarations in [pyproject.toml](../../pyproject.toml) are authoritative.
+An existing virtual environment keeps its original interpreter: recreate it with a
+supported Python interpreter when upgrading from an older baseline, then reinstall
+the package and its dependencies before restarting the server.
+
 The running server obtains its version exclusively from installed `phase-gate-mcp`
 package metadata. Development uses the editable installation above: source edits
 remain directly usable after a server restart, while installation metadata supplies

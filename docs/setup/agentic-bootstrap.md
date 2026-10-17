@@ -3,8 +3,8 @@
 # Agentic Bootstrap Guide for New Projects
 
 **Status:** APPROVED  
-**Version:** 1.4  
-**Last Updated:** 2026-10-16
+**Version:** 1.5  
+**Last Updated:** 2026-10-17
 
 ---
 
@@ -45,6 +45,11 @@ git push -u origin main
 ```
 
 ### 2. Initialize Virtual Environment & Install Package
+
+Before creating the environment, verify that its Python interpreter satisfies the
+chosen package's `Requires-Python` declaration; see the current
+[setup prerequisites](README.md#prerequisites).
+
 Run the following commands in the terminal using the terminal execution tool:
 ```powershell
 # Create virtual environment
@@ -200,6 +205,6 @@ This ensures that the workflow configurations are tracked in Git, making them in
 | 1.2 | 2026-10-01 | Implementation documenter | Describe current template_suite/checkpoint renewal, owner-led baseline handling and restart; retain complete-package assumption |
 | 1.1 | 2026-07-20 | Agent | Document .version file creation during CLI init |
 | 1.0 | 2026-07-08 | Agent | Initial draft |
-
 | 1.4 | 2026-10-16 | @imp documenter | Separate unchanged 3.0.0 package setup from deliberate adoption of unreleased layered configuration. |
+| 1.5 | 2026-10-17 | @imp documenter | Require the selected interpreter to satisfy the chosen package before creating its launch environment; link current prerequisites. |
 
