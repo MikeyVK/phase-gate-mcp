@@ -4,7 +4,7 @@ This directory contains the setup guidelines and configuration files necessary t
 
 ## Prerequisites
 Before starting, ensure the following are installed:
-* **Python** (version 3.11 or 3.12 recommended)
+* **Python** (version 3.13 or later)
 * **Git**
 * **VS Code** or **Google Antigravity** desktop IDE
 * A **GitHub Personal Access Token (PAT)** with repository scopes
@@ -50,6 +50,12 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -e .
 ```
+
+The current package requires Python 3.13 or later and MCP SDK `>=1.30.0,<2`;
+the declarations in [pyproject.toml](../../pyproject.toml) are authoritative.
+An existing virtual environment keeps its original interpreter: recreate it with a
+supported Python interpreter when upgrading from an older baseline, then reinstall
+the package and its dependencies before restarting the server.
 
 The running server obtains its version exclusively from installed `phase-gate-mcp`
 package metadata. Development uses the editable installation above: source edits
@@ -252,5 +258,6 @@ Verify that the MCP server is active by running the following command in the cha
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |
+
 
 

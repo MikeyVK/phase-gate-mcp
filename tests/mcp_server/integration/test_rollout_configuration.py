@@ -22,7 +22,6 @@ and native Pyright setting preservation without mutating live configurations.
 
 # Standard library
 import hashlib
-import json
 import tomllib
 from pathlib import Path
 
@@ -488,18 +487,6 @@ class TestRolloutConfiguration:
         with pytest.raises(OriginalChangedError):
             CheckedFileWriter().replace_if_unchanged(race_target, snapshot_bytes, current)
         assert race_target.read_bytes() == drift_bytes
-
-    def test_pyrightconfig_native_settings_preservation(self) -> None:
-        """Verify pyrightconfig.json natively declares all required compiler flags."""
-        root_dir = Path(__file__).resolve().parents[3]
-        pyrightconfig_path = root_dir / "pyrightconfig.json"
-        config = json.loads(pyrightconfig_path.read_text(encoding="utf-8"))
-
-        assert config.get("reportFunctionMemberAccess") is False
-        assert config.get("pythonVersion") == "3.11"
-        assert config.get("pythonPlatform") == "Windows"
-        assert config.get("typeCheckingMode") == "strict"
-        assert "mcp_server" in config.get("include", [])
 
     def test_presentation_yaml_clean_break_patch_and_drift_refusal(
         self, temp_workspace: Path

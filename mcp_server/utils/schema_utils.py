@@ -5,15 +5,15 @@ from __future__ import annotations
 import copy
 import re
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import Any
 from urllib.parse import unquote, urldefrag
 
 from pydantic import JsonValue
 
-JsonSchema: TypeAlias = dict[str, JsonValue] | bool
-SchemaDocumentReader: TypeAlias = Callable[[str, str], tuple[str, JsonSchema]]
-SchemaLocation: TypeAlias = tuple[str, tuple[str, ...]]
-ExpansionGuard: TypeAlias = Callable[[SchemaLocation, tuple[SchemaLocation, ...]], bool]
+type JsonSchema = dict[str, JsonValue] | bool
+type SchemaDocumentReader = Callable[[str, str], tuple[str, JsonSchema]]
+type SchemaLocation = tuple[str, tuple[str, ...]]
+type ExpansionGuard = Callable[[SchemaLocation, tuple[SchemaLocation, ...]], bool]
 
 _SCHEMA_MAPS = frozenset(
     {"$defs", "definitions", "properties", "patternProperties", "dependentSchemas"}

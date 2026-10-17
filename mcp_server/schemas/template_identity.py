@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
@@ -45,7 +45,7 @@ CompactFingerprint = Annotated[
     ),
 ]
 
-EdgeKind: TypeAlias = Literal["extends", "include", "import", "from_import"]
+type EdgeKind = Literal["extends", "include", "import", "from_import"]
 
 
 class ArtifactIdentity(BaseModel):

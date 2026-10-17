@@ -131,10 +131,7 @@ class FileArtifactTargetPaths:
 
     def resolve(self, relative: str) -> ResolvedScopePath:
         normalized = normalize_workspace_relative_path(relative)
-        if os.name == "nt" and any(
-            PureWindowsPath(part).is_reserved() or ":" in part or part.endswith((".", " "))
-            for part in Path(normalized).parts
-        ):
+        if os.name == "nt" and os.path.isreserved(normalized):
             raise ArtifactTargetError("unresolvable", normalized, "artifact_target_name_reserved")
         candidate = self._workspace_root / normalized
         try:

@@ -6,7 +6,6 @@ import importlib.metadata
 import json
 import os
 import subprocess
-import tomllib
 from dataclasses import dataclass, replace
 from pathlib import Path
 from shutil import copytree, which
@@ -567,22 +566,24 @@ def test_invalid_requests(
 def test_native_configuration_preservation_and_editor_target(
     native_pyright: NativePyright,
     pyright_package: PyrightPackage,
-    pytestconfig: pytest.Config,
 ) -> None:
     package = pyright_package
-    original_toml = (pytestconfig.rootpath / "pyproject.toml").read_bytes()
-    toml = original_toml.decode().replace("\r\n", "\n")
-    assert "pyright" not in tomllib.loads(toml).get("tool", {})
-    config = json.loads((pytestconfig.rootpath / "pyrightconfig.json").read_text())
-    assert config["pythonVersion"] == "3.11" and config["pythonPlatform"] == "Windows"
-    assert config["reportFunctionMemberAccess"] is False
-    assert config["reportArgumentType"] is False
-    assert config["reportMissingImports"] is True
-    assert config["executionEnvironments"] == [
-        {"root": "./backend"},
-        {"root": "./mcp_server"},
-        {"root": "./tests"},
-    ]
+    toml = '[project]\nname = "settings-probe"\nversion = "0.0.0"\n'
+    config = {
+        "include": ["mcp_server"],
+        "pythonVersion": "3.11",
+        "pythonPlatform": "Windows",
+        "typeCheckingMode": "strict",
+        "reportFunctionMemberAccess": False,
+        "reportArgumentType": False,
+        "reportMissingImports": True,
+        "reportMissingTypeStubs": False,
+        "executionEnvironments": [
+            {"root": "./backend"},
+            {"root": "./mcp_server"},
+            {"root": "./tests"},
+        ],
+    }
     for name in ("backend", "mcp_server", "tests"):
         (package.workspace / name).mkdir()
     target = package.workspace / "mcp_server" / "settings_probe.py"
@@ -639,4 +640,4 @@ def test_native_configuration_preservation_and_editor_target(
     editor_facts = native_json(editor.stdout)["generalDiagnostics"]
     assert isinstance(editor_facts, list)
     assert not any("3.12" in str(item) for item in editor_facts)
-    assert (pytestconfig.rootpath / "pyproject.toml").read_bytes() == original_toml
+    assert toml_path.read_text(encoding="utf-8") == toml

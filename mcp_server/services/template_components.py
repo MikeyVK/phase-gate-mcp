@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, TypeAlias
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -20,7 +20,7 @@ from mcp_server.services.artifact_identity import (
 
 SHARED_COMPONENT_ID = "shared"
 ComponentKind = Literal["shared", "package"]
-ComponentKey: TypeAlias = tuple[ComponentKind, str]
+type ComponentKey = tuple[ComponentKind, str]
 ComponentRelation = Literal[
     "unchanged",
     "upstream_only",

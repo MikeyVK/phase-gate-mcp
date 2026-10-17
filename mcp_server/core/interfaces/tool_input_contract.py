@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic, Protocol, TypeAlias, TypeVar
+from typing import Generic, Protocol, TypeVar
 
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, JsonValue, ValidationError
@@ -15,9 +15,8 @@ from pydantic_core import InitErrorDetails
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
-JsonObject: TypeAlias = dict[str, JsonValue]
+type JsonObject = dict[str, JsonValue]
 TInput_co = TypeVar("TInput_co", bound=BaseModel | None, covariant=True)
-TModel = TypeVar("TModel", bound=BaseModel)
 
 
 class IToolInputContract(Protocol[TInput_co]):
@@ -34,7 +33,7 @@ class IToolInputContract(Protocol[TInput_co]):
 
 
 @dataclass(frozen=True)
-class PreparedToolInputContract(Generic[TInput_co]):
+class PreparedToolInputContract(Generic[TInput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
     """Hold the composition root's schema and admission without reload capability."""
 
     schema: FrozenJsonObject
@@ -45,7 +44,9 @@ class PreparedToolInputContract(Generic[TInput_co]):
         return self.admit(raw)
 
 
-def prepare_model_input(model: type[TModel]) -> PreparedToolInputContract[TModel]:
+def prepare_model_input[TModel: BaseModel](
+    model: type[TModel],
+) -> PreparedToolInputContract[TModel]:
     """Prepare exposure and admission from one typed tool definition or projection."""
     schema = freeze_json(resolve_schema_refs(model.model_json_schema()))
     if not isinstance(schema, FrozenJsonObject):

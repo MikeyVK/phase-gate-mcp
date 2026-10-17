@@ -18,7 +18,7 @@ while `PGMCP_WORKSPACE_ROOT` directs workspace operations to the checkout.
 
 ## Prerequisites
 
-- Python 3.11 or later and pip.
+- Python 3.13 or later and pip.
 - The `build` package in the development environment (`python -m pip install build`).
 - Owner-installed native executables required by the configured check, test, and fix
   adapters in the stable runtime environment. PGMCP does not install native dependencies
@@ -140,3 +140,4 @@ No health-first gate is required for this reload procedure.
 - [Release assets procedure](../reference/release-assets-procedure.md)
 - [Server configuration](../reference/server-configuration.md)
 - [Package source and build script](../../scripts/build_package.py)
+

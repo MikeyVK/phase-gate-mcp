@@ -13,7 +13,7 @@ Decorator that validates incoming raw parameters dictionary into Pydantic models
 """
 
 # Standard library
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 # Third-party
 import jsonschema
@@ -28,10 +28,8 @@ from mcp_server.core.tool_execution import SchemaAttachment, ToolExecution, Whol
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
-TOutput = TypeVar("TOutput", bound=BaseModel)
 
-
-class InputValidationDecorator(ITool[TOutput | ValidationErrorOutput], Generic[TOutput]):
+class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErrorOutput]):
     """Bridges the untyped transport layer with the typed core execution layer."""
 
     def __init__(
@@ -137,6 +135,8 @@ def input_validation_failure(
             params=params,
         ),
         attachments=(
-            SchemaAttachment(identity=WholeToolSchemaIdentity(kind="whole_tool"), schema=schema),
+            SchemaAttachment(
+                identity=WholeToolSchemaIdentity(kind="whole_tool"), schema_document=schema
+            ),
         ),
     )

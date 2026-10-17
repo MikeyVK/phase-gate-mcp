@@ -64,7 +64,7 @@ class FileAdapterPackageReader:
 CapabilityT = TypeVar("CapabilityT", bound=BaseModel)
 
 
-def _select(
+def _select[CapabilityT: BaseModel](
     bindings: tuple[AdapterBinding[CapabilityT], ...], adapter_id: str, capability: str
 ) -> AdapterBinding[CapabilityT]:
     for binding in bindings:

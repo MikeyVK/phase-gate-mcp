@@ -182,7 +182,7 @@ async def test_registered_schema_query_transfers_the_complete_catalog_view(
     direct = await composition.core.execute(
         composition.core.input_contract.validate(raw), NoteContext()
     )
-    assert direct.attachments[0].schema is operation.schema_data
+    assert direct.attachments[0].schema_document is operation.schema_data
     assert [call.kwargs["timing"] for call in composition.runner.run.call_args_list] == [
         "pre",
         "post",

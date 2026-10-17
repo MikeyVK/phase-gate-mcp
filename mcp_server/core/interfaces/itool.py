@@ -8,11 +8,10 @@ Interface for outer untyped dictionary tool execution.
 """
 
 # Standard library
-from typing import Any, Generic, Protocol, runtime_checkable
+from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
 
 # Third-party
 from pydantic import BaseModel
-from typing_extensions import TypeVar
 
 from mcp_server.core.interfaces.tool_input_contract import JsonObject
 

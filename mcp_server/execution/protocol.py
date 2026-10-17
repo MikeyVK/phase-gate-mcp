@@ -56,7 +56,7 @@ TRequest = TypeVar("TRequest", bound=BaseModel)
 
 
 @dataclass(frozen=True)
-class AdapterRequestContract(Generic[TRequest]):
+class AdapterRequestContract(Generic[TRequest]):  # noqa: UP046 -- Preserve invariant request admission; reassess in #513.
     """Pure composition of operation intent and the runtime's execution context."""
 
     wire_type: type[BaseModel]
@@ -159,11 +159,8 @@ class StderrBuffer:
         )
 
 
-TResponse = TypeVar("TResponse", bound=BaseModel)
-
-
 @dataclass(frozen=True)
-class AdapterResponseContract(Generic[TResponse]):
+class AdapterResponseContract[TResponse: BaseModel]:
     """Injected role response model and exit-code expectation."""
 
     response_type: type[TResponse]

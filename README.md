@@ -79,7 +79,7 @@ Workspace policy uses complete `config/defaults/<file>.yaml` bases and optional 
 
 ## Getting Started & Installation
 
-**Requirements:** Python 3.11+
+**Requirements:** Python 3.13+
 
 Depending on your use case, choose one of the following guides to get started:
 
@@ -131,4 +131,5 @@ pytest tests/mcp_server/ --cov=mcp_server --cov-branch --cov-fail-under=90
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 

@@ -16,7 +16,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 
 from mcp.types import InitializeResult
 
@@ -88,10 +88,10 @@ def _setup_utf8_encoding() -> None:
         )
 
 
-RpcId: TypeAlias = str | int | None
-TransportState: TypeAlias = Literal["starting", "ready", "restarting", "unavailable", "stopped"]
-EventPresenter: TypeAlias = Callable[[str, Mapping[str, object]], str]
-ProcessFactory: TypeAlias = Callable[[dict[str, str]], subprocess.Popen[str]]
+type RpcId = str | int | None
+type TransportState = Literal["starting", "ready", "restarting", "unavailable", "stopped"]
+type EventPresenter = Callable[[str, Mapping[str, object]], str]
+type ProcessFactory = Callable[[dict[str, str]], subprocess.Popen[str]]
 
 
 def launch_server(env: dict[str, str]) -> subprocess.Popen[str]:

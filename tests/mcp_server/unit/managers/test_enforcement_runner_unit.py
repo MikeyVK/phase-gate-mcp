@@ -45,16 +45,7 @@ class TestGitCommitToolC3:
         result = await tool.execute(params, NoteContext())
         assert result.success is True
 
-    @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason=(
-            "Pre-existing: neutralize_to_base not yet called by GitCommitTool "
-            "(C8 contract, separate issue)"
-        ),
-        strict=False,
-    )
-    @pytest.mark.asyncio
-    async def test_server_renders_exclusion_note_in_response(self) -> None:
+    def test_note_context_renders_exclusion_note_in_response(self) -> None:
         """NoteContext.render_to_response must include ExclusionNote text in the result."""
         note_context = NoteContext()
         mock_presenter = MagicMock()
@@ -68,3 +59,8 @@ class TestGitCommitToolC3:
 
         all_text = " ".join(c["text"] for c in rendered.content if c.get("type") == "text")
         assert _STATE_JSON in all_text
+        assert base.content[0]["text"] == "abc1234"
+        assert rendered.content[0]["text"] == "abc1234"
+        mock_presenter.present_notes.assert_called_once_with(
+            "git_add_or_commit", note_context.entries
+        )

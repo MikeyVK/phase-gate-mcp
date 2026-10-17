@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -33,11 +33,7 @@ __all__ = [
 ]
 
 
-TInput = TypeVar("TInput", bound=BaseModel)
-TOutput = TypeVar("TOutput", bound=BaseModel)
-
-
-class _BaseIToolTransition(ICoreTool[TInput, TOutput], Generic[TInput, TOutput]):
+class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInput, TOutput]):
     """Base class for cycle transition tools implementing ILegacyTool."""
 
     def __init__(

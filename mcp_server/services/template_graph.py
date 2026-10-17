@@ -7,14 +7,13 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import TypeAlias
 
 from jinja2 import TemplateSyntaxError, nodes
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.schemas.template_identity import EdgeKind
 
-DependencyNode: TypeAlias = nodes.Extends | nodes.Include | nodes.Import | nodes.FromImport
+type DependencyNode = nodes.Extends | nodes.Include | nodes.Import | nodes.FromImport
 _EDGE_KINDS: dict[type[DependencyNode], EdgeKind] = {
     nodes.Extends: "extends",
     nodes.Include: "include",

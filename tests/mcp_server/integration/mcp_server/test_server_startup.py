@@ -44,6 +44,13 @@ async def test_read_resource(server: MCPServer) -> None:
     assert len(response.root.contents) == 1
     content = response.root.contents[0]
     assert isinstance(content, TextResourceContents)
+    assert str(content.uri) == "pgmcp://rules/coding_standards"
+    assert content.mimeType == "text/plain"
     policy = json.loads(content.text)
     assert policy["schema_version"] == 1
     assert policy["run_checks"]["bindings"]
+
+    with pytest.raises(ValueError, match="Resource not found: pgmcp://missing"):
+        await server.server.request_handlers[ReadResourceRequest](
+            ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl("pgmcp://missing")))
+        )

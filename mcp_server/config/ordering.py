@@ -3,7 +3,7 @@
 """Validate and order identified configuration objects without IO."""
 
 from collections.abc import Mapping
-from typing import Annotated, TypeVar
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StrictInt, StringConstraints
 
@@ -18,10 +18,7 @@ class OrderedConfigEntry(BaseModel):
     order: StrictInt
 
 
-_Entry = TypeVar("_Entry", bound=OrderedConfigEntry)
-
-
-def ordered_mapping(entries: Mapping[str, _Entry]) -> dict[str, _Entry]:
+def ordered_mapping[Entry: OrderedConfigEntry](entries: Mapping[str, Entry]) -> dict[str, Entry]:
     """Reject ambiguous ranks and return objects in explicit execution order."""
     ranks: set[int] = set()
     for entry in entries.values():

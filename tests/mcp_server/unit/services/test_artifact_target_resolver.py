@@ -127,7 +127,16 @@ def test_filename_is_a_basename_and_collision_never_overwrites(
             force_target=True,
         )
     if os.name == "nt":
-        for filename in ("result.md:stream", "result.md.", "result.md "):
+        for filename in (
+            "result.md:stream",
+            "result.md.",
+            "result.md ",
+            "CON.md",
+            "NUL",
+            "result?.md",
+            "result*.md",
+            "result\x01.md",
+        ):
             with pytest.raises(
                 ArtifactTargetError, match="artifact_target_name_reserved"
             ) as caught:

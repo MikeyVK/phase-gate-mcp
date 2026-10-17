@@ -46,14 +46,15 @@ CapabilityT_co = TypeVar("CapabilityT_co", covariant=True)
 
 
 @dataclass(frozen=True)
-class AdapterBinding(Generic[CapabilityT_co]):
+class AdapterBinding(Generic[CapabilityT_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
     """One qualified capability from an admitted package snapshot."""
 
     identity: AdapterPackageIdentity
     capability_id: str
     contract_version: int
     launch: AdapterLaunch
-    capability: CapabilityT_co
+    # Mypy 3.13 synthesizes an incompatible __replace__; retain covariance, reassess in #513.
+    capability: CapabilityT_co  # type: ignore[misc]
 
 
 class AdapterPackageReader(Protocol):

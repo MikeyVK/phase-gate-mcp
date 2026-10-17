@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from enum import IntEnum, StrEnum
-from typing import Annotated, Generic, Literal, TypeVar, get_args
+from typing import Annotated, Literal, get_args
 
 from pydantic import (
     AfterValidator,
@@ -99,9 +99,6 @@ class ProcessCapture(BaseModel):
     stderr: StreamCapture
 
 
-TResponse = TypeVar("TResponse", bound=BaseModel)
-
-
 class InvocationResultBase(BaseModel):
     """Common capture carried by every attempted invocation result."""
 
@@ -131,7 +128,7 @@ def _capture_describes_no_started_process(capture: ProcessCapture) -> bool:
     )
 
 
-class InvocationCompleted(InvocationResultBase, Generic[TResponse]):
+class InvocationCompleted[TResponse: BaseModel](InvocationResultBase):
     """A complete, contract-valid adapter response."""
 
     outcome: Literal["completed"]
