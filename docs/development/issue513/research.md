@@ -2,8 +2,8 @@
 
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
-**Status:** Research in progress — current Python 3.15 alignment candidate executed; migration decisions open  
-**Version:** 0.4  
+**Status:** Research findings assembled — bounded strategy proposal awaiting owner decision  
+**Version:** 0.5  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -28,6 +28,24 @@ SDK 2.x and a higher Python floor can improve supported infrastructure, but chan
 - Identify the smallest affected production boundaries and direct/indirect test consumers.
 - Compare actual candidate execution and preserve meaningful negative diagnostic signals.
 - Finish with an explicit human decision per boundary; do not automatically migrate or progress.
+
+## Current Decision Proposal
+
+This is the concrete proposed outcome of Research, **not owner approval or an implementation/release commitment**. The latest-alignment experiments replace the earlier old-pin-led recommendation. No additional combination matrix is needed for this proposal.
+
+| Boundary | Recommended strategy for owner decision |
+| --- | --- |
+| Python/dependencies | Target Python>=3.15 with the coherent current stable snapshot above. Update project/native-checker/adapter prerequisites consistently; no bridge for a3.13 production deployment. Installation and full migrated-application verification remain delivery gates. |
+| SDK API | Cleanly replace SDK 1 handler registration/result/field contracts at the existing server, converter and proxy boundaries. Keep managers/tools/presenters free of SDK-specific adaptation. Adapt valuable existing consumers; do not recreate request_handlers. |
+| Protocol lifecycle | Preserve the initialized2025-11-25 operation already demonstrated through SDK 2 native support. Do not add a pgmcp compatibility layer. Initialization-free2026 lifecycle/proxy support is a separate explicit scope; adopting SDK 2 does not automatically implement it. |
+| YAML installation | Use the supported PyYAML pure-Python installation route on this Windows3.15 target until a supported wheel exists. pgmcp already selects SafeLoader/SafeDumper and their own subclasses, with no C-loader/dumper selection; this does not require changing its parser implementation. Document/install the prerequisite explicitly. |
+| Type contracts / necessary cleanup | Preserve covariance and intentional protocol variance. Remove proven redundant annotations, narrow five broad ValidationError tests and make the three newly selected Ruff style corrections. Align the local GitAdapter variable annotation without changing accepted values. |
+| None input contract | Proposed clean break: remove the no-model/None admission-to-core route and its test-only consumers; use typed empty models for no-argument tools. All 49 production args_model properties already return models. This is a small but real internal contract choice requiring owner approval, not an automatic lint fix. |
+| Wider checker/test policy | Keep the existing production-scoped Mypy gate and deliberate negative-test exceptions. Record proposed retain/remove/narrow dispositions for all inventoried groups. Separate global Pyright signal restoration and unrelated test/import cleanup from the SDK/Python delivery; do not turn131 out-of-scope static test findings into required migration work. |
+
+**Why separate delivery scope:** #513 is explicitly a research/decision chore. SDK boundary and prerequisite migration are substantive refactor delivery; they should be scoped from this decision with Design/Planning and existing phase-boundary QA. This issue does not silently become an open-ended suppression-cleanup or new protocol architecture project. Follow-up issue administration remains with Coordination after owner approval.
+
+**Bounded acceptance for delivery:** clean install with the agreed prerequisite route; actual migrated server initialize/list/call/read-resource/error behavior; initialized proxy restart, cancellation and process cleanup; preserved type widening/rejection controls; targeted existing consumers and the workflow-owned full Validation gates. A package-wide migrated-server pass has not yet been claimed. There is no release authorization.
 
 ## Background
 
@@ -165,7 +183,7 @@ The pure-Python build flag is supported by [PyYAML 6.0.3 setup.py](https://raw.g
 | Current Mypy/Pyright with targetPython3.15 and candidate dependency path | Actual ToolExecution/AdapterBinding widening succeeds; two reversed returns produce exactly two expected errors in each checker. Positive controls have no messages. |
 | Ruff 0.15.6 target py315 | Reports the intended PLC0415 negative and no message for its paired positive, but warns3.15 support is under development/may be unstable. Preview was not enabled to hide it. |
 
-**Checker limitation:** the quality calls used the installed adapters: Mypy host3.13, Pyright Node, Ruff native binary. Their target language/dependency path was3.15; the native Mypy process/plugin still used its host Pydantic 2.11.7. Installing/importing Mypy in the3.15 lab is separate evidence and does not prove its entire execution there. [Mypy 2.4 release notes](https://mypy.readthedocs.io/en/stable/changelog.html#python-3-15-support) explicitly document3.15 support; that newer checker was not installed or approved. Simple target-version acceptance and preserved covariance do not prove all3.15 language features are supported by current pins.
+**Checker limitation:** the quality calls used the installed adapters: Mypy host3.13, Pyright Node, Ruff native binary. Their target language/dependency path was3.15; the native Mypy process/plugin still used its host Pydantic 2.11.7. Installing/importing Mypy in the 3.15 lab is separate evidence and does not prove its entire execution there. [Mypy 2.4 release notes](https://mypy.readthedocs.io/en/stable/changelog.html#python-3-15-support) explicitly document3.15 support; that newer checker was not installed or approved. Simple target-version acceptance and preserved covariance do not prove all 3.15 language features are supported by current pins.
 
 **Superseded preliminary recommendation:** the earlier suggestion to retain Python>=3.13 relied too heavily on current-pin limitations. The owner redirected Research toward alignment with the newest stable Python and a coherent appropriate dependency/checker set. The earlier measurements remain useful boundary evidence; they do not decide the target against a properly aligned candidate. The next section is the current research direction.
 
@@ -200,9 +218,23 @@ Check and test probes call the actual existing **RunChecksTool → CheckOperatio
 | Five Mypy production copies with local ignores removed, with current stubs | Five diagnostics remain: invariant ICoreTool input/output expectations; computed_field/property decorator limitation; Commit/string local assignment; None passed to a BaseModel-bound core input. AdapterBinding's former misc message is gone. These five are not automatically caused by the upgrade. |
 | Three unchanged existing behavior-test files | **92 passed in3.11s**, native exit0, no warning/skip/xfail summary. Python 3.15/Pytest9.1.1 actually executed the tests. Includes real temporary-Git-repository behavior, not production branch mutation. Workflow/planning bytes unchanged before/after. |
 
-Pyright initially resolved the repository's old1.1.408 dependency, correctly failing its aligned exact-version guard. The final experiment uses a separate lab workspace containing1.1.414, copies the same diagnostic policy, explicitly selects target3.15 and adds the source repository as an import path. This respects existing workspace-owned Node resolution; no active node_modules, guard bypass or adapter code change was needed. Missing YAML/jsonschema stubs in the initial Mypy lab were supplied as the proper checker prerequisites; final five-message evidence above supersedes that incomplete environment.
+Pyright initially resolved the repository's old 1.1.408 dependency, correctly failing its aligned exact-version guard. The final experiment uses a separate lab workspace containing1.1.414, copies the same diagnostic policy, explicitly selects target3.15 and adds the source repository as an import path. This respects existing workspace-owned Node resolution; no active node_modules, guard bypass or adapter code change was needed. Missing YAML/jsonschema stubs in the initial Mypy lab were supplied as the proper checker prerequisites; final five-message evidence above supersedes that incomplete environment.
 
 **Current assessment:** a coherent current 3.15 candidate is feasible in the tested boundaries and removes at least two earlier obstacles (old Ruff target warning and AdapterBinding's Mypy workaround). Python 3.15 plus oldpins is no longer the primary decision model. The remaining SDK handler/result/proxy API migration is normal work required to adopt SDK 2; repeated unchanged-server failure is not useful evidence against the new target. Full migrated-server startup, protocol/lifecycle verification and package validation belong to a bounded implementation proposal after the remaining strategy decisions. Preserve existing meaningful type contracts; do not retain obsolete suppressions merely because they were previously approved.
+
+### Final aligned suppression controls and source review
+
+All established paired controls were replayed on the aligned versions: **27 Pyright groups /54 sources /28 intended errors** (the unknown-lambda negative has two), and **ten Ruff groups /20 sources /ten intended errors**. Neither checker reports any paired positive source. Pyright 1.1.414 strict defaults still have the same four relevant default-none settings; the other23 listed false flags suppress real strict signals. This is diagnostic sensitivity proof, not a reason to enable all of them without scope/cost approval.
+
+The original20 Mypy-bearing test files report **131 static errors in nine files** on Mypy 2.4, compared with132 on the old baseline. Codes:117 arg-type, four unused-ignore, three attr-defined, two func-returns-value, two misc, two var-annotated, one assignment. The four exact redundant Mypy comments remain the same. This is outside the configured production-only Mypy gate; no runtime failure or new regression-test requirement follows from that count.
+
+Native Ruff 0.17.1 over the 56 existing noqa-bearing source files with RUF100 added finds the same **19 redundant directives**, plus **three new style diagnoses** in label_config.py: ISC004 at109/152 (parenthesize intentional adjacent strings in returned tuples), and UP037 at134 (unquote the helper's type annotation after adopting3.15 delayed annotations). Preserve returned strings/behavior. Do not apply the 3.15-specific annotation simplification on the unchanged3.13 baseline.
+
+A token-aware source review locates145 PLC0415 imports: eight production and137 test sites. Production groups are CLI optional paths(3), recovery-server composition(3), capture_exception(1) and phase input-schema generation(1). Most test imports are ordinary output/input models or mocks; their original historical rationale is generally unknown, and being local does not prove a cycle. The proposed disposition is ordinary module imports when those test files are migrated, retain a narrowly justified delayed import only for demonstrated timing/dependency need, and defer unrelated mass import reformatting. See the final disposition table in the inventory.
+
+The None/core mismatch has a bounded consumer explanation:49 args_model definitions in production tools return a model; none returns None. The optional prepared-input contract type and two explicit tests in test_pipeline_decorators.py preserve None acceptance. Tightening that internal admission contract touches the validation decorator, prepared-input contract and those test doubles/cases; it does not require changing public JSON inputs of the 49 tools. This is a proposed contract decision, not already approved removal.
+
+Source inspection found **no CLoader/CSafeLoader/CDumper/CSafeDumper selection** in active production Python. ConfigLoader's two loaders subclass yaml.SafeLoader; YamlDumper subclasses yaml.SafeDumper; the remaining reads use safe_load. The aligned runtime MRO and serialization round-trip confirm the selected Python implementation. Thus an unavailable optional C extension is an installation concern for the proposed route, not evidence that pgmcp needs another YAML implementation or loses an application-selected C parser.
 
 ### Proportional remaining evidence
 
@@ -210,9 +242,11 @@ Pyright initially resolved the repository's old1.1.408 dependency, correctly fai
 - Invalid handler input and actual pgmcp error-wrapper transport; minimal SDK explicit-error/resource-failure controls are now recorded above.
 - Whole-application candidate startup and the final migrated proxy's cancellation/deadline/subprocess behavior. Native-proxy/candidate-child restart, failed replacement and old/new client negotiation are already executed above.
 - Complete the Python 3.15 alignment assessment using the current candidate set, including deployment/installability and relevant remaining suppression controls. No further old-pin combination matrix or separate 3.14 run unless a concrete question requires it.
-- Grouped suppression probes and final dispositions before Research completion.
+- Owner decision on the bounded strategy/disposition proposal above; paired candidate group controls are now complete. Wider-policy hardening is explicitly proposed for separate delivery, not silently accepted as permanently safe.
 
 ## Questions
+
+The current decision proposal above consolidates these questions; observed facts are complete enough for that scoped decision, while implementation verification remains future work.
 
 - After remaining probes, should SDK 2.3 be a next-major migration target while preserving the current initialized protocol route, or should protocol-lifecycle expansion be a separately approved change?
 - Which Python floor is justified by actual dependency/runtime/checker execution and lifecycle benefits?
@@ -295,7 +329,7 @@ Reproduction route: inject MCPProxy.process_factory with a Popen launching the i
 Exact final positive/negative sources and all native invocations/outcomes are in [the suppression inventory](suppression-inventory.md). It includes:
 
 - Ten expected Ruff diagnostics in20 controls, zero positive diagnostics.
-- Expected intended Pyright report signals for all27 negative controls and zero positive diagnostics, using the final refinements explicitly recorded there.
+- Expected intended Pyright report signals for all 27 negative controls and zero positive diagnostics, using the final refinements explicitly recorded there.
 - Native root policy accepting three simple invalid call/type/attribute examples; candidate SDK 2 policy masking four old API attributes until explicitly enabled.
 - Six Mypy production copies:13 errors;13 Pyright-bearing copies:7 errors;20 original Mypy-bearing test files:132 static errors and 4 redundant ignores.
 - Six native Mypy policy controls: untyped application function is rejected, untyped tests.* function is accepted, typed positives pass and bad typed assignment is rejected in both packages.
@@ -349,6 +383,14 @@ The inner **run_tests** request is scope=targets, tests=[python_tests], args `-n
 
 The final adapter-snapshot preparation preserves each original prerequisite line and replaces only its version. Its first draft used an overbroad regex which dropped some Pytest prerequisite lines; that lab setup was corrected and the existing-test request rerun. No permanent test, source, active adapter/configuration or workflow position changed.
 
+### Final candidate group controls
+
+Using the same ignored research driver, run_tests scope=targets, tests=[python_tests], args `-n 0 -s --tb=short -k final_aligned_group_diagnostic`, timeout240: **1 passed in19.10s**. Inner existing RunChecksTool calls use the aligned adapter snapshots and versions; their native exit1 results are intentional diagnostic measurements. Pyright targets all 27 established positive/negative pairs in its isolated workspace; args `--pythonversion 3.15 --pythonpath <aligned interpreter> --outputjson`. Ruff targets the 20 existing group sources with `--target-version py315 --select PLC0415,T201,BLE001,UP046,ANN401,ARG001,ARG002,N818,SLF001,B017 --output-format json`. Mypy targets the 20 original files listed in the directive index with `--python-version 3.15 --python-executable <aligned interpreter> --follow-imports=silent --no-incremental --show-error-codes`. Outcomes and codes are above; supplemental 82faca7bceb64f1abb984a2c1455d95d. All native captures were untruncated.
+
+Same driver, selection `final_aligned_unused_ruff`, timeout150: measurement passed. Inner Ruff targets the 56 original noqa-bearing files, keeps native rule/per-file policy and adds `--target-version py315 --extend-select RUF100 --output-format json`:19 RUF100 plus the three exact style messages above, native exit1. The aligned YAML MRO probe and bool/int/multiline-string round-trip succeeded; supplemental 095c040a6e434d96969c6d5dbea77642. Exact paths remain in the inventory; no permanent tests added.
+
+Read-only AST/token review resolves all 145 local-import directive locations/enclosing functions and all 49 production args_model returns. Search active production for YAML calls/C-loader names, inspect ConfigLoader/YamlDumper bases, and compare the runtime MRO; [PyYAML 6.0.3 safe_load source](https://raw.githubusercontent.com/yaml/pyyaml/6.0.3/lib/yaml/__init__.py) confirms SafeLoader selection. [Pyright 1.1.414 strict-default source](https://raw.githubusercontent.com/microsoft/pyright/1.1.414/packages/pyright-internal/src/common/configOptions.ts) confirms the default-level classification. These source observations are not full application execution claims.
+
 ## Risks
 
 ### A successful minimal SDK server can be mistaken for pgmcp migration proof.
@@ -378,3 +420,4 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.2 | 2026-10-17 | @imp researcher | Add actual proxy/restart/failure and SDK 2 client negotiation evidence, diagnostic masking, candidate Pydantic findings and bounded migration option; retain open strategy decisions. |
 | 0.3 | 2026-10-17 | @imp researcher | Record owner-approved latest-stable Python experiment, actual 3.15 installation/runtime/CLI/proxy/type controls, unresolved installation/checker limits and provisional independent floor recommendation. |
 | 0.4 | 2026-10-17 | @imp researcher | Supersede old-pin-led recommendation with owner-directed current Python alignment; record actual aligned checker/core-tool runs,92 existing passing tests and removable AdapterBinding workaround. |
+| 0.5 | 2026-10-17 | @imp researcher | Consolidate owner decision proposal; finish aligned group controls and source-specific dispositions, clarify existing Python YAML route and the bounded None-input contract choice. |

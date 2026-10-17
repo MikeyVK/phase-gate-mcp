@@ -2,8 +2,8 @@
 
 # Issue 513 — Checker Suppression Inventory
 
-**Status:** Complete baseline and executed group controls — final dispositions open  
-**Version:** 0.4  
+**Status:** Complete baseline and candidate group evidence — disposition proposal awaiting owner decision  
+**Version:** 0.5  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -271,7 +271,7 @@ Proposal: restore basic call/argument/attribute signals as part of an explicitly
 Thirteen exact source copies had their Pyright directives and potentially masking Mypy ignores removed; root native policy remained unchanged. Receipt `0be4a12f0a5345dea321e7b18711179a`: 13 files, seven diagnostics:
 
 - ICoreTool: two reportInvalidTypeVarUse messages; input expects contravariance and output covariance. Owner-approved invariance must not be changed silently.
-- Fetch/pull test files: private import of test_support._input_schema (one each).
+- Fetch/pull test files: private import of the respective production git_fetch_tool/git_pull_tool._input_schema helper (one each).
 - test_consumers_c4: private _assemble_labels call.
 - test_project_manager: private resolver injection, already carrying its no-public-setter rationale.
 - test_base: deliberately constructing abstract BaseResource; a justified exact exception can replace the bare Mypy ignore and broad module switches.
@@ -542,7 +542,7 @@ def narrow_binding(value: AdapterBinding[BaseModel]) -> AdapterBinding[Result]:
 
 Both files live temporarily under `.pgmcp/temp/issue513/diagnostic-controls/python315_variance/`. Use run_checks scope=targets with both files, checks=[python_types] and args `--python-version 3.15 --python-executable <repo>/.pgmcp/temp/issue513/sdk23-py315/Scripts/python.exe`, timeout 90: exactly two return-value errors in negative.py, zero in positive.py (supplement 00b4a05a079c42889dded64cfd8078a1). Repeat checks=[python_pyright], args `--pythonversion 3.15 --pythonpath <same interpreter> --outputjson`: exactly two reportReturnType errors in negative.py, zero in positive.py (supplement e93dcc7ceda54244ae22bc86ad7ce618).
 
-Mypy was hosted on the native 3.13 adapter; Pyright runs in Node. The Mypy process/plugin used its host Pydantic 2.11.7; the Python-executable option selected the candidate dependency path. These are3.15 target/dependency comparisons, not proof of all language features or whole-checker execution on 3.15. The Mypy/Ruff packages separately installed/imported in the3.15 lab. No checker pin, native policy, production declaration or permanent test changed.
+Mypy was hosted on the native 3.13 adapter; Pyright runs in Node. The Mypy process/plugin used its host Pydantic 2.11.7; the Python-executable option selected the candidate dependency path. These are3.15 target/dependency comparisons, not proof of all language features or whole-checker execution on 3.15. The Mypy/Ruff packages separately installed/imported in the 3.15 lab. No checker pin, native policy, production declaration or permanent test changed.
 
 ## Current aligned baseline: candidate dispositions
 
@@ -567,6 +567,41 @@ Reproduction uses manifest-inventory copies of Mypy/Ruff/Pyright/Pytest with onl
 
 No production annotation, native checker policy or permanent test was changed. The current aligned baseline makes at least the one local Mypy exception demonstrably removable; complete inventory disposition and owner-approved delivery strategy are still open.
 
+## Final Disposition Proposal for Owner Decision
+
+This table consolidates earlier provisional rows against the aligned candidate. It proposes the cost/scope policy; it is not approval, remediation evidence or a claim that every source is statically clean. No suppressions have been changed.
+
+| Group / exact location index | Proposed disposition and reason | Concrete reassessment / delivery trigger |
+| --- | --- | --- |
+|19 Ruff unused entries; four Mypy unused entries; AdapterBinding execution.py:57 | Remove the redundant code/comment; retain necessary behavior/catches. All are independently observed redundant; binding covariance remains valid. | Apply with aligned checker baseline; recheck the affected source and preserved positive/negative controls. |
+| Nine inactive Pylint comments | Remove dormant directives when applying the approved cleanup; no current Pylint binding consumes them. | Any new Pylint binding is a new explicit policy, not a reason to retain inactive directives. |
+| B017 five assertions | Replace broad Exception with Pydantic ValidationError. Same rejected models/type under baseline and aligned dependencies. | Model validation contract/library change; no exact error-message asserts. |
+| Remaining BLE001 boundaries | Retain exact terminal/cleanup diagnosis boundaries after redundant comments are removed. Original exception/traceback or primary cleanup failure must survive. | Wrapper/presenter/cancellation/rollback boundary changes; run relevant existing failure-path behavior. |
+| T201 | Retain at CLI output and the proxy restart marker: intentional outward protocol/presentation output. | Output or restart-signaling contract changes. |
+| Remaining ANN401 | Retain dynamic Jinja/decorator/audit/Pydantic model_post_init or foreign-schema inputs only at their declared boundary. A narrower stable representation requires its own source contract decision. | Changed boundary schema/type authority; no blanket Any removal or expansion. |
+| ARG groups / test per-file ANN+ARG policy | Remove redundant inline comments; retain required interface/fixture parameters and current test policy. ConfigValidator._validate_phase_contracts.workflow is an ordinary removable unused private parameter, with its local caller updated. | Affected interface/helper changes; do not rename public keyword parameters for lint. |
+| UP046 | Retain explicit covariance and intentional invariance; retain the actual AdapterRole Pydantic workaround. No generic syntax migration by quota. | Supported Pydantic/checker baseline passes the full declaration/bound/variance/runtime controls, or owner explicitly approves a contract change. |
+| Settings prop-decorator | Retain exact computed_field/property limitation; still reports on current Mypy 2.4. | Supported plugin/checker removes the actual source diagnostic. |
+| GitAdapter assignment ignore | Replace the local inferred Commit-only annotation with its actual Commit-or-str contract; runtime values unchanged. | Targeted GitAdapter typing and existing behavior at delivery. |
+| None-to-core ignore | Proposed remove with the explicit no-model/None contract clean break described in Research.49 production model returns; two dedicated None tests plus their RecordingCore setup are test-only consumers. | Owner approval, then constructor/admission/type behavior and the affected existing decorator tests. No silent widening to BaseModel-or-None everywhere. |
+| Test mutation/invalid-input negatives(29 sites) | Retain precise ignores when deliberate invalid Python input is how the valuable runtime rejection is exercised. These are not support for obsolete behavior. | Actual invalid-input/immutability contract changes; keep positive and negative behavior. |
+| Mock replacement(4) / necessary private injection | Prefer existing injection/fakes when the same behavior can be shown; otherwise retain the exact test-double exception with its no-public-setter reason. | Refactor of that constructor/injection boundary, not every SDK bump. |
+| Test helper typing(5), bare dict(6), under-specified model(1) | Replace the imprecise setup annotation/value at the affected helper rather than pretend it is a library workaround. Scope those existing defects separately if unrelated to migrated consumers. | The test/helper is changed or enters an explicitly approved Mypy test gate. No suite-wide rewrite in the SDK delivery. |
+| Abstract BaseResource negative(1) | Keep valuable abstract-construction rejection; replace bare ignore/broad module switches with exact line codes. | Abstract/interface contract changes. |
+| Private assertions / helper imports | Move _assemble_labels assertion to CreateIssueTool's observable behavior; remove direct private _input_schema tests in fetch/pull where public input_schema covers the behavior. Corrected source owner: these are production tool helpers, not test_support. | Affected test file in scoped cleanup; preserve public behavior evidence. |
+| Local Pyright module switches | Remove where the source-copy measurement proves them redundant; narrow intentional abstract/injection sites. Restore any necessary diagnosis exactly where masked by another policy; do not assume global false disappears too. | Candidate targeted check with the named suppressions removed and masking considered. |
+| PLC0415(145 sites) |137 are test imports, mostly ordinary models/mocks without traceable timing rationale: move to module scope in affected migrated test files. Eight production imports group into CLI optional paths3, recovery composition3, error capture1, phase schema1. Retain delayed placement only where actual dependency/timing need is demonstrated; otherwise hoist. Defer mass unrelated import restyling with a changed-file trigger. | Any affected module/test is migrated or its import boundary changes. No claim that convenience alone proves a cycle. |
+| N818 GateViolation | Retain the established workflow-domain exception identity; correct its misleading “not a technical error type” explanation. It is a ValueError subclass raised by WorkflowGateRunner and consumed by cycle tools/reexports. Naming cleanup is not required for SDK 2. | Explicit change to the gate exception contract; do not add alias/compatibility naming paths incidentally. |
+| Mypy tests.* override | Retain production-scoped strict gate and the specific test definition-annotation relaxation. Typed invalid assignments still diagnose; whole-test typing is a separate scope decision. | Owner chooses a configured Mypy test gate. Current131 source diagnostics are not131 runtime failures or migration blockers. |
+| Four Pyright default-none settings | Retain explicit missing-super/uninitialized-instance/default-initializer/implicit-string-concatenation policy; latest 1.1.414 strict defaults agree. | Owner asks to adopt that additional style/construction policy. |
+| Other23 Pyright false settings | Proposed retain existing policy for the bounded migration and explicitly separate global hardening. Prioritize basic argument/call/attribute signals in that follow-up: they mask demonstrated wrong SDK API usage. Remaining groups cover Unknown/missing annotations, untyped decorator/base/stub boundaries, unused private definitions and unnecessary-expression policy. All have paired current-version signal proof; retention is a scope/cost proposal, not an assertion that they hide no defects. | Separate scoped native-policy hardening decision after/alongside SDK migration. Use strict Mypy and explicit candidate Pyright diagnostics for migrated API boundaries meanwhile; no silently restored global flags plus unbounded repair work. |
+
+Latest repeated measurements:27 Pyright groups/54 files=>28 intended errors and zero positive-source errors; ten Ruff groups/20 files=>ten intended diagnostics and zero positives;20 original Mypy-bearing test files=>131 errors in nine files (117 arg-type,4 unused-ignore,3 attr-defined,2 func-returns-value,2 misc,2 var-annotated,1 assignment). Supplemental 82faca7bceb64f1abb984a2c1455d95d; exact invocation recorded in Research. The five-site setup/mock/other membership remains at the original complete index. This is bounded diagnostic research, not a Validation verdict.
+
+Latest native-selection Ruff reassessment with RUF100: same 19 redundant comments plus ISC004 label_config.py:109/152 and UP037 label_config.py:134. Parenthesize the intended concatenated strings; unquote only after the 3.15 target activates. Supplemental 095c040a6e434d96969c6d5dbea77642. These are three small style changes in one production file, not a new error-handling policy.
+
+The owner must approve the proposed affected-boundary strategy and any deferral before Research closes. SDK migration verification, native-policy hardening and unrelated test cleanup must not be conflated or silently expanded.
+
 ## Related Documents
 
 - [Final #507 findings](<../issue507/research.md>)
@@ -581,3 +616,4 @@ No production annotation, native checker policy or permanent test was changed. T
 | 0.2 | 2026-10-17 | @imp researcher | Add all-rule paired controls, masking proof, source-copy checks, native test-policy comparison, candidate Pydantic evidence and provisional dispositions. |
 | 0.3 | 2026-10-17 | @imp researcher | Record actual 3.15/Pydantic 2.14 controls, retained covariance signal, unchanged AdapterRole limitation and checker-support evidence without broadening remediation. |
 | 0.4 | 2026-10-17 | @imp researcher | Reassess against current aligned 3.15/checker set; prove redundant AdapterBinding ignore with preserved variance and distinguish remaining source/library diagnoses. |
+| 0.5 | 2026-10-17 | @imp researcher | Consolidate proposed dispositions for every indexed group with scope/trigger, repeat all candidate group controls, and correct private-helper ownership. |
