@@ -3,7 +3,7 @@
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
 **Status:** Research in progress — source-removal impact measured; owner policy and delivery decisions pending  
-**Version:** 0.9  
+**Version:** 0.10  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -79,7 +79,25 @@ The actual [logging probes and call inventory](suppression-inventory.md#structur
 
 Both Pyright1.1.408 and1.1.414 accept raw logger.info(extra={"props":None}) even with the three basic diagnostics enabled. A small research-only typed builder rejects None and object values (exactly2 intended argument diagnostics;0 direct-call diagnostics) on both. The builder demonstrates static coverage only; it does not validate at runtime or prevent callers bypassing it.
 
-Proposed future outcome: one explicit typed structured-data contract in the existing logging facility, runtime admission before formatting can corrupt/drop facts, all affected callers aligned, and focused behavior coverage adapted in the existing logging tests. Preserve the primary message, severity and exception diagnosis. Do not turn invalid objects into strings or discard malformed data silently. The precise invalid-payload outcome (reject the logging call versus emit the original event with an explicit logging-payload diagnosis) and metadata ownership are not yet approved. No new logging framework or production changes are part of this Research increment.
+Proposed future outcome: one explicit typed structured-data contract in the existing logging facility, runtime admission before formatting can corrupt/drop facts, all affected callers aligned, and focused behavior coverage adapted in the existing logging tests. Preserve the primary message, severity and exception diagnosis. Do not turn invalid objects into strings or discard malformed data silently. The owner has now chosen to retain the original event and traceback with an explicit invalid-payload diagnosis; silently dropping malformed data is not acceptable. Metadata ownership/timestamp handling remains open. No new logging framework or production changes are part of this Research increment.
+
+### Remaining Pyright production findings: verified next batch
+
+[Detailed source controls and outcomes](suppression-inventory.md#remaining-pyright-production-findings-2026-10-17) distinguish small source-typing fixes, updated library exports and genuinely useful runtime guards.
+
+| Finding | Executed evidence | Proposed future direction, not yet approved |
+| --- | --- | --- |
+| Generic output-model binding map, bootstrap.py:279–280 | The actual function body has one dict[Never,object] argument diagnosis. Explicitly typing child_bindings as dict[object,object] removes it on both checkers. | Preserve the algorithm; specify its existing map contract. No generic resolver redesign. |
+| JSON Schema callback, content_input.py:59,94,113 | Existing dict[str,object] callback yields2 diagnoses; dict[str,JsonValue] yields0. Both variants admit valid requests, reject overlapping alternatives and retain oneOf under both dependency sets. | Correct the existing callback annotation at its Pydantic boundary; no new validation layer. |
+| Git HEAD representation, git_adapter.py:171–194 | GitPython's declared create_head contract accepts SymbolicReference or str, not Commit. A focused .hexsha variant type-checks on both stacks. | Supply the already-resolved commit hash, preserving the HEAD snapshot; do not replace it with a later-resolved literal HEAD. Full Git branch behavior belongs to the future fix verification. |
+| AnyIO worker call | Actual run_sync returns513 on both runtimes. The old stack reports a BrokenWorkerInterpreter attribute error; the aligned stack reports none. Installed AnyIO4.15.1 explicitly exports to_thread;4.12.1 relies on package import side effects plus a narrowly typed __getattr__. | Do not rewrite working calls or retain a global disable for the old export model when delivering the validated aligned dependency set. |
+| Frozen JSON runtime guards | Valid immutable entries accepted; mutable entries rejected with TypeError and wrong key types with ValueError on both runtimes. | Preserve useful runtime protection; an unnecessary-isinstance diagnostic is not permission to remove it. |
+| PyGithub nullability | Public raw-object construction without HTTP gives None for milestone,body,closed_at in PyGithub2.8.1 and2.10.0 despite non-null return annotations. Both Pyrights still call a milestone guard unnecessary. | Keep the guards. Correct the library-boundary type description where small and sound, or retain a precise evidence-backed exception. No global suppression justified by these sites. |
+| Unknown types at dynamic inputs |418 candidate production messages at296 locations;202 occur in bundled adapters. A focused existing Ruff protocol test rejects malformed JSON/root/operation/target types with exact locations. | These are not418 missing validations. Preserve stdlib-only adapter isolation, narrow dynamic values honestly and repair types per boundary. No casts/default coercion or host-model imports into independent adapters. |
+
+The actual JSON array-pointer branch also accepts a valid referenced string instance, rejects a wrong instance and rejects an out-of-range pointer under both runtimes; its old-only static index complaint does not establish a runtime indexing bug. No production changes or permanent test additions were made.
+
+The next owner policy question is whether the unnecessary-comparison/isinstance rules should be restored while keeping demonstrated runtime guards through sound boundary typing or justified local exceptions. The measurements do not establish that every one of the23+4 sites is removable or independently dispositioned.
 
 ## Background
 
@@ -321,7 +339,7 @@ Sources: [SDK changes](https://py.sdk.modelcontextprotocol.io/whats-new/), [SDK 
 | Core input contract | Approved future fix direction: remove the None/no-model core-input route; use typed empty models for tools without arguments. Adapt the direct test consumers without a compatibility path. No production implementation in #513. |
 | SDK-specific Python attributes | Approved future fix direction: adapt SDK1 Python API accesses to the SDK2 equivalents during the later SDK migration, including proxy InitializeResult.protocolVersion -> protocol_version. Keep wire naming distinct from Python attributes; no pgmcp compatibility layer. This does not approve a new protocol lifecycle or execute the SDK upgrade. |
 | Literal reason/stage attributes | Approved future fix direction: explicitly preserve the already-agreed Literal types on stored attributes as well as constructor parameters, matching the response models. Preserve runtime behavior; no casts or suppression merely to bypass the mismatch. |
-| Robust structured logging | Owner rejects the getattr-only repair as incomplete and approves investigating malformed/dynamic logging cases and a robust future fix. The source contract and runtime checks must be assessed together; stricter checker flags alone cannot constrain stdlib Logger.extra. Invalid-payload behavior and metadata ownership remain explicit decisions. No production implementation in #513. |
+| Robust structured logging | Approved future fix direction: preserve the original event/message/severity and traceback when extra logging data is invalid, and make the rejected data/problem explicitly visible in a logging-payload diagnosis. No silent discard or replacement of the primary error. Typed producers and runtime admission remain part of the repair; metadata ownership/timestamp handling is still open. No production implementation in #513. |
 | Remaining SDK scope, protocol lifecycle, Python floor and checker remediation | Not yet approved. Discuss remaining findings and record per-boundary strategy before Research closes. |
 
 ## Expected Results
@@ -476,3 +494,4 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.7 | 2026-10-17 | @imp researcher | Add actual-source global/local removal measurements, corrected reference/CWD evidence, overlapping exceptions, native-default effects and concrete owner policy questions without production changes. |
 | 0.8 | 2026-10-17 | @imp researcher | Record owner-approved future model-only input and SDK attribute fixes; keep literal-attribute and dynamic-logging proposals open pending explanation. |
 | 0.9 | 2026-10-17 | @imp researcher | Record approved Literal-attribute direction and robust logging research; reproduce malformed props, metadata overwrite, cleanup-field loss and static-contract limits without production changes. |
+| 0.10 | 2026-10-17 | @imp researcher | Record approved explicit logging-payload diagnosis; verify remaining typing/library/guard findings and preserve open guard-policy decisions. |

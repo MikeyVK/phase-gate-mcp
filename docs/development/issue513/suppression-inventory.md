@@ -3,7 +3,7 @@
 # Issue 513 — Checker Suppression Inventory
 
 **Status:** Actual source-removal measurements recorded — owner disposition and import-timing decisions remain open  
-**Version:** 0.8  
+**Version:** 0.9  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -706,7 +706,7 @@ Native Pyright1.1.408 and1.1.414 each report **exactly2 reportArgumentType diagn
 
 Future repair should establish a typed producer contract and runtime admission using the existing logging boundary, migrate the identified callers consistently, preserve primary event/exception facts, and adapt the existing behavior tests. A typed builder is a minimal candidate, not final architecture: it helps routed calls but cannot itself prevent raw Logger.extra bypasses. A plain getattr replacement or blanket Any/default=str conversion does not meet the owner's robustness goal.
 
-**Open policy:** reject invalid logging payloads before emission, or retain the original base event/traceback and emit an explicit payload diagnostic. Do not silently discard invalid props. Decide who owns reserved output fields; tightening that rule affects the existing restart timestamp producer. No approval for either error policy or timestamp change is inferred.
+**Owner-approved future failure policy:** retain the original base event/message/severity and traceback, and explicitly expose malformed logging data through a payload diagnosis. Silent discard and replacement of the original error are unacceptable. Metadata ownership remains open: tightening reserved output fields affects the existing restart timestamp producer. The owner has not approved that timestamp change.
 
 ### Durable reproduction and outcomes
 
@@ -717,6 +717,59 @@ Runtime invocation: run_tests(scope="targets", targets=[".pgmcp/temp/issue513/te
 Static reference: run_checks(scope="targets", targets=[".pgmcp/temp/issue513/aligned-node/controls/logging/direct.py",".pgmcp/temp/issue513/aligned-node/controls/logging/typed.py"], checks=["python_pyright"], args={"python_pyright":["--outputjson"]}, timeout_seconds=60). **2 expected diagnostics, native exit1,2 files analyzed,0 warnings**; complete capture. Supplemental a5cc864ef1314a89b31e7b6168caa81b.
 
 Candidate: same2 sources through the existing RunChecksTool/CheckOperation/runtime and aligned Pyright adapter, args --pythonversion3.15 --pythonpath<aligned interpreter> --outputjson; outer run_tests with -k candidate_logging_static_contracts_and_reserved, timeout120. The stdlib reserved-message control and candidate measurement complete; **2 expected native diagnostics,0 warnings**, complete capture. Supplemental094c9c69facc47889b12902e72f863b2. Production, permanent tests and active native config remain unchanged.
+
+
+## Remaining Pyright Production Findings (2026-10-17)
+
+This increment preserves production/configuration/permanent tests. It tests source variants, real public boundary behavior and installed dependency contracts. Proposed fixes below are not owner approvals; the approved logging failure policy is recorded above and in Research.
+
+### Small source-typing variants
+
+Seven temporary files under aligned-node/controls/remaining: retained/fixed bootstrap.py, content_input.py and git_base.py, plus anyio_api.py. Each explicitly enables reportArgumentType, reportCallIssue and reportAttributeAccessIssue; other native settings remain intact.
+
+| Variant | Source and exact change | Reference / candidate diagnostics |
+| --- | --- | --- |
+| Generic bindings | Extract the actual _resolve_generic_output_models function body with its real imports. At original bootstrap.py:279 add child_bindings:dict[object,object] to the existing dict(zip(...)) assignment. | Retained1 /1; fixed0 /0. The diagnosis concerns child_bindings, not the initial visit(tool_type,{}) call. |
+| Pydantic schema callback | Copy actual content_input.py; change _closed_alternatives(schema:dict[str,object]) to dict[str,JsonValue] and import the existing Pydantic JSON type. | Retained2 /2 at the union callbacks; fixed0 /0. |
+| Git HEAD input | Focused function with real Repo annotation and repo.create_head(name,repo.head.commit), versus the same call using repo.head.commit.hexsha. | Retained1 /1; fixed0 /0. |
+| AnyIO worker | import anyio; await anyio.to_thread.run_sync(lambda:513). | Old stack1 reportAttributeAccessIssue referring to type[BrokenWorkerInterpreter]; aligned stack0. |
+
+Total: reference5 expected diagnoses, candidate4; all fixed sources0,0 warnings. These native failed results deliberately contain retained negative controls. They are not a passing production gate or proof of a completed Git behavior change.
+
+Preliminary full bootstrap copies introduced an additional nominal-class mismatch because their locally defined SupportedToolContract differed from the imported original class. Those copy-artifact messages are excluded. The corrected comparison extracts the actual affected function body; no production suppressions are added.
+
+The GitPython3.2.1 [public create_head contract](https://gitpython.readthedocs.io/en/stable/reference.html#git.repo.base.Repo.create_head) declares SymbolicReference|str. Installed git/refs/symbolic.py _create resolves str(reference); Commit stringification represents its hash. Prefer the already-resolved hexsha over passing the literal HEAD, which would defer resolution. No branch/ref mutation was executed for this research comparison; future verification must preserve the concrete selected base and failure behavior.
+
+The installed AnyIO4.12.1 __init__ does not explicitly export to_thread and defines __getattr__ returning type[BrokenWorkerInterpreter] for an unrelated deprecated alias. AnyIO4.15.1 explicitly re-exports to_thread. Runtime call returns513 under both versions. This bounds the observed difference to the measured coherent stacks; no claim is made that changing the checker alone fixes the old library exports.
+
+### Behavior checks protect runtime contracts
+
+On Python3.13.7/current dependencies and3.15.0/aligned dependencies:
+
+- FrozenJsonObject((("key","value"),)) admits the immutable value. List entries reject with TypeError; an integer key rejects with ValueError. These are real guard behaviors despite annotations describing valid inputs.
+- resolve_json_schema expands #/$defs/Tuple/prefixItems/0; the resulting schema accepts {"first":"valid"} and rejects {"first":513}. Index9 rejects with unresolved_schema_pointer. Call only the public resolver, not its private pointer helper.
+- Both retained and fixed content_input modules admit valid ScaffoldContentRequest data, reject a request supplying overlapping text/file fields, and emit oneOf rather than anyOf. This preserves the meaningful behavior of the callback annotation correction.
+- anyio.run(anyio.to_thread.run_sync,lambda:513) succeeds on both installed library versions.
+
+Invocation: run_tests(scope="targets",targets=[".pgmcp/temp/issue513/test_issue513_research.py"],tests=["python_tests"],args={"python_tests":["-n","0","-s","--tb=short","-k","prepare_remaining_pyright_sources"]},timeout_seconds=90). Final supplemental43bf9b8f53854f5f856b43ae4ccd902e.
+
+Native reference: run_checks scope=targets, the exact7 files above, checks=[python_pyright], args=["--outputjson"], timeout90. Expected5 errors; supplemental e15a93140ddb4ee09883f9b637d0276f. Candidate: same7 relative paths through unchanged RunChecksTool/adapters/runtime and candidate prerequisites, args --pythonversion3.15 --pythonpath<aligned interpreter> --outputjson; outer -k remaining_candidate_pyright_source_variants,timeout120. Expected4; supplemental90e08994315d48d7ad0741f2de855c10. Complete captures.
+
+### Library nullability versus an unnecessary-comparison recommendation
+
+The public Github.create_from_raw_data(Issue,{"milestone":None,"body":None,"closed_at":None}) constructs complete objects without HTTP. Block Requester.requestJsonAndCheck to ensure no lazy request. In both PyGithub2.8.1/Python3.13.7 and2.10.0/Python3.15.0, all3 properties return None. Their declared return annotations remain Milestone,str,datetime.
+
+A minimal public Issue consumer guarded by if issue.milestone is not None produces exactly1 reportUnnecessaryComparison under Pyright1.1.408 and1.1.414 when that rule is enabled. Removing this guard solely because of the diagnosis would allow an actual None value to reach .number. Preserve the production guards in github_manager.py:175,185,192; assess the additional PR-reference guard separately. Prefer a sound nullable description at the existing library boundary, or a precise documented exception if a small correct typing repair is unavailable. No new generic Github abstraction or blanket global suppression follows from this finding.
+
+Runtime invocation: same research driver/tool, -k nullable_pygithub_properties,timeout90;1passed,54deselected,3.39s. Supplemental4354d24fc07d4e19b53b1f2daeeb381a. Native reference: one controls/remaining/nullable_github.py target, reportUnnecessaryComparison=true, checks=[python_pyright],args=[--outputjson],timeout60;1 expected error,03a2b0756a7842b894ac85182c7e0070. Candidate same source through aligned core-tool composer, outer -k nullable_pygithub_candidate_checker,timeout120;1expected error,f5e3bb0f0158475481d4dc3349a22f6e. No network or production mutation.
+
+### Unknown-type population and adapter isolation
+
+The already measured candidate removal DTO contains418 production Unknown* messages at296 distinct file/line positions: reportUnknownMemberType82, reportUnknownArgumentType146, reportUnknownVariableType190. Of these202 are in eight bundled adapter source files. Multiple diagnoses can describe the same dynamic container; this is not418 independent missing validations.
+
+A focused existing public Ruff protocol behavior test, test_request_rejections_preserve_root_and_index_details, was executed unchanged. It covers malformed JSON, a list root, a non-string operation and an integer target; each returns protocol exit2 and invalid_request with the exact root/field/index. Invocation run_tests(scope="targets",targets=["tests/mcp_server/integration/adapters/test_ruff_checks.py"],tests=["python_tests"],args={"python_tests":["-n","0","--tb=short","-k","request_rejections_preserve_root_and_index_details"]},timeout_seconds=90). Passed; supplementalc471d19db221449db7483645fc880cb0.
+
+Future typing must reflect existing validations and address any independently demonstrated validation gaps. Independent adapters remain stdlib-only and self-contained: importing host Pydantic/pgmcp models or adding knowledge to generic execution code merely to quiet diagnostics crosses the wrong boundary. Broad casts to a presumed valid mapping are not an acceptable replacement for validation. More source-specific Unknown/dynamic-output and optional-field dispositions remain for discussion; this representative adapter test does not prove every boundary is complete.
 
 
 ## Related Documents
@@ -737,3 +790,4 @@ Candidate: same2 sources through the existing RunChecksTool/CheckOperation/runti
 | 0.6 | 2026-10-17 | @imp researcher | Correct research scope/status: global and local actual-source removal impact remains in #513; diagnostic controls and retained-annotation surveys do not complete it. |
 | 0.7 | 2026-10-17 | @imp researcher | Measure all active local/global source-removal surfaces on verified reference and aligned stacks; add root-conftest omissions, policy overlap, native-default distinctions, source examples and explicit limits. |
 | 0.8 | 2026-10-17 | @imp researcher | Record actual logging malformed-input/collision behavior,23-call impact inventory and paired checker limitations; leave invalid-payload/metadata policies open. |
+| 0.9 | 2026-10-17 | @imp researcher | Record approved logging failure policy and next Pyright source/library controls; prove nullable-library and immutable-guard cases without removing runtime checks. |
