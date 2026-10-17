@@ -3,7 +3,7 @@
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
 **Status:** Research in progress — executed SDK baseline; decisions open  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -101,11 +101,26 @@ Direct test-import index:
 
 Counts reflect direct AST imports, not every import of the local `mcp_server` package. No AST/tokenization errors occurred in the 472-file scan.
 
-### Proxy protocol distinction — source finding, not a live candidate proof
+### Actual proxy with candidate child and old/new clients
 
-Current proxy startup forwards initialize and the matching initialized notification; other requests while starting are rejected. Restart relies on cached initialization and requires the same negotiated version. SDK 2 documentation describes initialization-free 2026-era connections. Therefore upgrading the SDK cannot by itself establish support for that route through this proxy.
+The **unchanged native SDK1.30 pgmcp proxy** launched an injected SDK2.3 child server. A real SDK1.30 client initialized through it, called the restart tool, observed a different executing child PID, then received `after-proxy-restart` from echo and `payload` from resource read. The proxy replayed initialize at protocol 2025-11-25. Requests during replacement received the existing restarting/unavailable error. Windows launcher PID and executing Python PID are different identities; the assertions compare the child's own before/after PID.
 
-Preserving an initialized, negotiated protocol route and adding a 2026 initialization-free lifecycle are different scope choices. No new admission/restart behavior is approved here. Actual proxy/candidate restart and failed-child probes remain open; the successful minimal stdio test bypassed the pgmcp proxy.
+A second scenario deliberately replaced the child with a process that exits before initialization. Audit emitted `restart_failed` (first observed reason `stdout_closed`, exit code not yet available at that event); the client received McpError indicating unavailable. This is an intentional negative control, not a new production incident.
+
+A raw pre-initialize `server/discover` request was rejected with JSON-RPC -32000 and structured `ERR_SERVER_UNAVAILABLE / forwarding_unavailable / starting`. The real **SDK2.3 Client** was then tested through the same native proxy and SDK2 child:
+
+| Client / mode | Executed outcome |
+| --- | --- |
+| SDK1.30 ClientSession initialize | Connected at 2025-11-25, including successful transparent child restart. |
+| SDK2.3 Client default auto | Connected at 2025-11-25 and echoed sdk2-client. Native SDK auto negotiation owns the fallback after discovery rejection. |
+| SDK2.3 Client explicit handshake (SDK option named legacy) | Connected at 2025-11-25 and echoed sdk2-client. No pgmcp bridge was introduced. |
+| SDK2.3 Client forced 2026-07-28 | Failed with ExceptionGroup containing MCPError: proxy unavailable/starting. The initialization-free lifecycle is not admitted by the current proxy. |
+
+The [SDK Client guide](https://py.sdk.modelcontextprotocol.io/client/) describes automatic negotiation; the installed pinned SDK2.3 `client/_probe.py` confirms fallback on the observed RPC error. Executed results distinguish this supported fallback from assuming all new clients work.
+
+**Scope limit:** these runs retain the proxy's native SDK1 imports and inject only its child process. They prove current lifecycle forwarding to SDK2 and the measured client negotiation routes. They do not prove the entire unmodified pgmcp process running with SDK2. Its protocolVersion attribute still needs migration, and whole-package startup/deployment remains unproved. Cancellation/deadline behavior under the final migrated application also remains open.
+
+A bounded candidate strategy is therefore available: cleanly replace the internal SDK1 API while preserving initialized 2025 protocol operation through SDK2's native support. Adding initialization-free 2026 operation can be a separate owner decision. No such migration strategy is approved yet.
 
 ### Checker reassessment
 
@@ -113,13 +128,19 @@ See [the complete suppression index](suppression-inventory.md) for every path/li
 
 The Ruff diagnostic preserved existing rule selection and added RUF100. It found exactly 19 unused directives, native exit 1, with no other diagnostic code. This is research evidence proposing annotation removal, not a failed release gate or permission to remove catches.
 
-Remaining work covers the ten local Ruff groups; Mypy overrides/code groups including the bare ignore; 27 explicit Pyright false flags and local directives. Establish effective defaults, original rationale when traceable, positive and negative behavior/type controls with the specific suppression removed, masking by other disabled rules, and a remove/narrow/retain disposition with a concrete trigger. No blanket enabling, quota or inferred permission to change covariance.
+All ten local Ruff rule groups and all 27 disabled Pyright report flags now have paired positive/negative diagnostic controls. The pinned Pyright strict defaults show **23 actual signal suppressions and four explicit default-none policies**. A targeted SDK2 check shows that native policy masks four obsolete API accesses; enabling the diagnoses exposes all four while the paired correct source passes.
+
+Six production-source Mypy copies without their nine ignores expose 13 diagnostics. Thirteen Pyright-bearing source copies without local directives/masking type ignores expose seven diagnostics. An additional targeted static check of the 20 original test files containing 50 Mypy directives reports 132 static errors in nine files; this is outside the configured production-only Mypy gate, not 132 runtime test failures.
+
+Provisional recommendations distinguish redundant annotations, intentional test/CLI/interface policy, library/checker limitations and genuine declaration gaps. Four Mypy annotations join the 19 Ruff entries as demonstrated redundant candidates. Five B017 assertions can be narrowed to ValidationError on both Pydantic versions. Full AdapterRole PEP695 conversion still fails under Pydantic2.14.1, so its exception remains justified. The admitted None core-input path versus a BaseModel-bound protocol is a separate contract-alignment question, not an SDK limitation.
+
+The detailed inventory retains exact sources, controls, scope/outcomes and reassessment triggers. Some source-specific dispositions (especially unexplained local imports and test typing) and the candidate Python/checker comparison remain open. No blanket enabling, global relaxation or silent variance change is proposed.
 
 ### Proportional remaining evidence
 
 - Candidate project dependency resolution and source-boundary imports; full startup only after an explicitly selected bounded prototype approach.
 - Invalid handler input and actual pgmcp error-wrapper transport; minimal SDK explicit-error/resource-failure controls are now recorded above.
-- Proxy initialization/restart, child failure, cancellation/timeout and clean subprocess termination under the chosen protocol route.
+- Whole-application candidate startup and the final migrated proxy's cancellation/deadline/subprocess behavior. Native-proxy/candidate-child restart, failed replacement and old/new client negotiation are already executed above.
 - Actual isolated Python candidate execution, if approved; separate runtime/dependency incompatibility from checker-pin limitations.
 - Grouped suppression probes and final dispositions before Research completion.
 
@@ -192,6 +213,27 @@ One focused temporary case imported the real ToolResult/converter in separate ba
 
 **Observed Result:** 1 passed, 4 deselected in 3.82s; native exit 0. Two separate sessions completed initialization, explicit tool-error output, missing-resource and invalid-list-return controls, followed by successful echo. Deliberate child tracebacks remained visible. Receipt c0a20d6b6fd64d1999655a79cbea04fa is supplemental.
 
+### Real proxy/candidate child and client negotiation
+
+- `run_tests(scope="targets", targets=[".pgmcp/temp/issue513/test_issue513_research.py"], tests=["python_tests"], args={"python_tests":["-n","0","-s","--tb=short","-k","native_proxy"]}, timeout_seconds=90)`: **1 passed, 5 deselected in 5.81s**, native exit0. Actual proxy replayed initialize; executing child PID changed; echo/resource succeeded. Supplemental `8bcb78d14ced4a34a7392a9e54d29649`.
+- Same file/tool, `-k "b017_validation or preinitialize_discovery or failed_sdk_child"`, timeout90: **3 passed, 10 deselected in 6.48s**. Both Pydantic model-validation comparisons succeeded; raw discovery was rejected; failed child replacement produced an audit/client diagnosis. Supplemental `690bc161489049999aa1022dc6a291b3`.
+- Same file/tool, `-k sdk2_client_auto`, timeout90: **1 passed, 15 deselected in 9.59s**. SDK2 auto and explicit-handshake modes connected at2025-11-25; forced2026-07-28 failed as recorded. Supplemental `d70f3043b96e4692a2f155e8a0ae5cf1`.
+
+Reproduction route: inject MCPProxy.process_factory with a Popen launching the isolated SDK2 interpreter and a minimal Server with on_list_tools/on_call_tool/on_read_resource. Echo returns its argument, pid returns os.getpid, restart returns a receipt then asynchronously emits the existing restart marker to stderr. Use a native SDK1 ClientSession or isolated SDK2 Client over stdio. For failed replacement, make the second factory launch exit before initialize; retain the ordinary proxy code. Put probe logs below an isolated temporary workspace root. No business-tool implementation or active server restart is required.
+
+### Diagnostic sensitivity, source copies and candidate Pydantic
+
+Exact final positive/negative sources and all native invocations/outcomes are in [the suppression inventory](suppression-inventory.md). It includes:
+
+- Ten expected Ruff diagnostics in20 controls, zero positive diagnostics.
+- Expected intended Pyright report signals for all27 negative controls and zero positive diagnostics, using the final refinements explicitly recorded there.
+- Native root policy accepting three simple invalid call/type/attribute examples; candidate SDK2 policy masking four old API attributes until explicitly enabled.
+- Six Mypy production copies:13 errors;13 Pyright-bearing copies:7 errors;20 original Mypy-bearing test files:132 static errors and4 redundant ignores.
+- Six native Mypy policy controls: untyped application function is rejected, untyped tests.* function is accepted, typed positives pass and bad typed assignment is rejected in both packages.
+- Actual AdapterRole source in isolated modules under Pydantic2.11.7 and2.14.1: retained declaration passes valid construction/schema/serialization and five invalid/immutable controls; full PEP695 conversion without the obsolete global TypeVar fails with PydanticUserError. `-k adapter_role_retained`:1passed in1.76s; supplemental `ebdc0b4fe6674fd4bab42df9faef6745`.
+
+These diagnostic failures are deliberate research measurements. Production/configuration/checker pins and the permanent test suite remain unchanged.
+
 ## Risks
 
 ### A successful minimal SDK server can be mistaken for pgmcp migration proof.
@@ -218,5 +260,7 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-17 | @imp researcher | Record approved isolated SDK probes, executed results, consumer boundaries, complete inventory navigation and unfinished decisions. |
+| 0.2 | 2026-10-17 | @imp researcher | Add actual proxy/restart/failure and SDK2 client negotiation evidence, diagnostic masking, candidate Pydantic findings and bounded migration option; retain open strategy decisions. |
+
 
 
