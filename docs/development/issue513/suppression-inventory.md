@@ -3,7 +3,7 @@
 # Issue 513 — Checker Suppression Inventory
 
 **Status:** Actual source-removal measurements recorded — owner disposition and import-timing decisions remain open  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -672,6 +672,53 @@ Supplemental receipts: final Ruff/CWD and candidate Pyright strict removal dd19a
 
 **Research remains open for owner disposition.** Migration/remediation execution belongs in targeted future issues. No global enablement, exception retention or production contract change is approved by this measurement.
 
+## Structured Logging Robustness Follow-up (2026-10-17)
+
+**Owner direction:** preserving current behavior through getattr alone is insufficient. Investigate malformed inputs and robust future repair; no production implementation in #513. The separate Literal-attribute fix direction is approved in [Research](research.md#approved-strategy).
+
+Source inventory:23 logging calls with extra in9 production files;22 use props, including3 restart calls fed by _create_audit_props. One cleanup-failure call at [process_runtime.py:282](../../../mcp_server/execution/process_runtime.py#L282) supplies directory/cause directly. [StructuredFormatter](../../../mcp_server/core/logging.py) merges only props and therefore does not include those two direct fields in its JSON output. Existing [logging tests](../../../tests/mcp_server/unit/core/test_logging.py) cover valid props, names, audit setup and handler ownership, not these malformed/collision cases.
+
+| Actual unchanged-formatter input | Python3.13.7 /3.15.0 observation |
+| --- | --- |
+| No props | Base JSON event produced. |
+| props={"key":"value","nullable":None} | Valid object, including JSON null. A null field value differs from props itself being None. |
+| props=None | TypeError before formatting completes. |
+| props="invalid" | ValueError during dict.update. |
+| props=[["key","value"]] | Accepted as iterable pairs, despite not being a mapping. |
+| props={513:"value"} | Accepted; json.dumps silently turns the key into "513". |
+| props={"path":Path("probe")} | TypeError during JSON serialization. |
+| props={"message":"replacement","level":"ERROR"} | Replaces the original message and INFO severity in the output. |
+| extra={"directory":"probe-dir","cause":"probe-error"} without props | Both supplied fields absent from structured output. |
+
+A separate control shows stdlib Logger.makeRecord rejects extra={"message":...} with KeyError, but nesting it inside props bypasses that protection and our flat merge overwrites the message. This is a boundary-consistency problem, not a new-version fix.
+
+Source review also identifies an existing collision: [admin_tools.py:47](../../../mcp_server/tools/admin_tools.py#L47) intentionally includes timestamp in _create_audit_props, which replaces the formatter timestamp on3 restart events. The property is present in live source; no claim is made that it is an accidental defect. Future metadata-ownership policy must reconcile it explicitly.
+
+### Static coverage and proposed boundary
+
+Exact paired sources under the ignored lab controls/logging directory:
+
+- direct.py: get_logger returns stdlib logging.Logger; logger.info receives one valid extra, extra={"props":None}, and extra={"props":{"path":object()}}.
+- typed.py: a research-only StructuredExtra TypedDict has props:Mapping[str,JsonValue]; structured_extra(props:Mapping[str,JsonValue]) returns it. Call with a valid mapping including a nullable field, then None, then an object-valued mapping.
+- Both files explicitly enable reportArgumentType, reportCallIssue and reportAttributeAccessIssue. No suppressions. This prototype demonstrates typing; its passthrough body is not proposed as sufficient runtime validation.
+
+Native Pyright1.1.408 and1.1.414 each report **exactly2 reportArgumentType diagnostics**, both typed.py:15,16; direct.py has zero. Merely removing global disables therefore does not protect the generic stdlib extra payload. The candidate requires the same explicit local contract as the reference.
+
+Future repair should establish a typed producer contract and runtime admission using the existing logging boundary, migrate the identified callers consistently, preserve primary event/exception facts, and adapt the existing behavior tests. A typed builder is a minimal candidate, not final architecture: it helps routed calls but cannot itself prevent raw Logger.extra bypasses. A plain getattr replacement or blanket Any/default=str conversion does not meet the owner's robustness goal.
+
+**Open policy:** reject invalid logging payloads before emission, or retain the original base event/traceback and emit an explicit payload diagnostic. Do not silently discard invalid props. Decide who owns reserved output fields; tightening that rule affects the existing restart timestamp producer. No approval for either error policy or timestamp change is inferred.
+
+### Durable reproduction and outcomes
+
+Use logging.Logger.makeRecord with message="original", severity INFO and the exact extra inputs in the table, then the real StructuredFormatter.format and json.loads. Keep each logger unregistered and attach no active handlers/files. Run identical scripts using the verified active Python3.13.7 and isolated aligned3.15.0 interpreters. Capture exception type separately from successful JSON fields; the mutation/drop observations are the asserted behavior, not a passing new implementation.
+
+Runtime invocation: run_tests(scope="targets", targets=[".pgmcp/temp/issue513/test_issue513_research.py"], tests=["python_tests"], args={"python_tests":["-n","0","-s","--tb=short","-k","logging_props_runtime_and_prepare"]}, timeout_seconds=90). **1 passed,50 deselected,2.28s**, covering9 cases on each interpreter. Supplemental fae5a83408b448c9a2ffb57b5830290e.
+
+Static reference: run_checks(scope="targets", targets=[".pgmcp/temp/issue513/aligned-node/controls/logging/direct.py",".pgmcp/temp/issue513/aligned-node/controls/logging/typed.py"], checks=["python_pyright"], args={"python_pyright":["--outputjson"]}, timeout_seconds=60). **2 expected diagnostics, native exit1,2 files analyzed,0 warnings**; complete capture. Supplemental a5cc864ef1314a89b31e7b6168caa81b.
+
+Candidate: same2 sources through the existing RunChecksTool/CheckOperation/runtime and aligned Pyright adapter, args --pythonversion3.15 --pythonpath<aligned interpreter> --outputjson; outer run_tests with -k candidate_logging_static_contracts_and_reserved, timeout120. The stdlib reserved-message control and candidate measurement complete; **2 expected native diagnostics,0 warnings**, complete capture. Supplemental094c9c69facc47889b12902e72f863b2. Production, permanent tests and active native config remain unchanged.
+
+
 ## Related Documents
 
 - [Final #507 findings](<../issue507/research.md>)
@@ -689,3 +736,4 @@ Supplemental receipts: final Ruff/CWD and candidate Pyright strict removal dd19a
 | 0.5 | 2026-10-17 | @imp researcher | Consolidate proposed dispositions for every indexed group with scope/trigger, repeat all candidate group controls, and correct private-helper ownership. |
 | 0.6 | 2026-10-17 | @imp researcher | Correct research scope/status: global and local actual-source removal impact remains in #513; diagnostic controls and retained-annotation surveys do not complete it. |
 | 0.7 | 2026-10-17 | @imp researcher | Measure all active local/global source-removal surfaces on verified reference and aligned stacks; add root-conftest omissions, policy overlap, native-default distinctions, source examples and explicit limits. |
+| 0.8 | 2026-10-17 | @imp researcher | Record actual logging malformed-input/collision behavior,23-call impact inventory and paired checker limitations; leave invalid-payload/metadata policies open. |

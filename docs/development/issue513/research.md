@@ -3,7 +3,7 @@
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
 **Status:** Research in progress — source-removal impact measured; owner policy and delivery decisions pending  
-**Version:** 0.8  
+**Version:** 0.9  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -70,6 +70,16 @@ The full explicit Mypy test survey is outside the configured production gate: re
 Candidate retained-view differences include21 extra Ruff messages (10 ISC004,11 UP037) and a Pyright contextmanager return-annotation deprecation at template_activation.py:257. These are separate migration findings. SDK2 constructor typing rejects several old alias spellings even where prior converter runtime probes accepted them; do not conflate static incompatibility with independently observed runtime failure.
 
 No production or permanent test changes, active-config edits or migrations were made. The existing covariance decision remains binding. Actual import-hoisting behavior, final per-boundary disposition and owner approval remain open; migration execution is delegated to later scoped issues.
+
+### Logging robustness follow-up: owner decision and executed evidence
+
+The owner approved the future Literal-attribute fix and explicitly widened the logging investigation beyond preserving current behavior. The former getattr-only direction is superseded: inspect and repair latent invalid logging cases as part of the future logging contract.
+
+The actual [logging probes and call inventory](suppression-inventory.md#structured-logging-robustness-follow-up-2026-10-17) cover23 extra-bearing logging calls in9 production files. They reproduce failures for props=None/non-serializable values, silent coercion of numeric keys, metadata override by flattened props, and loss of the existing process_runtime directory/cause fields supplied outside props. The restart audit helper also supplies timestamp, so reserving metadata names requires an explicit adjustment rather than silently rejecting its3 callers.
+
+Both Pyright1.1.408 and1.1.414 accept raw logger.info(extra={"props":None}) even with the three basic diagnostics enabled. A small research-only typed builder rejects None and object values (exactly2 intended argument diagnostics;0 direct-call diagnostics) on both. The builder demonstrates static coverage only; it does not validate at runtime or prevent callers bypassing it.
+
+Proposed future outcome: one explicit typed structured-data contract in the existing logging facility, runtime admission before formatting can corrupt/drop facts, all affected callers aligned, and focused behavior coverage adapted in the existing logging tests. Preserve the primary message, severity and exception diagnosis. Do not turn invalid objects into strings or discard malformed data silently. The precise invalid-payload outcome (reject the logging call versus emit the original event with an explicit logging-payload diagnosis) and metadata ownership are not yet approved. No new logging framework or production changes are part of this Research increment.
 
 ## Background
 
@@ -298,7 +308,7 @@ Sources: [SDK changes](https://py.sdk.modelcontextprotocol.io/whats-new/), [SDK 
 
 ## Approved Strategy
 
-**Research and delivery-boundary authorization; concrete migration and suppression-remediation strategies remain unapproved.**
+**Research scope and selected future fixes approved; remaining migration and logging policies stay open.**
 
 | Boundary | Current human decision |
 | --- | --- |
@@ -310,7 +320,8 @@ Sources: [SDK changes](https://py.sdk.modelcontextprotocol.io/whats-new/), [SDK 
 | Variance/type contracts | Carry forward the owner decision from #507 to preserve explicit covariance. No silent migration may weaken it. |
 | Core input contract | Approved future fix direction: remove the None/no-model core-input route; use typed empty models for tools without arguments. Adapt the direct test consumers without a compatibility path. No production implementation in #513. |
 | SDK-specific Python attributes | Approved future fix direction: adapt SDK1 Python API accesses to the SDK2 equivalents during the later SDK migration, including proxy InitializeResult.protocolVersion -> protocol_version. Keep wire naming distinct from Python attributes; no pgmcp compatibility layer. This does not approve a new protocol lifecycle or execute the SDK upgrade. |
-| Literal reason attributes / dynamic logging | Not yet decided. Owner requests a clearer explanation of current risk and the concrete small repair before choosing. |
+| Literal reason/stage attributes | Approved future fix direction: explicitly preserve the already-agreed Literal types on stored attributes as well as constructor parameters, matching the response models. Preserve runtime behavior; no casts or suppression merely to bypass the mismatch. |
+| Robust structured logging | Owner rejects the getattr-only repair as incomplete and approves investigating malformed/dynamic logging cases and a robust future fix. The source contract and runtime checks must be assessed together; stricter checker flags alone cannot constrain stdlib Logger.extra. Invalid-payload behavior and metadata ownership remain explicit decisions. No production implementation in #513. |
 | Remaining SDK scope, protocol lifecycle, Python floor and checker remediation | Not yet approved. Discuss remaining findings and record per-boundary strategy before Research closes. |
 
 ## Expected Results
@@ -464,3 +475,4 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.6 | 2026-10-17 | @imp researcher | Record separate migration delivery, restore complete global/local removal-impact research scope, correct evidence limits and distinguish protocol initialization from bootstrap/project initialization. |
 | 0.7 | 2026-10-17 | @imp researcher | Add actual-source global/local removal measurements, corrected reference/CWD evidence, overlapping exceptions, native-default effects and concrete owner policy questions without production changes. |
 | 0.8 | 2026-10-17 | @imp researcher | Record owner-approved future model-only input and SDK attribute fixes; keep literal-attribute and dynamic-logging proposals open pending explanation. |
+| 0.9 | 2026-10-17 | @imp researcher | Record approved Literal-attribute direction and robust logging research; reproduce malformed props, metadata overwrite, cleanup-field loss and static-contract limits without production changes. |
