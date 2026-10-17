@@ -2,13 +2,15 @@
 
 # Issue 513 — Checker Suppression Inventory
 
-**Status:** Complete baseline and candidate group evidence — disposition proposal awaiting owner decision  
-**Version:** 0.5  
+**Status:** Actual source-removal measurements recorded — owner disposition and import-timing decisions remain open  
+**Version:** 0.7  
 **Last Updated:** 2026-10-17
 
 ## Purpose
 
 Keep one complete location index for substantive reassessment; an entry is not automatically a defect or an approved permanent exception.
+
+**Owner clarification:** #513 must assess the actual impact of removing global and local suppressions, including version-related differences. Migration/remediation delivery moves to targeted future issue(s); the assessment itself does not. Synthetic positive/negative controls prove diagnostic sensitivity, not the full effect on original source. The 20-file Mypy survey retained its annotations. Per-site removal, overlapping masking and import-timing impact remain to be established where not explicitly measured below. Earlier retain/defer recommendations are provisional and are superseded wherever they imply deferring this assessment.
 
 ## Scope In
 
@@ -20,7 +22,7 @@ No automatic expansion into caches, generated assets, archive documentation, eve
 
 ## Summary
 
-Scanned **472 active production/test Python files**, with zero tokenize/AST errors. Found **278 comment lines in 76 files**: 201 Ruff, 59 Mypy, 13 Pyright and 9 Pylint directives; four lines belong to multiple families. String-literal fixture text was excluded using Python tokenize. Generated assets/caches were excluded; any native-excluded source fixture is explicitly tagged by the collector. The configured native policy is recorded separately.
+The original scoped scan covered **472 production/test Python files**, with zero tokenize/AST errors, and found **278 comment lines in 76 files**. The later [actual-source analysis](#actual-source-removal-impact-2026-10-17) covers473 active files and281 comment lines/77 files by including root test infrastructure and excluding intentionally invalid fixtures. Original family counts: 201 Ruff, 59 Mypy, 13 Pyright and 9 Pylint directives; four lines belong to multiple families. String-literal fixture text was excluded using Python tokenize. Generated assets/caches were excluded; any native-excluded source fixture is explicitly tagged by the collector. The configured native policy is recorded separately.
 
 Baseline: Python 3.13.7, MCP 1.30.0, Pydantic 2.11.7, Ruff 0.15.6, Mypy 1.19.1 and Pyright 1.1.408. The isolated SDK probe uses MCP 2.3.0/Pydantic 2.14.1, not a modified baseline environment. No final per-group disposition is claimed yet.
 
@@ -594,13 +596,81 @@ This table consolidates earlier provisional rows against the aligned candidate. 
 | N818 GateViolation | Retain the established workflow-domain exception identity; correct its misleading “not a technical error type” explanation. It is a ValueError subclass raised by WorkflowGateRunner and consumed by cycle tools/reexports. Naming cleanup is not required for SDK 2. | Explicit change to the gate exception contract; do not add alias/compatibility naming paths incidentally. |
 | Mypy tests.* override | Retain production-scoped strict gate and the specific test definition-annotation relaxation. Typed invalid assignments still diagnose; whole-test typing is a separate scope decision. | Owner chooses a configured Mypy test gate. Current131 source diagnostics are not131 runtime failures or migration blockers. |
 | Four Pyright default-none settings | Retain explicit missing-super/uninitialized-instance/default-initializer/implicit-string-concatenation policy; latest 1.1.414 strict defaults agree. | Owner asks to adopt that additional style/construction policy. |
-| Other23 Pyright false settings | Proposed retain existing policy for the bounded migration and explicitly separate global hardening. Prioritize basic argument/call/attribute signals in that follow-up: they mask demonstrated wrong SDK API usage. Remaining groups cover Unknown/missing annotations, untyped decorator/base/stub boundaries, unused private definitions and unnecessary-expression policy. All have paired current-version signal proof; retention is a scope/cost proposal, not an assertion that they hide no defects. | Separate scoped native-policy hardening decision after/alongside SDK migration. Use strict Mypy and explicit candidate Pyright diagnostics for migrated API boundaries meanwhile; no silently restored global flags plus unbounded repair work. |
+| Other23 Pyright false settings | All have paired candidate-version signal proof, including masked wrong SDK API use. This does not establish the complete actual-source removal impact. Earlier retention/follow-up recommendations are not approved. | Complete the actual-source removal and overlapping-masking assessment in #513, compare relevant baseline/candidate results, then discuss retain/remove/narrow and later remediation scope. |
 
 Latest repeated measurements:27 Pyright groups/54 files=>28 intended errors and zero positive-source errors; ten Ruff groups/20 files=>ten intended diagnostics and zero positives;20 original Mypy-bearing test files=>131 errors in nine files (117 arg-type,4 unused-ignore,3 attr-defined,2 func-returns-value,2 misc,2 var-annotated,1 assignment). Supplemental 82faca7bceb64f1abb984a2c1455d95d; exact invocation recorded in Research. The five-site setup/mock/other membership remains at the original complete index. This is bounded diagnostic research, not a Validation verdict.
 
 Latest native-selection Ruff reassessment with RUF100: same 19 redundant comments plus ISC004 label_config.py:109/152 and UP037 label_config.py:134. Parenthesize the intended concatenated strings; unquote only after the 3.15 target activates. Supplemental 095c040a6e434d96969c6d5dbea77642. These are three small style changes in one production file, not a new error-handling policy.
 
-The owner must approve the proposed affected-boundary strategy and any deferral before Research closes. SDK migration verification, native-policy hardening and unrelated test cleanup must not be conflated or silently expanded.
+The owner has separated migration execution from #513, but confirmed the complete global/local removal-impact assessment as #513 work. Research cannot close on the inventory and synthetic controls alone. Approval to retain exceptions or defer source-impact analysis must not be inferred.
+
+## Actual Source-Removal Impact (2026-10-17)
+
+This section supersedes generic-control-only or blanket retain/defer recommendations above. It measures suppression removal on real source copies; it does not authorize remediation or prove that every exposed diagnostic is a runtime bug.
+
+**Scope and isolation:** 473 Python files: 191 production and 282 tests, including the root tests/conftest.py. Caches, generated assets and validation_fixtures remain excluded. The broader test scope adds exactly three PLC0415 comments at tests/conftest.py:20,21,23: **281 directive-bearing comments in 77 files**, rather than the earlier 278/76 inventory. No additional format/isort disable directives or directly relevant warning filters were found in the active source/config search. Pylint is not an active check binding; its nine historical directives do not suppress Ruff/Mypy/Pyright.
+
+Three snapshots preserve package layout and line numbers: retained, no-local (comment directives removed with tokenize), no-all (also remove Ruff test ANN/ARG ignores and the Mypy tests.* untyped-definition override). AST equality against original source was verified for every file in every view. No production, test, dependency declaration or native workspace config was edited.
+
+**Verified reference:** active tool interpreter Python 3.13.7, MCP 1.30.0, Pydantic 2.11.7, Mypy 1.19.1, Ruff 0.15.6, Node Pyright 1.1.408. Candidate: Python 3.15.0, MCP 2.3.0, Pydantic 2.14.1, Mypy 2.4.0, Ruff 0.17.1, Node Pyright 1.1.414, with the earlier recorded aligned dependencies/stubs. A stale repository .venv (MCP 1.26/Pydantic 2.12.5) was detected; its Mypy/Pyright measurements are superseded by the confirmed active-interpreter rerun. Relative native configuration must run from the snapshot root: preliminary Ruff measurements from the wrong CWD/config location are also superseded.
+
+| Check / exact source scope | Reference: retained / no-local / no-all | Candidate: retained / no-local / no-all | Attribution |
+| --- | --- | --- | --- |
+| Ruff native selection; all 473 files | 7 / 195 / 293 | 28 / 216 / 314 | Removing local directives adds188 messages; subsequently removing test ANN/ARG exemptions adds98, identically on both stacks. Retained-view messages are separate pre-existing/version findings. |
+| Mypy strict/plugin policy; explicit 473-file research targets | 1071 / 1138 / 1141 | 618 / 677 / 680 | Local removal adds71/removes4 unused-ignore messages on the reference; adds67/removes8 on the candidate. Removing the test override adds exactly3 on either. |
+| Pyright; 191 production + all10 locally suppressed test files | 0 / 7 / 1294 | 1 / 8 / 869 | no-all deletes27 false settings and restores native strict defaults. Local removal adds7 on either stack; global removal then adds1287/861. |
+
+All final captures above were complete, with no output truncation. Native diagnostic runs normally return exit1; the outer research-probe completion is not a passing quality gate. The expanded Mypy targets intentionally include tests outside the configured production gate. Of reference retained1071, all1071 are in tests; candidate retained618 includes600 test diagnostics and18 production diagnostics. These totals are not newly introduced errors, runtime test failures or a blanket repair requirement.
+
+### Global rule impact and disposition options
+
+| Pyright false setting(s) | Reference / candidate after actual removal | Interpretation / proposed decision |
+| --- | --- | --- |
+| reportArgumentType |249 /248 (production16 /15) | Real boundary mismatches coexist with test preparation/invalid-input cases. Recommend restoring this basic signal in bounded follow-up delivery; classify/fix affected boundaries rather than retain a global blind spot. |
+| reportAttributeAccessIssue |416 /28 (production23 /15) | New dependency/checker types greatly change test diagnosis. Candidate still exposes removed SDK handlers and protocolVersion attributes; also dynamic LogRecord/BaseModel attributes. Source fixes or narrow dynamic boundaries need separate classification. |
+| reportCallIssue |3 /11 (production0 /8) | Eight candidate production messages expose old SDK constructor spellings/missing new typed parameters. Earlier converter runtime probes accepted wire aliases, so constructor typing errors are not all independently proven runtime failures. |
+| reportUnknownMemberType |153 /157 | Predominantly partially typed containers and dynamic boundaries; production114 /82. Restore only with a bounded source-typing plan, not blind casts. |
+| reportUnknownArgumentType |203 /159 | Production190 /146, often values narrowed to dict[Unknown,Unknown] during JSON request validation. These counts are not proof that validation is missing. |
+| reportUnknownVariableType |224 /223 | Production214 /190; correlated with the same dynamic maps. Assess once per shared boundary, not as separate runtime defects. |
+| reportUnknownLambdaType |3 /3 | Three messages at test_git_manager.py:575. A typed test replacement is a concrete cleanup candidate. |
+| reportUnnecessaryIsInstance / reportUnnecessaryComparison |23+4 /23+4 | Statically redundant checks can still reject invalid runtime input. E.g. ChecksConfig.match_for_filename validates str at checks_config.py:210. Do not delete runtime guards merely to satisfy this policy; decide boundary typing versus scoped exceptions. |
+| reportUnusedFunction |9 /1 | Most reference messages disappear with the candidate's types. Remaining _track_branch_local_artifacts at test_server.py:134 is a test helper. No automatic dead-code conclusion without caller/registration review. |
+| reportUntypedFunctionDecorator |0 /4 | Four unchanged SDK1 decorator sites on Server become invalid under SDK2. Handle with SDK migration, not a retained global suppression. |
+| reportMissingTypeStubs, reportUnusedClass, reportUntypedClassDecorator, reportUntypedBaseClass, reportUntypedNamedTuple, reportUnknownParameterType, reportMissingParameterType, reportMissingTypeArgument, reportUnnecessaryCast, reportAssertAlwaysTrue, reportIncompleteStub, reportFunctionMemberAccess |0 /0 each | No source diagnostics on the measured201-file scope. Removing these false flags has no measured immediate repair cost; retain the paired negative controls as sensitivity evidence, not a promise for arbitrary future targets. |
+| reportMissingSuperCall, reportUninitializedInstanceVariable, reportCallInDefaultInitializer, reportImplicitStringConcatenation |0 /0 after deletion | Native strict defaults leave these four off. Explicitly opting into all27 rules was separately measured: +125,+0,+3,+67 on either stack. That extra195 is a new policy, not the effect of removing false flags. |
+
+Ruff's global test exemption removes **26 annotation diagnostics** and **72 unused-argument diagnostics**. The98 consist of ANN40112, ANN0017, ANN2013, ANN2022, ANN0021, ANN0031, ARG00254, ARG00116 and ARG0052. Fixtures, protocol doubles and ordinary helpers must be distinguished before choosing the future test policy.
+
+Mypy's only test override hides three definitions: test_interface_imports.py:29, test_pipeline_decorators.py:279 and test_cli.py:99. The last is a monkeypatched copytree helper with *args/**kwargs. Adding correct test-helper annotations is the small proposed alternative to retaining the test-wide relaxation; no production contract change is implied.
+
+### Local rules, overlaps and version findings
+
+| Group | Actual source finding | Disposition / remaining policy |
+| --- | --- | --- |
+| PLC0415 |148 messages, including the3 newly indexed root-conftest imports. Eight are production imports; the others test imports. | Removal exposes placement diagnostics, not an import-cycle proof. Assess delayed CLI/recovery/error-capture composition separately from ordinary helper imports. Hoisting must preserve startup/fixture timing; it has not been executed for all sites. |
+| T201 / BLE001 / UP046 / N818 / SLF001 / B017 |5 /6 /7 /1 /3 /5 after local removal on both stacks. | Existing source-specific explanations and prior behavior controls remain relevant. Preserve diagnostic/cleanup boundaries and approved variance; narrow five broad ValidationError assertions; remove private behavior assertions where public behavior proves it. No automatic API/naming rewrite. |
+| ANN401 / ARG002 local |6 /7 messages with global test policy retained. | Core/dynamic schema typing and mandatory resource/interface parameters differ from an unused private helper argument. Earlier blanket per-file recommendations are not final decisions. |
+| Ruff redundancy depends on global policy |Current policy reports19 unused directives. Candidate global ANN/ARG exemption removed with local comments retained: only7 RUF100 messages remain, all production sites in the earlier table. | Twelve formerly unused test comments now suppress diagnostics. Decide final global policy before deleting these12. The7 policy-independent candidates are error_handling.py:136; project_manager.py:295; discovery_tools.py:84; git_tools.py:442,446; project_tools.py:117,223. |
+| Mypy local test annotations |Removal exposes frozen-object mutation, required-constructor, invalid typed-input, monkeypatch, bare dict, abstract-construction and setup issues. The exact59-comment index above remains authoritative. | Preserve deliberate invalid-input signal with precise necessary exceptions; improve ordinary preparation types. 71/67 added messages are not71/67 broken tests. |
+| Mypy version-sensitive redundancy |Four whole test ignores unused on both stacks; candidate additionally makes AdapterBinding's whole ignore and3 server no-untyped-call codes unused. Those server comments still suppress untyped-decorator. | Remove/narrow only the exact redundant code. SDK handler rewrite owns the server sites. Preserve covariance. |
+| Retained-view version findings |Candidate adds10 ISC004 and11 UP037 over the7 reference Ruff findings; Pyright adds reportDeprecated at template_activation.py:257 for @contextmanager -> Iterator rather than Generator. | Separate migration findings, not suppression-removal effects. Candidate SDK API typing differences likewise belong to later SDK delivery. |
+
+Seven reference Ruff messages were already present on this expanded selection: UP043 at integration/mcp_server/conftest.py:20, integration/test_pipeline_e2e.py:85, unit/tools/test_label_tools.py:45; UP040 at unit/config/test_tool_presentation_rollout.py:39,40; I001 at integration/test_target_startup.py:20 and unit/test_build_package.py:4. These are not caused by the suppression experiment.
+
+### Reproduction and receipts
+
+Use code-only copies below .pgmcp/temp/issue513/aligned-node/removal-impact/{retained,no-local,no-all}; copy mcp_server/**/*.py and tests/**/*.py excluding __pycache__, assets, node_modules and validation_fixtures. Remove only true comment directives with tokenize, preserve line numbers and verify AST equality. Copy pyproject.toml to each view and set mypy_path to that view. For no-all remove only the native tests ANN/ARG ignore and tests.* disallow_untyped_defs=false override. Keep native exclusions, plugin options and selected rules.
+
+Use the actual RunChecksTool -> CheckOperation/CheckService -> unchanged adapters/runtime, scope="targets", timeout_seconds=180, with paths relative to each execution workspace. Candidate adapter copies change exact prerequisite declarations only; retain guard enforcement.
+
+- Ruff:473 targets, execution CWD equal to the source view; checks=["python_lint"], args=["--config","<view>/pyproject.toml","--target-version","py313|py315","--output-format","json"].
+- Mypy:473 targets; checks=["python_types"], args=["--config-file","<view>/pyproject.toml","--python-version","3.13|3.15","--python-executable","<verified interpreter>","--follow-imports=silent","--cache-dir","<isolated cache>"]. Include every copied package initializer.
+- Pyright:201 targets defined above; checks=["python_pyright"], args=["--project","<view>/pyright-<stack>.json","--pythonpath","<verified interpreter>","--outputjson"]. Set pythonVersion/extraPaths to the selected snapshot and interpreter. Delete all27 false report settings for the actual-removal run; setting all27 to error is a separate opt-in comparison.
+- Overlap control: candidate Ruff, retained source comments, no-all native config, same473 targets/CWD, add --extend-select RUF100. Observed120 total:113 native findings plus7 RUF100, with complete capture.
+
+Supplemental receipts: final Ruff/CWD and candidate Pyright strict removal dd19a1f1e7304cafb8ffbff7ff545ede; candidate Mypy173cc445e6644756bf283e43205e1b3d; active-interpreter confirmation7db0fd729caf48a5bac15f0ee926e3bf; confirmed reference Mypy/Pyright384c5943bc07447fa7bdfb918609e9b1; global/local Ruff overlap2f545444c0c04a86b78a2693e430e7d1. The facts/invocations above are durable evidence; cached DTOs and ignored lab files are supplemental only.
+
+**Research remains open for owner disposition.** Migration/remediation execution belongs in targeted future issues. No global enablement, exception retention or production contract change is approved by this measurement.
 
 ## Related Documents
 
@@ -617,3 +687,5 @@ The owner must approve the proposed affected-boundary strategy and any deferral 
 | 0.3 | 2026-10-17 | @imp researcher | Record actual 3.15/Pydantic 2.14 controls, retained covariance signal, unchanged AdapterRole limitation and checker-support evidence without broadening remediation. |
 | 0.4 | 2026-10-17 | @imp researcher | Reassess against current aligned 3.15/checker set; prove redundant AdapterBinding ignore with preserved variance and distinguish remaining source/library diagnoses. |
 | 0.5 | 2026-10-17 | @imp researcher | Consolidate proposed dispositions for every indexed group with scope/trigger, repeat all candidate group controls, and correct private-helper ownership. |
+| 0.6 | 2026-10-17 | @imp researcher | Correct research scope/status: global and local actual-source removal impact remains in #513; diagnostic controls and retained-annotation surveys do not complete it. |
+| 0.7 | 2026-10-17 | @imp researcher | Measure all active local/global source-removal surfaces on verified reference and aligned stacks; add root-conftest omissions, policy overlap, native-default distinctions, source examples and explicit limits. |

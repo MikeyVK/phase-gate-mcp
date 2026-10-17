@@ -2,8 +2,8 @@
 
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
-**Status:** Research findings assembled — bounded strategy proposal awaiting owner decision  
-**Version:** 0.5  
+**Status:** Research in progress — source-removal impact measured; owner policy and delivery decisions pending  
+**Version:** 0.7  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -12,7 +12,7 @@ Assess upgrade boundaries and checker exceptions before choosing a bounded deliv
 
 ## Scope In
 
-MCP SDK 2.3 assessment against the final #507 baseline; Python versions above 3.13; active checker suppression inventory and targeted reassessment.
+MCP SDK 2.3 assessment against the final #507 baseline; Python versions above 3.13; impact of removing all active global and local checker suppressions, including differences caused by the aligned candidate versions. Inventory and synthetic rule controls alone do not complete that source-impact assessment.
 
 ## Scope Out
 
@@ -31,6 +31,8 @@ SDK 2.x and a higher Python floor can improve supported infrastructure, but chan
 
 ## Current Decision Proposal
 
+**Owner scope decision:** migration implementation will not occur in #513; plan targeted follow-up issue(s). The complete global/local suppression-removal impact assessment remains in #513. The recommendations below are not blanket approval to retain exceptions or to change production contracts.
+
 This is the concrete proposed outcome of Research, **not owner approval or an implementation/release commitment**. The latest-alignment experiments replace the earlier old-pin-led recommendation. No additional combination matrix is needed for this proposal.
 
 | Boundary | Recommended strategy for owner decision |
@@ -41,11 +43,33 @@ This is the concrete proposed outcome of Research, **not owner approval or an im
 | YAML installation | Use the supported PyYAML pure-Python installation route on this Windows3.15 target until a supported wheel exists. pgmcp already selects SafeLoader/SafeDumper and their own subclasses, with no C-loader/dumper selection; this does not require changing its parser implementation. Document/install the prerequisite explicitly. |
 | Type contracts / necessary cleanup | Preserve covariance and intentional protocol variance. Remove proven redundant annotations, narrow five broad ValidationError tests and make the three newly selected Ruff style corrections. Align the local GitAdapter variable annotation without changing accepted values. |
 | None input contract | Proposed clean break: remove the no-model/None admission-to-core route and its test-only consumers; use typed empty models for no-argument tools. All 49 production args_model properties already return models. This is a small but real internal contract choice requiring owner approval, not an automatic lint fix. |
-| Wider checker/test policy | Keep the existing production-scoped Mypy gate and deliberate negative-test exceptions. Record proposed retain/remove/narrow dispositions for all inventoried groups. Separate global Pyright signal restoration and unrelated test/import cleanup from the SDK/Python delivery; do not turn131 out-of-scope static test findings into required migration work. |
+| Wider checker/test policy | Complete the removal-impact assessment for all global and local suppressions within #513, against actual affected source and the relevant baseline/candidate versions. Synthetic controls establish diagnostic sensitivity, not full source impact. Remediation may be split into later issues; neither retention nor deferral of the assessment is approved. Distinguish static test diagnostics from runtime failures. |
 
 **Why separate delivery scope:** #513 is explicitly a research/decision chore. SDK boundary and prerequisite migration are substantive refactor delivery; they should be scoped from this decision with Design/Planning and existing phase-boundary QA. This issue does not silently become an open-ended suppression-cleanup or new protocol architecture project. Follow-up issue administration remains with Coordination after owner approval.
 
 **Bounded acceptance for delivery:** clean install with the agreed prerequisite route; actual migrated server initialize/list/call/read-resource/error behavior; initialized proxy restart, cancellation and process cleanup; preserved type widening/rejection controls; targeted existing consumers and the workflow-owned full Validation gates. A package-wide migrated-server pass has not yet been claimed. There is no release authorization.
+
+### Actual suppression-removal impact and policy discussion
+
+The [actual-source measurements](suppression-inventory.md#actual-source-removal-impact-2026-10-17) now cover473 source files, all local directive locations and the global settings' actual affected scope. This supersedes earlier synthetic-control-only assumptions.
+
+| Surface | Confirmed effect | Proposed discussion |
+| --- | --- | --- |
+| Ruff local removal |+188 diagnostics on both reference and aligned stacks. The root tests/conftest.py adds3 previously omitted PLC0415 comments;281 comments/77 files are now indexed. | Retain behavioral/error/variance contracts; distinguish delayed imports from ordinary local imports. Source-removal diagnostics do not prove safe hoisting. |
+| Ruff test ANN/ARG exemption removal |Further+98 diagnostics on either stack:26 annotation and72 unused-argument findings. | Consider stricter ordinary test-helper annotations separately from fixture/interface/dynamic-boundary exceptions. |
+| Global/local overlap |Removing global ANN/ARG exemption while retaining local comments changes RUF100-unused19 to7. Twelve formerly redundant test comments become effective. | Decide the final test policy before deleting those12 comments. |
+| Mypy local removal |Reference:71 new diagnostics and4 unused-ignore messages disappear. Candidate:67 new and8 unused-ignore messages disappear. | Preserve deliberate invalid/frozen/abstract test cases; fix preparation types and remove only redundant whole ignores/codes. |
+| Mypy test override removal |Exactly3 extra untyped-definition diagnostics on either stack. | Small helper-annotation cleanup is a concrete alternative to retaining a test-wide relaxation. |
+| Pyright global/local removal |On191 production+10 locally suppressed tests:0/1 retained,7/8 without local directives,1294/869 after also deleting false settings (reference/candidate). | Restore basic argument/call/attribute signals through bounded delivery; classify correlated Unknown/dynamic-boundary diagnostics before committing to broader hardening. These are diagnostic counts, not runtime defects. |
+| Four Pyright native-default-none rules |Deleting their false settings does not enable them. Explicitly opting in adds195 diagnostics on either stack. | New style/construction policy must be an explicit choice, not disguised as suppression removal. |
+| Type boundary |input_validation_decorator.py:115 passes None to an ICoreTool bounded by BaseModel. Both checkers expose it once unmasked. All49 production tools already supply models; prior None consumers are tests. | Owner decision required before deleting the None-input route or widening the core contract. No implicit contract change. |
+| Defensive runtime checks |23 unnecessary-isinstance and4 unnecessary-comparison signals remain on either stack. | Preserve actual runtime validation; choose boundary typing/scoped policy after source review rather than remove guards for a static rule. |
+
+The full explicit Mypy test survey is outside the configured production gate: retained1071 reference /618 candidate diagnostics are mostly existing test-typing findings. They are not caused by suppression removal and are not a requirement to repair1071 tests. Final details distinguish native completed diagnostic failures from outer research-probe completion and exclude preliminary wrong-CWD/stale-venv measurements.
+
+Candidate retained-view differences include21 extra Ruff messages (10 ISC004,11 UP037) and a Pyright contextmanager return-annotation deprecation at template_activation.py:257. These are separate migration findings. SDK2 constructor typing rejects several old alias spellings even where prior converter runtime probes accepted them; do not conflate static incompatibility with independently observed runtime failure.
+
+No production or permanent test changes, active-config edits or migrations were made. The existing covariance decision remains binding. Actual import-hoisting behavior, final per-boundary disposition and owner approval remain open; migration execution is delegated to later scoped issues.
 
 ## Background
 
@@ -242,16 +266,27 @@ Source inspection found **no CLoader/CSafeLoader/CDumper/CSafeDumper selection**
 - Invalid handler input and actual pgmcp error-wrapper transport; minimal SDK explicit-error/resource-failure controls are now recorded above.
 - Whole-application candidate startup and the final migrated proxy's cancellation/deadline/subprocess behavior. Native-proxy/candidate-child restart, failed replacement and old/new client negotiation are already executed above.
 - Complete the Python 3.15 alignment assessment using the current candidate set, including deployment/installability and relevant remaining suppression controls. No further old-pin combination matrix or separate 3.14 run unless a concrete question requires it.
-- Owner decision on the bounded strategy/disposition proposal above; paired candidate group controls are now complete. Wider-policy hardening is explicitly proposed for separate delivery, not silently accepted as permanently safe.
+- Discuss the measured actual-source removal impact and final dispositions, including global/local overlap and the four native-default-none rules. Investigate safe import timing only where needed to justify an actual hoisting proposal; removing a directive alone proves no runtime import behavior. Record owner decisions on type boundaries, test policy and bounded later delivery before Research closes.
 
 ## Questions
 
-The current decision proposal above consolidates these questions; observed facts are complete enough for that scoped decision, while implementation verification remains future work.
+The proposal above consolidates migration options. Research remains incomplete until actual global/local suppression-removal impact is assessed and the resulting strategy is discussed; implementation verification belongs to later delivery.
 
 - After remaining probes, should SDK 2.3 be a next-major migration target while preserving the current initialized protocol route, or should protocol-lifecycle expansion be a separately approved change?
 - Which Python floor is justified by actual dependency/runtime/checker execution and lifecycle benefits?
 - Which suppressions can be removed or narrowed, and which need retained, version-triggered exceptions?
 - Does the resulting migration still fit a chore, or should implementation be delegated to a separate bounded refactor issue?
+
+## Migration Benefits and Initialization Boundary
+
+The concrete benefits must be separated from migration feasibility and from an assumption that newer automatically means faster.
+
+- Python 3.15 has a longer support horizon and active bugfix maintenance; 3.13 remains security-supported. No pgmcp performance gain has been measured. The aligned checker/dependency set removes the demonstrated AdapterBinding unused-ignore requirement while preserving covariance; that observation belongs to the combined stack, not Python alone.
+- SDK 2 supplies explicit typed handler parameters/results and validates outgoing protocol shapes against the negotiated version. Its stdio runner isolates the wire descriptors from ordinary stdout. These are useful integration safeguards, not replacements for pgmcp business validation or error presentation. SDK 1 still receives critical fixes/security patches; migration is not justified by claiming it is unsupported.
+- The 2026 protocol carries version/client context per request rather than requiring initialize plus initialized for a session. For pgmcp's proxy this could remove cached initialize replay after child replacement. That is an architectural benefit inferred from the existing proxy and upstream lifecycle, not an implemented simplification or measured latency improvement.
+- Configuration/bootstrap, child readiness, process supervision, in-flight request handling and workspace initialize_project/state requirements remain. Supporting both protocol eras retains the old handshake route; a smaller proxy is not guaranteed merely by adopting SDK 2. Current SDK 2 clients already connect through the existing proxy using their native fallback; forced 2026 operation currently fails.
+
+Sources: [SDK changes](https://py.sdk.modelcontextprotocol.io/whats-new/), [SDK migration contract](https://py.sdk.modelcontextprotocol.io/migration/), [Python maintenance status](https://devguide.python.org/versions/).
 
 ## References
 
@@ -263,10 +298,12 @@ The current decision proposal above consolidates these questions; observed facts
 
 ## Approved Strategy
 
-**Research authorization only; migration strategy is not yet approved.**
+**Research and delivery-boundary authorization; concrete migration and suppression-remediation strategies remain unapproved.**
 
 | Boundary | Current human decision |
 | --- | --- |
+| Delivery boundary | Approved: no migration implementation within #513. Plan targeted follow-up issue(s); no new issue administration or production change is authorized by this record alone. |
+| Suppression assessment | Confirmed #513 work package: establish the impact of removing global and local suppressions, including their relationship to newer Python/dependency/checker versions. Source-impact assessment may not be deferred merely because migration delivery is separate. |
 | SDK experiment | Approved: create an isolated environment under .pgmcp/temp/issue513, install SDK 2.3 and its dependencies on existing Python 3.13, and run targeted positive/negative probes. Active server/source remain unchanged. |
 | Latest-stable alignment | Approved research direction: use Python 3.15 as the target and select/test appropriate current dependencies and checkers together; the previous retain3.13 preliminary recommendation is superseded. No production minimum change or release authorized. |
 | Additional interpreters | Approved: investigate the newest stable Python release. Prepared standard CPython 3.15.0 and two isolated environments below .pgmcp/temp/issue513; no system/PATH/default or active-server changes. This does not authorize a higher minimum. Python 3.14 was not installed. |
@@ -421,3 +458,5 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.3 | 2026-10-17 | @imp researcher | Record owner-approved latest-stable Python experiment, actual 3.15 installation/runtime/CLI/proxy/type controls, unresolved installation/checker limits and provisional independent floor recommendation. |
 | 0.4 | 2026-10-17 | @imp researcher | Supersede old-pin-led recommendation with owner-directed current Python alignment; record actual aligned checker/core-tool runs,92 existing passing tests and removable AdapterBinding workaround. |
 | 0.5 | 2026-10-17 | @imp researcher | Consolidate owner decision proposal; finish aligned group controls and source-specific dispositions, clarify existing Python YAML route and the bounded None-input contract choice. |
+| 0.6 | 2026-10-17 | @imp researcher | Record separate migration delivery, restore complete global/local removal-impact research scope, correct evidence limits and distinguish protocol initialization from bootstrap/project initialization. |
+| 0.7 | 2026-10-17 | @imp researcher | Add actual-source global/local removal measurements, corrected reference/CWD evidence, overlapping exceptions, native-default effects and concrete owner policy questions without production changes. |
