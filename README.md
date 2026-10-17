@@ -1,7 +1,12 @@
 # Phase-Gate MCP Server
 
 > [!IMPORTANT]
-> **Reconcile an existing workspace?** Read the **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)** before using `pgmcp --upgrade`. The command reconciles managed templates against an owner-approved baseline; it does not install Python dependencies or overwrite external configuration. See **[CHANGELOG.md](CHANGELOG.md)** for release notes.
+> **Set up or upgrade a workspace?** Give the **[agent-guided checklist](docs/setup/agentic-bootstrap.md)** to your chosen agent chat. It separates owner decisions, health and demonstrated capability use. Installation does not start an agent. The **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)** explains template renewal and checkpoint recovery; see **[CHANGELOG.md](CHANGELOG.md)** for release notes.
+
+For installed documentation, give the agent the local file
+`<server-root>/docs/setup/agentic-bootstrap.md` supplied by the selected package.
+The repository links above describe checkout paths; older installed artifacts keep
+their own supplied documentation and behavior.
 
 An MCP (Model Context Protocol) server that enforces structured software development lifecycles. It gives AI agents a toolset to navigate, manage, and execute work strictly within predefined project phases — ensuring consistent state management, quality enforcement, and repository orchestration.
 
@@ -84,8 +89,8 @@ Workspace policy uses complete `config/defaults/<file>.yaml` bases and optional 
 Depending on your use case, choose one of the following guides to get started:
 
 - 🔄 **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)**: Owner-led instructions for initializing a new server root or reconciling an existing managed template suite with `pgmcp --upgrade`.
-- 🚀 **[Manual Setup Guide](docs/setup/README.md)**: Detailed step-by-step instructions for manual installation and configuration in your IDE (VS Code or Google Antigravity).
-- 🤖 **[Agentic Bootstrap Guide](docs/setup/agentic-bootstrap.md)**: A step-by-step automated guide to help AI agents bootstrap `pgmcp` in a new workspace or integrate it into an existing repository without manual terminal commands.
+- 🚀 **[Runtime and Host Reference](docs/setup/README.md)**: Package/environment, native quality policy and selected VS Code, Antigravity or Codex connection details supporting the checklist.
+- 🤖 **[Agent-guided Workspace Checklist](docs/setup/agentic-bootstrap.md)**: The authoritative fresh-setup and upgrade/delta route, explicitly invoked in an agent chat; records owner choices and verified operations while preserving customizations.
 
 ### Local Development Setup
 

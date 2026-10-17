@@ -6,6 +6,14 @@ This guide covers **PGMCP 3.0.0**. Package installation, owner-managed configura
 and managed template-suite renewal are distinct operations. Use the reviewed artifacts
 and version-specific notes from [GitHub Releases](https://github.com/MikeyVK/phase-gate-mcp/releases).
 
+For the cooperative end-to-end route, explicitly invoke the
+[authoritative agent checklist](agentic-bootstrap.md) in the chosen workspace chat,
+using its **upgrade/delta** mode. This guide owns CLI/checkpoint and recovery
+details; it does not replace that checklist or declare capability readiness from
+health. Neither package installation nor `--upgrade` starts an agent. Preserve
+owner configuration and instructions, and revisit only the changed contracts and
+their dependencies before representative verification.
+
 ## Unreleased maintenance — owner acknowledgement required
 
 The unreleased #319 changes require a deliberate configuration_choice on each relevant
