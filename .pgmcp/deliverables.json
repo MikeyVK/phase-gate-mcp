@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "513": {
+      "issue_title": "Assess MCP SDK 2.x and higher Python baseline for next major release",
+      "workflow_name": "chore",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-17T06:37:27.579233+00:00"
+    }
+  }
+}
