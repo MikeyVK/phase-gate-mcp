@@ -2,196 +2,93 @@
 
 # Issue 507 — Validation
 
-**Status:** FAIL — bounded test repair approval pending  
-**Version:** 0.1  
-**Last Updated:** 2026-10-16
+**Status:** PASS — independent Validation review requested  
+**Version:** 0.2  
+**Last Updated:** 2026-10-17
 
 ## Purpose
 
-Record durable native evidence and the exact blockers before any repair or phase progression.
-
-## Scope In
-
-Owner-approved harness repair, schema-field rename, Python 3.13/SDK 1.30 maintenance and bounded Ruff/typing changes on implementation commit e805b108be375ab909e700b39b17d97a12eaea8b.
-
-## Scope Out
-
-No gate waiver, compatibility bridge, SDK2 migration, higher Python floor, broad test rewrite or permanent diagnostic-test additions.
-
-## Prerequisites
-
-- Independent QA issued GO for Implementation → Validation on exact commit e805b108; full verdict read from QA turn01a146cb-9ad2-7ed1-a2d9-a67c5d084f2f.
-- Source remains at the reviewed implementation commit; before this report only the normal Validation phase transition changed tracked state.
-
-## Issue Number
-
-#507
-
-## Validation Status
-
-FAIL
+Record the completed native validation of the owner-approved harness, schema, resource and typing maintenance, including the failed first attempt and its bounded repair.
 
 ## Scope
 
-Full native configured suite; branch python_review profile; configured production Mypy; changed-document offline links; live restart and resource read.
+Validated implementation snapshot: `9cb4e6394cf107d3bd7a703c35bc278717b798dd`, following the earlier implementation at `e805b108`. The normal Validation transition is the only subsequent workflow-state change. No production or native configuration changed during the test repair.
 
-## Obligations
+Included: restart task ownership, collection diagnostics, removal of an empty manual placeholder, stale XPASS repair, `schema_document`, Python 3.13, MCP SDK 1.30 resource returns and the approved per-rule PEP 695 changes. Excluded: SDK 2 migration, a higher Python baseline, compatibility bridges, new diagnostic test suites and gate waivers.
 
-### Classify and repair harness diagnostics without blanket suppression or test expansion.
+## Prerequisites
 
-**Evidence:**
+- Independent QA approved Implementation → Validation on `e805b108`.
+- The owner approved returning to Implementation for the two stale configuration tests (reply: “Prima”); the force-transition audit records the reason and approval.
+- Independent QA approved the bounded repair on `9cb4e639` before the final full run. QA turn: `01a14870-6016-7923-a2ad-9b10aac6c27b`.
+- Test/client budgets remained 1200/1800 seconds; the complete native suite was not split or narrowed.
 
-- [Implementation record](<research.md>)
-- [Restart task behavior](<../../../tests/mcp_server/tools/test_admin_tools.py>)
+## Validation Status
 
-**Outcome:** The full run reports no warnings, skip or XPASS; overall Validation remains failed because of the two existing config-coupled tests.
-
-### Preserve schema/resource and existing typing contracts.
-
-**Evidence:**
-
-- [Schema transport](<../../../mcp_server/core/tool_execution.py>)
-- [Central SDK boundary](<../../../mcp_server/server.py>)
-
-**Outcome:** Focused191-test implementation run passed; full run has no failure at these surfaces. Seven local UP046 exceptions preserve specified variance/library behavior; strict plugin and one Mypy exception approved.
-
-### Execute the complete native test selection without partitioning or argument substitution.
-
-**Evidence:**
-
-- [Native pytest settings](<../../../pyproject.toml>)
-
-**Outcome:** Completed2914 cases with native exit1:2912passed,2failed in458.00s. Execution was not timed out or incomplete.
-
-### Verify branch/source gates and refreshed live server.
-
-**Evidence:**
-
-- [Configured gates](<../../../.pgmcp/config/checks.yaml>)
-- [Runtime handler](<../../../mcp_server/server.py>)
-
-**Outcome:** Branch formatting/lint/Mypy/Pyright, configured production Mypy and changed-document link checks passed; fresh PID healthy and resource read retains requested URI/text/plain.
+PASS for the executed verification. Independent QA owns the phase-progression decision.
 
 ## Evidence
 
-### Full native suite completed with two actionable failures.
+| Invocation and scope | Observed result | Supplemental receipt |
+| --- | --- | --- |
+| `run_tests(scope="configured", timeout_seconds=1200)`; selected `python_tests`, no caller targets or arguments | **2913 passed in 416.58 seconds**, 8 workers, native exit 0; no warnings, skips or XPASS reported. Complete, no termination problem, capture not truncated. | `0cb248439a914d9a867ece916ebf103f` |
+| `run_checks(scope="branch", timeout_seconds=600)`; default `python_review`, native per-check branch selection | Formatting: 43 Python files; lint passed; Mypy: 29 production files; Pyright: 29 production files, 0 errors/0 warnings. All native exits 0. | `617082d635da440b85a4d5ee3648dfbf` |
+| `run_checks(scope="configured", checks=["python_types"], timeout_seconds=600)` | 191 production source files passed. Reused unchanged production/config evidence; the subsequent repair modified only tests and the report. | `0852896198dd41709de6a5d323757e43` |
+| `run_tests(scope="targets", targets=["tests/mcp_server/integration/adapters/test_pyright.py", "tests/mcp_server/integration/test_rollout_configuration.py"], tests=["python_tests"], args={"python_tests":["-r","sxX"]}, timeout_seconds=240)` | 55 passed in 53.63 seconds, native exit 0. | `c636eab80048463e808d2bede1f0a655` |
+| `run_checks(scope="targets", targets=[the same two test files], checks=["python_format","python_lint","python_pyright"], timeout_seconds=180)` | All passed; Pyright analyzed 2 files with 0 errors/0 warnings. | `112102770c7b4b79813a2a077a8b2b39` |
+| `run_checks(scope="targets", targets=["README.md","docs/setup/README.md","docs/setup/dev-isolation.md","docs/development/issue507/research.md"], checks=["markdown_links"], timeout_seconds=180)` | 71 occurrences, 58 unique; 32 successful, 39 excluded, 0 errors. Existing offline policy excludes external URLs; no online verification claim. The edited report is separately checked by safe-edit validation. | `adb2ced9d9974e64956e38330c05abf5` |
 
-2912passed/2failed in458.00s;8workers,2914items; no warnings/skip/XPASS reported. Native capture exit1, no termination problem, output not truncated. Supplemental receipt b646aae98e4e4a6991cd73b107634e46.
+The final suite used the unchanged native [pytest settings](../../../pyproject.toml). The runtime was Python 3.13.7 with pytest 9.0.2. Gates used Ruff 0.15.6, Mypy 1.19.1 and Pyright 1.1.408. The broad capture size was inspected before reading its opening and final summary; the 824,211-character result was not downloaded blindly.
 
-**Sources:**
+## First Attempt and Bounded Repair
 
-- [Pyright behavior test](<../../../tests/mcp_server/integration/adapters/test_pyright.py>)
-- [Rollout test](<../../../tests/mcp_server/integration/test_rollout_configuration.py>)
+The first completed `run_tests(scope="configured", timeout_seconds=1200)` on `e805b108` produced **2912 passed, 2 failed in 458.00 seconds**, native exit 1, with no timeout or truncated capture (supplemental `b646aae98e4e4a6991cd73b107634e46`). Its FAIL remains historical evidence and was not waived.
 
-**Invocation:** run_tests(scope='configured',timeout_seconds=1200); selected python_tests, requested_targets=[], args_source='configured', effective_args=[]. Native pyproject arguments unchanged; client window1800.
+| Failure | Cause and repair |
+| --- | --- |
+| [test_native_configuration_preservation_and_editor_target](../../../tests/mcp_server/integration/adapters/test_pyright.py) | Read the repository's Python version and demanded 3.11 after the approved move to 3.13. The existing native-versus-adapter diagnostics, configured-rule behavior and version-override comparison now use an explicit isolated test configuration. The 3.11 analyzer target is scenario input, not server compatibility support. The isolated TOML is checked for preservation. |
+| Removed `TestRolloutConfiguration.test_pyrightconfig_native_settings_preservation` in [rollout tests](../../../tests/mcp_server/integration/test_rollout_configuration.py) | Only asserted fixed repository config values, including 3.11; it executed no product behavior. Removed that method and its unused import. No replacement content snapshot or new case was added. |
 
-**Observed Result:** FAIL
+The suite changed from 2914 to 2913 items because one content-only test was removed. The real Pyright behavior test remains and passes. The repair added no production changes, native checker exceptions or test cases.
 
-### Branch Python gates pass with native per-check branch selection.
+## Live Server and Resource Demonstration
 
-Formatting41Python files; lint passed; Mypy29production files; Pyright29production files with0errors/0warnings. Native exits0; supplemental e08c629e07124658ad8da7fe81d1510e.
+After Implementation review, `health_check()` reported healthy PID 66008. `restart_server(reason="Issue #507 Validation: load approved Python 3.13/SDK 1.30 resource and typing changes from e805b108 after independent QA GO.")` succeeded. After 3.5 seconds, `health_check()` reported healthy PID 31008 with uptime 9.97 seconds.
 
-**Sources:**
+`read_mcp_resource(server="phase_gate_mcp", uri="pgmcp://cache/runs/bbbcf149f57f4d8698d1e38d5d1d017d?offset=0&limit=2000")` returned that exact requested URI and `text/plain` content with the healthy PID. Work-context, Git/issue, check and test calls remained usable through the current client. Installed/test metadata: Python 3.13.7, MCP 1.30.0, Pydantic 2.11.7. Product version 3.0.0 in health output is a separate fact.
 
-- [Check bindings](<../../../.pgmcp/config/checks.yaml>)
+See the [central resource boundary](../../../mcp_server/server.py), [schema transport](../../../mcp_server/core/tool_execution.py) and [restart behavior tests](../../../tests/mcp_server/tools/test_admin_tools.py). The later repair changed only tests, so this live demonstration remains fresh.
 
-**Invocation:** run_checks(scope='branch',timeout_seconds=600); selected default profile python_review; configured arguments.
+## Preservation and Containment
 
-**Observed Result:** PASS
+The [approved strategy and implementation record](research.md) retains explicit covariance, seven declaration-local UP046 exceptions, the strict Pydantic Mypy plugin (`init_typed=true`, `init_forbid_extra=true`) and one field-local Mypy `misc` exception. No global Ruff exclusions or Pyright weakening were introduced.
 
-### Configured workspace production Mypy passes.
-
-Success: no issues found in191source files; native exit0. Supplemental0852896198dd41709de6a5d323757e43.
-
-**Sources:**
-
-- [Native Mypy settings](<../../../pyproject.toml>)
-
-**Invocation:** run_checks(scope='configured',checks=['python_types'],timeout_seconds=600); no caller arguments.
-
-**Observed Result:** PASS
-
-### Changed-document offline link gate passes.
-
-71occurrences/58unique,32successful,39excluded,0errors. External URLs are excluded by the existing offline policy, not verified online. Supplemental adb2ced9d9974e64956e38330c05abf5.
-
-**Sources:**
-
-- [Research](<research.md>)
-- [Setup policy](<../../setup/README.md>)
-
-**Invocation:** run_checks(scope='targets',targets=['README.md','docs/setup/README.md','docs/setup/dev-isolation.md','docs/development/issue507/research.md'],checks=['markdown_links'],timeout_seconds=180).
-
-**Observed Result:** PASS
-
-### Loaded server and resource connection refreshed after implementation.
-
-health_check before restart: PID66008 healthy. restart_server returned success; after3.5s, health_check returned PID31008 healthy, uptime9.97s. get_work_context, git/issue/check/test tools work. read_mcp_resource for pgmcp://cache/runs/bbbcf149f57f4d8698d1e38d5d1d017d?offset=0&limit=2000 returned the same requested URI with text/plain. Installed/test environment metadata: Python3.13.7, MCP1.30.0, Pydantic2.11.7; package evidence is separate from product version3.0.0 in health output.
-
-**Sources:**
-
-- [SDK resource boundary](<../../../mcp_server/server.py>)
-- [Supported dependency declarations](<../../../pyproject.toml>)
-
-**Invocation:** health_check(); restart_server(reason='Issue #507 Validation...'); wait3.5s; health_check(); get_work_context(); read_mcp_resource(server='phase_gate_mcp',uri='<health cache URI above>').
-
-**Observed Result:** PASS
-
-## Demonstration
-
-Live restart changed PID and preserved tool/resource use through the current client connection; the configured native suite exercised real internal runtime and adapter boundaries in isolated test workspaces.
-
-## Preservation
-
-No production edits during Validation. The two failures preserve the exact approved3.13 config; they demand obsolete3.11 repository contents. Other3.11 fixture values are deliberate native analyzer test inputs, not a server compatibility promise.
-
-## Containment
-
-Only the phase transition changed tracked state before this report. Repairs must return to Implementation. A force transition requires explicit human approval; no approval is inferred from QA GO or elapsed time.
-
-## Bounded Repair — 2026-10-17
-
-The owner approved returning to Implementation (reply: "Prima"). The two-file repair isolates the existing native-versus-adapter Pyright scenario from repository defaults and removes the content-only rollout assertion. It adds no test cases and changes no production or native configuration. Focused invocation: `run_tests(scope='targets', targets=['tests/mcp_server/integration/adapters/test_pyright.py', 'tests/mcp_server/integration/test_rollout_configuration.py'], tests=['python_tests'], args={'python_tests':['-r','sxX']}, timeout_seconds=240)`. All 55 cases passed; focused formatting, lint and Pyright also passed (receipts c636eab80048463e808d2bede1f0a655 and 112102770c7b4b79813a2a077a8b2b39). Independent Implementation review and a fresh complete Validation run remain required; the earlier full-suite FAIL is retained below as historical evidence.
+The focused 191-test Implementation evidence complements the final complete suite. Temporary positive/negative typing probes are diagnostic evidence, not permanent suite additions. Final test execution left production, native configuration and planning data unchanged; Git status showed only the expected phase transition before this report update.
 
 ## Failures
 
-- tests/mcp_server/integration/adapters/test_pyright.py::test_native_configuration_preservation_and_editor_target, line577: asserts repository config pythonVersion=='3.11'. The subsequent native-versus-adapter/version-override behavior is valuable; proposed repair isolates its explicit scenario config instead of inheriting the live repository's Python baseline.
-- tests/mcp_server/integration/test_rollout_configuration.py::TestRolloutConfiguration::test_pyrightconfig_native_settings_preservation, line499: asserts the same3.11 repository value. This method executes no product behavior; proposed repair removes the content-only duplicate rather than updating another snapshot.
+None remain in the final executed verification. The two first-attempt failures and their repairs are retained above.
 
 ## Caveats
 
-- Validation is FAIL despite passing quality gates. No full-suite pass, QA Validation approval or Ready claim.
-- Native coverage was not requested; existing addopts contain no --cov. No numeric coverage claim.
-- The temporary negative typing probes are diagnostic evidence and are not permanent suite additions or substitutes for the full run.
-- The branch's implementation commit is local at this checkpoint; the new report records executed outcomes independent of cache availability.
-
-## Risks
-
-### Current repository settings are embedded in two test expectations, so approved deployment policy changes can invalidate unrelated tests.
-
-Pending owner approval: isolate the genuine native-behavior scenario and remove the pure configuration snapshot, with no new test cases.
-
-**Consequence:** Validation cannot progress until the bounded repair is reviewed and invalidated tests/full evidence rerun.
+- Native coverage was not requested; configured addopts contain no `--cov`. No numeric coverage claim.
+- Tool receipts supplement the durable invocations and outcomes above; cache persistence is not assumed.
+- Passing checks do not replace independent architecture/phase review or claim SDK 2 compatibility.
 
 ## Deferred Work
 
-### MCP SDK2/higher Python assessment and substantive reassessment of global/local checker suppressions.
-
-Explicitly deferred from507; #513 owns independent options, version-specific evidence and a human Approved Strategy. No automatic removal or permanent acceptance of current exceptions.
-
-**References:**
-
-- [Tracked follow-up513](<https://github.com/MikeyVK/phase-gate-mcp/issues/513>)
-- [Approved current boundary](<research.md>)
+[MCP SDK 2/higher Python and suppression reassessment — #513](https://github.com/MikeyVK/phase-gate-mcp/issues/513) owns the next-major options, version-specific evidence and owner strategy. Its scope includes substantive review of global, per-file and local checker suppressions. Current exceptions are neither automatically permanent nor removed without contract evidence. Coordination has recorded the follow-up. No other deferred work was identified within this bounded repair.
 
 ## Related Documents
 
-- [Approved strategy and implementation evidence](<research.md>)
-- [Issue507](<https://github.com/MikeyVK/phase-gate-mcp/issues/507>)
-- [Deferred assessment513](<https://github.com/MikeyVK/phase-gate-mcp/issues/513>)
+- [Approved strategy and implementation evidence](research.md)
+- [Issue 507](https://github.com/MikeyVK/phase-gate-mcp/issues/507)
+- [Native check bindings](../../../.pgmcp/config/checks.yaml)
+- [Setup requirements](../../setup/README.md)
 
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-16 | @imp validator | Record completed native full suite, two stale configuration-test failures, passing gates and live server refresh. |
+| 0.2 | 2026-10-17 | @imp validator | Preserve the first-attempt failures, record the owner-approved bounded repair and independent re-entry GO, and capture the complete passing rerun and fresh branch gates. |
