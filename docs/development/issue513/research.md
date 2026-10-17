@@ -2,8 +2,8 @@
 
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
-**Status:** Research in progress — executed SDK and Python 3.15 boundaries; decisions open  
-**Version:** 0.3  
+**Status:** Research in progress — current Python 3.15 alignment candidate executed; migration decisions open  
+**Version:** 0.4  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -167,14 +167,49 @@ The pure-Python build flag is supported by [PyYAML 6.0.3 setup.py](https://raw.g
 
 **Checker limitation:** the quality calls used the installed adapters: Mypy host3.13, Pyright Node, Ruff native binary. Their target language/dependency path was3.15; the native Mypy process/plugin still used its host Pydantic 2.11.7. Installing/importing Mypy in the3.15 lab is separate evidence and does not prove its entire execution there. [Mypy 2.4 release notes](https://mypy.readthedocs.io/en/stable/changelog.html#python-3-15-support) explicitly document3.15 support; that newer checker was not installed or approved. Simple target-version acceptance and preserved covariance do not prove all3.15 language features are supported by current pins.
 
-**Provisional recommendation, not an approved strategy:** keep Python>=3.13 while assessing a bounded SDK 2 migration independently. The measured source runtime can operate on 3.15 with the stated installation variant, but no used pgmcp behavior currently requires the higher minimum. Raising it now also needs explicit dependency-installation and checker-version decisions.3.15 provides a longer maintenance horizon; that benefit alone is not proof of a necessary floor increase. No cross-platform, full-suite, candidate wheel, broad performance, or completely migrated application claim is made.
+**Superseded preliminary recommendation:** the earlier suggestion to retain Python>=3.13 relied too heavily on current-pin limitations. The owner redirected Research toward alignment with the newest stable Python and a coherent appropriate dependency/checker set. The earlier measurements remain useful boundary evidence; they do not decide the target against a properly aligned candidate. The next section is the current research direction.
+
+### Current direction: align dependencies and checkers to Python 3.15
+
+The owner selected **latest-stable Python alignment as the research target** and explicitly asked to choose suitable dependencies together and test that combination. This supersedes using old fixed pins as the main basis for a floor recommendation. Production migration, release and the final minimum-support policy remain separate decisions.
+
+A fresh `.pgmcp/temp/issue513/aligned-py315` environment was created using the existing standard CPython 3.15.0 runtime. Pip resolved current stable releases without --pre; the selected versions below were checked against official [PyPI metadata](https://pypi.org/) and [npm Pyright metadata](https://registry.npmjs.org/pyright/latest) on 2026-10-17. SDK/Pydantic stayed within major2. This is a fixed observed research snapshot, not a policy to install floating dependencies in production.
+
+| Boundary | Aligned candidate |
+| --- | --- |
+| Runtime and protocol | Python 3.15.0; MCP 2.3.0 and mcp-types 2.3.0; Pydantic 2.14.1 |
+| Settings / configuration | pydantic-settings 2.16.0; PyYAML 6.0.3; jsonschema 4.26.0 |
+| Repository / templates | GitPython 3.2.1; PyGithub 2.10.0; Jinja2 3.1.6 |
+| Type/lint tools | Mypy 2.4.0; Ruff 0.17.1; native Node Pyright 1.1.414 |
+| Test tools | pytest 9.1.1; pytest-asyncio 1.4.0; pytest-cov 7.1.0; pytest-xdist 3.8.0; coverage 7.16.2 |
+| Checker prerequisites | types-PyYAML 6.0.12.20260906; types-jsonschema 4.26.0.20261006 |
+
+PyYAML 6.0.3 is still the latest stable release, so its missing Windows CP315 wheel is not an obsolete-pin finding. The explicit supported pure-Python installation variant was retained for the lab; no compiler was installed. All candidate dependencies install and isolated `python -I -m pip --isolated check` passes. Installation policy for deployment remains open.
+
+Adapter prerequisite declarations are part of alignment: exact old versions are not silently bypassed. The probe copies only each manifest's declared files for Mypy, Ruff, Pyright and Pytest below the lab, then updates only their requirements/package version declarations to the installed candidates. Adapter bodies and active manifests remain unchanged. The final Pytest snapshot retains all five original prerequisite entries. The unchanged catalog computes identities from those candidate bytes and resolves Python explicitly to the candidate interpreter.
+
+Check and test probes call the actual existing **RunChecksTool → CheckOperation/CheckSelector/CheckService → AdapterProcessRuntime** and **RunTestsTool → TestRunManager → AdapterProcessRuntime** paths. The native research test driver launches a candidate subprocess which performs this composition. It is an isolated core-tool/adapter execution, not a fully migrated MCP server or a production gate verdict.
+
+| Aligned execution | Outcome / implication |
+| --- | --- |
+| Runtime imports, production converter and model controls | Imports succeed without captured import warnings; converter text/JSON/image/resource/error controls preserve the measured fields and negative behavior. Retained AdapterRole and valid/invalid planning-related input models behave as before. |
+| Mypy 2.4 actually hosted on 3.15 with Pydantic 2.14 plugin | ToolExecution and AdapterBinding widening accepted; both deliberate narrowing returns rejected. The previous3.13-host limitation is removed for this experiment. |
+| AdapterBinding source without ignore | No misc error. The real unchanged production file with its retained ignore reports exactly unused-ignore at execution.py:57. This exception is a demonstrated removal candidate for the aligned baseline; explicit covariance need not change. |
+| Ruff 0.17.1 target py315 | Intended PLC0415 negative reported, paired positive clean; no prior under-development warning, no preview flag. |
+| Pyright 1.1.414 | Both variance negatives and argument negative reported as intended; paired positives clean. The actual 1.1.414 adapter identity is confirmed. |
+| Five Mypy production copies with local ignores removed, with current stubs | Five diagnostics remain: invariant ICoreTool input/output expectations; computed_field/property decorator limitation; Commit/string local assignment; None passed to a BaseModel-bound core input. AdapterBinding's former misc message is gone. These five are not automatically caused by the upgrade. |
+| Three unchanged existing behavior-test files | **92 passed in3.11s**, native exit0, no warning/skip/xfail summary. Python 3.15/Pytest9.1.1 actually executed the tests. Includes real temporary-Git-repository behavior, not production branch mutation. Workflow/planning bytes unchanged before/after. |
+
+Pyright initially resolved the repository's old1.1.408 dependency, correctly failing its aligned exact-version guard. The final experiment uses a separate lab workspace containing1.1.414, copies the same diagnostic policy, explicitly selects target3.15 and adds the source repository as an import path. This respects existing workspace-owned Node resolution; no active node_modules, guard bypass or adapter code change was needed. Missing YAML/jsonschema stubs in the initial Mypy lab were supplied as the proper checker prerequisites; final five-message evidence above supersedes that incomplete environment.
+
+**Current assessment:** a coherent current 3.15 candidate is feasible in the tested boundaries and removes at least two earlier obstacles (old Ruff target warning and AdapterBinding's Mypy workaround). Python 3.15 plus oldpins is no longer the primary decision model. The remaining SDK handler/result/proxy API migration is normal work required to adopt SDK 2; repeated unchanged-server failure is not useful evidence against the new target. Full migrated-server startup, protocol/lifecycle verification and package validation belong to a bounded implementation proposal after the remaining strategy decisions. Preserve existing meaningful type contracts; do not retain obsolete suppressions merely because they were previously approved.
 
 ### Proportional remaining evidence
 
 - Candidate wheel/package installation and deployment remain open: direct dependency sets and unchanged source startup on Python 3.15 were measured above; no migrated SDK 2 wheel exists.
 - Invalid handler input and actual pgmcp error-wrapper transport; minimal SDK explicit-error/resource-failure controls are now recorded above.
 - Whole-application candidate startup and the final migrated proxy's cancellation/deadline/subprocess behavior. Native-proxy/candidate-child restart, failed replacement and old/new client negotiation are already executed above.
-- Decide the Python floor using the executed 3.15 boundary comparison above; no separate 3.14 installation unless it becomes an owner-selected alternative. Preserve the distinction between runtime feasibility, installation prerequisites and checker support.
+- Complete the Python 3.15 alignment assessment using the current candidate set, including deployment/installability and relevant remaining suppression controls. No further old-pin combination matrix or separate 3.14 run unless a concrete question requires it.
 - Grouped suppression probes and final dispositions before Research completion.
 
 ## Questions
@@ -199,6 +234,7 @@ The pure-Python build flag is supported by [PyYAML 6.0.3 setup.py](https://raw.g
 | Boundary | Current human decision |
 | --- | --- |
 | SDK experiment | Approved: create an isolated environment under .pgmcp/temp/issue513, install SDK 2.3 and its dependencies on existing Python 3.13, and run targeted positive/negative probes. Active server/source remain unchanged. |
+| Latest-stable alignment | Approved research direction: use Python 3.15 as the target and select/test appropriate current dependencies and checkers together; the previous retain3.13 preliminary recommendation is superseded. No production minimum change or release authorized. |
 | Additional interpreters | Approved: investigate the newest stable Python release. Prepared standard CPython 3.15.0 and two isolated environments below .pgmcp/temp/issue513; no system/PATH/default or active-server changes. This does not authorize a higher minimum. Python 3.14 was not installed. |
 | Variance/type contracts | Carry forward the owner decision from #507 to preserve explicit covariance. No silent migration may weaken it. |
 | Production SDK, protocol/proxy, Python floor and checker remediation | No implementation choice approved yet. Discuss findings and record per-boundary strategy before Research closes. |
@@ -291,6 +327,28 @@ Native checker calls all used scope=targets and only the named positive/negative
 
 Exact covariance sources and remaining suppression dispositions are indexed in [the inventory](suppression-inventory.md). Negative checker exit1 results above are the required diagnostic controls, not failed release validation.
 
+### Aligned candidate: reproducible scope and outcomes
+
+Install into a fresh aligned-py315 venv with `PYYAML_FORCE_LIBYAML=0` in that installation process only, using pip --isolated --no-cache-dir, official PyPI, mcp>=2,<3, pydantic>=2,<3 and current stable runtime/test/checker packages listed above. Add the two current stub packages; install pyright@1.1.414 with npm --prefix <lab>/aligned-node --ignore-scripts --no-audit --no-fund --no-save. The observed direct pins above fix the reproduction snapshot; transitive dependency records remain in the ignored pip report. No active dependency installation or package-source constraint was changed.
+
+The temporary driver file remains `.pgmcp/temp/issue513/test_issue513_research.py`, run through the normal run_tests MCP tool, scope=targets, tests=[python_tests], args `-n 0 -s --tb=short -k <selection>`:
+
+| Selection / timeout | Observed evidence | Supplemental receipt |
+| --- | --- | --- |
+| python315_aligned_runtime or python315_aligned_checks /240s | 2 passed in34.27s. Actual3.15 imports/converter/model/pip consistency, Mypy 2.4 variance, Ruff 0.17.1 paired diagnostic. Initial Pyright was correctly unavailable on old workspace dependency; initial Mypy source-copy run also lacked two stub packages. | 8cacb6cdc6324b47b0bc12c098dd12ae |
+| aligned_refined_pyright /180s | 1 passed. Only corrected Pyright workspace resolution and Mypy source-copy run after stubs: two variance/one argument negative with clean positives; five remaining Mypy source diagnostics. | b2d29ed3436e4b0cba2eaa9a2b7a98bb |
+| aligned_retained_binding /120s | 1 passed measurement; actual production execution.py emits exactly one unused-ignore, native checker exit1. Not a passing production quality gate. | 8e8ea93bdb604f0a918b5fde30ef0360 |
+| aligned_existing_behavior /210s | 1 passed research driver in8.21s; inner candidate run_tests tool reports92passed in3.11s, native exit0. | 3abe4e05254249e399b06f23742edb95 |
+
+The inner **run_checks** calls retain scope=targets and source definitions recorded in the suppression inventory. Mypy args: `--python-version 3.15 --python-executable <aligned interpreter>`; source-copy/retained-source measurements also use `--follow-imports=silent`. Pyright args: `--pythonversion 3.15 --pythonpath <aligned interpreter> --outputjson`. Ruff args: `--target-version py315 --select PLC0415 --output-format json`. Exact adapter prerequisite files are updated only in lab copies; evidence confirms actual selected external versions. Do not disable version guards.
+
+The inner **run_tests** request is scope=targets, tests=[python_tests], args `-n 0 --tb=short`, timeout_seconds=120, with exactly:
+- [test_template_engine.py](../../../tests/mcp_server/unit/services/test_template_engine.py)
+- [test_artifact_header_reader.py](../../../tests/mcp_server/unit/services/test_artifact_header_reader.py)
+- [test_git_adapter_skip_paths.py](../../../tests/mcp_server/unit/adapters/test_git_adapter_skip_paths.py)
+
+The final adapter-snapshot preparation preserves each original prerequisite line and replaces only its version. Its first draft used an overbroad regex which dropped some Pytest prerequisite lines; that lab setup was corrected and the existing-test request rerun. No permanent test, source, active adapter/configuration or workflow position changed.
+
 ## Risks
 
 ### A successful minimal SDK server can be mistaken for pgmcp migration proof.
@@ -319,3 +377,4 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.1 | 2026-10-17 | @imp researcher | Record approved isolated SDK probes, executed results, consumer boundaries, complete inventory navigation and unfinished decisions. |
 | 0.2 | 2026-10-17 | @imp researcher | Add actual proxy/restart/failure and SDK 2 client negotiation evidence, diagnostic masking, candidate Pydantic findings and bounded migration option; retain open strategy decisions. |
 | 0.3 | 2026-10-17 | @imp researcher | Record owner-approved latest-stable Python experiment, actual 3.15 installation/runtime/CLI/proxy/type controls, unresolved installation/checker limits and provisional independent floor recommendation. |
+| 0.4 | 2026-10-17 | @imp researcher | Supersede old-pin-led recommendation with owner-directed current Python alignment; record actual aligned checker/core-tool runs,92 existing passing tests and removable AdapterBinding workaround. |

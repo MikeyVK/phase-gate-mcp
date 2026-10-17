@@ -3,7 +3,7 @@
 # Issue 513 — Checker Suppression Inventory
 
 **Status:** Complete baseline and executed group controls — final dispositions open  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-17
 
 ## Purpose
@@ -286,7 +286,7 @@ Six exact source copies removed all nine Mypy directive lines. Native plugin/str
 | --- | --- | --- |
 | settings.py:65 | prop-decorator on computed_field/property | Retain exact library/checker exception until their supported property typing resolves it. |
 | icore_tool.py:25 | Two misc variance expectations | Preserve approved invariance; reopen an intentional contract decision before removing the exception. |
-| execution.py:57 | misc: covariance used in synthetic replacement parameter | Retain exact exception with explicit covariance; recheck at Mypy/Python baseline change. |
+| execution.py:57 | misc: covariance used in synthetic replacement parameter under the baseline | Retain only for the old baseline; the aligned Mypy 2.4/Python 3.15 reassessment below proves this exception redundant while covariance remains intact. |
 | git_adapter.py:175 | assignment: Commit-inferred local later receives str | Candidate for a local explicit union annotation, preserving accepted values and runtime behavior. |
 | input_validation_decorator.py:115 | arg-type: None supplied to BaseModel-bound core protocol | Genuine declared-contract mismatch with the supported no-argument path; discuss alignment instead of treating it as an SDK workaround. |
 | server.py:84/96/108/125 | Seven no-untyped-call/untyped-decorator messages | Retain for SDK 1 baseline; remove along with the actual decorator API migration after typed SDK 2 handlers prove the contract. |
@@ -544,6 +544,29 @@ Both files live temporarily under `.pgmcp/temp/issue513/diagnostic-controls/pyth
 
 Mypy was hosted on the native 3.13 adapter; Pyright runs in Node. The Mypy process/plugin used its host Pydantic 2.11.7; the Python-executable option selected the candidate dependency path. These are3.15 target/dependency comparisons, not proof of all language features or whole-checker execution on 3.15. The Mypy/Ruff packages separately installed/imported in the3.15 lab. No checker pin, native policy, production declaration or permanent test changed.
 
+## Current aligned baseline: candidate dispositions
+
+The owner redirected Research to a coherent current Python 3.15 set. Exact dependencies, installation constraints, core-tool/adapter invocation and selected existing-test outcomes are in [Research](research.md#current-direction-align-dependencies-and-checkers-to-python-315). This supersedes using current old pins as the deciding evidence against alignment.
+
+| Item | Aligned observed evidence | Updated proposed disposition |
+| --- | --- | --- |
+| AdapterBinding type:ignore[misc], execution.py:57 | Mypy 2.4 actually running on Python 3.15/Pydantic 2.14.1 reports no error in the exact source copy with the ignore removed. Targeting the real unchanged production file reports exactly unused-ignore. Existing covariance positives pass and narrowing negatives remain errors. | **Remove for the aligned baseline**; preserve explicit TypeVar covariance and the frozen dataclass. No PEP695 class conversion is required. Keep old-baseline evidence distinct. |
+| ToolExecution / AdapterBinding covariance | Actual class imports in both Mypy 2.4 and Pyright 1.1.414 controls: zero positive diagnostics, two expected narrowing errors in each checker. | Retain the actual covariance contract. A newer checker removes a workaround; it does not authorize a weaker generic declaration. |
+| Ruff 0.15.6's Python 3.15 target warning | Same selected PLC0415 positive/negative under Ruff 0.17.1 reports the intended diagnostic without the old instability warning or preview. | Select the aligned supported checker rather than make the old warning an argument against Python 3.15. Complete per-rule policy remains separately reviewed. |
+| AdapterRole UP046 | Latest stable Pydantic is still 2.14.1. Full actual-declaration PEP695 conversion still fails class-not-fully-defined; retained behavior/schema/invalid controls pass. | Retain this specific library workaround; reassess when the actual full declaration works on a newer supported Pydantic. |
+| Mypy source-copy diagnostics | With current YAML/jsonschema stubs installed, five remaining messages across four of the five non-server copies: ICoreTool variance expectations twice, property decorator limitation, Commit/string local assignment and None/BaseModel input mismatch. | Preserve intentional protocol contracts pending explicit decisions; distinguish library limitation from the two existing source declaration gaps. Do not hide or attribute all five to a version incompatibility. |
+| New Mypy unused-section note | Narrow controls emit a note that tests.* override was unused in that particular invocation. | Informational consequence of the selected scope, not evidence that the test override is obsolete or a reason to disable warn_unused_configs. |
+| Other directives and native flags | No blanket current-checker/source-site reassessment in this increment. | Previous provisional dispositions retain their stated context and outstanding work; no mass cleanup approval. |
+
+Reproduction uses manifest-inventory copies of Mypy/Ruff/Pyright/Pytest with only exact prerequisite versions updated. Existing core RunChecksTool and AdapterProcessRuntime run on Python 3.15, resolving adapter Python explicitly to that interpreter. Pyright uses an isolated workspace containing the correct native Node dependency; its diagnostic policy is copied and source imports are explicitly directed to the repository. Do not bypass package-version guards or install into active node_modules.
+
+- Mypy covariance and Ruff controls: research driver selection `python315_aligned_checks`; native arguments and control definitions match the earlier 3.15 section; supplemental 8cacb6cdc6324b47b0bc12c098dd12ae.
+- Pyright final controls and Mypy five source copies: `aligned_refined_pyright`,180s; supplementalb2d29ed3436e4b0cba2eaa9a2b7a98bb. Mypy source copies use --follow-imports=silent and current types-PyYAML/types-jsonschema.
+- Actual retained declaration: `aligned_retained_binding`,120s; target mcp_server/core/interfaces/execution.py, Mypy args --python-version 3.15 --python-executable <aligned interpreter> --follow-imports=silent. Exactly one unused-ignore, native exit1; supplemental 8e8ea93bdb604f0a918b5fde30ef0360.
+- Existing behavior tests are **92 passed in3.11s** on actual Python 3.15/Pytest9.1.1 through the unchanged RunTestsTool/TestRunManager with candidate adapter prerequisite declarations. This is related runtime/dependency evidence, not a whole suppression-inventory verdict. Exact three-file scope is in Research.
+
+No production annotation, native checker policy or permanent test was changed. The current aligned baseline makes at least the one local Mypy exception demonstrably removable; complete inventory disposition and owner-approved delivery strategy are still open.
+
 ## Related Documents
 
 - [Final #507 findings](<../issue507/research.md>)
@@ -557,3 +580,4 @@ Mypy was hosted on the native 3.13 adapter; Pyright runs in Node. The Mypy proce
 | 0.1 | 2026-10-17 | @imp researcher | Record token-aware exact locations, native policy and observed unused exceptions without approving removals or retained policy. |
 | 0.2 | 2026-10-17 | @imp researcher | Add all-rule paired controls, masking proof, source-copy checks, native test-policy comparison, candidate Pydantic evidence and provisional dispositions. |
 | 0.3 | 2026-10-17 | @imp researcher | Record actual 3.15/Pydantic 2.14 controls, retained covariance signal, unchanged AdapterRole limitation and checker-support evidence without broadening remediation. |
+| 0.4 | 2026-10-17 | @imp researcher | Reassess against current aligned 3.15/checker set; prove redundant AdapterBinding ignore with preserved variance and distinguish remaining source/library diagnoses. |
