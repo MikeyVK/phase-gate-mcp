@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Full tests/checks pass; strict90% coverage remains below threshold
-**Version:** 0.8  
+**Status:** C_7 focused recovery complete; exact90% full Validation pending
+**Version:** 0.9  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -342,6 +342,16 @@ Installed migration, native opt-in coverage, xdist and proxy replacement cases a
 
 The installed pytest-cov plugin at its runtest-loop calls coverage.results.should_fail_under(total,fail_under,precision), whereas its terminal summary uses total < fail_under before formatting to two decimals. Precision2 can therefore round this one-hit shortfall into a zero exit while printing FAIL. Tighten report precision to6 without changing the threshold, measured package, branch scope or exclusions. One additional genuine public proxy obligation remains unproved: an explicit JSON-RPC initialize error from a replacement must be rejected with its original response diagnosis. Plan that single scenario in the existing parameterization, not a percentage/version assertion.
 
+## C_7 Focused Closure
+
+Independent QA approved Planning on4bb4592939591fb681a7cc0f51c9eeee6fb07a15. Only native coverage.report.precision changed2→6, and one existing failed-replacement parameter was added. fail_under=90, source/branch/subprocess/path configuration, exclusions, production defaults and all production source remain unchanged.
+
+The explicit JSON-RPC initialize-error case asserts initialize_response_failed/invalid_initialize_response, exact original error code/message/data in the failure response, no restart_completed, subsequent unavailable and real-child cleanup. It uses existing public process/event/sink seams; no new module, private call, version or percentage assertion.
+
+Actual candidate run_tests(scope="targets", targets=["tests/mcp_server/core/test_proxy.py"], tests=["python_tests"], args={"python_tests":["-q","--cov","--cov-branch","--junitxml=.pgmcp/temp/issue517/c7-proxy.xml","--cov-report=term","--cov-report=xml:.pgmcp/temp/issue517/c7-proxy-coverage.xml"]}, timeout_seconds=300) ran11 passing cases, zero failures/errors/skips. Native terminal reports99.91s; JUnit suite time is52.275s, so this evidence is not used for latency claims. Native exit1 correctly rejects this narrow16.123387% coverage selection; no threshold override. The actual report uses six-decimal precision and XML confirms the explicit-refusal rejection path executed.
+
+Targeted run_checks for the same file with python_format/python_lint/python_pyright, timeout600 all passed; Pyright one file, zero diagnostics. Native Markdown checks on edited evidence also passed. The full2960 passing tests and actual89.995636% shortfall above remain the latest complete result, not a green coverage claim. Independent Implementation → Validation review precedes the final complete configured run and required branch/configured gates, with raw combined coverage at least90% and no native threshold-failure text.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -360,3 +370,4 @@ The installed pytest-cov plugin at its runtest-loop calls coverage.results.shoul
 | 0.6 | 2026-10-18 | @imp implementer | Record C_5 focused/instrumented outcomes, retained xdist timeout evidence and synthetic-package isolation; preserve unresolved90% gate. |
 | 0.7 | 2026-10-18 | @imp implementer | Record10 passing public proxy cases and targeted checks after C_6; reserve full90% acceptance for independent re-entry to Validation. |
 | 0.8 | 2026-10-18 | @imp validator | Record2960 passing full cases/checks but89.995636% actual coverage; expose native rounding/terminal discrepancy and retain strict90% obligation. |
+| 0.9 | 2026-10-18 | @imp implementer | Record11 passing proxy cases, original initialize-error diagnosis and precision6; exact90% full acceptance remains pending. |

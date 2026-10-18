@@ -47,6 +47,14 @@ for line in sys.stdin:
     if request.get("method") == "initialize":
         if sys.argv[1] == "malformed_initialize":
             print("not-json", flush=True)
+        elif sys.argv[1] == "initialize_error":
+            print(json.dumps({
+                "jsonrpc": "2.0", "id": request["id"],
+                "error": {
+                    "code": -32001, "message": "native initialize refused",
+                    "data": {"reason": "source_not_ready"},
+                },
+            }), flush=True)
         else:
             print(json.dumps({
                 "jsonrpc": "2.0", "id": request["id"],
@@ -101,7 +109,7 @@ class ProxyProbe:
             raise OSError("replacement launch failed")
         code = "import threading; threading.Event().wait()" if mode == "silent" else CHILD
         arguments: list[str] = []
-        if mode in {"malformed_initialize", "protocol_changed"}:
+        if mode in {"malformed_initialize", "protocol_changed", "initialize_error"}:
             code = INITIALIZE_FAILURE_CHILD
             arguments = [mode]
         process = subprocess.Popen(
@@ -207,7 +215,14 @@ def test_restart_replays_initialize_and_finishes_inflight_once(probe: ProxyProbe
 
 
 @pytest.mark.parametrize(
-    "replacement", ["spawn_failure", "silent", "malformed_initialize", "protocol_changed"]
+    "replacement",
+    [
+        "spawn_failure",
+        "silent",
+        "malformed_initialize",
+        "protocol_changed",
+        "initialize_error",
+    ],
 )
 def test_failed_replacement_rejects_calls_and_cleans_children(
     probe: ProxyProbe, replacement: str
@@ -226,6 +241,16 @@ def test_failed_replacement_rejects_calls_and_cleans_children(
     elif replacement == "protocol_changed":
         assert failure["reason"] == "initialize_response_failed"
         assert failure["error"] == "initialize_protocol_changed"
+    elif replacement == "initialize_error":
+        assert failure["reason"] == "initialize_response_failed"
+        assert failure["error"] == "invalid_initialize_response"
+        response = failure["response"]
+        assert isinstance(response, dict)
+        assert response["error"] == {
+            "code": -32001,
+            "message": "native initialize refused",
+            "data": {"reason": "source_not_ready"},
+        }
     assert all(event != "restart_completed" for event, _ in probe.events)
     probe.send(2, "echo")
     rejected = probe.sink.receive(2)

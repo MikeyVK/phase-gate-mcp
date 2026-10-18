@@ -159,6 +159,6 @@ mcp_server = [
 
 [tool.coverage.report]
 fail_under = 90
-precision = 2
+precision = 6
 
 
