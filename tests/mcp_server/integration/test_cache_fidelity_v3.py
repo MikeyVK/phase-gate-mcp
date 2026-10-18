@@ -12,18 +12,17 @@ from typing import Annotated, Literal
 
 import pytest
 from mcp.types import (
-    ReadResourceRequest,
-    ReadResourceRequestParams,
     ReadResourceResult,
     TextResourceContents,
 )
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 class Capture(BaseModel):
@@ -154,13 +153,10 @@ async def _read_cached_operation(tmp_path: Path, operation: BaseModel) -> str:
         tools=[],
         resources=[CachedResponseResource(cache)],
     )
-    response = await server.server.request_handlers[ReadResourceRequest](
-        ReadResourceRequest(
-            params=ReadResourceRequestParams(uri=AnyUrl(f"pgmcp://cache/runs/{publication.run_id}"))
-        )
-    )
-    assert isinstance(response.root, ReadResourceResult)
-    assert len(response.root.contents) == 1
-    content = response.root.contents[0]
+    async with connected_mcp_client(server) as client:
+        response = await client.read_resource(f"pgmcp://cache/runs/{publication.run_id}")
+    assert isinstance(response, ReadResourceResult)
+    assert len(response.contents) == 1
+    content = response.contents[0]
     assert isinstance(content, TextResourceContents)
     return content.text

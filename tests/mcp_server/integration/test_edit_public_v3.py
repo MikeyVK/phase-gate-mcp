@@ -125,7 +125,7 @@ async def edit(
     operation = composition.text.present_text.call_args.kwargs["data"]
     assert isinstance(operation, EditOperationOutput)
     assert cached == operation.model_dump(mode="json")
-    assert response.isError is not operation.success
+    assert response.is_error is not operation.success
     assert not any(isinstance(item, EmbeddedResource) for item in response.content)
     summary = response.content[0]
     assert isinstance(summary, TextContent)
@@ -254,7 +254,7 @@ async def test_public_policy_preserves_selection_and_reports_unvalidated_setup_e
     assert isinstance(result, EditOperationOutput) and cached == result.model_dump(mode="json")
     written = policy == "report"
     assert result.success is written and result.written is written
-    assert response.isError is not written
+    assert response.is_error is not written
     assert result.error_code == (
         None if written else "configuration_choice_required" if unresolved else "validation_blocked"
     )
@@ -379,7 +379,7 @@ async def test_target_input_rejects_legacy_and_unadmitted_values(
         "safe_edit_file",
         arguments,
     )
-    assert response.isError and cached["error_type"] == "ValidationError"
+    assert response.is_error and cached["error_type"] == "ValidationError"
     assert target.read_bytes() == b"original"
     resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
     assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"

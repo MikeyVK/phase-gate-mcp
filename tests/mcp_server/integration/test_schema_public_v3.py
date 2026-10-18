@@ -10,11 +10,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import (
-    CallToolRequest,
-    CallToolRequestParams,
     CallToolResult,
     EmbeddedResource,
-    ListToolsRequest,
     ListToolsResult,
     TextContent,
     TextResourceContents,
@@ -42,6 +39,7 @@ from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.project_tools import GetProjectPlanInput
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaOutput, ScaffoldSchemaTool
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 @pytest.fixture
@@ -112,29 +110,27 @@ def compose(root: Path, delivered: DeliveredTemplate) -> Composition:
 
 
 async def listed_schema(composition: Composition) -> dict[str, JsonValue]:
-    response = await composition.server.server.request_handlers[ListToolsRequest](
-        ListToolsRequest()
-    )
-    assert isinstance(response.root, ListToolsResult)
-    assert len(response.root.tools) == 1
-    return response.root.tools[0].inputSchema
+    async with connected_mcp_client(composition.server) as client:
+        response = await client.list_tools()
+    assert isinstance(response, ListToolsResult)
+    assert len(response.tools) == 1
+    return response.tools[0].input_schema
 
 
 async def invoke(
     composition: Composition,
     arguments: dict[str, JsonValue],
 ) -> tuple[CallToolResult, EmbeddedResource, str]:
-    response = await composition.server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name="scaffold_schema", arguments=arguments))
-    )
-    assert isinstance(response.root, CallToolResult)
-    assert len(response.root.content) == 2
-    resource = response.root.content[1]
+    async with connected_mcp_client(composition.server) as client:
+        response = await client.call_tool("scaffold_schema", arguments)
+    assert isinstance(response, CallToolResult)
+    assert len(response.content) == 2
+    resource = response.content[1]
     assert isinstance(resource, EmbeddedResource)
     publication = composition.text.present_text.call_args.kwargs["cache_pub"]
     assert isinstance(publication, CachePublication)
     assert publication.run_id is not None
-    return response.root, resource, publication.run_id
+    return response, resource, publication.run_id
 
 
 def resource_schema(resource: EmbeddedResource) -> object:
@@ -157,8 +153,8 @@ async def test_registered_schema_query_transfers_the_complete_catalog_view(
         == thaw_json(composition.core.input_contract.schema)
     )
     response, embedded, run_id = await invoke(composition, raw)
-    assert response.isError is False
-    assert embedded.resource.mimeType == "application/schema+json"
+    assert response.is_error is False
+    assert embedded.resource.mime_type == "application/schema+json"
     assert str(embedded.resource.uri) == "schema://template/issue/context"
     selected = delivered.catalog.get("issue")
     assert resource_schema(embedded) == thaw_json(selected.schema)
@@ -211,7 +207,7 @@ async def test_invalid_envelope_uses_the_exposed_whole_tool_schema(
     exposed = await listed_schema(composition)
     assert not Draft202012Validator(exposed).is_valid(raw)
     response, embedded, run_id = await invoke(composition, raw)
-    assert response.isError is True
+    assert response.is_error is True
     assert str(embedded.resource.uri) == "schema://validation"
     assert resource_schema(embedded) == exposed
     composition.runner.run.assert_not_called()
@@ -270,9 +266,8 @@ async def test_registered_legacy_input_keeps_its_exposed_type_boundary(tmp_path:
         tools=[wrapped],
         resources=[],
     )
-    response = await server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name=core.name, arguments=raw))
-    )
-    assert isinstance(response.root, CallToolResult)
-    assert response.root.isError is True
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool(core.name, raw)
+    assert isinstance(response, CallToolResult)
+    assert response.is_error is True
     core.execute.assert_not_called()

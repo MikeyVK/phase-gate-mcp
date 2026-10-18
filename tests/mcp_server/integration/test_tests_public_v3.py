@@ -122,7 +122,7 @@ async def run(composition: Composition, arguments: dict[str, JsonValue]) -> RunT
     operation = composition.text.present_text.call_args.kwargs["data"]
     assert isinstance(operation, RunTestsOutput)
     assert cached == operation.model_dump(mode="json")
-    assert response.isError is not operation.success
+    assert response.is_error is not operation.success
     assert not any(isinstance(item, EmbeddedResource) for item in response.content)
     assert "run_status" not in cached
     return operation
@@ -274,7 +274,7 @@ async def test_schema_exposure_and_strict_admission_share_one_contract(
     schema = composition.server.tools[0].input_schema
     Draft202012Validator.check_schema(schema)
     response, cached = await invoke(composition, "run_tests", arguments)
-    assert response.isError and cached["error_type"] == "ValidationError"
+    assert response.is_error and cached["error_type"] == "ValidationError"
     assert cached["input_schema"] == schema and runtime.calls == []
     resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
     assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"

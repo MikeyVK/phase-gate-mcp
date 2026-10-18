@@ -53,8 +53,7 @@ class AdapterBinding(Generic[CapabilityT_co]):  # noqa: UP046 -- Preserve explic
     capability_id: str
     contract_version: int
     launch: AdapterLaunch
-    # Mypy 3.13 synthesizes an incompatible __replace__; retain covariance, reassess in #513.
-    capability: CapabilityT_co  # type: ignore[misc]
+    capability: CapabilityT_co
 
 
 class AdapterPackageReader(Protocol):

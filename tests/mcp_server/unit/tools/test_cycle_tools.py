@@ -27,6 +27,7 @@ from mcp_server.tools.cycle_tools import (
     TransitionCycleTool,
 )
 from tests.mcp_server.test_support import (
+    connected_mcp_client,
     get_default_server_root,
     make_dispatch_dependencies,
     make_dispatch_server,
@@ -233,7 +234,6 @@ class TestCycleTools:
                     )
                 ),
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with patch.object(
                 managers.enforcement_runner,
@@ -246,11 +246,12 @@ class TestCycleTools:
                         arguments={"to_cycle": 1, "issue_number": 257},
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "✅" in response.root.content[0].text
-        assert len(response.root.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
+        assert "✅" in response.content[0].text
+        assert len(response.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -296,7 +297,6 @@ class TestCycleTools:
                     )
                 ),
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with (
                 patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
@@ -319,13 +319,12 @@ class TestCycleTools:
                         },
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "Force-transitioned from Cycle - to Cycle 2/2 (One)" in (
-            response.root.content[0].text
-        )
-        assert len(response.root.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
+        assert "Force-transitioned from Cycle - to Cycle 2/2 (One)" in (response.content[0].text)
+        assert len(response.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -415,7 +414,6 @@ class TestCycleTools:
                     )
                 ),
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with (
                 patch.object(managers.enforcement_runner, "run") as mock_run,
@@ -434,10 +432,11 @@ class TestCycleTools:
                         arguments={"to_cycle": 1, "issue_number": 257},
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        texts = [item.text for item in response.root.content]
-        assert len(response.root.content) == 1
+        texts = [item.text for item in response.content]
+        assert len(response.content) == 1
         assert "cycle hook failed" in texts[0]
         assert all(TRANSITION_ADVISORY_NOTE not in text for text in texts)
 
@@ -481,7 +480,6 @@ class TestCycleTools:
                     )
                 ),
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with (
                 patch.object(managers.enforcement_runner, "run") as mock_run,
@@ -511,10 +509,11 @@ class TestCycleTools:
                         },
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        text = response.root.content[0].text
-        assert len(response.root.content) == 1
+        text = response.content[0].text
+        assert len(response.content) == 1
         assert "cycle hook failed" in text
         assert "⚠️" not in text
         assert "✅" not in text

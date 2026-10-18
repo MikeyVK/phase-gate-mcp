@@ -152,7 +152,7 @@ async def run(
     operation = composition.text.present_text.call_args.kwargs["data"]
     assert isinstance(operation, RunChecksOutput)
     assert cached == operation.model_dump(mode="json")
-    assert response.isError is not operation.success
+    assert response.is_error is not operation.success
     assert not any(isinstance(item, EmbeddedResource) for item in response.content)
     text = response.content[0]
     assert isinstance(text, TextContent)
@@ -256,7 +256,7 @@ async def test_malformed_envelope_returns_validation_schema(
 ) -> None:
     composition, runtime = compose(tmp_path, pytestconfig, ("passed",))
     response, cached = await invoke(composition, "run_checks", arguments)
-    assert response.isError and cached["error_type"] == "ValidationError"
+    assert response.is_error and cached["error_type"] == "ValidationError"
     if not arguments:
         schema = cached["input_schema"]
         assert isinstance(schema, dict)

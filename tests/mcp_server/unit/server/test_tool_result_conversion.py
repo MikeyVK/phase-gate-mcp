@@ -33,8 +33,8 @@ class TestToolResultConversion:
         mcp_result = convert_tool_result_to_mcp_result(result)
 
         assert isinstance(mcp_result, CallToolResult)
-        assert not mcp_result.isError
+        assert not mcp_result.is_error
         assert len(mcp_result.content) == 1
         assert isinstance(mcp_result.content[0], TextContent)
         assert mcp_result.content[0].text == "Hello World"
-        assert getattr(mcp_result, "structuredContent", None) is None
+        assert getattr(mcp_result, "structured_content", None) is None

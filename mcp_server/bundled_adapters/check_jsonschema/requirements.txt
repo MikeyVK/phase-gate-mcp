@@ -1,4 +1,4 @@
 check-jsonschema==0.38.2
 orjson==3.13.0
 ruamel.yaml==0.18.16
-jsonschema==4.25.1
+jsonschema==4.26.0

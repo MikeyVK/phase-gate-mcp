@@ -58,7 +58,7 @@ def fix_json_surrogates(json_str: str) -> str:
         # Convert to UTF-8 character
         try:
             return chr(codepoint)
-        except (ValueError, OverflowError):
+        except ValueError, OverflowError:
             # Invalid codepoint - replace with Unicode replacement character
             return "\ufffd"
 
@@ -226,7 +226,7 @@ class MCPProxy:
             try:
                 sys.stdout.write(json.dumps(message, ensure_ascii=False) + "\n")
                 sys.stdout.flush()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 self._output_available = False
 
     def _unavailable(self, identifier: RpcId, reason: str, child: _Child | None) -> None:
@@ -350,7 +350,7 @@ class MCPProxy:
             ):
                 raise ValueError("invalid_initialize_response")
             result = InitializeResult.model_validate(message["result"])
-            if child.is_restart and result.protocolVersion != self._protocol_version:
+            if child.is_restart and result.protocol_version != self._protocol_version:
                 raise ValueError("initialize_protocol_changed")
         except (KeyError, ValueError) as error:
             self._mark_failed(
@@ -366,7 +366,7 @@ class MCPProxy:
                 "initialize_replayed",
                 generation=child.number,
                 server_pid=child.process.pid,
-                protocol_version=result.protocolVersion,
+                protocol_version=result.protocol_version,
             )
             try:
                 self._write_child(child, {"jsonrpc": "2.0", "method": "notifications/initialized"})
@@ -375,7 +375,7 @@ class MCPProxy:
                 return
             self._mark_ready(child)
         else:
-            self._protocol_version = result.protocolVersion
+            self._protocol_version = result.protocol_version
             child.pending.remove(identifier)
             self._write_client(message)
 
@@ -391,7 +391,7 @@ class MCPProxy:
                 return
             try:
                 identifier = _message_id(message)
-            except (KeyError, ValueError):
+            except KeyError, ValueError:
                 self._event("uncorrelated_response", generation=child.number)
                 return
             if identifier in child.pending:

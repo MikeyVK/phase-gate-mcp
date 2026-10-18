@@ -11,8 +11,6 @@ from unittest.mock import MagicMock
 import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import (
-    CallToolRequest,
-    CallToolRequestParams,
     CallToolResult,
     EmbeddedResource,
     TextContent,
@@ -42,6 +40,7 @@ from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.integration.test_scaffold_operation_v3 import operation as build_operation
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 @pytest.fixture
@@ -158,10 +157,9 @@ async def invoke(
     name: str,
     arguments: dict[str, JsonValue],
 ) -> tuple[CallToolResult, dict[str, JsonValue]]:
-    response = await composition.server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name=name, arguments=arguments))
-    )
-    assert isinstance(response.root, CallToolResult)
+    async with connected_mcp_client(composition.server) as client:
+        response = await client.call_tool(name, arguments)
+    assert isinstance(response, CallToolResult)
     call = composition.text.present_text.call_args
     publication = call.kwargs["cache_pub"]
     operation = call.kwargs["data"]
@@ -173,10 +171,10 @@ async def invoke(
     )
     if isinstance(operation, ScaffoldOperationOutput):
         assert cached == operation.model_dump(mode="json")
-    summary = response.root.content[0]
+    summary = response.content[0]
     assert isinstance(summary, TextContent)
     assert f"pgmcp://cache/runs/{publication.run_id}" in summary.text
-    return response.root, cached
+    return response, cached
 
 
 def schema_resource(response: CallToolResult) -> EmbeddedResource:
@@ -216,7 +214,7 @@ async def test_public_scaffold_preserves_validation_and_actual_persistence(
             "validation": policy,
         },
     )
-    assert response.isError is not written
+    assert response.is_error is not written
     assert result["success"] is result["written"] is written
     assert result["validation_status"] == status
     assert result["validation_policy"] == policy
@@ -262,7 +260,7 @@ async def test_context_rejection_attaches_the_same_schema_as_discovery(
             "context": {},
         },
     )
-    assert rejected.isError is True
+    assert rejected.is_error is True
     assert result["written"] is False
     assert result["error_code"] == "context_invalid"
     assert result["checks"] == []
@@ -304,7 +302,7 @@ async def test_creation_fault_retains_passed_checks_and_exact_error_details(
             "context": {"problem": "Caller value", "context": ""},
         },
     )
-    assert response.isError is True
+    assert response.is_error is True
     assert result["written"] is False
     assert result["validation_status"] == "passed"
     assert result["error_code"] == "persistence_failed"
@@ -345,7 +343,7 @@ async def test_malformed_scaffold_input_stops_at_the_public_envelope(
     schema = composition.server.tools[0].input_schema
     assert not Draft202012Validator(schema).is_valid(raw)
     response, result = await invoke(composition, "scaffold_artifact", raw)
-    assert response.isError is True
+    assert response.is_error is True
     assert result["error_type"] == "ValidationError"
     assert result["params"] == raw
     assert result["input_schema"] == schema

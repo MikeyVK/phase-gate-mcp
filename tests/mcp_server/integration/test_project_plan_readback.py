@@ -15,17 +15,13 @@ from unittest.mock import Mock
 
 import pytest
 from git import Actor, Repo
+from mcp.shared.exceptions import MCPError
 from mcp.types import (
-    CallToolRequest,
-    CallToolRequestParams,
     CallToolResult,
-    ReadResourceRequest,
-    ReadResourceRequestParams,
     ReadResourceResult,
     TextContent,
     TextResourceContents,
 )
-from pydantic import AnyUrl
 
 import mcp_server
 from mcp_server.bootstrap import ServerBootstrapper
@@ -47,7 +43,7 @@ from mcp_server.schemas.deliverables import (
 )
 from mcp_server.server import MCPServer
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
-from tests.mcp_server.test_support import make_project_manager
+from tests.mcp_server.test_support import connected_mcp_client, make_project_manager
 
 
 class _CompleteEvidence:
@@ -131,14 +127,11 @@ def _planning_payload(cycle_count: int) -> SavePlanningModel:
 
 async def _call_plan(server: MCPServer) -> str:
     """Call the registered MCP handler and obtain its advertised resource URI."""
-    response = await server.server.request_handlers[CallToolRequest](
-        CallToolRequest(
-            params=CallToolRequestParams(name="get_project_plan", arguments={"issue_number": 53})
-        )
-    )
-    result = response.root
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool("get_project_plan", {"issue_number": 53})
+    result = response
     assert isinstance(result, CallToolResult)
-    assert not result.isError
+    assert not result.is_error
     text = "\n".join(part.text for part in result.content if isinstance(part, TextContent))
     assert "Implement bounded surface" not in text
     match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
@@ -148,10 +141,9 @@ async def _call_plan(server: MCPServer) -> str:
 
 async def _read_resource(server: MCPServer, uri: str) -> dict[str, Any]:
     """Read through the MCP resource handler, never the persistence file."""
-    response = await server.server.request_handlers[ReadResourceRequest](
-        ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl(uri)))
-    )
-    result = response.root
+    async with connected_mcp_client(server) as client:
+        response = await client.read_resource(uri)
+    result = response
     assert isinstance(result, ReadResourceResult)
     assert len(result.contents) == 1
     content = result.contents[0]
@@ -249,8 +241,10 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
     expected = revised["planning_deliverables"]
 
     restarted = ServerBootstrapper(settings).bootstrap_target()
-    with pytest.raises(ValueError, match="No cached data found"):
-        await _read_resource(restarted, old_uri)
+    async with connected_mcp_client(restarted) as client:
+        with pytest.raises(MCPError, match="No cached data found") as caught:
+            await client.read_resource(old_uri)
+        assert caught.value.code == 0
     new_uri = await _call_plan(restarted)
     assert new_uri != old_uri
     second = await _read_windowed_plan(restarted, new_uri)
@@ -324,11 +318,10 @@ async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_updat
         parent_branch="main",
     )
     repository.save(initial)
-    context_response = await server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name="get_work_context", arguments={}))
-    )
-    assert isinstance(context_response.root, CallToolResult)
-    assert not context_response.root.isError
+    async with connected_mcp_client(server) as client:
+        context_response = await client.call_tool("get_work_context", {})
+    assert isinstance(context_response, CallToolResult)
+    assert not context_response.is_error
     check_id = "D_1.1" if boundary == "cycle" else "D_1"
 
     async def advance(force: bool = False) -> dict[str, Any]:
@@ -343,10 +336,9 @@ async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_updat
             arguments.update(
                 skip_reason="Inspect current rule", human_approval_message="Owner approved"
             )
-        response = await server.server.request_handlers[CallToolRequest](
-            CallToolRequest(params=CallToolRequestParams(name=name, arguments=arguments))
-        )
-        call_result = response.root
+        async with connected_mcp_client(server) as client:
+            response = await client.call_tool(name, arguments)
+        call_result = response
         assert isinstance(call_result, CallToolResult)
         text = "\n".join(part.text for part in call_result.content if isinstance(part, TextContent))
         match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)

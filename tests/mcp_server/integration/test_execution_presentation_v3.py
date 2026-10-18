@@ -14,16 +14,12 @@ from unittest.mock import MagicMock
 
 import pytest
 from mcp.types import (
-    CallToolRequest,
-    CallToolRequestParams,
     CallToolResult,
-    ReadResourceRequest,
-    ReadResourceRequestParams,
     ReadResourceResult,
     TextContent,
     TextResourceContents,
 )
-from pydantic import AnyUrl, BaseModel, ConfigDict, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
 
 from mcp_server.bootstrap import SupportedToolContract
 from mcp_server.config.loader import ConfigLoader
@@ -39,6 +35,7 @@ from mcp_server.presenters.text_presenter import TextPresenter, validate_present
 from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 class Status(StrEnum):
@@ -142,23 +139,21 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
         publisher=cache,
         presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
     )
-    response = await server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name="projection", arguments={}))
-    )
-    assert isinstance(response.root, CallToolResult)
-    assert not response.root.isError
-    text = "\n".join(item.text for item in response.root.content if isinstance(item, TextContent))
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool("projection", {})
+    assert isinstance(response, CallToolResult)
+    assert not response.is_error
+    text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
     assert "row-one:" in text and "cache-only" not in text
     assert "UNKNOWN" not in text
     assert ("COMPLETE" in text) is (not nullable)
     assert ("Result: -" if nullable else "Result: 0") in text
     match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
     assert match is not None
-    readback = await server.server.request_handlers[ReadResourceRequest](
-        ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl(match.group())))
-    )
-    assert isinstance(readback.root, ReadResourceResult)
-    content = readback.root.contents[0]
+    async with connected_mcp_client(server) as client:
+        readback = await client.read_resource(match.group())
+    assert isinstance(readback, ReadResourceResult)
+    content = readback.contents[0]
     assert isinstance(content, TextResourceContents)
     assert Projection.model_validate_json(content.text) == operation
 
@@ -208,11 +203,10 @@ async def test_shipped_cache_hint_stays_complete_within_budget(
             publisher=cache,
             presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
         )
-        readback = await server.server.request_handlers[ReadResourceRequest](
-            ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl(guide_uri)))
-        )
-        assert isinstance(readback.root, ReadResourceResult)
-        content = readback.root.contents[0]
+        async with connected_mcp_client(server) as client:
+            readback = await client.read_resource(guide_uri)
+        assert isinstance(readback, ReadResourceResult)
+        content = readback.contents[0]
         assert isinstance(content, TextResourceContents)
         assert content.text == (
             Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"

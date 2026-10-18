@@ -45,7 +45,7 @@ def convert_tool_result_to_content(
             )
         elif content.get("type") == "image":
             response_content.append(
-                ImageContent(type="image", data=content["data"], mimeType=content["mimeType"])
+                ImageContent(type="image", data=content["data"], mime_type=content["mimeType"])
             )
         elif content.get("type") == "resource":
             response_content.append(EmbeddedResource(type="resource", resource=content["resource"]))
@@ -60,6 +60,6 @@ def convert_tool_result_to_mcp_result(
     mcp_content = convert_tool_result_to_content(result.content)
     return CallToolResult(
         content=cast(list[Any], mcp_content),
-        isError=result.is_error,
-        structuredContent=None,
+        is_error=result.is_error,
+        structured_content=None,
     )

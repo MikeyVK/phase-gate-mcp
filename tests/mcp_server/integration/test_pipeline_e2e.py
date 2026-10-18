@@ -41,7 +41,11 @@ from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import EnforcementErrorOutput
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
-from tests.mcp_server.test_support import assert_itool_result, make_test_server
+from tests.mcp_server.test_support import (
+    assert_itool_result,
+    connected_mcp_client,
+    make_test_server,
+)
 
 
 # Dummy Core Tool for E2E validation
@@ -82,7 +86,7 @@ class DummyCoreTool(ICoreTool[DummyInput, DummyOutput]):
 
 
 @pytest.fixture
-def temp_workspace(tmp_path: Path) -> Generator[Path, None, None]:
+def temp_workspace(tmp_path: Path) -> Generator[Path]:
     """Create temporary workspace for integration testing."""
     workspace = tmp_path / "test_workspace"
     workspace.mkdir(parents=True, exist_ok=True)
@@ -149,17 +153,17 @@ class TestPipelineE2E:
         server.tools = [decorated_tool]
 
         # Act - Trigger tool call request
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="dummy_core_tool",
                 arguments={"val": 42},
             )
         )
-        response = await handler(req)
+        async with connected_mcp_client(server) as client:
+            response = await client.call_tool(req.params.name, req.params.arguments)
 
         # Assert - Verify presented output and cache
-        text_content = assert_itool_result(response.root)
+        text_content = assert_itool_result(response)
         assert "Value: 42" in text_content
 
         # Verify run_id cache resolution
@@ -212,16 +216,16 @@ class TestPipelineE2E:
         )
         server.tools = [decorated_tool]
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="dummy_core_tool",
                 arguments={"val": 100},
             )
         )
-        response = await handler(req)
+        async with connected_mcp_client(server) as client:
+            response = await client.call_tool(req.params.name, req.params.arguments)
 
-        text_content = assert_itool_result(response.root)
+        text_content = assert_itool_result(response)
         assert "Value: 100" in text_content
         # Check that fallback warning and inline JSON dump are present
         assert "*(Cache publication failed. Full details dumped inline)*" in text_content
@@ -264,18 +268,18 @@ class TestPipelineE2E:
         )
         server.tools = [decorated_tool]
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="dummy_core_tool",
                 arguments={"val": 42},
             )
         )
-        response = await handler(req)
+        async with connected_mcp_client(server) as client:
+            response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert getattr(response.root, "is_error", False) or getattr(response.root, "isError", False)
-        assert len(response.root.content) == 1
-        text_content = response.root.content[0].text
+        assert response.is_error
+        assert len(response.content) == 1
+        text_content = response.content[0].text
         assert "❌ Branch feature-branch is dirty!" in text_content
 
         match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text_content)

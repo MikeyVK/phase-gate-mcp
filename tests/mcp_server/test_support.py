@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -16,6 +17,7 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
 from jinja2 import Environment
+from mcp import Client
 
 from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import (
@@ -567,9 +569,7 @@ def assert_itool_result(
     text_contains: str | None = None,
 ) -> str:
     """Verifies the ToolResult structure for ITool (pure text, no JSON)."""
-    is_err = getattr(result, "is_error", None)
-    if is_err is None:
-        is_err = getattr(result, "isError", False)
+    is_err = result.is_error
     assert not is_err, f"Expected successful tool result, got error: {result}"
 
     json_blocks = []
@@ -645,3 +645,10 @@ def make_template_suite_admission(
         create_adapters=create_adapters,
         validator=validator,
     )
+
+
+@asynccontextmanager
+async def connected_mcp_client(server: MCPServer) -> AsyncIterator[Client]:
+    """Expose the native initialized MCP client without request/result translation."""
+    async with Client(server.server, mode="legacy", cache=None) as client:
+        yield client
