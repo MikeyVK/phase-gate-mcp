@@ -2,8 +2,8 @@
 
 # Issue 517 — Python 3.15 and MCP SDK 2.3 Migration Research
 
-**Status:** Research complete for independent review; inherited strategy, no new owner policy requested  
-**Version:** 0.2  
+**Status:** Research strategy reopened only for public output-schema/content contract discovered in Design  
+**Version:** 0.3  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -114,6 +114,10 @@ Exact dependency/prerequisite declarations and existing runtime version guards r
 
 ## Approved Strategy
 
+**Design-discovered exception (2026-10-18):** the public output-schema/content preservation boundary is reopened for owner decision. Native SDK2 Client.call_tool on the approved initialized route rejects absent/null structuredContent when outputSchema is declared. Delivering the DTO or removing outputSchema both change that existing wire promise. The inherited decisions below remain binding everywhere else; the relevant pending alternatives and source-specific error mapping are in [Design](design.md#state-and-failures). No source/production policy was changed.
+
+Temporary diagnosis: run_tests(scope="targets", targets=[".pgmcp/temp/issue517/test_output_contract_probe.py"], tests=["python_tests"], args={"python_tests":["-n","0","-s","--tb=short"]}, timeout_seconds=90). One diagnostic case passed in3.89s: it launched the selected Python3.15/SDK2 environment, negotiated2025-11-25, observed null output rejected with "Tool example has an output schema but did not return structured content", and matching {"success":true} accepted. The host tool's driver is not candidate suite acceptance. Supplemental receipt378fb122078949bf97b7937673231888; ignored diagnostic file is not permanent coverage or a dependency-version assertion.
+
 Inherited from the owner-approved #513 outcome and published #517 scope, with the owner's explicit test-scope clarification on2026-10-18. That clarification supersedes the earlier old/new dependency-client verification wording: only the selected target stack is a delivery test target.
 
 | Boundary | Approved strategy |
@@ -129,7 +133,7 @@ Inherited from the owner-approved #513 outcome and published #517 scope, with th
 
 ## Expected Results
 
-Research supplies a bounded structural and preservation basis for Design, not a migrated application. Delivery succeeds only when the actual installed pgmcp artifact, initialized protocol operations and proxy failure/lifecycle behavior work under the controlled target with required quality/full-suite evidence. Direct tests are adapted proportionally and unrelated suppression work remains in #518. There is no new owner policy request from current source findings; exact handler/test/packaging and activation arrangements are Design/Planning questions within these boundaries.
+Research supplies a bounded structural and preservation basis for Design, not a migrated application. Delivery succeeds only when the actual installed pgmcp artifact, initialized protocol operations and proxy failure/lifecycle behavior work under the controlled target with required quality/full-suite evidence. Direct tests are adapted proportionally and unrelated suppression work remains in #518. The original source review found no new policy choice; the later Design output-schema/content probe above reopens precisely that wire-contract decision. Other handler/test/packaging/activation arrangements remain Design/Planning work within the inherited boundaries.
 
 ## Evidence
 
@@ -192,3 +196,4 @@ Keep #513 evidence labeled and require actual application success/failure/cancel
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp researcher | Map current SDK/dependency/test boundaries against inherited #513 decisions and identify delivery acceptance gaps without repeating compatibility research. |
 | 0.2 | 2026-10-18 | @imp researcher | Record explicit clean-break/target-only behavior-test policy; remove old/new dependency-client matrix as a delivery requirement while preserving native guards and installation acceptance. |
+| 0.3 | 2026-10-18 | @imp researcher | Reopen the specific output-schema/content strategy after a selected-stack initialized client probe exposed a preservation conflict in Design. |

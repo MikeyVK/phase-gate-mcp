@@ -2,8 +2,8 @@
 
 # Issue 517 — Native SDK 2 Migration Design
 
-**Status:** Design complete for independent review  
-**Version:** 0.1  
+**Status:** Design held for explicit output-contract owner decision; QA correction in progress  
+**Version:** 0.2  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -112,7 +112,7 @@ The callback contracts are async handle_list_resources(_ctx: ServerRequestContex
 
 ### Test lifecycle seam
 
-In existing tests/mcp_server/test_support.py, an async context manager connected_mcp_client(server: MCPServer) -> AsyncIterator[Client] owns only Client(server.server, cache=None) enter/exit. It exposes native SDK2 Client/results directly. Tests call list_tools/call_tool/read_resource and inspect snake_case fields, without .root wrappers, request_handlers, rewritten request objects or a pgmcp test dispatcher. Local helpers may retain their application-specific return shapes; they must consume real SDK results.
+In existing tests/mcp_server/test_support.py, an async context manager connected_mcp_client(server: MCPServer) -> AsyncIterator[Client] owns only Client(server.server, mode="legacy", cache=None) enter/exit. It exposes native SDK2 Client/results directly. Tests call list_tools/call_tool/read_resource and inspect snake_case fields, without .root wrappers, request_handlers, rewritten request objects or a pgmcp test dispatcher. Local helpers may retain their application-specific return shapes; they must consume real SDK results.
 
 ### Installed acceptance boundary
 
@@ -124,7 +124,31 @@ Existing tool composition -> native SDK2 callback -> normalized tool pipeline ->
 
 ## State and Failures
 
-No state schema or workflow transition behavior changes. Domain/input errors retain existing DTO/presenter/schema facts and wire isError behavior. Unknown resource/tool and unexpected processing exceptions retain current SDK/application error meaning; do not silently tighten statuses or rewrite diagnostics. asyncio.CancelledError still propagates. Proxy protocol change, failed child replacement and cleanup stay explicit failures, with no success after incomplete termination.
+No state/workflow schema change. SDK2 native initialized stream mode is mandatory in both the shared test helper and installed acceptance; the SDK's mode name legacy does not select an old SDK/dependency environment.
+
+### Explicit existing error mapping at the server boundary
+
+| Case | Observed SDK1/application wire outcome | SDK2 ownership / preservation requirement |
+| --- | --- | --- |
+| Normal operation | Explicit converter CallToolResult, isError=false, text/attachments; structuredContent=None despite published outputSchema. | The output-schema/content combination is reopened below; do not silently preserve an invalid combination or change it without owner decision. |
+| Existing operation/input error DTO | Explicit CallToolResult with isError=true and original presenter/schema facts. | Native server callback returns the explicit SDK2 result with the same error flag and facts. |
+| Unknown tool | Application raises ValueError("Tool not found: ..."); SDK1 decorator catches it into CallToolResult isError=true and text=str(error). | Native SDK2 callback must return that explicit tool error result. Do not let it become a JSON-RPC exception. |
+| Unknown resource / resource-read exception | SDK1 outer request boundary yields ErrorData(code=0, message=str(error), data=None). No tool-result isError field. | Use the native SDK2 MCPError/ErrorData path at this existing boundary, preserving code/message and the original cause/traceback. No tool error DTO or new framework. |
+| Response-processing exception, tool without output schema | Application returns the original "Error processing tool response: ..." content list; SDK1 normalizes it to CallToolResult isError=false. | This normalization must be explicit in SDK2 if that contract is retained; no automatic list conversion remains. |
+| Response-processing exception, declared output schema | SDK1 subsequently rejects the content-list fallback as missing structured output, replacing it with isError=true and "Output validation error: outputSchema defined but no structured output returned". | This schema-dependent fallback is affected by the reopened output-contract decision. Do not accidentally choose a new error flag or claim the no-schema normalization covers this case. Complete the explicit resulting contract before Planning. |
+| Cancellation | asyncio.CancelledError propagates rather than being normalized into a result. | Preserve propagation and native request cancellation; no fabricated success after timeout/cleanup failure. |
+
+These facts come from the current application and installed SDK1 source: read_resource wrapper338–393, error result473–479, call_tool normalization540–590 and outer dispatch777–794. They are source evidence, not a new legacy-version test matrix. The migration implements the required SDK2 mapping at server.py; business layers do not learn SDK error types.
+
+### Reopened public output contract — owner decision pending
+
+The proposed SDK2 Client.call_tool validates structured_content against the listed output_schema for non-error results. A targeted selected-stack probe on the initialized2025-11-25 route rejected null output with "Tool example has an output schema but did not return structured content"; the same operation with matching structured content passed.
+
+Current outputSchema exposure and absent/null structuredContent cannot both be preserved with this client acceptance contract. The existing unchanged-interface strategy is therefore unsound at this precise boundary. Two concrete alternatives are submitted to the owner:
+- Retain outputSchema and deliver the actual operation DTO as structuredContent, alongside current text/resources/cache. This adds public payload and requires the resulting processing-failure mapping to be explicit.
+- Stop advertising outputSchema and preserve current text/resource/cache output. This removes an existing public schema promise without adding the DTO payload.
+
+Neither is approved yet. Do not make schemas nullable merely to suppress the error, bypass validation, add a compatibility layer or misreport successful client acceptance. Design remains active; no Planning/implementation transition until the owner decision and targeted QA recheck.
 
 ## Preservation
 
@@ -193,3 +217,4 @@ Plan bounded structural cutover/consumer adaptation and real package/lifecycle a
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp designer | Specify native typed SDK2 callbacks/results, target-only test access, prerequisite ownership and isolated installed-package acceptance. |
+| 0.2 | 2026-10-18 | @imp designer | Make initialized test mode and source-based error mapping explicit; hold Design for reproduced public output-schema/content policy conflict. |
