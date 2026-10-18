@@ -3,8 +3,8 @@
 # Issue 513 — MCP SDK and Python Baseline Assessment
 
 **Status:** Research complete for independent review — implementation remains outside this issue  
-**Version:** 0.11  
-**Last Updated:** 2026-10-17
+**Version:** 0.12  
+**Last Updated:** 2026-10-18
 
 ## Purpose
 
@@ -264,6 +264,8 @@ The research establishes a feasible migration direction and suppression-removal 
 
 ## Research Closure
 
+**Research-only closeout route (owner decision,2026-10-18):** independent QA reviewed commit4c6d92b40757d4ecfb75656c024b5b6b3e982ccf and gave GO for the substantive Research conclusion, with one P2 against an ordinary transition into Implementation because this issue contains no implementation package. The owner then explicitly authorized this research branch to pass through Ready and be handed to Coordination, where the follow-up issues will be created. Use the existing force_phase_transition to move Research -> Ready with the owner's approval and this reason in the state audit. Implementation, Validation and Documentation are deliberately bypassed for this research-only closeout; no implementation/full-validation/documentation completion is claimed. Ready still owns final scope/evidence review, a scaffolded research-only PR, tracked-state commit and submission against registered main. No workflow/configuration change, migration, production repair, new broad test run or release is authorized. Coordination owns merge and the concrete migration-then-suppression follow-up issues. Request a targeted QA recheck of this closeout correction before the transition.
+
 The owner approved the target, initialized-protocol boundary, migration-before-repair sequence and ordinary-helper/precise-test-exception policy. All suppression families have a remove, narrow or retain-with-trigger direction in the final inventory. The source grouping distinguishes validation gaps from typing deficiencies; it does not claim that every later patch is already designed.
 
 There is no outstanding owner choice blocking Research review. Logging metadata ownership, final local typing techniques and migration acceptance evidence are explicitly assigned to later design/implementation. New evidence contradicting an approved contract must reopen that decision rather than silently change it.
@@ -467,3 +469,4 @@ No production remediation in this phase; obtain per-boundary strategy and split 
 | 0.9 | 2026-10-17 | @imp researcher | Record approved Literal-attribute direction and robust logging research; reproduce malformed props, metadata overwrite, cleanup-field loss and static-contract limits without production changes. |
 | 0.10 | 2026-10-17 | @imp researcher | Record approved explicit logging-payload diagnosis; verify remaining typing/library/guard findings and preserve open guard-policy decisions. |
 | 0.11 | 2026-10-17 | @imp researcher | Record final owner migration/protocol/test policy and delivery order; consolidate complete suppression dispositions, remaining source groups and review boundaries. |
+| 0.12 | 2026-10-18 | @imp researcher | Record substantive QA GO and owner-authorized research-only Research-to-Ready closeout route; retain Ready submission and Coordination-owned follow-up issues. |
