@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** C_7 focused recovery complete; exact90% full Validation pending
-**Version:** 0.9  
+**Status:** Actual90% and checks pass; one lifecycle test setup race remains
+**Version:** 0.10  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -352,6 +352,16 @@ Actual candidate run_tests(scope="targets", targets=["tests/mcp_server/core/test
 
 Targeted run_checks for the same file with python_format/python_lint/python_pyright, timeout600 all passed; Pyright one file, zero diagnostics. Native Markdown checks on edited evidence also passed. The full2960 passing tests and actual89.995636% shortfall above remain the latest complete result, not a green coverage claim. Independent Implementation → Validation review precedes the final complete configured run and required branch/configured gates, with raw combined coverage at least90% and no native threshold-failure text.
 
+## Post-C_7 Complete Validation
+
+**Coverage and checks pass; complete acceptance FAILS on one test-harness race.** Exact clean snapshot46292376e199cafbba59bd99d70b84bf33bece30, after independent Implementation GO686fc435. All seven cycles remain intact; final native git_status is clean.
+
+Same full configured native eight-worker invocation with --cov --cov-branch -q, timeout1800, output .pgmcp/temp/issue517/full-suite-c7.xml and coverage-c7.xml:2960 passed,1 failed, zero errors/skips,2961 cases in628.26s, native exit1. Combined coverage is13363/14456 lines plus3141/3876 branches =16504/18332 (90.028366%); native output explicitly says90% reached. Branch format/lint/Pyright and configured format/lint/Pyright all pass (66 formatting/lint targets,24 branch production types;474 configured format targets and191 configured production types, zero diagnostics). Reuse unchanged191-file production Mypy evidence.
+
+The sole failure is integration/execution/test_process_stopping.py::test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot. Its caller timeout1s starts stopping before the test has armed the original Node children. The synchronous observe-members injection then waits2s for a late child while blocking the event loop needed to arm the originals. The retained fixture establishes this ordering: parent/first PID at16:16:55, second PID and spawn-late.request at16:16:56, first.armed/second.armed only at16:16:58; no late.pid was published. The failure is the fixture AssertionError before a typed termination result, not demonstrated acceptance of an unsafe production stop.
+
+Repair only this existing race test: let the Node parent acknowledge that original children are armed; await that factual marker with a bounded async readiness wait; then explicitly cancel the invocation. Preserve the member-created-after-snapshot injection, UNCONFIRMED result, retained scratch and absent late.done; existing timeout/cause/shared-five-second-stop-budget tests stay unchanged. No new cases/modules, production timing change or gate exception. Another complete native Validation remains mandatory after independent phase review.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -371,3 +381,4 @@ Targeted run_checks for the same file with python_format/python_lint/python_pyri
 | 0.7 | 2026-10-18 | @imp implementer | Record10 passing public proxy cases and targeted checks after C_6; reserve full90% acceptance for independent re-entry to Validation. |
 | 0.8 | 2026-10-18 | @imp validator | Record2960 passing full cases/checks but89.995636% actual coverage; expose native rounding/terminal discrepancy and retain strict90% obligation. |
 | 0.9 | 2026-10-18 | @imp implementer | Record11 passing proxy cases, original initialize-error diagnosis and precision6; exact90% full acceptance remains pending. |
+| 0.10 | 2026-10-18 | @imp validator | Record actual90.028366% and green checks but one confirmed test setup deadlock; preserve negative complete outcome. |
