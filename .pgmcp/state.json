@@ -4,9 +4,9 @@
   "parent_branch": "main",
   "issue_number": 520,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 1,
-  "last_cycle": null,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -45,8 +45,16 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-18T20:25:36.249821+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
