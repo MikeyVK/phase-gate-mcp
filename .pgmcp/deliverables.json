@@ -19,7 +19,7 @@
       "created_at": "2026-10-18T06:34:02.783485+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 4,
+          "total": 5,
           "cycles": [
             {
               "cycle_id": "C_1",
@@ -151,6 +151,32 @@
                 }
               ],
               "exit_criteria": "The remaining startup routes pass with native parallelism, subprocess coverage feasibility/completeness is evidenced through actual candidate MCP tests, any needed behavior cases use public interfaces and remain proportional, and changed-file gates pass. Independent QA governs Implementation to Validation; only Validation runs the full configured suite and must reach 90% combined coverage with unchanged source/branch scope and all tests/checks passing. Preserve C1-C3 and both failed full runs; stop and discuss a material public-contract/policy or architectural change."
+            },
+            {
+              "cycle_id": "C_5",
+              "cycle_number": 5,
+              "cycle_name": "Focused installed measurement and coverage-test recovery",
+              "deliverables": [
+                {
+                  "deliverable_name": "Bounded installed measurement lifecycle",
+                  "description": "Use existing public MCPProxy constructor injection only in the installed migration/planning-readback test to separate instrumented test startup budget from production default. Keep real installed server, protocol, cache, migration and cleanup behavior; preserve unchanged default-entrypoint startup and timeout-rejection controls.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_target_startup.py"
+                  },
+                  "deliverable_id": "D_5.1"
+                },
+                {
+                  "deliverable_name": "Native coverage behavior without configuration-content coupling",
+                  "description": "Remove only the stale repository config-dictionary assertions/import from the existing opt-in/threshold conformance test. Preserve direct-native and adapter runs, absence of implicit coverage and native failure below threshold. Run both affected families and scoped coverage, inspect actual gaps before any additional cases.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/adapters/test_pytest.py"
+                  },
+                  "deliverable_id": "D_5.2"
+                }
+              ],
+              "exit_criteria": "Both affected existing test families pass through actual candidate MCP on native configured workers, including opt-in subprocess coverage for installed lifecycle. Format/lint/Pyright and changed-doc links pass. No production edit/default-deadline change, skip, coverage-source/threshold alteration, new test module or compatibility. Independent Implementation to Validation GO precedes another full mandatory run; 90% remains required. A substantive policy/contract change or genuinely remaining coverage gap needing disproportionate tests is discussed with owner."
             }
           ]
         },

@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -248,6 +248,21 @@ Native measurement selects source_pkgs=["mcp_server"] with --cov without a value
 
 **Closure:** Candidate run_tests(scope="targets") covers affected tests; changed Python format/lint/Pyright and applicable configured production Mypy cover code; markdown_links covers edited documents. Independent Implementation → Validation review precedes the complete configured suite with unchanged --cov/--cov-branch and90% threshold, then required branch/configured gates. No full suite during this cycle. Rollback uses the coherent pre-C_4 commit; committed prior cycles are never replaced.
 
+### C\_5 — Focused installed measurement and coverage-test recovery
+
+**Goal:** Repair the two post-C_4 failures before attributing any remaining coverage shortfall to missing cases. Preserve C_1–C_4 and all negative evidence.
+
+| Deliverable | Bounded implementation | Proof |
+| --- | --- | --- |
+| D_5.1 — Bounded installed measurement lifecycle | In the existing installed initialization/migration/planning-readback test only, launch the real installed proxy through its public constructor with initialization_timeout_seconds=90 and client timeout120. This tests functional integration under subprocess coverage without declaring a production startup SLA under instrumentation. Production default30, module-entrypoint controls in target_startup/v3_cutover and the explicit silent-child timeout case stay unchanged. No sleeps, retries or fallback success. | The full affected startup and pytest-adapter families plus unchanged core proxy controls pass with native workers. Run affected startup with --cov/--cov-branch and retain native data/diagnostics; a narrow selection may correctly fail the global90% threshold. Observe actual protocol, planning/cache roundtrip, migration and bounded process cleanup. |
+| D_5.2 — Native coverage behavior without content coupling | Remove the stale repository coverage-dictionary comparison and its unused tomllib import. Keep this existing test's isolated native config, direct and adapter opt-in runs, absence of coverage by default and native below-threshold rejection. No replacement literal repo-content assertion. | Existing behavior cases pass via real native tools; format/lint/Pyright on the two changed test files and markdown_links on edited docs pass. No new test case/module planned. |
+
+**Evidence and rationale:** [Post-C_4 Validation](validation.md#post-c_4-complete-validation) records2956 passed,2 failed and89.94% combined coverage. The failed child imported for approximately18s before bootstrap, then reached the existing30s deadline without readiness. Other real default startup routes passed in that same run. This establishes the need to distinguish the heavily instrumented functional integration budget from default-entrypoint timing; it does not prove a production deadlock or justify changing production timeout. The existing injectable constructor already supports this bounded test setup.
+
+**Sequence:** Independent Planning → Implementation GO; transition with resume_cycle="C_5"; make only the two test edits; run the affected test families and scoped instrumentation/gates; record actual outcomes. The failed long installed test currently omits its substantive body, so inspect fresh measurements before proposing additional behavior cases. No percentage prediction counts as acceptance.
+
+**Stops:** No production/config/threshold/source/parallelism change, new compatibility path, skip, suppression or arbitrary readiness sleep. Substantive public-contract/policy changes or disproportionate additional coverage work return to the owner. Independent Implementation → Validation GO precedes the next complete suite with the same90% gate and all branch/configured gates.
+
 ## Phase Deliverables
 
 ### Validation
@@ -300,3 +315,5 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | 0.2 | 2026-10-18 | @imp planner | Add one bounded recovery cycle for failed full Validation; preserve prior cycles/evidence and record the owner's explicit Python-only Ruff discovery choice. |
 | 0.3 | 2026-10-18 | @imp implementer | Record owner approval for targeted native-adapter repairs required by the selected upgrade, preserving public contracts and the C_3 boundary. |
 | 0.4 | 2026-10-18 | @imp planner | Add C_4 for installed startup callers, native child coverage and proportional behavior gaps; retain owner-required90%. |
+
+| 0.5 | 2026-10-18 | @imp planner | Add bounded C_5 for installed instrumented initialization and stale coverage-content test; preserve default startup controls and90% acceptance. |
