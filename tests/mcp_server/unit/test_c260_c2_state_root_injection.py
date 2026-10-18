@@ -467,6 +467,6 @@ class TestNormalizeConfigRootNoPhaseGateFallback:
                 f"normalize_config_root final fallback still hardcodes "
                 f"get_default_server_root(): {result}"
             )
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError, ValueError:
             # Raising is preferred — no .pgmcp path was produced
             pass

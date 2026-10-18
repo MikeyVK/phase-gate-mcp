@@ -249,12 +249,18 @@ def _native_error(text: str) -> str | None:
 def _message(stdout: bytes, stderr: bytes) -> str | None:
     combined = (stdout + b"\n" + stderr).decode("utf-8", errors="replace")
     lines = [line.strip() for line in combined.splitlines() if line.strip()]
-    if "Traceback (most recent call last):" in lines:
-        cause = lines[-1]
-        if cause == "ImportError":
-            error_lines = stderr.decode("utf-8", errors="replace").splitlines()
-            return next((line.strip() for line in error_lines if line.strip()), cause)
-        return cause
+    for stream in (stderr, stdout):
+        stream_lines = [
+            line.strip()
+            for line in stream.decode("utf-8", errors="replace").splitlines()
+            if line.strip()
+        ]
+        if "Traceback (most recent call last):" in stream_lines:
+            cause = stream_lines[-1]
+            if cause == "ImportError":
+                error_lines = stderr.decode("utf-8", errors="replace").splitlines()
+                return next((line.strip() for line in error_lines if line.strip()), cause)
+            return cause
     error = _native_error(combined)
     return error if error is not None else next(iter(lines), None)
 
@@ -305,9 +311,15 @@ def _classify_exit(code: int, text: str, config_file: str | None) -> str:
     if any(marker in lowered for marker in ("usage:", "unrecognized arguments", "invalid choice")):
         return "unsupported_input"
     if code == 2:
+        error = _native_error(text)
+        if error is not None and (
+            error.startswith("Cannot read file:")
+            or error.partition(": error: ")[2].startswith("Cannot read file:")
+        ):
+            return "execution_error"
         if any(line.strip().startswith(("error:", "mypy: error:")) for line in text.splitlines()):
             return "unsupported_input"
-        if _native_error(text) is not None:
+        if error is not None:
             return "failed"
     return "execution_error"
 
@@ -408,7 +420,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
 def main() -> int:
     try:
         request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         response, exit_code = _invalid([_issue([], "invalid_value")]), 2
     else:
         response, exit_code = _run(request)

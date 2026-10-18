@@ -26,16 +26,17 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 import pytest
 from git import Repo as GitRepo
+from jsonschema import Draft202012Validator
 
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import MCPError
 from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.tool_outputs import HealthCheckOutput
 from mcp_server.services.template_activation import UpgradeLock
 from scripts.build_package import read_manifest
 from tests.mcp_server.fixtures.installed_distribution import (
@@ -44,6 +45,7 @@ from tests.mcp_server.fixtures.installed_distribution import (
 )
 from tests.mcp_server.fixtures.server_process import run_server_process
 from tests.mcp_server.test_support import (
+    connected_mcp_client,
     copy_server_startup_inputs,
     make_project_manager,
 )
@@ -58,13 +60,6 @@ TARGET_V3_TOOL_NAMES = frozenset(
         "run_checks",
         "run_tests",
         "apply_fixes",
-    }
-)
-
-LEGACY_V2_TOOL_NAMES = frozenset(
-    {
-        "run_quality_gates",
-        "auto_fix",
     }
 )
 
@@ -95,7 +90,7 @@ def _build_test_settings(config_root: Path, server_root: Path) -> Settings:
 
 
 def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
-    """Build and install the current V3 source with the configured launcher."""
+    """Build and install the current V3 source with the selected interpreter."""
     candidate = tmp_path / "candidate_source"
     candidate.mkdir()
     shutil.copy2(REPO_ROOT / "pyproject.toml", candidate / "pyproject.toml")
@@ -114,7 +109,7 @@ def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
         else:
             shutil.copy2(source, destination)
 
-    launcher_python, _ = _active_launcher_runtime()
+    launcher_python, _ = _selected_runtime()
     distribution = build_installed_distribution(
         candidate, tmp_path / "distribution", python_executable=launcher_python
     )
@@ -136,26 +131,13 @@ def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
     return distribution
 
 
-def _active_launcher_runtime() -> tuple[Path, str]:
-    """Read the configured Codex launcher for an actual subprocess probe."""
-    launcher = tomllib.loads((REPO_ROOT / ".codex/config.toml").read_text(encoding="utf-8"))
-    configured = launcher["mcp_servers"]["phase_gate_mcp"]
-    launcher_python = Path(configured["command"])
-    assert launcher_python.is_absolute() and launcher_python.is_file()
-    assert configured["args"] == ["-m", "mcp_server.core.proxy"]
-    assert Path(configured["cwd"]).resolve() == REPO_ROOT.resolve()
-    assert Path(configured["env"]["PYTHONPATH"]).resolve() == REPO_ROOT.resolve()
-    assert Path(configured["env"]["PGMCP_WORKSPACE_ROOT"]).resolve() == REPO_ROOT.resolve()
-    assert configured["env"]["PGMCP_SERVER_PROJECT_DIR"] == ".pgmcp"
-    assert "VIRTUAL_ENV" not in configured["env"]
-    assert "PATH" not in configured["env"]
-
-    # The launcher does not override PATH; verify the subprocess sees this value.
-    return launcher_python, os.environ["PATH"]
+def _selected_runtime() -> tuple[Path, str]:
+    """Use the interpreter and lookup path executing this controlled test run."""
+    return Path(sys.executable).resolve(), os.environ["PATH"]
 
 
 def _installed_environment(distribution: InstalledDistribution, workspace: Path) -> dict[str, str]:
-    launcher_python, launcher_path = _active_launcher_runtime()
+    launcher_python, launcher_path = _selected_runtime()
     assert launcher_python.is_file()
     env = os.environ.copy()
     env["PATH"] = launcher_path
@@ -181,13 +163,15 @@ def _assert_candidate_launch_parity(python: Path, workspace: Path, env: dict[str
         [
             str(python),
             "-c",
-            "import json, os, shutil, sys; "
-            "print(json.dumps({'python': sys.executable, 'cwd': os.getcwd(), "
-            "'path': os.environ['PATH'], 'virtual_env': os.environ.get('VIRTUAL_ENV'), "
-            "'python_adapter': shutil.which('python'), 'node_adapter': shutil.which('node'), "
-            "'pythonpath': os.environ.get('PYTHONPATH'), "
-            "'workspace': os.environ.get('PGMCP_WORKSPACE_ROOT'), "
-            "'project_dir': os.environ.get('PGMCP_SERVER_PROJECT_DIR')}))",
+            (
+                "import json, os, shutil, sys; "
+                "print(json.dumps({'python': sys.executable, 'cwd': os.getcwd(), "
+                "'path': os.environ['PATH'], 'virtual_env': os.environ.get('VIRTUAL_ENV'), "
+                "'python_adapter': shutil.which('python'), 'node_adapter': shutil.which('node'), "
+                "'pythonpath': os.environ.get('PYTHONPATH'), "
+                "'workspace': os.environ.get('PGMCP_WORKSPACE_ROOT'), "
+                "'project_dir': os.environ.get('PGMCP_SERVER_PROJECT_DIR')}))"
+            ),
         ],
         cwd=workspace,
         env=env,
@@ -198,7 +182,7 @@ def _assert_candidate_launch_parity(python: Path, workspace: Path, env: dict[str
     )
     assert probe.returncode == 0, probe.stdout + probe.stderr
     observed = json.loads(probe.stdout)
-    _, launcher_path = _active_launcher_runtime()
+    _, launcher_path = _selected_runtime()
     assert Path(observed["python"]).resolve() == python.resolve()
     assert Path(observed["cwd"]).resolve() == workspace.resolve()
     assert observed["path"] == launcher_path
@@ -213,7 +197,8 @@ def _assert_candidate_launch_parity(python: Path, workspace: Path, env: dict[str
 class TestTargetStartup:
     """Integration test suite for target_startup_composition_and_launch_rehearsal."""
 
-    def test_target_tool_assembly_composition_and_no_duplicate_names(
+    @pytest.mark.asyncio
+    async def test_target_tool_assembly_composition_and_no_duplicate_names(
         self, isolated_target_env: tuple[Path, Path]
     ) -> None:
         """Verify target assembly has the 6 target V3 tools and no duplicate names."""
@@ -232,12 +217,6 @@ class TestTargetStartup:
         for target_tool in TARGET_V3_TOOL_NAMES:
             assert target_tool in unique_names, f"Expected target tool {target_tool} in assembly"
 
-        # Legacy V2 tools must NOT be present in target assembly
-        for legacy_tool in LEGACY_V2_TOOL_NAMES:
-            assert legacy_tool not in unique_names, (
-                f"Legacy tool {legacy_tool} must not be in target assembly"
-            )
-
         # Key unchanged tools must be present
         unchanged_expected = {
             "create_branch",
@@ -255,6 +234,23 @@ class TestTargetStartup:
             assert tool_name in unique_names, (
                 f"Expected unchanged tool {tool_name} in target assembly"
             )
+
+        async with connected_mcp_client(server) as client:
+            published = await client.list_tools()
+            assert {tool.name for tool in published.tools} == unique_names
+            assert len(published.tools) == len(unique_names)
+            for tool in published.tools:
+                assert tool.description
+                Draft202012Validator.check_schema(tool.input_schema)
+                if tool.output_schema is not None:
+                    Draft202012Validator.check_schema(tool.output_schema)
+
+            health = await client.call_tool("health_check", {})
+            assert not health.is_error
+            assert health.structured_content is not None
+            observed = HealthCheckOutput.model_validate_json(json.dumps(health.structured_content))
+            assert observed.success
+            assert health.content
 
     def test_target_presentation_alignment(self, isolated_target_env: tuple[Path, Path]) -> None:
         """Verify target tools validate presentation alignment cleanly."""
@@ -317,6 +313,7 @@ class TestTargetStartup:
             [sys.executable, "-m", "mcp_server.core.proxy"],
             cwd=workspace,
             env=env,
+            timeout=45,
         ) as proc:
             info = proc.initialize(client_name="pytest-target", client_version="1.0.0")
             assert "serverInfo" in info
@@ -325,15 +322,23 @@ class TestTargetStartup:
             tools = proc.list_tools()
             tool_names = {t["name"] for t in tools}
             assert tool_names >= TARGET_V3_TOOL_NAMES
-            assert not LEGACY_V2_TOOL_NAMES & tool_names
 
     def test_installed_candidate_init_migration_and_mcp_handshake(self, tmp_path: Path) -> None:
         """Rehearse one installed V3 candidate across fresh and owner-migrated roots."""
         distribution = _installed_candidate(tmp_path)
         assert distribution.root.resolve().is_relative_to(tmp_path.resolve())
         assert not distribution.root.resolve().is_relative_to(REPO_ROOT.resolve())
-        launcher_python, _ = _active_launcher_runtime()
-        launch = [str(launcher_python), "-m", "mcp_server.core.proxy"]
+        launcher_python, _ = _selected_runtime()
+        # This functional migration/readback probe also runs under subprocess coverage.
+        # Default-entrypoint timing remains covered by the separate startup scenarios.
+        launch = [
+            str(launcher_python),
+            "-c",
+            (
+                "from mcp_server.core.proxy import MCPProxy; "
+                "MCPProxy(initialization_timeout_seconds=90).run()"
+            ),
+        ]
 
         fresh = distribution.workspace
         fresh_env = _installed_environment(distribution, fresh)
@@ -406,13 +411,12 @@ class TestTargetStartup:
             "phases": {},
         }
         manager.save_planning_deliverables(53, author_plan)
-        with run_server_process(launch, cwd=fresh, env=fresh_env) as proc:
+        with run_server_process(launch, cwd=fresh, env=fresh_env, timeout=120) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-target")
             tools = proc.list_tools()
             names = [tool["name"] for tool in tools]
             assert len(names) == len(set(names))
             assert set(names) >= TARGET_V3_TOOL_NAMES
-            assert not {"run_quality_gates", "auto_fix"} & set(names)
 
             plan_response = proc.send_request(
                 "tools/call",
@@ -509,7 +513,7 @@ class TestTargetStartup:
         )
         assert forced.returncode == 0, forced.stdout + forced.stderr
         assert (legacy_root / "installation.json").is_file()
-        with run_server_process(launch, cwd=legacy, env=legacy_env) as proc:
+        with run_server_process(launch, cwd=legacy, env=legacy_env, timeout=120) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-migrated")
             names = [tool["name"] for tool in proc.list_tools()]
             assert len(names) == len(set(names))

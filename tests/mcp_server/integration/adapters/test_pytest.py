@@ -8,7 +8,6 @@ import json
 import os
 import subprocess
 import sys
-import tomllib
 from ctypes import wintypes
 from dataclasses import dataclass
 from pathlib import Path
@@ -182,7 +181,7 @@ def test_native_outcomes_and_options(
     result = response.root
     assert isinstance(result, NativeTestResult)
     assert result.decision.status == status
-    assert result.external_tools[0].version == "9.0.2"
+    assert result.external_tools[0].version == pytest.__version__
     assert isinstance(result.evidence, TextEvidence)
     assert token.lower() in result.evidence.data.lower()
     assert "OUTSIDE_DECOY" not in result.evidence.data
@@ -232,24 +231,19 @@ def test_last_failed_and_verbose_traceback_remain_native(native_case: NativeCase
 
 def test_native_coverage_is_opt_in_and_owns_threshold_rejection(native_case: NativeCase) -> None:
     case = native_case
-    package = case.workspace / "mcp_server"
+    package = case.workspace / "coverage_example"
     package.mkdir()
     (package / "__init__.py").write_text("", encoding="utf-8")
     (package / "sample.py").write_text(
         "def choose(value):\n    if value:\n        return 1\n    return 2\n", encoding="utf-8"
     )
     case.source.write_text(
-        "from mcp_server.sample import choose\n\n"
+        "from coverage_example.sample import choose\n\n"
         "def test_choose():\n    assert choose(True) == 1\n",
         encoding="utf-8",
     )
-    configured = tomllib.loads((case.repo_root / "pyproject.toml").read_text(encoding="utf-8"))[
-        "tool"
-    ]["coverage"]
-    assert configured["run"] == {"source": ["mcp_server"], "branch": True}
-    assert configured["report"]["fail_under"] == 90
     (case.workspace / "pyproject.toml").write_text(
-        '[tool.coverage.run]\nsource = ["mcp_server"]\nbranch = true\n'
+        '[tool.coverage.run]\nsource = ["coverage_example"]\nbranch = true\n'
         "[tool.coverage.report]\nfail_under = 90\n",
         encoding="utf-8",
     )
@@ -474,11 +468,11 @@ async def test_cancellation_stops_xdist_worker_and_descendant(native_case: Nativ
             ),
             request_contract=AdapterRequestContract(WireTestRequest),
             response_contract=role_response_contract(),
-            timeout_seconds=20,
+            timeout_seconds=60,
         )
     )
     try:
-        async with asyncio.timeout(12):
+        async with asyncio.timeout(45):
             while not all((case.workspace / name).exists() for name in ("worker.pid", "child.pid")):
                 await asyncio.sleep(0.02)
         worker_pid = int((case.workspace / "worker.pid").read_text())

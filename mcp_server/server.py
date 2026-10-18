@@ -2,26 +2,28 @@
 """MCP Server Entrypoint."""
 
 import asyncio
-import sys
 import time
 import uuid
-from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, cast
 
-import anyio
-from mcp.server import Server
-from mcp.server.lowlevel.helper_types import ReadResourceContents
+from mcp.server import Server, ServerRequestContext
 from mcp.server.stdio import stdio_server
+from mcp.shared.exceptions import MCPError
 from mcp.types import (
+    CallToolRequestParams,
     CallToolResult,
-    EmbeddedResource,
-    ImageContent,
+    ListResourcesResult,
+    ListToolsResult,
+    PaginatedRequestParams,
+    ReadResourceRequestParams,
+    ReadResourceResult,
     Resource,
     TextContent,
+    TextResourceContents,
     Tool,
 )
-from pydantic import AnyUrl, BaseModel
+from pydantic import BaseModel
 
 # Config
 from mcp_server.config.settings import Settings
@@ -66,9 +68,6 @@ class MCPServer:
         self._settings = settings
         self.presenter = presenter
         self.response_cache_manager = publisher
-        server_name = settings.server.name
-
-        self.server = Server(server_name)
         self.resources = resources
         self.tools = tools
 
@@ -81,32 +80,44 @@ class MCPServer:
     def setup_handlers(self) -> None:
         """Set up the MCP protocol handlers."""
 
-        @self.server.list_resources()  # type: ignore[no-untyped-call, untyped-decorator]
-        async def handle_list_resources() -> list[Resource]:
-            return [
-                Resource(
-                    uri=AnyUrl(r.uri_pattern),
-                    name=r.uri_pattern.rsplit("/", maxsplit=1)[-1],
-                    description=r.description,
-                    mimeType=r.mime_type,
-                )
-                for r in self.resources
-            ]
+        async def handle_list_resources(
+            _ctx: ServerRequestContext[None], _params: PaginatedRequestParams | None
+        ) -> ListResourcesResult:
+            return ListResourcesResult(
+                resources=[
+                    Resource(
+                        uri=r.uri_pattern,
+                        name=r.uri_pattern.rsplit("/", maxsplit=1)[-1],
+                        description=r.description,
+                        mime_type=r.mime_type,
+                    )
+                    for r in self.resources
+                ]
+            )
 
-        @self.server.read_resource()  # type: ignore[no-untyped-call, untyped-decorator]
-        async def handle_read_resource(uri: AnyUrl) -> list[ReadResourceContents]:
-            uri_str = str(uri)
-            for resource in self.resources:
-                if resource.matches(uri_str):
-                    return [
-                        ReadResourceContents(
-                            content=await resource.read(uri_str), mime_type="text/plain"
+        async def handle_read_resource(
+            _ctx: ServerRequestContext[None], params: ReadResourceRequestParams
+        ) -> ReadResourceResult:
+            uri = params.uri
+            try:
+                for resource in self.resources:
+                    if resource.matches(uri):
+                        return ReadResourceResult(
+                            contents=[
+                                TextResourceContents(
+                                    uri=uri, mime_type="text/plain", text=await resource.read(uri)
+                                )
+                            ]
                         )
-                    ]
-            raise ValueError(f"Resource not found: {uri_str}")
+                raise ValueError(f"Resource not found: {uri}")
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:  # noqa: BLE001 — terminal SDK boundary preserves the cause
+                raise MCPError(code=0, message=str(exc)) from exc
 
-        @self.server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
-        async def handle_list_tools() -> list[Tool]:
+        async def handle_list_tools(
+            _ctx: ServerRequestContext[None], _params: PaginatedRequestParams | None
+        ) -> ListToolsResult:
             tools_list = []
             for t in self.tools:
                 output_schema = None
@@ -116,16 +127,16 @@ class MCPServer:
                     Tool(
                         name=t.name,
                         description=t.description,
-                        inputSchema=t.input_schema,
-                        outputSchema=output_schema,
+                        input_schema=t.input_schema,
+                        output_schema=output_schema,
                     )
                 )
-            return tools_list
+            return ListToolsResult(tools=tools_list)
 
-        @self.server.call_tool(validate_input=False)  # type: ignore[untyped-decorator]
         async def handle_call_tool(
-            name: str, arguments: dict[str, Any] | None
-        ) -> CallToolResult | list[TextContent | ImageContent | EmbeddedResource]:
+            _ctx: ServerRequestContext[None], params: CallToolRequestParams
+        ) -> CallToolResult:
+            name, arguments = params.name, params.arguments
             call_id = uuid.uuid4().hex
             start_time = time.perf_counter()
             argument_keys = sorted((arguments or {}).keys())
@@ -185,6 +196,10 @@ class MCPServer:
                         raw_result = ToolResult(content=content, is_error=not success)
                         response_content = self._convert_tool_result_to_mcp_result(raw_result)
 
+                        response_content.structured_content = result_dto.model_dump(
+                            mode="json", by_alias=True
+                        )
+
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.debug(
                             "Tool call completed",
@@ -225,10 +240,26 @@ class MCPServer:
                                 }
                             },
                         )
-                        return [
-                            TextContent(type="text", text=f"Error processing tool response: {e!s}")
-                        ]
-            raise ValueError(f"Tool not found: {name}")
+                        return CallToolResult(
+                            content=[
+                                TextContent(
+                                    type="text", text=f"Error processing tool response: {e!s}"
+                                )
+                            ],
+                            is_error=True,
+                        )
+            return CallToolResult(
+                content=[TextContent(type="text", text=f"Tool not found: {name}")],
+                is_error=True,
+            )
+
+        self.server = Server[None](
+            self._settings.server.name,
+            on_list_resources=handle_list_resources,
+            on_read_resource=handle_read_resource,
+            on_list_tools=handle_list_tools,
+            on_call_tool=handle_call_tool,
+        )
 
     async def run(self) -> None:
         """Run the MCP server."""
@@ -237,12 +268,8 @@ class MCPServer:
         logger.info("Starting MCP server: %s", server_name)
         lifecycle_logger.info("MCP server running")
 
-        # Force LF only on Windows to prevent "invalid trailing data"
-        # and other CRLF issues in the JSON-RPC stream
-        stdout = anyio.wrap_file(TextIOWrapper(sys.stdout.buffer, encoding="utf-8", newline="\n"))
-
         try:
-            async with stdio_server(stdout=stdout) as (read_stream, write_stream):
+            async with stdio_server() as (read_stream, write_stream):
                 await self.server.run(
                     read_stream, write_stream, self.server.create_initialization_options()
                 )

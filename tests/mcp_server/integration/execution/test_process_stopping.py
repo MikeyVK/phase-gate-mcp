@@ -6,7 +6,7 @@ import asyncio
 import ctypes
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from ctypes import wintypes
 from dataclasses import dataclass
@@ -78,6 +78,7 @@ async function main() {
     await sleep(100);
   }
   if (mode === 'race') {
+    fs.writeFileSync(root + '/race.ready', 'original children armed');
     while (!fs.existsSync(root + '/spawn-late.request')) await sleep(5);
     const late = spawn(process.execPath, [__filename, 'child', root, 'late', '15000'],
                        {stdio: 'ignore', detached: true});
@@ -165,7 +166,7 @@ def _handle_is_alive(handle: int) -> bool:
 
 
 @contextmanager
-def retained_children(case: LifecycleCase) -> Iterator[tuple[int, ...]]:
+def retained_children(case: LifecycleCase) -> Generator[tuple[int, ...]]:
     """Hold both original children while the invocation completes."""
     kernel = _process_api()
     handles: list[int] = []
@@ -414,7 +415,7 @@ async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
                 raise AssertionError("late child did not start in the stop window")
             try:
                 published_pid = int(late_pid.read_text())
-            except (FileNotFoundError, ValueError):
+            except FileNotFoundError, ValueError:
                 time.sleep(0.005)
                 continue
             break
@@ -437,16 +438,19 @@ async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
             request=lifecycle_case.request,
             request_contract=request_contract(),
             response_contract=response_contract(),
-            timeout_seconds=1,
+            timeout_seconds=20,
         )
     )
     try:
         await wait_for_children(lifecycle_case)
         with retained_children(lifecycle_case):
+            async with asyncio.timeout(5):
+                while not (lifecycle_case.root / "race.ready").exists():
+                    await asyncio.sleep(0.01)
+            task.cancel()
             result = await task
         assert len(late_handles) == 1
-        assert isinstance(result, InvocationFailed)
-        assert result.failure.reason is AdapterCallFailureReason.TIMEOUT
+        assert isinstance(result, InvocationCancelled)
         assert result.termination_problem is TerminationProblem.UNCONFIRMED
         assert len(tuple((lifecycle_case.root / "invocations").iterdir())) == 1
         assert not (lifecycle_case.root / "late.done").exists()

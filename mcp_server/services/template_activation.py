@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -255,7 +255,7 @@ class UpgradeLock:
             stream.close()
 
     @contextmanager
-    def hold(self) -> Iterator[None]:
+    def hold(self) -> Generator[None]:
         self.acquire()
         try:
             yield
@@ -338,7 +338,7 @@ class ActivationFiles:
                     raise MCPError("template_activation_source_escape", code="ERR_CONFIG")
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(source.content)
-        except (OSError, ValueError, MCPError):
+        except OSError, ValueError, MCPError:
             self.discard(target)
             raise
 
@@ -477,7 +477,7 @@ class ActivationFiles:
             ):
                 raise MCPError("template_activation_backup_invalid", code="ERR_CONFIG")
             return facts, directories
-        except (OSError, ValueError, MCPError):
+        except OSError, ValueError, MCPError:
             self.discard(path)
             raise
 
@@ -676,7 +676,7 @@ class TemplateActivationService:
                 fresh=fresh,
             )
             self._files.publish_record(record)
-        except (OSError, ValueError, MCPError):
+        except OSError, ValueError, MCPError:
             if not paths.record.exists():
                 self._files.discard(paths.next)
                 if backup_created and backup is not None:

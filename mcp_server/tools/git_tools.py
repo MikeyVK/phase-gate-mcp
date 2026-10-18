@@ -63,7 +63,7 @@ def build_phase_guard(
     def phase_mismatch(branch: str, workflow_phase: str, cycle_number: int | None) -> None:
         try:
             state = state_reader.load(branch)
-        except (FileNotFoundError, KeyError, StateBranchMismatchError):
+        except FileNotFoundError, KeyError, StateBranchMismatchError:
             return
 
         if getattr(state, "branch", branch) != branch:
@@ -336,7 +336,7 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 auto_state = self._state_engine.get_state(current_branch)
                 workflow_phase = auto_state.current_phase
                 issue_number = auto_state.issue_number
-            except (FileNotFoundError, StateBranchMismatchError):
+            except FileNotFoundError, StateBranchMismatchError:
                 return GitCommitOutput(
                     success=False,
                     error_message=(

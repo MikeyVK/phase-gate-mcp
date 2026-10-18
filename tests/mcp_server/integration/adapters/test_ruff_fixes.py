@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 from shutil import rmtree
 
@@ -124,7 +125,9 @@ def test_native_fix_results_and_partial_mutation(
     for stream in (direct.stdout, direct.stderr):
         if stream:
             assert stream.decode("utf-8") in evidence_text(result)
-    assert result["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert result["external_tools"] == [
+        {"tool_id": "ruff", "version": distribution_version("ruff")}
+    ]
     assert "coverage" not in result and "required_targets" not in result
 
 
@@ -271,7 +274,9 @@ def test_declared_version_mismatch_stops_before_source_mutation(
     (package.root / "requirements.txt").write_text("ruff==0.0.0\n", encoding="utf-8")
     code, response = invoke(package, "format", (target,))
     assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
-    assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert response["external_tools"] == [
+        {"tool_id": "ruff", "version": distribution_version("ruff")}
+    ]
     assert "0.0.0" in str(decision(response)["message"])
     assert target.read_bytes() == before
 

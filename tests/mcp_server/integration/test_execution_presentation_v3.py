@@ -14,16 +14,12 @@ from unittest.mock import MagicMock
 
 import pytest
 from mcp.types import (
-    CallToolRequest,
-    CallToolRequestParams,
     CallToolResult,
-    ReadResourceRequest,
-    ReadResourceRequestParams,
     ReadResourceResult,
     TextContent,
     TextResourceContents,
 )
-from pydantic import AnyUrl, BaseModel, ConfigDict, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
 
 from mcp_server.bootstrap import SupportedToolContract
 from mcp_server.config.loader import ConfigLoader
@@ -39,6 +35,7 @@ from mcp_server.presenters.text_presenter import TextPresenter, validate_present
 from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 class Status(StrEnum):
@@ -60,6 +57,16 @@ class Projection(BaseModel):
     labels: tuple[StrictStr, ...] | None
     status: Status | None
     rows: tuple[Row, ...]
+    detail: Row | str
+
+
+class CollectionProjection(BaseModel):
+    """Use an independent concrete shape for collection admission."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    labels: tuple[StrictStr, ...]
+    rows: tuple[Row, ...]
+    status: Status
     detail: Row | str
 
 
@@ -142,32 +149,87 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
         publisher=cache,
         presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
     )
-    response = await server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name="projection", arguments={}))
-    )
-    assert isinstance(response.root, CallToolResult)
-    assert not response.root.isError
-    text = "\n".join(item.text for item in response.root.content if isinstance(item, TextContent))
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool("projection", {})
+    assert isinstance(response, CallToolResult)
+    assert not response.is_error
+    text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
     assert "row-one:" in text and "cache-only" not in text
     assert "UNKNOWN" not in text
     assert ("COMPLETE" in text) is (not nullable)
     assert ("Result: -" if nullable else "Result: 0") in text
     match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
     assert match is not None
-    readback = await server.server.request_handlers[ReadResourceRequest](
-        ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl(match.group())))
-    )
-    assert isinstance(readback.root, ReadResourceResult)
-    content = readback.root.contents[0]
+    async with connected_mcp_client(server) as client:
+        readback = await client.read_resource(match.group())
+    assert isinstance(readback, ReadResourceResult)
+    content = readback.contents[0]
     assert isinstance(content, TextResourceContents)
     assert Projection.model_validate_json(content.text) == operation
 
 
-def test_alignment_rejects_structured_union(config: PresentationConfig) -> None:
-    presenter = _presenter(config, ToolPresentationConfig(template_success="{detail}"))
-    with pytest.raises(ConfigError, match="structured|unsupported"):
+@pytest.mark.parametrize(
+    ("tool_config", "diagnosis"),
+    [
+        [{"template_success": "{detail}"}, "structured|unsupported"],
+        [{"template_success": "{"}, "Invalid template format"],
+        [
+            {
+                "collections": {
+                    "items": {"order": 10, "field": "labels", "item_template": "{label}"}
+                }
+            },
+            "may reference only",
+        ],
+        [
+            {"collections": {"items": {"order": 10, "field": "absent", "item_template": "{item}"}}},
+            "not present",
+        ],
+        [
+            {
+                "collections": {
+                    "items": {"order": 10, "field": "rows.args", "item_template": "{item}"}
+                }
+            },
+            "direct field",
+        ],
+        [
+            {
+                "enum_cases": {
+                    "state": {"order": 10, "field": "absent", "cases": {"complete": "Complete"}}
+                }
+            },
+            "not present",
+        ],
+        [
+            {
+                "enum_cases": {
+                    "state": {
+                        "order": 10,
+                        "field": "status.value",
+                        "cases": {"complete": "Complete"},
+                    }
+                }
+            },
+            "direct field",
+        ],
+        [
+            {
+                "enum_cases": {
+                    "state": {"order": 10, "field": "status", "cases": {"unexpected": "Unexpected"}}
+                }
+            },
+            "invalid case value",
+        ],
+    ],
+)
+def test_alignment_rejects_invalid_typed_projections(
+    config: PresentationConfig, tool_config: dict[str, object], diagnosis: str
+) -> None:
+    presenter = _presenter(config, ToolPresentationConfig.model_validate(tool_config))
+    with pytest.raises(ConfigError, match=diagnosis):
         validate_presentation_alignment(
-            presenter, [SupportedToolContract(name="projection", output_model=Projection)]
+            presenter, [SupportedToolContract(name="projection", output_model=CollectionProjection)]
         )
 
 
@@ -208,12 +270,45 @@ async def test_shipped_cache_hint_stays_complete_within_budget(
             publisher=cache,
             presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
         )
-        readback = await server.server.request_handlers[ReadResourceRequest](
-            ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl(guide_uri)))
-        )
-        assert isinstance(readback.root, ReadResourceResult)
-        content = readback.root.contents[0]
+        async with connected_mcp_client(server) as client:
+            readback = await client.read_resource(guide_uri)
+        assert isinstance(readback, ReadResourceResult)
+        content = readback.contents[0]
         assert isinstance(content, TextResourceContents)
         assert content.text == (
             Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"
         ).read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("names", [(), ("missing",), ("projection", "projection")])
+def test_alignment_rejects_catalog_identity_drift(
+    config: PresentationConfig, names: tuple[str, ...]
+) -> None:
+    presenter = _presenter(config, ToolPresentationConfig(template_success="{title}"))
+    contracts = [SupportedToolContract(name=name, output_model=Projection) for name in names]
+    with pytest.raises(ConfigError):
+        validate_presentation_alignment(presenter, contracts)
+
+
+@pytest.mark.parametrize("location", ["failure", "note"])
+def test_alignment_rejects_unsupported_diagnostic_placeholders(
+    config: PresentationConfig, location: str
+) -> None:
+    global_settings = config.global_settings.model_dump(mode="python")
+    if location == "failure":
+        global_settings["failures"]["ERR_SYSTEM"] = "{unknown_fact}"
+    else:
+        global_settings["notes"]["templates"]["recoveries"]["transition_conflict_recovery"] = (
+            "{unknown_fact}"
+        )
+    policy = PresentationConfig.model_validate(
+        {
+            "global": global_settings,
+            "tools": {"projection": {"template_success": "{title}"}},
+        }
+    )
+    with pytest.raises(ConfigError, match="placeholder"):
+        validate_presentation_alignment(
+            TextPresenter(config=policy),
+            [SupportedToolContract(name="projection", output_model=Projection)],
+        )

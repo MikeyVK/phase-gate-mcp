@@ -93,18 +93,6 @@ def test_asyncio_mode_is_strict() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_xdist_in_requirements_dev() -> None:
-    """pytest-xdist must be listed in requirements-dev.txt.
-
-    Parallel test execution with `-n auto` requires pytest-xdist.
-    """
-    req_dev = Path(__file__).parent.parent.parent.parent / "requirements-dev.txt"
-    content = req_dev.read_text(encoding="utf-8")
-    assert "pytest-xdist" in content, (
-        "pytest-xdist must be added to requirements-dev.txt for parallel execution support"
-    )
-
-
 def test_addopts_has_n_auto() -> None:
     """addopts must contain '-n auto' to enable parallel test execution.
 

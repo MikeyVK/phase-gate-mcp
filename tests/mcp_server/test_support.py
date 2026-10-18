@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -61,6 +62,8 @@ from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
+    from mcp import Client
+
     from mcp_server.adapters.git_adapter import GitAdapter
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
     from mcp_server.config.settings import Settings
@@ -567,9 +570,7 @@ def assert_itool_result(
     text_contains: str | None = None,
 ) -> str:
     """Verifies the ToolResult structure for ITool (pure text, no JSON)."""
-    is_err = getattr(result, "is_error", None)
-    if is_err is None:
-        is_err = getattr(result, "isError", False)
+    is_err = result.is_error
     assert not is_err, f"Expected successful tool result, got error: {result}"
 
     json_blocks = []
@@ -645,3 +646,13 @@ def make_template_suite_admission(
         create_adapters=create_adapters,
         validator=validator,
     )
+
+
+@asynccontextmanager
+async def connected_mcp_client(server: MCPServer) -> AsyncGenerator[Client]:
+    """Expose the native initialized MCP client without request/result translation."""
+    # Non-protocol consumers of this shared helper must not eagerly load the SDK client.
+    from mcp import Client  # noqa: PLC0415
+
+    async with Client(server.server, mode="legacy", cache=None) as client:
+        yield client

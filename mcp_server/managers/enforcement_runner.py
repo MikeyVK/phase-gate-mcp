@@ -347,7 +347,7 @@ class EnforcementRunner:
         )
         try:
             current_phase: str | None = self._state_reader.load(branch).current_phase
-        except (FileNotFoundError, StateNotFoundError):
+        except FileNotFoundError, StateNotFoundError:
             current_phase = None
         if current_phase != required_phase:
             note_context.produce(
@@ -404,7 +404,7 @@ class EnforcementRunner:
             branch_issue = self._git_config.extract_issue_number(branch)
             if loaded_state.issue_number != branch_issue:
                 return
-        except (FileNotFoundError, StateNotFoundError):
+        except FileNotFoundError, StateNotFoundError:
             return  # Bootstrap: no state.json means gate is inactive
 
         if self._context_loaded_reader is None:

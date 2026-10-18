@@ -17,7 +17,7 @@ from mcp_server.server import MCPServer
 
 
 @pytest.fixture
-def server(tmp_path: Path, pytestconfig: pytest.Config) -> Generator[MCPServer, None, None]:
+def server(tmp_path: Path, pytestconfig: pytest.Config) -> Generator[MCPServer]:
     """Compose the public V3 server in an isolated workspace with mocked GitHub calls."""
     source = pytestconfig.rootpath / ".pgmcp"
     target = tmp_path / ".pgmcp"

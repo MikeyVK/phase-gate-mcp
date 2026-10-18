@@ -3,8 +3,8 @@
 # Native Adapter Execution Contract
 
 **Status:** Current
-**Version:** 1.2
-**Last Updated:** 2026-10-11
+**Version:** 1.3
+**Last Updated:** 2026-10-18
 
 
 ## Purpose
@@ -169,7 +169,7 @@ The adapter's JSON stdin and the native child's filename/message stdin are disti
 
 ### Pinned Pyright filename convention
 
-Pyright 1.1.408 reads one literal filename per line from its native stdin channel and provides no quoting/escaping convention that preserves a filename containing an ordinary space. CR/LF, native leading/trailing trimming and invalid UTF-8 also cannot faithfully represent an explicit filename. The adapter refuses the whole explicit selection as unsupported_input if any filename is unrepresentable; it does not normalize, split, quote or fall back to argv.
+The pinned Pyright 1.1.414 reads one literal filename per line from its native stdin channel and provides no quoting/escaping convention that preserves a filename containing an ordinary space. CR/LF, native leading/trailing trimming and invalid UTF-8 also cannot faithfully represent an explicit filename. The adapter refuses the whole explicit selection as unsupported_input if any filename is unrepresentable; it does not normalize, split, quote or fall back to argv.
 
 Use representable explicit filenames. Empty selection remains a native configured-discovery request and can discover space-containing paths. This is an explicit supported-input boundary, not a general filesystem-path restriction.
 
@@ -219,7 +219,7 @@ These guards protect selection, operation and result semantics. They do not isol
 
 ### Check-jsonschema source families
 
-The bundled `check_jsonschema` adapter provides YAML configuration and JSON Schema checks through one pinned native tool. The [package requirements](../../mcp_server/bundled_adapters/check_jsonschema/requirements.txt) declare check-jsonschema 0.38.2, orjson 3.13.0, ruamel.yaml 0.18.16 and jsonschema 4.25.1. Provision those prerequisites in the Python interpreter selected by the execution runtime. The adapter launches that interpreter's `-m check_jsonschema`, checks actual distribution versions and import availability, and refuses missing or mismatched prerequisites before analysis.
+The bundled `check_jsonschema` adapter provides YAML configuration and JSON Schema checks through one pinned native tool. The [package requirements](../../mcp_server/bundled_adapters/check_jsonschema/requirements.txt) declare check-jsonschema 0.38.2, orjson 3.13.0, ruamel.yaml 0.18.16 and jsonschema 4.26.0. Provision those prerequisites in the Python interpreter selected by the execution runtime. The adapter launches that interpreter's `-m check_jsonschema`, checks actual distribution versions and import availability, and refuses missing or mismatched prerequisites before analysis.
 
 Selection requests require literal existing file operands supplied through targets or admitted native positional arguments. Configured scope can therefore use explicit file operands in its native arguments even when targets are empty. Directory targets and requests without any file operands are unsupported; the adapter does not discover files or infer operands. Content requests use the supplied proposal at the intended target path through the existing invocation scratch allocation, preserving the original file. Native arguments come from the [workspace bindings](../../.pgmcp/config/checks.yaml), including parser choice and complete JSON report format; the adapter does not supply application-specific schema rules.
 
@@ -304,3 +304,9 @@ Read the complete cached DTO rather than recovering facts from the bounded text 
 
 - [Checks/tests/fixes](<tools/quality.md>)
 - [Server configuration](<server-configuration.md>)
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.3 | 2026-10-18 | @imp documenter | Align documented native Pyright/jsonschema pins with the selected runtime declarations. |

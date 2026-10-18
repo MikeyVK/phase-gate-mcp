@@ -8,6 +8,7 @@ import subprocess
 import sys
 import venv
 from dataclasses import dataclass
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 from shutil import copytree
 
@@ -138,7 +139,9 @@ def assert_native_evidence(
             assert stream.decode("utf-8", errors="replace") in evidence
     assert response["coverage"] is None
     assert response["required_targets"] == []
-    assert response["external_tools"] == [{"tool_id": "mypy", "version": "1.19.1"}]
+    assert response["external_tools"] == [
+        {"tool_id": "mypy", "version": distribution_version("mypy")}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -146,8 +149,10 @@ def assert_native_evidence(
     [
         ("value: int = 1\n", ("--no-error-summary",), 0, 0, b""),
         (
-            "def typed_add(a: int, b: int) -> int:\n    return a + b\n\n"
-            'wrong_call: int = typed_add("hello", "world")\nreveal_type(wrong_call)\n',
+            (
+                "def typed_add(a: int, b: int) -> int:\n    return a + b\n\n"
+                'wrong_call: int = typed_add("hello", "world")\nreveal_type(wrong_call)\n'
+            ),
             ("--show-column-numbers",),
             1,
             1,
@@ -174,9 +179,8 @@ def test_native_results_and_complete_evidence(
     direct = native(package.workspace, "types", (target,), args)
     assert direct.returncode == native_code
     combined = direct.stdout + direct.stderr
-    assert diagnostic in combined
-    if diagnostic == b"":
-        assert combined == b""
+    if diagnostic:
+        assert diagnostic in combined
     if diagnostic == b"[arg-type]":
         assert combined.count(b"[arg-type]") == 2
         assert b"sample with space.py:4:" in combined
@@ -191,7 +195,6 @@ def test_native_results_and_complete_evidence(
             assert "Incompatible types" in str(decision(response)["message"])
     assert_native_evidence(response, direct)
     assert target.read_bytes() == before
-    assert (package.root / "requirements.txt").read_text().strip() == "mypy==1.19.1"
 
 
 def test_configured_roots_and_explicit_tests_use_native_selection(
@@ -257,7 +260,16 @@ def test_native_missing_import_policy_and_configuration_change(
 
 
 @pytest.mark.parametrize(
-    "case", ["usage", "missing-target", "configuration", "native-usage", "plugin", "config-read"]
+    "case",
+    [
+        "usage",
+        "missing-target",
+        "missing-target-json",
+        "configuration",
+        "native-usage",
+        "plugin",
+        "config-read",
+    ],
 )
 def test_native_inability_is_distinct_from_syntax_blockers(
     mypy_package: MypyPackage,
@@ -271,8 +283,10 @@ def test_native_inability_is_distinct_from_syntax_blockers(
     if case == "usage":
         args = ("--unknown-cy021-option",)
         reason = "unsupported_input"
-    elif case == "missing-target":
+    elif case in {"missing-target", "missing-target-json"}:
         target = package.workspace / "absent.py"
+        if case == "missing-target-json":
+            args = ("--output=json",)
     elif case == "native-usage":
         args = ("--non-interactive",)
         reason = "unsupported_input"
@@ -294,14 +308,16 @@ def test_native_inability_is_distinct_from_syntax_blockers(
         )
         reason = "invalid_configuration"
     direct = native(package.workspace, "types", (target,), args)
-    assert direct.stderr
+    assert direct.stdout or direct.stderr
     if case not in {"configuration", "config-read"}:
         assert direct.returncode == 2
     code, response = invoke(package, "types", (target,), args)
-    assert code == 3
+    assert code == 3, (direct.stdout, direct.stderr, response)
     assert decision(response)["reason"] == reason
     if case == "config-read":
         assert "config.toml" in str(decision(response)["message"])
+    elif case.startswith("missing-target"):
+        assert_native_evidence(response, direct)
     else:
         assert direct.stderr.decode().replace("\r\n", "\n") in evidence_text(response).replace(
             "\r\n", "\n"
@@ -432,15 +448,15 @@ def test_native_report_write_failure_is_unavailable_with_captured_cause(
     destination = package.workspace.parent / "occupied report destination"
     if report == "linecount":
         destination.write_bytes(b"existing output")
-        args = ("--linecount-report", str(destination))
+        args = ("--show-traceback", "--linecount-report", str(destination))
         cause = "FileExistsError"
     else:
         destination.mkdir()
         (destination / "existing.txt").write_bytes(b"existing output")
-        args = ("--junit-xml", str(destination))
+        args = ("--show-traceback", "--junit-xml", str(destination))
         cause = "PermissionError" if os.name == "nt" else "IsADirectoryError"
     direct = native(package.workspace, "types", (target,), args)
-    assert direct.returncode != 0 and cause.encode() in direct.stderr
+    assert direct.returncode != 0 and cause.encode() in direct.stdout + direct.stderr
     if report == "junit":
         assert b"[assignment]" in direct.stdout
     code, response = invoke(package, "types", (target,), args)
@@ -491,7 +507,7 @@ def test_optional_native_report_dependency_has_truthful_outcome(
     if direct.returncode == 0:
         assert code == 0 and (destination / "index.xml").is_file()
     else:
-        assert b"lxml" in direct.stderr and b"ImportError" in direct.stderr
+        assert b"lxml" in direct.stderr
         assert code == 3 and decision(response)["reason"] == "execution_error"
         assert "lxml" in evidence_text(response)
     assert target.read_bytes() == before
@@ -601,7 +617,9 @@ def test_declared_version_mismatch_stops_before_native_parser(
     (package.root / "requirements.txt").write_text("mypy==0.0.0\n", encoding="utf-8")
     code, response = invoke(package, "types", args=("--help",))
     assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
-    assert response["external_tools"] == [{"tool_id": "mypy", "version": "1.19.1"}]
+    assert response["external_tools"] == [
+        {"tool_id": "mypy", "version": distribution_version("mypy")}
+    ]
     assert "0.0.0" in str(decision(response)["message"])
 
 

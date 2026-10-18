@@ -17,11 +17,8 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import (
-    CallToolRequest,
-    CallToolRequestParams,
     CallToolResult,
     EmbeddedResource,
-    ListToolsRequest,
     ListToolsResult,
     TextResourceContents,
 )
@@ -44,6 +41,7 @@ from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresen
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ToolErrorOutput
 from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 class Operation(BaseModel):
@@ -117,16 +115,16 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
         publisher=publisher,
         presenter=ResponsePresenter(text, SchemaResourcePresenter()),
     )
-    response = await server.server.request_handlers[CallToolRequest](
-        CallToolRequest(params=CallToolRequestParams(name="attached", arguments={}))
-    )
-    assert isinstance(response.root, CallToolResult)
-    assert response.root.isError is error
-    assert len(response.root.content) == 2
-    resource = response.root.content[1]
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool("attached", {})
+    assert isinstance(response, CallToolResult)
+    assert response.is_error is error
+    assert response.structured_content == operation.model_dump(mode="json", by_alias=True)
+    assert len(response.content) == 2
+    resource = response.content[1]
     assert isinstance(resource, EmbeddedResource)
     assert str(resource.resource.uri) == "schema://template/order%2Fbook/context"
-    assert resource.resource.mimeType == "application/schema+json"
+    assert resource.resource.mime_type == "application/schema+json"
     assert isinstance(resource.resource, TextResourceContents)
     assert json.loads(resource.resource.text) == {
         "type": "object",
@@ -148,9 +146,10 @@ async def test_listing_exposes_operation_schema_only(tmp_path: Path) -> None:
         tools=[wrapped],
         resources=[],
     )
-    listing = await server.server.request_handlers[ListToolsRequest](ListToolsRequest())
-    assert isinstance(listing.root, ListToolsResult)
-    assert listing.root.tools[0].outputSchema == Operation.model_json_schema()
+    async with connected_mcp_client(server) as client:
+        listing = await client.list_tools()
+    assert isinstance(listing, ListToolsResult)
+    assert listing.tools[0].output_schema == Operation.model_json_schema()
 
 
 @pytest.mark.asyncio
@@ -180,7 +179,37 @@ async def test_v3_stdio_startup_and_handshake(tmp_path: Path, pytestconfig: pyte
     with anyio.fail_after(30):
         async with stdio_client(parameters) as (read, write), ClientSession(read, write) as client:
             initialized = await client.initialize()
-            assert initialized.serverInfo.name
+            assert initialized.server_info.name
             listing = await client.list_tools()
             names = {tool.name for tool in listing.tools}
             assert {"health_check", "scaffold_artifact", "get_project_plan"} <= names
+
+
+@pytest.mark.asyncio
+async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Processing failures remain explicit tool errors with the original logged exception."""
+    failure = RuntimeError("presentation unavailable")
+    operation = Operation(success=True, value=1)
+    wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
+        AttachedCore(ToolExecution(operation=operation, attachments=()))
+    )
+    presenter = MagicMock()
+    presenter.present.side_effect = failure
+    server = MCPServer(
+        settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[],
+        presenter=presenter,
+    )
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool("attached", {})
+        missing = await client.call_tool("missing", {})
+    assert response.is_error
+    assert response.structured_content is None
+    assert "presentation unavailable" in response.content[0].text
+    assert any(record.exc_info and record.exc_info[1] is failure for record in caplog.records)
+    assert missing.is_error
+    assert missing.structured_content is None
+    assert missing.content[0].text == "Tool not found: missing"

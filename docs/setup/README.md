@@ -9,7 +9,7 @@ readiness procedure.
 ## Prerequisites
 
 - Select a Python interpreter supported by the chosen package. Current source
-  requires Python 3.13+ and MCP SDK `>=1.30.0,<2`; its
+  requires Python 3.15+ and MCP SDK `==2.3.0`; its
   [dependency declarations](https://github.com/MikeyVK/phase-gate-mcp/blob/main/pyproject.toml)
   are authoritative for source installs. Read the actual artifact's metadata for
   an older published release.

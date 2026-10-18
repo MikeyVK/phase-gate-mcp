@@ -17,7 +17,7 @@ import queue
 import subprocess
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, TextIO
@@ -193,7 +193,7 @@ class ServerProcess:
         response = self.send_request(
             "initialize",
             {
-                "protocolVersion": "2024-11-05",
+                "protocolVersion": "2025-11-25",
                 "capabilities": {},
                 "clientInfo": {"name": client_name, "version": client_version},
             },
@@ -270,7 +270,7 @@ def run_server_process(
     cwd: Path,
     env: dict[str, str],
     timeout: float = 30.0,
-) -> Iterator[ServerProcess]:
+) -> Generator[ServerProcess]:
     """Convenience context manager for an explicitly configured ServerProcess."""
     server = ServerProcess(command, cwd=cwd, env=env, timeout=timeout)
     with server:

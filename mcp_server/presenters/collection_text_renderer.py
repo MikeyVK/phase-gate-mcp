@@ -145,7 +145,7 @@ class SafeNoneFormatter(string.Formatter):
             )
         try:
             return str(super().format_field(value, format_spec))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             return str(value)
 
     def _format_sequence(self, values: Sequence[object]) -> str:

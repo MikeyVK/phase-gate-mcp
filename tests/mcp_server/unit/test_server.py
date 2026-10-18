@@ -37,6 +37,7 @@ from mcp_server.tools.phase_tools import (
 from mcp_server.tools.pr_tools import SubmitPRTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
+    connected_mcp_client,
     get_default_server_root,
     make_dispatch_dependencies,
     make_dispatch_server,
@@ -268,7 +269,6 @@ class TestServerToolRegistration:
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [factory.create_tool(DummyTool())]
 
-            handler = server.server.request_handlers[CallToolRequest]
             caplog.set_level(logging.DEBUG, logger="mcp_server.server")
 
             req = CallToolRequest(
@@ -277,7 +277,8 @@ class TestServerToolRegistration:
                     arguments={"a": 1},
                 )
             )
-            await handler(req)
+            async with connected_mcp_client(server) as client:
+                await client.call_tool(req.params.name, req.params.arguments)
 
         start_logs = [
             r
@@ -335,7 +336,6 @@ class TestServerToolRegistration:
             manager.git_config = managers.git_manager.git_config
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [factory.create_tool(CreateBranchTool(manager=manager))]
-            handler = server.server.request_handlers[CallToolRequest]
 
             req = CallToolRequest(
                 params=CallToolRequestParams(
@@ -348,9 +348,10 @@ class TestServerToolRegistration:
                     },
                 )
             )
-            response = await handler(req)
+            async with connected_mcp_client(server) as client:
+                response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "cannot be created from base" in response.root.content[0].text
+        assert "cannot be created from base" in response.content[0].text
         manager.create_branch.assert_not_called()
 
     @pytest.mark.asyncio
@@ -395,16 +396,19 @@ class TestServerToolRegistration:
                     )
                 )
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with patch(
                 "mcp_server.managers.github_manager.GitHubManager.create_pr",
                 side_effect=AssertionError("create_pr should not be called"),
             ) as mock_create_pr:
-                response = await handler(_make_submit_pr_request())
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(
+                        _make_submit_pr_request().params.name,
+                        _make_submit_pr_request().params.arguments,
+                    )
 
-        text = "\n".join(c.text for c in response.root.content if hasattr(c, "text"))
-        assert response.root.isError is True
+        text = "\n".join(c.text for c in response.content if hasattr(c, "text"))
+        assert response.is_error is True
         assert "requires phase 'ready'" in text
         assert "Current phase: 'documentation'" in text
         assert "Request a transition to the ready phase." in text
@@ -459,7 +463,6 @@ class TestServerToolRegistration:
                     )
                 )
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with (
                 patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
@@ -479,11 +482,12 @@ class TestServerToolRegistration:
                         },
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "Transitioned 'research' → 'planning'" in response.root.content[0].text
-        assert len(response.root.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
+        assert "Transitioned 'research' → 'planning'" in response.content[0].text
+        assert len(response.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -515,7 +519,6 @@ class TestServerToolRegistration:
                     )
                 )
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with (
                 patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
@@ -536,11 +539,12 @@ class TestServerToolRegistration:
                         },
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "Force-transitioned 'research' → 'planning'" in response.root.content[0].text
-        assert len(response.root.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
+        assert "Force-transitioned 'research' → 'planning'" in response.content[0].text
+        assert len(response.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -592,7 +596,6 @@ class TestServerToolRegistration:
                     )
                 )
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with patch.object(managers.enforcement_runner, "run") as mock_run:
 
@@ -612,10 +615,11 @@ class TestServerToolRegistration:
                         },
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        texts = [item.text for item in response.root.content]
-        assert len(response.root.content) == 1
+        texts = [item.text for item in response.content]
+        assert len(response.content) == 1
         assert "post hook failed" in texts[0]
         assert all(TRANSITION_ADVISORY_NOTE not in text for text in texts)
 
@@ -645,7 +649,6 @@ class TestServerToolRegistration:
                     )
                 )
             ]
-            handler = server.server.request_handlers[CallToolRequest]
 
             with (
                 patch.object(managers.enforcement_runner, "run") as mock_run,
@@ -673,10 +676,11 @@ class TestServerToolRegistration:
                         },
                     )
                 )
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        text = response.root.content[0].text
-        assert len(response.root.content) == 1
+        text = response.content[0].text
+        assert len(response.content) == 1
         assert "post hook failed" in text
         assert "⚠️" not in text
         assert "✅" not in text
@@ -699,9 +703,7 @@ class TestServerToolRegistration:
             mock_settings_cls.from_env.reset_mock()
 
             with (
-                patch("mcp_server.server.TextIOWrapper", return_value=MagicMock()),
                 patch("mcp_server.server.stdio_server", side_effect=fake_stdio_server),
-                patch("mcp_server.server.anyio.wrap_file", return_value=MagicMock()),
                 patch.object(server.server, "run", new=AsyncMock()) as mock_run,
             ):
                 await server.run()
@@ -780,8 +782,6 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
             "put",
             return_value=CachePublication(success=False, error_code="write_failed"),
         ) as mock_put:
-            handler = server.server.request_handlers[CallToolRequest]
-
             req = CallToolRequest(
                 params=CallToolRequestParams(
                     name="dummy_tool",
@@ -790,9 +790,10 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
             )
 
             with patch.object(presenter, "present", wraps=presenter.present) as mock_present:
-                response = await handler(req)
+                async with connected_mcp_client(server) as client:
+                    response = await client.call_tool(req.params.name, req.params.arguments)
 
-        content = response.root.content
+        content = response.content
         assert len(content) == 1
         text = getattr(content[0], "text", "")
         # Should return direct text block formatted by presenter

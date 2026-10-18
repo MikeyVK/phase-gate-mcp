@@ -175,7 +175,7 @@ def _diagnostic_from_json(value: object) -> str | None:
 def _message(stdout: bytes, stderr: bytes, operation: str) -> str | None:
     try:
         parsed = json.loads(stdout.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         parsed = None
     diagnostic = _diagnostic_from_json(parsed)
     if diagnostic is not None:
@@ -395,7 +395,7 @@ def _run(request: object) -> tuple[dict[str, object], int]:
 def main() -> int:
     try:
         request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         response, exit_code = _invalid([_issue([], "invalid_value")]), 2
     else:
         response, exit_code = _run(request)

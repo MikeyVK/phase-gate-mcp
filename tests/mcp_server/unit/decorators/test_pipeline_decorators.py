@@ -21,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 # Third-party
 import pytest
-from mcp.types import ListToolsRequest, ListToolsResult
+from mcp.types import ListToolsResult
 from pydantic import BaseModel, ConfigDict, JsonValue, create_model
 
 from mcp_server.config.settings import ServerSettings, Settings
@@ -52,6 +52,7 @@ from mcp_server.schemas.error_outputs import (
     ValidationErrorOutput,
 )
 from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 # Dummy models for testing
@@ -352,9 +353,10 @@ async def test_registered_schema_and_real_admission_share_the_prepared_contract(
         tools=[wrapped],
         resources=[],
     )
-    listing = await server.server.request_handlers[ListToolsRequest](ListToolsRequest())
-    assert isinstance(listing.root, ListToolsResult)
-    assert listing.root.tools[0].inputSchema == thaw_json(contract.schema)
+    async with connected_mcp_client(server) as client:
+        listing = await client.list_tools()
+    assert isinstance(listing, ListToolsResult)
+    assert listing.tools[0].input_schema == thaw_json(contract.schema)
     assert wrapped.args_model is StaticInput
     raw: dict[str, JsonValue] = {
         "selected": "package-a",
@@ -366,10 +368,11 @@ async def test_registered_schema_and_real_admission_share_the_prepared_contract(
     assert result.operation.content == raw["content"]
     assert isinstance(core.inputs[0], AdmittedInput)
     # Delayed exposure cannot mutate the prepared snapshot through an earlier result.
-    listing.root.tools[0].inputSchema.clear()
-    repeated = await server.server.request_handlers[ListToolsRequest](ListToolsRequest())
-    assert isinstance(repeated.root, ListToolsResult)
-    assert repeated.root.tools[0].inputSchema == thaw_json(contract.schema)
+    listing.tools[0].input_schema.clear()
+    async with connected_mcp_client(server) as client:
+        repeated = await client.list_tools()
+    assert isinstance(repeated, ListToolsResult)
+    assert repeated.tools[0].input_schema == thaw_json(contract.schema)
 
 
 @pytest.mark.asyncio

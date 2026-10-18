@@ -373,20 +373,26 @@ class TestTemplateCatalog:
                 "0",
             ),
             (
-                b"{% macro label(content, value=content.local) %}{{ value }}{% endmacro %}"
-                b"{{ label({'local':'ok'}) }}",
+                (
+                    b"{% macro label(content, value=content.local) %}{{ value }}{% endmacro %}"
+                    b"{{ label({'local':'ok'}) }}"
+                ),
                 b"",
                 "ok",
             ),
             (
-                b'{% extends "shared/templates/base.jinja2" %}{% set title = content.value %}'
-                b"{% block body %}{{ title }}{% endblock %}",
+                (
+                    b'{% extends "shared/templates/base.jinja2" %}{% set title = content.value %}'
+                    b"{% block body %}{{ title }}{% endblock %}"
+                ),
                 b"{% block body %}{% endblock %}",
                 "0",
             ),
             (
-                b"{% macro wrap() %}{{ caller({'local':'ok'}) }}{% endmacro %}"
-                b"{% call(content) wrap() %}{{ content.local }}{% endcall %}",
+                (
+                    b"{% macro wrap() %}{{ caller({'local':'ok'}) }}{% endmacro %}"
+                    b"{% call(content) wrap() %}{{ content.local }}{% endcall %}"
+                ),
                 b"",
                 "ok",
             ),

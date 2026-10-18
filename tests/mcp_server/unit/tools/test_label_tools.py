@@ -42,7 +42,7 @@ def mock_github_manager() -> MagicMock:
 
 
 @pytest.fixture
-def test_label_config(tmp_path: Path) -> Generator[LabelConfig, None, None]:
+def test_label_config(tmp_path: Path) -> Generator[LabelConfig]:
     """Create a temp label config with test labels."""
     yaml_content = """version: "1.0.0"
 labels:

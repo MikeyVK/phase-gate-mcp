@@ -106,7 +106,7 @@ async def run(composition: Composition, arguments: dict[str, JsonValue]) -> Appl
     operation = composition.text.present_text.call_args.kwargs["data"]
     assert isinstance(operation, ApplyFixesOutput)
     assert cached == operation.model_dump(mode="json")
-    assert response.isError is not operation.success
+    assert response.is_error is not operation.success
     assert not any(isinstance(item, EmbeddedResource) for item in response.content)
     assert "run_status" not in cached and "changed_files" not in cached
     return operation
@@ -286,7 +286,7 @@ async def test_strict_public_schema_is_reusable_after_invalid_calls(
     schema = composition.server.tools[0].input_schema
     Draft202012Validator.check_schema(schema)
     response, cached = await invoke(composition, "apply_fixes", arguments)
-    assert response.isError and cached["error_type"] == "ValidationError"
+    assert response.is_error and cached["error_type"] == "ValidationError"
     assert cached["input_schema"] == schema and runtime.calls == []
     resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
     assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"

@@ -7,15 +7,14 @@
 import json
 
 import pytest
+from mcp.shared.exceptions import MCPError
 from mcp.types import (
-    ReadResourceRequest,
-    ReadResourceRequestParams,
     ReadResourceResult,
     TextResourceContents,
 )
-from pydantic import AnyUrl
 
 from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import connected_mcp_client
 
 
 @pytest.mark.asyncio
@@ -35,22 +34,19 @@ async def test_list_resources(server: MCPServer) -> None:
 @pytest.mark.asyncio
 async def test_read_resource(server: MCPServer) -> None:
     """Test that resources can be read."""
-    response = await server.server.request_handlers[ReadResourceRequest](
-        ReadResourceRequest(
-            params=ReadResourceRequestParams(uri=AnyUrl("pgmcp://rules/coding_standards"))
-        )
-    )
-    assert isinstance(response.root, ReadResourceResult)
-    assert len(response.root.contents) == 1
-    content = response.root.contents[0]
+    async with connected_mcp_client(server) as client:
+        response = await client.read_resource("pgmcp://rules/coding_standards")
+    assert isinstance(response, ReadResourceResult)
+    assert len(response.contents) == 1
+    content = response.contents[0]
     assert isinstance(content, TextResourceContents)
     assert str(content.uri) == "pgmcp://rules/coding_standards"
-    assert content.mimeType == "text/plain"
+    assert content.mime_type == "text/plain"
     policy = json.loads(content.text)
     assert policy["schema_version"] == 1
     assert policy["run_checks"]["bindings"]
 
-    with pytest.raises(ValueError, match="Resource not found: pgmcp://missing"):
-        await server.server.request_handlers[ReadResourceRequest](
-            ReadResourceRequest(params=ReadResourceRequestParams(uri=AnyUrl("pgmcp://missing")))
-        )
+    async with connected_mcp_client(server) as client:
+        with pytest.raises(MCPError, match="Resource not found: pgmcp://missing") as caught:
+            await client.read_resource("pgmcp://missing")
+        assert caught.value.code == 0

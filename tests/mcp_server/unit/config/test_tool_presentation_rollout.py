@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import string
 from pathlib import Path
-from typing import TypeAlias
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.presentation_config import (
@@ -36,8 +35,8 @@ from mcp_server.schemas.tool_outputs import (
 _REPO_ROOT = Path(__file__).parents[4]
 _PRESENTATION_PATH = _REPO_ROOT / ".pgmcp" / "config" / "presentation.yaml"
 
-PlaceholderSet: TypeAlias = frozenset[str]
-CollectionExpectation: TypeAlias = tuple[str, PlaceholderSet, tuple[str, PlaceholderSet] | None]
+type PlaceholderSet = frozenset[str]
+type CollectionExpectation = tuple[str, PlaceholderSet, tuple[str, PlaceholderSet] | None]
 
 
 def _placeholders(template: str) -> PlaceholderSet:

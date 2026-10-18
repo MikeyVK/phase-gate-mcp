@@ -90,8 +90,10 @@ class TestTemplateGraph:
                 "template_dependency_optional",
             ),
             (
-                '{% extends "shared/templates/one.jinja2" %}'
-                '{% extends "shared/templates/two.jinja2" %}',
+                (
+                    '{% extends "shared/templates/one.jinja2" %}'
+                    '{% extends "shared/templates/two.jinja2" %}'
+                ),
                 "template_renderer_ambiguous",
             ),
             ('{% include "shared/templates/missing.jinja2" %}', "template_source_unavailable"),

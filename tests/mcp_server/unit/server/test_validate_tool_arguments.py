@@ -17,7 +17,11 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.server import MCPServer
 from mcp_server.tools.tool_result import ToolResult
-from tests.mcp_server.test_support import get_default_server_root, make_test_server
+from tests.mcp_server.test_support import (
+    connected_mcp_client,
+    get_default_server_root,
+    make_test_server,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -116,7 +120,6 @@ class TestValidateToolArgumentsFailurePath:
         """
         invalid_args = {"optional_field": 99}
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="mock_simple",
@@ -124,11 +127,11 @@ class TestValidateToolArgumentsFailurePath:
             )
         )
         with patch("jsonschema.validate"):
-            response = await handler(req)
-        result = response.root
+            async with connected_mcp_client(server) as client:
+                response = await client.call_tool(req.params.name, req.params.arguments)
+        result = response
 
-        assert hasattr(result, "isError"), "Result must have isError"
-        assert result.isError is True, "isError must be True for validation failure"
+        assert result.is_error is True, "isError must be True for validation failure"
 
     @pytest.mark.asyncio
     async def test_failure_includes_schema_resource(self, server: MCPServer) -> None:
@@ -138,7 +141,6 @@ class TestValidateToolArgumentsFailurePath:
         """
         invalid_args = {"unknown_field": "typo"}
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="mock_simple",
@@ -146,9 +148,10 @@ class TestValidateToolArgumentsFailurePath:
             )
         )
         with patch("jsonschema.validate"):
-            response = await handler(req)
-        result = response.root
-        assert result.isError is True
+            async with connected_mcp_client(server) as client:
+                response = await client.call_tool(req.params.name, req.params.arguments)
+        result = response
+        assert result.is_error is True
 
         resource_items = [c for c in result.content if isinstance(c, EmbeddedResource)]
         assert len(resource_items) > 0, "Expected schema://validation resource in failure response"
@@ -156,8 +159,8 @@ class TestValidateToolArgumentsFailurePath:
         assert str(resource.uri) == "schema://validation", (
             f"Expected uri=schema://validation, got {resource.uri}"
         )
-        assert resource.mimeType == "application/json", (
-            f"Expected application/json, got {resource.mimeType}"
+        assert resource.mime_type == "application/json", (
+            f"Expected application/json, got {resource.mime_type}"
         )
 
         schema = json.loads(resource.text)
@@ -176,7 +179,6 @@ class TestValidateToolArgumentsFailurePath:
         """
         invalid_args = {"optional_field": "not-an-integer"}
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="mock_simple",
@@ -184,9 +186,10 @@ class TestValidateToolArgumentsFailurePath:
             )
         )
         with patch("jsonschema.validate"):
-            response = await handler(req)
-        result = response.root
-        assert result.isError is True
+            async with connected_mcp_client(server) as client:
+                response = await client.call_tool(req.params.name, req.params.arguments)
+        result = response
+        assert result.is_error is True
 
         text_items = [c for c in result.content if getattr(c, "type", None) == "text"]
         assert len(text_items) > 0, "Expected diagnostic text in failure response"
@@ -207,7 +210,6 @@ class TestValidateToolArgumentsFailurePath:
         """
         valid_args = {"required_field": "hello"}
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="mock_simple",
@@ -215,10 +217,11 @@ class TestValidateToolArgumentsFailurePath:
             )
         )
         with patch("jsonschema.validate"):
-            response = await handler(req)
-        result = response.root
+            async with connected_mcp_client(server) as client:
+                response = await client.call_tool(req.params.name, req.params.arguments)
+        result = response
 
-        assert getattr(result, "isError", False) is False
+        assert result.is_error is False
         assert len(result.content) == 1
         assert "OK" in result.content[0].text
 
@@ -230,7 +233,6 @@ class TestValidateToolArgumentsFailurePath:
         """
         invalid_args = {}
 
-        handler = server.server.request_handlers[CallToolRequest]
         req = CallToolRequest(
             params=CallToolRequestParams(
                 name="mock_simple",
@@ -238,9 +240,10 @@ class TestValidateToolArgumentsFailurePath:
             )
         )
         with patch("jsonschema.validate"):
-            response = await handler(req)
-        result = response.root
-        assert result.isError is True
+            async with connected_mcp_client(server) as client:
+                response = await client.call_tool(req.params.name, req.params.arguments)
+        result = response
+        assert result.is_error is True
 
         resource_items = [c for c in result.content if isinstance(c, EmbeddedResource)]
         schema = json.loads(resource_items[0].resource.text)

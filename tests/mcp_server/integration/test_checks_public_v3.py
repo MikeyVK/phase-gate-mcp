@@ -152,7 +152,7 @@ async def run(
     operation = composition.text.present_text.call_args.kwargs["data"]
     assert isinstance(operation, RunChecksOutput)
     assert cached == operation.model_dump(mode="json")
-    assert response.isError is not operation.success
+    assert response.is_error is not operation.success
     assert not any(isinstance(item, EmbeddedResource) for item in response.content)
     text = response.content[0]
     assert isinstance(text, TextContent)
@@ -220,6 +220,26 @@ async def test_native_findings_and_internal_failures_keep_distinct_operational_s
             invalid_row["evidence"] = evidence
             with pytest.raises(ValidationError):
                 SelectionCheckResult.model_validate_json(json.dumps(invalid_row))
+        for facts in (
+            {"required_targets": ["invented.py"]},
+            {"request_rejection": [{"location": ["operation"], "code": "invalid_value"}]},
+            {"reason": "execution_error"},
+        ):
+            with pytest.raises(ValidationError):
+                SelectionCheckResult.model_validate_json(
+                    json.dumps({**first.model_dump(mode="json"), **facts})
+                )
+        for facts in (
+            {"requested_scope": "targets"},
+            {"requested_targets": ["invented.py"]},
+            {"removed_targets": ["invented.py"]},
+            {"error_code": "selection_invalid"},
+            {"success": False},
+        ):
+            with pytest.raises(ValidationError):
+                RunChecksOutput.model_validate_json(
+                    json.dumps({**result.model_dump(mode="json"), **facts})
+                )
         for invalid_code in ("no_configured_checks", "operation_interrupted"):
             invalid_result = result.model_dump(mode="json")
             invalid_result["error_code"] = invalid_code
@@ -256,7 +276,7 @@ async def test_malformed_envelope_returns_validation_schema(
 ) -> None:
     composition, runtime = compose(tmp_path, pytestconfig, ("passed",))
     response, cached = await invoke(composition, "run_checks", arguments)
-    assert response.isError and cached["error_type"] == "ValidationError"
+    assert response.is_error and cached["error_type"] == "ValidationError"
     if not arguments:
         schema = cached["input_schema"]
         assert isinstance(schema, dict)
@@ -438,3 +458,12 @@ async def test_unresolved_choice_is_projected_with_binding_ids_and_no_native_fac
     invalid["error_details"] = {"binding_ids": ["check_0"]}
     with pytest.raises(ValidationError, match="configuration_refusal"):
         RunChecksOutput.model_validate_json(json.dumps(invalid))
+    for facts in (
+        {"error_details": {"binding_ids": ["check_1", "check_1"]}},
+        {"error_details": None},
+        {"error_code": None, "error_details": None},
+    ):
+        with pytest.raises(ValidationError):
+            RunChecksOutput.model_validate_json(
+                json.dumps({**result.model_dump(mode="json"), **facts})
+            )

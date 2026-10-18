@@ -84,7 +84,7 @@ Workspace policy uses complete `config/defaults/<file>.yaml` bases and optional 
 
 ## Getting Started & Installation
 
-**Requirements:** Python 3.13+
+**Current source requirements:** Python 3.15+; use the selected release artifact's metadata for older published packages.
 
 Depending on your use case, choose one of the following guides to get started:
 
