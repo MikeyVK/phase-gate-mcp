@@ -685,3 +685,63 @@ def test_cross_process_activation_lock_excludes_second_activation(
     finally:
         resume.touch()
         _terminate(first)
+
+
+def test_upgrade_lock_wait_continues_on_release(tmp_path: Path) -> None:
+    """Contended acquisition continues as soon as the owner releases."""
+    path = tmp_path / "startup.lock"
+    holder = UpgradeLock(path)
+    holder.acquire()
+    elapsed = [0.0]
+    pauses: list[float] = []
+
+    def sleep(seconds: float) -> None:
+        pauses.append(seconds)
+        elapsed[0] += seconds
+        holder.release()
+
+    waiting = UpgradeLock(path, monotonic=lambda: elapsed[0], sleep=sleep)
+    try:
+        waiting.acquire_with_wait(max_wait_seconds=1, retry_interval_seconds=0.25)
+        with pytest.raises(MCPError) as caught:
+            holder.acquire()
+        assert caught.value.params["reason"] == "contention"
+        assert pauses == [0.25]
+        waiting.release()
+        holder.acquire()
+    finally:
+        waiting.release()
+        holder.release()
+
+
+def test_upgrade_lock_wait_exhaustion_preserves_cause(tmp_path: Path) -> None:
+    """A monotonic bound stops retrying while preserving the native lock cause."""
+    path = tmp_path / "startup.lock"
+    holder = UpgradeLock(path)
+    elapsed = [0.0]
+    pauses: list[float] = []
+
+    def sleep(seconds: float) -> None:
+        pauses.append(seconds)
+        elapsed[0] += seconds
+
+    waiting = UpgradeLock(path, monotonic=lambda: elapsed[0], sleep=sleep)
+    with holder.hold(), pytest.raises(MCPError) as caught:
+        waiting.acquire_with_wait(max_wait_seconds=0.5, retry_interval_seconds=0.2)
+    error = caught.value
+    assert error.message == "template_upgrade_lock_timeout"
+    assert error.params["lock_path"] == str(path)
+    assert error.params["elapsed_seconds"] == pytest.approx(0.5)
+    assert error.params["attempts"] > 0
+    assert sum(pauses) == pytest.approx(0.5)
+    assert isinstance(error.__cause__, MCPError)
+    assert isinstance(error.__cause__.__cause__, OSError)
+    waiting.acquire()
+    waiting.release()
+
+
+def test_upgrade_lock_wait_does_not_retry_owned_instance(tmp_path: Path) -> None:
+    lock = UpgradeLock(tmp_path / "owned.lock")
+    with lock.hold(), pytest.raises(MCPError) as caught:
+        lock.acquire_with_wait(max_wait_seconds=1, retry_interval_seconds=0.25)
+    assert caught.value.params["reason"] == "already_owned"
