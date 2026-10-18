@@ -129,6 +129,69 @@ async def test_policy_retains_actual_text_bytes_and_validation(
     else:
         assert result.selected_source == "none" and result.checks == ()
     assert EditOperationOutput.model_validate_json(result.model_dump_json()) == result
+
+    invalid_changes = [
+        {"success": not written},
+        {"validation_status": "passed", "checks": []},
+        {"error_details": {"path": "other.txt"}},
+        {
+            "success": False,
+            "written": False,
+            "error_code": "persistence_failed",
+            "error_details": None,
+        },
+    ]
+    if written:
+        invalid_changes.append({"error_code": "validation_blocked"})
+        if policy == "report" and result.validation_status != "passed":
+            invalid_changes.append({"validation_policy": "enforce"})
+    else:
+        invalid_changes.extend(({"error_code": None}, {"validation_policy": "report"}))
+
+    payload = result.model_dump(mode="json")
+    for change in invalid_changes:
+        with pytest.raises(ValidationError):
+            EditOperationOutput.model_validate_json(json.dumps({**payload, **change}))
+
+    if written:
+        for selection in (
+            {
+                "selected_source": None,
+                "profile_id": None,
+                "template_id": None,
+                "extension": None,
+                "selection_reason": None,
+                "checks": [],
+                "validation_status": "not_executed",
+                "validation_policy": "report",
+            },
+            {"checks": [], "validation_status": "not_executed", "validation_policy": "report"}
+            if has_profile
+            else {"content_changed": None},
+        ):
+            with pytest.raises(ValidationError):
+                EditOperationOutput.model_validate_json(json.dumps({**payload, **selection}))
+    if has_profile:
+        with pytest.raises(ValidationError):
+            EditOperationOutput.model_validate_json(
+                json.dumps({**payload, "selected_source": None})
+            )
+        observed_check = result.checks[0]
+        observed_payload = observed_check.model_dump(mode="json")
+        assert isinstance(observed_payload["invocation"], dict)
+        invalid_facts = [
+            {"invocation": None},
+            {"request_rejection": [{"location": ["operation"], "code": "invalid_value"}]},
+            {"message": None} if outcome != "passed" else {"reason": "execution_error"},
+            {"invocation": {**observed_payload["invocation"], "external_tools": None}},
+        ]
+        if outcome == "failed":
+            invalid_facts.extend(
+                ({"evidence": None}, {"termination_problem": "termination_unconfirmed"})
+            )
+        for facts in invalid_facts:
+            with pytest.raises(ValidationError):
+                type(observed_check).model_validate_json(json.dumps({**observed_payload, **facts}))
     if written:
         invalid = result.model_dump(mode="json")
         invalid["content_changed"] = None

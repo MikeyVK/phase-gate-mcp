@@ -146,10 +146,19 @@ ignore = []
 
 
 [tool.coverage.run]
-source = ["mcp_server"]
+source_pkgs = ["mcp_server"]
 branch = true
+patch = ["subprocess"]
+
+[tool.coverage.paths]
+mcp_server = [
+    "mcp_server",
+    "*/installed/mcp_server",
+    "*/site-packages/mcp_server",
+]
 
 [tool.coverage.report]
 fail_under = 90
+precision = 2
 
 

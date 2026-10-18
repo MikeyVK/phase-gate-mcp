@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Renewed Validation failed; startup repair and owner-required90% coverage recovery remain  
-**Version:** 0.3  
+**Status:** C_4 focused recovery complete; renewed full Validation pending
+**Version:** 0.4  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -220,6 +220,46 @@ The producer added --cov/--cov-branch as mandatory #517 Planning acceptance with
 
 The remaining startup repair requires an earlier-phase recovery; the owner's standing force-backtransition approval is recorded in AGENTS.md. No production/test patch has been made in this Validation phase and no gate exception has been applied.
 
+## C_4 Recovery Evidence
+
+The owner retained the extra90% combined line/branch gate. Independent QA approved Planning at cc79277e4b1c8cea0abaade180d56ef37d744989; C_4 re-entry is recorded in8d94c26f. C_1–C_3 and both negative complete runs remain unchanged. No production source has changed in C_4.
+
+### Native measurement
+
+pytest-cov7 removed automatic subprocess measurement. The existing14 proxy/activation cases passed before and after coverage.py patch=["subprocess"]: native reports23.36% and23.70% for that limited selection, with47 additional covered lines and15 branches (42 lines in template activation). These small selections intentionally do not satisfy the workspace-wide90% gate; native exit1 is retained rather than reported as a gate pass.
+
+Directory-based source selection becomes absolute when native coverage configuration is serialized into children. To measure the same package in source and installed launches, native source_pkgs=["mcp_server"] and --cov without a value preserve package identity. Standard coverage.paths maps the checkout, */installed/mcp_server and */site-packages/mcp_server; no source exclusions or threshold changes are introduced. All191 source Python files matched the isolated installed package as text; two files differed only in line endings. Native package-entrypoint reporting completed without missing-source errors or duplicate installed paths. Windows forcible termination still cannot guarantee a child flush; no production shutdown change or private instrumentation was added.
+
+### Focused behavior
+
+| Selection through actual candidate run_tests | Outcome |
+| --- | --- |
+| Proxy and template activation,14 existing cases, native parallelism |14 passed before/after measurement change (87.54s/67.13s native summaries). |
+| Target startup and v3 cutover, eight cases, explicit45s installed client windows |8 passed in148.97s. |
+| Package source/installed entrypoints, two existing cases with package-based measurement |2 passed in54.45s; native no-data warnings from idle workers remain visible. |
+| Four changed component families: proxy, target startup, Git adapter and typed presentation |84 passed in135.13s. Seven subsequently identified duplicate projection scenarios were removed; retained scenarios reuse this evidence until their surface changes. |
+| Existing real-process cleanup/serialization cases, strengthened result-provenance checks |First six selected cases passed in10.85s. Whole-family retry:34 passed,2 new assertions failed because interrupted test/fix messages are legitimately optional. Corrected those new test assumptions without changing production policy. A subsequent38-case diagnostic had37 passed and one further over-strict test success-flag assertion; that assertion was also corrected. Final scoped closure is recorded below. |
+
+The catalog test now observes actual initialized listing, valid published schemas where present and structured health data validated as HealthCheckOutput. It does not invent a requirement that every tool advertises outputSchema: the existing normal decorator stack does not forward that metadata. This is a separate finding for coordination, not a new production change or a claim that structured DTO delivery failed.
+
+New public proxy scenarios prove recovery after malformed frames and child cleanup on EOF, interruption and IO failure. One temporary-local-remote Git scenario proves actual GitPython tracking/fetch/pull, stash content preservation and commit/merge ancestry. Typed-projection admission adds only previously uncovered cases; public result tests reject fabricated native facts, missing invocation identity, duplicate rows and contradictory operation/refusal claims. No test asserts dependency versions or source text; no compatibility scenario or new permanent test module was added.
+
+### C_4 focused closure
+
+run_tests(scope="targets", targets=the ten changed Python test files, tests=["python_tests"], args={"python_tests":["-q","--junitxml=.pgmcp/temp/issue517/c4-final-focused.xml"]}, timeout_seconds=1200) completed with223 passed, zero failures/errors/skips, native exit0 in125.54s. This is a focused family selection, not full Validation.
+
+The final native format/lint/Pyright checks on those ten files all passed; Pyright1.1.414 reported ten files and zero diagnostics. An initial fixture inherited and narrowed a mutable field; it was corrected to an independent frozen model without an ignore or production change. Its17-case presentation family then passed again in7.53s with native exit0 (c4-projection-typed-final.xml); unchanged family evidence is reused.
+
+Additional bounded diagnostics retained native XML evidence:74 Git/proposal cases passed in16.34s (c4-preservation.xml);98 check/edit/runtime cases passed in13.94s (c4-contract-final.xml);18 IO cases passed in9.61s (c4-file-io-final.xml). Their opt-in coverage calls correctly returned native exit1 because these limited families do not cover the full package; no --cov-fail-under override was used.
+
+Native coverage precision is now2, with fail_under=90 unchanged: whole-percent rounding must not make89.6% satisfy the retained90% requirement. Both direct and proxy entrypoints are observed in the existing source/installed scenarios. The ten edited families contain223 cases versus177 before C_4, a net46 additional behavior cases; no permanent test module was added. Seven duplicate new projection scenarios, one old protocol-instance assertion and obsolete negative V2 tool/config assertions in touched startup tests were removed.
+
+The pre-migration active installed server also uses optional output_model metadata to publish outputSchema, and its normal decorators do not forward that metadata. Thus the catalog observation predates this SDK cutover. Preserve it as a coordination finding; structured DTO delivery and conditional schema preservation are proven separately, without silently changing the wrapper contract.
+
+Full90% acceptance remains unproven and is owned by renewed complete Validation. C_4 made no production-source edit, threshold reduction, exclusion/skip, suppression, private measurement hook, new dependency or active-host switch. The existing coherent installed wheel remains valid for target RPC because production code is unchanged. Required complete suite/coverage and branch/configured gates follow only after independent Implementation → Validation GO.
+
+
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -233,3 +273,4 @@ The remaining startup repair requires an earlier-phase recovery; the owner's sta
 | 0.1 | 2026-10-18 | @imp validator | Record complete negative suite/configured gate evidence, clean checkout restoration and concrete missed consumer/provisioning boundaries. |
 | 0.2 | 2026-10-18 | @imp implementer | Preserve failed full Validation and record owner-approved C_3 recovery, exact focused outcomes, native/process causes and pending complete revalidation. |
 | 0.3 | 2026-10-18 | @imp validator | Record complete C_3 retry:2911/2912 tests pass, all required checks pass,87.93% opt-in coverage fails and one installed-startup client window remains; reopen the unbaselined extra coverage acceptance with the owner. |
+| 0.4 | 2026-10-18 | @imp implementer | Record bounded C_4 measurement and focused behavior evidence; preserve negative full runs and owner-required90% acceptance as pending. |

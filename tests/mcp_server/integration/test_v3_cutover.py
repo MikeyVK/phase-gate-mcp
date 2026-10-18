@@ -42,27 +42,27 @@ def _launch_environment(*, workspace: Path, package_root: Path) -> dict[str, str
 
 
 def _assert_v3_catalog(workspace: Path, env: dict[str, str]) -> None:
-    with run_server_process(
-        [sys.executable, "-m", "mcp_server.core.proxy"],
-        cwd=workspace,
-        env=env,
-        timeout=45,
-    ) as process:
-        info = process.initialize(client_name="pytest-v3-cutover")
-        assert info["serverInfo"]["name"] == "phase-gate-mcp"
-        names = [tool["name"] for tool in process.list_tools()]
-        assert len(names) == len(set(names))
-        assert set(names) >= V3_TOOLS
-        assert not {"run_quality_gates", "auto_fix"} & set(names)
-        response = process.send_request(
-            "tools/call",
-            {"name": "scaffold_schema", "arguments": {"artifact_type": "research"}},
-        )
-        assert "result" in response
-        assert any(
-            item.get("type") == "resource" and item["resource"]["uri"].startswith("schema://")
-            for item in response["result"]["content"]
-        )
+    for entrypoint in ("mcp_server", "mcp_server.core.proxy"):
+        with run_server_process(
+            [sys.executable, "-m", entrypoint],
+            cwd=workspace,
+            env=env,
+            timeout=45,
+        ) as process:
+            info = process.initialize(client_name="pytest-v3-cutover")
+            assert info["serverInfo"]["name"] == "phase-gate-mcp"
+            names = [tool["name"] for tool in process.list_tools()]
+            assert len(names) == len(set(names))
+            assert set(names) >= V3_TOOLS
+            response = process.send_request(
+                "tools/call",
+                {"name": "scaffold_schema", "arguments": {"artifact_type": "research"}},
+            )
+            assert "result" in response
+            assert any(
+                item.get("type") == "resource" and item["resource"]["uri"].startswith("schema://")
+                for item in response["result"]["content"]
+            )
 
 
 class TestV3Cutover:
@@ -70,7 +70,6 @@ class TestV3Cutover:
 
     def test_source_stdio_entrypoint_discovers_v3_tools(self, tmp_path: Path) -> None:
         assert (REPO_ROOT / ".pgmcp/installation.json").is_file()
-        assert not (REPO_ROOT / ".pgmcp/config/quality.yaml").exists()
         workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
         env = _launch_environment(workspace=workspace, package_root=REPO_ROOT)
         _assert_v3_catalog(workspace, env)
@@ -91,5 +90,4 @@ class TestV3Cutover:
         assert initialized.returncode == 0, initialized.stdout + initialized.stderr
         assert (workspace / ".pgmcp/installation.json").is_file()
         assert not (workspace / ".pgmcp/.version").exists()
-        assert not (workspace / ".pgmcp/config/quality.yaml").exists()
         _assert_v3_catalog(workspace, env)

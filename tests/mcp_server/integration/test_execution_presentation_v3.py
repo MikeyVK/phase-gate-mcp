@@ -60,6 +60,16 @@ class Projection(BaseModel):
     detail: Row | str
 
 
+class CollectionProjection(BaseModel):
+    """Use an independent concrete shape for collection admission."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    labels: tuple[StrictStr, ...]
+    rows: tuple[Row, ...]
+    status: Status
+    detail: Row | str
+
+
 class ProjectionCore:
     name = "projection"
     description = "Return a typed projection"
@@ -158,11 +168,68 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
     assert Projection.model_validate_json(content.text) == operation
 
 
-def test_alignment_rejects_structured_union(config: PresentationConfig) -> None:
-    presenter = _presenter(config, ToolPresentationConfig(template_success="{detail}"))
-    with pytest.raises(ConfigError, match="structured|unsupported"):
+@pytest.mark.parametrize(
+    ("tool_config", "diagnosis"),
+    [
+        [{"template_success": "{detail}"}, "structured|unsupported"],
+        [{"template_success": "{"}, "Invalid template format"],
+        [
+            {
+                "collections": {
+                    "items": {"order": 10, "field": "labels", "item_template": "{label}"}
+                }
+            },
+            "may reference only",
+        ],
+        [
+            {"collections": {"items": {"order": 10, "field": "absent", "item_template": "{item}"}}},
+            "not present",
+        ],
+        [
+            {
+                "collections": {
+                    "items": {"order": 10, "field": "rows.args", "item_template": "{item}"}
+                }
+            },
+            "direct field",
+        ],
+        [
+            {
+                "enum_cases": {
+                    "state": {"order": 10, "field": "absent", "cases": {"complete": "Complete"}}
+                }
+            },
+            "not present",
+        ],
+        [
+            {
+                "enum_cases": {
+                    "state": {
+                        "order": 10,
+                        "field": "status.value",
+                        "cases": {"complete": "Complete"},
+                    }
+                }
+            },
+            "direct field",
+        ],
+        [
+            {
+                "enum_cases": {
+                    "state": {"order": 10, "field": "status", "cases": {"unexpected": "Unexpected"}}
+                }
+            },
+            "invalid case value",
+        ],
+    ],
+)
+def test_alignment_rejects_invalid_typed_projections(
+    config: PresentationConfig, tool_config: dict[str, object], diagnosis: str
+) -> None:
+    presenter = _presenter(config, ToolPresentationConfig.model_validate(tool_config))
+    with pytest.raises(ConfigError, match=diagnosis):
         validate_presentation_alignment(
-            presenter, [SupportedToolContract(name="projection", output_model=Projection)]
+            presenter, [SupportedToolContract(name="projection", output_model=CollectionProjection)]
         )
 
 
@@ -211,3 +278,37 @@ async def test_shipped_cache_hint_stays_complete_within_budget(
         assert content.text == (
             Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"
         ).read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("names", [(), ("missing",), ("projection", "projection")])
+def test_alignment_rejects_catalog_identity_drift(
+    config: PresentationConfig, names: tuple[str, ...]
+) -> None:
+    presenter = _presenter(config, ToolPresentationConfig(template_success="{title}"))
+    contracts = [SupportedToolContract(name=name, output_model=Projection) for name in names]
+    with pytest.raises(ConfigError):
+        validate_presentation_alignment(presenter, contracts)
+
+
+@pytest.mark.parametrize("location", ["failure", "note"])
+def test_alignment_rejects_unsupported_diagnostic_placeholders(
+    config: PresentationConfig, location: str
+) -> None:
+    global_settings = config.global_settings.model_dump(mode="python")
+    if location == "failure":
+        global_settings["failures"]["ERR_SYSTEM"] = "{unknown_fact}"
+    else:
+        global_settings["notes"]["templates"]["recoveries"]["transition_conflict_recovery"] = (
+            "{unknown_fact}"
+        )
+    policy = PresentationConfig.model_validate(
+        {
+            "global": global_settings,
+            "tools": {"projection": {"template_success": "{title}"}},
+        }
+    )
+    with pytest.raises(ConfigError, match="placeholder"):
+        validate_presentation_alignment(
+            TextPresenter(config=policy),
+            [SupportedToolContract(name="projection", output_model=Projection)],
+        )

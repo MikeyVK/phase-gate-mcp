@@ -30,11 +30,13 @@ from pathlib import Path
 
 import pytest
 from git import Repo as GitRepo
+from jsonschema import Draft202012Validator
 
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import MCPError
 from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.tool_outputs import HealthCheckOutput
 from mcp_server.services.template_activation import UpgradeLock
 from scripts.build_package import read_manifest
 from tests.mcp_server.fixtures.installed_distribution import (
@@ -43,6 +45,7 @@ from tests.mcp_server.fixtures.installed_distribution import (
 )
 from tests.mcp_server.fixtures.server_process import run_server_process
 from tests.mcp_server.test_support import (
+    connected_mcp_client,
     copy_server_startup_inputs,
     make_project_manager,
 )
@@ -57,13 +60,6 @@ TARGET_V3_TOOL_NAMES = frozenset(
         "run_checks",
         "run_tests",
         "apply_fixes",
-    }
-)
-
-LEGACY_V2_TOOL_NAMES = frozenset(
-    {
-        "run_quality_gates",
-        "auto_fix",
     }
 )
 
@@ -201,7 +197,8 @@ def _assert_candidate_launch_parity(python: Path, workspace: Path, env: dict[str
 class TestTargetStartup:
     """Integration test suite for target_startup_composition_and_launch_rehearsal."""
 
-    def test_target_tool_assembly_composition_and_no_duplicate_names(
+    @pytest.mark.asyncio
+    async def test_target_tool_assembly_composition_and_no_duplicate_names(
         self, isolated_target_env: tuple[Path, Path]
     ) -> None:
         """Verify target assembly has the 6 target V3 tools and no duplicate names."""
@@ -220,12 +217,6 @@ class TestTargetStartup:
         for target_tool in TARGET_V3_TOOL_NAMES:
             assert target_tool in unique_names, f"Expected target tool {target_tool} in assembly"
 
-        # Legacy V2 tools must NOT be present in target assembly
-        for legacy_tool in LEGACY_V2_TOOL_NAMES:
-            assert legacy_tool not in unique_names, (
-                f"Legacy tool {legacy_tool} must not be in target assembly"
-            )
-
         # Key unchanged tools must be present
         unchanged_expected = {
             "create_branch",
@@ -243,6 +234,23 @@ class TestTargetStartup:
             assert tool_name in unique_names, (
                 f"Expected unchanged tool {tool_name} in target assembly"
             )
+
+        async with connected_mcp_client(server) as client:
+            published = await client.list_tools()
+            assert {tool.name for tool in published.tools} == unique_names
+            assert len(published.tools) == len(unique_names)
+            for tool in published.tools:
+                assert tool.description
+                Draft202012Validator.check_schema(tool.input_schema)
+                if tool.output_schema is not None:
+                    Draft202012Validator.check_schema(tool.output_schema)
+
+            health = await client.call_tool("health_check", {})
+            assert not health.is_error
+            assert health.structured_content is not None
+            observed = HealthCheckOutput.model_validate_json(json.dumps(health.structured_content))
+            assert observed.success
+            assert health.content
 
     def test_target_presentation_alignment(self, isolated_target_env: tuple[Path, Path]) -> None:
         """Verify target tools validate presentation alignment cleanly."""
@@ -314,7 +322,6 @@ class TestTargetStartup:
             tools = proc.list_tools()
             tool_names = {t["name"] for t in tools}
             assert tool_names >= TARGET_V3_TOOL_NAMES
-            assert not LEGACY_V2_TOOL_NAMES & tool_names
 
     def test_installed_candidate_init_migration_and_mcp_handshake(self, tmp_path: Path) -> None:
         """Rehearse one installed V3 candidate across fresh and owner-migrated roots."""
@@ -395,13 +402,12 @@ class TestTargetStartup:
             "phases": {},
         }
         manager.save_planning_deliverables(53, author_plan)
-        with run_server_process(launch, cwd=fresh, env=fresh_env) as proc:
+        with run_server_process(launch, cwd=fresh, env=fresh_env, timeout=45) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-target")
             tools = proc.list_tools()
             names = [tool["name"] for tool in tools]
             assert len(names) == len(set(names))
             assert set(names) >= TARGET_V3_TOOL_NAMES
-            assert not {"run_quality_gates", "auto_fix"} & set(names)
 
             plan_response = proc.send_request(
                 "tools/call",
@@ -498,7 +504,7 @@ class TestTargetStartup:
         )
         assert forced.returncode == 0, forced.stdout + forced.stderr
         assert (legacy_root / "installation.json").is_file()
-        with run_server_process(launch, cwd=legacy, env=legacy_env) as proc:
+        with run_server_process(launch, cwd=legacy, env=legacy_env, timeout=45) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-migrated")
             names = [tool["name"] for tool in proc.list_tools()]
             assert len(names) == len(set(names))

@@ -207,7 +207,7 @@ The owner approved explicit native Ruff automatic discovery of Python files (.py
 
 ### Coverage measurement recovery
 
-The owner explicitly retained the extra90% combined line/branch coverage gate for #517 on 2026-10-18. Preserve source=mcp_server, branch coverage and the threshold; both failed full runs remain evidence. pytest-cov7 requires coverage.py native subprocess support for child interpreters. Evaluate patch=["subprocess"] at the existing configuration owner, including xdist combination, isolated/installed source identity and Windows termination limits. Keep diagnostics visible; no private instrumentation, exclusions or production changes for measurement. Only after measurement review should proportional public-behavior gaps drive test adaptations.
+The owner explicitly retained the extra90% combined line/branch coverage gate for #517 on 2026-10-18. Preserve the measured mcp_server package, branch coverage and the threshold; both failed full runs remain evidence. pytest-cov7 requires coverage.py native subprocess support for child interpreters. Evaluate patch=["subprocess"] at the existing configuration owner, including xdist combination, isolated/installed source identity and Windows termination limits. Keep diagnostics visible; no private instrumentation, exclusions or production changes for measurement. Only after measurement review should proportional public-behavior gaps drive test adaptations.
 
 References: [pytest-cov subprocess support](https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html), [coverage native patches](https://coverage.readthedocs.io/en/latest/config.html#run-patch).
 

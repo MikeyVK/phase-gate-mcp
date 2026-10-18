@@ -12,6 +12,7 @@ from uuid import UUID
 
 import pytest
 from jsonschema import Draft202012Validator
+from pydantic import ValidationError
 
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.fixes_config import FixesConfig
@@ -156,6 +157,19 @@ async def test_domain_outcomes_are_completed_and_keep_concrete_resource_payload(
     publication = cache.put("process_fixture", result)
     text = await CachedResponseResource(cache).read(f"pgmcp://cache/runs/{publication.run_id}")
     assert InvocationCompleted[FixtureResponse].model_validate_json(text) == result
+
+    payload = result.model_dump(mode="json")
+    for capture in (
+        {**payload["capture"], "exit_code": 128},
+        {
+            **payload["capture"],
+            "stdout": {**payload["capture"]["stdout"], "head": "unaccepted raw output"},
+        },
+    ):
+        with pytest.raises(ValidationError):
+            InvocationCompleted[FixtureResponse].model_validate_json(
+                json.dumps({**payload, "capture": capture})
+            )
 
 
 @pytest.mark.parametrize(
@@ -661,6 +675,36 @@ async def test_public_cleanup_failure_retains_accepted_native_response_and_fix_e
     if role == "check":
         assert original["coverage"] is None and original["required_targets"] == []
 
+    row_payload = row.model_dump(mode="json")
+    for contradictory in (
+        {"adapter": None},
+        {"args_source": None, "effective_args": []},
+        {"external_tools": original["external_tools"]},
+        {"reason": "timeout"},
+        {"evidence": {"format": "text", "data": "unrelated native result"}},
+        {"status": "passed"},
+        {"reason": None, "evidence": None},
+    ):
+        with pytest.raises(ValidationError):
+            type(row).model_validate_json(json.dumps({**row_payload, **contradictory}))
+    payload = restored.model_dump(mode="json")
+    if role != "check":
+        selection_field = {"test": "selected_tests", "fix": "selected_fixes"}[role]
+        duplicate = [payload[selection_field][0], payload[selection_field][0]]
+        with pytest.raises(ValidationError):
+            type(restored).model_validate_json(json.dumps({**payload, selection_field: duplicate}))
+    unconfirmed = {**row_payload, "termination_problem": "termination_unconfirmed"}
+    with pytest.raises(ValidationError):
+        type(restored).model_validate_json(
+            json.dumps({**payload, "results": [unconfirmed, *payload["results"][1:]]})
+        )
+    for contradictory in (
+        {"results": [row_payload, row_payload]},
+        {"requested_scope": "configured"},
+    ):
+        with pytest.raises(ValidationError):
+            type(restored).model_validate_json(json.dumps({**payload, **contradictory}))
+
 
 @pytest.mark.parametrize("mode", ["failed_detail", "invalid_request", "cancel"])
 async def test_content_cleanup_failure_preserves_response_or_stop_in_serialized_projection(
@@ -696,6 +740,20 @@ async def test_content_cleanup_failure_preserves_response_or_stop_in_serialized_
             restored.invocation.capture,
             "failed",
         )
+
+        payload = restored.model_dump(mode="json")
+        for contradictory in (
+            {"invocation": None},
+            {"args_source": None},
+            {"effective_args": None},
+            {"reason": None},
+            {"status": "failed"},
+            {"status": "passed"},
+            {"reason": "timeout"},
+            {"evidence": {"format": "text", "data": "unrelated native result"}},
+        ):
+            with pytest.raises(ValidationError):
+                MutationCheck.model_validate_json(json.dumps({**payload, **contradictory}))
     else:
         assert restored.status == "not_executed"
         assert restored.evidence is None
@@ -713,6 +771,18 @@ async def test_content_cleanup_failure_preserves_response_or_stop_in_serialized_
             assert restored.request_rejection is not None
             assert restored.request_rejection[0].location == ("operation",)
             assert restored.request_rejection[0].code == "invalid_value"
+
+        payload = restored.model_dump(mode="json")
+        assert isinstance(payload["invocation"], dict)
+        for contradictory in (
+            {"invocation": None},
+            {"reason": None},
+            {"evidence": {"format": "text", "data": "invented native finding"}},
+            {"invocation": {**payload["invocation"], "external_tools": []}},
+            {"args_source": None},
+        ):
+            with pytest.raises(ValidationError):
+                MutationCheck.model_validate_json(json.dumps({**payload, **contradictory}))
     assert not (process_fixture.workspace / "proposed.txt").exists()
 
 
@@ -761,6 +831,36 @@ async def test_public_cleanup_failure_keeps_stop_reason_details_and_exposes_clea
     assert "fixture denied invocation removal" in row.message
     directories = tuple((process_fixture.workspace / "invocations").iterdir())
     assert any(str(directory) in row.message for directory in directories)
+
+    first_payload = row.model_dump(mode="json")
+    for contradictory in (
+        {"adapter": None},
+        {"reason": None},
+        {"evidence": {"format": "text", "data": "invented native finding"}},
+        {"external_tools": []},
+        {"request_rejection": None} if mode == "invalid_request" else {"args_source": None},
+    ):
+        with pytest.raises(ValidationError):
+            type(row).model_validate_json(json.dumps({**first_payload, **contradictory}))
+    waiting = restored.results[1]
+    waiting_payload = waiting.model_dump(mode="json")
+    for contradictory in (
+        {"adapter": first_payload["adapter"], "capture": first_payload["capture"]},
+        {"evidence": {"format": "text", "data": "invented native finding"}},
+        {"external_tools": []},
+        {"reason": None},
+    ):
+        with pytest.raises(ValidationError):
+            type(waiting).model_validate_json(json.dumps({**waiting_payload, **contradictory}))
+    payload = restored.model_dump(mode="json")
+    changes = (
+        ({"success": True}, {"error_details": None}, {"error_code": None})
+        if mode == "invalid_request"
+        else ({"error_code": None},)
+    )
+    for contradictory in changes:
+        with pytest.raises(ValidationError):
+            type(restored).model_validate_json(json.dumps({**payload, **contradictory}))
 
 
 async def test_public_cleanup_failure_preserves_primary_process_failure(

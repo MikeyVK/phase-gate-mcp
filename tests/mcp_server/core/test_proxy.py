@@ -218,3 +218,62 @@ def test_cancellation_is_forwarded_and_cleanup_finishes_pending(probe: ProxyProb
     cancelled = probe.sink.receive(2)
     assert "error" in cancelled
     assert sum(frame["id"] == 2 for frame in probe.sink.observed) == 1
+
+
+def test_malformed_frames_do_not_prevent_following_valid_request(probe: ProxyProbe) -> None:
+    probe.connect()
+    for line in ("not json", "[]"):
+        probe.proxy.send_to_server(line)
+    for identifier in (True, [], 1.5):
+        probe.proxy.send_to_server(
+            json.dumps({"jsonrpc": "2.0", "id": identifier, "method": "tools/list"})
+        )
+    probe.wait_event("client_json_failed")
+    probe.wait_event("client_id_invalid")
+    probe.proxy.send_to_server(
+        json.dumps(
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "\ud800"}}
+        )
+    )
+    rejected = probe.sink.receive(2)
+    assert rejected["error"]["code"] == -32602
+    probe.send(3, "echo")
+    assert "result" in probe.sink.receive(3)
+
+
+@pytest.mark.parametrize("ending", ["eof", "interrupt", "io_error"])
+def test_stdin_termination_closes_the_live_child(probe: ProxyProbe, ending: str) -> None:
+    def messages() -> Iterator[str]:
+        yield "\n"
+        yield json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-11-25",
+                    "capabilities": {},
+                    "clientInfo": {"name": "stdin-test", "version": "1"},
+                },
+            }
+        )
+        assert "result" in probe.sink.receive(1)
+        yield json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        yield json.dumps(
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "echo"}}
+        )
+        assert "result" in probe.sink.receive(2)
+        if ending == "interrupt":
+            raise KeyboardInterrupt
+        if ending == "io_error":
+            raise OSError("client input closed")
+
+    probe.monkeypatch.setattr(sys, "stdout", probe.sink)
+    probe.monkeypatch.setattr(sys, "stdin", messages())
+    probe.proxy.run()
+    probe.wait_event("proxy_stopped")
+    if ending != "eof":
+        probe.wait_event("proxy_interrupted" if ending == "interrupt" else "proxy_io_failed")
+    process = probe.proxy.server_process
+    assert process is not None and process.poll() is not None
+    assert not probe.proxy.restarting

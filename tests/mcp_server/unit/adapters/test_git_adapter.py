@@ -4,13 +4,15 @@
 @dependencies: pytest, mcp_server.adapters.git_adapter
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from git import GitCommandError, Repo
 from git.remote import PushInfo
 
 from mcp_server.adapters.git_adapter import GitAdapter
-from mcp_server.core.exceptions import ExecutionError
+from mcp_server.core.exceptions import ExecutionError, MCPSystemError
 
 
 class TestGitAdapterCheckout:
@@ -787,3 +789,120 @@ class TestGitAdapterHardResetAndForcePush:
 
             with pytest.raises(ExecutionError, match="Failed to force push"):
                 adapter.force_push_with_lease()
+
+
+@pytest.mark.slow
+def test_local_remote_roundtrip_preserves_commits_and_stashed_content(tmp_path: Path) -> None:
+    root = tmp_path / "work"
+    repository = Repo.init(root, initial_branch="main")
+    remote = Repo.init(tmp_path / "remote.git", bare=True)
+    with repository.config_writer() as configuration:
+        configuration.set_value("user", "name", "Adapter scenario")
+        configuration.set_value("user", "email", "adapter@example.invalid")
+    repository.create_remote("origin", str(remote.working_dir or remote.git_dir))
+    adapter = GitAdapter(str(root))
+    target = root / "artifact.txt"
+    target.write_text("initial\n", encoding="utf-8")
+    try:
+        initial = adapter.commit("Initial artifact")
+        assert adapter.is_clean()
+        assert adapter.get_status()["branch"] == "main"
+        assert not adapter.has_upstream()
+        adapter.push(set_upstream=True)
+        assert adapter.has_upstream()
+        assert "origin" in adapter.fetch(prune=True)
+        assert adapter.pull()
+        assert any("origin/main" in branch for branch in adapter.list_branches(remote=True))
+
+        adapter.create_branch("feature/roundtrip", base="main")
+        adapter.checkout("feature/roundtrip")
+        target.write_text("committed change\n", encoding="utf-8")
+        changed = adapter.commit("Change artifact")
+        assert adapter.has_net_diff_for_path("artifact.txt", "main")
+        assert "artifact.txt" in adapter.get_diff_stat("main")
+        assert adapter.is_ancestor(initial)
+        assert adapter.get_recent_commits()[0] == "Change artifact"
+
+        target.write_text("pending change\n", encoding="utf-8")
+        untracked = root / "new.txt"
+        untracked.write_text("untracked content\n", encoding="utf-8")
+        adapter.stash(message="pending artifact", include_untracked=True)
+        assert target.read_text(encoding="utf-8") == "committed change\n"
+        assert not untracked.exists() and adapter.stash_list()
+        adapter.stash_pop()
+        assert target.read_text(encoding="utf-8") == "pending change\n"
+        assert untracked.read_text(encoding="utf-8") == "untracked content\n"
+        adapter.restore(["artifact.txt"])
+        untracked.unlink()
+
+        adapter.checkout("main")
+        adapter.merge("feature/roundtrip")
+        assert adapter.is_ancestor(changed)
+        adapter.delete_local_branch("feature/roundtrip")
+        assert all(
+            "feature/roundtrip" not in branch for branch in adapter.list_branches(verbose=True)
+        )
+        assert target.read_text(encoding="utf-8") == "committed change\n"
+        repository.git.checkout(initial)
+        assert adapter.get_current_branch() == "HEAD"
+        assert not adapter.has_upstream()
+    finally:
+        adapter.repo.close()
+        repository.close()
+        remote.close()
+
+
+@pytest.mark.parametrize(
+    ("operation", "backend_path", "parameters"),
+    [
+        ("fetch", "remote", ()),
+        ("pull", "remote", ()),
+        ("has_upstream", "active_branch.tracking_branch", ()),
+        ("list_branches", "git.branch", ()),
+        ("get_diff_stat", "git.diff", ("main",)),
+        ("has_net_diff_for_path", "git.merge_base", ("artifact.txt", "main")),
+        ("has_net_diff_for_path", "git.diff", ("artifact.txt", "main")),
+    ],
+)
+def test_native_command_failures_preserve_the_cause(
+    operation: str, backend_path: str, parameters: tuple[str, ...]
+) -> None:
+    failure = GitCommandError("git operation", 128, stderr="native failure sentinel")
+    repository = MagicMock()
+    command = repository
+    for segment in backend_path.split("."):
+        command = getattr(command, segment)
+    command.side_effect = failure
+    with patch("mcp_server.adapters.git_adapter.Repo", return_value=repository):
+        adapter = GitAdapter("/unused")
+        with pytest.raises(ExecutionError) as captured:
+            getattr(adapter, operation)(*parameters)
+    assert captured.value.__cause__ is failure
+
+
+@pytest.mark.parametrize("status", [1, 128])
+def test_ancestry_distinguishes_a_negative_answer_from_native_failure(status: int) -> None:
+    failure = GitCommandError("git merge-base", status, stderr="ancestry diagnostic")
+    repository = MagicMock()
+    repository.git.merge_base.side_effect = failure
+    with patch("mcp_server.adapters.git_adapter.Repo", return_value=repository):
+        adapter = GitAdapter("/unused")
+        if status == 1:
+            assert adapter.is_ancestor("candidate") is False
+        else:
+            with pytest.raises(ExecutionError) as captured:
+                adapter.is_ancestor("candidate")
+            assert captured.value.__cause__ is failure
+
+
+@pytest.mark.parametrize("missing", [False, True])
+def test_unusable_repository_retains_the_native_diagnostic(tmp_path: Path, missing: bool) -> None:
+    root = tmp_path / "repository"
+    if not missing:
+        root.mkdir()
+    adapter = GitAdapter(str(root))
+    with pytest.raises(ExecutionError) as captured:
+        adapter.get_current_branch()
+    access_error = captured.value.__cause__
+    assert isinstance(access_error, MCPSystemError)
+    assert access_error.__cause__ is not None

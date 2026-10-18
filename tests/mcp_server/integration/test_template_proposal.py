@@ -359,3 +359,61 @@ def test_writable_endpoint_alias_preserves_target(tmp_path: Path) -> None:
 
     assert (outside / "retained.txt").read_bytes() == b"keep"
     assert staged.is_dir()
+
+
+@pytest.mark.parametrize("operation", ["stage", "proposal"])
+@pytest.mark.parametrize("failure_point", ["write", "replace"])
+def test_io_failure_preserves_prior_tree_and_cleans_preparation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, operation: str, failure_point: str
+) -> None:
+    actual, supplied, staged, proposal, config = (
+        tmp_path / name for name in ("actual", "supplied", "upgrade", "proposal", "config")
+    )
+    write_package_tree(actual, _package_files("pkg", "demo", body=b"actual"))
+    write_package_tree(supplied, _package_files("pkg", "demo", body=b"candidate"))
+    write_package_tree(staged, _package_files("pkg", "demo", body=b"candidate"))
+    write_package_tree(proposal, _package_files("pkg", "demo", body=b"previous proposal"))
+    _write_config(config, ("text",))
+    service = _service(actual, staged, proposal, config)
+    selections = _selections(service.admit(actual), service.admit(staged))
+    target = staged if operation == "stage" else proposal
+    incoming = target.parent / f".{target.name}.incoming"
+    previous = target.parent / f".{target.name}.previous"
+
+    def tree(root: Path) -> dict[str, bytes]:
+        return {
+            path.relative_to(root).as_posix(): path.read_bytes()
+            for path in root.rglob("*")
+            if path.is_file()
+        }
+
+    before = {root: tree(root) for root in (actual, supplied, target)}
+    failure = PermissionError("publication denied")
+    write = Path.write_bytes
+    move = Path.replace
+
+    def write_with_failure(path: Path, data: bytes) -> int:
+        if failure_point == "write" and path.is_relative_to(incoming):
+            raise failure
+        return write(path, data)
+
+    def move_with_failure(path: Path, destination: Path) -> Path:
+        if failure_point == "replace" and path == incoming:
+            raise failure
+        return move(path, destination)
+
+    monkeypatch.setattr(Path, "write_bytes", write_with_failure)
+    monkeypatch.setattr(Path, "replace", move_with_failure)
+    with pytest.raises(MCPError) as captured:
+        if operation == "stage":
+            service.stage_candidate(supplied)
+        else:
+            service.materialize_proposal(selections)
+    causes: list[BaseException] = []
+    cause: BaseException | None = captured.value
+    while cause is not None:
+        causes.append(cause)
+        cause = cause.__cause__
+    assert failure in causes
+    assert all(tree(root) == saved for root, saved in before.items())
+    assert not incoming.exists() and not previous.exists()
