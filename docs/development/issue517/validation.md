@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Initial Validation failed; C_3 focused recovery complete; renewed full Validation pending  
-**Version:** 0.2  
+**Status:** Renewed Validation failed; one startup failure and coverage acceptance decision open  
+**Version:** 0.3  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -187,7 +187,38 @@ Test paths in the table are relative to tests/mcp_server. Evidence is reused onl
 - Startup/installed tests use the selected interpreter, initialized2025 protocol and existing public process/build seams, independent of private .codex/config.toml.
 - Concrete Python3.15 format/lint/contextmanager findings were repaired at their existing owners. Implicit string concatenations remain single values via explicit parentheses; test-only type aliases are used only as annotations. Explicit covariance, diagnostic policy and existing suppressions remain intact.
 
-No new permanent test module, SDK1 bridge, version-matrix suite, skip, reduced coverage or gate exception was added. One existing missing-file case gained JSON input coverage and the obsolete requirements-content test was removed. The neutral-CWD GitManager composition finding remains separately deferred. Full-suite/coverage and final configured gates are still pending renewed Validation.
+No new permanent test module, SDK1 bridge, version-matrix suite, skip, reduced coverage or gate exception was added. One existing missing-file case gained JSON input coverage and the obsolete requirements-content test was removed. The neutral-CWD GitManager composition finding remains separately deferred. At C_3 closure, complete Validation was still pending; its executed result is recorded below.
+
+## Post-C_3 Complete Validation
+
+**Outcome: FAIL under the current #517 Planning acceptance.** The exact tested snapshot was `94cc5638be0493f2d6d9ebb27652d8c2892724ce`, with all three cycles retained, Validation active and a clean real issue branch in the isolated verification worktree. No source/workflow files changed during verification; the final native git_status was clean and the primary checkout was restored afterward.
+
+The actual installed candidate ran:
+
+```text
+run_tests(scope="configured", tests=["python_tests"],
+  args={"python_tests":["--cov=mcp_server","--cov-branch","-q",
+    "--junitxml=.pgmcp/temp/issue517/full-suite-retry.xml",
+    "--cov-report=term","--cov-report=xml:.pgmcp/temp/issue517/coverage-retry.xml"]},
+  timeout_seconds=1800)
+```
+
+| Required selection | Native result |
+| --- | --- |
+| Complete suite, native eight workers |2911 passed,1 failed,0 errors,0 skips in483.07s; native exit1. JUnit contains2912 cases. |
+| Opt-in combined line/branch coverage |87.93%, below the configured90%. XML:13100/14456 lines,3019/3876 branches; line-rate0.9062, branch-rate0.7789. No threshold, source selection or exclusion was changed. |
+| run_checks(scope="branch", checks=["python_format","python_lint","python_pyright"], timeout_seconds=600) |All passed:61 Python formatting/lint targets; Pyright24 production files, zero diagnostics. |
+| run_checks(scope="configured", checks=["python_types","python_format","python_lint","python_pyright"], timeout_seconds=600) |All passed: Mypy191 production files; formatting474 files; lint passed; Pyright191 files, zero diagnostics. The native unused tests.* override note stays visible. |
+
+The sole failing case is `tests/mcp_server/integration/test_target_startup.py::TestTargetStartup::test_installed_candidate_init_migration_and_mcp_handshake`. Its fresh-installed client still uses the helper's30s default at the `run_server_process(launch, cwd=fresh, env=fresh_env)` call; a second installed route has the same default. The failure captured proxy_started, server_spawned and server-starting diagnostics before the client deadline. The already repaired source-startup route has an explicit45s client window. A directed repair must cover the remaining installed callers and retain the unchanged production initialization deadline.
+
+### Coverage acceptance decision reopened
+
+The native test binding has default_args=[]; pyproject's addopts does not request coverage and explicitly documents coverage as opt-in. [Issue507's complete Validation](../issue507/validation.md) records2913 passing cases with the normal configured invocation and no caller coverage arguments. Thus there is no measured pre-upgrade coverage baseline in that acceptance evidence. The present87.93% is an observed shortfall, not proof that this migration reduced coverage.
+
+The producer added --cov/--cov-branch as mandatory #517 Planning acceptance without first establishing that baseline. Owner choice has been requested: either restore normal complete configured-suite acceptance while recording the coverage shortfall for explicit follow-up, or retain the added coverage gate and investigate/remediate it within #517. Until that decision is captured, the current plan still fails and no next-phase approval is claimed. Do not lower90%, add exclusions or create a broad collection of metric-only tests.
+
+The remaining startup repair requires an earlier-phase recovery; the owner's standing force-backtransition approval is recorded in AGENTS.md. No production/test patch has been made in this Validation phase and no gate exception has been applied.
 
 ## Related Documents
 
@@ -201,3 +232,4 @@ No new permanent test module, SDK1 bridge, version-matrix suite, skip, reduced c
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp validator | Record complete negative suite/configured gate evidence, clean checkout restoration and concrete missed consumer/provisioning boundaries. |
 | 0.2 | 2026-10-18 | @imp implementer | Preserve failed full Validation and record owner-approved C_3 recovery, exact focused outcomes, native/process causes and pending complete revalidation. |
+| 0.3 | 2026-10-18 | @imp validator | Record complete C_3 retry:2911/2912 tests pass, all required checks pass,87.93% opt-in coverage fails and one installed-startup client window remains; reopen the unbaselined extra coverage acceptance with the owner. |
