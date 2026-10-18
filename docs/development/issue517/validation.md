@@ -2,13 +2,13 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** C_8 focused recovery complete; complete joint acceptance pending
-**Version:** 0.11  
+**Status:** Complete evidence passed; independent Validation review requested
+**Version:** 1.0  
 **Last Updated:** 2026-10-18
 
 ## Purpose
 
-Record the first complete selected-stack Validation and the bounded recovery required before progression.
+Record the latest complete selected-stack acceptance and retain earlier negative attempts as historical diagnosis. The authoritative current outcome is Post-C_8 Complete Acceptance below; earlier failures are not hidden or treated as current blockers.
 
 ## Scope Out
 
@@ -20,11 +20,11 @@ No release, active host upgrade, SDK1 compatibility matrix, broad suppression-po
 
 ## Validation Status
 
-FAIL
+PASS
 
 ## Scope
 
-Python3.15/SDK2.3 migration at commit32083d48206fc085fcc8b89681a229d3ab6ada6d on refactor/517-migrate-python315-mcp-sdk23. Research v0.4, Design v0.3, both planned cycles and independent Implementation-entry GO on b9910773.
+Python3.15/SDK2.3 migration at the final tested snapshot c7a33c686684b5f7d405c0577d6f40bb4a8b30c4 on refactor/517-migrate-python315-mcp-sdk23. Research v0.6, Design v0.6, Planning v0.8 and all eight executed cycles; independent Implementation-entry GO on e2e7ba7d. Actual verification uses the clean installed target and managed verification worktree.
 
 ## Obligations
 
@@ -36,7 +36,7 @@ Python3.15/SDK2.3 migration at commit32083d48206fc085fcc8b89681a229d3ab6ada6d on
 - [Shared native client](<../../../tests/mcp_server/test_support.py>)
 - [Dependency authority](<../../../pyproject.toml>)
 
-**Outcome:** Focused SDK evidence and branch checks pass. Full-suite native-adapter and private-launcher consumers were missed by the earlier direct-SDK inventory; C_1 is not sufficient for final acceptance.
+**Outcome:** PASS in final complete acceptance. Native SDK/direct consumers and all adapter families pass. The earlier inventory omissions remain recorded in historical diagnosis below.
 
 ### C\_2 — proxy lifecycle and clean installed acceptance
 
@@ -44,7 +44,7 @@ Python3.15/SDK2.3 migration at commit32083d48206fc085fcc8b89681a229d3ab6ada6d on
 
 - [Proxy behavior tests](<../../../tests/mcp_server/core/test_proxy.py>)
 
-**Outcome:** Four focused lifecycle cases pass and real installed proxy acceptance passes. Three proxy cases fail in the full parallel run; parallel robustness remains unproven.
+**Outcome:** PASS in final complete acceptance. Current source/installed startup, proxy replacement/cancellation/cleanup and process-stop cases pass with native parallelism; actual installed identity/restart/cache evidence is retained.
 
 ### Validation — complete native suite and branch/configured gates
 
@@ -52,7 +52,7 @@ Python3.15/SDK2.3 migration at commit32083d48206fc085fcc8b89681a229d3ab6ada6d on
 
 - [Planning](<planning.md>)
 
-**Outcome:** FAIL. Full suite and configured format/lint/Pyright are negative; no waiver or reduced threshold.
+**Outcome:** PASS. Final complete suite, actual90.012001% combined coverage and required branch/configured gates pass; no waiver or reduced threshold.
 
 ## Evidence
 
@@ -114,9 +114,13 @@ SDK knowledge remains in exactly server.py, core/proxy.py and utils/mcp_converte
 
 ## Containment
 
+The following describes the initial verification checkout lifecycle. Later runs explicitly record their snapshot/location/clean state below; the final primary-checkout transfer belongs to Ready.
+
 Native checks/tests were invoked through the clean installed candidate MCP, using Python -I with the verification workspace as cwd. The exact real issuebranch, Validation state and clean commit were verified before the run. A temporary parking branch freed the branch for that managed worktree; the original checkout was restored cleanly and the parking branch deleted. Post-run candidate git_status confirmed no tracked/untracked source or workflow mutations. The verification worktree and ignored native XML evidence remain available for recovery. The active host/runtime was not upgraded.
 
 ## Failures
+
+Historical findings from the initial failed Validation. The final Post-C_8 acceptance supersedes these unresolved-at-the-time statements; exact earlier negative outcomes remain evidence.
 
 - 70setup errors:47Pyright cases require the removed Python-Pyright distribution for fixture provisioning;23commitlint/template/distribution cases cannot find worktree-local native Node prerequisites and fall back to an absent historical scratch path.
 - 68native-adapter failures across Ruff checks28, Ruff fixes5, Pytest10 and Mypy25. They include hardcoded old version assertions (0.15.6/9.0.2/1.19.1) and Mypy2.4's additional native configuration note. Preserve meaningful native diagnostic/guard behavior; do not simply change or delete failing assertions without checking their purpose.
@@ -372,6 +376,56 @@ The actual retained fixture confirms ordering (2026-10-18, UTC+02): both origina
 
 run_checks(scope="targets", targets=[the same test file], checks=["python_format","python_lint","python_pyright"], timeout_seconds=600) all passed; Pyright one file, zero diagnostics. Native document checks passed. The complete C_7 test failure remains historical negative evidence despite sufficient90.028366% coverage. Independent Implementation → Validation GO and another complete configured suite with actual90%/all required gates remain mandatory.
 
+## Post-C_8 Complete Acceptance
+
+**Outcome: PASS; independent Validation review requested.** Exact tested snapshot `c7a33c686684b5f7d405c0577d6f40bb4a8b30c4` on refactor/517-migrate-python315-mcp-sdk23, after independent Implementation GO on e2e7ba7d84fbaa005c52e78453cb3077a2ede4e5. The actual installed Python3.15/SDK2.3 candidate executed the full native selection in the verification worktree. Before/after git_status was clean; get_project_plan retained all eight cycles. No test/gate exception.
+
+```text
+run_tests(scope="configured", tests=["python_tests"],
+  args={"python_tests":["--cov","--cov-branch","-q",
+    "--junitxml=.pgmcp/temp/issue517/full-suite-c8.xml",
+    "--cov-report=term","--cov-report=xml:.pgmcp/temp/issue517/coverage-c8.xml"]},
+  timeout_seconds=1800)
+run_checks(scope="branch",
+  checks=["python_format","python_lint","python_pyright"], timeout_seconds=600)
+run_checks(scope="configured",
+  checks=["python_format","python_lint","python_pyright"], timeout_seconds=600)
+```
+
+| Required evidence | Final outcome |
+| --- | --- |
+| Complete native suite, eight workers |2961 passed, zero failures/errors/skips; native exit0,477.83s. JUnit suite477.737s. |
+| Actual combined coverage |13358/14456 lines plus3143/3876 branches =16501/18332 =90.01200087279075%. Native six-decimal report90.012001%; explicitly90% reached, no threshold-failure text. |
+| Branch formatting/lint |66 Python targets passed. |
+| Branch Pyright |24 production files, zero errors/warnings/information. |
+| Configured formatting/lint |474 formatting targets passed; lint passed. |
+| Configured Pyright |191 production files, zero errors/warnings/information. |
+| Configured Mypy |Reuse post-C_4 passing191-production-file result: production source and Mypy configuration unchanged through C_5–C_8. Its native unused tests.* note remains visible. |
+| Measurement containment |No foreign/synthetic paths in final XML; package, branch scope and90% threshold retained. Native subprocess/path aliases remain limited to verified identical installed/source copies. |
+| Workflow containment |All eight cycles retained; no source/workflow mutation during full verification. Primary checkout remains temporarily parked until the Ready transfer. |
+
+### Deliverable and invariant mapping
+
+| Delivered obligations | Behavioral/structural evidence |
+| --- | --- |
+| D_1.1–D_1.3: coherent stack, native SDK boundaries, direct consumers |[Dependency authority](../../../pyproject.toml), [server](../../../mcp_server/server.py), [converter](../../../mcp_server/utils/mcp_converters.py) and [initialized client helper](../../../tests/mcp_server/test_support.py); full suite and native guards pass. Actual operation DTO serialization, domain/processing errors, resource errors and conditional output schemas are exercised without a SDK1 registry facade. |
+| D_2.1–D_2.2: lifecycle and installed acceptance |[Public proxy tests](../../../tests/mcp_server/core/test_proxy.py) and [installed startup](../../../tests/mcp_server/integration/test_target_startup.py); current full cases pass. Reuse C_3 real wheel/pip/module/process identity and49-tool/5-resource/restart/cache/schema/error evidence: no production Python changed afterward. |
+| D_3.1–D_3.3: native adapters/prerequisites/checker cleanup |Full adapter/startup/process families and all required Python gates pass; Mypy2.4 missing-file classification retains native diagnosis. Obsolete requirement/version-content assertions and private launcher assumptions were removed; native negative dependency controls remain. |
+| D_4.1–D_4.3: startup/coverage/behavior |Native subprocess measurement covers current source/installed paths. Existing public-boundary families prove real Git/IO/projection/response facts; final full90% passes with no skip, coverage exclusion or metric-only assertion. |
+| D_5.1–D_5.2: functional installed measurement and native coverage |[Installed migration/readback](../../../tests/mcp_server/integration/test_target_startup.py) retains its explicit instrumented functional budget, separate unchanged default startup controls; [Pytest conformance](../../../tests/mcp_server/integration/adapters/test_pytest.py) keeps direct/adapter opt-in and native threshold rejection with a separately named synthetic package. |
+| D_6.1/D_7.1: replacement initialization and exact threshold |[Existing proxy parameterization](../../../tests/mcp_server/core/test_proxy.py) proves malformed output, changed negotiated protocol and explicit initialize-error refusal with original diagnosis, unavailable state and real-child cleanup. Precision6 and the actual fraction prevent accepting a rounded shortfall. |
+| D_8.1: late-member stop proof |[Existing stopping family](../../../tests/mcp_server/integration/execution/test_process_stopping.py) uses factual readiness before cancellation and still proves birth after snapshot, UNCONFIRMED and scratch retention. Original timeout/cancellation/five-second stop-budget cases also pass. |
+| Validation D_1 |This report retains exact final and earlier negative outcomes; ignored native XML supplements rather than replaces durable evidence. Documentation D_1 follows after independent GO. |
+
+SDK ownership stays at existing server/converter/proxy boundaries. Presenter/domain DTO/cache/attachment ownership, explicit covariance and native prerequisites retain their approved contracts. No production architecture, compatibility bridge, SDK1 environment, version-matrix suite, new global suppression or active-host switch was added during recovery. The selected stack, all current behavior cases and the owner-retained actual90% requirement are jointly satisfied in this complete run.
+
+### Residual findings for Coordination
+
+- The pre-existing neutral-CWD GitManager root-injection defect and optional output-model metadata lost by normal wrappers remain separately triaged; this migration does not claim to repair them. Structured operation delivery is proven; the wrapper catalog limitation predates this cutover.
+- Retained cache-failure truncation wording can overstate lost details now that structuredContent also carries the operation. The DTO remains available; document the route and let Coordination triage a config-wording follow-up without changing presentation mechanics here.
+- #518 owns broad global/local suppression-policy repair. No new release or active-harness activation is included.
+- Coverage is above90% with a small margin; this is current complete evidence, not a future stability or latency guarantee. Historical negative runs and focused timing discrepancies remain visible.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -393,3 +447,4 @@ run_checks(scope="targets", targets=[the same test file], checks=["python_format
 | 0.9 | 2026-10-18 | @imp implementer | Record11 passing proxy cases, original initialize-error diagnosis and precision6; exact90% full acceptance remains pending. |
 | 0.10 | 2026-10-18 | @imp validator | Record actual90.028366% and green checks but one confirmed test setup deadlock; preserve negative complete outcome. |
 | 0.11 | 2026-10-18 | @imp implementer | Record11 passing stopping cases and real readiness/birth ordering; preserve all native budgets and pending complete revalidation. |
+| 1.0 | 2026-10-18 | @imp validator | Record joint complete PASS:2961 cases, actual90.012001%, all required gates, deliverable mapping and explicit residual triage; request independent Documentation-entry review. |
