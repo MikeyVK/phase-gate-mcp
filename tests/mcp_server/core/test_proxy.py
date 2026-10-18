@@ -40,6 +40,24 @@ asyncio.run(main())
 """
 
 
+INITIALIZE_FAILURE_CHILD = """
+import json, sys
+for line in sys.stdin:
+    request = json.loads(line)
+    if request.get("method") == "initialize":
+        if sys.argv[1] == "malformed_initialize":
+            print("not-json", flush=True)
+        else:
+            print(json.dumps({
+                "jsonrpc": "2.0", "id": request["id"],
+                "result": {
+                    "protocolVersion": "2024-11-05", "capabilities": {},
+                    "serverInfo": {"name": "replacement", "version": "1"},
+                },
+            }), flush=True)
+"""
+
+
 class FrameSink(io.StringIO):
     """Collect whole public JSON-RPC frames written by the proxy."""
 
@@ -82,8 +100,12 @@ class ProxyProbe:
         if mode == "spawn_failure":
             raise OSError("replacement launch failed")
         code = "import threading; threading.Event().wait()" if mode == "silent" else CHILD
+        arguments: list[str] = []
+        if mode in {"malformed_initialize", "protocol_changed"}:
+            code = INITIALIZE_FAILURE_CHILD
+            arguments = [mode]
         process = subprocess.Popen(
-            [sys.executable, "-u", "-c", code],
+            [sys.executable, "-u", "-c", code, *arguments],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -184,7 +206,9 @@ def test_restart_replays_initialize_and_finishes_inflight_once(probe: ProxyProbe
     assert sum(frame["id"] == 3 for frame in probe.sink.observed) == 1
 
 
-@pytest.mark.parametrize("replacement", ["spawn_failure", "silent"])
+@pytest.mark.parametrize(
+    "replacement", ["spawn_failure", "silent", "malformed_initialize", "protocol_changed"]
+)
 def test_failed_replacement_rejects_calls_and_cleans_children(
     probe: ProxyProbe, replacement: str
 ) -> None:
@@ -192,8 +216,17 @@ def test_failed_replacement_rejects_calls_and_cleans_children(
     probe.replacement = replacement
     probe.proxy.trigger_restart()
     probe.wait_event("restart_failed")
+    failure = next(fields for event, fields in probe.events if event == "restart_failed")
     if replacement == "silent":
         probe.wait_event("initialize_timeout")
+    elif replacement == "malformed_initialize":
+        assert failure["reason"] == "initialize_stdout_invalid"
+        assert failure["raw_stdout"] == "not-json"
+        assert isinstance(failure["error"], str) and failure["error"]
+    elif replacement == "protocol_changed":
+        assert failure["reason"] == "initialize_response_failed"
+        assert failure["error"] == "initialize_protocol_changed"
+    assert all(event != "restart_completed" for event, _ in probe.events)
     probe.send(2, "echo")
     rejected = probe.sink.receive(2)
     assert rejected["error"]["data"]["code"] == "ERR_SERVER_UNAVAILABLE"

@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** C_5 test recovery complete; bounded proxy behavior coverage remains
-**Version:** 0.6  
+**Status:** C_5/C_6 focused recovery complete; full Validation pending
+**Version:** 0.7  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -302,6 +302,27 @@ Paths above are relative to tests/mcp_server except native evidence outputs unde
 
 Comparison of the instrumented startup probe with the failed full run found no additional covered production lines/branches. The89.94% shortfall therefore remains substantively unresolved; no further full run is justified solely by these two repaired failures. Plan a minimal additional public proxy behavior gap: malformed replacement initialization and changed negotiated protocol. Preserve default deadline, actual child termination and factual error output; no metric-only assertions or new architecture.
 
+## C_6 Focused Closure
+
+Independent QA approved Planning on `1f1d36fb06f9ac79fdc98c87aaad41d307e09100`. Exactly two parameter cases were added to the existing proxy failed-replacement test: malformed JSON initialization output and a structurally valid result changing the negotiated protocol. The existing public process factory supplies real controlled children. Assertions observe restart_failed reason/original diagnosis, no restart_completed, subsequent ERR_SERVER_UNAVAILABLE/unavailable and bounded cleanup of every real child. No production/config/default-deadline change, private calls or new permanent module.
+
+Actual candidate invocation:
+
+```text
+run_tests(scope="targets", targets=["tests/mcp_server/core/test_proxy.py"],
+  tests=["python_tests"],
+  args={"python_tests":["-q","--cov","--cov-branch",
+    "--junitxml=.pgmcp/temp/issue517/c6-proxy.xml",
+    "--cov-report=term","--cov-report=xml:.pgmcp/temp/issue517/c6-proxy-coverage.xml"]},
+  timeout_seconds=300)
+```
+
+All10 cases passed, zero failures/errors/skips in50.25s. Native exit1 is the correct global threshold rejection for this narrow16.11% selection; no coverage-gate override was passed. Native XML shows the intended previously unmeasured protocol-change rejection and initialize-stdout parse-failure paths executed. A diagnostic comparison with the last full run finds ten additional production lines and three additional branch destinations; that comparison is not a combined acceptance result or a guarantee of final90%.
+
+run_checks(scope="targets", targets=["tests/mcp_server/core/test_proxy.py"], checks=["python_format","python_lint","python_pyright"], timeout_seconds=600) passed all three; Pyright one file, zero diagnostics. Document edits pass their native link checks. C_5's unchanged family/control evidence is reused with its recorded negative xdist timeout and later passing targeted recheck; complete parallel stability and total coverage remain obligations of full Validation.
+
+Implementation recovery is complete within C_5/C_6. Both earlier C_4 full failures and the negative89.94% remain visible. Independent Implementation → Validation review is required before the next full run. No release, active-host switch, compatibility/version matrix, skip, new suppression, threshold/source/parallelism reduction or gate exception is included.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -318,3 +339,4 @@ Comparison of the instrumented startup probe with the failed full run found no a
 | 0.4 | 2026-10-18 | @imp implementer | Record bounded C_4 measurement and focused behavior evidence; preserve negative full runs and owner-required90% acceptance as pending. |
 | 0.5 | 2026-10-18 | @imp validator | Record post-C_4 full run:2956 pass,2 failures,89.94% coverage; preserve green checks and native startup timeline without weakening acceptance. |
 | 0.6 | 2026-10-18 | @imp implementer | Record C_5 focused/instrumented outcomes, retained xdist timeout evidence and synthetic-package isolation; preserve unresolved90% gate. |
+| 0.7 | 2026-10-18 | @imp implementer | Record10 passing public proxy cases and targeted checks after C_6; reserve full90% acceptance for independent re-entry to Validation. |
