@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** C_4 focused recovery complete; renewed full Validation pending
-**Version:** 0.4  
+**Status:** Post-C_4 complete Validation failed; bounded test recovery required
+**Version:** 0.5  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -260,6 +260,31 @@ Full90% acceptance remains unproven and is owned by renewed complete Validation.
 
 
 
+## Post-C_4 Complete Validation
+
+**Outcome: FAIL.** Independent QA approved Implementation to Validation on `59878795a40905c6d3092d75fdfab54e977a1e91`. The exact tested snapshot was `3ab7be16e9778b0f8c572ffd4e258321f0ca5af6`, with Validation active, all four planning cycles intact and a clean issue branch. The final native git_status remained clean.
+
+```text
+run_tests(scope="configured", tests=["python_tests"],
+  args={"python_tests":["--cov","--cov-branch","-q",
+    "--junitxml=.pgmcp/temp/issue517/full-suite-c4.xml",
+    "--cov-report=term","--cov-report=xml:.pgmcp/temp/issue517/coverage-c4.xml"]},
+  timeout_seconds=1800)
+```
+
+| Required selection | Native result |
+| --- | --- |
+| Complete suite, native eight workers |2956 passed,2 failed,0 errors,0 skips;2958 cases, native exit1 in586.50s. |
+| Combined line/branch coverage, precision2 |89.94%, below90%;13348/14456 lines and3139/3876 branches. Threshold/source/branch scope unchanged. |
+| Branch format/lint/Pyright, timeout600 |All passed:66 formatting/lint targets;24 production Pyright files, zero diagnostics. |
+| Configured Mypy/format/lint/Pyright, timeout600 |All passed: Mypy191 production files, formatting474 files, lint passed and Pyright191 files with zero diagnostics. The native unused tests.* override note remains visible. |
+
+The first failure is the installed initialization/migration/planning-readback test at `test_target_startup.py:406`. Its45s client received the real proxy `ERR_SERVER_UNAVAILABLE` with reason `initialize_timeout`; extending the client again would not repair this. Retained native audit events show child PID47628 spawned at13:04:18.388UTC, reached bootstrap's starting message at13:04:36.360 and exceeded the unchanged30s proxy initialization deadline at13:04:48.429. No ready event preceded the deadline. Other source and installed startup controls in the same run became ready in approximately21s and17s. These observations establish a load/instrumentation-sensitive initialization failure, not a proven production deadlock or authorization to change production timing.
+
+The second failure is `integration/adapters/test_pytest.py::test_native_coverage_is_opt_in_and_owns_threshold_rejection`: a literal assertion against the repository's old coverage.run dictionary fails before the valuable native behavior assertions. Remove that content coupling while retaining the direct/adapter opt-in and native threshold rejection proof. Do not replace it with a new exact config-content assertion.
+
+The89.94% result remains negative. The failed installed test did not execute its planning/cache/migration body; repair the failures and inspect fresh native coverage before adding any further behavior cases. No gate exception, reduced threshold, skip, source exclusion, production patch or additional test case was applied in Validation. Native XML under .pgmcp/temp/issue517 is supplemental; the snapshot, invocations, observations and counts here are the durable evidence.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -274,3 +299,5 @@ Full90% acceptance remains unproven and is owned by renewed complete Validation.
 | 0.2 | 2026-10-18 | @imp implementer | Preserve failed full Validation and record owner-approved C_3 recovery, exact focused outcomes, native/process causes and pending complete revalidation. |
 | 0.3 | 2026-10-18 | @imp validator | Record complete C_3 retry:2911/2912 tests pass, all required checks pass,87.93% opt-in coverage fails and one installed-startup client window remains; reopen the unbaselined extra coverage acceptance with the owner. |
 | 0.4 | 2026-10-18 | @imp implementer | Record bounded C_4 measurement and focused behavior evidence; preserve negative full runs and owner-required90% acceptance as pending. |
+
+| 0.5 | 2026-10-18 | @imp validator | Record post-C_4 full run:2956 pass,2 failures,89.94% coverage; preserve green checks and native startup timeline without weakening acceptance. |
