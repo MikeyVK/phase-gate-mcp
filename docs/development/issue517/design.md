@@ -112,7 +112,7 @@ The callback contracts are async handle_list_resources(_ctx: ServerRequestContex
 
 ### Test lifecycle seam
 
-In existing tests/mcp_server/test_support.py, an async context manager connected_mcp_client(server: MCPServer) -> AsyncIterator[Client] owns only Client(server.server, mode="legacy", cache=None) enter/exit. It exposes native SDK2 Client/results directly. Tests call list_tools/call_tool/read_resource and inspect snake_case fields, without .root wrappers, request_handlers, rewritten request objects or a pgmcp test dispatcher. Local helpers may retain their application-specific return shapes; they must consume real SDK results.
+In existing tests/mcp_server/test_support.py, an async context manager connected_mcp_client(server: MCPServer) -> AsyncGenerator[Client] owns only Client(server.server, mode="legacy", cache=None) enter/exit. It exposes native SDK2 Client/results directly. Tests call list_tools/call_tool/read_resource and inspect snake_case fields, without .root wrappers, request_handlers, rewritten request objects or a pgmcp test dispatcher. Local helpers may retain their application-specific return shapes; they must consume real SDK results.
 
 ### Installed acceptance boundary
 

@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import partial
@@ -648,7 +648,7 @@ def make_template_suite_admission(
 
 
 @asynccontextmanager
-async def connected_mcp_client(server: MCPServer) -> AsyncIterator[Client]:
+async def connected_mcp_client(server: MCPServer) -> AsyncGenerator[Client]:
     """Expose the native initialized MCP client without request/result translation."""
     async with Client(server.server, mode="legacy", cache=None) as client:
         yield client
