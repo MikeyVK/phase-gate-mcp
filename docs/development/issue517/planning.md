@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -287,6 +287,20 @@ Add exactly one parameter to the existing public failed-replacement test in test
 
 **Exit/stops:** Existing proxy cases plus the single explicit-refusal case pass with real diagnosis/cleanup and file gates. No active-host switch, new architecture, compatibility, skips, source exclusions, deadline or threshold reduction. Material policy/contract changes return to owner. After independent Implementation → Validation GO, rerun the complete configured suite and required branch/configured gates; require actual combined coverage at least90%, tests green and no native threshold-failure text. Rollback uses the pre-C_7 snapshot; no replacement of earlier cycles.
 
+### C\_8 — Readiness-ordered late-member stop evidence
+
+**Dependency:** Complete C_7 Validation at46292376:2960 pass/1 failure, actual90.028366% and all required checks pass. Preserve that complete negative acceptance result and all committed cycles.
+
+**D_8.1:** Change only tests/mcp_server/integration/execution/test_process_stopping.py. Its race-mode Node parent publishes race.ready after seeing the original children armed. The existing test awaits that factual marker asynchronously within5s after retained_children has armed both originals, then explicitly cancels the invocation. Use a20s test invocation ceiling as in the existing cancellation evidence. The injection still takes a real WindowsJob membership snapshot before requesting the genuinely later child and retains its existing2s birth-observation window.
+
+The outcome assertion becomes InvocationCancelled with UNCONFIRMED because cancellation is now the deliberate trigger. Preserve the late-member count, retained scratch and absent late.done; do not weaken the old-snapshot confirmation invariant. Existing timeout-cause, cancellation-confirmation and shared-five-second-stop-budget tests remain unchanged. No new case/module, production code/deadline or broad helper refactor.
+
+**Why this is ordering, not a stop-policy change:** Failed fixture markers (host local UTC+02) show spawn-late.request at16:16:56 before first.armed/second.armed at16:16:58. The1s invoke deadline started synchronous termination while the async test still needed to arm the originals; the2s polling callback blocked that event loop. The assertion occurred before a typed production outcome. Readiness before explicit cancellation removes that test-created deadlock while still exercising the same production kill/confirmation path.
+
+**Sequence/evidence:** Independent Planning → Implementation GO; resume_cycle="C_8"; adapt the existing case/script; run only that process-stopping family with native workers and --cov/--cov-branch, keeping its expected narrow threshold rejection and XML. Targeted format/lint/Pyright and changed-doc markdown_links must pass. Confirm the marker precedes cancellation and no late child is accepted from the old snapshot. Reuse unrelated fresh evidence; no full suite during Implementation.
+
+**Exit/stops:** Existing family passes; real race, cause/unknown confirmation, scratch retention and cleanup evidence remain meaningful. No arbitrary readiness sleep, skip, threshold/source/parallelism change, compatibility or production modification. Material contract/policy or disproportionate scope returns to owner. Independent Implementation → Validation GO precedes another full configured run requiring all tests/checks green and actual combined coverage at least90%. Rollback is the pre-C_8 snapshot; no previous cycle replacement.
+
 ## Phase Deliverables
 
 ### Validation
@@ -342,3 +356,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | 0.5 | 2026-10-18 | @imp planner | Add bounded C_5 for installed instrumented initialization and stale coverage-content test; preserve default startup controls and90% acceptance. |
 | 0.6 | 2026-10-18 | @imp planner | Add C_6: two genuine public replacement-initialization behavior cases in the existing proxy test; keep all gates and defaults. |
 | 0.7 | 2026-10-18 | @imp planner | Add C_7: native precision6 and one public explicit initialize-refusal case; preserve actual90% without rounded acceptance. |
+| 0.8 | 2026-10-18 | @imp planner | Add C_8: readiness-order the existing late-member stop race with explicit cancellation; preserve timeout coverage and all production limits. |

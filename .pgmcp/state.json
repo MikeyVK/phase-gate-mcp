@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 517,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "planning",
   "current_cycle": 7,
   "last_cycle": 7,
   "cycle_history": [
@@ -25,7 +25,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Full suite2960/checks pass but native precision2 rounds actual89.995636% into exit0 despite FAIL summary. Preserve strict90%; plan precision6 and one genuine missing public replacement initialize-error scenario.",
+  "skip_reason": "Full run reaches actual90.028366% and passes all checks but one Windows stop-race fixture deadlocks by stopping before armed readiness. Plan one test-only ordering repair, no new cases or production changes.",
   "issue_title": "Migrate to Python 3.15 and MCP SDK 2.3",
   "created_at": "2026-10-18T06:34:02.797889+00:00",
   "transitions": [
@@ -177,6 +177,14 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-10-18T14:31:49.879717+00:00",
+      "human_approval_message": "Owner standing approval granted 2026-10-18: Voor deze en komende sessies akkoord voor force terug naar eerdere fases!",
+      "forced": true,
+      "skip_reason": "Full run reaches actual90.028366% and passes all checks but one Windows stop-race fixture deadlocks by stopping before armed readiness. Plan one test-only ordering repair, no new cases or production changes."
     }
   ],
   "reconstructed": false,
