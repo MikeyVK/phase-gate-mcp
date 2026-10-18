@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 520,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -58,6 +58,14 @@
       "from_phase": "validation",
       "to_phase": "documentation",
       "timestamp": "2026-10-18T20:47:17.090362+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-10-18T20:51:29.903929+00:00",
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
