@@ -55,7 +55,7 @@ class StartupRecoveryPresenter(IPresenter):
         payload = data.model_dump(mode="json") if isinstance(data, BaseModel) else data
         if isinstance(data, HealthCheckOutput):
             heading = (
-                "Server admission failed. Correct the source externally, then call restart_server."
+                "Server admission failed."
                 if data.startup_diagnostic is not None
                 else "Server health"
             )

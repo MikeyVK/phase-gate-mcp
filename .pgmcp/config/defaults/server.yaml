@@ -1,0 +1,10 @@
+# pgmcp:v1 id=yaml_configuration pv=1.0.0 pf=PLMSEYmswjuR9tyD sf=WI5iXHBKVOU91bYE
+
+# Required startup policy; workspace differences belong in ../server.yaml.
+
+"version": "1.0.0"
+"startup_lock":
+  "max_wait_seconds": 30
+  "retry_interval_seconds": 0.25
+"proxy":
+  "initialization_timeout_seconds": 60

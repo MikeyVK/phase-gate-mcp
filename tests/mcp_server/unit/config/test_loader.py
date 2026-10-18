@@ -65,9 +65,7 @@ def test_server_policy_composes_without_template_reads(tmp_path: Path) -> None:
         {"proxy": {"initialization_timeout_seconds": 30}},
     ],
 )
-def test_server_policy_rejects_invalid_budgets(
-    tmp_path: Path, changes: dict[str, object]
-) -> None:
+def test_server_policy_rejects_invalid_budgets(tmp_path: Path, changes: dict[str, object]) -> None:
     _server_basis(tmp_path, **changes)
     with pytest.raises(ConfigError):
         ConfigLoader(tmp_path).load_server_config()

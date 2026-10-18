@@ -26,7 +26,9 @@ import re
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 import pytest
 from git import Repo as GitRepo
@@ -268,12 +270,18 @@ class TestTargetStartup:
         settings = _build_test_settings(config_root, server_root)
         bootstrapper = ServerBootstrapper(settings)
 
-        # Acquire lock externally
+        (config_root / "server.yaml").write_text(
+            "startup_lock:\n  max_wait_seconds: 0.02\n  retry_interval_seconds: 0.005\n"
+            "proxy:\n  initialization_timeout_seconds: 1\n",
+            encoding="utf-8",
+        )
         external_lock = UpgradeLock(lock_path)
         with external_lock.hold():
             with pytest.raises(MCPError) as exc_info:
                 bootstrapper.bootstrap_target()
-            assert "template_upgrade_locked" in str(exc_info.value)
+            assert exc_info.value.message == "template_upgrade_lock_timeout"
+            assert exc_info.value.params["lock_path"] == str(lock_path)
+            assert isinstance(exc_info.value.__cause__, MCPError)
             assert exc_info.value.code == "ERR_CONFIG"
 
     def test_target_startup_unresolved_recovery_refusal(
@@ -518,3 +526,99 @@ class TestTargetStartup:
             names = [tool["name"] for tool in proc.list_tools()]
             assert len(names) == len(set(names))
             assert set(names) >= TARGET_V3_TOOL_NAMES
+
+
+def test_three_concurrent_proxy_starts_are_healthy(tmp_path: Path) -> None:
+    """Three real clients share a workspace while each owns its own proxy."""
+    workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
+    # Explicit functional-test budget also accommodates subprocess instrumentation.
+    (workspace / ".pgmcp/config/server.yaml").write_text(
+        "startup_lock:\n  max_wait_seconds: 90\n  retry_interval_seconds: 0.05\n"
+        "proxy:\n  initialization_timeout_seconds: 180\n",
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    env.update(
+        PYTHONPATH=str(REPO_ROOT),
+        PGMCP_WORKSPACE_ROOT=str(workspace),
+        PGMCP_SERVER_PROJECT_DIR=".pgmcp",
+    )
+    for key in ("PGMCP_CONFIG_ROOT", "PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
+        env.pop(key, None)
+    barrier = Barrier(3)
+
+    def observe(number: int) -> tuple[int, frozenset[str]]:
+        barrier.wait(timeout=30)
+        with run_server_process(
+            [sys.executable, "-m", "mcp_server.core.proxy"],
+            cwd=workspace,
+            env=env,
+            timeout=210,
+        ) as process:
+            process.initialize(client_name=f"parallel-{number}")
+            names = frozenset(tool["name"] for tool in process.list_tools())
+            result = process.send_request("tools/call", {"name": "health_check", "arguments": {}})[
+                "result"
+            ]
+            assert not result.get("isError", False), result
+            health = HealthCheckOutput.model_validate(result["structuredContent"])
+            assert health.success, health
+            assert health.status == "healthy"
+            assert health.startup_diagnostic is None
+            return process.process.pid, names
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        observed = list(pool.map(observe, range(3)))
+    assert len({pid for pid, _ in observed}) == 3
+    catalogs = [names for _, names in observed]
+    assert catalogs[0] >= TARGET_V3_TOOL_NAMES
+    assert all(names == catalogs[0] for names in catalogs)
+
+
+def test_exhausted_startup_exposes_original_lock_diagnosis(tmp_path: Path) -> None:
+    """A limited real server returns factual timeout and native-cause details."""
+    workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
+    root = workspace / ".pgmcp"
+    (root / "config/server.yaml").write_text(
+        "startup_lock:\n  max_wait_seconds: 0.02\n  retry_interval_seconds: 0.005\n"
+        "proxy:\n  initialization_timeout_seconds: 60\n",
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    env.update(
+        PYTHONPATH=str(REPO_ROOT),
+        PGMCP_WORKSPACE_ROOT=str(workspace),
+        PGMCP_SERVER_PROJECT_DIR=".pgmcp",
+    )
+    for key in ("PGMCP_CONFIG_ROOT", "PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
+        env.pop(key, None)
+    lock_path = root / "template_upgrade.lock"
+    with (
+        UpgradeLock(lock_path).hold(),
+        run_server_process(
+            [sys.executable, "-m", "mcp_server.core.proxy"],
+            cwd=workspace,
+            env=env,
+            timeout=75,
+        ) as process,
+    ):
+        process.initialize()
+        assert {tool["name"] for tool in process.list_tools()} == {"health_check", "restart_server"}
+        result = process.send_request("tools/call", {"name": "health_check", "arguments": {}})[
+            "result"
+        ]
+        payload = result["structuredContent"]
+        Draft202012Validator(HealthCheckOutput.model_json_schema()).validate(payload)
+        assert payload["status"] == "unhealthy"
+        diagnostic = payload["startup_diagnostic"]
+        assert diagnostic["message"] == "template_upgrade_lock_timeout"
+        params = diagnostic["params"]
+        assert params["lock_path"] == str(lock_path)
+        assert params["attempts"] >= 1
+        assert params["elapsed_seconds"] >= 0.02
+        contention = diagnostic["cause"]
+        assert contention["message"] == "template_upgrade_locked"
+        assert contention["cause"]["exception_type"].rsplit(".", 1)[-1] in {
+            "PermissionError",
+            "BlockingIOError",
+        }

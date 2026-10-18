@@ -370,10 +370,19 @@ class ServerBootstrapper:
         template_root = settings.server.resolved_template_root
         workspace_root = Path(settings.server.workspace_root)
 
-        # 1. DI-06 Startup Lock Check and Acquisition
+        # Read only startup policy before acquiring the source-admission lock.
+        contracts_loader = TemplateContractLoader(template_root)
+        config_loader = ConfigLoader(
+            config_root=config_root,
+            context_schema_reader=contracts_loader.load_context_schema,
+        )
+        startup_policy = config_loader.load_server_config()
         lock_path = server_root / "template_upgrade.lock"
         upgrade_lock = UpgradeLock(lock_path)
-        upgrade_lock.acquire()
+        upgrade_lock.acquire_with_wait(
+            max_wait_seconds=startup_policy.startup_lock.max_wait_seconds,
+            retry_interval_seconds=startup_policy.startup_lock.retry_interval_seconds,
+        )
 
         try:
             setup_logging(log_level=settings.logging.level, audit_log=settings.logging.audit_log)
@@ -401,14 +410,7 @@ class ServerBootstrapper:
                         file_path=installation_path.as_posix(),
                     )
 
-            # 3. Load configurations via ConfigLoader
-            contracts_loader = TemplateContractLoader(template_root)
-            config_loader = ConfigLoader(
-                config_root=config_root,
-                context_schema_reader=contracts_loader.load_context_schema,
-            )
-
-            # Load V2/V3 configurations
+            # Load the remaining configuration inside source admission.
             github_settings = resolve_github_settings(
                 config_loader.load_github_config(), os.environ.get("GITHUB_TOKEN")
             )

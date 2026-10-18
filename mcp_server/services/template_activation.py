@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
+import math
 import os
 import shutil
+import sys
+import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -215,31 +219,108 @@ def _path_entry_present(path: Path) -> bool:
 class UpgradeLock:
     """Own one OS lock until release or process termination; never remove its inode."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(
+        self,
+        path: Path,
+        *,
+        monotonic: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
         if not path.is_absolute():
             raise ValueError("absolute_upgrade_lock_required")
         self.path = path.parent.resolve() / path.name
         self._file: BinaryIO | None = None
+        self._monotonic = monotonic
+        self._sleep = sleep
 
     def acquire(self) -> None:
+        """Attempt once, distinguishing the native lock conflict from other IO."""
         if self._file is not None:
-            raise MCPError("template_upgrade_locked", code="ERR_CONFIG")
-        _require_owned_endpoint(self.path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        stream = self.path.open("a+b")
+            raise MCPError(
+                "template_upgrade_locked",
+                code="ERR_CONFIG",
+                params={"reason": "already_owned", "lock_path": str(self.path)},
+            )
+        stream: BinaryIO | None = None
+        operation = "prepare"
         try:
-            if os.fstat(stream.fileno()).st_size == 0:
-                stream.write(b"\0")
-                stream.flush()
+            _require_owned_endpoint(self.path)
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            operation = "open"
+            stream = self.path.open("a+b")
+            operation = "seek"
             stream.seek(0)
+            operation = "acquire"
             if os.name == "nt":
                 msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
             else:
                 _posix_lock(stream.fileno(), "LOCK_EX", "LOCK_NB")
+            self._file = stream
         except OSError as error:
-            stream.close()
-            raise MCPError("template_upgrade_locked", code="ERR_CONFIG") from error
-        self._file = stream
+            busy_codes = {errno.EACCES} if os.name == "nt" else {errno.EAGAIN, errno.EWOULDBLOCK}
+            busy = operation == "acquire" and error.errno in busy_codes
+            params: dict[str, Any] = {"lock_path": str(self.path), "operation": operation}
+            if busy:
+                params["reason"] = "contention"
+            raise MCPError(
+                "template_upgrade_locked" if busy else "template_upgrade_lock_io_error",
+                code="ERR_CONFIG",
+                params=params,
+            ) from error
+        finally:
+            if stream is not None and self._file is not stream:
+                primary = sys.exception()
+                try:
+                    stream.close()
+                except OSError as cleanup_error:
+                    if primary is None:
+                        raise
+                    primary.add_note(f"lock_stream_close_failed: {cleanup_error!r}")
+
+    def acquire_with_wait(self, *, max_wait_seconds: float, retry_interval_seconds: float) -> None:
+        """Bound only actual contention; retain immediate acquisition for commands."""
+        if (
+            isinstance(max_wait_seconds, bool)
+            or isinstance(retry_interval_seconds, bool)
+            or not math.isfinite(max_wait_seconds)
+            or not math.isfinite(retry_interval_seconds)
+            or max_wait_seconds <= 0
+            or retry_interval_seconds <= 0
+            or retry_interval_seconds > max_wait_seconds
+        ):
+            raise ValueError("invalid_startup_lock_wait")
+        started = self._monotonic()
+        attempts = 0
+        last_error: MCPError | None = None
+        while True:
+            elapsed = self._monotonic() - started
+            if last_error is not None and elapsed >= max_wait_seconds:
+                raise MCPError(
+                    "template_upgrade_lock_timeout",
+                    code="ERR_CONFIG",
+                    params={
+                        "lock_path": str(self.path),
+                        "max_wait_seconds": max_wait_seconds,
+                        "retry_interval_seconds": retry_interval_seconds,
+                        "elapsed_seconds": elapsed,
+                        "attempts": attempts,
+                    },
+                ) from last_error
+            attempts += 1
+            try:
+                self.acquire()
+            except MCPError as error:
+                if (
+                    error.message != "template_upgrade_locked"
+                    or error.params.get("reason") != "contention"
+                ):
+                    raise
+                last_error = error
+            else:
+                return
+            remaining = max_wait_seconds - (self._monotonic() - started)
+            if remaining > 0:
+                self._sleep(min(retry_interval_seconds, remaining))
 
     def release(self) -> None:
         stream, self._file = self._file, None

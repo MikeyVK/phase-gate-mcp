@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import json
 import os
 import subprocess
@@ -745,3 +746,73 @@ def test_upgrade_lock_wait_does_not_retry_owned_instance(tmp_path: Path) -> None
     with lock.hold(), pytest.raises(MCPError) as caught:
         lock.acquire_with_wait(max_wait_seconds=1, retry_interval_seconds=0.25)
     assert caught.value.params["reason"] == "already_owned"
+
+
+@pytest.mark.parametrize("stage", ["open", "native"])
+def test_upgrade_lock_io_is_not_retried(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stage: str
+) -> None:
+    """Only native contention is retryable; ordinary IO retains its cause."""
+    path = tmp_path / "startup.lock"
+    streams = []
+    original_open = Path.open
+    original_error = OSError(errno.EACCES if stage == "open" else errno.EBADF, "injected IO")
+
+    def open_stream(target: Path, *args: object, **kwargs: object):
+        if target == path and stage == "open":
+            raise original_error
+        stream = original_open(target, *args, **kwargs)
+        streams.append(stream)
+        return stream
+
+    def fail_native(*args: object) -> None:
+        raise original_error
+
+    monkeypatch.setattr(Path, "open", open_stream)
+    if stage == "native":
+        monkeypatch.setattr("msvcrt.locking" if os.name == "nt" else "fcntl.flock", fail_native)
+    pauses: list[float] = []
+    lock = UpgradeLock(path, sleep=pauses.append)
+    with pytest.raises(MCPError) as caught:
+        lock.acquire_with_wait(max_wait_seconds=1, retry_interval_seconds=0.25)
+    assert caught.value.message == "template_upgrade_lock_io_error"
+    assert caught.value.params["operation"] == ("open" if stage == "open" else "acquire")
+    assert caught.value.__cause__ is original_error
+    assert pauses == []
+    assert all(stream.closed for stream in streams)
+
+
+def test_empty_lock_excludes_another_process_and_releases(tmp_path: Path) -> None:
+    """The OS excludes another process on a fresh, empty synchronization file."""
+    path = tmp_path / "fresh.lock"
+    ready = tmp_path / "ready"
+    resume = tmp_path / "resume"
+    errors = tmp_path / "error"
+    code = (
+        "from pathlib import Path; import sys, time; "
+        "from mcp_server.services.template_activation import UpgradeLock; "
+        "lock=UpgradeLock(Path(sys.argv[1])); lock.acquire(); "
+        "Path(sys.argv[2]).touch(); "
+        "\nwhile not Path(sys.argv[3]).exists(): time.sleep(.01)"
+        "\nlock.release()"
+    )
+    process = subprocess.Popen(
+        [sys.executable, "-c", code, str(path), str(ready), str(resume)],
+        cwd=_repo_root(),
+        text=True,
+    )
+    try:
+        assert _wait_for_file(ready, process=process, error_path=errors)
+        waiting = UpgradeLock(path)
+        with pytest.raises(MCPError) as caught:
+            waiting.acquire()
+        assert caught.value.message == "template_upgrade_locked"
+        assert caught.value.params["reason"] == "contention"
+        resume.touch()
+        process.wait(timeout=15)
+        assert process.returncode == 0
+        with waiting.hold():
+            pass
+    finally:
+        resume.touch()
+        _terminate(process)

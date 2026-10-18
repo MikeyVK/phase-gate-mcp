@@ -28,6 +28,7 @@ from mcp_server.config.schemas import (
 )
 from mcp_server.config.schemas.adapter_manifest import AdapterManifest, AdapterTrustConfig
 from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
+from mcp_server.config.schemas.server_config import ServerConfig
 from mcp_server.config.schemas.template_suite import (
     TemplateManifest,
     TemplatePackageVersion,
@@ -189,6 +190,10 @@ class ConfigLoader:
         config_path: Path | None = None,
     ) -> ContractsConfig:
         return self._load_workspace(ContractsConfig, "contracts.yaml", config_path=config_path)
+
+    def load_server_config(self) -> ServerConfig:
+        """Read required startup policy through ordinary workspace composition."""
+        return self._load_workspace(ServerConfig, "server.yaml")
 
     def load_github_config(self, config_path: Path | None = None) -> GitHubSettings:
         """Load workspace GitHub identity and optional explicit token alternative."""
