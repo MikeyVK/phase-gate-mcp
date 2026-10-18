@@ -122,6 +122,7 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
     )
     assert isinstance(response.root, CallToolResult)
     assert response.root.isError is error
+    assert response.root.structuredContent == operation.model_dump(mode="json", by_alias=True)
     assert len(response.root.content) == 2
     resource = response.root.content[1]
     assert isinstance(resource, EmbeddedResource)
