@@ -138,7 +138,9 @@ original-file safety or persistence failures. See the [editing reference](../ref
 Restart after package, active-suite or startup-loaded configuration changes using
 the existing `restart_server` route when available. Reconnect/refresh client tool
 discovery; an interpreter or launch-environment change may require a full host
-relaunch. A restart acknowledgement is not evidence of the newly loaded process.
+relaunch. A [startup-policy change](../reference/server-configuration.md#startup-admission-policy)
+requires full proxy/child relaunch, rather than child-only restart_server. A restart
+acknowledgement is not evidence of the newly loaded process.
 
 Verify the selected launcher interpreter, installed package version/module location
 and resolved roots in that launch context, without dumping environment variables or

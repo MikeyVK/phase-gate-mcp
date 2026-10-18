@@ -42,11 +42,25 @@ also configures the proxy's own streams for UTF-8.
 | unavailable | Launch, initialization or transport failed; inspect stderr/audit evidence. |
 | stopped | Proxy lifecycle ended. |
 
-The default initialization deadline is 30 seconds. It starts when the initialize
+The distributed [startup policy](server-configuration.md#startup-admission-policy)
+specifies a 60-second initialization deadline. Proxy main reads the required basis
+and optional workspace override through ConfigLoader and injects this value; direct
+MCPProxy construction requires an explicit deadline. It starts when the initialize
 request is sent to the child and covers completing the handshake, including
 notifications/initialized. It is not a planned startup sleep or a delay added to
 every request. Before the first client initialize request, the transport remains
 starting; no initialization timer has yet begun.
+
+Ordinary child startup attempts the source-admission lock immediately and retries true
+native contention for at most the configured 30 seconds, at intervals up to 0.25 seconds.
+It continues immediately on acquisition; activation/renewal retain single-attempt locking.
+The proxy deadline also needs time for subsequent admission/handshake. Configure the
+outer client's startup window with additional margin (75 seconds is recommended for
+the distributed 60-second proxy policy). These are distinct budgets, not a fixed sleep
+or a guaranteed total startup duration.
+
+Applying a coordinated server.yaml policy change requires full proxy/child relaunch.
+restart_server replaces only the child; it cannot refresh the existing proxy deadline.
 
 The initial initialize response is validated and forwarded to the client. The proxy
 marks ready only after forwarding notifications/initialized and confirming that the
@@ -61,8 +75,18 @@ establish healthy admission. Query health_check for the domain result.
 ## Admission failure and recovery
 
 Recognized bootstrap configuration failures produce a limited server exposing exactly
-health_check and restart_server. Its health text contains the original structured
-diagnosis, including available parameters and cause. Ordinary tools remain unavailable.
+health_check and restart_server. Health retains the original structured diagnosis,
+including available parameters and causes. Ordinary tools remain unavailable.
+
+A template_upgrade_lock_timeout reports the lock path, configured budget, actual
+elapsed time and attempt count, with the last native contention cause. This means
+admission exhausted its contention budget; it does not by itself prove corrupt
+configuration. Once the competing startup or renewal has released the lock, request
+an explicit later restart and inspect fresh health/tools. There is no background
+readmission loop. Native open/seek/acquisition failures that are not contention use
+template_upgrade_lock_io_error and preserve the failed operation and original cause.
+
+For an actual source error:
 
 1. Read health_check and locate the failing source from its diagnostic.
 2. Repair that source with an external editor.
@@ -72,13 +96,14 @@ diagnosis, including available parameters and cause. Ordinary tools remain unava
 
 Invalid content remains rejected. Another restart without correction can produce a
 new unhealthy child with the same diagnostic. The restart receipt confirms only that
-the request was accepted. The limited surface does not require an advertised
-outputSchema, structuredContent or healthy-server performance/interface parity.
-See [health and restart contracts](tools/discovery.md).
+the request was accepted. The limited surface retains the existing
+[health and restart contracts](tools/discovery.md); it does not promise healthy-server
+performance or ordinary-tool availability.
 
-Failures before recovery composition, including invalid Settings or a missing server
-root, may leave no MCP tool endpoint. Correct those externally and reconnect/relaunch.
-The proxy does not automatically restart every crashed or unavailable child.
+Failures before recovery composition, including invalid launcher settings, a missing
+server root or a required policy rejected by proxy main, may leave no MCP tool endpoint.
+Correct those externally and reconnect/relaunch. The proxy does not automatically
+restart every crashed or unavailable child.
 
 ## Restart and request ownership
 
@@ -132,7 +157,8 @@ Server stderr is retained as server_stderr with its generation and process ident
 | Evidence | Interpretation and action |
 | --- | --- |
 | server_spawned without server_ready | Spawn is not readiness. Inspect subsequent initialization/exit evidence. |
-| initialize_timeout | The handshake exceeded its deadline. Inspect startup stderr and correct the cause. |
+| initialize_timeout | The handshake exceeded its configured deadline. Inspect startup stderr and the separate lock/admission budget. |
+| template_upgrade_lock_timeout in health | The child exhausted its contention budget. Inspect the factual diagnosis, allow the owner to release the lock, then request an explicit restart. |
 | initialize_response_failed / initialize_stdout_invalid | Error, invalid result/ID/protocol or malformed initialization output. Correct the launch/source and retry externally if no recovery endpoint exists. |
 | server_start_failed | Process launch failed; server_pid is null. Correct interpreter/launch configuration. |
 | child_exited / stdout_closed | Child transport ended; pending requests receive unavailable responses. |
