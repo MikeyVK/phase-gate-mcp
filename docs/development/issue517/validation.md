@@ -2,7 +2,7 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Renewed Validation failed; one startup failure and coverage acceptance decision open  
+**Status:** Renewed Validation failed; startup repair and owner-required90% coverage recovery remain  
 **Version:** 0.3  
 **Last Updated:** 2026-10-18
 
@@ -216,7 +216,7 @@ The sole failing case is `tests/mcp_server/integration/test_target_startup.py::T
 
 The native test binding has default_args=[]; pyproject's addopts does not request coverage and explicitly documents coverage as opt-in. [Issue507's complete Validation](../issue507/validation.md) records2913 passing cases with the normal configured invocation and no caller coverage arguments. Thus there is no measured pre-upgrade coverage baseline in that acceptance evidence. The present87.93% is an observed shortfall, not proof that this migration reduced coverage.
 
-The producer added --cov/--cov-branch as mandatory #517 Planning acceptance without first establishing that baseline. Owner choice has been requested: either restore normal complete configured-suite acceptance while recording the coverage shortfall for explicit follow-up, or retain the added coverage gate and investigate/remediate it within #517. Until that decision is captured, the current plan still fails and no next-phase approval is claimed. Do not lower90%, add exclusions or create a broad collection of metric-only tests.
+The producer added --cov/--cov-branch as mandatory #517 Planning acceptance without first establishing that baseline. Owner choice has been requested: either restore normal complete configured-suite acceptance while recording the coverage shortfall for explicit follow-up, or retain the added coverage gate and investigate/remediate it within #517. The owner explicitly chose to retain the extra90% gate and investigate/restore coverage within #517. This closes the policy question without relaxing acceptance; the current plan still fails and no next-phase approval is claimed. Investigate measurement completeness and actual behavioral gaps. Do not lower90%, add exclusions or create a broad collection of metric-only tests.
 
 The remaining startup repair requires an earlier-phase recovery; the owner's standing force-backtransition approval is recorded in AGENTS.md. No production/test patch has been made in this Validation phase and no gate exception has been applied.
 
