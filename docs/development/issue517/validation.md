@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Actual90% and checks pass; one lifecycle test setup race remains
-**Version:** 0.10  
+**Status:** C_8 focused recovery complete; complete joint acceptance pending
+**Version:** 0.11  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -362,6 +362,16 @@ The sole failure is integration/execution/test_process_stopping.py::test_member_
 
 Repair only this existing race test: let the Node parent acknowledge that original children are armed; await that factual marker with a bounded async readiness wait; then explicitly cancel the invocation. Preserve the member-created-after-snapshot injection, UNCONFIRMED result, retained scratch and absent late.done; existing timeout/cause/shared-five-second-stop-budget tests stay unchanged. No new cases/modules, production timing change or gate exception. Another complete native Validation remains mandatory after independent phase review.
 
+## C_8 Focused Closure
+
+Independent QA approved Planning on0f3f1e0e3827d4b3f995bd1c0e24c163d342db11. Only the existing process-stopping test file changed: race-mode Node readiness now follows original-child arming; the async test awaits that marker before deliberate cancellation. Its20s test ceiling, unchanged2s late-birth window and existing production five-second stop budget are separate bounds. No new case/module or production edit.
+
+Actual candidate run_tests(scope="targets", targets=["tests/mcp_server/integration/execution/test_process_stopping.py"], tests=["python_tests"], args={"python_tests":["-q","--cov","--cov-branch","--junitxml=.pgmcp/temp/issue517/c8-stopping.xml","--cov-report=term","--cov-report=xml:.pgmcp/temp/issue517/c8-stopping-coverage.xml"]}, timeout_seconds=600), native eight workers:11 passed, zero failures/errors/skips. Native terminal56.83s, JUnit suite19.802s; no latency conclusion. Native exit1 correctly reflects this narrow18.896303% selection, without gate override.
+
+The actual retained fixture confirms ordering (2026-10-18, UTC+02): both original armed markers16:38:18.330; race.ready16:38:18.346; spawn-late.request16:38:18.362; late.pid16:38:18.443; late.armed16:38:18.448. Thus the real later process was born after the observed snapshot/request, with setup already ready. The test retains InvocationCancelled/UNCONFIRMED, one late handle, invocation scratch and no late.done. Separate timeout/cause/cancellation/shared-five-second cases passed in the same family.
+
+run_checks(scope="targets", targets=[the same test file], checks=["python_format","python_lint","python_pyright"], timeout_seconds=600) all passed; Pyright one file, zero diagnostics. Native document checks passed. The complete C_7 test failure remains historical negative evidence despite sufficient90.028366% coverage. Independent Implementation → Validation GO and another complete configured suite with actual90%/all required gates remain mandatory.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -382,3 +392,4 @@ Repair only this existing race test: let the Node parent acknowledge that origin
 | 0.8 | 2026-10-18 | @imp validator | Record2960 passing full cases/checks but89.995636% actual coverage; expose native rounding/terminal discrepancy and retain strict90% obligation. |
 | 0.9 | 2026-10-18 | @imp implementer | Record11 passing proxy cases, original initialize-error diagnosis and precision6; exact90% full acceptance remains pending. |
 | 0.10 | 2026-10-18 | @imp validator | Record actual90.028366% and green checks but one confirmed test setup deadlock; preserve negative complete outcome. |
+| 0.11 | 2026-10-18 | @imp implementer | Record11 passing stopping cases and real readiness/birth ordering; preserve all native budgets and pending complete revalidation. |
