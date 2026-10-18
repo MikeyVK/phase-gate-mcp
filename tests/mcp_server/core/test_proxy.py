@@ -1,92 +1,221 @@
-"""Unit tests for MCPProxy - transparent server restart.
+"""Exercise public proxy lifecycle with controlled native SDK children."""
 
-Tests:
-- Proxy initialization
-- Initialize handshake capture and replay
-- Restart marker detection (stderr)
-- UTF-8 encoding handling
-- Transparent restart flow
+import io
+import json
+import subprocess
+import sys
+import threading
+from collections.abc import Iterator, Mapping
+from pathlib import Path
+from queue import Queue
+from typing import Any
 
-@layer: Tests (Unit)
-@dependencies: pytest, mcp_server.core.proxy
+import pytest
+
+from mcp_server.core.proxy import MCPProxy
+
+CHILD = """
+import asyncio, os, sys
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import CallToolResult, ListToolsResult, TextContent, Tool
+async def listing(ctx, params):
+    return ListToolsResult(tools=[
+        Tool(name=name, input_schema={"type":"object"}) for name in ("echo","hold")
+    ])
+async def call(ctx, params):
+    if params.name == "hold":
+        print("hold_started", file=sys.stderr, flush=True)
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            print("hold_cancelled", file=sys.stderr, flush=True)
+            raise
+    return CallToolResult(content=[TextContent(type="text", text=str(os.getpid()))])
+async def main():
+    server=Server("proxy-child", on_list_tools=listing, on_call_tool=call)
+    async with stdio_server() as (read, write):
+        await server.run(read, write, server.create_initialization_options())
+asyncio.run(main())
 """
 
-import sys
 
-from mcp_server.core.proxy import RESTART_MARKER, MCPProxy
+class FrameSink(io.StringIO):
+    """Collect whole public JSON-RPC frames written by the proxy."""
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.frames: Queue[dict[str, Any]] = Queue()
+        self.observed: list[dict[str, Any]] = []
 
-class TestMCPProxyInitialization:
-    """Test proxy initialization."""
+    def write(self, value: str) -> int:
+        for line in value.splitlines():
+            if line.startswith("{"):
+                frame = json.loads(line)
+                self.observed.append(frame)
+                self.frames.put(frame)
+        return len(value)
 
-    def test_proxy_init(self) -> None:
-        """Test proxy initializes with correct defaults."""
-        proxy = MCPProxy()
-
-        assert proxy.server_process is None
-        assert proxy.init_request is None
-        assert proxy.restarting is False
-        assert not proxy.restart_count  # 0 is falsey
-        assert proxy.proxy_pid > 0
-
-
-class TestInitializeCapture:
-    """Test initialize handshake capture."""
-
-    def test_captures_initialize_request(self) -> None:
-        """Test proxy captures initialize request for replay."""
-        proxy = MCPProxy()
-
-        init_message = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2025-11-25",
-                "clientInfo": {"name": "Visual Studio Code", "version": "1.0.0"},
-            },
-        }
-
-        # Simulate capturing init request
-        proxy.init_request = init_message
-
-        assert proxy.init_request["method"] == "initialize"
-        assert proxy.init_request["id"] == 1
+    def receive(self, identifier: int) -> dict[str, Any]:
+        frame = self.frames.get(timeout=15)
+        assert frame["id"] == identifier, frame
+        return frame
 
 
-class TestRestartMarkerDetection:
-    """Test restart marker detection on stderr."""
+class ProxyProbe:
+    """Own real test processes and observe protocol/events through public seams."""
 
-    def test_restart_marker_constant(self) -> None:
-        """Test restart marker constant is defined."""
-        assert RESTART_MARKER == "__MCP_RESTART_REQUEST__"
+    def __init__(self, sink: FrameSink, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.sink = sink
+        self.monkeypatch = monkeypatch
+        self.processes: list[subprocess.Popen[str]] = []
+        self.events: list[tuple[str, Mapping[str, object]]] = []
+        self.condition = threading.Condition()
+        self.replacement = "healthy"
+        self.proxy = MCPProxy(
+            process_factory=self.spawn,
+            event_presenter=self.present_event,
+            initialization_timeout_seconds=5,
+        )
 
-    def test_detects_restart_marker_in_stderr(self) -> None:
-        """Test proxy detects restart marker in stderr stream."""
-        # Placeholder for future implementation
-        proxy = MCPProxy()
-        assert hasattr(proxy, "trigger_restart")  # Method exists
+    def spawn(self, env: dict[str, str]) -> subprocess.Popen[str]:
+        mode = self.replacement if self.processes else "healthy"
+        if mode == "spawn_failure":
+            raise OSError("replacement launch failed")
+        code = "import threading; threading.Event().wait()" if mode == "silent" else CHILD
+        process = subprocess.Popen(
+            [sys.executable, "-u", "-c", code],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            text=True,
+            encoding="utf-8",
+        )
+        self.processes.append(process)
+        return process
+
+    def present_event(self, event: str, fields: Mapping[str, object]) -> str:
+        with self.condition:
+            self.events.append((event, dict(fields)))
+            self.condition.notify_all()
+        return event
+
+    def wait_event(self, event: str, *, stderr: str | None = None) -> None:
+        with self.condition:
+            found = self.condition.wait_for(
+                lambda: any(
+                    name == event and (stderr is None or fields.get("raw_stderr") == stderr)
+                    for name, fields in self.events
+                ),
+                timeout=15,
+            )
+        assert found, self.events
+
+    def send(self, identifier: int, name: str) -> None:
+        self.proxy.send_to_server(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": identifier,
+                    "method": "tools/call",
+                    "params": {"name": name, "arguments": {}},
+                }
+            )
+        )
+
+    def connect(self) -> None:
+        self.monkeypatch.setattr(sys, "stdout", self.sink)
+        self.proxy.start_server()
+        self.proxy.send_to_server(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2025-11-25",
+                        "capabilities": {},
+                        "clientInfo": {"name": "proxy-test", "version": "1"},
+                    },
+                }
+            )
+        )
+        assert "result" in self.sink.receive(1)
+        self.proxy.send_to_server(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "notifications/initialized",
+                }
+            )
+        )
+        self.wait_event("server_ready")
 
 
-class TestUTF8Encoding:
-    """Test UTF-8 encoding fixes for Windows."""
+@pytest.fixture
+def probe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[ProxyProbe]:
+    monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(tmp_path))
+    monkeypatch.setenv("PGMCP_SERVER_PROJECT_DIR", ".pgmcp")
+    sink = FrameSink()
+    instance = ProxyProbe(sink, monkeypatch)
+    try:
+        yield instance
+    finally:
+        instance.proxy.cleanup()
+        for process in instance.processes:
+            process.wait(timeout=10)
+        assert all(process.poll() is not None for process in instance.processes)
 
-    def test_utf8_forced_on_windows(self) -> None:
-        """Test UTF-8 is forced on stdout/stderr on Windows."""
-        # This test verifies the module-level UTF-8 setup
-        # If we get here without errors, UTF-8 setup worked
-        if sys.platform == "win32":
-            assert sys.stdout.encoding == "utf-8"
-            assert sys.stderr.encoding == "utf-8"
+
+def test_restart_replays_initialize_and_finishes_inflight_once(probe: ProxyProbe) -> None:
+    probe.connect()
+    probe.send(2, "echo")
+    before = probe.sink.receive(2)
+    probe.send(3, "hold")
+    probe.wait_event("server_stderr", stderr="hold_started")
+    probe.proxy.trigger_restart()
+    interrupted = probe.sink.receive(3)
+    assert interrupted["error"]["data"]["reason"] == "restart_interrupted"
+    probe.wait_event("restart_completed")
+    probe.send(4, "echo")
+    after = probe.sink.receive(4)
+    assert before["result"]["content"][0]["text"] != after["result"]["content"][0]["text"]
+    assert sum(frame["id"] == 1 for frame in probe.sink.observed) == 1
+    assert sum(frame["id"] == 3 for frame in probe.sink.observed) == 1
 
 
-class TestTransparentRestart:
-    """Test transparent restart flow."""
+@pytest.mark.parametrize("replacement", ["spawn_failure", "silent"])
+def test_failed_replacement_rejects_calls_and_cleans_children(
+    probe: ProxyProbe, replacement: str
+) -> None:
+    probe.connect()
+    probe.replacement = replacement
+    probe.proxy.trigger_restart()
+    probe.wait_event("restart_failed")
+    if replacement == "silent":
+        probe.wait_event("initialize_timeout")
+    probe.send(2, "echo")
+    rejected = probe.sink.receive(2)
+    assert rejected["error"]["data"]["code"] == "ERR_SERVER_UNAVAILABLE"
+    assert rejected["error"]["data"]["state"] == "unavailable"
 
-    def test_restart_increments_counter(self) -> None:
-        """Test restart counter increments on each restart."""
-        proxy = MCPProxy()
 
-        assert not proxy.restart_count  # 0 is falsey
-        proxy.restart_count += 1
-        assert proxy.restart_count == 1
+def test_cancellation_is_forwarded_and_cleanup_finishes_pending(probe: ProxyProbe) -> None:
+    probe.connect()
+    probe.send(2, "hold")
+    probe.wait_event("server_stderr", stderr="hold_started")
+    probe.proxy.send_to_server(
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "notifications/cancelled",
+                "params": {"requestId": 2, "reason": "test cancellation"},
+            }
+        )
+    )
+    probe.wait_event("server_stderr", stderr="hold_cancelled")
+    probe.proxy.cleanup()
+    cancelled = probe.sink.receive(2)
+    assert "error" in cancelled
+    assert sum(frame["id"] == 2 for frame in probe.sink.observed) == 1
