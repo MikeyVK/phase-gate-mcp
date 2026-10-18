@@ -3,7 +3,7 @@
 # Issue 517 — Python 3.15 and MCP SDK 2.3 Migration Research
 
 **Status:** Research complete for independent review; inherited strategy, no new owner policy requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -16,7 +16,7 @@ Runtime/package/checker prerequisites; SDK integration at server, converter and 
 
 ## Scope Out
 
-No implementation in Research. No SDK1/Python3.13 production bridge, initialization-free2026 lifecycle, unrelated suppression repair (#518), new abstraction framework, release/publication or automatic upgrade of the active server environment.
+No implementation in Research. No SDK1/Python3.13 production bridge, initialization-free2026 lifecycle, unrelated suppression repair (#518), new abstraction framework, release/publication or automatic upgrade of the active server environment. No legacy-dependency environments, SDK1 interoperability test matrix, legacy API preservation tests or new tests whose only purpose is to assert dependency version numbers.
 
 ## Prerequisites
 
@@ -84,7 +84,7 @@ The existing [shared helpers](../../../tests/mcp_server/test_support.py#L459) ma
 | --- | --- | --- |
 | SDK API/versions/variance | #513 isolated SDK2.3/Python3.15 environment, paired type/runtime controls and92 unchanged existing tests. Candidate package metadata remains present on disk; no new installation was made here. | Actual migrated source under selected dependencies; required native-configured gates in their owning phase. This is not a demand to repeat the old version matrix. |
 | Application startup/listing | [stdio startup test](../../../tests/mcp_server/integration/test_tool_attachment_transport.py#L157) launches actual source and lists tools; other tests exercise resource/tool dispatch through the removed registry. | Installed pgmcp in a clean environment, neutral CWD and explicit isolated workspace: initialize/list tools/list resources/call/read/errors, schema/attachments/cache fidelity and diagnostic/degraded startup. Separate process/package identity from an editable/source import. |
-| Protocol/harness | #513 actual proxy/minimal candidate child, SDK1 client/SDK2 server and initialized negotiation/restart probes. | Real migrated pgmcp/proxy with old/new clients in isolated environments. Wire protocol compatibility does not require equal installed SDK package versions. |
+| Protocol/harness | #513 actual proxy/minimal candidate child, SDK1 client/SDK2 server and initialized negotiation/restart probes. | Real migrated pgmcp/proxy using the selected SDK2 stack and the preserved initialized protocol route. The owner excludes a legacy SDK/dependency compatibility matrix and separate SDK1-client test environments; the older #513 probes remain historical research evidence, not required delivery tests. |
 | Proxy lifecycle | [Current6 proxy tests](../../../tests/mcp_server/core/test_proxy.py) mainly inspect/assign attributes or assert constants; they do not exercise replacement, cancellation/deadline or child cleanup. | Adapt/replace low-value cases with compact public behavior coverage in the existing surface: restart success, failed replacement, in-flight outcome, cancellation/deadline and cleanup. Use real controlled child processes where the behavior requires them, with bounded cleanup. No permanent duplicate research-probe suite. |
 | Native prerequisite consistency | #513's4 upgraded adapter lab copies proved selected check/test paths, not installation of every configured bundled tool. | Reconcile the check_jsonschema jsonschema pin and relevant other exact prerequisites; verify actual selected executables and complete pip consistency. If an external pin cannot support the target, report the exact conflict instead of disabling guards or upgrading unrelated tooling. |
 | Installed package | #513 proved the dependency set and supported PyYAML pure-Python route, not a migrated pgmcp wheel. | Build using the existing asset procedure; install the real artifact, pip check and probe the installed server/proxy. Set PYYAML_FORCE_LIBYAML=0 only in the intended isolated install process as needed; no C-loader application rewrite or performance claim. |
@@ -106,18 +106,24 @@ The inherited strategy permits isolated development/acceptance and explicitly ex
 
 Changing/repointing the active host runtime and restarting its client is an explicit owner action/approval later. It is not authorized by starting #517, and is not necessary to close this source Research. Design/Planning must identify the safe activation boundary before it is needed for workflow-owned configured verification. No credential files or host launcher configuration were changed or printed here.
 
+### Explicit owner clarification: clean break and tests
+
+The owner confirmed a clean break on2026-10-18 and rejected legacy tests or additional tests whose purpose is to guard dependency versions. Preserve meaningful application/protocol behavior through the selected new SDK; do not preserve old SDK Python APIs or package combinations. Adapt valuable existing tests, remove obsolete ones and add only focused behavior coverage for an actual acceptance gap.
+
+Exact dependency/prerequisite declarations and existing runtime version guards remain part of the approved operational contract. Recording the installed environment and running pip consistency checks are installation acceptance evidence, not a new permanent version-assertion suite. This decision does not authorize disabling guards or unrelated removal of existing guard-behavior tests. #518 retains the remaining suppression-repair scope.
+
 ## Approved Strategy
 
-Inherited directly from the owner-approved #513 outcome and published #517 scope; this issue does not reopen those choices.
+Inherited from the owner-approved #513 outcome and published #517 scope, with the owner's explicit test-scope clarification on2026-10-18. That clarification supersedes the earlier old/new dependency-client verification wording: only the selected target stack is a delivery test target.
 
 | Boundary | Approved strategy |
 | --- | --- |
 | Python/SDK/dependencies |Python>=3.15, SDK2.3 and the coherent investigated snapshot; align package/checker/exact adapter prerequisites together. Material target drift or contradiction reopens the owner decision. No floating-latest acceptance or guard bypass. |
 | SDK ownership |Clean replacement in server/converter/proxy integration; preserve tool/domain/presenter/resource interfaces and wire behavior. No SDK1 production bridge or new architecture. |
-| Initialized protocol |Preserve2025-11-25 with native SDK2 support. Initialization-free2026/proxy simplification excluded. Old/new client evidence uses separate environments where needed, not equal SDK versions. |
+| Initialized protocol |Preserve2025-11-25 with native SDK2 support and prove that behavior on the selected stack. Initialization-free2026/proxy simplification and maintained SDK1-client/dependency compatibility tests are excluded. |
 | Installation |Supported Windows pure-Python PyYAML route; actual clean pgmcp package install and pip consistency. No release/deployment or automatic active environment replacement. |
 | Type contracts |Keep explicit covariance, intentional variance and useful runtime guards. Remove only demonstrably migration-obsolete exceptions such as AdapterBinding misc and applicable SDK handler codes. All remaining repair belongs to #518. |
-| Consumers/tests |Adapt valuable direct/shared consumers to supported behavior; no removed-registry facade, suite-wide rewrite or source-content assertions. Existing evidence is reused until invalidated; full suite/gates at the owning phase. |
+| Consumers/tests |Adapt valuable direct/shared consumers to behavior on the chosen new stack. Remove or replace obsolete SDK1 API tests instead of preserving them through facades. No legacy test paths, old dependency environments, compatibility matrix, new dependency-version-only assertions or suite-wide rewrite. Add focused tests only for meaningful behavior/acceptance gaps; reuse fresh evidence and run required full suite/gates in the owning phase. |
 | Workflow/config/docs |Normal refactor phases with independent QA. Preserve enforcement and effective workspace config. Update only baseline/prerequisite/setup docs invalidated by the delivered migration; historical #513 remains evidence. |
 | Activation |Keep current server/client operational during isolated research. Actual active-runtime installation/host switch requires an explicit later owner decision before execution. No hidden automatic restart/launcher edit. |
 
@@ -185,3 +191,4 @@ Keep #513 evidence labeled and require actual application success/failure/cancel
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp researcher | Map current SDK/dependency/test boundaries against inherited #513 decisions and identify delivery acceptance gaps without repeating compatibility research. |
+| 0.2 | 2026-10-18 | @imp researcher | Record explicit clean-break/target-only behavior-test policy; remove old/new dependency-client matrix as a delivery requirement while preserving native guards and installation acceptance. |
