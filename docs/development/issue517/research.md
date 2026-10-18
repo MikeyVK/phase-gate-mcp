@@ -2,8 +2,8 @@
 
 # Issue 517 — Python 3.15 and MCP SDK 2.3 Migration Research
 
-**Status:** Research strategy reopened only for public output-schema/content contract discovered in Design  
-**Version:** 0.3  
+**Status:** Research complete; owner-approved structured output amendment  
+**Version:** 0.4  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -114,7 +114,7 @@ Exact dependency/prerequisite declarations and existing runtime version guards r
 
 ## Approved Strategy
 
-**Design-discovered exception (2026-10-18):** the public output-schema/content preservation boundary is reopened for owner decision. Native SDK2 Client.call_tool on the approved initialized route rejects absent/null structuredContent when outputSchema is declared. Delivering the DTO or removing outputSchema both change that existing wire promise. The inherited decisions below remain binding everywhere else; the relevant pending alternatives and source-specific error mapping are in [Design](design.md#state-and-failures). No source/production policy was changed.
+**Owner-approved amendment (2026-10-18):** retain each tool's public output schema and deliver the actual operation DTO as `structuredContent`, alongside existing text, resources and cache publication. The owner explicitly chose this improved structured-output route after the Design probe and independent QA exposed the existing schema/content inconsistency. SDK1 and SDK2 native clients both enforce this consistency; registry-direct tests had bypassed it. This narrow wire-output addition supersedes unchanged-output preservation at this boundary only. SDK-specific projection remains at the existing server boundary; domain DTOs and presenters do not acquire SDK responsibilities. Detailed output and error contracts are in [Design](design.md#state-and-failures).
 
 Temporary diagnosis: run_tests(scope="targets", targets=[".pgmcp/temp/issue517/test_output_contract_probe.py"], tests=["python_tests"], args={"python_tests":["-n","0","-s","--tb=short"]}, timeout_seconds=90). One diagnostic case passed in3.89s: it launched the selected Python3.15/SDK2 environment, negotiated2025-11-25, observed null output rejected with "Tool example has an output schema but did not return structured content", and matching {"success":true} accepted. The host tool's driver is not candidate suite acceptance. Supplemental receipt378fb122078949bf97b7937673231888; ignored diagnostic file is not permanent coverage or a dependency-version assertion.
 
@@ -123,6 +123,7 @@ Inherited from the owner-approved #513 outcome and published #517 scope, with th
 | Boundary | Approved strategy |
 | --- | --- |
 | Python/SDK/dependencies |Python>=3.15, SDK2.3 and the coherent investigated snapshot; align package/checker/exact adapter prerequisites together. Material target drift or contradiction reopens the owner decision. No floating-latest acceptance or guard bypass. |
+| Public operation output |Retain outputSchema and include the matching actual operation DTO in structuredContent. Keep text/resources/cache and their responsibilities; no schema-validation bypass, invented payload or compatibility bridge. |
 | SDK ownership |Clean replacement in server/converter/proxy integration; preserve tool/domain/presenter/resource interfaces and wire behavior. No SDK1 production bridge or new architecture. |
 | Initialized protocol |Preserve2025-11-25 with native SDK2 support and prove that behavior on the selected stack. Initialization-free2026/proxy simplification and maintained SDK1-client/dependency compatibility tests are excluded. |
 | Installation |Supported Windows pure-Python PyYAML route; actual clean pgmcp package install and pip consistency. No release/deployment or automatic active environment replacement. |
@@ -133,7 +134,7 @@ Inherited from the owner-approved #513 outcome and published #517 scope, with th
 
 ## Expected Results
 
-Research supplies a bounded structural and preservation basis for Design, not a migrated application. Delivery succeeds only when the actual installed pgmcp artifact, initialized protocol operations and proxy failure/lifecycle behavior work under the controlled target with required quality/full-suite evidence. Direct tests are adapted proportionally and unrelated suppression work remains in #518. The original source review found no new policy choice; the later Design output-schema/content probe above reopens precisely that wire-contract decision. Other handler/test/packaging/activation arrangements remain Design/Planning work within the inherited boundaries.
+Research supplies a bounded structural and preservation basis for Design, not a migrated application. Delivery succeeds only when the actual installed pgmcp artifact, initialized protocol operations and proxy failure/lifecycle behavior work under the controlled target with required quality/full-suite evidence. Direct tests are adapted proportionally and unrelated suppression work remains in #518. The Design output-schema/content finding is resolved by the owner's explicit structured-output decision above. Other handler/test/packaging/activation arrangements remain Design/Planning work within the inherited boundaries.
 
 ## Evidence
 
@@ -197,3 +198,4 @@ Keep #513 evidence labeled and require actual application success/failure/cancel
 | 0.1 | 2026-10-18 | @imp researcher | Map current SDK/dependency/test boundaries against inherited #513 decisions and identify delivery acceptance gaps without repeating compatibility research. |
 | 0.2 | 2026-10-18 | @imp researcher | Record explicit clean-break/target-only behavior-test policy; remove old/new dependency-client matrix as a delivery requirement while preserving native guards and installation acceptance. |
 | 0.3 | 2026-10-18 | @imp researcher | Reopen the specific output-schema/content strategy after a selected-stack initialized client probe exposed a preservation conflict in Design. |
+| 0.4 | 2026-10-18 | @imp researcher | Record owner approval to retain output schemas and deliver matching operation DTOs as structured content; close the narrowly reopened strategy decision. |

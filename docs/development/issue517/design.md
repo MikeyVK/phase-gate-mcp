@@ -2,8 +2,8 @@
 
 # Issue 517 — Native SDK 2 Migration Design
 
-**Status:** Design held for explicit output-contract owner decision; QA correction in progress  
-**Version:** 0.2  
+**Status:** Design revised for independent QA recheck  
+**Version:** 0.3  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -78,7 +78,7 @@ This follows the three source owners and removes the obsolete SDK boundary rathe
 | Resource listing | Return ListResourcesResult(resources=list[Resource]); use string URI and SDK2 mime_type constructor name. |
 | Resource read | ReadResourceRequestParams.uri selects the existing resource. Return ReadResourceResult(contents=[TextResourceContents(uri=..., mime_type="text/plain", text=...)]). Preserve existing delivered text/plain and separately advertised resource MIME. No incidental MIME correction. |
 | Tool listing | Return ListToolsResult with SDK2 input_schema/output_schema fields. Preserve operation_output_model projection so transport attachments do not pollute operation schema. |
-| Tool call | Receive CallToolRequestParams, select params.name/arguments and execute the same normalized pipeline. Return CallToolResult only, with existing text/resource/error semantics. Do not enable another input validator before the existing prepared tool admission. |
+| Tool call | Receive CallToolRequestParams, select params.name/arguments and execute the same normalized pipeline. Return CallToolResult only. Include the actual operation DTO as structured_content, serialized in JSON mode with schema-compatible aliases; retain text, resources, cache publication and operation error facts. Transport attachments/notes/presentation are not the structured operation payload. Do not enable another input validator before the existing prepared tool admission. |
 | Converter | Keep application content dictionaries and convert text/JSON/image/embedded resource using native SDK2 Python fields. Preserve nested wire aliases and is_error serialization as isError. No new domain DTO. |
 | Stdio run | Use SDK2 stdio_server() ownership and existing Server.run/create_initialization_options. Remove the redundant host TextIOWrapper/anyio.wrap_file output wrapper; native SDK2 owns protected wire/UTF-8 framing. No manual transport framework. |
 | Proxy | Change3 InitializeResult.protocolVersion accesses to protocol_version; retain current process_factory, initialized replay, ID/generation/race checks and teardown behavior. |
@@ -126,33 +126,32 @@ Existing tool composition -> native SDK2 callback -> normalized tool pipeline ->
 
 No state/workflow schema change. SDK2 native initialized stream mode is mandatory in both the shared test helper and installed acceptance; the SDK's mode name legacy does not select an old SDK/dependency environment.
 
-### Explicit existing error mapping at the server boundary
+### Explicit error mapping at the server boundary
 
-| Case | Observed SDK1/application wire outcome | SDK2 ownership / preservation requirement |
+| Case | Observed prior outcome | SDK2 contract |
 | --- | --- | --- |
-| Normal operation | Explicit converter CallToolResult, isError=false, text/attachments; structuredContent=None despite published outputSchema. | The output-schema/content combination is reopened below; do not silently preserve an invalid combination or change it without owner decision. |
-| Existing operation/input error DTO | Explicit CallToolResult with isError=true and original presenter/schema facts. | Native server callback returns the explicit SDK2 result with the same error flag and facts. |
-| Unknown tool | Application raises ValueError("Tool not found: ..."); SDK1 decorator catches it into CallToolResult isError=true and text=str(error). | Native SDK2 callback must return that explicit tool error result. Do not let it become a JSON-RPC exception. |
-| Unknown resource / resource-read exception | SDK1 outer request boundary yields ErrorData(code=0, message=str(error), data=None). No tool-result isError field. | Use the native SDK2 MCPError/ErrorData path at this existing boundary, preserving code/message and the original cause/traceback. No tool error DTO or new framework. |
-| Response-processing exception, tool without output schema | Application returns the original "Error processing tool response: ..." content list; SDK1 normalizes it to CallToolResult isError=false. | This normalization must be explicit in SDK2 if that contract is retained; no automatic list conversion remains. |
-| Response-processing exception, declared output schema | SDK1 subsequently rejects the content-list fallback as missing structured output, replacing it with isError=true and "Output validation error: outputSchema defined but no structured output returned". | This schema-dependent fallback is affected by the reopened output-contract decision. Do not accidentally choose a new error flag or claim the no-schema normalization covers this case. Complete the explicit resulting contract before Planning. |
-| Cancellation | asyncio.CancelledError propagates rather than being normalized into a result. | Preserve propagation and native request cancellation; no fabricated success after timeout/cleanup failure. |
+| Normal operation | Explicit converter result with isError=false, but no structured output despite published schema. | Return is_error=false with the actual operation DTO as structured_content, matching output_schema. Preserve text/resources/cache. |
+| Existing operation/input error DTO | Explicit result with isError=true and original presenter/schema facts. | Return is_error=true and the actual operation DTO with the same error facts. Do not validate it as a successful operation or fabricate success. |
+| Unknown tool | SDK1 catches application ValueError("Tool not found: ...") into an error tool result. | Return explicit CallToolResult is_error=true, original message as text. No operation DTO exists; no fabricated structured content and no JSON-RPC error substitution. |
+| Unknown resource / resource-read exception | SDK1 outer request boundary yields ErrorData(code=0, message=str(error), data=None), without a tool isError field. | Preserve this through SDK2 MCPError/ErrorData at the existing server boundary, retaining the original exception as cause/traceback. No tool DTO or new exception framework. |
+| Response-processing exception | The application logs the traceback and returns "Error processing tool response: ...". SDK1 turns a schema-less list into a false-error-flag result; for declared output schemas it instead masks that diagnosis with an output-validation error and isError=true. | Return an explicit failed tool result with is_error=true and the original processing-error text; retain the logged exception/traceback. There is no valid completed response to label successful. Do not reconstruct schema-dependent SDK1 normalization or invent operation data after failure. |
+| Cancellation | CancelledError propagates. | Preserve propagation and native cancellation; no fabricated success after timeout or cleanup failure. |
 
-These facts come from the current application and installed SDK1 source: read_resource wrapper338–393, error result473–479, call_tool normalization540–590 and outer dispatch777–794. They are source evidence, not a new legacy-version test matrix. The migration implements the required SDK2 mapping at server.py; business layers do not learn SDK error types.
+The error mapping belongs to server.py, where the SDK boundary already exists. Domain tools, presenters and converters retain their existing responsibilities. Error responses preserve application diagnosis instead of reproducing the old incidental output-validation masking.
 
-### Reopened public output contract — owner decision pending
+### Owner-approved structured output contract
 
-The proposed SDK2 Client.call_tool validates structured_content against the listed output_schema for non-error results. A targeted selected-stack probe on the initialized2025-11-25 route rejected null output with "Tool example has an output schema but did not return structured content"; the same operation with matching structured content passed.
+On2026-10-18 the owner chose the improved route: retain outputSchema and deliver the real operation DTO as structuredContent. This explicitly amends the preservation strategy at the public output boundary; [Research](research.md#approved-strategy) records the decision. SDK1 and SDK2 native clients both reject the prior schema/content inconsistency. The selected-stack initialized2025-11-25 probe independently observed null rejected and matching {"success":true} accepted.
 
-Current outputSchema exposure and absent/null structuredContent cannot both be preserved with this client acceptance contract. The existing unchanged-interface strategy is therefore unsound at this precise boundary. Two concrete alternatives are submitted to the owner:
-- Retain outputSchema and deliver the actual operation DTO as structuredContent, alongside current text/resources/cache. This adds public payload and requires the resulting processing-failure mapping to be explicit.
-- Stop advertising outputSchema and preserve current text/resource/cache output. This removes an existing public schema promise without adding the DTO payload.
+The existing server handler owns this projection because it already has execution.operation and publishes its schema through operation_output_model. Its JSON-mode, alias-aware model serialization supplies the structured object; no parsing of presented text, cache readback or ToolExecution transport wrapper. Optional null fields follow the declared DTO schema rather than the cache's independent omission policy. Existing text, embedded resources, attachment URI/MIME and full cache publication remain available.
 
-Neither is approved yet. Do not make schemas nullable merely to suppress the error, bypass validation, add a compatibility layer or misreport successful client acceptance. Design remains active; no Planning/implementation transition until the owner decision and targeted QA recheck.
+The converter continues converting the existing ToolResult content/error flag to SDK models; it does not infer an operation schema or reconstruct a DTO. The server attaches the known operation projection to the completed SDK result. Unknown-tool and response-processing failures carry explicit error text/flag without invented structured data. Native client validation remains enabled.
+
+Adapt existing public schema/cache/attachment scenarios to assert matching structured operation data through Client.call_tool. Cover a meaningful response-processing failure at the existing server-test boundary, including its error flag and original diagnosis; do not add dependency-version tests or SDK1 comparison fixtures. The isolated diagnostic is research evidence only, not permanent coverage.
 
 ## Preservation
 
-Preserve current tool names/schema and admission order, operation/cache fidelity, attachments and MIME/URI, configured failure projection, initialized wire protocol, child generations and meaningful covariance/guard behavior. The existing resource list/read MIME difference is deliberately retained. No old SDK Python API is preserved as a consumer contract.
+Preserve current tool names/schema and admission order, operation/cache fidelity, attachments and MIME/URI, configured failure projection, initialized wire protocol, child generations and meaningful covariance/guard behavior. Add matching structured operation output as explicitly approved. The existing resource list/read MIME difference is deliberately retained. No old SDK Python API is preserved as a consumer contract.
 
 ## Transition and Cleanup
 
@@ -218,3 +217,4 @@ Plan bounded structural cutover/consumer adaptation and real package/lifecycle a
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp designer | Specify native typed SDK2 callbacks/results, target-only test access, prerequisite ownership and isolated installed-package acceptance. |
 | 0.2 | 2026-10-18 | @imp designer | Make initialized test mode and source-based error mapping explicit; hold Design for reproduced public output-schema/content policy conflict. |
+| 0.3 | 2026-10-18 | @imp designer | Apply owner-approved structured operation output, explicit SDK2 error mapping and initialized native client contract for targeted QA recheck. |
