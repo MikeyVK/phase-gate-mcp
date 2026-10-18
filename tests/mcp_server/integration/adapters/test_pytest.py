@@ -8,7 +8,6 @@ import json
 import os
 import subprocess
 import sys
-import tomllib
 from ctypes import wintypes
 from dataclasses import dataclass
 from pathlib import Path
@@ -232,24 +231,19 @@ def test_last_failed_and_verbose_traceback_remain_native(native_case: NativeCase
 
 def test_native_coverage_is_opt_in_and_owns_threshold_rejection(native_case: NativeCase) -> None:
     case = native_case
-    package = case.workspace / "mcp_server"
+    package = case.workspace / "coverage_example"
     package.mkdir()
     (package / "__init__.py").write_text("", encoding="utf-8")
     (package / "sample.py").write_text(
         "def choose(value):\n    if value:\n        return 1\n    return 2\n", encoding="utf-8"
     )
     case.source.write_text(
-        "from mcp_server.sample import choose\n\n"
+        "from coverage_example.sample import choose\n\n"
         "def test_choose():\n    assert choose(True) == 1\n",
         encoding="utf-8",
     )
-    configured = tomllib.loads((case.repo_root / "pyproject.toml").read_text(encoding="utf-8"))[
-        "tool"
-    ]["coverage"]
-    assert configured["run"] == {"source": ["mcp_server"], "branch": True}
-    assert configured["report"]["fail_under"] == 90
     (case.workspace / "pyproject.toml").write_text(
-        '[tool.coverage.run]\nsource = ["mcp_server"]\nbranch = true\n'
+        '[tool.coverage.run]\nsource = ["coverage_example"]\nbranch = true\n'
         "[tool.coverage.report]\nfail_under = 90\n",
         encoding="utf-8",
     )

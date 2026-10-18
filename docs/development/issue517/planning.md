@@ -315,5 +315,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | 0.2 | 2026-10-18 | @imp planner | Add one bounded recovery cycle for failed full Validation; preserve prior cycles/evidence and record the owner's explicit Python-only Ruff discovery choice. |
 | 0.3 | 2026-10-18 | @imp implementer | Record owner approval for targeted native-adapter repairs required by the selected upgrade, preserving public contracts and the C_3 boundary. |
 | 0.4 | 2026-10-18 | @imp planner | Add C_4 for installed startup callers, native child coverage and proportional behavior gaps; retain owner-required90%. |
-
 | 0.5 | 2026-10-18 | @imp planner | Add bounded C_5 for installed instrumented initialization and stale coverage-content test; preserve default startup controls and90% acceptance. |

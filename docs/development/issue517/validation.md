@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Post-C_4 complete Validation failed; bounded test recovery required
-**Version:** 0.5  
+**Status:** C_5 test recovery complete; bounded proxy behavior coverage remains
+**Version:** 0.6  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -285,6 +285,23 @@ The second failure is `integration/adapters/test_pytest.py::test_native_coverage
 
 The89.94% result remains negative. The failed installed test did not execute its planning/cache/migration body; repair the failures and inspect fresh native coverage before adding any further behavior cases. No gate exception, reduced threshold, skip, source exclusion, production patch or additional test case was applied in Validation. Native XML under .pgmcp/temp/issue517 is supplemental; the snapshot, invocations, observations and counts here are the durable evidence.
 
+## C_5 Focused Recovery
+
+Independent QA approved C_5 Planning on `0104cd720d3a07f1cb3b2cc3101ce0a1eb987bf9`. Only two existing test files changed. The installed functional migration/readback probe uses the existing public MCPProxy constructor with90s initialization and120s client windows; production default30, default module-entrypoint tests and explicit silent-child rejection remain unchanged. This probe establishes functional behavior under instrumentation, not a30s startup guarantee.
+
+The existing Pytest coverage-conformance case retains actual native and adapter opt-in/threshold proof. Its obsolete repository-config equality and unused tomllib import were removed. Instrumented evidence then exposed its synthetic package's mcp_server name in production coverage (four sample lines/two branches); rename only that isolated fixture to coverage_example. The production coverage selection was not changed.
+
+| Actual candidate MCP selection | Result |
+| --- | --- |
+| run_tests(scope="targets"), target_startup.py, integration/adapters/test_pytest.py, core/test_proxy.py; -q --junitxml=.pgmcp/temp/issue517/c5-focused.xml; timeout900, native eight workers |38 passed,1 failed in161.90s. The repaired startup/coverage cases and all proxy controls passed. One unchanged native xdist subprocess exceeded its45s helper budget. |
+| Same two affected files, -k "installed_candidate_init_migration_and_mcp_handshake or native_coverage_is_opt_in_and_owns_threshold_rejection or (native_outcomes_and_options and xdist)", --cov --cov-branch -q, c5-instrumented.xml and c5-instrumented-coverage.xml; timeout900, native eight workers |All3 cases passed in138.64s; the previously timed-out xdist case completed in12.44s. Native exit1 correctly reflects narrow42.71% coverage, not a test failure. No xdist timeout was changed and the prior failure stays visible. |
+| Pytest-adapter file only, -k native_coverage_is_opt_in_and_owns_threshold_rejection, --cov --cov-branch -q, c5-coverage-isolation.xml and c5-coverage-isolation-coverage.xml; timeout300 |1 passed in23.00s after fixture rename; native exit1 for narrow17.43% coverage. XML contains no temporary synthetic mcp_server package. |
+| run_checks(scope="targets"), both edited test files, python_format/python_lint/python_pyright; timeout600 |All passed; Pyright two files, zero diagnostics. An initial ISC004 in the new launch string was repaired with explicit parentheses. |
+
+Paths above are relative to tests/mcp_server except native evidence outputs under .pgmcp/temp/issue517. Earlier passing cases are reused only where the subsequent parentheses/isolated-fixture edits cannot change their behavior. No new permanent case/module or production code was added in C_5.
+
+Comparison of the instrumented startup probe with the failed full run found no additional covered production lines/branches. The89.94% shortfall therefore remains substantively unresolved; no further full run is justified solely by these two repaired failures. Plan a minimal additional public proxy behavior gap: malformed replacement initialization and changed negotiated protocol. Preserve default deadline, actual child termination and factual error output; no metric-only assertions or new architecture.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -299,5 +316,5 @@ The89.94% result remains negative. The failed installed test did not execute its
 | 0.2 | 2026-10-18 | @imp implementer | Preserve failed full Validation and record owner-approved C_3 recovery, exact focused outcomes, native/process causes and pending complete revalidation. |
 | 0.3 | 2026-10-18 | @imp validator | Record complete C_3 retry:2911/2912 tests pass, all required checks pass,87.93% opt-in coverage fails and one installed-startup client window remains; reopen the unbaselined extra coverage acceptance with the owner. |
 | 0.4 | 2026-10-18 | @imp implementer | Record bounded C_4 measurement and focused behavior evidence; preserve negative full runs and owner-required90% acceptance as pending. |
-
 | 0.5 | 2026-10-18 | @imp validator | Record post-C_4 full run:2956 pass,2 failures,89.94% coverage; preserve green checks and native startup timeline without weakening acceptance. |
+| 0.6 | 2026-10-18 | @imp implementer | Record C_5 focused/instrumented outcomes, retained xdist timeout evidence and synthetic-package isolation; preserve unresolved90% gate. |

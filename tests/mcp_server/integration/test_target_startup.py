@@ -329,7 +329,16 @@ class TestTargetStartup:
         assert distribution.root.resolve().is_relative_to(tmp_path.resolve())
         assert not distribution.root.resolve().is_relative_to(REPO_ROOT.resolve())
         launcher_python, _ = _selected_runtime()
-        launch = [str(launcher_python), "-m", "mcp_server.core.proxy"]
+        # This functional migration/readback probe also runs under subprocess coverage.
+        # Default-entrypoint timing remains covered by the separate startup scenarios.
+        launch = [
+            str(launcher_python),
+            "-c",
+            (
+                "from mcp_server.core.proxy import MCPProxy; "
+                "MCPProxy(initialization_timeout_seconds=90).run()"
+            ),
+        ]
 
         fresh = distribution.workspace
         fresh_env = _installed_environment(distribution, fresh)
@@ -402,7 +411,7 @@ class TestTargetStartup:
             "phases": {},
         }
         manager.save_planning_deliverables(53, author_plan)
-        with run_server_process(launch, cwd=fresh, env=fresh_env, timeout=45) as proc:
+        with run_server_process(launch, cwd=fresh, env=fresh_env, timeout=120) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-target")
             tools = proc.list_tools()
             names = [tool["name"] for tool in tools]
@@ -504,7 +513,7 @@ class TestTargetStartup:
         )
         assert forced.returncode == 0, forced.stdout + forced.stderr
         assert (legacy_root / "installation.json").is_file()
-        with run_server_process(launch, cwd=legacy, env=legacy_env, timeout=45) as proc:
+        with run_server_process(launch, cwd=legacy, env=legacy_env, timeout=120) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-migrated")
             names = [tool["name"] for tool in proc.list_tools()]
             assert len(names) == len(set(names))
