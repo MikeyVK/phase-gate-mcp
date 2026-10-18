@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 517,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "planning",
   "current_cycle": 2,
   "last_cycle": 2,
   "cycle_history": [
@@ -25,7 +25,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Independent QA rejected Validation after the complete native suite and configured gates failed. Return to Planning to add one bounded repair cycle without gate exceptions; retain committed C_1/C_2.",
   "issue_title": "Migrate to Python 3.15 and MCP SDK 2.3",
   "created_at": "2026-10-18T06:34:02.797889+00:00",
   "transitions": [
@@ -60,6 +60,14 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-10-18T10:30:06.169626+00:00",
+      "human_approval_message": "Voor deze en komende sessies akkoord voor force terug naar eerdere fases!",
+      "forced": true,
+      "skip_reason": "Independent QA rejected Validation after the complete native suite and configured gates failed. Return to Planning to add one bounded repair cycle without gate exceptions; retain committed C_1/C_2."
     }
   ],
   "reconstructed": false,

@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK 2 Migration Design
 
 **Status:** Design revised for independent QA recheck  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -197,6 +197,14 @@ Remove redundant wrapper and prove installed stdio/proxy behavior; retain proces
 
 Align explicit target declarations, preserve guards and verify a clean installed package; report material target drift before changing the approved set.
 
+## Validation Recovery Boundaries
+
+Native conformance tests compare adapter outcomes/evidence with the native command actually provisioned for the selected target. Preserve version-rejection, diagnostic-fidelity and missing-dependency behavior; do not reinstate the Python Pyright wrapper or add version-only tests. Node packages resolve through the isolated workspace's ordinary node_modules, without a global NODE_PATH contaminating negative controls.
+
+Startup tests use the selected interpreter and existing public process/installed-distribution seams, independent of private active-harness configuration. The existing native Client helper owns its SDK import; unrelated shared-helper consumers must not eagerly load that protocol client. Process tests observe readiness, errors and termination within explicit budgets. Diagnose the parallel failures before changing waits; do not hide product defects behind serial-only evidence.
+
+The owner approved explicit native Ruff automatic discovery of Python files (.py/.pyi), excluding Markdown code blocks from that automatic selection without force-exclude. Concrete target-induced format/lint/contextmanager findings may be repaired with semantic review, preserving covariance and existing suppression policy. No new production architecture, active-host change or neutral-CWD Git composition fix is included.
+
 ## Planning Consequences
 
 Plan bounded structural cutover/consumer adaptation and real package/lifecycle acceptance, with cleanup and focused evidence. Do not sequence SDK1 and SDK2 compatibility phases or add a broad suppression cycle. Full-suite/coverage belongs to Validation; active host activation is not a dependency of isolated candidate RPC acceptance and remains separately authorized.
@@ -218,3 +226,4 @@ Plan bounded structural cutover/consumer adaptation and real package/lifecycle a
 | 0.1 | 2026-10-18 | @imp designer | Specify native typed SDK2 callbacks/results, target-only test access, prerequisite ownership and isolated installed-package acceptance. |
 | 0.2 | 2026-10-18 | @imp designer | Make initialized test mode and source-based error mapping explicit; hold Design for reproduced public output-schema/content policy conflict. |
 | 0.3 | 2026-10-18 | @imp designer | Apply owner-approved structured operation output, explicit SDK2 error mapping and initialized native client contract for targeted QA recheck. |
+| 0.4 | 2026-10-18 | @imp planner | Clarify existing native/test/process seams and owner-approved discovery boundaries for the bounded Validation recovery. |

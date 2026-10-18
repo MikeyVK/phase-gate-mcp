@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -26,11 +26,13 @@ Release/publication, active runtime replacement, SDK1 environments, dependency-v
 
 ## Summary
 
-Two dependent implementation cycles: coherent native integration/consumer cutover, then proxy lifecycle and clean installed acceptance. Validation owns one full suite and branch/configured gates; reuse fresh focused evidence.
+C_1/C_2 delivered the native cutover and focused installed/proxy acceptance. The first complete Validation failed and independent QA rejected progression. C_3 repairs only the exposed consumer/prerequisite/checker gaps; renewed Validation owns the complete suite and branch/configured gates. The owner approved automatic Ruff discovery of Python files only; declare it explicitly without force-exclude.
 
 ## Dependencies
 
-- C_2 depends on C_1; validation follows both completed cycles.
+- C_2 depends on C_1; both retain their committed history.
+- C_3 depends on C_1/C_2 and the first failed Validation; independent Planning review precedes Implementation re-entry with resume_cycle="C_3".
+- Renewed Validation follows completed C_3 and independent QA GO.
 
 ## Risks
 
@@ -188,6 +190,44 @@ Focused lifecycle/installation evidence succeeds on the clean installed target; 
 - Material target-stack conflict, required behavior outside approved strategy, or active host switch needed: reopen owner decision.
 - Required native prerequisites unavailable or incomplete evidence: do not bypass guards or claim passing evidence.
 
+### C\_3 — Validation consumer and prerequisite recovery
+
+**Goal:** Repair the concrete missed consumers and verification prerequisites exposed by the first complete Validation, preserving C_1/C_2 and the approved application strategy.
+
+**Cycle Number:** 3
+
+#### Scope and Dependencies
+
+Depends on C_1/C_2 and the failed Validation at commit `32083d48206fc085fcc8b89681a229d3ab6ada6d`, recorded in [Validation](validation.md). The original 82 failures, 70 setup errors, coverage shortfall and configured-gate failures remain negative evidence until replaced by a complete successful Validation. This cycle does not reinterpret focused greens as full acceptance.
+
+| Deliverable | Scope and primary seams | Required focused evidence |
+| --- | --- | --- |
+| D_3.1 — Native adapter fixtures and evidence | Isolated Node/build prerequisites; Pyright native fixture; Ruff check/fix, Pytest and Mypy conformance consumers; orchestration NODE_PATH; obsolete requirements-dev text assertion | Affected native adapter families, including real diagnostic/report fidelity, native exact-version rejection and dependency-absence controls. Use actual native evidence; do not create version-only tests or reinstate the Python Pyright wrapper. |
+| D_3.2 — Selected runtime startup and lifecycle evidence | Existing target-startup/v3-cutover and installed-distribution seams; test_support Client import; proxy and template-activation process cases | Selected-interpreter/public-process scenarios without private Codex config; reproduce the nine lifecycle failures in a bounded parallel selection. Capture readiness/error/termination observations before choosing any wait-budget repair. A serial pass or longer timeout alone is insufficient. |
+| D_3.3 — Configured checker findings and focused closure | Concrete Python format/lint findings, template_activation contextmanager annotation and owner-approved Ruff discovery | Changed Python files receive applicable format/lint/Pyright checks; production-scoped Mypy covers annotation edits. Review unsafe syntax changes for semantic equivalence. Preserve covariance, diagnostic visibility and existing suppression policy. |
+
+#### Selection Decision
+
+Owner approved automatic Python-file selection on 2026-10-18: declare native Ruff include patterns for .py/.pyi files; Markdown code blocks are outside automatic discovery. Preserve deliberate targeting and do not enable force-exclude. This selects artifact types rather than disabling diagnostics; unrelated or historical Markdown rewrites and broader #518 suppression work remain excluded.
+
+#### Execution and Cleanup
+
+Provision build/setuptools/wheel and the configured Node tool versions only in the isolated selected-stack verification environment. Use ordinary workspace-local Node resolution and remove the diagnostic driver's global NODE_PATH; the deliberate missing-dependency fixture must stay missing. Keep active host/runtime and native prerequisites untouched.
+
+Use existing tests/helpers and public runtime seams. Preserve adapter guards, source/native output fidelity, cleanup assertions and meaningful negative scenarios. Remove only the obsolete requirements text assertion; do not replace it with another metadata/version-content test. Localize the native Client import only within its existing helper, with a narrow import rationale if required.
+
+For process failures, first observe imports, process exit/errors, initialization/readiness and teardown under the affected parallel selection. Compare any test-only budget to the existing production deadline; preserve the intentional silent-child timeout scenario. Stop on a reproduced production defect or contract change beyond the approved SDK boundary.
+
+Run affected families separately through candidate run_tests(scope="targets"), retaining their configured parallelism where needed to reproduce lifecycle failures. Use Python-file targets for Python gates and markdown_links for changed documents. Reuse unaffected evidence; no workspace-wide suite during this cycle.
+
+#### Exit and Stop Conditions
+
+Affected adapter, startup/installed and proxy/activation families pass through actual target MCP calls, including bounded parallel reproduction of lifecycle failures and native negative controls; changed-file gates pass. No new compatibility path, skip, threshold reduction, diagnostic suppression or active host change. Native Ruff automatic discovery is explicitly Python-only as approved by the owner. Independent QA reviews before re-entry to complete Validation.
+
+After independent Implementation → Validation GO, rerun the complete configured suite with unchanged coverage/native parallelism, branch gates and final configured gates as specified below. Preserve the failed first run and report any remaining failures. A gate exception, new skip, lowered coverage, diagnostic disable, active-host switch or neutral-CWD GitManager repair is outside this recovery.
+
+Cycle rollback uses the pre-recovery coherent commit; there is no SDK1 fallback. Existing committed C_1/C_2 blocks are not replaced.
+
 ## Phase Deliverables
 
 ### Validation
@@ -237,3 +277,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp planner | Sequence native cutover, focused behavior evidence and clean installed proxy acceptance within the approved strategy. |
+| 0.2 | 2026-10-18 | @imp planner | Add one bounded recovery cycle for failed full Validation; preserve prior cycles/evidence and record the owner's explicit Python-only Ruff discovery choice. |

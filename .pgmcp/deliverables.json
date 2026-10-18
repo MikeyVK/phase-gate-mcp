@@ -19,7 +19,7 @@
       "created_at": "2026-10-18T06:34:02.783485+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 2,
+          "total": 3,
           "cycles": [
             {
               "cycle_id": "C_1",
@@ -81,6 +81,41 @@
                 }
               ],
               "exit_criteria": "Focused lifecycle/installation evidence succeeds on the clean installed target; no orphaned children, SDK1 bridge, launcher mutation or release. Relevant file checks pass; independent QA requested before Validation."
+            },
+            {
+              "cycle_id": "C_3",
+              "cycle_number": 3,
+              "cycle_name": "Validation consumer and prerequisite recovery",
+              "deliverables": [
+                {
+                  "deliverable_name": "Native adapter fixtures and evidence",
+                  "description": "Provision the isolated native Node/build prerequisites, remove orchestration NODE_PATH contamination, migrate Pyright fixture to native Node resolution, adapt affected Ruff/Pytest/Mypy evidence assertions to actual native results, and remove the obsolete requirements text assertion. Preserve native version rejection, diagnostic fidelity, dependency-absence controls and test scenarios.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/adapters/test_pyright.py"
+                  },
+                  "deliverable_id": "D_3.1"
+                },
+                {
+                  "deliverable_name": "Selected runtime startup and lifecycle evidence",
+                  "description": "Remove private active-harness configuration assumptions using the selected interpreter and existing installed-distribution/public-process seams. Diagnose all nine parallel proxy/activation failures with readiness, errors and termination evidence before changing bounded waits; localize SDK Client loading where justified. Preserve public behavior, process cleanup and explicit timeout-failure controls.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/core/test_proxy.py"
+                  },
+                  "deliverable_id": "D_3.2"
+                },
+                {
+                  "deliverable_name": "Configured checker findings and focused closure",
+                  "description": "Repair concrete formatter/lint/contextmanager findings on the selected stack with semantic review of unsafe suggestions; preserve covariance and existing suppression policy. Apply the owner's explicit Python-only native Ruff automatic selection without force-exclude. Prove affected families and changed-file gates; retain failed full Validation evidence and reserve the complete rerun for Validation.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "docs/development/issue517/validation.md"
+                  },
+                  "deliverable_id": "D_3.3"
+                }
+              ],
+              "exit_criteria": "Affected adapter, startup/installed and proxy/activation families pass through actual target MCP calls, including bounded parallel reproduction of lifecycle failures and native negative controls; changed-file gates pass. No new compatibility path, skip, threshold reduction, diagnostic suppression or active host change. Native Ruff automatic discovery is explicitly Python-only as approved by the owner. Independent QA reviews before re-entry to complete Validation."
             }
           ]
         },

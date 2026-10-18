@@ -151,7 +151,7 @@ or merely create shallow or tautological asserts to satisfy tooling.
 3. **Workflow-Driven Testing:** Follow the active workflow and plan; add or adapt tests only when they provide durable evidence.
 4. **Tools > Manual:** Never manually create a file if `scaffold_artifact` exists. Never manually parse status if `get_work_context` exists.
 5. **English Artifacts, Dutch Chat:** Write Code/Docs/Commits in **English**. Talk to the User in **Dutch** (Nederlands).
-6. **Human-in-the-Loop:** Tooling and branch locks enforce PR-merge approval; Ready does not duplicate that check. `force_phase_transition` requires approval + reason.
+6. **Human-in-the-Loop:** Tooling and branch locks enforce PR-merge approval; Ready does not duplicate that check. `force_phase_transition` requires approval + reason. The owner's standing approval, granted on 2026-10-18 for this and future sessions, covers necessary forced returns to earlier phases. Record the recovery reason and cite that approval; independent QA still governs phase progression, and new policy decisions remain with the owner.
 7. **Quality Gates:** Use the scope and timing required by the active phase and plan. Reuse fresh passing evidence unless subsequent changes invalidate it.
 8. **Type-Checking Consistency:** Resolve typing issues using [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md). No global disables; targeted ignores only as last resort.
 9. **Cache Reads and Hashes:**

@@ -3,7 +3,7 @@
 # Issue 517 — Python 3.15 and MCP SDK 2.3 Migration Research
 
 **Status:** Research complete; owner-approved structured output amendment  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -191,6 +191,10 @@ Keep #513 evidence labeled and require actual application success/failure/cancel
 - [Architecture contract](<../../coding_standards/ARCHITECTURE_PRINCIPLES.md>)
 - [Developer isolation](<../../setup/dev-isolation.md>)
 
+## Validation Recovery Selection Decision
+
+On 2026-10-18 the owner approved automatic Ruff discovery of Python files only after the upgraded native tool also discovered Markdown code blocks. Declare .py/.pyi discovery explicitly without force-exclude; keep existing diagnostic policy and deliberate targeting. This artifact-selection decision does not authorize historical Markdown rewrites or #518 suppression work. The full failed Validation remains recorded in [Validation](validation.md).
+
 ## Version History
 
 | Version | Date | Author | Changes |
@@ -199,3 +203,4 @@ Keep #513 evidence labeled and require actual application success/failure/cancel
 | 0.2 | 2026-10-18 | @imp researcher | Record explicit clean-break/target-only behavior-test policy; remove old/new dependency-client matrix as a delivery requirement while preserving native guards and installation acceptance. |
 | 0.3 | 2026-10-18 | @imp researcher | Reopen the specific output-schema/content strategy after a selected-stack initialized client probe exposed a preservation conflict in Design. |
 | 0.4 | 2026-10-18 | @imp researcher | Record owner approval to retain output schemas and deliver matching operation DTOs as structured content; close the narrowly reopened strategy decision. |
+| 0.5 | 2026-10-18 | @imp planner | Record owner-approved Python-only Ruff automatic discovery for the bounded failed-Validation recovery. |
