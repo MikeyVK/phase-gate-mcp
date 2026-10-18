@@ -19,7 +19,7 @@
       "created_at": "2026-10-18T06:34:02.783485+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 3,
+          "total": 4,
           "cycles": [
             {
               "cycle_id": "C_1",
@@ -116,6 +116,41 @@
                 }
               ],
               "exit_criteria": "Affected adapter, startup/installed and proxy/activation families pass through actual target MCP calls, including bounded parallel reproduction of lifecycle failures and native negative controls; changed-file gates pass. No new compatibility path, skip, threshold reduction, diagnostic suppression or active host change. Native Ruff automatic discovery is explicitly Python-only as approved by the owner. Independent QA reviews before re-entry to complete Validation."
+            },
+            {
+              "cycle_id": "C_4",
+              "cycle_number": 4,
+              "cycle_name": "Complete startup callers and coverage measurement recovery",
+              "deliverables": [
+                {
+                  "deliverable_name": "Remaining installed startup clients",
+                  "description": "Give the two existing installed routes an explicit client window consistent with source startup while retaining production deadlines, real initialization/error/readiness and cleanup assertions.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_target_startup.py"
+                  },
+                  "deliverable_id": "D_4.1"
+                },
+                {
+                  "deliverable_name": "Complete native coverage measurement",
+                  "description": "Evaluate and configure coverage.py native subprocess measurement for the selected pytest-cov 7 stack; prove child data collection/combination on existing process behavior, including source/installed path identity and Windows limitations. No source/branch exclusions, threshold reduction or private instrumentation.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "pyproject.toml"
+                  },
+                  "deliverable_id": "D_4.2"
+                },
+                {
+                  "deliverable_name": "Proportional behavioral coverage closure",
+                  "description": "After measurement completeness, identify genuine missing public behavior from coverage evidence and adapt existing relevant tests proportionally. Keep the owner-required 90% combined line/branch gate for complete Validation; no metric-only, dependency-version or compatibility tests.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "docs/development/issue517/validation.md"
+                  },
+                  "deliverable_id": "D_4.3"
+                }
+              ],
+              "exit_criteria": "The remaining startup routes pass with native parallelism, subprocess coverage feasibility/completeness is evidenced through actual candidate MCP tests, any needed behavior cases use public interfaces and remain proportional, and changed-file gates pass. Independent QA governs Implementation to Validation; only Validation runs the full configured suite and must reach 90% combined coverage with unchanged source/branch scope and all tests/checks passing. Preserve C1-C3 and both failed full runs; stop and discuss a material public-contract/policy or architectural change."
             }
           ]
         },

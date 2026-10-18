@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 517,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "planning",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -25,7 +25,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Independent QA rejected Validation after the complete native suite and configured gates failed. Return to Planning to add one bounded repair cycle without gate exceptions; retain committed C_1/C_2.",
+  "skip_reason": "Renewed complete Validation at 94cc5638 failed one installed startup client deadline and the extra 90% combined coverage gate. Owner explicitly retained that gate and authorized coverage investigation/repair within #517. Plan bounded C_4 for remaining startup callers, native subprocess measurement and proportional behavioral gaps; preserve prior cycles, negative evidence and unchanged acceptance.",
   "issue_title": "Migrate to Python 3.15 and MCP SDK 2.3",
   "created_at": "2026-10-18T06:34:02.797889+00:00",
   "transitions": [
@@ -85,6 +85,14 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-10-18T11:38:53.017987+00:00",
+      "human_approval_message": "Voor deze en komende sessies akkoord voor force terug naar eerdere fases!",
+      "forced": true,
+      "skip_reason": "Renewed complete Validation at 94cc5638 failed one installed startup client deadline and the extra 90% combined coverage gate. Owner explicitly retained that gate and authorized coverage investigation/repair within #517. Plan bounded C_4 for remaining startup callers, native subprocess measurement and proportional behavioral gaps; preserve prior cycles, negative evidence and unchanged acceptance."
     }
   ],
   "reconstructed": false,

@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK 2 Migration Design
 
 **Status:** Design revised for independent QA recheck  
-**Version:** 0.5  
+**Version:** 0.6  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -205,6 +205,12 @@ Startup tests use the selected interpreter and existing public process/installed
 
 The owner approved explicit native Ruff automatic discovery of Python files (.py/.pyi), excluding Markdown code blocks from that automatic selection without force-exclude. Concrete target-induced format/lint/contextmanager findings may be repaired with semantic review, preserving covariance and existing suppression policy. On 2026-10-18 the owner explicitly included targeted updates of every affected adapter required by the selected toolchain upgrade, beyond Python and the SDK alone. Keep native-specific interpretation at each existing adapter owner and preserve the public check/test/fix contracts, diagnostics and native guards; do not add compatibility architecture. The exposed Mypy 2.4 missing-file classification is one concrete case: preserve execution_error/unavailable and full native evidence, using the existing behavior cases. No new production architecture, active-host change or neutral-CWD Git composition fix is included.
 
+### Coverage measurement recovery
+
+The owner explicitly retained the extra90% combined line/branch coverage gate for #517 on 2026-10-18. Preserve source=mcp_server, branch coverage and the threshold; both failed full runs remain evidence. pytest-cov7 requires coverage.py native subprocess support for child interpreters. Evaluate patch=["subprocess"] at the existing configuration owner, including xdist combination, isolated/installed source identity and Windows termination limits. Keep diagnostics visible; no private instrumentation, exclusions or production changes for measurement. Only after measurement review should proportional public-behavior gaps drive test adaptations.
+
+References: [pytest-cov subprocess support](https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html), [coverage native patches](https://coverage.readthedocs.io/en/latest/config.html#run-patch).
+
 ## Planning Consequences
 
 Plan bounded structural cutover/consumer adaptation and real package/lifecycle acceptance, with cleanup and focused evidence. Do not sequence SDK1 and SDK2 compatibility phases or add a broad suppression cycle. Full-suite/coverage belongs to Validation; active host activation is not a dependency of isolated candidate RPC acceptance and remains separately authorized.
@@ -228,3 +234,4 @@ Plan bounded structural cutover/consumer adaptation and real package/lifecycle a
 | 0.3 | 2026-10-18 | @imp designer | Apply owner-approved structured operation output, explicit SDK2 error mapping and initialized native client contract for targeted QA recheck. |
 | 0.4 | 2026-10-18 | @imp planner | Clarify existing native/test/process seams and owner-approved discovery boundaries for the bounded Validation recovery. |
 | 0.5 | 2026-10-18 | @imp implementer | Record explicit owner approval for targeted current-native adapter repairs, retaining public check/test/fix and diagnosis contracts. |
+| 0.6 | 2026-10-18 | @imp planner | Record owner-retained90% gate and native measurement boundary for recovery. |

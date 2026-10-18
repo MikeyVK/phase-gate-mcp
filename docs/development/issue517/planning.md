@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.3  
+**Version:** 0.4  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -228,6 +228,24 @@ After independent Implementation → Validation GO, rerun the complete configure
 
 Cycle rollback uses the pre-recovery coherent commit; there is no SDK1 fallback. Existing committed C_1/C_2 blocks are not replaced.
 
+### C\_4 — Complete startup callers and coverage measurement recovery
+
+**Goal:** Resolve the remaining startup failure and the owner-retained90% combined coverage gate after the complete C_3 retry.
+
+**Dependencies:** C_1–C_3 remain unchanged. Both failed full runs stay recorded in [Validation](validation.md). The owner retained the additional90% gate on 2026-10-18 after the absence of an earlier measured baseline was explained. Re-entry uses resume_cycle="C_4" after independent Planning → Implementation GO.
+
+| Deliverable | Scope and seams | Focused evidence |
+| --- | --- | --- |
+| D_4.1 — Remaining installed startup clients | The two installed run_server_process callers in integration/test_target_startup.py; align their client window with source startup, retaining production deadlines and real handshake/error/cleanup behavior. | Existing target-startup/v3-cutover and proxy cases under native parallelism; no arbitrary sleep or serial-only acceptance. |
+| D_4.2 — Complete native coverage measurement | pyproject.toml and existing process tests. pytest-cov7 removed automatic child coverage; coverage.py offers native patch=["subprocess"]. Evaluate collection/combination, installed/source identity and Windows termination before attributing missing coverage to absent tests. | Bounded actual-candidate child-process behavior and native coverage evidence. Preserve source=mcp_server, branch=true, fail_under=90 and visible diagnostics. Native path mapping only for proven identical source copies; never merge different versions or suppress missing source. |
+| D_4.3 — Proportional behavioral coverage closure | Only genuine public-behavior gaps after measurement review, preferably adapting existing tests; no general test framework. | Focused behavior cases and file gates. Record tested behavior, not source-content, dependency-version or percentage assertions. Complete90% acceptance belongs to full Validation. |
+
+**Execution:** Fix D_4.1 and establish a narrow process baseline. Evaluate native subprocess coverage with focused tests before retaining it; check isolated launches, selected interpreter, xdist combination and diagnostics. Preserve negative dependency controls and cleanup. Retain only trustworthy measurement. If real gaps remain, inspect owning public interfaces and add meaningful missing scenarios. Temporary diagnosis stays under .pgmcp/temp.
+
+**Exclusions and stops:** No threshold reduction, new exclusions/skips, diagnostic suppression, private coverage hooks, production changes for measurement, metric-only tests, compatibility, active-host upgrade, neutral-CWD GitManager repair or broad #518 work. A material public-contract/policy change or disproportionate test expansion requires owner discussion.
+
+**Closure:** Candidate run_tests(scope="targets") covers affected tests; changed Python format/lint/Pyright and applicable configured production Mypy cover code; markdown_links covers edited documents. Independent Implementation → Validation review precedes the complete configured suite with unchanged --cov=mcp_server/--cov-branch and90% threshold, then required branch/configured gates. No full suite during this cycle. Rollback uses the coherent pre-C_4 commit; committed prior cycles are never replaced.
+
 ## Phase Deliverables
 
 ### Validation
@@ -279,3 +297,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | 0.1 | 2026-10-18 | @imp planner | Sequence native cutover, focused behavior evidence and clean installed proxy acceptance within the approved strategy. |
 | 0.2 | 2026-10-18 | @imp planner | Add one bounded recovery cycle for failed full Validation; preserve prior cycles/evidence and record the owner's explicit Python-only Ruff discovery choice. |
 | 0.3 | 2026-10-18 | @imp implementer | Record owner approval for targeted native-adapter repairs required by the selected upgrade, preserving public contracts and the C_3 boundary. |
+| 0.4 | 2026-10-18 | @imp planner | Add C_4 for installed startup callers, native child coverage and proportional behavior gaps; retain owner-required90%. |
