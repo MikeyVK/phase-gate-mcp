@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** C_5/C_6 focused recovery complete; full Validation pending
-**Version:** 0.7  
+**Status:** Full tests/checks pass; strict90% coverage remains below threshold
+**Version:** 0.8  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -323,6 +323,25 @@ run_checks(scope="targets", targets=["tests/mcp_server/core/test_proxy.py"], che
 
 Implementation recovery is complete within C_5/C_6. Both earlier C_4 full failures and the negative89.94% remain visible. Independent Implementation → Validation review is required before the next full run. No release, active-host switch, compatibility/version matrix, skip, new suppression, threshold/source/parallelism reduction or gate exception is included.
 
+## Post-C_6 Complete Validation
+
+**Tests and checks pass; strict90% acceptance remains FAIL.** Exact clean tested snapshot: `077c922092f9b603ccfb080bd5dc4a03c513710f`, after independent Implementation GO on d2c1d8b. All six cycles remained intact and post-run git_status was clean.
+
+The same complete configured invocation used --cov --cov-branch -q, timeout1800 and native eight workers, with JUnit .pgmcp/temp/issue517/full-suite-c6.xml and coverage .pgmcp/temp/issue517/coverage-c6.xml.
+
+| Required evidence | Observed result |
+| --- | --- |
+| Full configured tests |2960 passed, zero failures/errors/skips in513.20s; native exit0 and adapter status passed. |
+| Actual combined line/branch coverage |13357/14456 lines and3141/3876 branches:16498/18332 =89.9956360462579%, below90%. No synthetic paths appear in XML. |
+| Native reporting discrepancy |Terminal displays90.00% plus FAIL Required test coverage not reached; pytest-cov's exit decision rounds to configured precision2, so native exit0 disagrees with the raw comparison in its terminal summary. This is native rounding, not evidence that the adapter invented an exit code. |
+| Required branch format/lint/Pyright |All passed;66 format/lint targets,24 production Pyright files, zero diagnostics. |
+| Configured format/lint/Pyright |All passed;474 format files and191 Pyright files, zero diagnostics. |
+| Configured production Mypy |Reuse post-C_4 passing191-file result; production source/Mypy configuration unchanged in C_5/C_6. Native unused tests.* note remains visible. |
+
+Installed migration, native opt-in coverage, xdist and proxy replacement cases all passed in this complete run. The earlier xdist timeout remains historical evidence, not a current failure. Native tool status/exit alone is insufficient here: the owner's actual90% requirement is not reached by the raw counts, so no forward phase request was made.
+
+The installed pytest-cov plugin at its runtest-loop calls coverage.results.should_fail_under(total,fail_under,precision), whereas its terminal summary uses total < fail_under before formatting to two decimals. Precision2 can therefore round this one-hit shortfall into a zero exit while printing FAIL. Tighten report precision to6 without changing the threshold, measured package, branch scope or exclusions. One additional genuine public proxy obligation remains unproved: an explicit JSON-RPC initialize error from a replacement must be rejected with its original response diagnosis. Plan that single scenario in the existing parameterization, not a percentage/version assertion.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -340,3 +359,4 @@ Implementation recovery is complete within C_5/C_6. Both earlier C_4 full failur
 | 0.5 | 2026-10-18 | @imp validator | Record post-C_4 full run:2956 pass,2 failures,89.94% coverage; preserve green checks and native startup timeline without weakening acceptance. |
 | 0.6 | 2026-10-18 | @imp implementer | Record C_5 focused/instrumented outcomes, retained xdist timeout evidence and synthetic-package isolation; preserve unresolved90% gate. |
 | 0.7 | 2026-10-18 | @imp implementer | Record10 passing public proxy cases and targeted checks after C_6; reserve full90% acceptance for independent re-entry to Validation. |
+| 0.8 | 2026-10-18 | @imp validator | Record2960 passing full cases/checks but89.995636% actual coverage; expose native rounding/terminal discrepancy and retain strict90% obligation. |
