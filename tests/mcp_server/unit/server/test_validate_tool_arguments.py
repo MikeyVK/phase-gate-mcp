@@ -221,7 +221,7 @@ class TestValidateToolArgumentsFailurePath:
                 response = await client.call_tool(req.params.name, req.params.arguments)
         result = response
 
-        assert getattr(result, "isError", False) is False
+        assert result.is_error is False
         assert len(result.content) == 1
         assert "OK" in result.content[0].text
 
