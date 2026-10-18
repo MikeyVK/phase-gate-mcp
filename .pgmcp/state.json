@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 517,
   "workflow_name": "refactor",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -26,6 +26,14 @@
       "from_phase": "research",
       "to_phase": "design",
       "timestamp": "2026-10-18T06:51:30.167576+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-10-18T08:18:26.427030+00:00",
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null

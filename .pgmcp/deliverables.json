@@ -16,7 +16,103 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-18T06:34:02.783485+00:00"
+      "created_at": "2026-10-18T06:34:02.783485+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 2,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Native SDK and dependency cutover",
+              "deliverables": [
+                {
+                  "deliverable_name": "Coherent target prerequisites",
+                  "description": "Align Python/runtime/dev metadata and affected native adapter pins and language targets, preserving native guards and explicit covariance.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "pyproject.toml"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Native server and structured operation results",
+                  "description": "Replace SDK1 registration and aliases at server/converter/proxy owners; deliver matching structured DTOs and explicit failure mapping, retaining initialized protocol and presentation/cache contracts.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/server.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                },
+                {
+                  "deliverable_name": "Direct consumer migration",
+                  "description": "Adapt the identified direct SDK tests through an initialized native client lifecycle helper; remove obsolete API coupling and cover structured-output/error behavior proportionally.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/test_support.py"
+                  },
+                  "deliverable_id": "D_1.3"
+                }
+              ],
+              "exit_criteria": "Coherent target source and prerequisites; focused migrated server/converter/schema/cache/attachment/admission tests and production typing pass on the selected stack through actual candidate MCP tools; no compatibility facade or guard bypass."
+            },
+            {
+              "cycle_id": "C_2",
+              "cycle_number": 2,
+              "cycle_name": "Proxy lifecycle and installed acceptance",
+              "deliverables": [
+                {
+                  "deliverable_name": "Meaningful proxy lifecycle coverage",
+                  "description": "Replace shallow proxy cases with bounded public behavior evidence for restart/replacement, failed replacement, in-flight/cancellation/deadline and cleanup, using existing process injection.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/core/test_proxy.py"
+                  },
+                  "deliverable_id": "D_2.1"
+                },
+                {
+                  "deliverable_name": "Clean installed candidate acceptance",
+                  "description": "Build/install the real wheel in an isolated Python3.15 environment; prove module/process identity, pip consistency, initialized actual pgmcp tool/resource/error and proxy lifecycle behavior; retain active host.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "scripts/build_package.py"
+                  },
+                  "deliverable_id": "D_2.2"
+                }
+              ],
+              "exit_criteria": "Focused lifecycle/installation evidence succeeds on the clean installed target; no orphaned children, SDK1 bridge, launcher mutation or release. Relevant file checks pass; independent QA requested before Validation."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Durable validation evidence",
+                "description": "Compact durable validation report with target identity, exact scopes/native outcomes, one full configured suite/coverage and branch/configured checks, installed/proxy acceptance and remaining risks.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue517/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Updated active setup documentation",
+                "description": "Correct active setup/isolation/tooling docs invalidated by the delivered baseline; record outcome and handoff without rewriting historical research.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/setup/README.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
