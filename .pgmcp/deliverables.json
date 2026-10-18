@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "520": {
+      "issue_title": "Server remains unhealthy after transient startup lock failure",
+      "workflow_name": "bug",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-18T16:38:09.720364+00:00"
+    }
+  }
+}
