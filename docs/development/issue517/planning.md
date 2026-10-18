@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.5  
+**Version:** 0.6  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -263,6 +263,18 @@ Native measurement selects source_pkgs=["mcp_server"] with --cov without a value
 
 **Stops:** No production/config/threshold/source/parallelism change, new compatibility path, skip, suppression or arbitrary readiness sleep. Substantive public-contract/policy changes or disproportionate additional coverage work return to the owner. Independent Implementation → Validation GO precedes the next complete suite with the same90% gate and all branch/configured gates.
 
+### C\_6 — Bounded replacement-initialization behavior coverage
+
+**Dependency:** Completed C_5 at be29ff8696044b82831e59452fdc8a7a015dc7d9. All previous cycles and negative full runs remain intact.
+
+**D_6.1:** Extend only tests/mcp_server/core/test_proxy.py's existing failed-replacement parameterization with two current public behavior scenarios: malformed JSON from the replacement during initialize, and a structurally valid initialize result that changes the negotiated protocol. The real controlled child is supplied by the existing process factory. Observe restart_failed and its actual diagnosis, subsequent ERR_SERVER_UNAVAILABLE/unavailable, absence of restart_completed, and termination of every real child through the existing fixture. No private method calls or source-content/percentage assertions.
+
+**Rationale:** C_5's instrumented installed probe adds no covered production lines/branches relative to the89.94% full measurement. Its coverage-conformance fixture also needed a distinct synthetic package name (coverage_example) to prevent four sample lines/two branches from being measured as production; the native opt-in/threshold case passes after isolation. The two proposed proxy scenarios exercise genuine unproved failure handling at the changed SDK/transport boundary. This is two additional parameter cases in one existing test, with no permanent module or production change.
+
+**Sequence and evidence:** Independent Planning → Implementation GO; resume_cycle="C_6"; adapt the existing real-child setup and parameterization; run only core/test_proxy.py through candidate run_tests with native workers and opt-in --cov/--cov-branch, retaining native XML and unchanged global90% rejection for a narrow selection. Confirm behavior assertions and actual previously missed branches, not a diagnostic union as final acceptance. Run targeted format/lint/Pyright and markdown_links for changed docs. Reuse C_5's unaffected39-case evidence with its explicit transient xdist timeout and passing targeted recheck; do not conceal either outcome.
+
+**Exit/stop:** Two new protocol-behavior cases and original timeout/spawn/cancellation/cleanup cases pass; changed-file gates pass. Production defaults, source/branch selection, parallelism, thresholds, no-compat strategy and active host are unchanged. No broad test rewrite, private instrumentation or metric-only cases. Material policy/contract changes or disproportionate further expansion return to the owner. Independent Implementation → Validation GO precedes complete configured90% Validation and branch/configured gates. Rollback uses be29ff86; no earlier committed cycle is replaced.
+
 ## Phase Deliverables
 
 ### Validation
@@ -316,3 +328,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | 0.3 | 2026-10-18 | @imp implementer | Record owner approval for targeted native-adapter repairs required by the selected upgrade, preserving public contracts and the C_3 boundary. |
 | 0.4 | 2026-10-18 | @imp planner | Add C_4 for installed startup callers, native child coverage and proportional behavior gaps; retain owner-required90%. |
 | 0.5 | 2026-10-18 | @imp planner | Add bounded C_5 for installed instrumented initialization and stale coverage-content test; preserve default startup controls and90% acceptance. |
+| 0.6 | 2026-10-18 | @imp planner | Add C_6: two genuine public replacement-initialization behavior cases in the existing proxy test; keep all gates and defaults. |

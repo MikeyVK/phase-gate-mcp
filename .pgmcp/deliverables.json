@@ -19,7 +19,7 @@
       "created_at": "2026-10-18T06:34:02.783485+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 5,
+          "total": 6,
           "cycles": [
             {
               "cycle_id": "C_1",
@@ -177,6 +177,23 @@
                 }
               ],
               "exit_criteria": "Both affected existing test families pass through actual candidate MCP on native configured workers, including opt-in subprocess coverage for installed lifecycle. Format/lint/Pyright and changed-doc links pass. No production edit/default-deadline change, skip, coverage-source/threshold alteration, new test module or compatibility. Independent Implementation to Validation GO precedes another full mandatory run; 90% remains required. A substantive policy/contract change or genuinely remaining coverage gap needing disproportionate tests is discussed with owner."
+            },
+            {
+              "cycle_id": "C_6",
+              "cycle_number": 6,
+              "cycle_name": "Bounded replacement-initialization behavior coverage",
+              "deliverables": [
+                {
+                  "deliverable_name": "Reject malformed and inconsistent replacement initialization",
+                  "description": "Extend the existing public proxy failed-replacement parameterization by two controlled native-child scenarios: malformed JSON initialization output and a valid initialization response with a changed negotiated protocol. Observe unavailable/error reason, absence of successful replacement readiness, factual diagnosis and bounded termination of every real child. Use the existing process factory/events/protocol sink; no private calls, new module, production or timeout-policy changes.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/core/test_proxy.py"
+                  },
+                  "deliverable_id": "D_6.1"
+                }
+              ],
+              "exit_criteria": "Existing proxy family passes on native workers with both new current-protocol behavior scenarios and original timeout/spawn-failure/cancellation cases. A targeted instrumented probe shows real missing production branches exercised without any metric assertion or gate override. File format/lint/Pyright and changed-doc links pass; independent Implementation-to-Validation QA then complete full90% Validation. Keep all prior negative outcomes, production defaults, source/branch scope, parallelism and no-compat strategy unchanged."
             }
           ]
         },
