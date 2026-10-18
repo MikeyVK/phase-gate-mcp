@@ -4,8 +4,8 @@
 # Developer Isolation
 
 **Status:** APPROVED  
-**Version:** 1.1  
-**Last Updated:** 2026-09-24
+**Version:** 1.2  
+**Last Updated:** 2026-10-18
 
 ---
 
@@ -18,7 +18,7 @@ while `PGMCP_WORKSPACE_ROOT` directs workspace operations to the checkout.
 
 ## Prerequisites
 
-- Python 3.13 or later and pip.
+- Python 3.15 or later and pip for the current source; older published packages follow their own metadata.
 - The `build` package in the development environment (`python -m pip install build`).
 - Owner-installed native executables required by the configured check, test, and fix
   adapters in the stable runtime environment. PGMCP does not install native dependencies
@@ -33,6 +33,12 @@ is `.pgmcp/` under that workspace. Configuration resolves to
 `PGMCP_TEMPLATE_ROOT` selects another path. An explicit root remains authoritative and
 owner-managed; package defaults are initial-install material and migration references,
 not a fallback that silently fills an existing configuration.
+
+The neutral-CWD rehearsal proves installed module identity. It does not establish Git
+neutrality: the current GitManager composition still defaults its GitAdapter to the
+process working directory. Verify repository identity before Git operations; see the
+[composition root](../../mcp_server/bootstrap.py) and
+[Git adapter](../../mcp_server/adapters/git_adapter.py).
 
 ```mermaid
 graph TD
@@ -141,3 +147,9 @@ No health-first gate is required for this reload procedure.
 - [Server configuration](../reference/server-configuration.md)
 - [Package source and build script](../../scripts/build_package.py)
 
+
+## Version History
+
+| Version | Date | Author | Changes |
+| --- | --- | --- | --- |
+| 1.2 | 2026-10-18 | @imp documenter | Align source prerequisite with Python3.15 and qualify the existing neutral-CWD Git limitation. |

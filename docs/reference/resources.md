@@ -1,7 +1,7 @@
 # PhaseGate MCP Server - Resources Specification
 
 **Status:** v1.0 (Foundation)
-**Last Updated:** 2026-10-17
+**Last Updated:** 2026-10-18
 
 ---
 
@@ -13,8 +13,9 @@ Resources expose read-only data through MCP URIs. This reference distinguishes p
 
 ### Resource Transport
 
-The central server handler returns explicit MCP SDK `ReadResourceContents` values
-with `text/plain` content, preserving the requested URI in the MCP response.
+The central server handler returns an explicit MCP SDK `ReadResourceResult`
+containing `TextResourceContents` with `text/plain` content, preserving the requested
+URI in the MCP response.
 A payload described below as JSON is serialized JSON text; its data format does not
 change that transport media type. Unknown URIs and resource-read failures remain
 errors. The wrapper does not change resource matching, payloads or cache lifetime.

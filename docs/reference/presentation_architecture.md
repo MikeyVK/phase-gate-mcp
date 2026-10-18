@@ -3,8 +3,8 @@
 # Presentation Architecture and Resource Delegation
 
 **Status:** DEFINITIVE  
-**Version:** 2.3.0  
-**Last Updated:** 2026-09-24
+**Version:** 2.4.0  
+**Last Updated:** 2026-10-18
 
 **Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
@@ -14,17 +14,25 @@
 
 ## Purpose
 
-The presentation layer turns a complete structured tool-output DTO into a bounded,
-actionable Markdown projection for the chat while keeping the complete DTO authoritative
-in the MCP Resource cache. Presentation configuration owns wording, field selection,
-ordering, and per-tool item limits. Generic Python components own rendering mechanics,
-startup validation, and the final byte ceiling.
+The operation DTO owns the complete tool-result facts. MCPServer serializes that
+actual DTO as MCP `structuredContent`; the presentation layer produces a bounded,
+actionable Markdown projection and supplied schema attachments. The Resource cache
+retains the operation through its existing canonical serialization policy.
+Presentation configuration owns wording, field selection, ordering and per-tool item
+limits. Generic Python components own rendering mechanics, startup validation and the
+final text byte ceiling.
 
-This boundary has two complementary outputs:
+These outputs serve complementary purposes:
 
-1. a compact text response for routine decisions;
-2. a complete resource at `pgmcp://cache/runs/{run_id}` for exhaustive structured data
-   and verbose diagnostics.
+1. compact text supports routine decisions;
+2. `structuredContent` supplies the actual operation DTO, serialized by the server with
+   JSON mode and aliases, independently of text truncation or cache publication;
+3. `pgmcp://cache/runs/{run_id}` supplies the cached operation and bounded reads when
+   clients need that route for complete fields or verbose diagnostics.
+
+Schema exposure follows the registered tool's available output-model metadata.
+Processing or transport failures without an operation DTO remain explicit errors;
+structured data is never reconstructed from presented Markdown.
 
 Schema attachments travel separately in the internal
 [ToolExecution](../../mcp_server/core/tool_execution.py) carrier. Cache publication stores
@@ -62,18 +70,20 @@ sequenceDiagram
     Presenter->>Resources: serialize supplied schema attachments
     Resources-->>Presenter: zero or more embedded resources
     Presenter-->>Server: PresentedOutput(text, resources)
-    Server-->>Client: CallToolResult
+    Server-->>Client: CallToolResult(text, resources, structuredContent=operation)
 ```
 
 The DTO is published before presentation. Collection limits and text truncation therefore
-never remove fields or items from the cached representation.
+never remove fields or items from the cached representation or the server-owned
+structured operation.
 
 ## Ownership Boundaries
 
 | Concern | Authoritative owner |
 |---|---|
 | Tool result semantics and complete data | Frozen tool-output DTO |
-| Complete operation payload | MCP Resource cache |
+| Operation DTO serialization into MCP structuredContent | MCPServer |
+| Cached operation representation and bounded reads | MCP Resource cache |
 | Attachment identity and schema facts | Producer of `SchemaAttachment` |
 | Attachment URI, media type and schema serialization | `SchemaResourcePresenter` |
 | Per-tool wording, scalar selection, collection declarations, headings, order, and item limits | `presentation.yaml` |
@@ -191,11 +201,14 @@ fallbacks, and the cache reference have been composed.
   budget permits.
 - A truthful truncation notice and one complete cache reference are reserved when cache
   publication succeeded.
-- If cache publication failed, the notice explicitly says complete details are
-  unavailable; it does not claim that a resource exists.
+- If cache publication failed, the limiter uses the configured cache-failure notice
+  without inventing a resource. Server-owned `structuredContent` still contains the
+  returned operation DTO, even when retained text fallbacks describe cache-related
+  unavailability.
 
-The byte ceiling is universal. Individual tools configure item limits, not their own
-text budgets.
+The byte ceiling applies to every tool's presented text. It does not truncate
+`structuredContent` or schema attachments. Individual tools configure item limits,
+not their own text budgets.
 
 ## Cache Serialization and Attachment Ownership
 
@@ -228,13 +241,16 @@ MCP `isError` continues to derive from operation success.
 ## Cache and Client Guidance
 
 The inline projection is sufficient when it contains the information needed for the
-current action. Read the cached resource when completeness, intentionally omitted fields,
-or available native evidence and diagnostics are required. Examples include complete Git
-output, diffs, test/check/fix result records and captured evidence, and resolved context
-schemas.
+current action. Use the provided `structuredContent` when additional operation fields
+or captured diagnostics are needed and the client exposes them. Read the cached resource
+when that route or bounded paging is needed. Examples include complete Git output, diffs,
+test/check/fix result records and captured evidence, and resolved context schemas.
 
-Do not parse presented Markdown to reconstruct DTO data. The resource is the structured
-operation contract, subject to the fields and bounded capture represented by that DTO.
+Do not parse presented Markdown to reconstruct DTO data. Both structured operation
+and cached data follow the DTO contract and its bounded capture. Wire serialization
+uses JSON mode with aliases; the cache's canonical policy defines its field
+presence for unset optional nulls. They represent the same operation, not a promise
+of byte-identical JSON.
 For large results, follow the configured cache-reading hint and packaged cache-reading
 guide; it describes safe windows and integrity checks without replaying a mutation.
 
@@ -299,5 +315,6 @@ those facts from Markdown.
 | 2.2.0 | 2026-09-13 | Agent | Document operation/attachment transport and required-null cache fidelity |
 | 2.0.0 | 2026-08-22 | Agent | Document bounded declarative projection, runtime catalog alignment, ordered collections, and final byte limiting |
 | 1.1.0 | 2026-08-19 | Agent | Document composite text and validation-resource presentation |
+| 2.4.0 | 2026-10-18 | @imp documenter | Document server-owned structured operation delivery, SDK2 ownership and retained cache/attachment semantics. |
 
 

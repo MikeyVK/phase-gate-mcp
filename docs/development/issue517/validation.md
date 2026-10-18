@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Complete evidence passed; independent Validation review requested
-**Version:** 1.0  
+**Status:** Validation approved; Documentation complete; independent Ready review requested
+**Version:** 1.1  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -426,6 +426,22 @@ SDK ownership stays at existing server/converter/proxy boundaries. Presenter/dom
 - #518 owns broad global/local suppression-policy repair. No new release or active-harness activation is included.
 - Coverage is above90% with a small margin; this is current complete evidence, not a future stability or latency guarantee. Historical negative runs and focused timing discrepancies remain visible.
 
+## Documentation Closure
+
+Independent QA approved Validation → Documentation on f4cc711483d7b741e239b9e008213bfe7455a70f, based on the unchanged full tested snapshot c7a33c686684b5f7d405c0577d6f40bb4a8b30c4. Only the smallest active reference/developer surface was edited:
+
+| Active document | Corrected claim |
+| --- | --- |
+| [README](../../../README.md) and [setup reference](../../setup/README.md) |Current source requires Python3.15/SDK2.3; older published artifacts retain their own authoritative metadata. No publication claim. |
+| [Developer isolation](../../setup/dev-isolation.md) |Source Python prerequisite and explicit existing neutral-CWD Git limit; no claim that all Git routing was repaired. |
+| [Execution adapters](../../reference/execution-adapters.md) |Documented native Pyright1.1.414 and jsonschema4.26.0 match their declarations. |
+| [Resources](../../reference/resources.md) |SDK2 ReadResourceResult containing TextResourceContents preserves URI/text/plain/error ownership. |
+| [Presentation architecture](../../reference/presentation_architecture.md) |Actual structuredContent is server-owned, alongside existing bounded text/cache/attachments. Cache field-presence policy differs from wire serialization without changing operation facts; text truncation/cache loss does not remove a returned structured DTO. |
+
+The active [agent protocol](../../../AGENTS.md), [cache paging guide](../../../mcp_server/resources/cache_reading.md), [agent-led setup checklist](../../setup/agentic-bootstrap.md), [workspace upgrade procedure](../../setup/workspace-upgrade.md) and [build/release procedure](../../reference/release-assets-procedure.md) were reviewed/reused unchanged: roles, paging/mutation-safety, owner setup choices and distribution procedure did not change. Historical issue artifacts, illustrative older-Python issue text and the package release version are intentionally unchanged.
+
+All25 targeted safe_edit operations passed their native link review. Final run_checks(scope="targets", targets=[the six active documents and this report], checks=["markdown_links"], timeout_seconds=300) passed:141 link occurrences,137 successful,4 configured external exclusions, zero errors and native exit0. Unchanged Python/source/config/test evidence is reused. No production, test, native configuration, template or agent-instruction change was made in Documentation. The three residuals and #518 remain Coordination triage, not claims of repairs here.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -448,3 +464,4 @@ SDK ownership stays at existing server/converter/proxy boundaries. Presenter/dom
 | 0.10 | 2026-10-18 | @imp validator | Record actual90.028366% and green checks but one confirmed test setup deadlock; preserve negative complete outcome. |
 | 0.11 | 2026-10-18 | @imp implementer | Record11 passing stopping cases and real readiness/birth ordering; preserve all native budgets and pending complete revalidation. |
 | 1.0 | 2026-10-18 | @imp validator | Record joint complete PASS:2961 cases, actual90.012001%, all required gates, deliverable mapping and explicit residual triage; request independent Documentation-entry review. |
+| 1.1 | 2026-10-18 | @imp documenter | Record six active documentation updates, seven-document link evidence and unchanged validated production/test/config baseline; request independent Ready review. |
