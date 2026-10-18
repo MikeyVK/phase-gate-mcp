@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib.metadata
 import json
 import os
 import subprocess
@@ -25,6 +24,7 @@ class NativePyright:
     node: Path
     entrypoint: Path
     root: Path
+    version: str
 
 
 @dataclass(frozen=True)
@@ -33,19 +33,29 @@ class PyrightPackage:
     root: Path
     workspace: Path
     schema: Draft202012Validator
+    version: str
 
 
 @pytest.fixture(scope="session")
-def native_pyright(tmp_path_factory: pytest.TempPathFactory) -> NativePyright:
+def native_pyright(
+    tmp_path_factory: pytest.TempPathFactory, pytestconfig: pytest.Config
+) -> NativePyright:
     executable = which("node")
     assert executable is not None
     provision = tmp_path_factory.mktemp("native_pyright")
     package = provision / "node_modules" / "pyright"
-    installed = importlib.metadata.distribution("pyright")
-    copytree(Path(str(installed.locate_file("pyright/dist"))), package)
-    metadata = json.loads((package / "package.json").read_text(encoding="utf-8"))
-    assert metadata["version"] == "1.1.408"
-    return NativePyright(Path(executable), package / "index.js", provision)
+    source = pytestconfig.rootpath / "node_modules" / "pyright"
+    declaration = json.loads(
+        (pytestconfig.rootpath / "mcp_server/bundled_adapters/pyright/package.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    metadata = json.loads((source / "package.json").read_text(encoding="utf-8"))
+    assert metadata["version"] == declaration["dependencies"]["pyright"], (
+        "Install the declared native Node Pyright prerequisite"
+    )
+    copytree(source, package)
+    return NativePyright(Path(executable), package / "index.js", provision, metadata["version"])
 
 
 @pytest.fixture
@@ -77,6 +87,7 @@ def pyright_package(
         root,
         workspace,
         Draft202012Validator(json.loads(schema.read_text(encoding="utf-8"))),
+        native_pyright.version,
     )
 
 
@@ -159,7 +170,7 @@ def assert_json_evidence(
     expected = native_json(direct.stdout)
     # Native timing fields vary per invocation; diagnostics are preserved verbatim.
     assert actual["generalDiagnostics"] == expected["generalDiagnostics"]
-    assert actual["version"] == expected["version"] == "1.1.408"
+    assert actual["version"] == expected["version"]
     for key in ("filesAnalyzed", "errorCount", "warningCount", "informationCount"):
         actual_summary, expected_summary = actual["summary"], expected["summary"]
         assert isinstance(actual_summary, dict) and isinstance(expected_summary, dict)
@@ -168,7 +179,7 @@ def assert_json_evidence(
         assert direct.stderr.decode() in data
     assert response["coverage"] is None
     assert response["required_targets"] == []
-    assert response["external_tools"] == [{"tool_id": "pyright", "version": "1.1.408"}]
+    assert response["external_tools"] == [{"tool_id": "pyright", "version": expected["version"]}]
     return actual
 
 
@@ -249,8 +260,6 @@ def test_native_results_and_diagnostic_facts(
         )
         assert decision(response)["message"] == expected_message
     assert target.read_bytes() == before
-    manifest = json.loads((package.root / "package.json").read_text())
-    assert manifest["dependencies"] == {"pyright": "1.1.408"}
 
 
 @pytest.mark.parametrize("mode", ["--verbose", "--stats", "--dependencies", "--stats \t"])
@@ -506,9 +515,9 @@ def test_declared_version_is_checked_before_operation(
     declaration.write_text(json.dumps(metadata), encoding="utf-8")
     code, response = invoke(package, args=("--help",))
     assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
-    assert response["external_tools"] == [{"tool_id": "pyright", "version": "1.1.408"}]
+    assert response["external_tools"] == [{"tool_id": "pyright", "version": package.version}]
     message = str(decision(response)["message"])
-    assert "actual=1.1.408" in message and "expected=0.0.0" in message
+    assert f"actual={package.version}" in message and "expected=0.0.0" in message
     assert "evidence" not in response
 
 

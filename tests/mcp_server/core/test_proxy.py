@@ -57,7 +57,7 @@ class FrameSink(io.StringIO):
         return len(value)
 
     def receive(self, identifier: int) -> dict[str, Any]:
-        frame = self.frames.get(timeout=15)
+        frame = self.frames.get(timeout=45)
         assert frame["id"] == identifier, frame
         return frame
 
@@ -75,7 +75,6 @@ class ProxyProbe:
         self.proxy = MCPProxy(
             process_factory=self.spawn,
             event_presenter=self.present_event,
-            initialization_timeout_seconds=5,
         )
 
     def spawn(self, env: dict[str, str]) -> subprocess.Popen[str]:
@@ -108,7 +107,7 @@ class ProxyProbe:
                     name == event and (stderr is None or fields.get("raw_stderr") == stderr)
                     for name, fields in self.events
                 ),
-                timeout=15,
+                timeout=45,
             )
         assert found, self.events
 

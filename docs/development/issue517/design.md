@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK 2 Migration Design
 
 **Status:** Design revised for independent QA recheck  
-**Version:** 0.4  
+**Version:** 0.5  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -203,7 +203,7 @@ Native conformance tests compare adapter outcomes/evidence with the native comma
 
 Startup tests use the selected interpreter and existing public process/installed-distribution seams, independent of private active-harness configuration. The existing native Client helper owns its SDK import; unrelated shared-helper consumers must not eagerly load that protocol client. Process tests observe readiness, errors and termination within explicit budgets. Diagnose the parallel failures before changing waits; do not hide product defects behind serial-only evidence.
 
-The owner approved explicit native Ruff automatic discovery of Python files (.py/.pyi), excluding Markdown code blocks from that automatic selection without force-exclude. Concrete target-induced format/lint/contextmanager findings may be repaired with semantic review, preserving covariance and existing suppression policy. No new production architecture, active-host change or neutral-CWD Git composition fix is included.
+The owner approved explicit native Ruff automatic discovery of Python files (.py/.pyi), excluding Markdown code blocks from that automatic selection without force-exclude. Concrete target-induced format/lint/contextmanager findings may be repaired with semantic review, preserving covariance and existing suppression policy. On 2026-10-18 the owner explicitly included targeted updates of every affected adapter required by the selected toolchain upgrade, beyond Python and the SDK alone. Keep native-specific interpretation at each existing adapter owner and preserve the public check/test/fix contracts, diagnostics and native guards; do not add compatibility architecture. The exposed Mypy 2.4 missing-file classification is one concrete case: preserve execution_error/unavailable and full native evidence, using the existing behavior cases. No new production architecture, active-host change or neutral-CWD Git composition fix is included.
 
 ## Planning Consequences
 
@@ -227,3 +227,4 @@ Plan bounded structural cutover/consumer adaptation and real package/lifecycle a
 | 0.2 | 2026-10-18 | @imp designer | Make initialized test mode and source-based error mapping explicit; hold Design for reproduced public output-schema/content policy conflict. |
 | 0.3 | 2026-10-18 | @imp designer | Apply owner-approved structured operation output, explicit SDK2 error mapping and initialized native client contract for targeted QA recheck. |
 | 0.4 | 2026-10-18 | @imp planner | Clarify existing native/test/process seams and owner-approved discovery boundaries for the bounded Validation recovery. |
+| 0.5 | 2026-10-18 | @imp implementer | Record explicit owner approval for targeted current-native adapter repairs, retaining public check/test/fix and diagnosis contracts. |

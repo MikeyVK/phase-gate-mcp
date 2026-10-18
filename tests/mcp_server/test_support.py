@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
 from jinja2 import Environment
-from mcp import Client
 
 from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import (
@@ -63,6 +62,8 @@ from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
+    from mcp import Client
+
     from mcp_server.adapters.git_adapter import GitAdapter
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
     from mcp_server.config.settings import Settings
@@ -650,5 +651,8 @@ def make_template_suite_admission(
 @asynccontextmanager
 async def connected_mcp_client(server: MCPServer) -> AsyncGenerator[Client]:
     """Expose the native initialized MCP client without request/result translation."""
+    # Non-protocol consumers of this shared helper must not eagerly load the SDK client.
+    from mcp import Client  # noqa: PLC0415
+
     async with Client(server.server, mode="legacy", cache=None) as client:
         yield client

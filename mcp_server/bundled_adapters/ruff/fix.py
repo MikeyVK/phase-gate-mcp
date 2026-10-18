@@ -260,7 +260,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
 def main() -> int:
     try:
         request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         result, code = _invalid(None, "invalid_value")
     else:
         result, code = _run(request)

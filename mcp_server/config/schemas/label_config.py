@@ -106,8 +106,10 @@ class LabelConfig(BaseModel):
         )
         return (
             False,
-            f"Label '{name}' does not match any configured static label, "
-            f"dynamic pattern,{examples_str} or freeform exception.",
+            (
+                f"Label '{name}' does not match any configured static label, "
+                f"dynamic pattern,{examples_str} or freeform exception."
+            ),
         )
 
     def label_exists(self, name: str) -> bool:
@@ -131,7 +133,7 @@ class LabelConfig(BaseModel):
 
 def validate_phase_label(
     label_name: str,
-    workphases_config: "WorkphasesConfig",
+    workphases_config: WorkphasesConfig,
 ) -> tuple[bool, str]:
     """Validate a label against known workflow phases.
 
@@ -149,6 +151,8 @@ def validate_phase_label(
     valid_list = ", ".join(sorted(known_phases))
     return (
         False,
-        f"phase label 'phase:{phase_slug}' names an unknown workphase '{phase_slug}'. "
-        f"Valid phases: {valid_list}.",
+        (
+            f"phase label 'phase:{phase_slug}' names an unknown workphase '{phase_slug}'. "
+            f"Valid phases: {valid_list}."
+        ),
     )

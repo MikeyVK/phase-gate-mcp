@@ -6,7 +6,7 @@ import asyncio
 import ctypes
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from ctypes import wintypes
 from dataclasses import dataclass
@@ -165,7 +165,7 @@ def _handle_is_alive(handle: int) -> bool:
 
 
 @contextmanager
-def retained_children(case: LifecycleCase) -> Iterator[tuple[int, ...]]:
+def retained_children(case: LifecycleCase) -> Generator[tuple[int, ...]]:
     """Hold both original children while the invocation completes."""
     kernel = _process_api()
     handles: list[int] = []
@@ -414,7 +414,7 @@ async def test_member_spawned_during_stop_cannot_be_confirmed_from_old_snapshot(
                 raise AssertionError("late child did not start in the stop window")
             try:
                 published_pid = int(late_pid.read_text())
-            except (FileNotFoundError, ValueError):
+            except FileNotFoundError, ValueError:
                 time.sleep(0.005)
                 continue
             break

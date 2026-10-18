@@ -495,7 +495,7 @@ async def _stop[TResponse: BaseModel](
             invocation.finished = True
             await asyncio.gather(*invocation.io_tasks, return_exceptions=True)
             return None
-    except (TimeoutError, OSError):
+    except TimeoutError, OSError:
         invocation.stop_unconfirmed = True
         return TerminationProblem.UNCONFIRMED
 

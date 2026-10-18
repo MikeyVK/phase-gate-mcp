@@ -156,8 +156,10 @@ def evidence(response: dict[str, JsonValue]) -> str:
     ("content", "expected"),
     [
         (
-            "CuStOm(scope)!: Keep Caller Case\n\nMultiple body lines.\nSecond line.\n\n"
-            "Refs: #460\nCaller-footer: unchanged\n",
+            (
+                "CuStOm(scope)!: Keep Caller Case\n\nMultiple body lines.\nSecond line.\n\n"
+                "Refs: #460\nCaller-footer: unchanged\n"
+            ),
             0,
         ),
         pytest.param(

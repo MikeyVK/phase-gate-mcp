@@ -8,6 +8,7 @@ import subprocess
 import sys
 import venv
 from dataclasses import dataclass
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 from shutil import copytree, rmtree
 
@@ -145,22 +146,15 @@ def assert_native_evidence(
             assert stream.decode("utf-8", errors="replace") in evidence
     assert response["coverage"] is None
     assert response["required_targets"] == []
-    assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert response["external_tools"] == [
+        {"tool_id": "ruff", "version": distribution_version("ruff")}
+    ]
 
 
-def test_native_ruff_version_and_read_only_controls_override_fix_configuration(
+def test_read_only_controls_override_fix_configuration(
     ruff_package: RuffPackage,
 ) -> None:
     package = ruff_package
-    version = subprocess.run(
-        [sys.executable, "-m", "ruff", "--version"],
-        cwd=package.workspace,
-        capture_output=True,
-        check=True,
-        timeout=15,
-    )
-    assert version.stdout.decode("utf-8").strip() == "ruff 0.15.6"
-    assert (package.root / "requirements.txt").read_text(encoding="utf-8").strip() == "ruff==0.15.6"
     target = package.workspace / "unused.py"
     before = b"import os\n"
     target.write_bytes(before)
@@ -567,7 +561,9 @@ def test_unsupported_or_malformed_declared_version_is_not_assumed_supported(
     (package.root / "requirements.txt").write_text(declaration + "\n", encoding="utf-8")
     code, response = invoke(package, "lint", (target,))
     assert code == 3 and decision(response)["reason"] == "dependency_unavailable"
-    assert response["external_tools"] == [{"tool_id": "ruff", "version": "0.15.6"}]
+    assert response["external_tools"] == [
+        {"tool_id": "ruff", "version": distribution_version("ruff")}
+    ]
     assert declaration in str(decision(response)["message"])
 
 

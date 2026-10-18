@@ -516,7 +516,7 @@ def _selection_stdin(targets: tuple[str, ...]) -> bytes:
 def main() -> int:
     try:
         request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         response, exit_code = _invalid([_issue([], "invalid_value")]), 2
     else:
         response, exit_code = _run(request)

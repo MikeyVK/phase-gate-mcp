@@ -2,8 +2,8 @@
 
 # Issue 517 — Selected Stack Validation
 
-**Status:** Failed Validation; bounded recovery proposal pending  
-**Version:** 0.1  
+**Status:** Initial Validation failed; C_3 focused recovery complete; renewed full Validation pending  
+**Version:** 0.2  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -159,6 +159,36 @@ Return to Planning with explicit owner approval for force_phase_transition, reta
 
 No production behavior repair, neutral-CWD Git composition change or new architecture is presumed. A reproduced product defect or type-contract change reopens its exact decision.
 
+## C_3 Recovery Evidence
+
+The owner authorized the forced return to Planning for this and future sessions, explicitly chose Python-only native Ruff automatic discovery without force-exclude, and authorized targeted repairs at every existing adapter owner required by the selected upgrade. Independent QA approved C_3 at e801d5998f368e01b33c112086bd1e16a347ad00. C_1/C_2 and the failed full Validation above remain intact.
+
+| Focused invocation / surface | Observed result |
+| --- | --- |
+| run_tests, targets: core/test_proxy.py and integration/test_template_activation.py; native eight workers, -q --tb=long; timeout600 | Baseline: 14 passed in49.95s. This alone did not reproduce the parallel failures. |
+| run_tests, targets: affected native adapter, startup/install, proxy/activation and direct syntax-consumer families; native eight workers, -q --tb=long; timeout1200 | 333 passed,13 failed in401.09s. Native JUnit: .pgmcp/temp/issue517/c3-focused.xml. Preserved as diagnostic evidence. |
+| run_tests, targets: integration/adapters/test_mypy.py, integration/adapters/test_pytest.py, integration/test_template_activation.py, core/test_proxy.py, integration/test_target_startup.py, integration/test_v3_cutover.py; native eight workers, -q --tb=long; timeout1200 | 99 passed,2 failed in196.81s; only Mypy report-cause stream assumptions remained. All process/startup/cancellation cases passed. Native JUnit: .pgmcp/temp/issue517/c3-recheck.xml. |
+| run_tests, targets: integration/adapters/test_mypy.py; native eight workers, -q --tb=long; timeout600 | After cause extraction repair: all54 passed in40.11s. Native JUnit: .pgmcp/temp/issue517/c3-mypy-final.xml. |
+| run_tests, targets: integration/execution/test_process_stopping.py and unit/test_c260_c2_state_root_injection.py; native eight workers, -q; timeout600 | 32 passed in24.61s. |
+| run_checks, scope=targets, the40 changed Python files; checks=python_format,python_lint,python_pyright; timeout600 | All passed; Pyright1.1.414 reported40 analyzed files, zero errors/warnings/information. |
+| run_checks, scope=configured, checks=python_types; timeout600 | Mypy2.4.0 passed191 production files. The native unused tests.* override note remains visible. |
+| Existing scripts/build_package.py, selected Python3.15 | Real wheel and sdist built successfully; isolated --no-index --no-deps reinstall succeeded and pip check reported no broken requirements. No publication or active-host upgrade. |
+| Rebuilt installed proxy, neutral CWD and initialized2025-11-25 |49 tools,5 resources; structured health/schema attachment, same-session cache fidelity and explicit tool/resource errors passed. Restart changed actual health PID67944 to20752 and remained healthy. Both modules resolved under the isolated site-packages; all5 observed proxy/child-wrapper/actual-server PIDs were absent after exit. |
+
+Test paths in the table are relative to tests/mcp_server. Evidence is reused only where later edits did not change the tested surface; the forthcoming complete Validation remains mandatory.
+
+### Reproduced causes and repairs
+
+- Native prerequisite/fixture repair: provision worktree-local Node Pyright, TypeScript and commitlint plus build prerequisites; remove diagnostic NODE_PATH contamination. Native guards and deliberate missing-dependency controls stay effective. Pyright uses the declared native Node package instead of the removed Python wrapper.
+- Native evidence assertions use the actual invoked native version/output. Remove the obsolete requirements-dev text assertion; retain meaningful native rejection, read-only/fix and complete-output behavior cases.
+- Mypy2.4 reports a missing target as `absent.py: error: Cannot read file: No such file or directory`; the existing adapter now preserves execution_error/unavailable for both text and JSON diagnostics. Report-write traceback causes are extracted from the stream actually containing the traceback instead of accidentally selecting another stream's final hint. Complete stdout/stderr remain in evidence. Existing report cases explicitly request --show-traceback to prove cause retention.
+- Shared test_support had eagerly imported the SDK Client for non-protocol consumers. Eight parallel activation-test module imports measured8.33s before and6.03s after localizing that import; all eight later imports omitted the SDK client. This proves avoidable coupling, not a claim that it alone explained every failure.
+- The combined native run reproduced initialize_timeout in the proxy probes, whose test-only deadline was5s versus the existing production default30s. Tests now use the actual default; the silent-child deadline/rejection case and child cleanup remain required. Activation waits observe errors/exits immediately within30s; client windows include launcher startup before the unchanged production deadline. Nested cancellation observes worker/descendant readiness before cancellation, preserving the actual termination assertions. No arbitrary sleep is accepted as readiness and no production deadline changed.
+- Startup/installed tests use the selected interpreter, initialized2025 protocol and existing public process/build seams, independent of private .codex/config.toml.
+- Concrete Python3.15 format/lint/contextmanager findings were repaired at their existing owners. Implicit string concatenations remain single values via explicit parentheses; test-only type aliases are used only as annotations. Explicit covariance, diagnostic policy and existing suppressions remain intact.
+
+No new permanent test module, SDK1 bridge, version-matrix suite, skip, reduced coverage or gate exception was added. One existing missing-file case gained JSON input coverage and the obsolete requirements-content test was removed. The neutral-CWD GitManager composition finding remains separately deferred. Full-suite/coverage and final configured gates are still pending renewed Validation.
+
 ## Related Documents
 
 - [Approved Research](<research.md>)
@@ -170,3 +200,4 @@ No production behavior repair, neutral-CWD Git composition change or new archite
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp validator | Record complete negative suite/configured gate evidence, clean checkout restoration and concrete missed consumer/provisioning boundaries. |
+| 0.2 | 2026-10-18 | @imp implementer | Preserve failed full Validation and record owner-approved C_3 recovery, exact focused outcomes, native/process causes and pending complete revalidation. |

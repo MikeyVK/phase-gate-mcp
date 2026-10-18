@@ -3,7 +3,7 @@
 # Issue 517 — Python 3.15 and MCP SDK 2.3 Migration Research
 
 **Status:** Research complete; owner-approved structured output amendment  
-**Version:** 0.5  
+**Version:** 0.6  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -193,6 +193,8 @@ Keep #513 evidence labeled and require actual application success/failure/cancel
 
 ## Validation Recovery Selection Decision
 
+The owner's additional 2026-10-18 scope decision covers targeted updates to every existing adapter affected by the selected upgrade, not just Python/SDK code. Native-specific adaptation remains at adapter owners, preserving public check/test/fix semantics, native guards and full diagnosis. The first reproduced case is Mypy 2.4 missing-file classification; it must remain execution_error/unavailable. This retains the clean-break strategy and adds no compatibility layer.
+
 On 2026-10-18 the owner approved automatic Ruff discovery of Python files only after the upgraded native tool also discovered Markdown code blocks. Declare .py/.pyi discovery explicitly without force-exclude; keep existing diagnostic policy and deliberate targeting. This artifact-selection decision does not authorize historical Markdown rewrites or #518 suppression work. The full failed Validation remains recorded in [Validation](validation.md).
 
 ## Version History
@@ -204,3 +206,4 @@ On 2026-10-18 the owner approved automatic Ruff discovery of Python files only a
 | 0.3 | 2026-10-18 | @imp researcher | Reopen the specific output-schema/content strategy after a selected-stack initialized client probe exposed a preservation conflict in Design. |
 | 0.4 | 2026-10-18 | @imp researcher | Record owner approval to retain output schemas and deliver matching operation DTOs as structured content; close the narrowly reopened strategy decision. |
 | 0.5 | 2026-10-18 | @imp planner | Record owner-approved Python-only Ruff automatic discovery for the bounded failed-Validation recovery. |
+| 0.6 | 2026-10-18 | @imp implementer | Record owner authority for targeted native-adapter migration repairs and the reproduced Mypy missing-file contract repair. |

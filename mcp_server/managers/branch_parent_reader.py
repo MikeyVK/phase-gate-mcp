@@ -24,7 +24,7 @@ class BranchStateParentReader:
         """
         try:
             state = self._state_reader.load(branch)
-        except (StateNotFoundError, StateBranchMismatchError):
+        except StateNotFoundError, StateBranchMismatchError:
             return None
 
         if state.branch != branch:

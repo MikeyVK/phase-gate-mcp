@@ -128,10 +128,10 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
             phase_source = "state.json"
             phase_confidence = "high"
             workflow_state_status = WorkflowStateStatus.AVAILABLE
-        except (StateNotFoundError, FileNotFoundError):
+        except StateNotFoundError, FileNotFoundError:
             # Uninitialized branch: state.json absent or branch not yet initialized.
             workflow_state_status = WorkflowStateStatus.MISSING
-        except (OSError, KeyError):
+        except OSError, KeyError:
             workflow_state_status = WorkflowStateStatus.UNREADABLE
 
         instructions = None

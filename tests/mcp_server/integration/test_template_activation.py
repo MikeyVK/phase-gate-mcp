@@ -357,9 +357,18 @@ def _start_child(target: str, *args: str) -> subprocess.Popen[str]:
     )
 
 
-def _wait_for_file(path: Path, timeout: float = 15) -> bool:
+def _wait_for_file(
+    path: Path,
+    *,
+    process: subprocess.Popen[str],
+    error_path: Path,
+    timeout: float = 30,
+) -> bool:
+    """Observe the activation boundary, stopping early on a child error or exit."""
     deadline = time.monotonic() + timeout
     while not path.exists() and time.monotonic() < deadline:
+        if process.poll() is not None or error_path.exists():
+            return False
         time.sleep(0.02)
     return path.exists()
 
@@ -555,7 +564,7 @@ def test_interruption_recovers_pair_in_fresh_process(
         str(error_path),
     )
     try:
-        assert _wait_for_file(ready, 8), (
+        assert _wait_for_file(ready, process=process, error_path=error_path), (
             f"child did not reach activation boundary {stage}; "
             f"returncode={process.poll()} "
             f"error={error_path.read_text(encoding='utf-8') if error_path.exists() else 'none'}"
@@ -600,7 +609,7 @@ def test_unknown_recovery_state_is_preserved(activation_case: ActivationCase) ->
         str(error_path),
     )
     try:
-        assert _wait_for_file(ready, 8), (
+        assert _wait_for_file(ready, process=process, error_path=error_path), (
             f"child did not reach unknown-state boundary; returncode={process.poll()} "
             f"error={error_path.read_text(encoding='utf-8') if error_path.exists() else 'none'}"
         )
@@ -656,7 +665,7 @@ def test_cross_process_activation_lock_excludes_second_activation(
     )
     second_report = case.root / "second-lock.json"
     try:
-        assert _wait_for_file(ready, 8), (
+        assert _wait_for_file(ready, process=first, error_path=error_path), (
             f"child did not reach lock boundary; returncode={first.poll()} "
             f"error={error_path.read_text(encoding='utf-8') if error_path.exists() else 'none'}"
         )

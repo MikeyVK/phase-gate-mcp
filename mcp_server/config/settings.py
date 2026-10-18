@@ -89,7 +89,7 @@ class Settings(BaseModel):
     logging: LogSettings = Field(default_factory=LogSettings)
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         """Load settings from env vars with optional PGMCP_CONFIG_PATH overlay."""
         config_data: dict[str, Any] = {}
 

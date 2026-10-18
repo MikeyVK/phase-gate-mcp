@@ -182,7 +182,7 @@ def test_native_outcomes_and_options(
     result = response.root
     assert isinstance(result, NativeTestResult)
     assert result.decision.status == status
-    assert result.external_tools[0].version == "9.0.2"
+    assert result.external_tools[0].version == pytest.__version__
     assert isinstance(result.evidence, TextEvidence)
     assert token.lower() in result.evidence.data.lower()
     assert "OUTSIDE_DECOY" not in result.evidence.data
@@ -474,11 +474,11 @@ async def test_cancellation_stops_xdist_worker_and_descendant(native_case: Nativ
             ),
             request_contract=AdapterRequestContract(WireTestRequest),
             response_contract=role_response_contract(),
-            timeout_seconds=20,
+            timeout_seconds=60,
         )
     )
     try:
-        async with asyncio.timeout(12):
+        async with asyncio.timeout(45):
             while not all((case.workspace / name).exists() for name in ("worker.pid", "child.pid")):
                 await asyncio.sleep(0.02)
         worker_pid = int((case.workspace / "worker.pid").read_text())

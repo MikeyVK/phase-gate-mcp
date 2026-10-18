@@ -100,7 +100,7 @@ class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInp
         branch: str | None = None
         try:
             branch = self._get_git_manager().get_current_branch()
-        except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
+        except ValueError, OSError, RuntimeError:  # git unavailable — fall back to state file
             branch = None
 
         # NOTE: IStateReader requires a known branch as input; raw state.json read retained

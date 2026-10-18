@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -216,7 +216,7 @@ Provision build/setuptools/wheel and the configured Node tool versions only in t
 
 Use existing tests/helpers and public runtime seams. Preserve adapter guards, source/native output fidelity, cleanup assertions and meaningful negative scenarios. Remove only the obsolete requirements text assertion; do not replace it with another metadata/version-content test. Localize the native Client import only within its existing helper, with a narrow import rationale if required.
 
-For process failures, first observe imports, process exit/errors, initialization/readiness and teardown under the affected parallel selection. Compare any test-only budget to the existing production deadline; preserve the intentional silent-child timeout scenario. Stop on a reproduced production defect or contract change beyond the approved SDK boundary.
+For process failures, first observe imports, process exit/errors, initialization/readiness and teardown under the affected parallel selection. Compare any test-only budget to the existing production deadline; preserve the intentional silent-child timeout scenario. Stop on a reproduced production defect or contract change beyond the approved SDK boundary. On 2026-10-18 the owner explicitly included targeted repairs at any existing adapter owner required by the selected native toolchain upgrade, within D_3.1 and preserving public check/test/fix contracts. The Mypy missing-file execution_error/unavailable classification is the first concrete case. Retain complete native diagnosis and prove behavior with proportional existing cases; new policy or public-contract changes still require an owner decision.
 
 Run affected families separately through candidate run_tests(scope="targets"), retaining their configured parallelism where needed to reproduce lifecycle failures. Use Python-file targets for Python gates and markdown_links for changed documents. Reuse unaffected evidence; no workspace-wide suite during this cycle.
 
@@ -278,3 +278,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-18 | @imp planner | Sequence native cutover, focused behavior evidence and clean installed proxy acceptance within the approved strategy. |
 | 0.2 | 2026-10-18 | @imp planner | Add one bounded recovery cycle for failed full Validation; preserve prior cycles/evidence and record the owner's explicit Python-only Ruff discovery choice. |
+| 0.3 | 2026-10-18 | @imp implementer | Record owner approval for targeted native-adapter repairs required by the selected upgrade, preserving public contracts and the C_3 boundary. |

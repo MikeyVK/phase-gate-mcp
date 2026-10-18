@@ -164,7 +164,7 @@ class GitHubManager:
         """Add labels to an issue or PR."""
         self.adapter.add_labels(issue_number, labels)
 
-    def list_issues(self, state: str = "open", labels: list[str] | None = None) -> list["Issue"]:
+    def list_issues(self, state: str = "open", labels: list[str] | None = None) -> list[Issue]:
         """List issues with optional filtering."""
         return self.adapter.list_issues(state=state, labels=labels)
 
@@ -193,15 +193,15 @@ class GitHubManager:
             author=issue.user.login,
         )
 
-    def close_issue(self, issue_number: int, comment: str | None = None) -> "Issue":
+    def close_issue(self, issue_number: int, comment: str | None = None) -> Issue:
         """Close an issue with optional comment."""
         return self.adapter.close_issue(issue_number, comment=comment)
 
-    def list_labels(self) -> list["Label"]:
+    def list_labels(self) -> list[Label]:
         """List all labels in the repository."""
         return self.adapter.list_labels()
 
-    def create_label(self, name: str, color: str, description: str = "") -> "Label":
+    def create_label(self, name: str, color: str, description: str = "") -> Label:
         """Create a new label in the repository."""
         return self.adapter.create_label(name=name, color=color, description=description)
 
@@ -223,7 +223,7 @@ class GitHubManager:
         labels: list[str] | None = None,
         milestone: int | None = None,
         assignees: list[str] | None = None,
-    ) -> "Issue":
+    ) -> Issue:
         """Update fields on an issue."""
         return self.adapter.update_issue(
             issue_number=issue_number,
@@ -235,13 +235,13 @@ class GitHubManager:
             assignees=assignees,
         )
 
-    def list_milestones(self, state: str = "open") -> list["Milestone"]:
+    def list_milestones(self, state: str = "open") -> list[Milestone]:
         """List milestones for the repository."""
         return self.adapter.list_milestones(state=state)
 
     def create_milestone(
         self, title: str, description: str | None = None, due_on: str | None = None
-    ) -> "Milestone":
+    ) -> Milestone:
         """Create a new milestone."""
         return self.adapter.create_milestone(
             title=title,
@@ -249,13 +249,13 @@ class GitHubManager:
             due_on=due_on,
         )
 
-    def close_milestone(self, milestone_number: int) -> "Milestone":
+    def close_milestone(self, milestone_number: int) -> Milestone:
         """Close a milestone."""
         return self.adapter.close_milestone(milestone_number)
 
     def list_prs(
         self, state: str = "open", base: str | None = None, head: str | None = None
-    ) -> list["PullRequest"]:
+    ) -> list[PullRequest]:
         """List pull requests with optional filtering."""
         return self.adapter.list_prs(state=state, base=base, head=head)
 

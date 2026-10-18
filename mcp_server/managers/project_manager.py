@@ -518,7 +518,7 @@ class ProjectManager:
         # Use WorkflowStatusResolver to detect current phase (Issue #231 C4)
         try:
             status = self._workflow_status_resolver.resolve_current()
-        except (StateNotFoundError, StateBranchMismatchError, OSError):
+        except StateNotFoundError, StateBranchMismatchError, OSError:
             return plan
         if status.sub_phase:
             plan["current_phase"] = f"{status.current_phase}:{status.sub_phase}"

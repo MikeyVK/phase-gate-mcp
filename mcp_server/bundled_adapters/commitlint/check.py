@@ -269,7 +269,7 @@ def _run(
         return _unavailable("execution_error", str(exc))
     try:
         info = json.loads(guard.stdout)
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         return _unavailable("invalid_result", "Native prerequisite probe returned invalid data.")
     if not isinstance(info, dict) or guard.returncode:
         return _unavailable("execution_error", "Native prerequisite probe could not complete.")
@@ -315,7 +315,7 @@ def main() -> int:
     """Compose the installed pure reader and run exactly one supplied request."""
     try:
         request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         response, code = _invalid([], "invalid_value"), 2
     else:
         validated = _validate(request)
