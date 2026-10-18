@@ -3,7 +3,7 @@
 # Issue 517 — Native SDK Migration Plan
 
 **Status:** Proposed for independent Planning review  
-**Version:** 0.6  
+**Version:** 0.7  
 **Last Updated:** 2026-10-18
 
 ## Purpose
@@ -275,6 +275,18 @@ Native measurement selects source_pkgs=["mcp_server"] with --cov without a value
 
 **Exit/stop:** Two new protocol-behavior cases and original timeout/spawn/cancellation/cleanup cases pass; changed-file gates pass. Production defaults, source/branch selection, parallelism, thresholds, no-compat strategy and active host are unchanged. No broad test rewrite, private instrumentation or metric-only cases. Material policy/contract changes or disproportionate further expansion return to the owner. Independent Implementation → Validation GO precedes complete configured90% Validation and branch/configured gates. Rollback uses be29ff86; no earlier committed cycle is replaced.
 
+### C\_7 — Exact coverage threshold and explicit initialize-error evidence
+
+**Dependency:** Post-C_6 complete Validation at077c9220:2960 passing tests/all required checks, but raw16498/18332 (89.995636%) is below90. Native pytest-cov rounds to precision2 for its exit decision while its terminal summary compares the raw fraction and prints FAIL. Preserve this contradiction and reject forward progression despite adapter passed/exit0.
+
+**D_7.1:** Change only pyproject.toml coverage.report.precision from2 to6; fail_under=90, source_pkgs, native subprocess/path configuration, branch scope, exclusions and parallelism stay unchanged. This makes a single missing hit distinguishable from90 for this workspace; it tightens admission rather than lowering the owner's threshold. The earlier C_4 precision2 text records that stage and is superseded here.
+
+Add exactly one parameter to the existing public failed-replacement test in tests/mcp_server/core/test_proxy.py: a structurally valid JSON-RPC initialize error from the replacement. Its original error code, message and data must remain in the captured failure response; the proxy rejects it as initialize_response_failed/invalid_initialize_response, never announces restart_completed, returns unavailable for later work and terminates every real child. Reuse the existing controlled subprocess/event/sink/cleanup seams. This is a genuine explicit-refusal behavior at the migrated boundary, not a percentage assertion, SDK-version test or new module.
+
+**Evidence and sequence:** Independent Planning → Implementation GO, resume_cycle="C_7"; keep all committed cycles. Execute only the existing proxy family with native workers and --cov/--cov-branch, preserving its expected narrow global threshold failure, XML and diagnosis. Run targeted format/lint/Pyright and changed-doc markdown_links. No production or adapter interpretation change is required: the adapter factually follows native exit0. Treat raw counts/complete native outcomes as the final acceptance evidence; do not teach the adapter to parse a special coverage summary.
+
+**Exit/stops:** Existing proxy cases plus the single explicit-refusal case pass with real diagnosis/cleanup and file gates. No active-host switch, new architecture, compatibility, skips, source exclusions, deadline or threshold reduction. Material policy/contract changes return to owner. After independent Implementation → Validation GO, rerun the complete configured suite and required branch/configured gates; require actual combined coverage at least90%, tests green and no native threshold-failure text. Rollback uses the pre-C_7 snapshot; no replacement of earlier cycles.
+
 ## Phase Deliverables
 
 ### Validation
@@ -329,3 +341,4 @@ Independent QA is used only at phase boundaries. After cycle evidence, request I
 | 0.4 | 2026-10-18 | @imp planner | Add C_4 for installed startup callers, native child coverage and proportional behavior gaps; retain owner-required90%. |
 | 0.5 | 2026-10-18 | @imp planner | Add bounded C_5 for installed instrumented initialization and stale coverage-content test; preserve default startup controls and90% acceptance. |
 | 0.6 | 2026-10-18 | @imp planner | Add C_6: two genuine public replacement-initialization behavior cases in the existing proxy test; keep all gates and defaults. |
+| 0.7 | 2026-10-18 | @imp planner | Add C_7: native precision6 and one public explicit initialize-refusal case; preserve actual90% without rounded acceptance. |
