@@ -57,6 +57,9 @@ from tests.mcp_server.test_support import (
     make_project_manager,
 )
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
+
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 _BRANCH = "feature/268-test"
 

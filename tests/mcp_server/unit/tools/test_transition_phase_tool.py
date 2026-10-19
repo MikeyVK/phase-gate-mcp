@@ -34,6 +34,8 @@ from mcp_server.tools.phase_tools import (
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("forced", [False, True], ids=["normal", "forced"])

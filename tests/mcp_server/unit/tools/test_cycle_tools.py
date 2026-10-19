@@ -36,6 +36,8 @@ from tests.mcp_server.test_support import (
     make_project_manager,
 )
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
 TRANSITION_ADVISORY_NOTE = (
     "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
     "to load the current phase context for this branch."

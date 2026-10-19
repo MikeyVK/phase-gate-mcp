@@ -4,8 +4,8 @@
 # Developer Isolation
 
 **Status:** APPROVED  
-**Version:** 1.2  
-**Last Updated:** 2026-10-18
+**Version:** 1.3  
+**Last Updated:** 2026-10-19
 
 ---
 
@@ -34,11 +34,29 @@ is `.pgmcp/` under that workspace. Configuration resolves to
 owner-managed; package defaults are initial-install material and migration references,
 not a fallback that silently fills an existing configuration.
 
-The neutral-CWD rehearsal proves installed module identity. It does not establish Git
-neutrality: the current GitManager composition still defaults its GitAdapter to the
-process working directory. Verify repository identity before Git operations; see the
-[composition root](../../mcp_server/bootstrap.py) and
-[Git adapter](../../mcp_server/adapters/git_adapter.py).
+Git tools, workflow context and branch check selection use the same canonical selected
+workspace. For neutral or foreign launch directories, set an absolute
+`PGMCP_WORKSPACE_ROOT` to the exact intended worktree root. The target does not need
+its own Python or PGMCP package installation. Package, config and template roots may
+be external; server data and temporary artifacts remain inside the selected workspace.
+
+Git is acquired lazily: a valid non-Git workspace can start normally, while a Git
+operation reports `git_context_unavailable` with its original cause. Git does not
+search a parent repository or choose a child repository. Ordinary, explicitly selected
+nested and linked worktree roots are supported; bare repositories, administrative
+`.git` paths and non-root subdirectories are refused. Linked worktrees retain Git's
+normal shared repository metadata.
+
+Inherited `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, `GIT_INDEX_FILE`,
+`GIT_OBJECT_DIRECTORY`, `GIT_NAMESPACE`, `GIT_SHALLOW_FILE` or `GIT_GRAFT_FILE`
+declarations refuse Git use, including an empty declaration or one added after prior
+successful use. Diagnostics name the conflicting variables without exposing their values.
+PGMCP does not clear the process environment. Native identity, credentials, SSH and
+user/system policy remain enabled. An initial conflicting native `core.worktree` is
+refused; admitted commands remain explicitly bound to the selected worktree and Git
+directory. See the [composition root](../../mcp_server/bootstrap.py),
+[Git adapter](../../mcp_server/adapters/git_adapter.py) and
+[validated isolation proof](../development/issue522/validation.md).
 
 ```mermaid
 graph TD
@@ -153,3 +171,4 @@ No health-first gate is required for this reload procedure.
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.2 | 2026-10-18 | @imp documenter | Align source prerequisite with Python3.15 and qualify the existing neutral-CWD Git limitation. |
+| 1.3 | 2026-10-19 | @imp documenter | Replace the CWD Git limitation with validated exact-worktree binding and native-context admission (#522). |

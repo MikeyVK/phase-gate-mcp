@@ -47,6 +47,8 @@ from tests.mcp_server.test_support import (
     make_project_manager,
 )
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
 
 class TestProjectManagerWorkflows:
     """Test ProjectManager with workflows.yaml integration."""

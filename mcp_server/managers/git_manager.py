@@ -56,13 +56,13 @@ class GitManager:
     def __init__(
         self,
         git_config: GitConfig,
-        adapter: GitAdapter | None = None,
+        adapter: GitAdapter,
         *,
         workphases_config: WorkphasesConfig,
         scope_encoder: ScopeEncoder,
         scope_decoder: ScopeDecoder,
     ) -> None:
-        self.adapter = adapter or GitAdapter()
+        self.adapter = adapter
         self._git_config = git_config
         self._workphases_config = workphases_config
         self._scope_encoder = scope_encoder

@@ -61,13 +61,6 @@ class TestGitManagerValidation:
         """Fixture for GitManager with mocked adapter."""
         return make_git_manager(git_config=git_config, adapter=mock_adapter)
 
-    def test_init_default(self) -> None:
-        """Test initialization with default adapter."""
-        mgr = make_git_manager(
-            git_config=ConfigLoader(Path(f"{get_default_server_root()}/config")).load_git_config()
-        )
-        assert mgr.adapter is not None
-
     def test_get_status(self, manager: GitManager, mock_adapter: MagicMock) -> None:
         """Test get_status delegation."""
         mock_adapter.get_status.return_value = {"branch": "main"}

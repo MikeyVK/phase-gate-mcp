@@ -4,8 +4,8 @@
 
 
 **Status:** DEFINITIVE
-**Version:** 1.4
-**Last Updated:** 2026-10-18
+**Version:** 1.5
+**Last Updated:** 2026-10-19
 
 **Sources:** [launcher settings](../../mcp_server/config/settings.py), [ConfigLoader](../../mcp_server/config/loader.py) and [startup policy schema](../../mcp_server/config/schemas/server_config.py)
 **Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py)
@@ -20,6 +20,14 @@ server-data directory. Configuration and template-suite roots can independently 
 redirected with `PGMCP_CONFIG_ROOT` and `PGMCP_TEMPLATE_ROOT`; when set, those paths are
 authoritative even when they lie outside the server-data directory. Relative paths in
 server settings resolve from the workspace root unless a setting documents another base.
+
+The selected workspace must be an absolute existing directory. Git consumers share its
+canonical root, independently of package location, external config/templates and launch
+CWD. Git use requires that exact worktree root; it never searches ancestors or children.
+A non-Git workspace can start, with Git unavailability diagnosed when a Git operation is
+requested. Server data and temporary artifacts remain workspace-contained. See
+[developer isolation](../setup/dev-isolation.md#roots-and-ownership) for native-context
+conflicts and the supported installed/neutral-CWD arrangement.
 
 ---
 ## Path Derivation Chain
@@ -51,7 +59,7 @@ Without an explicit config/template root, each root is resolved under server_roo
 
 | Variable | Model field | Default | Description |
 |---|---|---|---|
-| `PGMCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Repository root. All relative paths resolve from here. |
+| `PGMCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Absolute workspace root; Git use requires the exact selected worktree. All relative workspace paths resolve from here. |
 | `PGMCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
 | `PGMCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
 | `PGMCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
@@ -320,3 +328,4 @@ and [execution outcomes](tools/quality.md#deliberate-binding-setup).
 | 1.2 | 2026-10-07 | @imp documenter | Document required branch-policy declarations, matching semantics, scope boundaries and clean-break admission. |
 | 1.3 | 2026-10-16 | @imp documenter | Document source layering, GitHub separation and preserved initialization choices. |
 | 1.4 | 2026-10-18 | @imp documenter | Document composed startup admission policy, explicit migration and proxy relaunch boundary for #520. |
+| 1.5 | 2026-10-19 | @imp documenter | Document canonical selected-workspace Git binding, lazy refusal and supported root placement (#522). |

@@ -29,6 +29,8 @@ from tests.mcp_server.test_support import (
     make_project_manager,
 )
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
 
 class TestInitializeProjectToolMode1:
     """Test atomic initialization (Mode 1) for Issue #39."""

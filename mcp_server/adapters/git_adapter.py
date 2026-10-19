@@ -9,7 +9,7 @@ postcondition: every path in skip_paths is removed from the index via
 git restore --staged before index.commit().
 
 @layer: Backend (Adapters)
-@dependencies: [GitPython, mcp_server.config.settings, mcp_server.core.exceptions,
+@dependencies: [GitPython, mcp_server.core.exceptions,
                 mcp_server.core.logging]
 @responsibilities:
     - Expose git operations (commit, checkout, branch, push, fetch, restore)
@@ -18,15 +18,15 @@ git restore --staged before index.commit().
     - Raise ExecutionError / MCPSystemError on git failures
 """
 
+import os
 from pathlib import Path
 from typing import Any, Literal
 
-from git import GitCommandError, InvalidGitRepositoryError, Repo
+from git import GitCommandError, Repo
 from git.diff import Diff
-from git.exc import BadName
+from git.exc import BadName, GitError
 from git.remote import PushInfo
 
-from mcp_server.config.settings import Settings
 from mcp_server.core import logging as core_logging
 from mcp_server.core.exceptions import ExecutionError, MCPSystemError
 from mcp_server.core.interfaces.git import (
@@ -45,32 +45,78 @@ _PUSH_ERROR_MASK: int = (
 class GitAdapter:
     """Adapter for interacting with local Git repository."""
 
-    def __init__(
-        self,
-        repo_path: str | None = None,
-        settings: Settings | None = None,
-    ) -> None:
-        """Initialize the Git adapter."""
-        base_repo_path = repo_path or (
-            settings.server.workspace_root if settings else str(Path.cwd())
-        )
-        self.repo_path = base_repo_path
+    def __init__(self, repo_path: str) -> None:
+        """Capture one explicit absolute workspace; acquire Git only when used."""
+        if not repo_path.strip() or not Path(repo_path).is_absolute():
+            raise ValueError("Git workspace must be a nonblank absolute path")
+        self._workspace_root = Path(repo_path).resolve()
         self._repo: Repo | None = None
 
     @property
+    def repo_path(self) -> str:
+        """Return the canonical selected workspace."""
+        return str(self._workspace_root)
+
+    @property
     def repo(self) -> Repo:
-        """Get the git repository object."""
-        if not self._repo:
-            try:
-                self._repo = Repo(self.repo_path)
-            except InvalidGitRepositoryError as e:
+        """Admit the exact worktree and preserve its identity for native commands."""
+        selectors = (
+            "GIT_DIR",
+            "GIT_WORK_TREE",
+            "GIT_COMMON_DIR",
+            "GIT_INDEX_FILE",
+            "GIT_OBJECT_DIRECTORY",
+            "GIT_NAMESPACE",
+            "GIT_SHALLOW_FILE",
+            "GIT_GRAFT_FILE",
+        )
+        conflicts = [name for name in selectors if name in os.environ]
+        if conflicts:
+            raise MCPSystemError(
+                f"git_context_unavailable: native_context_override at {self.repo_path}; "
+                f"variables={', '.join(conflicts)}"
+            )
+        if self._repo is not None:
+            return self._repo
+
+        try:
+            candidate = Repo(self.repo_path, search_parent_directories=False, expand_vars=False)
+        except (GitError, OSError, ValueError, TypeError) as exc:
+            raise MCPSystemError(
+                f"git_context_unavailable: failed to access {self.repo_path}: {exc}"
+            ) from exc
+
+        try:
+            if candidate.bare:
                 raise MCPSystemError(
-                    f"Invalid git repository at {self.repo_path}",
-                    fallback="Initialize git repository",
-                ) from e
-            except Exception as e:
-                raise MCPSystemError(f"Failed to access git repo: {e}") from e
-        return self._repo
+                    f"git_context_unavailable: bare_repository at {self.repo_path}"
+                )
+            worktree = candidate.working_tree_dir
+            if worktree is None or Path(worktree).resolve() != self._workspace_root:
+                raise MCPSystemError(
+                    f"git_context_unavailable: worktree_mismatch at {self.repo_path}"
+                )
+            native_root = candidate.git.rev_parse("--show-toplevel")
+            if Path(native_root).resolve() != self._workspace_root:
+                raise MCPSystemError(
+                    f"git_context_unavailable: native_worktree_mismatch at {self.repo_path}"
+                )
+            candidate.git.set_persistent_git_options(
+                git_dir=candidate.git_dir, work_tree=self.repo_path
+            )
+        except BaseException as exc:
+            try:
+                candidate.close()
+            except (GitError, OSError, ValueError) as cleanup_error:
+                exc.add_note(f"Unpublished Git handle cleanup failed: {cleanup_error}")
+            if not isinstance(exc, (GitError, OSError, ValueError, TypeError)):
+                raise
+            raise MCPSystemError(
+                f"git_context_unavailable: failed to admit {self.repo_path}: {exc}"
+            ) from exc
+
+        self._repo = candidate
+        return candidate
 
     def get_current_branch(self) -> str:
         """Get the current branch name."""
