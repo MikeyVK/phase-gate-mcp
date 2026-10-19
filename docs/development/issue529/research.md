@@ -3,7 +3,7 @@
 # Issue \#529 — Harness delivery and complete-output access
 
 **Status:** DRAFT — Research in progress; delivery strategy pending  
-**Version:** 0.7  
+**Version:** 0.8  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -12,11 +12,11 @@ Establish an evidence-backed client delivery contract before #528 chooses catalo
 
 ## Scope In
 
-Current supported harnesses, model-visible short responses and workflow instructions, complete-output access, preferred retrieval routes, and measurable payload limits. Research extends #523 rather than repeating its history.
+Configurable response profiles built on the existing presentation configuration, independent selection for multiple harnesses sharing a workspace, preservation of short text and mandatory instructions, complete-output routes and proportionate validation of pgmcp's delivery contract. Existing client probes remain explicitly scoped supporting evidence; the owner has stopped further probing. Research extends #523 rather than repeating its history.
 
 ## Scope Out
 
-No runtime, output DTO, schema, cache or harness configuration changes have been approved. No historical-version matrix, compatibility bridge, release or #528 implementation.
+No production implementation or active harness configuration changes in this Research step. The configurable-profile direction is approved; concrete public response shape and cache-publication failure policy still require owner decisions below. No historical-version matrix, compatibility bridge, release or #528 implementation.
 
 ## Problem Statement
 
@@ -220,22 +220,79 @@ The peer deterministically supplies tool calls; it proves what the real agent ex
 
 ### Decision status after owner correction
 
-The owner rejected the early move to contract options. The earlier A/B recommendation is withdrawn. No output mechanism, generic retrieval tool or harness-specific configuration is selected. Complete the factual channel/read-route inventory and resolve material integration/version gaps before presenting solutions or requesting a boundary strategy. The mandatory direct text/instruction delivery and complete-output access requirements remain unchanged.
+The earlier A/B recommendation remains withdrawn. After the capability probes, the owner stopped further probing and approved investigation of a minimal configurable response policy built on presentation.yaml. The owner requires short text and mandatory instructions to survive every supported profile, and explicitly requires independent use by multiple harnesses sharing one workspace. The proposal below is Research input for owner decisions, not an implemented API or approved final design.
+
+### Minimal response-profile proposal
+
+Two new delivery controls are sufficient for the initial scope:
+
+| Proposed profile field | Values | Meaning |
+|---|---|---|
+| data_channel | structured, text | Put the operation data and an accessible representation of its attachments into structuredContent or text content. Short explanatory text remains text in both cases. |
+| data_delivery | inline, resource | Include the complete operation DTO directly, or reference the existing cached operation resource. Resource mode requires an agent-accessible MCP resource route in the selected installation; server startup cannot infer that route from the client name. |
+
+A proposed presentation.yaml excerpt, to be added beside existing global/tools declarations, is:
+
+~~~yaml
+global:
+  default_response_profile: structured_inline
+  max_text_response_bytes: 8000
+  cache_read_budget_chars: 6000
+
+response_profiles:
+  structured_inline:
+    data_channel: structured
+    data_delivery: inline
+  structured_resource:
+    data_channel: structured
+    data_delivery: resource
+  text_inline:
+    data_channel: text
+    data_delivery: inline
+~~~
+
+These are capability profiles, not client-name branches or a certification list. Profile keys supply identity; no ordering behavior or duplicated id field is required. Existing templates, notes, collection declarations and wording stay shared. Existing numeric controls can remain global with optional overrides of those same fields within a profile; resolving them is explicit profile composition, not a new file loader. The cache_read_budget_chars setting currently determines when pagination guidance is shown; it is not a resource-read page-size limit. Resource windows still use the existing explicit offset/limit contract. Do not silently turn that field into a new paging control.
+
+Proposed selection is one new launcher environment value, PGMCP_RESPONSE_PROFILE. Each harness sets it only on its own PGMCP process. The selector uses Settings.from_env and the existing ConfigLoader/assembly boundary; it is not a tool argument or a shared state.json setting. Definitions use the existing defaults/workspace-override chain. If the selector is absent, the explicitly declared global.default_response_profile applies; unknown IDs are configuration errors through the existing startup recovery path. The code must not contain a hidden default ID or infer a profile from clientInfo.
+
+The source supports this direction: [Settings](../../../mcp_server/config/settings.py) owns launcher environment resolution; [proxy](../../../mcp_server/core/proxy.py) passes its environment into each child generation; [bootstrap](../../../mcp_server/bootstrap.py) loads presentation configuration and constructs the presenter. Selection stays local to one server instance and unchanged across its ordinary child restarts. A changed launch selector requires reconnect/relaunch. A profile edit affecting the response schema requires catalog refresh/reconnection; do not change shapes during calls under a stale catalog.
+
+#### Fixed preservation rules
+
+- Render explanatory text and mandatory instructions once from the existing DTO/configuration sources. Always provide the protected text in content. Whenever structuredContent exists, also include the same protected text there. There is no setting to disable either the explanation or mandatory instructions.
+- Preserve phase instructions embedded in get_work_context's template as well as configured next-instruction and recovery guidance. Do not recover these by parsing rendered Markdown or duplicating workflow text in a second configuration.
+- Presentation budgets may shorten optional details, not the protected explanation or instructions. When protected material exceeds the configured presentation budget, preserve it and permit an explicitly documented overrun. Inline mode also promises complete operation data; its bulk data is not truncated to fit the short-presentation budget. This is a proposed change from the current hard final-text ceiling, mandated by the owner's preservation requirement.
+- Keep attachment facts complete in the selected data channel. The cache currently stores operation DTOs only; resource mode must not imply that schema attachments are in that cache. Keep attachments directly available, with the existing embedded-resource representation where appropriate, rather than expanding cache ownership.
+- Preserve operation outcome, isError and complete diagnostic facts for success, policy failures and system exceptions. A presentation problem after a mutation must not be reported as though the mutation never occurred.
+- Keep tools, managers, adapters and internal operation models free of client/profile branches. No automatic client fingerprinting, per-call profile switching, expression language, extra profile files, generic cache tool, or compatibility bridge is proposed.
+
+#### Genuine owner choices
+
+| Choice | Smallest recommended direction | Alternative / impact |
+|---|---|---|
+| Public structured response shape | One common transport envelope containing the protected text, the actual operation data or its reference, and attachment representations. Internal operation DTOs remain intact. The selected profile governs both returned data and advertised outputSchema. | Keeping the bare DTO as the public structured response requires adding presentation fields across operation schemas or another defined schema strategy; a switch alone cannot preserve text for structured-only consumers. This public clean break must be explicit and guide #528. |
+| Cache publication failure in resource mode | Return the complete operation inline in the selected channel, clearly disclose cache unavailability and retain the actual operation outcome. This fixed, explicit failure rule can exceed the normal payload objective. | Refuse to deliver the complete result when publication fails. Since the operation may already have written, this needs a separate truthful post-operation error/recovery contract and can encourage unsafe retries. |
+
+Text-channel profiles omit structuredContent and its advertised outputSchema; structured-channel profiles advertise the corresponding common envelope schema. If the owner approves inline delivery on cache failure, the resource profile's schema must admit both a successful resource reference and complete inline data from the outset; do not change the catalog after a call.
+
+The default recommendation is structured_inline: content always contains the short text/instructions, structuredContent also contains them plus complete operation data. text_inline serves clients that need complete text delivery; structured_resource is an explicit installation choice for environments with resource access. These defaults, proposed selector and two-field profile form are presented for approval, not activated.
+
+Impact is concentrated at PresentationConfig/ConfigLoader composition, Settings and bootstrap selection, ResponsePresenter/PresentedOutput, TextBudgetLimiter and MCP response/catalog serialization. Reuse the existing error boundaries and raw-operation cache. Existing config, presenter and transport behavior tests should be adapted, with one focused same-workspace/two-instance isolation case. No permanent harness/version matrix or tests preserving the old public response shape are required. No tests or production changes were made for this proposal. This is no longer mechanical maintenance; the workflow/scope must be aligned before any implementation.
 
 ## Questions
 
-- Which concrete output contract meets both mandatory delivery requirements across the required current harnesses?
-- Can one generic contract satisfy the evidence, or is harness-specific configuration demonstrably necessary?
-- What initial-response payload objective and exceptions preserve complete diagnostics and usable retrieval?
-- Which integration-specific execution remains necessary where public source or documentation is incomplete or contradictory?
+- Does the owner approve the proposed two-field capability profiles and per-instance environment selection with a declared default?
+- Does the owner approve a common public structured envelope while preserving internal operation DTOs?
+- Should cache-publication failure in resource mode deliver the full operation inline, with truthful cache status and the original operation outcome?
+- What measurable payload objective is appropriate once protected text and explicit inline failure delivery are excluded from a hard size ceiling?
 
 ## Approved Strategy
 
-The owner has confirmed the direct-instruction, direct-short-response and demonstrated complete-output requirements above, and requires an explicit preferred route per harness. Clean break remains the migration policy: no legacy bridge or historical-version tests. The supported integration/build scope, delivery mechanism, any necessary harness-specific configuration, and measurable payload objective remain PENDING OWNER DECISION. Research is not complete and must not progress on this draft.
+The owner approved the configurable-profile direction, reuse of the existing presentation configuration, unconditional preservation of short text and mandatory instructions, and independent profile selection for harnesses sharing one workspace. Further client probing is stopped; existing measurements remain evidence for their exact routes and conditions, not universal or future-client guarantees. Clean break remains the migration policy: no legacy bridge or historical-version tests. The concrete profile fields/selector, public structured envelope, cache-publication failure policy and measurable payload objective remain PENDING OWNER DECISION. Research is not complete and must not progress on this draft.
 
 ## Expected Results
 
-An explicit supported-harness scope with demonstrable instruction delivery and full-output access, a justified preferred route per harness, and an owner-approved contract and payload objective. Unproven integrations remain visible as open work rather than compatibility claims.
+An owner-approved configurable delivery contract with preserved explanatory text/instructions, truthful complete-data access and explicit per-instance profile selection. Prove pgmcp's own profile behavior and isolation with proportionate tests; state client-route prerequisites and the limits of existing observations without requiring a permanent harness/version matrix.
 
 ## Consumers
 
@@ -289,3 +346,4 @@ Stop for an explicit scope/workflow decision before implementation when the sele
 | 0.5 | 2026-10-19 | @imp researcher | Prove Antigravity SDK/native local-harness text and resource/file recovery; execute the real VS Code 1.142.0 Local-agent attempt and record its pre-model readiness failure without claiming delivery success. |
 | 0.6 | 2026-10-19 | @imp researcher | Resolve isolated VS Code Local-agent startup through normal activation and default approvals; measure actual model input and native large-result files; retain text/instruction loss and 2,000-character read_file line truncation as negative findings. |
 | 0.7 | 2026-10-19 | @imp researcher | Prove complete 22,086-character VS Code readback through native scoped search; record the failed external-path control and fresh-profile terminal-consent limit without claiming default recovery or fixing independent instruction loss. |
+| 0.8 | 2026-10-19 | @imp researcher | Record owner-approved configurable-profile direction; propose two delivery controls, per-instance selection, protected text/instructions and explicit public-envelope/cache-failure decisions without production changes. |
