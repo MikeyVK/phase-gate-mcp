@@ -16,7 +16,86 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-19T04:56:36.651924+00:00"
+      "created_at": "2026-10-19T04:56:36.651924+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Selected-workspace Git correction",
+              "deliverables": [
+                {
+                  "deliverable_name": "Explicit canonical Git composition",
+                  "description": "Require GitManager adapter and GitAdapter absolute path, remove adapter Settings/CWD fallbacks, and bind both existing bootstrap Git consumers to the same canonical selected workspace without eager Git acquisition.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/bootstrap.py"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Exact worktree and native context admission",
+                  "description": "Implement lazy exact-root/nonbare/native-worktree admission, bounded inherited selector refusal including cached use, persistent git-dir/work-tree binding and unpublished-handle cleanup through existing MCPSystemError diagnostics.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/adapters/git_adapter.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                },
+                {
+                  "deliverable_name": "Proportional consumer and cycle-history migration",
+                  "description": "Adapt shared test composition/direct callers and invalid native mock preparation; remove the obsolete shallow default-constructor case, retain meaningful guards, and prove actual history failure cause plus manager unavailable behavior.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_git_cycle_evidence.py"
+                  },
+                  "deliverable_id": "D_1.3"
+                },
+                {
+                  "deliverable_name": "Public target isolation and installed acceptance",
+                  "description": "Prove selected-target reads/mutations with foreign repository unchanged, absent/unsupported/nested/linked and native-conflict controls, ordinary Git policy, non-Git bootstrap and externally installed neutral/foreign-CWD operation using existing families.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_target_startup.py"
+                  },
+                  "deliverable_id": "D_1.4"
+                }
+              ],
+              "exit_criteria": "All D_1.1\u2013D_1.4 pass focused public behavior and applicable file gates under Design1.1; selected-root Git/context/check consumers agree, controlled writes affect only the selected repository, native and history refusal preserves diagnosis/unavailable contracts, and no compatibility path, new router, unrelated cleanup or shallow/content/version test remains."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Durable validation",
+                "description": "Compact report maps exact native full-suite/branch/configured outcomes and installed/source isolation plus native/history refusal evidence to Design1.1; preserve negative attempts and operational limits.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue522/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Current Git/workspace operational contract",
+                "description": "Reconcile current developer-isolation, configuration and applicable Git/setup references with exact-root selection, external roots, lazy refusal/native selectors and the validated neutral-CWD correction; historical artifacts remain unchanged.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/setup/dev-isolation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
