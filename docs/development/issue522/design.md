@@ -3,7 +3,7 @@
 # Issue \#522 — One selected Git worktree per connection
 
 **Status:** REVIEW REQUESTED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Problem Statement
@@ -100,7 +100,9 @@ No process-global variable is removed or rewritten. A selector conflict refuses 
 
 ### Error presentation and unchanged consumers
 
-Reuse existing ExecutionError for factual selection failures and existing native/system wrapping for repository-open failures. Factual error text identifies git_context_unavailable, selected workspace and reason (native_context_override, bare_repository, worktree_mismatch or native_worktree_mismatch), plus variable names where relevant. Preserve causes/tracebacks. This is system/developer diagnosis, not new recovery prose or a policy-specific presenter branch; public error/output models remain unchanged.
+Use existing MCPSystemError for factual repository-admission failures, including inherited native selectors, unsupported roots and native worktree mismatch. Keep ordinary operation ExecutionError wrapping unchanged. Factual error text identifies git_context_unavailable, selected workspace and reason (native_context_override, bare_repository, worktree_mismatch or native_worktree_mismatch), plus variable names where relevant. Preserve causes/tracebacks. This is system/developer diagnosis, not new recovery prose or a policy-specific presenter branch; public error/output models remain unchanged.
+
+GitAdapter.read_issue_history already catches MCPSystemError and converts it to CommitHistoryUnavailableError(reason_code="git_history_unavailable"), preserving the admission error as cause. Keep that existing conversion: GitManager.read_cycle_evidence must return CycleEvidence(status="unavailable", reason_code="git_history_unavailable") when repository admission fails, with no fabricated branch/HEAD/protected-cycle facts. ProjectManager continues its existing fail-closed/explicit-force handling; no planning or force-policy change. Do not use a bare general ExecutionError for repo admission, since that bypasses the existing history catch.
 
 Current broad operation wrappers may retain their existing diagnostic chaining; do not redesign all Git error handling. No tool catches/reinterprets the new diagnosis or acquires another repository. Git absence remains a use-time error through current wrapper/enforcement boundaries.
 
@@ -113,6 +115,7 @@ Current broad operation wrappers may retain their existing diagnostic chaining; 
 | unit/adapters/test_git_adapter.py and existing real-local-remote scenario | Selected-A status and a real stage/commit affect A while launch repository B's HEAD/index/files remain unchanged. Later CWD changes do not rebind. Include ordinary identity/config behavior. |
 | Existing adapter behavior family | Parameterize distinct unavailable inputs (missing path, no-repo container, parent subdirectory, bare/admin path); assert public refusal and no writes to B. Test outer versus explicitly selected nested root and a genuine linked worktree/.git file. |
 | Existing native boundary | Inherited selector refusal, including a selector added after successful use; explicit worktree pin versus misleading core.worktree. Assert diagnosis and unchanged nonselected repository, not helper calls/source strings. |
+| integration/test_git_cycle_evidence.py | One public history case supplies an admission conflict to the actual adapter/manager path. Verify the adapter's CommitHistoryUnavailableError retains its MCPSystemError cause and factual diagnosis; read_cycle_evidence returns its existing unavailable result with git_history_unavailable and no invented branch/HEAD/protected cycles. No new history framework or broad planning test matrix. |
 | unit/server/test_bootstrap.py / integration/test_target_startup.py | Public bootstrap/tool status and workflow context agree with selected A from neutral and foreign CWD, with external server/config roots. A valid non-Git workspace still reaches ordinary admission and Git use reports unavailability. Avoid private _build_manager_graph tests. |
 | Existing installed candidate startup case | Reuse the one wheel build; initialize/use a target separate from installed package and neutral launch directory, then query public Git status/context and exercise a controlled selected-target mutation with B unchanged. Verify installed module provenance using existing fixture facts. |
 
@@ -209,3 +212,4 @@ Plan the smallest coherent defect-correction cycle(s) covering explicit composit
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp designer | Specify explicit Git composition, lazy exact-root admission and bounded native-context control. |
+| 1.1 | 2026-10-19 | @imp designer | Route admission errors through existing MCPSystemError/history unavailable conversion and require one focused cycle-evidence case after QA finding. |
