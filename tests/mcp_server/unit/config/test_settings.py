@@ -365,3 +365,14 @@ def test_response_profile_launcher_and_explicit_environment_precedence(
     else:
         settings = Settings.from_env()
         assert settings.server.response_profile == (environment_profile or "launcher-profile")
+
+
+@pytest.mark.parametrize("selector", [None, "selected", ""])
+def test_response_profile_setting_is_optional_but_nonempty(selector: str | None) -> None:
+    """Unset selection uses configuration; explicitly empty selection is invalid."""
+    assert ServerSettings().response_profile is None
+    if selector == "":
+        with pytest.raises(ValidationError, match="response_profile"):
+            ServerSettings(response_profile=selector)
+    else:
+        assert ServerSettings(response_profile=selector).response_profile == selector

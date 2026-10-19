@@ -1,22 +1,15 @@
-# mcp_server\schemas\presentation_output.py
-# template=dto version=c3132e49 created=2026-08-19T19:00Z updated=2026-08-19T19:05Z
-"""
-Data Transfer Object for presentation_output.
+"""Immutable presentation values and the public response envelope.
 
-Presentation output and embedded resource DTOs.
-
-@layer: Presentation
-@dependencies: [pydantic]
-@responsibilities:
-    - Define immutable PresentationResource model for embedded client resources
-    - Define immutable PresentedOutput model for combined presentation results
+Operation models remain internal and are serialized only at the presentation boundary.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 
 class PresentationResource(BaseModel):
-    """Immutable representation of an embedded presentation resource."""
+    """An attachment's complete identity, media type and textual contents."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -25,8 +18,62 @@ class PresentationResource(BaseModel):
     content: str
 
 
+class RenderedPresentation(BaseModel):
+    """Required guidance separated from optional rendered details."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    core: str
+    details: str
+
+
+class InlineOperation(BaseModel):
+    """Complete JSON-mode operation facts supplied directly."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+    delivery: Literal["inline"]
+    operation: dict[str, JsonValue]
+
+
+class ResourceOperation(BaseModel):
+    """A reference to a successfully serialized and published operation."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+    delivery: Literal["resource"]
+    uri: str
+    size_chars: int | None = Field(ge=0)
+
+
+class DeliveryFailure(BaseModel):
+    """Delivery status independent of the actual operation outcome."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+    code: Literal["cache_publication_failed", "operation_serialization_failed"]
+    details_truncated: bool
+
+
+type OperationDelivery = Annotated[
+    InlineOperation | ResourceOperation, Field(discriminator="delivery")
+]
+
+
+class PublicToolResponse(BaseModel):
+    """The selected public presentation, data and direct attachments."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+
+    success: bool
+    presentation: str | None
+    data: OperationDelivery | None
+    attachments: tuple[PresentationResource, ...]
+    delivery_error: DeliveryFailure | None
+
+
 class PresentedOutput(BaseModel):
-    """Unified immutable presentation result produced by the presentation layer."""
+    """The existing carrier until the planned transport cutover."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 

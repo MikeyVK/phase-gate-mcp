@@ -12,10 +12,18 @@ Unit tests for PresentationResource and PresentedOutput frozen DTO models.
     - Test PresentedOutput model creation, defaults, immutability, and extra fields forbidden
 """
 
+import json
+
 import pytest
 from pydantic import ValidationError
 
-from mcp_server.schemas.presentation_output import PresentationResource, PresentedOutput
+from mcp_server.schemas.presentation_output import (
+    InlineOperation,
+    PresentationResource,
+    PresentedOutput,
+    PublicToolResponse,
+    ResourceOperation,
+)
 
 
 class TestPresentationResource:
@@ -87,20 +95,14 @@ class TestPresentedOutput:
 @pytest.mark.parametrize("delivery", ["inline", "resource"])
 def test_public_envelope_preserves_data_and_direct_attachments(delivery: str) -> None:
     """The public carrier keeps operation facts distinct from direct schema data."""
-    import json  # noqa: PLC0415
-
-    from mcp_server.schemas.presentation_output import (  # noqa: PLC0415
-        InlineOperation,
-        PublicToolResponse,
-        ResourceOperation,
-    )
-
     operation = {"success": False, "values": {"zero": 0, "empty": [], "null": None}}
     resource = PresentationResource(uri="schema://validation", content='{"type":"object"}')
     data = (
         InlineOperation(delivery="inline", operation=operation)
         if delivery == "inline"
-        else ResourceOperation(delivery="resource", uri="pgmcp://cache/runs/" + "a" * 32, size_chars=42)
+        else ResourceOperation(
+            delivery="resource", uri="pgmcp://cache/runs/" + "a" * 32, size_chars=42
+        )
     )
     response = PublicToolResponse(
         success=False,

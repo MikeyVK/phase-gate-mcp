@@ -28,7 +28,7 @@ class TestResponseCache:
         pub = CachePublication(run_id="a" * 32)
         assert pub.run_id == "a" * 32
         with pytest.raises(ValidationError, match="frozen_instance"):
-            setattr(pub, "success", False)
+            pub.success = False
 
         # Invalid strings should raise ValidationError
         with pytest.raises(ValidationError):
