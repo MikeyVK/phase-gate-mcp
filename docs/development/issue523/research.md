@@ -2,8 +2,8 @@
 
 # Issue \#523 — Tool-output contracts, client delivery and overlap
 
-**Status:** Research completed; independent review requested  
-**Version:** 1.0  
+**Status:** Completed research  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -120,7 +120,7 @@ A durable research report with exact reproducible measurements, clearly limited 
 
 ### Evidence packaging completed
 
-Research QA granted Research → Implementation on d568f5e6667e94d1a5ef0f66a4be9b3ae5501234. Implementation rechecked the complete branch inventory: only this report and initialized workflow files are tracked. The temporary probe is reproduced below rather than added to the permanent suite. Active presentation architecture and agent guidance were inspected and remain accurate; no additional instruction layer is needed. The catalog/schema and client-delivery observations remain findings for owner/Co consideration, not runtime changes. Validation must still execute its configured suite and relevant branch checks.
+Research QA granted Research → Implementation on d568f5e6667e94d1a5ef0f66a4be9b3ae5501234. Implementation rechecked the complete branch inventory: only this report and initialized workflow files are tracked. The temporary probe is reproduced below rather than added to the permanent suite. Active presentation architecture and agent guidance were inspected and remain accurate; no additional instruction layer is needed. The catalog/schema and client-delivery observations remain findings for owner/Co consideration, not runtime changes. Validation subsequently completed its configured suite (2996 passed in 566.34s) and relevant branch checks, with independent QA GO to Documentation on 9287322171db8ec110ff84032896b9c8928dc98c. See [Validation evidence](validation.md) for exact scopes, outcomes and limitations.
 
 ## Evidence
 
@@ -250,3 +250,5 @@ async def test_observe_public_output_channels(tmp_path: Path, monkeypatch: pytes
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp researcher | Record current delivery contracts, reproducible observations, bounded client evidence and research-only strategy. |
+| 1.1 | 2026-10-19 | @imp documenter | Link completed Validation and finalize the research-only evidence index. |
+

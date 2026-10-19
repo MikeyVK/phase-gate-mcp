@@ -97,6 +97,18 @@ Existing separately scoped follow-up; not implemented in #523. Preserve sequence
 
 - [Issue #524](<https://github.com/MikeyVK/phase-gate-mcp/issues/524>)
 
+## Documentation reconciliation
+
+| Reviewed active surface | Outcome |
+|---|---|
+| [Presentation architecture](../../reference/presentation_architecture.md) | Already states actual operation delivery, optional registered metadata, separate attachments, canonical cache and text-only byte limiting. No runtime change invalidates it. |
+| [Tools navigation](../../reference/tools/README.md) | Already points to the live registration/schema owners and presentation reference; no static inventory or duplicated client guarantee is added. |
+| [AGENTS cache guidance](../../../AGENTS.md) and [agent-instructions model](../../reference/copilot-agent-instructions-model.md) | Existing summary-first and selective cache-read guidance remains applicable. No extra instruction or enforcement layer is needed. |
+| Configs, template suite and derived consumers | No schemas, runtime policy, instruction source or templates changed; no synchronization is required. |
+| Historical issue documents | Reviewed for history only and left unchanged. Current evidence and limits remain in this issue's Research and Validation. |
+
+Independent QA granted Validation → Documentation on 9287322171db8ec110ff84032896b9c8928dc98c. Documentation changes only reconcile this evidence index; they do not invalidate the configured test suite or select any deferred runtime policy.
+
 ## Related Documents
 
 - [Authoritative Research and strategy](<research.md>)
