@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 524,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "skip_reason": null,
   "issue_title": "Cache-failure notice incorrectly reports result details as unavailable",
   "created_at": "2026-10-19T07:49:11.558262+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-19T07:53:48.172080+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
