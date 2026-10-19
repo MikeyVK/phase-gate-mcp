@@ -3,10 +3,12 @@
   "projects": {
     "529": {
       "issue_title": "Establish client delivery and structured payload guarantees",
-      "workflow_name": "chore",
+      "workflow_name": "refactor",
       "execution_mode": "interactive",
       "required_phases": [
         "research",
+        "design",
+        "planning",
         "implementation",
         "validation",
         "documentation",

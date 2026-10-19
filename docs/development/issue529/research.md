@@ -2,8 +2,8 @@
 
 # Issue \#529 — Harness delivery and complete-output access
 
-**Status:** FINAL — Research complete; independent QA review requested  
-**Version:** 1.1  
+**Status:** FINAL — Research content approved by independent QA; workflow aligned for Design  
+**Version:** 1.2  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -311,7 +311,7 @@ Profile-focused tests should prove the operation outcome is retained, oversized 
 
 None at the Research strategy boundary. On 2026-10-19 the owner explicitly approved the general envelope and instructed: preserve the mandatory core always and bound only diagnostic details. These decisions close the two earlier policy questions.
 
-Exact field names, default limits, envelope/schema variants and validation of supported profile combinations are Design work within this approved strategy. The current chore workflow has no Design phase; workflow alignment is an operational precondition to that transition, not an unresolved output-policy choice. There is no further client probe campaign or downstream consumer migration requirement.
+Exact field names, default limits, envelope/schema variants and validation of supported profile combinations are Design work within this approved strategy. The branch was originally registered as chore. On 2026-10-19 the owner explicitly authorized a one-time direct registration correction to refactor because no existing-workflow migration tool exists. Both registrations now use the configured refactor phase sequence; this resolves the operational precondition without reinitialization. There is no further client probe campaign or downstream consumer migration requirement.
 
 ## Approved Strategy
 
@@ -325,7 +325,7 @@ Exact field names, default limits, envelope/schema variants and validation of su
 | Tests | Test profiles and their observable results, including representative valid/invalid routes, preservation, error/attachment behavior and same-workspace instance isolation. Adapt valuable existing tests and remove obsolete assertions as needed. No concrete-harness/version matrix, dependency-version surveillance, legacy-path tests or tests whose only purpose is rejecting the old shape. |
 | Client evidence and support claims | Further probing is stopped. Existing observations prove only their exact routes and conditions. Validate pgmcp's own configurable contract and document installation prerequisites; do not claim delivery into every present or future client's model context. |
 
-Research is complete: the investigation, boundary-specific strategy and owner decisions are recorded. Independent QA is requested for the content go/no-go to Design; no QA approval or phase transition is claimed here. The current chore workflow has no Design phase. Before an actual transition, align the workflow with the owner-requested Design/Planning route without reinitializing the branch or erasing its existing state.
+Research is complete. Independent QA reviewed commit 3d919b27172b016eaceb278f81060a80373d6a9f and gave content GO for Design, with workflow alignment as the sole process blocker. The owner subsequently approved refactor and explicitly permitted the narrow registration repair. Only workflow_name and required_phases were changed in state.json and project 529 in deliverables.json. A before/after field comparison confirmed that identity, parent, creation timestamps, current phase and all history were unchanged. get_project_plan(529) and get_work_context() both reported refactor with Research still active before the normal phase transition. The branch name remains unchanged to preserve its identity. No new production behavior is claimed by this administrative correction.
 
 ## Expected Results
 
@@ -368,7 +368,7 @@ Validate complete instruction/presentation publication and full-data access unde
 
 ### A shared output redesign may exceed the maintenance scope of a chore.
 
-Stop for an explicit scope/workflow decision before implementation when the selected mechanism is not bounded maintenance.
+The owner approved refactor and the one-time registration correction before Design. Follow the existing refactor contract for further phases; no general workflow-migration feature is added.
 
 ## Related Documents
 
@@ -392,3 +392,4 @@ Stop for an explicit scope/workflow decision before implementation when the sele
 | 0.9 | 2026-10-19 | @imp researcher | Add approved presentation_channel, replace fixed duplication with selected routing, record clean-break strategy per boundary and profile-focused tests; finish investigation while retaining the two explicit owner policy decisions before Design. |
 | 1.0 | 2026-10-19 | @imp researcher | Confirm no production structured-result readers in scope, verify official protocol/schema rules and record owner-directed bounded emergency text delivery; retain public-envelope approval as the sole policy question. |
 | 1.1 | 2026-10-19 | @imp researcher | Record explicit owner approval of the public envelope and mandatory-core preservation with only diagnostic details bounded; close Research policy questions and request independent QA for Design, subject to workflow alignment. |
+| 1.2 | 2026-10-19 | @imp researcher | Record independent content GO and the owner-authorized chore-to-refactor registration repair; verify preservation of all unrelated state and history before normal Design transition. |
