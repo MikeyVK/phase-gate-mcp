@@ -3,7 +3,7 @@
 # Issue \#522 — Explicit workspace ownership of Git
 
 **Status:** REVIEW REQUESTED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Scope In
@@ -42,7 +42,15 @@ The published issue and #517 residual identify a pre-existing composition defect
 
 ServerSettings already defines a connection-wide workspace and independent server/config/template roots. An explicit PGMCP_WORKSPACE_ROOT overrides its launcher overlay. The existing documented launcher default resolves the connection workspace from launch CWD; this issue does not silently change that general Settings contract. Git must consume that resolved selection once, never choose CWD independently. For external/neutral launch, supply an absolute explicit workspace. Relative workspace inputs already fail normal FileScopePaths admission; they are not a supported neutral-launch shortcut.
 
-The target need not contain the Python package. Server data and effective config/template roots can be explicitly external. Git/workflow conventions come from the connection's ConfigLoader, not native Git discovery or the installed package's own checkout. External config remains an explicit owner-selected policy source for that workspace; introducing an automatic second target-config lookup would contradict the existing root contract. A package/root move with the same explicit target and effective policy must not change Git selection.
+The target need not contain the Python package. Effective config/template roots can be explicitly external. Server-data placement is narrower: the current ArtifactTargetResolver requires its temporary-artifact root to be a workspace descendant, so a server-data root wholly outside the workspace is not an admitted general bootstrap mode. Its Settings path arithmetic alone does not prove otherwise. Git/workflow conventions come from the connection's ConfigLoader, not native Git discovery or the installed package's own checkout. External config remains an explicit owner-selected policy source for that workspace; introducing an automatic second target-config lookup would contradict the existing root contract. A package/root move with the same explicit target and effective policy must not change Git selection.
+
+### Correction from live implementation evidence
+
+A public bootstrap probe with selected target A, foreign launch repository B, an external configuration root and server-data root S outside A failed before Git use: ArtifactTargetResolver.__init__ computes temporary_artifacts_root.relative_to(workspace_root), which raised ValueError for S/temp/artifacts. The initial Research inference from Settings arithmetic was too broad. [The artifact boundary](../../../mcp_server/services/artifact_target_resolver.py) is authoritative for that existing admission limit.
+
+Keep server data in an explicitly chosen directory within A while package/config/template roots may be external. This still proves the issue's independent Git routing and does not require a Python/pgmcp package installation in A. Adding out-of-workspace artifact/state support would expand another subsystem and is not included here.
+
+After correcting the isolated test preparation, the actual causal RED run used native run_tests(scope="targets", targets=["tests/mcp_server/integration/test_target_startup.py","tests/mcp_server/integration/test_git_cycle_evidence.py"], tests=["python_tests"], args={"python_tests":["-q","-k","selected_workspace_git or admission_conflict"]}, timeout_seconds=900): three expected failures in17.04s. Git status reported foreign-launch instead of selected-target, incorrectly succeeded for a selected non-Git folder, and history did not refuse inherited redirection. No production code changed; the durable RED cases were committed in Implementation at2b10b93b before the audited backward return to Research. The rejected external-server-data assumption is not counted as Git RED or silently accepted.
 
 ### Repository forms and competing approaches
 
@@ -89,7 +97,7 @@ These are scope/preservation/breakage decisions under the owner's authorization.
 
 ## Expected Results
 
-Public Git status/context and branch-scoped check selection agree on the selected target. Controlled mutations affect only that repository, while a different launch repository remains unchanged. Installed imports from outside the target, neutral/foreign CWD, external config/server roots, linked/nested worktrees and meaningful refusal cases are covered through public behavior. Genuine missing/ambiguous native contexts retain diagnostics and authorize no alternate mutation. Workspace conventions and ordinary Git user/system policy retain their existing owners.
+Public Git status/context and branch-scoped check selection agree on the selected target. Controlled mutations affect only that repository, while a different launch repository remains unchanged. Installed imports from outside the target, neutral/foreign CWD, external config/template roots with workspace-contained server data, linked/nested worktrees and meaningful refusal cases are covered through public behavior. Genuine missing/ambiguous native contexts retain diagnostics and authorize no alternate mutation. Workspace conventions and ordinary Git user/system policy retain their existing owners.
 
 ## Evidence
 
@@ -173,3 +181,4 @@ Adapt shared factories and existing behavior families. Preserve valuable guards;
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp researcher | Establish causal root-selection evidence, supported boundaries and clean-break strategy. |
+| 1.1 | 2026-10-19 | @imp researcher | Correct unsupported external server-data inference against live artifact admission; retain causal RED and unchanged Git scope. |

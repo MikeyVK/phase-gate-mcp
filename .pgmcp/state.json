@@ -4,9 +4,9 @@
   "parent_branch": "main",
   "issue_number": 522,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "research",
   "current_cycle": 1,
-  "last_cycle": null,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -18,7 +18,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Bounded research correction: live public bootstrap proves out-of-workspace server-data/temp roots are rejected by ArtifactTargetResolver before Git. Correct the unsupported external-server-root claim; retain external package/config/template and causal RED. No production change or artifact architecture expansion; obtain fresh independent QA through forward boundaries.",
   "issue_title": "Git operations are not consistently bound to the target workspace",
   "created_at": "2026-10-19T04:56:36.663473+00:00",
   "transitions": [
@@ -45,8 +45,16 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-10-19T05:55:06.028145+00:00",
+      "human_approval_message": "Standing owner approval granted 2026-10-18 for justified forced returns to earlier phases, reiterated in the owner-authorized 2026-10-19 series handoff. This is a backward recovery, not a forward gate waiver.",
+      "forced": true,
+      "skip_reason": "Bounded research correction: live public bootstrap proves out-of-workspace server-data/temp roots are rejected by ArtifactTargetResolver before Git. Correct the unsupported external-server-root claim; retain external package/config/template and causal RED. No production change or artifact architecture expansion; obtain fresh independent QA through forward boundaries."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
