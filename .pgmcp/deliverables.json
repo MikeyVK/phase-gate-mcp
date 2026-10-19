@@ -16,7 +16,112 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-19T09:20:58.269801+00:00"
+      "created_at": "2026-10-19T09:20:58.269801+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 2,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Profile contracts and truthful serialization facts",
+              "deliverables": [
+                {
+                  "deliverable_name": "Explicit profile configuration and selection",
+                  "description": "Implement frozen response-profile configuration, version 2.0.0 defaults, positive resolved budgets and explicit per-process selector through existing Settings/bootstrap seams; update directly affected configuration builders without old-key aliases.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/config/schemas/presentation_config.py"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Truthful canonical serialization and publication diagnosis",
+                  "description": "Remove concealed replacement-JSON success; preserve original native errors/causes through existing capture_exception and CachePublication diagnostic union; no entry or eviction on failed serialization. Preserve normal canonical representation and cache read/window API.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/schemas/cache_publication.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                },
+                {
+                  "deliverable_name": "Frozen public response value contracts",
+                  "description": "Define the approved common envelope, inline/resource alternatives and both delivery-error codes at the existing presentation-output boundary; keep internal operation DTOs and ToolExecution intact. Prove required value/config/error invariants through focused existing tests.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/schemas/presentation_output.py"
+                  },
+                  "deliverable_id": "D_1.3"
+                }
+              ],
+              "exit_criteria": "Focused configuration/settings, publication and cache-fidelity behavior tests pass, including original exception/cause and independent valid operation facts; changed Python files pass applicable directed format/lint/type checks; native YAML checks pass changed config. No runtime legacy/compatibility mode. Existing loaded server remains available until the complete C_2 activation."
+            },
+            {
+              "cycle_id": "C_2",
+              "cycle_number": 2,
+              "cycle_name": "Protected presentation, profile delivery and live cutover",
+              "deliverables": [
+                {
+                  "deliverable_name": "Protected rendering and bounded diagnostic details",
+                  "description": "Render required template/enum/instruction/note content independently from full JSON serialization, separate optional collections, and update the existing limiter to preserve mandatory core with explicit overruns and UTF-8-safe detail bounds.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/presenters/text_presenter.py"
+                  },
+                  "deliverable_id": "D_2.1"
+                },
+                {
+                  "deliverable_name": "Selected MCP envelope and configuration-independent recovery",
+                  "description": "Resolve/inject the process-local profile, route full operation data and attachments, emit the matching common output schema and truthful independent cache/inline emergency variants, retain actual isError; use fixed full dual-channel startup recovery. Remove bare structured assignment, unconditional resource copies, unlimited fallback and absent-presenter bypass.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/server.py"
+                  },
+                  "deliverable_id": "D_2.2"
+                },
+                {
+                  "deliverable_name": "Current behavioral consumer evidence and activation",
+                  "description": "Adapt existing direct presenter/transport/bootstrap tests and shared constructors to the clean contract; prove representative channel combinations, native SDK schema acceptance, full operation/resource/attachment routes, two instances sharing config, startup recovery and both serializer failure directions. Restart/reload the completed server and perform focused healthy live calls; keep temporary probes out of permanent suite.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_execution_presentation_v3.py"
+                  },
+                  "deliverable_id": "D_2.3"
+                }
+              ],
+              "exit_criteria": "Focused presenter/limiter/interface/schema/server tests and directly affected SDK integration consumers pass; branch-selected focused groups remain bounded to touched seams. Directed production/test checks pass. Completed server restarts healthy and preserves work-context instructions. All old-route remnants removed; no compatibility or client-specific code. Request independent QA before Validation."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Durable validation and completion mapping",
+                "description": "Record one full native-configured suite, branch gates, production-scoped Mypy and configured Python checks; map every deliverable/invariant, actual failure outcomes, cleanup, process isolation and live evidence without relying on transient run IDs.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue529/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Current profile, setup and cache-reading documentation",
+                "description": "Update current presentation architecture, setup/launcher guidance and packaged cache guide for selected profiles, common envelope, schema boundaries, mandatory-core budget exception and fixed startup recovery; preserve historical issue reports.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/reference/presentation_architecture.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
