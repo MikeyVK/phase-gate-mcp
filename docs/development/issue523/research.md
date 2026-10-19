@@ -118,6 +118,10 @@ A newly proposed runtime/schema/cache/compatibility change is the stop condition
 
 A durable research report with exact reproducible measurements, clearly limited client claims, reconciled history and actionable follow-up boundaries. No production, runtime config or permanent test changes; no unsupported compatibility/token claims.
 
+### Evidence packaging completed
+
+Research QA granted Research → Implementation on d568f5e6667e94d1a5ef0f66a4be9b3ae5501234. Implementation rechecked the complete branch inventory: only this report and initialized workflow files are tracked. The temporary probe is reproduced below rather than added to the permanent suite. Active presentation architecture and agent guidance were inspected and remain accurate; no additional instruction layer is needed. The catalog/schema and client-delivery observations remain findings for owner/Co consideration, not runtime changes. Validation must still execute its configured suite and relevant branch checks.
+
 ## Evidence
 
 ### Reproduce the measured output fields
