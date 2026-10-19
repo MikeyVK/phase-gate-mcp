@@ -2,8 +2,8 @@
 # Configuration and Template Loading
 
 **Status:** DEFINITIVE  
-**Version:** 1.1  
-**Last Updated:** 2026-10-16
+**Version:** 1.2  
+**Last Updated:** 2026-10-18
 
 Runtime settings select roots, workspace declarations select policy, and template packages own artifact contracts. Existing typed models remain authoritative for their fields.
 
@@ -14,6 +14,13 @@ Runtime settings select roots, workspace declarations select policy, and templat
 ## Workspace declarations
 
 [ConfigLoader](../../mcp_server/config/loader.py) reads required complete bases from `config_root/defaults/<file>.yaml` and optional workspace differences from `config_root/<file>.yaml`. The selected root is self-contained: missing bases do not fall back to a repository or installed package. Loading does not write files, create backups or materialize effective configuration.
+
+Normal proxy/server startup first reads the required [server policy](server-configuration.md#startup-admission-policy)
+through this same loader: defaults/server.yaml plus optional root server.yaml. The proxy
+injects its configured initialize deadline; the child reads only this policy before
+bounded lock acquisition and keeps other source admission inside the lock. No separate
+startup loader or timing fallback is involved. Policy edits require full proxy/child
+relaunch; direct CLI --init/--upgrade dispatch remains outside ordinary startup admission.
 
 The basis must be a complete valid document. After composition, the result must satisfy the same domain model and cross-config references. Present empty YAML, duplicate keys, nonmapping roots, unreadable sources and invalid schema versions are errors. An absent override inherits; `{}` changes nothing.
 
@@ -100,3 +107,4 @@ This refactor supplies no new build/distribution/upgrade mechanism. Existing roo
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-16 | @imp documenter | Consolidate the implemented layered-source and composition contract. |
 | 1.1 | 2026-10-16 | @imp documenter | Document removed operation-policy Python/config contracts, deliberate owner cleanup and preserved active admission for #506. |
+| 1.2 | 2026-10-18 | @imp documenter | Place early startup policy in ordinary source composition and describe its relaunch boundary for #520. |

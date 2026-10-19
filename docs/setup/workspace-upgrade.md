@@ -162,7 +162,10 @@ authority to replace that root.
 Restart the MCP server after package installation, an active suite change or a change
 to startup-loaded configuration. Reconnect or refresh the MCP client so it discovers
 the new tool contracts. A launch-environment change may require closing and relaunching
-the client so the proxy and child server inherit the new settings.
+the client so the proxy and child server inherit the new settings. Changes to the
+[startup policy](../reference/server-configuration.md#startup-admission-policy) always
+require full proxy/child relaunch. Existing workspaces explicitly install its required
+basis; template-only --upgrade does not install server.yaml.
 
 Inspect `health_check` after restart. If startup is rejected, use its diagnosis to
 repair the cause, then request another restart. A restart acknowledgement alone is

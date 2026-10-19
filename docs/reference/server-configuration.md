@@ -4,10 +4,10 @@
 
 
 **Status:** DEFINITIVE
-**Version:** 1.3
-**Last Updated:** 2026-10-16
+**Version:** 1.4
+**Last Updated:** 2026-10-18
 
-**Source:** [mcp_server/config/settings.py](../../mcp_server/config/settings.py)
+**Sources:** [launcher settings](../../mcp_server/config/settings.py), [ConfigLoader](../../mcp_server/config/loader.py) and [startup policy schema](../../mcp_server/config/schemas/server_config.py)
 **Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py)
 
 ---
@@ -72,12 +72,59 @@ ConfigLoader composes defaults/github.yaml and optional root github.yaml. Identi
 
 ---
 
+## Startup admission policy
+
+[ConfigLoader.load_server_config()](../../mcp_server/config/loader.py) composes
+required `config_root/defaults/server.yaml` with optional
+`config_root/server.yaml`, using the ordinary [composition contract](config-loading-architecture.md).
+[ServerConfig](../../mcp_server/config/schemas/server_config.py) is the authoritative
+closed, immutable schema. The complete basis has `version: "1.0.0"` and all fields below.
+
+| Field | Distributed basis | Meaning |
+| --- | --- | --- |
+| `startup_lock.max_wait_seconds` | 30 | Maximum retry budget for ordinary startup lock contention. |
+| `startup_lock.retry_interval_seconds` | 0.25 | Interval between failed native lock attempts, bounded by remaining budget. |
+| `proxy.initialization_timeout_seconds` | 60 | Proxy deadline for completing the child initialize handshake. |
+
+The first lock attempt is immediate and startup continues as soon as it acquires
+the lock. All timings must be finite, positive numbers; booleans and numeric strings
+are rejected. The retry interval cannot exceed the wait budget, and the proxy
+deadline must exceed that budget. These bounds do not guarantee total startup latency.
+
+For example, an optional workspace override can change just the wait budget:
+
+```yaml
+startup_lock:
+  max_wait_seconds: 40
+```
+
+The proxy and child independently read this policy through the existing loader.
+Only the policy is read before the child's source-admission lock; template and adapter
+admission remain inside that lock. Launcher Settings still selects roots and logging.
+`PGMCP_CONFIG_PATH` is a launcher overlay, not the source of these timing fields.
+
+Fresh `--init` installs the packaged basis through the existing assets route.
+Existing workspaces must explicitly install/reconcile the new required basis and
+any override before normal startup. `--upgrade` renews templates and does not install
+this configuration. If an existing `config_root/server.yaml` contains a launcher
+overlay with `server:` or `logging:`, move that owner-managed overlay to a distinct
+file and update `PGMCP_CONFIG_PATH`; the root `server.yaml` now has the startup-policy shape.
+
+A missing/invalid policy is an admission error with its source diagnosis. If the
+proxy cannot read it, no child is launched and no MCP recovery endpoint is promised.
+Applying coordinated policy edits requires a full proxy/child relaunch:
+`restart_server` replaces only the child and retains the proxy's current deadline.
+See [proxy timing and recovery](proxy_restart.md).
+
+---
+
 ## API Reference
 
 ### `Settings.from_env()`
 
 Class method. Reads environment variables, applies optional YAML overlay, and returns a validated
-`Settings` instance.  Called once at startup by `MCPServer.__init__`.
+`Settings` instance. Composition entrypoints use it to resolve launcher settings;
+startup timing policy is subsequently read by `ConfigLoader.load_server_config()`.
 
 ```python
 settings: Settings = Settings.from_env()
@@ -124,7 +171,7 @@ Neutral values permit startup/health; existing registration, use-time and enforc
 Set `PGMCP_CONFIG_PATH` to the path of a YAML file to override server or logging settings:
 
 ```yaml
-# .pgmcp/config/server.yaml  (example)
+# .pgmcp/launcher-settings.yaml (explicit PGMCP_CONFIG_PATH example)
 server:
   name: "my-workflow"
   logs_dir: "output/logs"
@@ -272,3 +319,4 @@ and [execution outcomes](tools/quality.md#deliberate-binding-setup).
 | 1.0 | 2026-05-11 | Agent | Initial draft |
 | 1.2 | 2026-10-07 | @imp documenter | Document required branch-policy declarations, matching semantics, scope boundaries and clean-break admission. |
 | 1.3 | 2026-10-16 | @imp documenter | Document source layering, GitHub separation and preserved initialization choices. |
+| 1.4 | 2026-10-18 | @imp documenter | Document composed startup admission policy, explicit migration and proxy relaunch boundary for #520. |

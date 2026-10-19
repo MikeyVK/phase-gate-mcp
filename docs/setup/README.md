@@ -73,6 +73,17 @@ explicit parent for a **real** issue branch. Read the
 [registration/recovery guidance](workspace-upgrade.md#unreleased-branch-registration-contract)
 when adopting it; workspace initialization is not issue registration.
 
+### Choose startup budgets
+
+Normal proxy/server startup requires `defaults/server.yaml` under the effective config
+root. Fresh `--init` installs it from current package assets; existing workspaces must
+explicitly install/reconcile it because `--upgrade` remains template-only. Optional
+root `server.yaml` contains workspace differences. The default policy is a 30-second
+lock retry budget, 0.25-second interval and 60-second proxy initialize deadline.
+See [the authoritative startup policy and migration note](../reference/server-configuration.md#startup-admission-policy).
+A policy change requires full proxy/child relaunch; child-only `restart_server` retains
+the old proxy deadline. Allow outer client startup margin (recommended 75 seconds).
+
 ### Choose the workspace quality policy
 
 Provision each required adapter's pinned native dependencies, then choose the native
@@ -164,6 +175,7 @@ does not prove automatic rule loading or MCP activation.
 
 ```toml
 [mcp_servers.phase_gate_mcp]
+startup_timeout_sec = 75
 tool_timeout_sec = 1800
 ```
 

@@ -20,6 +20,8 @@ from typing import Any, Literal
 
 from mcp.types import InitializeResult
 
+from mcp_server.config.loader import ConfigLoader
+from mcp_server.config.settings import Settings
 from mcp_server.presenters.startup_recovery_presenter import present_proxy_event
 
 # RESTART_MARKER: Printed to stderr by server to signal restart request
@@ -144,7 +146,7 @@ class MCPProxy:
         *,
         process_factory: ProcessFactory = launch_server,
         event_presenter: EventPresenter = present_proxy_event,
-        initialization_timeout_seconds: float = 30.0,
+        initialization_timeout_seconds: float,
     ) -> None:
         if not math.isfinite(initialization_timeout_seconds) or initialization_timeout_seconds <= 0:
             raise ValueError("positive_initialization_timeout_required")
@@ -695,7 +697,9 @@ class MCPProxy:
 
 def main() -> None:
     """Entry point for python -m mcp_server.core.proxy."""
-    MCPProxy().run()
+    settings = Settings.from_env()
+    policy = ConfigLoader(settings.server.resolved_config_root).load_server_config()
+    MCPProxy(initialization_timeout_seconds=policy.proxy.initialization_timeout_seconds).run()
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ from typing import Any
 
 import pytest
 
-from mcp_server.core.proxy import MCPProxy
+from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.proxy import MCPProxy, main
 
 CHILD = """
 import asyncio, os, sys
@@ -99,6 +100,7 @@ class ProxyProbe:
         self.condition = threading.Condition()
         self.replacement = "healthy"
         self.proxy = MCPProxy(
+            initialization_timeout_seconds=60,
             process_factory=self.spawn,
             event_presenter=self.present_event,
         )
@@ -335,3 +337,41 @@ def test_stdin_termination_closes_the_live_child(probe: ProxyProbe, ending: str)
     process = probe.proxy.server_process
     assert process is not None and process.poll() is not None
     assert not probe.proxy.restarting
+
+
+@pytest.mark.parametrize("missing_basis", [False, True])
+def test_proxy_entrypoint_composes_policy_before_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, missing_basis: bool
+) -> None:
+    """Proxy launch requires composed configuration, without a fallback deadline."""
+    config = tmp_path / ".pgmcp/config"
+    (config / "defaults").mkdir(parents=True)
+    if not missing_basis:
+        (config / "defaults/server.yaml").write_text(
+            'version: "1.0.0"\nstartup_lock:\n  max_wait_seconds: 1\n'
+            "  retry_interval_seconds: 0.25\nproxy:\n  initialization_timeout_seconds: 2\n",
+            encoding="utf-8",
+        )
+    (config / "server.yaml").write_text(
+        "proxy:\n  initialization_timeout_seconds: 3\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(tmp_path))
+    monkeypatch.setenv("PGMCP_CONFIG_ROOT", str(config))
+    monkeypatch.delenv("PGMCP_CONFIG_PATH", raising=False)
+    observed: list[float] = []
+
+    class ProxyLaunch:
+        def __init__(self, *, initialization_timeout_seconds: float) -> None:
+            self.deadline = initialization_timeout_seconds
+
+        def run(self) -> None:
+            observed.append(self.deadline)
+
+    monkeypatch.setattr("mcp_server.core.proxy.MCPProxy", ProxyLaunch)
+    if missing_basis:
+        with pytest.raises(ConfigError):
+            main()
+        assert observed == []
+    else:
+        main()
+        assert observed == [3]
