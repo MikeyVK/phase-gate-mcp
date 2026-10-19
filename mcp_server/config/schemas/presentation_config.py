@@ -170,6 +170,14 @@ class GlobalPresentationConfig(BaseModel):
     @model_validator(mode="after")
     def validate_cache_reference_template(self) -> GlobalPresentationConfig:
         """Reject malformed cache references independently of positive budgets."""
+        for key in (
+            "cache_publication_failed",
+            "operation_serialization_failed",
+            "diagnostic_excerpt_label",
+            "diagnostic_unavailable",
+        ):
+            if not self.next_instruction_texts.get(key):
+                raise ValueError(f"next_instruction_texts.{key} must be nonempty")
         uri_template = "\n".join(
             text
             for key in ("uri_reference", "pagination_reference")

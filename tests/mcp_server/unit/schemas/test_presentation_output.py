@@ -66,30 +66,18 @@ class TestPresentationResource:
 class TestPresentedOutput:
     """Test suite for PresentedOutput DTO."""
 
-    def test_create_output_defaults(self) -> None:
-        """Verify PresentedOutput creation with default empty resources."""
-        output = PresentedOutput(text="Success output")
-        assert output.text == "Success output"
-        assert output.resources == []
-
-    def test_create_output_with_resources(self) -> None:
-        """Verify PresentedOutput with embedded resources."""
-        res = PresentationResource(uri="schema://validation", content="{}")
-        output = PresentedOutput(text="Validation error", resources=[res])
-        assert output.text == "Validation error"
-        assert len(output.resources) == 1
-        assert output.resources[0].uri == "schema://validation"
-
     def test_output_is_frozen(self) -> None:
         """Verify PresentedOutput is immutable."""
-        output = PresentedOutput(text="Test")
+        output = PresentedOutput(text="Test", structured_content=None)
         with pytest.raises(ValidationError):
             output.text = "New text"  # type: ignore[misc]
 
     def test_output_forbids_extra_fields(self) -> None:
         """Verify PresentedOutput forbids extra fields."""
         with pytest.raises(ValidationError):
-            PresentedOutput(text="Test", extra_prop="invalid")  # type: ignore[call-arg]
+            PresentedOutput.model_validate(
+                {"text": "Test", "structured_content": None, "extra_prop": "invalid"}
+            )
 
 
 @pytest.mark.parametrize("delivery", ["inline", "resource"])

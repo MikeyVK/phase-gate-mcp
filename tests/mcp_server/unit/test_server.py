@@ -23,11 +23,18 @@ from pydantic import BaseModel
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces import ICoreTool, PRStatus
+from mcp_server.core.interfaces.ipresenter import IPresenter
+from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import ToolExecution
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.cache_publication import CachePublication
-from mcp_server.schemas.presentation_output import InlineOperation, PublicToolResponse
+from mcp_server.schemas.presentation_output import (
+    InlineOperation,
+    PresentedOutput,
+    PublicToolResponse,
+)
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.server import MCPServer
 from mcp_server.tools.git_tools import CreateBranchTool
@@ -44,6 +51,7 @@ from tests.mcp_server.test_support import (
     make_dispatch_server,
     make_phase_state_engine,
     make_project_manager,
+    make_response_presenter,
 )
 
 TRANSITION_ADVISORY_NOTE = (
@@ -718,16 +726,9 @@ class TestServerToolRegistration:
 
 @pytest.mark.asyncio
 async def test_handle_call_tool_cache_error_intercept() -> None:
-    """If cache write fails (returns None), the presenter should be called with run_id=None
-    and format the fallback message correctly without crashing.
-    """
+    """Retain complete inline operation data when cache publication fails."""
     from pydantic import BaseModel  # noqa: PLC0415
 
-    from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
-    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
-        SchemaResourcePresenter,
-    )
-    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
 
     class DummyTool(ICoreTool[BaseModel, ToolResult]):
@@ -749,26 +750,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
         _patch_server_settings(mock_settings_cls)
 
-        config_data = {
-            "global": {
-                "default_failure_template": "Failure: {error_message}",
-                "emojis": {"failure": "❌"},
-                "formatting": {
-                    "none_value": "-",
-                    "inline_sequence_separator": ", ",
-                    "inline_sequence_omission_template": "… {omitted_count} more",
-                    "collection_omission_template": "- … {omitted_count} more {field}",
-                    "truncation_notice": "Output truncated.",
-                    "cache_unavailable_truncation_notice": "Output unavailable.",
-                },
-            },
-            "tools": {},
-        }
-        text_presenter = TextPresenter(config_data=config_data)
-        presenter = ResponsePresenter(
-            text_presenter=text_presenter,
-            resource_presenter=SchemaResourcePresenter(),
-        )
+        presenter = make_response_presenter()
 
         managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
         workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
@@ -800,8 +782,12 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         content = response.content
         assert len(content) == 1
         text = getattr(content[0], "text", "")
-        # Should return direct text block formatted by presenter
-        assert "success" in text
+        assert response.is_error is False
+        assert response.structured_content is not None
+        envelope = PublicToolResponse.model_validate_json(json.dumps(response.structured_content))
+        assert envelope.success
+        assert isinstance(envelope.data, InlineOperation)
+        assert "success" in json.dumps(envelope.data.operation)
         # Since cache_pub.run_id is None, there should be NO cache URI in output
         assert "pgmcp://cache/runs/" not in text
 
@@ -819,14 +805,15 @@ def test_server_constructor_clean() -> None:
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
         _patch_server_settings(mock_settings_cls)
         settings = mock_settings_cls.from_env.return_value
+        presenter = MagicMock(spec=IPresenter)
         server = MCPServer(
             settings=settings,
             tools=[],
             resources=[],
-            presenter=None,
+            presenter=presenter,
             publisher=None,
         )
-        assert server is not None
+        assert server.presenter is presenter
 
 
 @pytest.mark.asyncio
@@ -863,18 +850,68 @@ async def test_degraded_health_tool_uses_normalized_pipeline(tmp_path: Path) -> 
         response = await client.call_tool("health_check", {})
 
     assert response.structured_content is not None
-    envelope = PublicToolResponse.model_validate(response.structured_content)
+    envelope = PublicToolResponse.model_validate_json(json.dumps(response.structured_content))
     assert isinstance(envelope.data, InlineOperation)
-    observed = HealthCheckOutput.model_validate(envelope.data.operation)
-    assert observed.startup_diagnostic == execution.operation.startup_diagnostic
-    assert envelope.success is observed.success
-    assert response.is_error is not observed.success
+    assert execution.operation.startup_diagnostic is not None
+    assert envelope.data.operation["startup_diagnostic"] == (
+        execution.operation.startup_diagnostic.model_dump(mode="json")
+    )
+    assert envelope.data.operation["status"] == "unhealthy"
+    assert envelope.success is execution.operation.success
+    assert response.is_error is not execution.operation.success
     assert envelope.delivery_error is None
     assert envelope.attachments == ()
     assert len(response.content) == 1
     text = response.content[0]
     assert isinstance(text, TextContent)
     assert envelope.presentation == text.text
-    assert observed.startup_diagnostic is not None
-    assert observed.startup_diagnostic.message in text.text
+    assert execution.operation.startup_diagnostic.message in text.text
     assert catalog.tools[0].output_schema == PublicToolResponse.model_json_schema()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("operation_success", [True, False])
+async def test_server_transfers_selected_structured_projection(
+    tmp_path: Path, operation_success: bool
+) -> None:
+    """Forward the presenter schema and projection without requiring tool output metadata."""
+    from mcp_server.config.settings import ServerSettings, Settings  # noqa: PLC0415
+
+    class Operation(BaseModel):
+        success: bool
+        marker: str
+
+    operation = Operation(success=operation_success, marker="structured operation marker")
+    envelope = PublicToolResponse(
+        success=operation_success,
+        presentation="complete structured guidance",
+        data=InlineOperation(delivery="inline", operation=operation.model_dump(mode="json")),
+        attachments=(),
+        delivery_error=None,
+    )
+    projected = PresentedOutput(text=None, structured_content=envelope.model_dump(mode="json"))
+    presenter = MagicMock(spec=IPresenter)
+    presenter.present.return_value = projected
+    presenter.output_schema.return_value = PublicToolResponse.model_json_schema()
+    tool = MagicMock(spec=ITool)
+    tool.name = "structured_operation"
+    tool.description = "Return a supplied operation"
+    tool.input_schema = {"type": "object", "properties": {}}
+    tool.execute = AsyncMock(return_value=ToolExecution(operation=operation, attachments=()))
+    server = MCPServer(
+        settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[tool],
+        resources=[],
+        presenter=presenter,
+    )
+
+    async with connected_mcp_client(server) as client:
+        catalog = await client.list_tools()
+        response = await client.call_tool(tool.name, {})
+
+    assert catalog.tools[0].output_schema == presenter.output_schema.return_value
+    assert response.content == []
+    assert response.structured_content == projected.structured_content
+    assert response.is_error is not operation_success
+    presenter.present.assert_called_once()
+    assert presenter.present.call_args.kwargs["data"] is operation

@@ -23,7 +23,7 @@ from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
-from tests.mcp_server.test_support import connected_mcp_client
+from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
 class Capture(BaseModel):
@@ -190,6 +190,7 @@ async def _read_cached_operation(tmp_path: Path, operation: BaseModel) -> str:
         Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[],
         resources=[CachedResponseResource(cache)],
+        presenter=make_response_presenter(),
     )
     async with connected_mcp_client(server) as client:
         response = await client.read_resource(f"pgmcp://cache/runs/{publication.run_id}")

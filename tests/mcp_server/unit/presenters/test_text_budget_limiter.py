@@ -35,9 +35,7 @@ class TestTextBudgetLimiter:
         assert not result.details_truncated
 
     @pytest.mark.parametrize("cache_available", [False, True])
-    def test_limits_only_optional_details_and_protects_notices(
-        self, cache_available: bool
-    ) -> None:
+    def test_limits_only_optional_details_and_protects_notices(self, cache_available: bool) -> None:
         core = "Required instruction\n\ncache:" + "a" * 32
         result = _limiter(160).limit(
             RenderedPresentation(core=core, details="First block\n\n" + "🚀" * 200),

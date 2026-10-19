@@ -30,14 +30,12 @@ from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublish
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
-from tests.mcp_server.test_support import connected_mcp_client
+from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
 class Status(StrEnum):
@@ -96,6 +94,7 @@ def _presenter(config: PresentationConfig, tool: ToolPresentationConfig) -> Text
         config=PresentationConfig.model_validate(
             {
                 "global": config.global_settings,
+                "response_profiles": config.response_profiles,
                 "tools": {"projection": tool},
             }
         )
@@ -149,7 +148,7 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
         tools=[wrapped],
         resources=[CachedResponseResource(cache)],
         publisher=cache,
-        presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
+        presenter=make_response_presenter(config, text_presenter=presenter),
     )
     async with connected_mcp_client(server) as client:
         response = await client.call_tool("projection", {})
@@ -280,13 +279,16 @@ async def test_shipped_cache_delivery_preserves_operation(
         tools=[wrapped],
         resources=[CachedResponseResource(cache), CacheReadGuideResource()],
         publisher=publisher,
-        presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
+        presenter=make_response_presenter(config, text_presenter=presenter),
     )
     async with connected_mcp_client(server) as client:
         response = await client.call_tool("projection", {})
         assert isinstance(response, CallToolResult)
         assert response.is_error is (not operation_success)
-        assert response.structured_content == operation.model_dump(mode="json", by_alias=True)
+        assert response.structured_content is not None
+        assert response.structured_content["data"]["operation"] == operation.model_dump(
+            mode="json", by_alias=True
+        )
         text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
         assert len(text.encode("utf-8")) <= config.global_settings.max_text_response_bytes
         match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
@@ -294,13 +296,9 @@ async def test_shipped_cache_delivery_preserves_operation(
         if cache_failure:
             assert match is None
             assert guide_uri not in text
-            tail = config.global_settings.formatting.cache_unavailable_truncation_notice
-            if length > config.global_settings.max_text_response_bytes:
-                assert text.endswith(tail)
-            else:
-                notices = config.global_settings.next_instruction_texts
-                assert notices["cache_publication_failed"] in text
-                assert tail not in text
+            notices = config.global_settings.next_instruction_texts
+            assert notices["cache_publication_failed"] in text
+            assert response.structured_content["delivery_error"] is None
             return
 
         assert match is not None
@@ -345,6 +343,7 @@ def test_alignment_rejects_unsupported_diagnostic_placeholders(
     policy = PresentationConfig.model_validate(
         {
             "global": global_settings,
+            "response_profiles": config.response_profiles,
             "tools": {"projection": {"template_success": "{title}"}},
         }
     )
@@ -353,3 +352,190 @@ def test_alignment_rejects_unsupported_diagnostic_placeholders(
             TextPresenter(config=policy),
             [SupportedToolContract(name="projection", output_model=Projection)],
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("presentation_channel", "data_channel", "delivery"),
+    [
+        ("both", "structured", "inline"),
+        ("both", "structured", "resource"),
+        ("text", "text", "inline"),
+        ("structured", "text", "inline"),
+        ("structured", "structured", "inline"),
+        ("text", "structured", "resource"),
+        ("both", "text", "resource"),
+    ],
+)
+async def test_selected_profiles_preserve_guidance_and_complete_output(
+    config: PresentationConfig,
+    tmp_path: Path,
+    presentation_channel: str,
+    data_channel: str,
+    delivery: str,
+) -> None:
+    """Real SDK consumers receive exactly the selected projections and full data."""
+    import json  # noqa: PLC0415
+    from uuid import uuid4  # noqa: PLC0415
+
+    from jsonschema import Draft202012Validator  # noqa: PLC0415
+
+    raw = config.model_dump(by_alias=True)
+    marker = "required-guidance-" + uuid4().hex
+    raw["global"]["next_instruction_texts"]["probe_instruction"] = marker
+    raw["global"]["default_response_profile"] = "probe"
+    raw["response_profiles"]["probe"] = {
+        "presentation_channel": presentation_channel,
+        "data_channel": data_channel,
+        "data_delivery": delivery,
+    }
+    raw["tools"] = {
+        "projection": {"template_success": "{title}", "next_instructions": ["probe_instruction"]}
+    }
+    policy = PresentationConfig.model_validate(raw)
+    operation = Projection(
+        success=True,
+        title="Operation summary",
+        count=0,
+        labels=None,
+        status=None,
+        rows=(),
+        detail="complete-data-" + "x" * 20_000,
+    )
+    cache = ResponseCacheManager()
+    wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
+        ProjectionCore(operation)
+    )
+    server = MCPServer(
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[CachedResponseResource(cache)],
+        publisher=cache,
+        presenter=make_response_presenter(policy),
+    )
+    async with connected_mcp_client(server) as client:
+        listing = await client.list_tools()
+        response = await client.call_tool("projection", {})
+        text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
+        structured = response.structured_content
+        has_structured = (
+            presentation_channel in {"both", "structured"} or data_channel == "structured"
+        )
+        assert (listing.tools[0].output_schema is not None) is has_structured
+        assert (structured is not None) is has_structured
+        if has_structured:
+            assert structured is not None
+            schema = listing.tools[0].output_schema
+            assert schema is not None
+            Draft202012Validator(schema).validate(structured)
+            assert (structured["presentation"] is not None) is (presentation_channel != "text")
+            if structured["presentation"] is not None:
+                assert marker in structured["presentation"]
+        if presentation_channel in {"text", "both"}:
+            assert marker in text
+        else:
+            assert marker not in text
+        if data_channel == "text":
+            bundle = json.loads(text.split("```json\n", 1)[1].split("\n```", 1)[0])
+            assert structured is None or structured["data"] is None
+        else:
+            assert structured is not None
+            bundle = structured
+            assert isinstance(operation.detail, str)
+            assert operation.detail not in text
+        selected_data = bundle["data"]
+        if delivery == "inline":
+            assert selected_data["operation"] == operation.model_dump(mode="json", by_alias=True)
+        else:
+            recovered = await client.read_resource(selected_data["uri"])
+            content = recovered.contents[0]
+            assert isinstance(content, TextResourceContents)
+            assert Projection.model_validate_json(content.text) == operation
+        assert not response.is_error
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("failure_stage", "delivery", "operation_success"),
+    [
+        ("cache", "inline", True),
+        ("inline", "inline", True),
+        ("both", "inline", False),
+        ("cache", "resource", True),
+    ],
+)
+async def test_independent_serialization_failure_retains_actual_outcome(
+    config: PresentationConfig,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_stage: str,
+    delivery: str,
+    operation_success: bool,
+) -> None:
+    """Neither native failure can be mistaken for full data or a failed mutation."""
+    from jsonschema import Draft202012Validator  # noqa: PLC0415
+
+    operation = Projection(
+        success=operation_success,
+        title="Required operation facts",
+        count=0,
+        labels=None,
+        status=None,
+        rows=(),
+        detail="native detail",
+    )
+    expected = operation.model_dump(mode="json", by_alias=True)
+    calls = {"cache": 0, "inline": 0}
+    original_dump = Projection.model_dump
+    if failure_stage in {"cache", "both"}:
+
+        def fail_cache(*_args: object, **_kwargs: object) -> str:
+            calls["cache"] += 1
+            raise RuntimeError("canonical serializer failed") from OSError("native canonical cause")
+
+        monkeypatch.setattr(Projection, "model_dump_json", fail_cache)
+    if failure_stage in {"inline", "both"}:
+
+        def fail_inline(self: Projection, **kwargs: object) -> dict[str, object]:
+            if kwargs.get("mode") == "json":
+                calls["inline"] += 1
+                raise RuntimeError("inline serializer failed") from OSError("native inline cause")
+            return original_dump(self, **kwargs)
+
+        monkeypatch.setattr(Projection, "model_dump", fail_inline)
+    raw = config.model_dump(by_alias=True)
+    raw["tools"] = {"projection": {"template_success": "{title}", "template_failure": "{title}"}}
+    policy = PresentationConfig.model_validate(raw)
+    profile = "structured_inline" if delivery == "inline" else "structured_resource"
+    cache = ResponseCacheManager()
+    wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
+        ProjectionCore(operation)
+    )
+    server = MCPServer(
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[CachedResponseResource(cache)],
+        publisher=cache,
+        presenter=make_response_presenter(policy, profile_id=profile),
+    )
+    async with connected_mcp_client(server) as client:
+        listing = await client.list_tools()
+        response = await client.call_tool("projection", {})
+    assert response.is_error is (not operation_success)
+    body = response.structured_content
+    assert body is not None and body["success"] is operation_success
+    assert operation.title in body["presentation"]
+    schema = listing.tools[0].output_schema
+    assert schema is not None
+    Draft202012Validator(schema).validate(body)
+    if failure_stage == "cache" and delivery == "inline":
+        assert body["data"]["operation"] == expected
+        assert body["delivery_error"] is None
+    else:
+        assert body["data"] is None
+        assert body["delivery_error"]["code"] == "operation_serialization_failed"
+    if failure_stage in {"cache", "both"}:
+        assert calls["cache"] == 1
+        assert "pgmcp://cache/runs/" not in body["presentation"]
+    if failure_stage in {"inline", "both"}:
+        assert calls["inline"] == 1

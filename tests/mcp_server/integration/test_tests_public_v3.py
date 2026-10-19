@@ -33,15 +33,18 @@ from mcp_server.execution.models import (
 from mcp_server.execution.process_runtime import AdapterProcessRuntime
 from mcp_server.execution.test_service import TestRunManager as RunManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.run_tests_tool import RunTestsTool
 from tests.mcp_server.fixtures.test_role_double import RecordingTestRuntime
-from tests.mcp_server.integration.test_scaffold_public_v3 import Composition, invoke
+from tests.mcp_server.integration.test_scaffold_public_v3 import (
+    Composition,
+    invoke,
+    schema_attachment,
+)
+from tests.mcp_server.test_support import make_response_presenter
 from tests.mcp_server.unit.execution.test_test_service import (
     Catalog,
     InterruptedRuntime,
@@ -112,7 +115,7 @@ def compose(
         tools=[wrapped],
         resources=[resource],
         publisher=cache,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     return Composition(server, resource, text)
 
@@ -276,8 +279,7 @@ async def test_schema_exposure_and_strict_admission_share_one_contract(
     response, cached = await invoke(composition, "run_tests", arguments)
     assert response.is_error and cached["error_type"] == "ValidationError"
     assert cached["input_schema"] == schema and runtime.calls == []
-    resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
-    assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"
+    assert schema_attachment(response).uri == "schema://validation"
     if not arguments:
         properties = schema["properties"]
         assert isinstance(properties, dict)

@@ -12,9 +12,7 @@ import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import (
     CallToolResult,
-    EmbeddedResource,
     TextContent,
-    TextResourceContents,
 )
 from pydantic import BaseModel, JsonValue
 
@@ -27,12 +25,10 @@ from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHan
 from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.cache_publication import CachePublication
-from mcp_server.schemas.mutation_outputs import ScaffoldOperationOutput
+from mcp_server.schemas.presentation_output import PresentationResource
 from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
@@ -40,7 +36,7 @@ from mcp_server.tools.scaffold_tool import ScaffoldArtifactTool
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaTool
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
 from tests.mcp_server.integration.test_scaffold_operation_v3 import operation as build_operation
-from tests.mcp_server.test_support import connected_mcp_client
+from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
 @pytest.fixture
@@ -147,7 +143,7 @@ def compose(
         tools=wrapped,
         resources=[resource],
         publisher=cache,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     return Composition(server, resource, text)
 
@@ -169,18 +165,26 @@ async def invoke(
     cached = json.loads(
         await composition.cache_resource.read(f"pgmcp://cache/runs/{publication.run_id}")
     )
-    if isinstance(operation, ScaffoldOperationOutput):
-        assert cached == operation.model_dump(mode="json")
+    envelope = response.structured_content
+    assert isinstance(envelope, dict)
+    assert envelope["success"] is cached["success"]
+    assert envelope["delivery_error"] is None
+    delivery = envelope["data"]
+    assert isinstance(delivery, dict) and delivery["delivery"] == "inline"
+    assert delivery["operation"] == operation.model_dump(mode="json", by_alias=True)
     summary = response.content[0]
     assert isinstance(summary, TextContent)
     assert f"pgmcp://cache/runs/{publication.run_id}" in summary.text
+    assert envelope["presentation"] == summary.text
     return response, cached
 
 
-def schema_resource(response: CallToolResult) -> EmbeddedResource:
-    resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
-    assert len(resources) == 1
-    return resources[0]
+def schema_attachment(response: CallToolResult) -> PresentationResource:
+    envelope = response.structured_content
+    assert isinstance(envelope, dict)
+    attachments = envelope["attachments"]
+    assert isinstance(attachments, list) and len(attachments) == 1
+    return PresentationResource.model_validate(attachments[0])
 
 
 @pytest.mark.asyncio
@@ -269,14 +273,13 @@ async def test_context_rejection_attaches_the_same_schema_as_discovery(
     assert isinstance(details, dict) and details["issues"]
     assert "schema_data" not in result and "attachments" not in result
     queried, _ = await invoke(composition, "scaffold_schema", {"artifact_type": "issue"})
-    rejection_schema = schema_resource(rejected).resource
-    query_schema = schema_resource(queried).resource
+    rejection_schema = schema_attachment(rejected)
+    query_schema = schema_attachment(queried)
     assert rejection_schema.uri == query_schema.uri
-    assert str(rejection_schema.uri) == "schema://template/issue/context"
-    assert isinstance(rejection_schema, TextResourceContents)
-    assert isinstance(query_schema, TextResourceContents)
-    assert json.loads(rejection_schema.text) == json.loads(query_schema.text)
-    assert json.loads(query_schema.text) == thaw_json(delivered.catalog.get("issue").schema)
+    assert rejection_schema.uri == "schema://template/issue/context"
+    assert rejection_schema.mime_type == query_schema.mime_type == "application/schema+json"
+    assert json.loads(rejection_schema.content) == json.loads(query_schema.content)
+    assert json.loads(query_schema.content) == thaw_json(delivered.catalog.get("issue").schema)
 
 
 @pytest.mark.asyncio
@@ -347,5 +350,5 @@ async def test_malformed_scaffold_input_stops_at_the_public_envelope(
     assert result["error_type"] == "ValidationError"
     assert result["params"] == raw
     assert result["input_schema"] == schema
-    assert str(schema_resource(response).resource.uri) == "schema://validation"
+    assert schema_attachment(response).uri == "schema://validation"
     assert not (tmp_path / "outputs").exists()

@@ -73,9 +73,18 @@ class PublicToolResponse(BaseModel):
 
 
 class PresentedOutput(BaseModel):
-    """The existing carrier until the planned transport cutover."""
+    """The selected transport projection, independent of MCP SDK classes."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: str | None
+    structured_content: dict[str, JsonValue] | None
+
+
+class BoundedPresentation(BaseModel):
+    """A readable projection with explicit optional-detail omission."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     text: str
-    resources: list[PresentationResource] = Field(default_factory=list)
+    details_truncated: bool

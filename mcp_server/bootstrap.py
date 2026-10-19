@@ -92,7 +92,6 @@ from mcp_server.presenters.response_presenter import ResponsePresenter
 from mcp_server.presenters.schema_resource_presenter import (
     SchemaResourcePresenter,
 )
-from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.presenters.text_presenter import (
     TextPresenter,
     validate_presentation_alignment,
@@ -430,6 +429,9 @@ class ServerBootstrapper:
             enforcement_config = config_loader.load_enforcement_config()
             contracts_config = config_loader.load_contracts_config()
             presentation_config = config_loader.load_presentation_config()
+            response_profile = presentation_config.resolve_response_profile(
+                settings.server.response_profile
+            )
 
             validator = ConfigValidator()
 
@@ -682,12 +684,6 @@ class ServerBootstrapper:
                 collection_renderer=CollectionTextRenderer(
                     presentation_config.global_settings.formatting
                 ),
-                budget_limiter=TextBudgetLimiter(
-                    max_text_response_bytes=(
-                        presentation_config.global_settings.max_text_response_bytes
-                    ),
-                    formatting=presentation_config.global_settings.formatting,
-                ),
             )
             validate_presentation_alignment(
                 text_presenter,
@@ -697,6 +693,8 @@ class ServerBootstrapper:
             presenter = ResponsePresenter(
                 text_presenter=text_presenter,
                 resource_presenter=resource_presenter,
+                profile=response_profile,
+                global_config=presentation_config.global_settings,
             )
 
             factory = CoreToolFactory(

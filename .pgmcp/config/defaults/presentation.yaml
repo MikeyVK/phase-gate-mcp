@@ -42,6 +42,9 @@
     "recheck_quality": "\U0001F4CB REQUIRED NEXT STEP: Run run_checks(scope='targets',\
       \ targets={modified_files}) to verify that the applied fixes now pass all checks."
     "cache_publication_failed": "*(Cache publication failed; cached access is unavailable.)*"
+    "operation_serialization_failed": "Operation data could not be serialized for the selected delivery route; the reported operation outcome remains unchanged."
+    "diagnostic_excerpt_label": "Diagnostic excerpt (may be incomplete; not a complete JSON result):"
+    "diagnostic_unavailable": "No additional diagnostic excerpt is available."
   "failures":
     "planning_cycle_protected": "Planning change rejected: cycles with implementation\
       \ commits cannot be replaced, removed or renumbered. ({error_code})"

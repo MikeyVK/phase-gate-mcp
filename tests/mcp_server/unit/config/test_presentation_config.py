@@ -70,7 +70,13 @@ def _global_config(max_bytes: int = 8_000) -> dict[str, Any]:
                 "Output truncated; complete details are unavailable."
             ),
         },
-        "next_instruction_texts": {"uri_reference": ("View resource: pgmcp://cache/runs/{run_id}")},
+        "next_instruction_texts": {
+            "uri_reference": "View resource: pgmcp://cache/runs/{run_id}",
+            "cache_publication_failed": "Cache publication unavailable.",
+            "operation_serialization_failed": "Operation serialization unavailable.",
+            "diagnostic_excerpt_label": "Incomplete diagnostic excerpt:",
+            "diagnostic_unavailable": "Diagnostic unavailable.",
+        },
     }
 
 

@@ -18,6 +18,7 @@ import re
 import shutil
 from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 # Third-party
@@ -25,6 +26,7 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel
 
+from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import (
     ValidationError as CoreValidationError,
@@ -33,18 +35,16 @@ from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import (
-    SchemaResourcePresenter,
-)
-from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import EnforcementErrorOutput
+from mcp_server.schemas.presentation_output import InlineOperation, PublicToolResponse
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from tests.mcp_server.test_support import (
     assert_itool_result,
     connected_mcp_client,
+    make_config_loader,
+    make_response_presenter,
     make_test_server,
 )
 
@@ -59,13 +59,10 @@ class DummyOutput(BaseModel):
     result: str
 
 
-def _presentation_formatting() -> dict[str, str]:
-    return {
-        "inline_sequence_omission_template": "… {omitted_count} more",
-        "collection_omission_template": "- … {omitted_count} more {field}",
-        "truncation_notice": "Output truncated.",
-        "cache_unavailable_truncation_notice": "Output unavailable.",
-    }
+def _presentation_config() -> dict[str, Any]:
+    config = make_config_loader().load_presentation_config().model_dump(by_alias=True)
+    config["tools"] = {"dummy_core_tool": {"template_success": "Success: {result}"}}
+    return config
 
 
 class DummyCoreTool(ICoreTool[DummyInput, DummyOutput]):
@@ -129,27 +126,8 @@ class TestPipelineE2E:
         # Set up test server
         server = isolated_server
         server.response_cache_manager = cache_manager
-        config_data = {
-            "global": {
-                "formatting": _presentation_formatting(),
-                "next_instruction_texts": {
-                    "uri_reference": (
-                        "*(Full details available in the structured JSON payload. "
-                        "View resource: pgmcp://cache/runs/{run_id})*"
-                    )
-                },
-            },
-            "tools": {
-                "dummy_core_tool": {
-                    "template_success": "Success: {result}",
-                }
-            },
-        }
-        text_presenter = TextPresenter(config_data=config_data)
-        server.presenter = ResponsePresenter(
-            text_presenter=text_presenter,
-            resource_presenter=SchemaResourcePresenter(),
-        )
+        config_data = _presentation_config()
+        server.presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
         server.tools = [decorated_tool]
 
         # Act - Trigger tool call request
@@ -174,6 +152,10 @@ class TestPipelineE2E:
         cached_dto = cache_manager.get(run_id, DummyOutput)
         assert cached_dto is not None
         assert cached_dto.result == "Value: 42"
+        assert response.structured_content is not None
+        envelope = PublicToolResponse.model_validate_json(json.dumps(response.structured_content))
+        assert isinstance(envelope.data, InlineOperation)
+        assert envelope.data.operation == cached_dto.model_dump(mode="json", by_alias=True)
 
     @pytest.mark.asyncio
     async def test_pipeline_cache_fallback(
@@ -190,28 +172,11 @@ class TestPipelineE2E:
 
         server = isolated_server
         server.response_cache_manager = cache_manager
-        config_data = {
-            "global": {
-                "formatting": _presentation_formatting(),
-                "next_instruction_texts": {
-                    "uri_reference": (
-                        "*(Full details available in the structured JSON payload. "
-                        "View resource: pgmcp://cache/runs/{run_id})*"
-                    ),
-                    "cache_publication_failed": "CACHE FAILURE MARKER",
-                },
-            },
-            "tools": {
-                "dummy_core_tool": {
-                    "template_success": "Success: {result}",
-                }
-            },
-        }
-        text_presenter = TextPresenter(config_data=config_data)
-        server.presenter = ResponsePresenter(
-            text_presenter=text_presenter,
-            resource_presenter=SchemaResourcePresenter(),
+        config_data = _presentation_config()
+        config_data["global"]["next_instruction_texts"]["cache_publication_failed"] = (
+            "CACHE FAILURE MARKER"
         )
+        server.presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
         server.tools = [decorated_tool]
 
         req = CallToolRequest(
@@ -230,9 +195,13 @@ class TestPipelineE2E:
         assert "pgmcp://cache/runs/" not in text_content
         expected = DummyOutput(success=True, result="Value: 100")
         assert not response.is_error
-        assert response.structured_content == expected.model_dump(mode="json", by_alias=True)
-        fallback = json.loads(text_content.split("```json\n", 1)[1].split("\n```", 1)[0])
-        assert fallback == expected.model_dump(mode="json")
+        assert response.structured_content is not None
+        envelope = PublicToolResponse.model_validate_json(json.dumps(response.structured_content))
+        assert envelope.success
+        assert isinstance(envelope.data, InlineOperation)
+        assert envelope.data.operation == expected.model_dump(mode="json", by_alias=True)
+        assert envelope.presentation == text_content
+        assert envelope.delivery_error is None
         cache_manager.put.assert_called_once_with("dummy_core_tool", expected)
 
     @pytest.mark.asyncio
@@ -255,20 +224,9 @@ class TestPipelineE2E:
 
         server = isolated_server
         server.response_cache_manager = cache_manager
-        config_data = {
-            "global": {
-                "formatting": _presentation_formatting(),
-                "default_failure_template": "Failure: {error_message}",
-                "emojis": {"failure": "❌"},
-                "failures": {"dirty_workdir": "Branch {branch} is dirty!"},
-            },
-            "tools": {},
-        }
-        text_presenter = TextPresenter(config_data=config_data)
-        server.presenter = ResponsePresenter(
-            text_presenter=text_presenter,
-            resource_presenter=SchemaResourcePresenter(),
-        )
+        config_data = _presentation_config()
+        config_data["global"]["failures"] = {"dirty_workdir": "Branch {branch} is dirty!"}
+        server.presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
         server.tools = [decorated_tool]
 
         req = CallToolRequest(

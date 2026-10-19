@@ -38,9 +38,7 @@ from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.resources.base import BaseResource
-from mcp_server.schemas.presentation_output import PresentedOutput
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 
 # Tools
@@ -61,7 +59,7 @@ class MCPServer:
         settings: Settings,
         tools: list[ITool],
         resources: list[BaseResource],
-        presenter: IPresenter | None = None,
+        presenter: IPresenter,
         publisher: IToolResponsePublisher | None = None,
     ) -> None:
         """Initialize the MCP server with resources and tools."""
@@ -120,9 +118,7 @@ class MCPServer:
         ) -> ListToolsResult:
             tools_list = []
             for t in self.tools:
-                output_schema = None
-                if hasattr(t, "output_model") and getattr(t, "output_model", None) is not None:
-                    output_schema = operation_output_model(t.output_model).model_json_schema()
+                output_schema = self.presenter.output_schema()
                 tools_list.append(
                     Tool(
                         name=t.name,
@@ -161,44 +157,30 @@ class MCPServer:
                         execution = await tool.execute(arguments or {}, note_context)
                         result_dto = execution.operation
 
-                        # 2. Publish result to cache (resilient; returns None on failure)
+                        # 2. Publish only the operation; receipts preserve delivery diagnosis.
                         cache_pub = None
                         if self.response_cache_manager is not None:
                             cache_pub = self.response_cache_manager.put(tool.name, result_dto)
 
-                        # 3. Generate presentation output (formats DTO, notes, resources)
-                        if self.presenter is not None:
-                            presented = self.presenter.present(
-                                tool_name=tool.name,
-                                data=result_dto,
-                                notes=note_context.entries,
-                                cache_pub=cache_pub,
-                                attachments=execution.attachments,
-                            )
-                        else:
-                            presented = PresentedOutput(text=str(result_dto), resources=[])
+                        # 3. Project the operation, notes and attachments once.
+                        presented = self.presenter.present(
+                            tool_name=tool.name,
+                            data=result_dto,
+                            notes=note_context.entries,
+                            cache_pub=cache_pub,
+                            attachments=execution.attachments,
+                        )
 
-                        # 4. Construct and return normalized ToolResult
-                        content: list[dict[str, Any]] = [{"type": "text", "text": presented.text}]
-                        for res in presented.resources:
-                            content.append(
-                                {
-                                    "type": "resource",
-                                    "resource": {
-                                        "uri": res.uri,
-                                        "mimeType": res.mime_type,
-                                        "text": res.content,
-                                    },
-                                }
-                            )
+                        # 4. Transfer only the selected presentation channels.
+                        content: list[dict[str, Any]] = []
+                        if presented.text is not None:
+                            content.append({"type": "text", "text": presented.text})
 
                         success = getattr(result_dto, "success", True)
                         raw_result = ToolResult(content=content, is_error=not success)
                         response_content = self._convert_tool_result_to_mcp_result(raw_result)
 
-                        response_content.structured_content = result_dto.model_dump(
-                            mode="json", by_alias=True
-                        )
+                        response_content.structured_content = presented.structured_content
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.debug(

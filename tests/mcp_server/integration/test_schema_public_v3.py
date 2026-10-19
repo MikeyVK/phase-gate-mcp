@@ -11,13 +11,12 @@ import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import (
     CallToolResult,
-    EmbeddedResource,
     ListToolsResult,
     TextContent,
-    TextResourceContents,
 )
 from pydantic import BaseModel, JsonValue
 
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
 from mcp_server.core.decorators.input_validation_decorator import InputValidationDecorator
@@ -27,19 +26,18 @@ from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
+from mcp_server.schemas.presentation_output import PresentationResource
 from mcp_server.schemas.template_identity import ArtifactIdentity
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.project_tools import GetProjectPlanInput
 from mcp_server.tools.template_schema_tool import ScaffoldSchemaOutput, ScaffoldSchemaTool
 from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, load_delivered_template
-from tests.mcp_server.test_support import connected_mcp_client
+from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
 @pytest.fixture
@@ -74,37 +72,24 @@ def compose(root: Path, delivered: DeliveredTemplate) -> Composition:
     )
     cache = ResponseCacheManager(max_size=1)
     resource = CachedResponseResource(cache)
-    text = MagicMock(
-        spec=ITextPresenter,
-        wraps=TextPresenter(
-            config_data={
-                "global": {
-                    "formatting": {
-                        "inline_sequence_omission_template": " ({omitted_count} omitted)",
-                        "collection_omission_template": "{omitted_count} omitted",
-                        "truncation_notice": "Truncated",
-                        "cache_unavailable_truncation_notice": "Truncated without cache",
-                    },
-                    "next_instruction_texts": {
-                        "uri_reference": "pgmcp://cache/runs/{run_id}",
-                    },
-                },
-                "tools": {
-                    "scaffold_schema": {
-                        "template_success": (
-                            "{template_id}: {purpose} ({package_version}, {package_fingerprint})"
-                        ),
-                    }
-                },
-            }
-        ),
-    )
+    config = ConfigLoader(
+        Path(__file__).resolve().parents[3] / ".pgmcp/config"
+    ).load_presentation_config()
+    data = config.model_dump(mode="json", by_alias=True)
+    data["tools"] = {
+        "scaffold_schema": {
+            "template_success": (
+                "{template_id}: {purpose} ({package_version}, {package_fingerprint})"
+            ),
+        }
+    }
+    text = MagicMock(spec=ITextPresenter, wraps=TextPresenter(config_data=data))
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(root))),
         tools=[wrapped],
         resources=[resource],
         publisher=cache,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     return Composition(server, core, cache, resource, runner, text)
 
@@ -120,22 +105,28 @@ async def listed_schema(composition: Composition) -> dict[str, JsonValue]:
 async def invoke(
     composition: Composition,
     arguments: dict[str, JsonValue],
-) -> tuple[CallToolResult, EmbeddedResource, str]:
+) -> tuple[CallToolResult, PresentationResource, str]:
     async with connected_mcp_client(composition.server) as client:
         response = await client.call_tool("scaffold_schema", arguments)
     assert isinstance(response, CallToolResult)
-    assert len(response.content) == 2
-    resource = response.content[1]
-    assert isinstance(resource, EmbeddedResource)
+    assert len(response.content) == 1
+    envelope = response.structured_content
+    assert isinstance(envelope, dict)
+    attachments = envelope["attachments"]
+    assert isinstance(attachments, list) and len(attachments) == 1
+    resource = PresentationResource.model_validate(attachments[0])
+    delivery = envelope["data"]
+    assert isinstance(delivery, dict) and delivery["delivery"] == "inline"
+    operation = composition.text.present_text.call_args.kwargs["data"]
+    assert delivery["operation"] == operation.model_dump(mode="json", by_alias=True)
     publication = composition.text.present_text.call_args.kwargs["cache_pub"]
     assert isinstance(publication, CachePublication)
     assert publication.run_id is not None
     return response, resource, publication.run_id
 
 
-def resource_schema(resource: EmbeddedResource) -> object:
-    assert isinstance(resource.resource, TextResourceContents)
-    return json.loads(resource.resource.text)
+def resource_schema(resource: PresentationResource) -> object:
+    return json.loads(resource.content)
 
 
 @pytest.mark.asyncio
@@ -154,8 +145,8 @@ async def test_registered_schema_query_transfers_the_complete_catalog_view(
     )
     response, embedded, run_id = await invoke(composition, raw)
     assert response.is_error is False
-    assert embedded.resource.mime_type == "application/schema+json"
-    assert str(embedded.resource.uri) == "schema://template/issue/context"
+    assert embedded.mime_type == "application/schema+json"
+    assert embedded.uri == "schema://template/issue/context"
     selected = delivered.catalog.get("issue")
     assert resource_schema(embedded) == thaw_json(selected.schema)
     cached = json.loads(await composition.resource.read(f"pgmcp://cache/runs/{run_id}"))
@@ -208,7 +199,7 @@ async def test_invalid_envelope_uses_the_exposed_whole_tool_schema(
     assert not Draft202012Validator(exposed).is_valid(raw)
     response, embedded, run_id = await invoke(composition, raw)
     assert response.is_error is True
-    assert str(embedded.resource.uri) == "schema://validation"
+    assert embedded.uri == "schema://validation"
     assert resource_schema(embedded) == exposed
     composition.runner.run.assert_not_called()
     operation = composition.cache.get(run_id, ValidationErrorOutput)
@@ -238,7 +229,7 @@ async def test_new_composition_changes_current_schema_without_mutating_old_snaps
     raw: dict[str, JsonValue] = {"artifact_type": "issue"}
     _, old_resource, old_run = await invoke(first, raw)
     _, current_resource, _ = await invoke(second, raw)
-    assert old_resource.resource.uri == current_resource.resource.uri
+    assert old_resource.uri == current_resource.uri
     assert resource_schema(old_resource) == thaw_json(delivered.catalog.get("issue").schema)
     assert resource_schema(current_resource) == thaw_json(restarted.catalog.get("issue").schema)
     assert resource_schema(old_resource) != resource_schema(current_resource)
@@ -265,6 +256,7 @@ async def test_registered_legacy_input_keeps_its_exposed_type_boundary(tmp_path:
         settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[wrapped],
         resources=[],
+        presenter=make_response_presenter(),
     )
     async with connected_mcp_client(server) as client:
         response = await client.call_tool(core.name, raw)

@@ -9,12 +9,16 @@ Interfaces for translating execution results, operation notes, and presentation 
 
 from typing import Any, Protocol, runtime_checkable
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 
 from mcp_server.core.operation_notes import NoteEntry
 from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.schemas.cache_publication import CachePublication
-from mcp_server.schemas.presentation_output import PresentationResource, PresentedOutput
+from mcp_server.schemas.presentation_output import (
+    PresentationResource,
+    PresentedOutput,
+    RenderedPresentation,
+)
 
 
 @runtime_checkable
@@ -28,8 +32,8 @@ class ITextPresenter(Protocol):
         notes: list[NoteEntry] | None = None,
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
-    ) -> str:
-        """Format data and notes into a Markdown text string."""
+    ) -> RenderedPresentation:
+        """Render required guidance separately from optional Markdown details."""
         ...
 
     def present_notes(
@@ -68,4 +72,8 @@ class IPresenter(Protocol):
         attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
         """Present data, notes, and resources as a complete PresentedOutput."""
+        ...
+
+    def output_schema(self) -> dict[str, JsonValue] | None:
+        """Describe the selected structured projection for the connected catalog."""
         ...

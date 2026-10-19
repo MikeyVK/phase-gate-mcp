@@ -31,6 +31,7 @@ from pathlib import Path
 from threading import Barrier
 
 import pytest
+import yaml
 from git import Actor
 from git import Repo as GitRepo
 from jsonschema import Draft202012Validator
@@ -251,7 +252,9 @@ class TestTargetStartup:
             health = await client.call_tool("health_check", {})
             assert not health.is_error
             assert health.structured_content is not None
-            observed = HealthCheckOutput.model_validate_json(json.dumps(health.structured_content))
+            observed = HealthCheckOutput.model_validate_json(
+                json.dumps(health.structured_content["data"]["operation"])
+            )
             assert observed.success
             assert health.content
 
@@ -469,12 +472,9 @@ class TestTargetStartup:
                     "tools/call",
                     {"name": "scaffold_schema", "arguments": {"artifact_type": "research"}},
                 )
-                content = response["result"]["content"]
+                attachments = response["result"]["structuredContent"]["attachments"]
                 return next(
-                    item["resource"]["text"]
-                    for item in content
-                    if item.get("type") == "resource"
-                    and item["resource"]["uri"].startswith("schema://")
+                    item["content"] for item in attachments if item["uri"].startswith("schema://")
                 )
 
             admitted = schema_text()
@@ -517,7 +517,7 @@ class TestTargetStartup:
                             "tools/call", {"name": tool_name, "arguments": {}}
                         )["result"]
                         assert not response.get("isError", False), response
-                        payload = response["structuredContent"]
+                        payload = response["structuredContent"]["data"]["operation"]
                         field = "branch" if tool_name == "git_status" else "current_branch"
                         assert payload[field] == "main"
                     created = proc.send_request(
@@ -621,7 +621,9 @@ def test_three_concurrent_proxy_starts_are_healthy(tmp_path: Path) -> None:
                 "result"
             ]
             assert not result.get("isError", False), result
-            health = HealthCheckOutput.model_validate(result["structuredContent"])
+            health = HealthCheckOutput.model_validate(
+                result["structuredContent"]["data"]["operation"]
+            )
             assert health.success, health
             assert health.status == "healthy"
             assert health.startup_diagnostic is None
@@ -667,7 +669,7 @@ def test_exhausted_startup_exposes_original_lock_diagnosis(tmp_path: Path) -> No
         result = process.send_request("tools/call", {"name": "health_check", "arguments": {}})[
             "result"
         ]
-        payload = result["structuredContent"]
+        payload = result["structuredContent"]["data"]["operation"]
         Draft202012Validator(HealthCheckOutput.model_json_schema()).validate(payload)
         assert payload["status"] == "unhealthy"
         diagnostic = payload["startup_diagnostic"]
@@ -728,15 +730,18 @@ async def test_selected_workspace_git_ignores_foreign_launch(
         async with connected_mcp_client(server) as client:
             health = await client.call_tool("health_check", {})
             assert health.structured_content is not None
-            assert health.structured_content["status"] == "healthy"
+            assert health.structured_content["data"]["operation"]["status"] == "healthy"
             result = await client.call_tool("git_status", {})
             assert result.structured_content is not None
             if has_repository:
                 assert not result.is_error, result
-                assert result.structured_content["branch"] == "selected-target"
+                assert result.structured_content["data"]["operation"]["branch"] == "selected-target"
                 context = await client.call_tool("get_work_context", {})
                 assert context.structured_content is not None
-                assert context.structured_content["current_branch"] == "selected-target"
+                assert (
+                    context.structured_content["data"]["operation"]["current_branch"]
+                    == "selected-target"
+                )
             else:
                 assert result.is_error
                 assert result.structured_content["success"] is False
@@ -749,3 +754,85 @@ async def test_selected_workspace_git_ignores_foreign_launch(
         foreign_repo.close()
         if target_repo is not None:
             target_repo.close()
+
+
+def test_two_stdio_instances_select_independent_profiles_from_shared_config(tmp_path: Path) -> None:
+    """Launch selectors stay local while both servers read the same authored settings."""
+    workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
+    config_root = workspace / ".pgmcp/config"
+    marker = f"Profile presentation {tmp_path.name}"
+    instruction = f"Preserve profile instruction {tmp_path.name}"
+    (config_root / "presentation.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "global": {"next_instruction_texts": {"instance_instruction": instruction}},
+                "tools": {
+                    "health_check": {
+                        "template_success": marker + " {status}",
+                        "next_instructions": ["instance_instruction"],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    before = {
+        path.relative_to(config_root): path.read_bytes()
+        for path in config_root.rglob("*")
+        if path.is_file()
+    }
+    env = os.environ.copy()
+    env.update(
+        PYTHONPATH=str(REPO_ROOT),
+        PGMCP_WORKSPACE_ROOT=str(workspace),
+        PGMCP_SERVER_PROJECT_DIR=".pgmcp",
+        PGMCP_CONFIG_ROOT=str(config_root),
+        PGMCP_RESPONSE_PROFILE="structured_inline",
+    )
+    for key in ("PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
+        env.pop(key, None)
+    text_env = {**env, "PGMCP_RESPONSE_PROFILE": "text_inline"}
+    launch = [sys.executable, "-m", "mcp_server.core.proxy"]
+    with run_server_process(launch, cwd=workspace, env=env, timeout=75) as structured:
+        structured.initialize(client_name="profile-structured")
+        with run_server_process(launch, cwd=workspace, env=text_env, timeout=75) as text:
+            text.initialize(client_name="profile-text")
+            assert structured.process.pid != text.process.pid
+            structured_tool = next(
+                tool for tool in structured.list_tools() if tool["name"] == "health_check"
+            )
+            text_tool = next(tool for tool in text.list_tools() if tool["name"] == "health_check")
+            assert structured_tool["outputSchema"]
+            assert text_tool.get("outputSchema") is None
+            text_result = text.send_request(
+                "tools/call", {"name": "health_check", "arguments": {}}
+            )["result"]
+            assert not text_result.get("isError", False), text_result
+            assert text_result.get("structuredContent") is None
+            text_content = "\n".join(item["text"] for item in text_result["content"])
+            assert marker in text_content and instruction in text_content
+            delivered = json.loads(text_content.rsplit("```json\n", 1)[1].split("\n```", 1)[0])
+            assert delivered["data"]["delivery"] == "inline"
+            text_health = HealthCheckOutput.model_validate(delivered["data"]["operation"])
+            assert text_health.success and text_health.status == "healthy"
+
+            # Query the first instance after the second is active to expose shared selection.
+            result = structured.send_request(
+                "tools/call", {"name": "health_check", "arguments": {}}
+            )["result"]
+            assert not result.get("isError", False), result
+            envelope = result["structuredContent"]
+            Draft202012Validator(structured_tool["outputSchema"]).validate(envelope)
+            assert marker in envelope["presentation"] and instruction in envelope["presentation"]
+            structured_text = "\n".join(item["text"] for item in result["content"])
+            assert structured_text == envelope["presentation"]
+            assert envelope["data"]["delivery"] == "inline"
+            structured_health = HealthCheckOutput.model_validate(envelope["data"]["operation"])
+            assert structured_health.success and structured_health.status == "healthy"
+            assert structured_health.pid != text_health.pid
+
+    assert before == {
+        path.relative_to(config_root): path.read_bytes()
+        for path in config_root.rglob("*")
+        if path.is_file()
+    }

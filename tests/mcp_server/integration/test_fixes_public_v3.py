@@ -23,14 +23,17 @@ from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager
 from mcp_server.execution.models import ApplyFixesOutput
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.fix_tools import ApplyFixesTool
-from tests.mcp_server.integration.test_scaffold_public_v3 import Composition, invoke
+from tests.mcp_server.integration.test_scaffold_public_v3 import (
+    Composition,
+    invoke,
+    schema_attachment,
+)
+from tests.mcp_server.test_support import make_response_presenter
 from tests.mcp_server.unit.execution.test_fix_service import (
     Catalog,
     NativeRuntime,
@@ -96,7 +99,7 @@ def compose(
         tools=[wrapped],
         resources=[resource],
         publisher=cache,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     return Composition(server, resource, text)
 
@@ -288,8 +291,7 @@ async def test_strict_public_schema_is_reusable_after_invalid_calls(
     response, cached = await invoke(composition, "apply_fixes", arguments)
     assert response.is_error and cached["error_type"] == "ValidationError"
     assert cached["input_schema"] == schema and runtime.calls == []
-    resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
-    assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"
+    assert schema_attachment(response).uri == "schema://validation"
     if not arguments:
         properties = schema["properties"]
         assert isinstance(properties, dict)
