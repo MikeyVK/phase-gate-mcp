@@ -3,10 +3,18 @@
 # Issue \#522 — Workspace-bound Git implementation plan
 
 **Status:** REVIEW REQUESTED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Purpose
+
+### Audited recovery and retained C_1
+
+Live bootstrap disproved the assumption that server data may be wholly outside the workspace: ArtifactTargetResolver requires its temporary artifacts to be workspace-contained. Research1.1 and Design1.2 have independent GO. External package/config/template roots remain admissible; server data uses an alternate folder inside the selected workspace. Extending artifact/state placement is outside522.
+
+The stored C_1 and phase blocks remain unchanged. Their references to Design1.1 identify the original technical contract, preserved by Design1.2; the authoritative root clarification above applies to the existing generic external-root obligation. Names, deliverable descriptions, presence validators and exact exit text below remain identical to get_project_plan. No protected cycle is replaced, no new cycle/scope or gate waiver is introduced.
+
+Causal RED is already committed at2b10b93b: the two selected-workspace public cases report the wrong foreign repository (including incorrect success without target Git), and the history case lacks native-selector refusal. The final focused run had three expected failures in17.04s. Reuse this fresh evidence on unchanged production code; the earlier artifact-root refusal is separately retained and is not Git RED. Resume exactly C_1 after independent Planning→Implementation GO.
 
 ### Verification ownership
 
@@ -39,7 +47,7 @@ Documentation updates the smallest complete current surface; no production/test 
 
 ## Scope In
 
-Approved Research37fa53de and Design1.1 on18653784, including the corrected MCPSystemError → history unavailable contract.
+Approved Research1.1 on03730151 and Design1.2 on9fb83bac, preserving the corrected MCPSystemError → history unavailable contract.
 
 ## Scope Out
 
@@ -47,12 +55,12 @@ Issues518/523/524, multi-repository discovery/router, dynamic MCP roots, global 
 
 ## Prerequisites
 
-- Independent Research→Design GO on37fa53de and Design→Planning GO on18653784.
+- Independent Research1.1→Design GO on03730151 and Design1.2→Planning GO on9fb83bac after the audited root-boundary correction.
 - Selected Python3.15/MCP2.3 baseline and existing native pins. Before package tests verify build/setuptools/wheel already provisioned; missing environment prerequisite is not a product failure or reason to weaken assertions.
 
 ## Summary
 
-One coherent cycle delivers Design1.1: explicit composition, adapter-owned exact/native selection, direct/shared consumer migration and public installed isolation evidence. No new architecture, config precedence, compatibility or active-host rollout.
+One coherent cycle delivers Design1.2 (the preserved Design1.1 architecture plus the Research1.1 root clarification): explicit composition, adapter-owned exact/native selection, direct/shared consumer migration and public installed isolation evidence. No new architecture, config precedence, compatibility or active-host rollout.
 
 ## Dependencies
 
@@ -210,3 +218,4 @@ Reconcile current developer-isolation, configuration and applicable Git/setup re
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp planner | Plan one causal correction cycle, proportional public coverage and phase-owned native acceptance. |
+| 1.1 | 2026-10-19 | @imp planner | Apply reviewed root clarification, preserve stored C_1 and causal RED, and require explicit C_1 resumption. |
