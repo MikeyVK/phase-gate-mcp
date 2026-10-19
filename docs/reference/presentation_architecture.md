@@ -1,143 +1,166 @@
 <!-- docs/reference/presentation_architecture.md -->
-<!-- template=reference version=064954ea created=2026-08-19T19:43Z updated=2026-09-13 -->
-# Presentation Architecture and Resource Delegation
+<!-- template=reference version=064954ea created=2026-08-19T19:43Z updated=2026-10-20 -->
+# Presentation Architecture and Response Profiles
 
 **Status:** DEFINITIVE  
-**Version:** 2.4.1  
-**Last Updated:** 2026-10-19
+**Version:** 3.0.0  
+**Last Updated:** 2026-10-20
 
 **Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
 **Presenter implementation:** [mcp_server/presenters](../../mcp_server/presenters)
 
----
-
 ## Purpose
 
-The operation DTO owns the complete tool-result facts. MCPServer serializes that
-actual DTO as MCP `structuredContent`; the presentation layer produces a bounded,
-actionable Markdown projection and supplied schema attachments. The Resource cache
-retains the operation through its existing canonical serialization policy.
-Presentation configuration owns wording, field selection, ordering and per-tool item
-limits. Generic Python components own rendering mechanics, startup validation and the
-final text byte ceiling.
+The operation DTO owns tool-result facts. The presentation boundary projects those facts, configured instructions and separately owned attachments through a response profile. MCPServer transfers that projection without reconstructing DTOs from text. The cache retains the operation through its existing canonical serialization policy.
 
-These outputs serve complementary purposes:
-
-1. compact text supports routine decisions;
-2. `structuredContent` supplies the actual operation DTO, serialized by the server with
-   JSON mode and aliases, independently of text truncation or cache publication;
-3. `pgmcp://cache/runs/{run_id}` supplies the cached operation and bounded reads when
-   clients need that route for complete fields or verbose diagnostics.
-
-Schema exposure follows the registered tool's available output-model metadata.
-Processing or transport failures without an operation DTO remain explicit errors;
-structured data is never reconstructed from presented Markdown.
-
-Schema attachments travel separately in the internal
-[ToolExecution](../../mcp_server/core/tool_execution.py) carrier. Cache publication stores
-only its operation DTO; text presentation receives that DTO, notes and publication facts.
-The resource presenter receives only attachments. The whole-tool input error DTO retains
-its existing `input_schema` field, while its explicit attachment supplies
-`schema://validation`. An attachment does not otherwise enter the cached operation.
+Configuration owns wording, presentation fields, collection ordering, item limits and profile definitions. Generic presenters own rendering, protected-core budgeting, selected-channel delivery and the matching public schema. This is a clean public-contract cutover; internal operation DTOs and ToolExecution retain their responsibilities.
 
 ## End-to-End Flow
 
 ```mermaid
 sequenceDiagram
-    autonumber
     participant Client as MCP client
     participant Server as MCPServer
     participant Tool as Wrapped ITool
     participant Cache as ResponseCacheManager
     participant Presenter as ResponsePresenter
     participant Text as TextPresenter
-    participant Collections as CollectionTextRenderer
     participant Budget as TextBudgetLimiter
     participant Resources as SchemaResourcePresenter
-
     Client->>Server: tools/call(name, arguments)
     Server->>Tool: execute(arguments, NoteContext)
     Tool-->>Server: ToolExecution(operation, attachments)
     Server->>Cache: publish operation only
-    Cache-->>Server: CachePublication(run_id, success)
-    Server->>Presenter: present(operation, attachments, notes, cache publication)
-    Presenter->>Text: render operation, notes and publication facts
-    Text->>Collections: render configured ordered collections
-    Collections-->>Text: bounded Markdown collections
-    Text->>Budget: limit final composed text
-    Budget-->>Text: at most 8,000 UTF-8 bytes
-    Presenter->>Resources: serialize supplied schema attachments
-    Resources-->>Presenter: zero or more embedded resources
-    Presenter-->>Server: PresentedOutput(text, resources)
-    Server-->>Client: CallToolResult(text, resources, structuredContent=operation)
+    Cache-->>Server: CachePublication(success, run_id or diagnosis)
+    Server->>Presenter: operation, notes, attachments, publication facts
+    Presenter->>Text: render configured explanation and guidance
+    Text-->>Presenter: RenderedPresentation(core, details)
+    Presenter->>Budget: protect core; limit optional details
+    Presenter->>Resources: serialize supplied attachments
+    Presenter-->>Server: PresentedOutput(text?, structured_content?)
+    Server-->>Client: selected channels; actual isError
 ```
 
-The DTO is published before presentation. Collection limits and text truncation therefore
-never remove fields or items from the cached representation or the server-owned
-structured operation.
+Normal publication precedes presentation. Limits on rendered details never remove fields from a normally delivered inline operation or from a successfully published cached operation.
 
 ## Ownership Boundaries
 
-| Concern | Authoritative owner |
-|---|---|
-| Tool result semantics and complete data | Frozen tool-output DTO |
-| Operation DTO serialization into MCP structuredContent | MCPServer |
-| Cached operation representation and bounded reads | MCP Resource cache |
-| Attachment identity and schema facts | Producer of `SchemaAttachment` |
-| Attachment URI, media type and schema serialization | `SchemaResourcePresenter` |
-| Per-tool wording, scalar selection, collection declarations, headings, order, and item limits | `presentation.yaml` |
-| Configuration shape | `PresentationConfig` and its nested frozen schemas |
-| Supported tool identity and output model | Runtime-derived `SupportedToolContract` catalog |
-| Settings-dependent exposed tools | `ToolAssembly.active_tools` |
-| Scalar/list/tuple formatting | `SafeNoneFormatter` |
-| Ordered collection rendering | `CollectionTextRenderer` |
-| Final text ceiling | `TextBudgetLimiter` |
-| Composition of text and embedded schema resources | `ResponsePresenter` |
+| Concern | Owner |
+| --- | --- |
+| Result semantics and complete operation facts | Frozen operation DTO |
+| Operation/attachment separation | ToolExecution carrier |
+| Canonical cached representation and window reads | ResponseCacheManager / CachedResponseResource |
+| Attachment identity/schema facts | SchemaAttachment producer |
+| Attachment URI, media type and schema serialization | SchemaResourcePresenter |
+| Wording, field/collection declarations, ordering and item limits | presentation.yaml |
+| Profile definitions and default | PresentationConfig |
+| Per-process profile selection | Existing Settings / bootstrap |
+| Scalar and collection formatting | TextPresenter / CollectionTextRenderer |
+| Protected core and optional-detail budget mechanics | TextBudgetLimiter |
+| Selected public envelope, emergency projection and output schema | ResponsePresenter |
+| Transfer to MCP and real operation isError | MCPServer |
 
-Business logic, managers, adapters, and domain validation services do not construct
-user-facing presentation strings.
+Managers, tools and adapters do not compose user-facing policy explanations. Native diagnostics and original exception causes remain evidence at the existing error boundaries. See [Architecture Principles §15](../coding_standards/ARCHITECTURE_PRINCIPLES.md).
 
-## Runtime Tool Catalog
+## Process-Local Profiles
 
-`ServerBootstrapper` constructs a `ToolAssembly` with the supported tool contracts and
-the settings-dependent active tools exposed to the MCP client. The supported contract
-catalog is derived from the constructed tool instances and their concrete output models;
-it is not a second static tool list. Read current tool names and schemas from the live
-server composition. Credential settings may change which tools are active without
-changing what the build supports.
+Presentation configuration version 2.0.0 defines response_profiles and global.default_response_profile. The existing loader composes defaults with workspace overrides. Each profile requires:
 
-## Declarative Presentation Configuration
+| Field | Values | Meaning |
+| --- | --- | --- |
+| presentation_channel | text, structured, both | Where the complete short explanation and mandatory instructions appear |
+| data_channel | text, structured | Where complete operation data or its resource reference and direct attachments appear |
+| data_delivery | inline, resource | Whether operation data is inline or points to successful cache publication |
 
-`presentation.yaml` contains one entry for every supported tool and global formatting
-policy. A tool entry can use:
+Shipped profiles:
 
-| Field | Purpose |
-|---|---|
-| `template_success` / `template_failure` | Scalar Markdown projection for the normal result envelope |
-| `max_items` | Shared bound for inline scalar sequences and every configured collection depth |
-| `collections` | Ordered `list[T]` or variadic `tuple[T, ...]` projection declarations |
-| `collections[].children` | Recursive projection of direct ordered-sequence fields on model items |
-| `enum_cases` | Additional configured text selected by a serialized enum value |
-| `next_instructions` | Configured follow-up text, such as context reload reminders |
-| note groups | Configured exclusion, suggestion, recovery, and information messages |
+| Profile | Presentation | Data channel | Operation delivery |
+| --- | --- | --- | --- |
+| structured_inline (default) | both | structured | inline |
+| structured_resource | both | structured | resource |
+| text_inline | text | text | inline |
 
-Global formatting defines the None placeholder, sequence separator, item-omission text,
-collection-omission text, truncation notices, and the byte ceiling.
+Set PGMCP_RESPONSE_PROFILE on an individual launcher process to select a named profile. An explicit environment value overrides launcher-provided server.response_profile; omission selects the configured global default. Empty or unknown selectors fail startup admission. No harness/model detection or shared active-profile state exists. Two processes can read the same config root and select different profiles without editing shared configuration.
 
-### Ordered Sequences
+Profile definitions may override max_text_response_bytes, max_cache_failure_detail_bytes and cache_read_budget_chars; omitted overrides inherit global values. All resolved budgets must be positive. Invalid literals, unknown fields, empty profile maps and invalid defaults fail configuration validation.
 
-Only exact `list[T]` and variadic `tuple[T, ...]` annotations are supported. `T` must be a
-scalar (`str`, `int`, `float`, `bool`, or enum) or a Pydantic model. Arbitrary iterables,
-mappings, sets, sorting, filtering, and tool-specific renderer branches are deliberately
-unsupported.
+See [setup guidance](../setup/README.md#choose-the-response-profile) for activation and client verification.
 
-Flat scalar sequences may appear directly in an ordinary template, for example issue
-labels. Structured sequences use a collection declaration with an optional heading and
-an item template. Child collections are evaluated depth-first. Every level preserves DTO
-order and applies the tool's `max_items` independently.
+## Public Envelope and Channels
 
-Example:
+When presentation or data selects structured, structuredContent is the common envelope:
+
+```json
+{
+  "success": true,
+  "presentation": "Planning updated. Read the refreshed work context.",
+  "data": {"delivery": "inline", "operation": {"success": true}},
+  "attachments": [],
+  "delivery_error": null
+}
+```
+
+All five outer fields are present. presentation is null if structured presentation is unselected. data is null and attachments is empty if the data channel is text. success always represents the actual operation outcome; delivery_error describes a separate delivery failure.
+
+Normal data alternatives:
+
+- Inline: delivery=inline and the complete operation serialized in JSON mode with aliases.
+- Resource: delivery=resource, a truthful pgmcp://cache/runs/<run_id> URI and optional size_chars. The resource points only to the operation.
+- Attachments: complete objects with uri, mime_type and content in the selected data channel, including resource profiles.
+
+With data_channel=text, one distinct fenced JSON segment carries the complete envelope data/attachments after any selected presentation. That segment is outside the short-presentation budget. No unconditional embedded-resource or unselected-channel copy is added. With entirely structured normal output, content can be empty. With both channels exclusively text, outputSchema and structuredContent are absent.
+
+The presenter generates the selected outputSchema from the same frozen public models and resolved profile used for delivery. It admits the normal alternative and applicable delivery-error alternative, with channel-specific null restrictions. MCPServer uses it for the connected tool catalog; it does not advertise each internal operation DTO as the public response shape. Decorator metadata work in issue #528 remains a separate concern.
+
+Unknown-tool requests and processing/transport errors before a normalized operation exists remain genuine explicit errors at their existing boundary. They do not invent an operation DTO.
+
+## Protected Presentation and Budgets
+
+TextPresenter returns core and details separately:
+
+- core: complete configured success/failure template, enum explanation, next instructions and all notes. Phase instructions and hand-over text embedded in a main template therefore remain complete.
+- details: configured collection projections, retaining existing item limits.
+
+ResponsePresenter adds truthful cache/pagination or failure notices. TextBudgetLimiter reserves the core, separators and required truncation notice before admitting optional details. It cuts only details, on UTF-8-safe boundaries, preferring complete lines/blocks and closing an intersected fence within the allowance.
+
+The global presentation allowance is 8000 bytes by default. Protected content alone may exceed it and is never cut; optional details are then omitted with the configured notice. Complete inline data and attachments are outside this budget. This is not a universal wire/token/cost ceiling.
+
+cache_read_budget_chars (default 6000 Unicode codepoints) controls when to display pagination advice, not a resource read limit. The actual existing window API is unchanged.
+
+## Cache and Serialization Failures
+
+| Situation | Delivered result |
+| --- | --- |
+| Cache succeeds; inline selected | Complete inline operation and attachments; truthful cache guidance |
+| Cache fails; inline serialization succeeds | Complete inline operation and attachments; configured cache-unavailable warning |
+| Resource selected; cache fails or publisher absent | No fabricated URI; protected emergency text, data=null and explicit delivery_error |
+| Inline serialization fails | Protected emergency text and operation_serialization_failed; actual success/isError retained |
+| Cache succeeds but inline serialization fails | Same explicit inline delivery error; any cache guidance remains truthful, without silently changing the selected route |
+
+Canonical cache serialization runs once before accepting an entry. Its native failure propagates to the existing publisher boundary, which captures the original exception/cause and returns CachePublication(success=False, error_code=serialization_failed, diagnostic=...). No entry or eviction occurs on failed serialization. Other publication failures report write_failed with diagnosis. The serializer never substitutes error JSON and reports it as complete operation publication.
+
+The distinct inline JSON projection is attempted once when needed. A failure of canonical serialization does not establish failure of inline serialization, or vice versa. No failed full serializer is retried to construct an emergency excerpt.
+
+Emergency output retains actual outcome, explanation, instructions, notes and necessary failure/truncation notices. It emits text even for a normally structured-only presentation profile and also retains selected structured presentation. Complete attachments remain directly available. delivery_error.code is cache_publication_failed or operation_serialization_failed, with details_truncated.
+
+Only native diagnostic details are bounded by max_cache_failure_detail_bytes (default 8000), including excerpt label/formatting closure. The core remains protected even when larger. The excerpt is labelled potentially incomplete diagnostic text, not a complete JSON result. The outer MCP response and selected structured variant remain serializable/schema-valid. These are output bounds, not streaming or memory guarantees for arbitrary objects.
+
+## Startup Recovery
+
+When startup configuration is rejected, StartupRecoveryPresenter does not load another config, select a profile or depend on cache access. Its fixed exception is full recovery text/instructions in both content and presentation, complete inline operation diagnosis, direct attachments and delivery_error=null. Healthy startup restores the configured profile.
+
+A health query can succeed while reporting rejected admission; a restart receipt does not prove that the replacement admitted successfully. Check health and refresh tools/list after replacement. Raw proxy failures before an MCP response remain proxy-event presentation, without invented tool outcomes.
+
+## Declarative Rendering and Catalog Validation
+
+ServerBootstrapper derives SupportedToolContract entries from actual supported tool instances and output models. Settings select ToolAssembly.active_tools. This avoids a second static catalog and validates inactive supported tools too.
+
+A tool presentation entry uses template_success/template_failure, max_items, ordered collections/children, enum_cases, next_instructions and configured note groups. Collection/child/enum identities are mapping keys with unique sibling order ranks; DTO item order remains unchanged. See [configuration composition](config-loading-architecture.md).
+
+Only exact list[T] and variadic tuple[T, ...] sequence annotations are supported, with scalar or Pydantic model items. Flat scalar sequences can appear in templates; structured sequences use declared collections. Each depth applies max_items independently. Arbitrary iterable discovery, sorting/filtering and tool-specific renderer branches are unsupported.
+
+For example:
 
 ```yaml
 list_issues:
@@ -149,157 +172,42 @@ list_issues:
       order: 10
       field: issues
       heading: "Issues:"
-      item_template: >-
-        - #{number} [{state}] {title} — {html_url} |
-        labels: {labels} | assignees: {assignees_summary} | created: {created_at}
+      item_template: "- #{number} [{state}] {title} — {html_url}"
 ```
 
-Collection, child and enum-case declarations use mapping-key identities and unique
-sibling order ranks. DTO item order is separate and remains unchanged. See
-[configuration composition](config-loading-architecture.md) for source overrides.
+Successful output must have the declared field/container/item shapes. Generic failure DTOs may omit success-only collections; presentation never fabricates them. Startup rejects missing/unknown tool entries, duplicate names, unresolved output models, invalid placeholders/formatting, unsupported collections/children, invalid enum cases and inconsistent max_items declarations. A tiny positive budget is valid because required content can overrun it.
 
-When more than ten issues exist, the text adds an omission line. All issues remain in the
-cached `ListIssuesOutput` DTO.
+## Cache Representation and Client Guidance
 
-### Runtime Shape Rules
+The cache retains required nullable fields and explicitly supplied optional nulls; only unset optional null fields are omitted. Non-null defaults and ordinary JSON values (null, false, zero, empty containers) retain their existing representation. Complete and window reads use that same canonical JSON. A later resource serialization failure propagates to the existing read-resource error boundary, without a replacement completeness claim.
 
-On a successful output, a configured collection must exist and must have the configured
-list/tuple and item shape. Missing fields, wrong container types, wrong item types, or
-missing item placeholders raise `ConfigError` with field/path context. Generic failure
-envelopes may omit success-only collections; the presenter does not fabricate them.
+Inline JSON mode with aliases and the cache's canonical field-presence policy represent the same operation, without promising byte-identical JSON. Do not reconstruct facts from rendered Markdown.
 
-## Startup Validation
+Use the selected complete inline data when available; otherwise read the successful resource reference. Check size before paging and follow the [packaged cache guide](../../mcp_server/resources/cache_reading.md). The cache is transient/process-local; a run ID alone is not durable proof. Record exact invocation, scope and observed outcome in committed evidence. Never replay a mutation merely to recover cached details.
 
-`validate_presentation_alignment` runs during server bootstrap against the complete
-supported catalog. Startup fails fast when:
+SchemaResourcePresenter maps attachment identity to schema://validation (application/json) or schema://template/<percent-encoded-template-id>/context (application/schema+json). The complete schema content travels in the selected data channel. Attachments never enter the operation cache.
 
-- a supported tool lacks a presentation entry or configuration names an unknown tool;
-- a tool name is duplicated or its concrete output model cannot be resolved;
-- a template placeholder is absent from the tool's DTO or uses a forbidden generic
-  presentation field;
-- a configured collection is not a supported ordered-sequence field, has invalid item
-  placeholders, or declares an invalid child;
-- an enum case targets a non-enum field or unknown value;
-- a bounded sequence has no `max_items`, or `max_items` exists without a bounded sequence;
-- global formatting cannot preserve the mandatory truncation notice and fixed-shape
-  cache reference within the configured budget.
-
-This validation uses the same runtime-derived contracts that drive tool activation. It
-therefore avoids a second catalog source of truth while validating inactive supported
-tools as well as active ones.
-
-## Final UTF-8 Byte Ceiling
-
-The global `max_text_response_bytes` value is `8000`. `TextBudgetLimiter` is the final
-step after scalar templates, enum blocks, collections, instructions, notes, cache-failure
-fallbacks, and the cache reference have been composed.
-
-- Under-budget text is returned byte-for-byte unchanged.
-- Over-budget text is truncated on a UTF-8-safe boundary, preferring complete Markdown
-  blocks or lines.
-- If truncation intersects a fenced code block, the limiter closes the fence when the
-  budget permits.
-- A truthful truncation notice and one complete cache reference are reserved when cache
-  publication succeeded.
-- Failed cache publication uses the configured cache-failure warning; when text
-  overflows, the limiter reserves the configured no-cache truncation notice without
-  inventing a resource. These notices describe failed cached access and text truncation,
-  not loss of complete operation data or completeness of the inline JSON fallback.
-  Server-owned `structuredContent` independently contains the actual operation DTO for
-  a normally produced operation response. Field presence in the server response does
-  not establish that a particular client or model receives that channel; error paths
-  without a structured operation response retain their existing explicit diagnostics.
-
-The byte ceiling applies to every tool's presented text. It does not truncate
-`structuredContent` or schema attachments. Individual tools configure item limits,
-not their own text budgets.
-
-## Cache Serialization and Attachment Ownership
-
-[CachedResponseResource](../../mcp_server/resources/cache.py) serializes the operation
-using its canonical Pydantic field contract. Required nullable fields retain `null`.
-Explicitly supplied optional nulls also remain present; only unset optional null fields
-are omitted. Non-null defaults retain their existing representation. The rule follows
-the actual nested DTO and selected union variant through models, mappings and sequences.
-Ordinary JSON values, including null, false, zero and empty containers, are preserved.
-
-Complete reads and bounded Unicode-codepoint windows use the same serialized operation.
-The hash identifies that complete UTF-8 representation. Cache eviction, cache misses,
-and publisher/read interface separation are unchanged; a resource read never replays
-the producing operation.
-
-[SchemaResourcePresenter](../../mcp_server/presenters/schema_resource_presenter.py)
-dispatches on attachment identity, without inspecting operation classes or querying
-the catalog:
-
-| Attachment identity | URI | Media type |
-|---|---|---|
-| Whole-tool input schema | `schema://validation` | `application/json` |
-| Selected template context | `schema://template/<percent-encoded-template-id>/context` | `application/schema+json` |
-
-Template identity denotes the active catalog contract, not retained version history.
-The response carries the complete embedded schema. This transport capability does not
-activate a new template suite or change which attachments existing tools produce.
-MCP `isError` continues to derive from operation success.
-
-## Cache and Client Guidance
-
-The inline projection is sufficient when it contains the information needed for the
-current action. Use the provided `structuredContent` when additional operation fields
-or captured diagnostics are needed and the client exposes them. Read the cached resource
-when that route or bounded paging is needed. Examples include complete Git output, diffs,
-test/check/fix result records and captured evidence, and resolved context schemas.
-
-Do not parse presented Markdown to reconstruct DTO data. Both structured operation
-and cached data follow the DTO contract and its bounded capture. Wire serialization
-uses JSON mode with aliases; the cache's canonical policy defines its field
-presence for unset optional nulls. They represent the same operation, not a promise
-of byte-identical JSON.
-For large results, follow the configured cache-reading hint and packaged cache-reading
-guide; it describes safe windows and integrity checks without replaying a mutation.
-
-`scaffold_schema` also supplies its selected context schema as a separate schema
-attachment. The operation DTO and attachment have separate ownership and serialization
-paths.
+Server publication proves the selected server output, not delivery to every downstream model context. Installation must verify the chosen client's actual presentation and full-data readback route; no harness-version compatibility matrix is built into the presenter.
 
 ## Configured Execution Evidence
 
-The V3 execution tools use the same generic presentation and cache path as other tools.
-`run_checks`, `run_tests`, and `apply_fixes` return their factual operation DTOs;
-configured templates render bounded result rows while the cache retains the full serialized
-DTO. Result order follows the operation contract. Presentation limits and the final
-8,000-byte ceiling affect only inline text.
+run_checks, run_tests and apply_fixes use the same profile boundary. Inspect operation success/error_code separately from each native result's status, reason, evidence, adapter identity and capture. An accepted operation can contain a failed native check without becoming a protocol failure.
 
-The operation envelope and the native outcome answer different questions. Inspect
-`success` and any `error_code` for operation or consumer failures; inspect each
-result's status, reason, evidence, adapter identity, and bounded capture for observed
-native work. A check or test can report a substantive failed result without that result
-being converted into a protocol error. An unavailable adapter, rejected internal request,
-interruption, or unconfirmed termination remains an operational fact. Do not infer
-success from a heading or from the absence of an inline diagnostic.
-
-`apply_fixes` applies selected fixes in request order and stops when work cannot continue
-or a selected fix does not pass. Earlier native changes may already have occurred. Its
-result rows distinguish completed work from unavailable or not-executed work; the
-operation does not promise rollback. Inspect affected files, then choose an authorized
-narrow recheck or recovery. The system does not automatically chain fixes and checks.
-
-The complete operation DTO is published before presentation. Use the cached resource
-when you need result fields or evidence omitted by the bounded text, and do not reconstruct
-those facts from Markdown.
+apply_fixes runs selected fixes in request order and stops when work cannot continue or a fix does not pass. Earlier native changes may exist; rollback is not promised. Inspect the result and affected files before an authorized narrow recheck. Presentation never chains another fix/check automatically.
 
 ## Primary Implementation and Evidence
 
-- [Structured tool-output schemas](../../mcp_server/schemas/tool_outputs.py)
-- [Check, test, and fix tools](../../mcp_server/tools/check_tools.py), [run tests](../../mcp_server/tools/run_tests_tool.py), and [apply fixes](../../mcp_server/tools/fix_tools.py)
-- [Presentation configuration schema](../../mcp_server/config/schemas/presentation_config.py)
-- [Text presenter and startup alignment](../../mcp_server/presenters/text_presenter.py)
-- [Collection renderer](../../mcp_server/presenters/collection_text_renderer.py)
-- [Text budget limiter](../../mcp_server/presenters/text_budget_limiter.py)
+- [Profile and presentation config](../../mcp_server/config/schemas/presentation_config.py)
+- [Public envelope/value models](../../mcp_server/schemas/presentation_output.py)
 - [Response presenter](../../mcp_server/presenters/response_presenter.py)
-- [Schema resource presenter](../../mcp_server/presenters/schema_resource_presenter.py)
-- [Presentation composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
-- [Presentation rollout tests](../../tests/mcp_server/unit/config/test_tool_presentation_rollout.py)
+- [Protected text renderer](../../mcp_server/presenters/text_presenter.py)
+- [Budget limiter](../../mcp_server/presenters/text_budget_limiter.py)
+- [Startup recovery presenter](../../mcp_server/presenters/startup_recovery_presenter.py)
+- [Cache resource](../../mcp_server/resources/cache.py)
+- [Profile/SDK/serializer behavior tests](../../tests/mcp_server/integration/test_execution_presentation_v3.py)
+- [Protected composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
+- [Startup and instance-isolation tests](../../tests/mcp_server/integration/test_target_startup.py)
+- [Issue #529 validation](../development/issue529/validation.md)
 
 ## Related Documentation
 
@@ -308,12 +216,10 @@ those facts from Markdown.
 - [Discovery and admin tools](tools/discovery.md)
 - [Architecture principles](../coding_standards/ARCHITECTURE_PRINCIPLES.md)
 
----
-
 ## Version History
 
 | Version | Date | Author | Changes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 2.3.0 | 2026-09-24 | @imp | Align execution evidence and runtime catalog guidance with the V3 check/test/fix surface |
 | 2.1.0 | 2026-08-22 | Agent | Document nested structured quality-gate findings and complete cached evidence |
 | 2.2.0 | 2026-09-13 | Agent | Document operation/attachment transport and required-null cache fidelity |
@@ -321,6 +227,4 @@ those facts from Markdown.
 | 1.1.0 | 2026-08-19 | Agent | Document composite text and validation-resource presentation |
 | 2.4.0 | 2026-10-18 | @imp documenter | Document server-owned structured operation delivery, SDK2 ownership and retained cache/attachment semantics. |
 | 2.4.1 | 2026-10-19 | @imp documenter | Distinguish cache/text availability notices from operation delivery and client access. |
-
-
-
+| 3.0.0 | 2026-10-20 | @imp documenter | Document process-local profiles, selected common envelope/schema, protected core, independent serialization failures and fixed recovery. |

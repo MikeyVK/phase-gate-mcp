@@ -209,7 +209,7 @@ class TestToolPresentationRollout:
         text = presenter.present_text("get_project_plan", output)
 
         markers = ["research", "R1", "R2", "design", "D1"]
-        positions = [text.index(marker) for marker in markers]
+        positions = [text.details.index(marker) for marker in markers]
         assert positions == sorted(positions)
 
     def test_renders_nested_issue_labels_without_python_repr(self) -> None:
@@ -231,8 +231,8 @@ class TestToolPresentationRollout:
 
         text = presenter.present_text("list_issues", output)
 
-        assert "feature, priority:high, presentation" in text
-        assert "['feature'" not in text
+        assert "feature, priority:high, presentation" in text.details
+        assert "['feature'" not in text.details
 
     def test_expands_issue_and_pr_details(self) -> None:
         presenter = TextPresenter(config=_load_config())
@@ -263,9 +263,9 @@ class TestToolPresentationRollout:
         pr_text = presenter.present_text("get_pr", pull_request)
 
         for value in ("Issue body", "feature", issue.html_url, issue.created_at):
-            assert value in issue_text
+            assert value in issue_text.core
         for value in ("PR body", "open", pull_request.html_url):
-            assert value in pr_text
+            assert value in pr_text.core
 
     def test_retains_health_check_identity_below_budget(self) -> None:
         presenter = TextPresenter(config=_load_config())
@@ -279,7 +279,7 @@ class TestToolPresentationRollout:
 
         text = presenter.present_text("health_check", output)
 
-        assert text == (
+        assert text.core == (
             "📋 **Server Health Status**\n"
             "- Status: healthy\n"
             "- Version: 1.2.3\n"

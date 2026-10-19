@@ -521,6 +521,7 @@ class TestRolloutConfiguration:
                 {
                     "version": pres_config.version,
                     "global": pres_config.global_settings,
+                    "response_profiles": pres_config.response_profiles,
                     "tools": v3_subset,
                 }
             )

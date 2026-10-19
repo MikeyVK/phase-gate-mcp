@@ -56,6 +56,7 @@ from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.server import MCPServer
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
+from tests.mcp_server.test_support import make_response_presenter
 
 
 class _AssemblyInput(BaseModel):
@@ -301,6 +302,7 @@ class TestMCPServerBootstrap:
             settings=mock_settings,
             tools=mock_tools,
             resources=mock_resources,
+            presenter=make_response_presenter(),
         )
         assert server.tools is mock_tools
         assert server.resources is mock_resources

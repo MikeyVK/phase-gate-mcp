@@ -66,8 +66,11 @@ if TYPE_CHECKING:
     from mcp import Client
 
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
+    from mcp_server.config.schemas.presentation_config import PresentationConfig
     from mcp_server.config.settings import Settings
+    from mcp_server.core.interfaces.ipresenter import ITextPresenter
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+    from mcp_server.presenters.response_presenter import ResponsePresenter
     from mcp_server.server import MCPServer
 
 
@@ -548,11 +551,6 @@ def make_dispatch_dependencies(settings: Settings) -> DispatchDependencies:
 def make_dispatch_server(settings: Settings) -> MCPServer:
     """Compose the current request handler for focused tool-dispatch tests."""
     from mcp_server.config.loader import ConfigLoader  # noqa: PLC0415
-    from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
-    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
-        SchemaResourcePresenter,
-    )
-    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
     from mcp_server.server import MCPServer  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
 
@@ -564,10 +562,7 @@ def make_dispatch_server(settings: Settings) -> MCPServer:
         settings=settings,
         tools=[],
         resources=[],
-        presenter=ResponsePresenter(
-            text_presenter=TextPresenter(config=presentation),
-            resource_presenter=SchemaResourcePresenter(),
-        ),
+        presenter=make_response_presenter(presentation),
         publisher=ResponseCacheManager(),
     )
 
@@ -663,3 +658,27 @@ async def connected_mcp_client(server: MCPServer) -> AsyncGenerator[Client]:
 
     async with Client(server.server, mode="legacy", cache=None) as client:
         yield client
+
+
+def make_response_presenter(
+    config: PresentationConfig | None = None,
+    *,
+    text_presenter: ITextPresenter | None = None,
+    profile_id: str | None = None,
+) -> ResponsePresenter:
+    """Compose the actual selected presenter for focused output behavior tests."""
+    from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
+    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
+        SchemaResourcePresenter,
+    )
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+
+    resolved = config if config is not None else make_config_loader().load_presentation_config()
+    return ResponsePresenter(
+        text_presenter=text_presenter
+        if text_presenter is not None
+        else TextPresenter(config=resolved),
+        resource_presenter=SchemaResourcePresenter(),
+        profile=resolved.resolve_response_profile(profile_id),
+        global_config=resolved.global_settings,
+    )

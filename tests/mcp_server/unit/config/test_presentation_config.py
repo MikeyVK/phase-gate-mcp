@@ -11,12 +11,15 @@
 """
 
 from enum import StrEnum
+from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 from pydantic import BaseModel, ValidationError
 
 from mcp_server.bootstrap import SupportedToolContract
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.presenters.text_presenter import (
@@ -55,6 +58,7 @@ class _OtherOutput(BaseModel):
 
 def _global_config(max_bytes: int = 8_000) -> dict[str, Any]:
     return {
+        "default_response_profile": "primary",
         "max_text_response_bytes": max_bytes,
         "formatting": {
             "none_value": "-",
@@ -66,7 +70,23 @@ def _global_config(max_bytes: int = 8_000) -> dict[str, Any]:
                 "Output truncated; complete details are unavailable."
             ),
         },
-        "next_instruction_texts": {"uri_reference": ("View resource: pgmcp://cache/runs/{run_id}")},
+        "next_instruction_texts": {
+            "uri_reference": "View resource: pgmcp://cache/runs/{run_id}",
+            "cache_publication_failed": "Cache publication unavailable.",
+            "operation_serialization_failed": "Operation serialization unavailable.",
+            "diagnostic_excerpt_label": "Incomplete diagnostic excerpt:",
+            "diagnostic_unavailable": "Diagnostic unavailable.",
+        },
+    }
+
+
+def _response_profiles() -> dict[str, dict[str, str]]:
+    return {
+        "primary": {
+            "presentation_channel": "both",
+            "data_channel": "structured",
+            "data_delivery": "inline",
+        }
     }
 
 
@@ -84,6 +104,7 @@ def _presenter(
     return TextPresenter(
         config_data={
             "global": _global_config(max_bytes),
+            "response_profiles": _response_profiles(),
             "tools": tools,
         }
     )
@@ -103,6 +124,7 @@ class TestPresentationConfig:
         config = PresentationConfig.model_validate(
             {
                 "global": _global_config(),
+                "response_profiles": _response_profiles(),
                 "tools": {
                     "sample": _tool_config(
                         max_items=3,
@@ -158,11 +180,16 @@ class TestPresentationConfig:
         global_config["formatting"].update(formatting_update)
 
         with pytest.raises(ValidationError, match="placeholder"):
-            PresentationConfig.model_validate({"global": global_config, "tools": {}})
+            PresentationConfig.model_validate(
+                {"global": global_config, "response_profiles": _response_profiles(), "tools": {}}
+            )
 
-    def test_rejects_budget_that_cannot_hold_notice_and_cache_reference(self) -> None:
-        with pytest.raises(ValidationError, match="budget"):
-            PresentationConfig.model_validate({"global": _global_config(max_bytes=20), "tools": {}})
+    def test_accepts_positive_budget_smaller_than_protected_cache_reference(self) -> None:
+        config = PresentationConfig.model_validate(
+            {"global": _global_config(max_bytes=1), "response_profiles": _response_profiles()}
+        )
+
+        assert config.resolve_response_profile().max_text_response_bytes == 1
 
 
 class TestPresentationAlignment:
@@ -323,3 +350,196 @@ class TestPresentationAlignment:
 
         with pytest.raises(ConfigError):
             validate_presentation_alignment(presenter, _contracts())
+
+
+class TestResponseProfiles:
+    """Process-local selection resolves complete immutable capabilities."""
+
+    def test_resolves_default_and_selected_profiles_without_mutating_definitions(self) -> None:
+        global_config = _global_config(max_bytes=1)
+        global_config.update(
+            default_response_profile="primary",
+            max_cache_failure_detail_bytes=37,
+            cache_read_budget_chars=23,
+        )
+        config = PresentationConfig.model_validate(
+            {
+                "version": "2.0.0",
+                "global": global_config,
+                "response_profiles": {
+                    "primary": {
+                        "presentation_channel": "both",
+                        "data_channel": "structured",
+                        "data_delivery": "inline",
+                    },
+                    "alternate": {
+                        "presentation_channel": "text",
+                        "data_channel": "text",
+                        "data_delivery": "resource",
+                        "max_text_response_bytes": 19,
+                        "max_cache_failure_detail_bytes": 17,
+                        "cache_read_budget_chars": 13,
+                    },
+                },
+            }
+        )
+
+        primary = config.resolve_response_profile()
+        alternate = config.resolve_response_profile("alternate")
+
+        assert primary.profile_id == "primary"
+        assert primary.presentation_channel == "both"
+        assert primary.data_channel == "structured"
+        assert primary.data_delivery == "inline"
+        assert primary.max_text_response_bytes == 1
+        assert primary.max_cache_failure_detail_bytes == 37
+        assert primary.cache_read_budget_chars == 23
+        assert alternate.profile_id == "alternate"
+        assert alternate.presentation_channel == "text"
+        assert alternate.data_channel == "text"
+        assert alternate.data_delivery == "resource"
+        assert alternate.max_text_response_bytes == 19
+        assert alternate.max_cache_failure_detail_bytes == 17
+        assert alternate.cache_read_budget_chars == 13
+        assert config.resolve_response_profile() == primary
+        assert config.response_profiles["primary"].max_text_response_bytes is None
+        with pytest.raises(ValidationError):
+            alternate.max_text_response_bytes = 2  # type: ignore[misc]
+        with pytest.raises(ValidationError):
+            config.response_profiles["primary"].data_delivery = "resource"  # type: ignore[misc]
+        with pytest.raises(ConfigError, match="unknown"):
+            config.resolve_response_profile("unknown")
+        with pytest.raises(ConfigError):
+            config.resolve_response_profile("")
+
+    @pytest.mark.parametrize("presentation_channel", ["text", "structured", "both"])
+    @pytest.mark.parametrize("data_channel", ["text", "structured"])
+    @pytest.mark.parametrize("data_delivery", ["inline", "resource"])
+    def test_accepts_independent_channel_combinations(
+        self,
+        presentation_channel: str,
+        data_channel: str,
+        data_delivery: str,
+    ) -> None:
+        config = PresentationConfig.model_validate(
+            {
+                "global": _global_config(),
+                "response_profiles": {
+                    "primary": {
+                        "presentation_channel": presentation_channel,
+                        "data_channel": data_channel,
+                        "data_delivery": data_delivery,
+                    }
+                },
+            }
+        )
+
+        resolved = config.resolve_response_profile()
+        assert resolved.presentation_channel == presentation_channel
+        assert resolved.data_channel == data_channel
+        assert resolved.data_delivery == data_delivery
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("presentation_channel", "unknown"),
+            ("data_channel", "both"),
+            ("data_delivery", "unknown"),
+            ("unknown", True),
+        ],
+    )
+    def test_rejects_invalid_profile_capabilities(self, field: str, value: object) -> None:
+        profile: dict[str, object] = dict(_response_profiles()["primary"])
+        profile[field] = value
+
+        with pytest.raises(ValidationError, match=field):
+            PresentationConfig.model_validate(
+                {"global": _global_config(), "response_profiles": {"primary": profile}}
+            )
+
+    @pytest.mark.parametrize("field", ["presentation_channel", "data_channel", "data_delivery"])
+    def test_requires_every_profile_capability(self, field: str) -> None:
+        profiles = _response_profiles()
+        del profiles["primary"][field]
+
+        with pytest.raises(ValidationError, match=field):
+            PresentationConfig.model_validate(
+                {"global": _global_config(), "response_profiles": profiles}
+            )
+
+    @pytest.mark.parametrize(
+        "field",
+        ["max_text_response_bytes", "max_cache_failure_detail_bytes", "cache_read_budget_chars"],
+    )
+    @pytest.mark.parametrize("value", [0, -1])
+    @pytest.mark.parametrize("on_profile", [False, True])
+    def test_requires_positive_budgets(self, field: str, value: int, on_profile: bool) -> None:
+        global_config = _global_config()
+        profile: dict[str, object] = dict(_response_profiles()["primary"])
+        (profile if on_profile else global_config)[field] = value
+
+        with pytest.raises(ValidationError, match=field):
+            PresentationConfig.model_validate(
+                {"global": global_config, "response_profiles": {"primary": profile}}
+            )
+
+    @pytest.mark.parametrize(
+        "profiles",
+        [
+            None,
+            {},
+            {
+                "": {
+                    "presentation_channel": "text",
+                    "data_channel": "text",
+                    "data_delivery": "inline",
+                }
+            },
+        ],
+    )
+    def test_requires_nonempty_identified_profiles(self, profiles: object) -> None:
+        config_data: dict[str, object] = {"global": _global_config()}
+        if profiles is not None:
+            config_data["response_profiles"] = profiles
+
+        with pytest.raises(ValidationError, match="response_profiles"):
+            PresentationConfig.model_validate(config_data)
+
+    @pytest.mark.parametrize("default_profile", [None, "", "absent"])
+    def test_requires_default_profile_membership(self, default_profile: str | None) -> None:
+        global_config = _global_config()
+        if default_profile is None:
+            del global_config["default_response_profile"]
+        else:
+            global_config["default_response_profile"] = default_profile
+
+        with pytest.raises(ValidationError, match="default_response_profile"):
+            PresentationConfig.model_validate(
+                {"global": global_config, "response_profiles": _response_profiles()}
+            )
+
+    def test_existing_loader_merges_profile_overrides_and_uses_schema_version(
+        self, tmp_path: Path
+    ) -> None:
+        defaults = tmp_path / "defaults"
+        defaults.mkdir()
+        (defaults / "presentation.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "version": "2.0.0",
+                    "global": _global_config(),
+                    "response_profiles": _response_profiles(),
+                }
+            ),
+            encoding="utf-8",
+        )
+        (tmp_path / "presentation.yaml").write_text(
+            yaml.safe_dump({"response_profiles": {"primary": {"max_text_response_bytes": 7}}}),
+            encoding="utf-8",
+        )
+
+        config = ConfigLoader(tmp_path).load_presentation_config()
+
+        assert config.version == "2.0.0"
+        assert config.resolve_response_profile().max_text_response_bytes == 7
+        assert config.resolve_response_profile().data_delivery == "inline"

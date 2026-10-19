@@ -9,12 +9,13 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
+from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel, Field
 
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
+from mcp_server.schemas.presentation_output import PublicToolResponse
 from mcp_server.server import MCPServer
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
@@ -136,8 +137,8 @@ class TestValidateToolArgumentsFailurePath:
     @pytest.mark.asyncio
     async def test_failure_includes_schema_resource(self, server: MCPServer) -> None:
         """
-        RED condition: The failure response must include a schema://validation
-        EmbeddedResource with the valid input schema in JSON.
+        The failure response includes a direct schema://validation attachment
+        with the valid input schema in JSON.
         """
         invalid_args = {"unknown_field": "typo"}
 
@@ -153,9 +154,13 @@ class TestValidateToolArgumentsFailurePath:
         result = response
         assert result.is_error is True
 
-        resource_items = [c for c in result.content if isinstance(c, EmbeddedResource)]
-        assert len(resource_items) > 0, "Expected schema://validation resource in failure response"
-        resource = resource_items[0].resource
+        assert result.structured_content is not None
+        envelope = PublicToolResponse.model_validate_json(json.dumps(result.structured_content))
+        resource_items = [a for a in envelope.attachments if a.uri == "schema://validation"]
+        assert len(resource_items) > 0, (
+            "Expected schema://validation attachment in failure response"
+        )
+        resource = resource_items[0]
         assert str(resource.uri) == "schema://validation", (
             f"Expected uri=schema://validation, got {resource.uri}"
         )
@@ -163,7 +168,7 @@ class TestValidateToolArgumentsFailurePath:
             f"Expected application/json, got {resource.mime_type}"
         )
 
-        schema = json.loads(resource.text)
+        schema = json.loads(resource.content)
         assert isinstance(schema, dict), "schema must be a dict"
         assert "properties" in schema, "schema must have properties"
         assert "required_field" in schema["properties"], "required_field must be in properties"
@@ -245,8 +250,11 @@ class TestValidateToolArgumentsFailurePath:
         result = response
         assert result.is_error is True
 
-        resource_items = [c for c in result.content if isinstance(c, EmbeddedResource)]
-        schema = json.loads(resource_items[0].resource.text)
+        assert result.structured_content is not None
+        envelope = PublicToolResponse.model_validate_json(json.dumps(result.structured_content))
+        resource_items = [a for a in envelope.attachments if a.uri == "schema://validation"]
+        assert resource_items
+        schema = json.loads(resource_items[0].content)
 
         assert "$defs" not in schema, "Schema must not contain $defs (Cycle 1 guarantee)"
         assert "$ref" not in json.dumps(schema), "Schema must not contain $ref anywhere"

@@ -52,7 +52,7 @@ from mcp_server.schemas.error_outputs import (
     ValidationErrorOutput,
 )
 from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import connected_mcp_client
+from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
 # Dummy models for testing
@@ -352,6 +352,7 @@ async def test_registered_schema_and_real_admission_share_the_prepared_contract(
         settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[wrapped],
         resources=[],
+        presenter=make_response_presenter(),
     )
     async with connected_mcp_client(server) as client:
         listing = await client.list_tools()

@@ -1,9 +1,23 @@
 # Reading cached tool results
 
-Read `pgmcp://cache/runs/<run_id>` for the complete JSON operation. Tool responses
-always retain this link. Only results exceeding the configured
-`global.cache_read_budget_chars` (default 6000 Unicode codepoints) also link here.
-This is a conservative read budget, not a claim about every client's truncation limit.
+Use the selected response profile's complete inline operation when the client exposes
+it: `data.operation` in the structured envelope, or the designated JSON text segment.
+Schema attachments are separate, complete `uri`, `mime_type`, `content` objects in that
+selected data channel; the operation cache does not contain them.
+
+A successful publication also supplies `pgmcp://cache/runs/<run_id>` for the complete
+canonical JSON operation. Resource profiles use that reference as their operation-data
+route. Failed publication supplies no usable URI: inspect the explicit delivery facts
+and configured warning rather than trying to read a fabricated resource. Normal inline
+data can remain complete despite a cache failure. An emergency diagnostic excerpt is
+labelled potentially incomplete and is not a complete JSON result.
+
+Only results exceeding the resolved profile's `cache_read_budget_chars` (inherited from
+`global.cache_read_budget_chars`, default 6000 Unicode codepoints) also link here.
+This is a conservative read-advice threshold, not a client truncation guarantee.
+Profile selection is process-local; use the same connected server that produced a
+reference. Cache state is transient. For durable evidence, record the exact invocation,
+scope and observed outcome; a run ID or cache URI alone is insufficient.
 
 ## Bounded reads
 

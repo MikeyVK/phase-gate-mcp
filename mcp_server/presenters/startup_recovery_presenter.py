@@ -6,13 +6,17 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter
 from mcp_server.core.operation_notes import NoteEntry
 from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.schemas.cache_publication import CachePublication
-from mcp_server.schemas.presentation_output import PresentedOutput
+from mcp_server.schemas.presentation_output import (
+    InlineOperation,
+    PresentedOutput,
+    PublicToolResponse,
+)
 from mcp_server.schemas.tool_outputs import HealthCheckOutput, RestartServerOutput
 
 
@@ -52,7 +56,10 @@ class StartupRecoveryPresenter(IPresenter):
     ) -> PresentedOutput:
         """Include diagnostic and decorator errors verbatim in the public result."""
         del cache_pub, success
-        payload = data.model_dump(mode="json") if isinstance(data, BaseModel) else data
+        payload = (
+            data.model_dump(mode="json", by_alias=True) if isinstance(data, BaseModel) else data
+        )
+        operation_success = payload.get("success", True)
         if isinstance(data, HealthCheckOutput):
             heading = (
                 "Server admission failed."
@@ -73,7 +80,15 @@ class StartupRecoveryPresenter(IPresenter):
                 ensure_ascii=False,
                 indent=2,
             )
-        return PresentedOutput(
-            text=text,
-            resources=list(self._resource_presenter.present_resources(attachments)),
+        envelope = PublicToolResponse(
+            success=operation_success,
+            presentation=text,
+            data=InlineOperation(delivery="inline", operation=payload),
+            attachments=self._resource_presenter.present_resources(attachments),
+            delivery_error=None,
         )
+        return PresentedOutput(text=text, structured_content=envelope.model_dump(mode="json"))
+
+    def output_schema(self) -> dict[str, JsonValue]:
+        """Expose the fixed full recovery envelope without presentation configuration."""
+        return PublicToolResponse.model_json_schema()

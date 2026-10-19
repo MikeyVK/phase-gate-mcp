@@ -20,8 +20,6 @@ from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHan
 from mcp_server.core.interfaces.file_writer import WriteHousekeepingIssue
 from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.mutation_outputs import EditOperationOutput
@@ -32,7 +30,12 @@ from mcp_server.tools.edit_tool import SafeEditTool
 from mcp_server.utils.atomic_file_writer import CheckedFileWriter
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots, write_package_tree
 from tests.mcp_server.integration.test_edit_operation_v3 import operation as build_operation
-from tests.mcp_server.integration.test_scaffold_public_v3 import Composition, invoke
+from tests.mcp_server.integration.test_scaffold_public_v3 import (
+    Composition,
+    invoke,
+    schema_attachment,
+)
+from tests.mcp_server.test_support import make_response_presenter
 from tests.mcp_server.unit.services.test_template_catalog import catalog_loader, package_files
 
 
@@ -101,7 +104,7 @@ def compose(
         tools=[wrapped],
         resources=[resource],
         publisher=cache,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     return Composition(server, resource, text)
 
@@ -381,7 +384,6 @@ async def test_target_input_rejects_legacy_and_unadmitted_values(
     )
     assert response.is_error and cached["error_type"] == "ValidationError"
     assert target.read_bytes() == b"original"
-    resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
-    assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"
+    assert schema_attachment(response).uri == "schema://validation"
     schema = cached["input_schema"]
     assert isinstance(schema, dict) and not Draft202012Validator(schema).is_valid(arguments)

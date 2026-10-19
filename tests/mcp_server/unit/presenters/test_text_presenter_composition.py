@@ -1,34 +1,21 @@
-# tests/mcp_server/unit/presenters/test_text_presenter_composition.py
-# template=unit_test version=8825c0bb created=2026-08-22T00:00Z updated=2026-08-22
-"""Generic TextPresenter composition and boundary contract tests.
+"""Protected composition, truthful delivery and direct complete attachments."""
 
-@layer: Tests (Unit)
-@dependencies: [pydantic, text_presenter, response_presenter]
-@responsibilities:
-    - Verify semantic block order and final byte enforcement
-    - Verify cache-publication fallback remains truthful and sanitized
-    - Prove source DTOs and separately embedded resources remain complete
-"""
-
+import json
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel
 
+from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.operation_notes import Note
 from mcp_server.core.tool_execution import SchemaAttachment, WholeToolSchemaIdentity
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import (
-    SchemaResourcePresenter,
-)
 from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
+from tests.mcp_server.test_support import make_config_loader, make_response_presenter
 
 
 class _Status(StrEnum):
-    AVAILABLE = "available"
     MISSING = "missing"
 
 
@@ -47,199 +34,147 @@ class _Output(BaseModel):
 
 
 def _config(
-    *,
-    max_bytes: int = 800,
-    tool_name: str = "synthetic_tool",
-    template_success: str = "SCALAR {name}: {labels}",
-) -> dict[str, Any]:
-    return {
-        "global": {
-            "max_text_response_bytes": max_bytes,
-            "emojis": {"query": "Q", "failure": "X"},
-            "formatting": {
-                "none_value": "-",
-                "inline_sequence_separator": ", ",
-                "inline_sequence_omission_template": "… {omitted_count} more",
-                "collection_omission_template": "- … {omitted_count} more {field}",
-                "truncation_notice": "[TRUNCATED]",
-                "cache_unavailable_truncation_notice": "[CACHE UNAVAILABLE]",
-            },
-            "next_instruction_texts": {
-                "instruction": "INSTRUCTION {name}",
-                "uri_reference": "CACHE pgmcp://cache/runs/{run_id}",
-                "cache_publication_failed": "FALLBACK",
-            },
-            "notes": {
-                "groups": {
-                    "suggestions": {
-                        "emoji": "N",
-                        "header": "NOTES",
-                    }
+    *, max_bytes: int = 800, template_success: str = "SCALAR {name}: {labels}"
+) -> PresentationConfig:
+    source = make_config_loader().load_presentation_config().model_dump(by_alias=True)
+    source["global"]["max_text_response_bytes"] = max_bytes
+    source["global"]["max_cache_failure_detail_bytes"] = 96
+    source["global"]["formatting"]["truncation_notice"] = "[TRUNCATED]"
+    source["global"]["formatting"]["cache_unavailable_truncation_notice"] = "[UNAVAILABLE]"
+    source["global"]["next_instruction_texts"]["instruction"] = "INSTRUCTION {name}"
+    source["global"]["notes"]["groups"]["suggestions"] = {"emoji": "N", "header": "NOTES"}
+    source["tools"] = {
+        "synthetic_tool": {
+            "category": "query",
+            "max_items": 2,
+            "template_success": template_success,
+            "template_failure": "ERROR {error_message}",
+            "collections": {
+                "items": {
+                    "order": 10,
+                    "field": "items",
+                    "heading": "COLLECTION",
+                    "item_template": "- ITEM {name}: {tags}",
                 }
             },
-        },
-        "tools": {
-            tool_name: {
-                "category": "query",
-                "max_items": 2,
-                "template_success": template_success,
-                "template_failure": "ERROR {error_message}",
-                "collections": {
-                    "entry_1": {
-                        "order": 10,
-                        "field": "items",
-                        "heading": "COLLECTION",
-                        "item_template": "- ITEM {name}: {tags}",
-                    }
-                },
-                "enum_cases": {
-                    "entry_1": {"order": 10, "field": "status", "cases": {"missing": "ENUM {name}"}}
-                },
-                "next_instructions": ["instruction"],
-                "suggestions": {"composition_note": "NOTE {value}"},
-            }
-        },
+            "enum_cases": {
+                "status": {"order": 10, "field": "status", "cases": {"missing": "ENUM {name}"}}
+            },
+            "next_instructions": ["instruction"],
+            "suggestions": {"composition_note": "NOTE {value}"},
+        }
     }
+    return PresentationConfig.model_validate(source)
 
 
 def _output(*, payload: str = "short") -> _Output:
     return _Output(
         name="sample",
         labels=("bug", "priority", "backend"),
-        items=[
-            _Item(name="first", tags=("a", "b", "c")),
-            _Item(name="second", tags=("d",)),
-        ],
+        items=[_Item(name="first", tags=("a", "b", "c")), _Item(name="second", tags=("d",))],
         status=_Status.MISSING,
         payload=payload,
     )
 
 
 class TestTextPresenterComposition:
-    """Generic semantic block composition."""
-
-    def test_orders_generic_blocks_and_preserves_source_dto(self) -> None:
-        presenter = TextPresenter(config_data=_config())
+    def test_separates_protected_guidance_and_optional_collections(self) -> None:
+        config = _config()
         data = _output()
         before = data.model_dump()
-        cache_pub = CachePublication(run_id="a" * 32, success=True)
-
-        text = presenter.present_text(
-            tool_name="synthetic_tool",
-            data=data,
+        rendered = TextPresenter(config=config).present_text(
+            "synthetic_tool",
+            data,
             notes=[Note(key="composition_note", params={"value": "present"})],
-            cache_pub=cache_pub,
         )
-
-        markers = [
-            "SCALAR",
-            "ENUM",
-            "COLLECTION",
-            "INSTRUCTION",
-            "NOTES",
-            "CACHE pgmcp://cache/runs/",
+        positions = [
+            rendered.core.index(marker) for marker in ("SCALAR", "ENUM", "INSTRUCTION", "NOTES")
         ]
-        positions = [text.index(marker) for marker in markers]
         assert positions == sorted(positions)
-        assert "bug, priority, … 1 more" in text
-        assert "- ITEM first: a, b, … 1 more" in text
+        assert "bug, priority, … 1 more" in rendered.core
+        assert "COLLECTION" not in rendered.core
+        assert "- ITEM first: a, b, … 1 more" in rendered.details
         assert data.model_dump() == before
 
-    def test_final_limiter_keeps_one_complete_cache_uri(self) -> None:
-        presenter = TextPresenter(
-            config_data=_config(
-                max_bytes=180,
-                template_success="SCALAR {payload}",
+    def test_oversized_required_core_survives_budget_and_keeps_cache_reference(self) -> None:
+        config = _config(max_bytes=180, template_success="SCALAR {payload}")
+        data = _output(payload="🚀" * 300)
+        output = make_response_presenter(config).present(
+            "synthetic_tool",
+            data,
+            cache_pub=CachePublication(run_id="b" * 32),
+        )
+        assert output.text is not None
+        assert data.payload in output.text
+        assert len(output.text.encode("utf-8")) > 180
+        assert output.text.count("pgmcp://cache/runs/" + "b" * 32) == 1
+        assert "[TRUNCATED]" in output.text
+        assert "�" not in output.text
+
+    def test_resource_failure_bounds_diagnostic_details_and_keeps_required_guidance(self) -> None:
+        config = _config(max_bytes=100)
+        presenter = make_response_presenter(config, profile_id="structured_resource")
+        output = presenter.present(
+            "synthetic_tool",
+            _output(payload="diagnostic-value " * 200),
+            notes=[Note(key="composition_note", params={"value": "required-recovery"})],
+            cache_pub=CachePublication(success=False, error_code="write_failed"),
+        )
+        assert output.text is not None and output.structured_content is not None
+        assert "INSTRUCTION sample" in output.text and "required-recovery" in output.text
+        assert "pgmcp://cache/runs/" not in output.text
+        assert output.structured_content["success"] is True
+        assert output.structured_content["data"] is None
+        assert output.structured_content["delivery_error"] == {
+            "code": "cache_publication_failed",
+            "details_truncated": True,
+        }
+        label = config.global_settings.next_instruction_texts["diagnostic_excerpt_label"]
+        if label in output.text:
+            assert (
+                len(output.text.split(label, 1)[1].encode("utf-8")) + len(label.encode("utf-8"))
+                <= 96
             )
+
+    def test_failure_rendering_does_not_require_absent_success_collections(self) -> None:
+        rendered = TextPresenter(config=_config()).present_text(
+            "synthetic_tool", {"success": False, "error_message": "post hook failed"}, success=False
         )
-        cache_pub = CachePublication(run_id="b" * 32, success=True)
+        assert "ERROR post hook failed" in rendered.core
+        assert rendered.details == ""
 
-        text = presenter.present_text(
-            tool_name="synthetic_tool",
-            data=_output(payload="🚀" * 300),
-            cache_pub=cache_pub,
-        )
-
-        cache_reference = "CACHE pgmcp://cache/runs/" + "b" * 32
-        assert len(text.encode("utf-8")) <= 180
-        assert text.count(cache_reference) == 1
-        assert "[TRUNCATED]" in text
-        assert "�" not in text
-
-    def test_large_cache_failure_fallback_is_last_and_truthful(self) -> None:
-        presenter = TextPresenter(
-            config_data=_config(
-                max_bytes=160,
-                template_success="SCALAR {payload}",
-            )
-        )
-
-        text = presenter.present_text(
-            tool_name="synthetic_tool",
-            data=_output(payload="secret-safe " * 200),
-            cache_pub=CachePublication(
-                run_id=None,
-                success=False,
-                error_code="write_failed",
-            ),
-        )
-
-        assert len(text.encode("utf-8")) <= 160
-        assert "[CACHE UNAVAILABLE]" in text
-        assert "[TRUNCATED]" not in text
-        assert "pgmcp://cache/runs/" not in text
-
-    def test_failure_output_bypasses_absent_tool_specific_collections(self) -> None:
-        """Failure envelopes use failure text without absent success-output collections."""
-        presenter = TextPresenter(config_data=_config())
-        error = {"success": False, "error_message": "post hook failed"}
-
-        text = presenter.present_text("synthetic_tool", error, success=False)
-
-        assert "ERROR post hook failed" in text
-        assert "COLLECTION" not in text
-
-    def test_response_resource_remains_complete_outside_text_budget(self) -> None:
-        tool_name = "validation_tool"
-        config = _config(
-            max_bytes=150,
-            tool_name=tool_name,
-            template_success="UNUSED",
-        )
-        config["tools"][tool_name]["collections"] = {}
-        config["tools"][tool_name]["enum_cases"] = {}
-        config["tools"][tool_name]["next_instructions"] = []
-        config["tools"][tool_name]["max_items"] = None
-        presenter = ResponsePresenter(
-            text_presenter=TextPresenter(config_data=config),
-            resource_presenter=SchemaResourcePresenter(),
-        )
+    def test_direct_schema_and_operation_remain_complete_outside_presentation_budget(self) -> None:
+        source = _config(max_bytes=1).model_dump(by_alias=True)
+        source["tools"]["synthetic_tool"] = {
+            "template_success": "UNUSED",
+            "template_failure": "{error_message}",
+        }
+        config = PresentationConfig.model_validate(source)
         schema = {
             "type": "object",
             "properties": {f"field_{index}": {"type": "string"} for index in range(100)},
         }
+        frozen = freeze_json(schema)
+        assert isinstance(frozen, FrozenJsonObject)
         data = ValidationErrorOutput(
-            error_message="x" * 1_000,
-            validation_errors=[],
-            input_schema=schema,
+            error_message="x" * 1000, validation_errors=[], input_schema=schema
         )
-
-        frozen_schema = freeze_json(schema)
-        assert isinstance(frozen_schema, FrozenJsonObject)
-        output = presenter.present(
+        output = make_response_presenter(config).present(
+            "synthetic_tool",
+            data,
             attachments=(
                 SchemaAttachment(
-                    identity=WholeToolSchemaIdentity(kind="whole_tool"),
-                    schema_document=frozen_schema,
+                    identity=WholeToolSchemaIdentity(kind="whole_tool"), schema_document=frozen
                 ),
             ),
-            tool_name=tool_name,
-            data=data,
-            success=False,
-            cache_pub=CachePublication(run_id="c" * 32, success=True),
+            cache_pub=CachePublication(run_id="c" * 32),
         )
-
-        assert len(output.text.encode("utf-8")) <= 150
-        assert output.resources[0].content
-        assert '"field_99"' in output.resources[0].content
+        assert output.text is not None
+        assert data.error_message is not None
+        assert data.error_message in output.text
+        payload = output.structured_content
+        assert payload is not None
+        attachments = payload["attachments"]
+        assert isinstance(attachments, list) and isinstance(attachments[0], dict)
+        assert json.loads(str(attachments[0]["content"])) == schema
         assert data.input_schema == schema

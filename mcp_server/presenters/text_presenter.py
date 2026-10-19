@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import string
 from collections.abc import Sequence
@@ -28,31 +27,20 @@ from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.core.operation_notes import NoteEntry
 from mcp_server.presenters.collection_text_renderer import (
     CollectionTextRenderer,
+    SafeNoneFormatter,
     classify_sequence_annotation,
     is_scalar_annotation,
     unwrap_nullable_annotation,
 )
-from mcp_server.presenters.collection_text_renderer import (
-    SafeNoneFormatter as SequenceSafeNoneFormatter,
-)
-from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
+from mcp_server.schemas.presentation_output import RenderedPresentation
 
 if TYPE_CHECKING:
     from mcp_server.bootstrap import SupportedToolContract
 
 
-class SafeNoneFormatter(SequenceSafeNoneFormatter):
-    """Compatibility name for the shared generic value formatter."""
-
-
-# Legacy note mapping removed
-
-
 logger = logging.getLogger(__name__)
-
-_DEFAULT_RUN_ID = "DEFAULT_RUN_ID_SENTINEL"
 
 
 class TextPresenter(ITextPresenter):
@@ -66,7 +54,6 @@ class TextPresenter(ITextPresenter):
         config_data: dict[str, Any] | None = None,
         config: PresentationConfig | None = None,
         collection_renderer: CollectionTextRenderer | None = None,
-        budget_limiter: TextBudgetLimiter | None = None,
     ) -> None:
         """Initialize presenter with config data or PresentationConfig object."""
         if config is not None:
@@ -74,16 +61,12 @@ class TextPresenter(ITextPresenter):
         elif config_data is not None:
             resolved = PresentationConfig.model_validate(config_data)
         else:
-            resolved = PresentationConfig.model_validate({"global": {}, "tools": {}})
+            raise ConfigError("Presentation configuration is required")
 
         self.global_config = resolved.global_settings
         self.tools_config = resolved.tools
         self._collection_renderer = collection_renderer or CollectionTextRenderer(
             self.global_config.formatting
-        )
-        self._budget_limiter = budget_limiter or TextBudgetLimiter(
-            max_text_response_bytes=self.global_config.max_text_response_bytes,
-            formatting=self.global_config.formatting,
         )
 
     def get_next_instruction_texts(self) -> dict[str, str]:
@@ -153,8 +136,8 @@ class TextPresenter(ITextPresenter):
         notes: list[NoteEntry] | None = None,
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
-    ) -> str:
-        """Present the DTO or dict as a formatted string."""
+    ) -> RenderedPresentation:
+        """Render required guidance and optional details without full JSON serialization."""
 
         # 1. Resolve success and presentation category
         resolved_success = success if success is not None else getattr(data, "success", True)
@@ -172,15 +155,16 @@ class TextPresenter(ITextPresenter):
             else:
                 resolved_cat = tool_cfg.get("category") or "query"
         # 2. Convert DTO/dict to a flat dictionary for formatting
-        data_dict = data.model_dump() if isinstance(data, BaseModel) else dict(data)
+        data_dict = (
+            {name: getattr(data, name) for name in type(data).model_fields}
+            if isinstance(data, BaseModel)
+            else dict(data)
+        )
 
-        # 3. Resolve run_id for placeholders and fallback trigger
-        if cache_pub is not None:
-            placeholder_run_id = cache_pub.run_id
-            should_trigger_fallback = not cache_pub.success
-        else:
-            placeholder_run_id = data_dict.get("run_id")
-            should_trigger_fallback = False
+        placeholder_run_id = (
+            cache_pub.run_id if cache_pub is not None and cache_pub.success else None
+        )
+        collection_text = ""
 
         # 4. Bepaal template op basis van success
         template = None
@@ -280,8 +264,6 @@ class TextPresenter(ITextPresenter):
                     collections,
                     tool_cfg.max_items,
                 )
-                if collection_text:
-                    text = f"{text}\n\n{collection_text}"
 
         # 6. Resolve and append next instructions
         if resolved_success and next_instructions:
@@ -322,45 +304,7 @@ class TextPresenter(ITextPresenter):
             if notes_text:
                 text = f"{text}\n\n{notes_text}"
 
-        # 8. Fallback when cache publication failed
-        if should_trigger_fallback:
-            warning_note = self.get_next_instruction_texts().get(
-                "cache_publication_failed",
-                "*(Cache publication failed; cached access is unavailable.)*",
-            )
-            json_dict = dict(data_dict)
-            json_dict.pop("traceback", None)
-            json_str = json.dumps(json_dict, indent=2)
-            text = f"{text}\n\n{warning_note}\n```json\n{json_str}\n```"
-
-        cache_reference = None
-        if placeholder_run_id:
-            uri_template = self.get_next_instruction_texts().get("uri_reference")
-            if uri_template:
-                cache_reference = self._format_data_template(
-                    uri_template,
-                    data_dict,
-                    max_items=tool_cfg.max_items if tool_cfg else None,
-                    run_id=placeholder_run_id,
-                )
-            else:
-                cache_reference = (
-                    "*(Full details available in the structured JSON payload. "
-                    f"View resource: pgmcp://cache/runs/{placeholder_run_id})*"
-                )
-            if (
-                cache_pub is not None
-                and cache_pub.success
-                and cache_pub.size_chars is not None
-                and cache_pub.size_chars > self.global_config.cache_read_budget_chars
-            ):
-                pagination_reference = self.get_next_instruction_texts().get("pagination_reference")
-                if pagination_reference:
-                    cache_reference = f"{cache_reference}\n{pagination_reference}"
-            if cache_reference not in text:
-                text = f"{text}\n\n{cache_reference}"
-
-        return self._budget_limiter.limit(text, cache_reference)
+        return RenderedPresentation(core=text, details=collection_text)
 
     present = present_text
 

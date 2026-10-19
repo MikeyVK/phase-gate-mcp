@@ -15,13 +15,17 @@ Unit tests for ITextPresenter, IResourcePresenter, and IPresenter protocols.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter, ITextPresenter
 from mcp_server.core.operation_notes import NoteEntry
 from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.schemas.cache_publication import CachePublication
-from mcp_server.schemas.presentation_output import PresentationResource, PresentedOutput
+from mcp_server.schemas.presentation_output import (
+    PresentationResource,
+    PresentedOutput,
+    RenderedPresentation,
+)
 
 
 class MockTextPresenter:
@@ -34,8 +38,8 @@ class MockTextPresenter:
         notes: list[NoteEntry] | None = None,
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
-    ) -> str:
-        return "text"
+    ) -> RenderedPresentation:
+        return RenderedPresentation(core="text", details="")
 
     def present_notes(
         self,
@@ -68,7 +72,10 @@ class MockPresenter:
         *,
         attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
-        return PresentedOutput(text="ok", resources=[])
+        return PresentedOutput(text="ok", structured_content=None)
+
+    def output_schema(self) -> dict[str, JsonValue] | None:
+        return None
 
 
 class IncompletePresenter:

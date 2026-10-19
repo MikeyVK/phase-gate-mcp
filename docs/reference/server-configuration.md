@@ -4,8 +4,8 @@
 
 
 **Status:** DEFINITIVE
-**Version:** 1.5
-**Last Updated:** 2026-10-19
+**Version:** 1.6
+**Last Updated:** 2026-10-20
 
 **Sources:** [launcher settings](../../mcp_server/config/settings.py), [ConfigLoader](../../mcp_server/config/loader.py) and [startup policy schema](../../mcp_server/config/schemas/server_config.py)
 **Tests:** [tests/mcp_server/unit/config/test_settings.py](../../tests/mcp_server/unit/config/test_settings.py)
@@ -65,6 +65,7 @@ Without an explicit config/template root, each root is resolved under server_roo
 | `PGMCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
 | `PGMCP_CONFIG_ROOT` | `server.config_root` | unset | Use this configuration directory as the effective source; it remains owner-managed. |
 | `PGMCP_TEMPLATE_ROOT` | `server.template_root` | unset | Use this template-suite directory as the active root; external roots remain owner-managed. |
+| `PGMCP_RESPONSE_PROFILE` | `server.response_profile` | unset | Select a named response profile for this process; omission uses the configured default. Empty/unknown values reject healthy admission. |
 | `PGMCP_BYPASS_VERSION_CHECK` | `server.bypass_version_check` | `False` | Set to `true` only to bypass the documented workspace-version validation. It does not migrate config or create a template-suite checkpoint. |
 
 ### Logging
@@ -108,7 +109,7 @@ startup_lock:
 
 The proxy and child independently read this policy through the existing loader.
 Only the policy is read before the child's source-admission lock; template and adapter
-admission remain inside that lock. Launcher Settings still selects roots and logging.
+admission remain inside that lock. Launcher Settings still selects roots, logging and the process-local response profile.
 `PGMCP_CONFIG_PATH` is a launcher overlay, not the source of these timing fields.
 
 Fresh `--init` installs the packaged basis through the existing assets route.
@@ -147,7 +148,13 @@ settings: Settings = Settings.from_env()
 | `server_root_dir` | `str` | `PGMCP_SERVER_PROJECT_DIR` | `\".pgmcp\"` |
 | `logs_dir` | `str` | `PGMCP_LOGS_DIR` | `"logs"` |
 | `config_root` | `str \| None` | `PGMCP_CONFIG_ROOT` | `None` — resolves to `server_root/config` unless overridden. |
+| `response_profile` | `str \| None` | `PGMCP_RESPONSE_PROFILE` | `None` — use `global.default_response_profile` from presentation config. |
 | `bypass_version_check` | `bool` | `PGMCP_BYPASS_VERSION_CHECK` | `False` (automatically defaults to `True` during pytest runs) |
+
+An explicit `PGMCP_RESPONSE_PROFILE` overrides the launcher `server.response_profile`.
+Profile definitions remain in shared presentation configuration; selecting a profile
+never rewrites that shared source. See the [profile contract](presentation_architecture.md)
+and [launcher activation guidance](../setup/README.md#choose-the-response-profile).
 
 ### `LogSettings`
 
@@ -329,3 +336,4 @@ and [execution outcomes](tools/quality.md#deliberate-binding-setup).
 | 1.3 | 2026-10-16 | @imp documenter | Document source layering, GitHub separation and preserved initialization choices. |
 | 1.4 | 2026-10-18 | @imp documenter | Document composed startup admission policy, explicit migration and proxy relaunch boundary for #520. |
 | 1.5 | 2026-10-19 | @imp documenter | Document canonical selected-workspace Git binding, lazy refusal and supported root placement (#522). |
+| 1.6 | 2026-10-20 | @imp documenter | Document process-local response-profile selector, environment precedence and shared definitions (#529). |

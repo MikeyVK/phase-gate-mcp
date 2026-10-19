@@ -16,6 +16,7 @@ import uuid
 from collections import OrderedDict
 from typing import TYPE_CHECKING, TypeVar, cast
 
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.utils.cache_serialization import serialize_cached_response
@@ -43,6 +44,15 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
         """Publish the output DTO to the cache and return a CachePublication."""
         try:
             size_chars = len(serialize_cached_response(output))
+        except Exception as exc:  # noqa: BLE001 -- Publication boundary retains native diagnosis.
+            logger.exception("Cache serialization failed")
+            return CachePublication(
+                success=False,
+                error_code="serialization_failed",
+                diagnostic=capture_exception(exc),
+            )
+
+        try:
             # Generate a new unique run_id
             run_id = uuid.uuid4().hex
 
@@ -54,10 +64,14 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
             if len(self._cache) > self._max_size:
                 self._cache.popitem(last=False)
             return CachePublication(run_id=run_id, success=True, size_chars=size_chars)
-        except Exception:
+        except Exception as exc:  # noqa: BLE001 -- Publication boundary retains native diagnosis.
             # Publication failure must not replace the underlying tool outcome.
             logger.exception("Cache publication failed")
-            return CachePublication(run_id=None, success=False, error_code="write_failed")
+            return CachePublication(
+                success=False,
+                error_code="write_failed",
+                diagnostic=capture_exception(exc),
+            )
 
     def get(self, run_id: str, response_model: type[T] | None = None) -> T | None:
         """Retrieve and deserialize a cached DTO using the expected type-safe model."""

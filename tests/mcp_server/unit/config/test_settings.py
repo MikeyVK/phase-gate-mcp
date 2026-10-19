@@ -342,3 +342,37 @@ def test_github_config_validation_hides_input_values(tmp_path: Path, malformed_y
     assert ("line 1, column" if malformed_yaml else "owner") in str(caught.value)
     assert "private-fixture-value" not in str(caught.value)
     assert "private-fixture-value" not in str(caught.value.__cause__)
+
+
+@pytest.mark.parametrize("environment_profile", [None, "environment-profile", ""])
+def test_response_profile_launcher_and_explicit_environment_precedence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    environment_profile: str | None,
+) -> None:
+    """An explicit selector wins over YAML; an explicit empty value is invalid."""
+    config_file = tmp_path / "settings.yaml"
+    config_file.write_text("server:\n  response_profile: launcher-profile\n", encoding="utf-8")
+    monkeypatch.setenv("PGMCP_CONFIG_PATH", str(config_file))
+    if environment_profile is None:
+        monkeypatch.delenv("PGMCP_RESPONSE_PROFILE", raising=False)
+    else:
+        monkeypatch.setenv("PGMCP_RESPONSE_PROFILE", environment_profile)
+
+    if environment_profile == "":
+        with pytest.raises(ValidationError, match="response_profile"):
+            Settings.from_env()
+    else:
+        settings = Settings.from_env()
+        assert settings.server.response_profile == (environment_profile or "launcher-profile")
+
+
+@pytest.mark.parametrize("selector", [None, "selected", ""])
+def test_response_profile_setting_is_optional_but_nonempty(selector: str | None) -> None:
+    """Unset selection uses configuration; explicitly empty selection is invalid."""
+    assert ServerSettings().response_profile is None
+    if selector == "":
+        with pytest.raises(ValidationError, match="response_profile"):
+            ServerSettings(response_profile=selector)
+    else:
+        assert ServerSettings(response_profile=selector).response_profile == selector

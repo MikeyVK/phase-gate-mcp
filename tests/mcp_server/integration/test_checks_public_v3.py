@@ -21,8 +21,6 @@ from mcp_server.core.interfaces.git import BranchChanges, IBranchChangeReader
 from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.execution.check_selection import CheckSelector
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.schemas.execution_outputs import RunChecksOutput, SelectionCheckResult
@@ -30,7 +28,12 @@ from mcp_server.server import MCPServer
 from mcp_server.services.check_operation import CheckOperation
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.check_tools import RunChecksTool
-from tests.mcp_server.integration.test_scaffold_public_v3 import Composition, invoke
+from tests.mcp_server.integration.test_scaffold_public_v3 import (
+    Composition,
+    invoke,
+    schema_attachment,
+)
+from tests.mcp_server.test_support import make_response_presenter
 from tests.mcp_server.unit.execution.test_check_selection import configured_checks
 from tests.mcp_server.unit.execution.test_check_selection import selector as build_selector
 from tests.mcp_server.unit.execution.test_check_service import EmptyBranch, RecordingRuntime
@@ -139,7 +142,7 @@ def compose(
         tools=[wrapped],
         resources=[resource],
         publisher=cache,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     return Composition(server, resource, text), runtime
 
@@ -288,8 +291,7 @@ async def test_malformed_envelope_returns_validation_schema(
             "additionalProperties": False,
         }
     assert runtime.requests == []
-    resources = [item for item in response.content if isinstance(item, EmbeddedResource)]
-    assert len(resources) == 1 and str(resources[0].resource.uri) == "schema://validation"
+    assert schema_attachment(response).uri == "schema://validation"
 
 
 @pytest.mark.asyncio

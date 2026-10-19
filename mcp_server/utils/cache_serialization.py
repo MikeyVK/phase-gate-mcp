@@ -2,17 +2,12 @@
 
 from __future__ import annotations
 
-import json
-import logging
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from pydantic.main import IncEx
-
-
-logger = logging.getLogger(__name__)
 
 
 def _absent_optional_nulls(value: object) -> IncEx:
@@ -46,23 +41,6 @@ def _absent_optional_nulls(value: object) -> IncEx:
 
 
 def serialize_cached_response(dto: BaseModel) -> str:
-    """Serialize once using the existing optional-null and error fallback contract."""
+    """Return canonical operation JSON or propagate the original serialization error."""
     # Required null and explicitly supplied null are operation facts.
-    try:
-        content = dto.model_dump_json(exclude=_absent_optional_nulls(dto))
-    except Exception as e:
-        # Preserve JSON fallback while retaining the complete diagnosis in the log.
-        logger.exception("Cache serialization failed for %s", type(dto).__name__)
-        fallback = {
-            "success": False,
-            "error_type": "SerializationError",
-            "message": f"Unable to serialize DTO: {e}",
-            "dto_type": type(dto).__name__,
-        }
-        if hasattr(dto, "error_message") and dto.error_message:
-            fallback["error_message"] = str(dto.error_message)
-        if hasattr(dto, "traceback") and dto.traceback:
-            fallback["traceback"] = str(dto.traceback)
-        content = json.dumps(fallback)
-
-    return content
+    return dto.model_dump_json(exclude=_absent_optional_nulls(dto))

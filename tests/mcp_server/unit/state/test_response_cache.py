@@ -15,6 +15,7 @@ from pydantic import BaseModel, ValidationError
 
 # Project modules
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.state.response_cache import ResponseCacheManager
 
 
@@ -26,6 +27,8 @@ class TestResponseCache:
         # Valid hex UUID should pass
         pub = CachePublication(run_id="a" * 32)
         assert pub.run_id == "a" * 32
+        with pytest.raises(ValidationError, match="frozen_instance"):
+            pub.success = False
 
         # Invalid strings should raise ValidationError
         with pytest.raises(ValidationError):
@@ -33,6 +36,22 @@ class TestResponseCache:
 
         with pytest.raises(ValidationError):
             CachePublication(run_id="g" * 32)  # Non-hex characters
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {},
+            {"run_id": "a" * 32, "error_code": "write_failed"},
+            {"run_id": "a" * 32, "diagnostic": ExecutionErrorOutput(error_message="Failed")},
+            {"success": False},
+            {"success": False, "run_id": "a" * 32, "error_code": "write_failed"},
+            {"success": False, "error_code": "write_failed", "size_chars": 12},
+        ],
+    )
+    def test_cache_publication_requires_consistent_facts(self, payload: dict[str, object]) -> None:
+        """Accept only coherent published or unavailable receipt facts."""
+        with pytest.raises(ValidationError):
+            CachePublication.model_validate(payload)
 
     @pytest.mark.parametrize("publication_fails", [False, True])
     def test_response_cache_manager_put_get_exists(
@@ -64,6 +83,11 @@ class TestResponseCache:
             assert not pub.success
             assert pub.run_id is None
             assert pub.error_code == "write_failed"
+            assert isinstance(pub.diagnostic, ExecutionErrorOutput)
+            assert pub.diagnostic.error_message == "RuntimeError: cache publication failed"
+            assert pub.diagnostic.traceback is not None
+            assert "OSError: cache storage unavailable" in pub.diagnostic.traceback
+            assert "RuntimeError: cache publication failed" in pub.diagnostic.traceback
             assert model.value == "test"
             record = caplog.records[-1]
             assert record.exc_info is not None
@@ -74,6 +98,8 @@ class TestResponseCache:
             return
 
         assert pub.success
+        assert pub.error_code is None
+        assert pub.diagnostic is None
         assert pub.run_id is not None
         assert len(pub.run_id) == 32
 

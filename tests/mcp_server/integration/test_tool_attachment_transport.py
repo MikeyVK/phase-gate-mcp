@@ -18,9 +18,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import (
     CallToolResult,
-    EmbeddedResource,
     ListToolsResult,
-    TextResourceContents,
 )
 from pydantic import BaseModel, ConfigDict
 
@@ -36,12 +34,11 @@ from mcp_server.core.tool_execution import (
 )
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
-from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ToolErrorOutput
+from mcp_server.schemas.presentation_output import RenderedPresentation
 from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import connected_mcp_client
+from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
 class Operation(BaseModel):
@@ -100,12 +97,12 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
     publisher.put.return_value = publication
     text = MagicMock(spec=ITextPresenter)
 
-    def present_text(**kwargs: object) -> str:
+    def present_text(**kwargs: object) -> RenderedPresentation:
         publisher.put.assert_called_once_with("attached", operation)
         assert kwargs["data"] is operation
         assert kwargs["cache_pub"] is publication
         assert "attachments" not in kwargs
-        return "Operation result"
+        return RenderedPresentation(core="Operation result", details="")
 
     text.present_text.side_effect = present_text
     server = MCPServer(
@@ -113,27 +110,30 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
         tools=[wrapped],
         resources=[],
         publisher=publisher,
-        presenter=ResponsePresenter(text, SchemaResourcePresenter()),
+        presenter=make_response_presenter(text_presenter=text),
     )
     async with connected_mcp_client(server) as client:
         response = await client.call_tool("attached", {})
     assert isinstance(response, CallToolResult)
     assert response.is_error is error
-    assert response.structured_content == operation.model_dump(mode="json", by_alias=True)
-    assert len(response.content) == 2
-    resource = response.content[1]
-    assert isinstance(resource, EmbeddedResource)
-    assert str(resource.resource.uri) == "schema://template/order%2Fbook/context"
-    assert resource.resource.mime_type == "application/schema+json"
-    assert isinstance(resource.resource, TextResourceContents)
-    assert json.loads(resource.resource.text) == {
+    payload = response.structured_content
+    assert payload is not None
+    assert payload["data"] == {
+        "delivery": "inline",
+        "operation": operation.model_dump(mode="json", by_alias=True),
+    }
+    assert len(response.content) == 1
+    attachment = payload["attachments"][0]
+    assert attachment["uri"] == "schema://template/order%2Fbook/context"
+    assert attachment["mime_type"] == "application/schema+json"
+    assert json.loads(attachment["content"]) == {
         "type": "object",
         "properties": {"value": {"type": "integer"}},
     }
 
 
 @pytest.mark.asyncio
-async def test_listing_exposes_operation_schema_only(tmp_path: Path) -> None:
+async def test_listing_exposes_selected_public_response_schema(tmp_path: Path) -> None:
     execution: ToolExecution[BaseModel] = ToolExecution(
         operation=Operation(success=True, value=1), attachments=()
     )
@@ -141,15 +141,17 @@ async def test_listing_exposes_operation_schema_only(tmp_path: Path) -> None:
         AttachedCore(execution)
     )
     wrapped.output_model = ToolExecution[Operation]
+    presenter = make_response_presenter()
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[wrapped],
         resources=[],
+        presenter=presenter,
     )
     async with connected_mcp_client(server) as client:
         listing = await client.list_tools()
     assert isinstance(listing, ListToolsResult)
-    assert listing.tools[0].output_schema == Operation.model_json_schema()
+    assert listing.tools[0].output_schema == presenter.output_schema()
 
 
 @pytest.mark.asyncio
@@ -197,6 +199,7 @@ async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
     )
     presenter = MagicMock()
     presenter.present.side_effect = failure
+    presenter.output_schema.return_value = None
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[wrapped],

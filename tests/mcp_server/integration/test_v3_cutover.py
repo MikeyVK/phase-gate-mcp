@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+from mcp_server.schemas.presentation_output import PublicToolResponse
 from tests.mcp_server.fixtures.installed_distribution import build_installed_distribution
 from tests.mcp_server.fixtures.server_process import run_server_process
 from tests.mcp_server.test_support import copy_server_startup_inputs
@@ -59,10 +61,18 @@ def _assert_v3_catalog(workspace: Path, env: dict[str, str]) -> None:
                 {"name": "scaffold_schema", "arguments": {"artifact_type": "research"}},
             )
             assert "result" in response
-            assert any(
-                item.get("type") == "resource" and item["resource"]["uri"].startswith("schema://")
-                for item in response["result"]["content"]
+            envelope = PublicToolResponse.model_validate_json(
+                json.dumps(response["result"]["structuredContent"])
             )
+            schema_attachments = [
+                attachment
+                for attachment in envelope.attachments
+                if attachment.uri.startswith("schema://")
+            ]
+            assert schema_attachments
+            for attachment in schema_attachments:
+                assert attachment.mime_type == "application/schema+json"
+                assert isinstance(json.loads(attachment.content), dict)
 
 
 class TestV3Cutover:
