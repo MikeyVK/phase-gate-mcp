@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.3  
-**Last Updated:** 2026-10-15  
+**Version:** 3.4  
+**Last Updated:** 2026-10-19  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_git_tools.py](../../../tests/mcp_server/unit/tools/test_git_tools.py)  
@@ -27,10 +27,18 @@ The MCP server provides **15 Git tools** across 4 functional categories:
 | **Git Sync** | 2 | Thread-safe fetch/pull with lock files |
 | **Git Analysis** | 2 | Branch listing with verbose info, diff statistics |
 | **TOTAL** | **15** | — |
-- ✅ Execute in workspace root (detected from environment)
+- ✅ Execute against the canonical selected workspace root, independent of launch CWD
 - ✅ Return structured responses via the MCP Resource Cache (using Pydantic DTOs)
 - ✅ Validate inputs before git operations
 - ✅ Integrate with PhaseStateEngine for branch state tracking
+
+Git tools, workflow context and branch check selection use the same exact selected
+worktree. They do not discover an ancestor or child repository. Git acquisition is lazy;
+missing Git, bare/admin roots or conflicting native repository selectors refuse Git use
+with a chained `git_context_unavailable` diagnosis. Existing history consumers report
+unavailability through their established contract. Ordinary native identity and credential
+policy remains enabled. See [workspace and native-context admission](../../setup/dev-isolation.md#roots-and-ownership)
+for supported roots, inherited selector conflicts and installed-server operation.
 
 > [!NOTE]
 > **Bounded presentation and cache:** Every Git tool returns a configured Markdown
@@ -961,6 +969,7 @@ Both `git_fetch` and `git_pull` execute potentially blocking GitPython network o
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.4 | 2026-10-19 | @imp documenter | Document selected-worktree binding and native-context refusal without launch-CWD fallback (#522). |
 | 3.3 | 2026-10-15 | @imp documenter | Document registered parent reads without reflog inference and remove retired default-base config example (#503) |
 | 3.2 | 2026-10-10 | @imp documenter | Document shared independent phase/cycle/sub-phase scope fields and first-line issue normalization (#491) |
 | 3.1 | 2026-08-22 | Agent | Document bounded Git projections and current-branch semantics |
