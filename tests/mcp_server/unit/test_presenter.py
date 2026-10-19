@@ -145,6 +145,7 @@ class TestTextPresenter:
                 },
                 "next_instruction_texts": {
                     "test_advisory": "🚀 TEST ADVISORY WARNING",
+                    "cache_publication_failed": "CACHE FAILURE MARKER",
                     "uri_reference": (
                         "*(Full details available in the structured JSON payload. "
                         "View resource: pgmcp://cache/runs/{run_id})*"
@@ -275,12 +276,19 @@ class TestTextPresenter:
             notes=[],
             cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
         )
-        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert (
+            mock_yaml_config["global"]["next_instruction_texts"]["cache_publication_failed"] in text
+        )
         assert "```json" in text
         assert "Validation Failed" in text
 
-    def test_present_text_fallback_run_id_none(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting when run_id is None and CachePublication.success is False."""
+    @pytest.mark.parametrize("configured_warning", [True, False])
+    def test_present_text_fallback_run_id_none(
+        self, mock_yaml_config: dict[str, Any], configured_warning: bool
+    ) -> None:
+        """Preserve fallback data with a configured or omitted optional warning."""
+        if not configured_warning:
+            del mock_yaml_config["global"]["next_instruction_texts"]["cache_publication_failed"]
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, result="Fallback JSON test")
 
@@ -290,9 +298,15 @@ class TestTextPresenter:
             notes=[],
             cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
         )
-        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        if configured_warning:
+            assert (
+                mock_yaml_config["global"]["next_instruction_texts"]["cache_publication_failed"]
+                in text
+            )
+        assert "pgmcp://cache/runs/" not in text
         assert "```json" in text
-        assert '"result": "Fallback JSON test"' in text
+        fallback = json.loads(text.split("```json\n", 1)[1].split("\n```", 1)[0])
+        assert fallback == dto.model_dump()
 
     def test_present_text_fallback_run_id_none_execution_error(
         self, mock_yaml_config: dict[str, Any]
@@ -313,7 +327,9 @@ class TestTextPresenter:
             notes=[],
             cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
         )
-        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert (
+            mock_yaml_config["global"]["next_instruction_texts"]["cache_publication_failed"] in text
+        )
         assert "```json" in text
         assert "Test Execution Error" in text
         assert "traceback" not in text
@@ -371,7 +387,9 @@ class TestTextPresenter:
             cache_pub=cache_pub,
         )
         assert "Format error" in text
-        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert (
+            mock_yaml_config["global"]["next_instruction_texts"]["cache_publication_failed"] in text
+        )
         fallback = json.loads(text.split("```json\n", 1)[1].split("\n```", 1)[0])
         assert fallback == dto.model_dump()
         records = [

@@ -24,8 +24,7 @@
     "collection_omission_template": "- … {omitted_count} more {field}"
     "truncation_notice": "Output truncated; complete details are available in the\
       \ cached resource."
-    "cache_unavailable_truncation_notice": "Output truncated; complete details are\
-      \ unavailable because cache publication failed."
+    "cache_unavailable_truncation_notice": "Text output truncated; no cached result is available."
   "cache_read_budget_chars": 6000
   "next_instruction_texts":
     "uri_reference": "Result: pgmcp://cache/runs/{run_id}"
@@ -40,7 +39,7 @@
       \ now; keep exactly one item in progress and update it after each material step."
     "recheck_quality": "\U0001F4CB REQUIRED NEXT STEP: Run run_checks(scope='targets',\
       \ targets={modified_files}) to verify that the applied fixes now pass all checks."
-    "cache_publication_failed": "*(Cache publication failed. Full details dumped inline)*"
+    "cache_publication_failed": "*(Cache publication failed; cached access is unavailable.)*"
   "failures":
     "planning_cycle_protected": "Planning change rejected: cycles with implementation\
       \ commits cannot be replaced, removed or renumbered. ({error_code})"

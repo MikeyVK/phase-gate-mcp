@@ -26,6 +26,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.presentation_config import PresentationConfig, ToolPresentationConfig
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
@@ -33,6 +34,7 @@ from mcp_server.presenters.response_presenter import ResponsePresenter
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
+from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from tests.mcp_server.test_support import connected_mcp_client
@@ -234,50 +236,89 @@ def test_alignment_rejects_invalid_typed_projections(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("length", [8, 20_000], ids=["small", "large"])
-async def test_shipped_cache_hint_stays_complete_within_budget(
+@pytest.mark.parametrize(
+    ("length", "cache_failure", "operation_success"),
+    [
+        pytest.param(8, False, True, id="published-small"),
+        pytest.param(20_000, False, True, id="published-large"),
+        pytest.param(8, True, True, id="unpublished-small"),
+        pytest.param(20_000, True, True, id="unpublished-large"),
+        pytest.param(20_000, True, False, id="unpublished-error"),
+    ],
+)
+async def test_shipped_cache_delivery_preserves_operation(
     config: PresentationConfig,
     length: int,
+    cache_failure: bool,
+    operation_success: bool,
     tmp_path: Path,
 ) -> None:
+    """Preserve operation facts while selecting truthful configured cache guidance."""
     presenter = _presenter(config, ToolPresentationConfig(template_success="{title}"))
     operation = Projection(
-        success=True,
+        success=operation_success,
         title="Brief summary",
         count=0,
         labels=None,
         status=None,
         rows=(),
-        detail="x" * length,
+        detail="diagnostic-" + "x" * length,
     )
     cache = ResponseCacheManager()
-    publication = cache.put("projection", operation)
-    text = presenter.present_text("projection", operation, cache_pub=publication)
-    assert f"pgmcp://cache/runs/{publication.run_id}" in text
-    complete = await CachedResponseResource(cache).read(f"pgmcp://cache/runs/{publication.run_id}")
-    assert publication.size_chars == len(complete)
-    paged = len(complete) > config.global_settings.cache_read_budget_chars
-    guide_uri = CacheReadGuideResource.uri_pattern
-    assert (guide_uri in text) is paged
-    assert len(text.encode("utf-8")) <= config.global_settings.max_text_response_bytes
-    assert len(text) < 200
-    assert "sha256" not in text
-    if paged:
-        server = MCPServer(
-            Settings(server=ServerSettings(workspace_root=str(tmp_path))),
-            tools=[],
-            resources=[CacheReadGuideResource()],
-            publisher=cache,
-            presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
+    publisher: IToolResponsePublisher = cache
+    if cache_failure:
+        failed_publisher = MagicMock(spec=IToolResponsePublisher)
+        failed_publisher.put.return_value = CachePublication(
+            success=False, error_code="write_failed"
         )
-        async with connected_mcp_client(server) as client:
-            readback = await client.read_resource(guide_uri)
+        publisher = failed_publisher
+    wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
+        ProjectionCore(operation)
+    )
+    server = MCPServer(
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[CachedResponseResource(cache), CacheReadGuideResource()],
+        publisher=publisher,
+        presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
+    )
+    async with connected_mcp_client(server) as client:
+        response = await client.call_tool("projection", {})
+        assert isinstance(response, CallToolResult)
+        assert response.is_error is (not operation_success)
+        assert response.structured_content == operation.model_dump(mode="json", by_alias=True)
+        text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
+        assert len(text.encode("utf-8")) <= config.global_settings.max_text_response_bytes
+        match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
+        guide_uri = CacheReadGuideResource.uri_pattern
+        if cache_failure:
+            assert match is None
+            assert guide_uri not in text
+            tail = config.global_settings.formatting.cache_unavailable_truncation_notice
+            if length > config.global_settings.max_text_response_bytes:
+                assert text.endswith(tail)
+            else:
+                notices = config.global_settings.next_instruction_texts
+                assert notices["cache_publication_failed"] in text
+                assert tail not in text
+            return
+
+        assert match is not None
+        readback = await client.read_resource(match.group())
         assert isinstance(readback, ReadResourceResult)
         content = readback.contents[0]
         assert isinstance(content, TextResourceContents)
-        assert content.text == (
-            Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"
-        ).read_text(encoding="utf-8")
+        assert Projection.model_validate_json(content.text) == operation
+        paged = len(content.text) > config.global_settings.cache_read_budget_chars
+        assert (guide_uri in text) is paged
+        assert len(text) < 200
+        if paged:
+            guide = await client.read_resource(guide_uri)
+            assert isinstance(guide, ReadResourceResult)
+            assert isinstance(guide.contents[0], TextResourceContents)
+            assert guide.contents[0].text == (
+                Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"
+            ).read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("names", [(), ("missing",), ("projection", "projection")])
