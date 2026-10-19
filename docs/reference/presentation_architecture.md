@@ -3,8 +3,8 @@
 # Presentation Architecture and Resource Delegation
 
 **Status:** DEFINITIVE  
-**Version:** 2.4.0  
-**Last Updated:** 2026-10-18
+**Version:** 2.4.1  
+**Last Updated:** 2026-10-19
 
 **Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
@@ -201,10 +201,14 @@ fallbacks, and the cache reference have been composed.
   budget permits.
 - A truthful truncation notice and one complete cache reference are reserved when cache
   publication succeeded.
-- If cache publication failed, the limiter uses the configured cache-failure notice
-  without inventing a resource. Server-owned `structuredContent` still contains the
-  returned operation DTO, even when retained text fallbacks describe cache-related
-  unavailability.
+- Failed cache publication uses the configured cache-failure warning; when text
+  overflows, the limiter reserves the configured no-cache truncation notice without
+  inventing a resource. These notices describe failed cached access and text truncation,
+  not loss of complete operation data or completeness of the inline JSON fallback.
+  Server-owned `structuredContent` independently contains the actual operation DTO for
+  a normally produced operation response. Field presence in the server response does
+  not establish that a particular client or model receives that channel; error paths
+  without a structured operation response retain their existing explicit diagnostics.
 
 The byte ceiling applies to every tool's presented text. It does not truncate
 `structuredContent` or schema attachments. Individual tools configure item limits,
@@ -316,5 +320,7 @@ those facts from Markdown.
 | 2.0.0 | 2026-08-22 | Agent | Document bounded declarative projection, runtime catalog alignment, ordered collections, and final byte limiting |
 | 1.1.0 | 2026-08-19 | Agent | Document composite text and validation-resource presentation |
 | 2.4.0 | 2026-10-18 | @imp documenter | Document server-owned structured operation delivery, SDK2 ownership and retained cache/attachment semantics. |
+| 2.4.1 | 2026-10-19 | @imp documenter | Distinguish cache/text availability notices from operation delivery and client access. |
+
 
 
