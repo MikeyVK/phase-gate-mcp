@@ -16,7 +16,68 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-19T07:49:11.548866+00:00"
+      "created_at": "2026-10-19T07:49:11.548866+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "truthful-cache-notices",
+              "deliverables": [
+                {
+                  "deliverable_name": "factual-notices",
+                  "description": "Correct the two existing configured notice values and the existing generic presenter fallback literal without changing interfaces or behavior paths.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": ".pgmcp/config/defaults/presentation.yaml"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "preserved-response-behavior",
+                  "description": "Adapt existing shipped-config transport and presenter tests for failed/successful cache publication, bounded text, exact structured DTO/outcome and optional-key fallback; retain no-operation controls without prose snapshots.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_execution_presentation_v3.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                }
+              ],
+              "exit_criteria": "The three notice values are truthful; focused cache/text/operation controls and changed-file gates pass; no interface/transport/cache redesign, legacy tests or configuration admission change."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "verification",
+                "description": "Persist native configured full-suite, relevant branch/configured gates, focused behavior evidence and limitations.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue524/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "availability-reference",
+                "description": "Clarify cache-failure wording versus actual operation delivery and client access limits in the active presentation reference.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/reference/presentation_architecture.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
