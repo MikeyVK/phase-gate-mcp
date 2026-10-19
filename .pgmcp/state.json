@@ -6,7 +6,7 @@
   "workflow_name": "refactor",
   "current_phase": "implementation",
   "current_cycle": 2,
-  "last_cycle": 1,
+  "last_cycle": null,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -25,7 +25,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Validation full native run found four remaining old attachment-transport expectations in two direct consumer testfiles, plus one pre-child-readiness timeout in existing process lifecycle test. Return to C_2 for bounded direct consumer migration and focused timeout diagnosis; retain original failed full run and require QA again, no gate exception.",
   "issue_title": "Establish client delivery and structured payload guarantees",
   "created_at": "2026-10-19T09:20:58.285627+00:00",
   "transitions": [
@@ -52,8 +52,25 @@
       "human_approval_message": "Owner authorized autonomous issue execution; independent QA GO Planning \u2192 Implementation at 6aee195cf0352b1c3a67b527e9c3deb45e996fd9.",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-19T21:36:22.129886+00:00",
+      "human_approval_message": "Owner authorizes autonomous issue execution with independent QA at phase boundaries; QA GO Implementation\u2192Validation on98378e6e3f8ea7dbb5fbaf8432f277ebadac43c6, QA chat final2026-10-19.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-19T21:49:04.292610+00:00",
+      "human_approval_message": "Standing owner approval2026-10-18 for necessary forced returns to earlier phases, recorded in AGENTS.md; current direct owner instruction authorizes autonomous #529 execution with QA at phase boundaries and policy-only pauses.",
+      "forced": true,
+      "skip_reason": "Validation full native run found four remaining old attachment-transport expectations in two direct consumer testfiles, plus one pre-child-readiness timeout in existing process lifecycle test. Return to C_2 for bounded direct consumer migration and focused timeout diagnosis; retain original failed full run and require QA again, no gate exception.",
+      "resume_cycle": "C_2"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": "refactor"
 }
