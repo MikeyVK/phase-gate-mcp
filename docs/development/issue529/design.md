@@ -3,7 +3,7 @@
 # Issue \#529 — Configurable response profiles and protected presentation
 
 **Status:** PROPOSED — Design complete for independent review; not implemented  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -101,7 +101,7 @@ The current source already separates operation facts, schema attachments, text r
 | Optional collection/detail rendering and safe cuts | Existing collection renderer and TextBudgetLimiter; protected material never enters an unqualified final prefix cut |
 | Data route, attachment representation and envelope | ResponsePresenter and frozen presentation-output DTOs |
 | MCP content/structuredContent/isError and catalog schema | MCPServer and existing converter; mechanically transfer presenter output, never reconstruct data from Markdown |
-| Raw operation publication and paging | Existing ResponseCacheManager and CachedResponseResource; no envelope, notes or attachments added to the cache |
+| Raw operation publication and paging | Existing ResponseCacheManager and CachedResponseResource; normal representation, URI/window contract and raw DTO ownership retained; publication explicitly reports serialization failure |
 | Config-independent recovery | Existing StartupRecoveryPresenter composed by cli.py; fixed full dual-channel projection without consulting rejected configuration |
 
 The presentation return-contract change is intentional: IPresenter remains the narrow presentation dependency of MCPServer; tools, managers, adapters and operation models receive no new dependencies. Bootstrap passes concrete values, not a ConfigLoader or whole Settings object, into presenters.
@@ -182,7 +182,7 @@ class ResourceOperation(BaseModel):
     size_chars: int | None
 
 class DeliveryFailure(BaseModel):
-    code: Literal["cache_publication_failed"]
+    code: Literal["cache_publication_failed", "operation_serialization_failed"]
     details_truncated: bool
 
 class PublicToolResponse(BaseModel):
@@ -247,16 +247,46 @@ Schemas remain fixed for the connected catalog lifetime. Runtime cache failure u
 | Inline profile, cache publication succeeds | Complete operation and attachments remain inline; cache receipt may supply normal direct reading guidance. |
 | Inline profile, cache publication fails but normal inline serialization is available | Keep full inline operation and attachments. Protect the configured cache-unavailable notice; do not discard already available inline data or add a redundant full JSON fallback. |
 | Resource profile, publication succeeds | Supply real URI/size from CachePublication and direct attachments; no inline operation duplicate. |
-| Resource profile, publication fails or publisher is absent | No usable resource reference. Return emergency text, retain selected structured presentation, and mark delivery_error with unavailable data. |
+| Resource profile, publication fails or publisher is absent | No usable resource reference. Return emergency text, retain selected structured presentation, and mark delivery_error with unavailable data; distinguish serialization failure as specified below. |
 | Required profile or definitions invalid | Existing recognized startup-rejection/recovery path; never choose another normal profile silently. |
 
 A resource failure's mandatory core comprises actual operation outcome, rendered explanation/instructions/notes, cache-failure notice and any diagnostic-truncation notice. All remain complete even if they exceed max_text_response_bytes or the diagnostic allowance. Emergency text is emitted even for a normally structured-only presentation profile; this is the explicit owner-approved exception. Keep the selected structured presentation as well. A structured data projection has data=null, direct complete attachments and delivery_error; for data_channel=text, retain direct attachments in a complete JSON text segment with unavailable data. The structured envelope, when selected, independently retains delivery_error even when data_channel=text.
 
 Append at most max_cache_failure_detail_bytes of diagnostic text, including its excerpt label/formatting closure; this allowance does not contain the mandatory core or direct attachments. UTF-8 cuts retain valid Unicode. Label JSON-derived fragments as potentially incomplete diagnostic text, not complete JSON or an application/json resource. Never slice the enclosing serialized MCP/JSON-RPC message. No unavailable-looking-valid URI, completeness claim or claim of full logs/files without established storage.
 
-Bound only the diagnostic excerpt. When inline serialization already succeeded, use available facts; do not reconstruct a DTO from presentation. When serialization itself failed, do not retry the same full serializer or dump an unbounded arbitrary object representation. Preserve the actual serialization diagnosis at the existing error boundary and use available scalar/native diagnostic facts for the excerpt; if unavailable, say so through configured failure wording. An excerpt-generation problem cannot turn a successful completed mutation into a reported operation failure. No new exception framework or cache serializer redesign is introduced.
+Bound only the diagnostic excerpt. When inline serialization already succeeded, use available facts; do not reconstruct a DTO from presentation. When serialization itself failed, do not retry the same full serializer or dump an unbounded arbitrary object representation. Preserve the actual serialization diagnosis at the existing error boundary and use available scalar/native diagnostic facts for the excerpt; if unavailable, say so through configured failure wording. An excerpt-generation problem cannot turn a successful completed mutation into a reported operation failure. The targeted serializer failure-contract correction is defined below; no new exception framework, replacement cache or generic serializer framework is introduced.
 
 This design specifies output bounds, not streaming/memory/time guarantees for arbitrary payload objects. Operation/cache facts remain authoritative; a delivery error is distinct from operation failure.
+
+### Serialization completeness and original-error ownership
+
+QA identified a concrete existing counterexample: serialize_cached_response catches a native serialization exception and returns replacement SerializationError JSON; ResponseCacheManager.put then reports success and CachedResponseResource.read may return that replacement. Such a receipt does not establish complete operation availability.
+
+Close this within the existing boundaries, without a second cache or serializer framework:
+
+| Boundary | Required contract |
+|---|---|
+| serialize_cached_response(dto) -> str | Return the canonical normal operation JSON, retaining current optional-null and alias policy. On failure, propagate the original exception/cause; remove the concealed replacement-JSON success path. Do not catch and turn it into a different operation. |
+| ResponseCacheManager.put | Invoke canonical serialization once before accepting the entry. Serialization failure returns CachePublication(success=False, run_id=None, error_code="serialization_failed", diagnostic=capture_exception(original_exception)); no new cache entry or eviction occurs. Other publication failures retain error_code="write_failed" and the captured diagnostic. Logging/capture belongs to this existing boundary. |
+| CachePublication | Extend the frozen receipt with diagnostic: ExecutionErrorOutput | None. It is the existing generic diagnostic DTO, distinct from the actual tool operation. Success implies a real run_id, full canonical serialization and no diagnostic/error_code. Failure implies run_id=None and error_code; failed serialization is never called successful publication. Validate these combinations. |
+| CachedResponseResource.read | Successful canonical JSON and window semantics stay unchanged. A subsequent serialization error propagates to the existing MCP read-resource error boundary; never return a replacement DTO under a complete-operation resource claim. No second JSON cache or read API. |
+| Inline projection in ResponsePresenter | Attempt the actual operation JSON-mode projection once when inline data is needed. Catch a failure at this existing presentation boundary, retain capture_exception diagnostics and use the schema-valid operation_serialization_failed delivery variant. Do not replace actual success/isError or repeat that failed full projection. A failure of the distinct canonical cache projection does not establish failure of inline projection, or vice versa. |
+| TextPresenter core rendering | Core template/instruction rendering must not depend on successful serialization of the whole DTO. Resolve the existing declared template fields from the original operation values through the existing generic formatter. Optional collection rendering remains at its existing seam. A failed full JSON projection must not prevent required guidance from being rendered. |
+
+These are explicit error-contract corrections required by the approved truthful-delivery guarantee. They do not change the cache's operation ownership, normal JSON representation, memory policy or paging protocol. The original operation remains authoritative; CachePublication.diagnostic only supplies delivery diagnosis. This removes a hidden failure conversion rather than preserving it through a compatibility path.
+
+Complementary cases:
+| Cache result | Inline projection, when required | Delivery |
+|---|---|---|
+| Full operation published | Complete | Normal inline or resource route |
+| Serialization failed | Complete | Inline profile retains full inline data and explicit cache-unavailable notice; resource profile uses operation_serialization_failed emergency, no URI |
+| Other publication failure | Complete | Inline profile retains complete data; resource profile uses cache_publication_failed emergency |
+| Either result | Inline serialization fails | Inline profile uses operation_serialization_failed emergency with actual operation outcome, selected mandatory presentation, direct attachments and data=null |
+| Full operation published | Not requested by resource profile | Use the successful canonical resource without a redundant inline serialization attempt |
+
+delivery_error.code therefore distinguishes operation_serialization_failed from cache_publication_failed. Both admit the same protected emergency layout and bounded native diagnostic excerpt. If an inline projection fails after a real resource was published, keep any configured cache guidance truthful but do not silently change the selected inline data route or claim complete inline delivery. An inline diagnostic failure is explicit even when an alternate readable resource exists. Resource fallback does not retry the failed canonical serializer. Use available original exception/native facts for the bounded excerpt; no error-prose parsing, full-object repr, or another exception/serialization framework.
+
+Adapt the existing serialization-failure branch in integration/test_cache_fidelity_v3.py to assert failed publication/no URI and retained exception/cause, together with existing canonical fidelity cases. Extend existing publication/response cases to prove the independent inline-success and inline-failure variants and preservation of actual isError. This is focused current-behavior coverage, not tests rejecting or retaining the old fallback.
 
 ### Configuration-independent startup recovery
 
@@ -304,7 +334,7 @@ No workflow state or shared active-profile state is introduced. Normal wrappers 
 
 ## Transition and Cleanup
 
-Apply one clean contract cutover in later implementation: update shipped presentation config and affected focused config/test builders together; remove the old bare structured assignment and unconditional attachment transport path. Remove the old final-prefix limiter behavior and unlimited cache-failure JSON append when replaced, rather than retaining aliases or a parallel legacy presenter. Keep the current main rendering templates and note sources; no second per-tool configuration inventory. Update current setup/presentation/cache-reading references during Documentation; preserve historical issue reports except these current authoritative phase artifacts. Release/install execution and #528 implementation remain outside this Design.
+Apply one clean contract cutover in later implementation, including removal of the hidden canonical-serialization replacement-JSON success path: update shipped presentation config and affected focused config/test builders together; remove the old bare structured assignment and unconditional attachment transport path. Remove the old final-prefix limiter behavior and unlimited cache-failure JSON append when replaced, rather than retaining aliases or a parallel legacy presenter. Keep the current main rendering templates and note sources; no second per-tool configuration inventory. Update current setup/presentation/cache-reading references during Documentation; preserve historical issue reports except these current authoritative phase artifacts. Release/install execution and #528 implementation remain outside this Design.
 
 ## Validation
 
@@ -328,7 +358,7 @@ Apply one clean contract cutover in later implementation: update shipped present
 
 ### Emergency response remains truthful and bounded
 
-**Method:** Inject publisher failure after successful and failed operations, with diagnostics beyond the byte limit and unavailable serialization facts.
+**Method:** Inject publisher failure and native serialization failure after successful and failed operations, including independently failing canonical-cache and inline projections, with diagnostics beyond the byte limit.
 
 **Expected Result:** No fake URI or false completeness claim; valid MCP JSON and schema variant; actual outcome retained; bounded labelled excerpt and complete instructions/notices.
 
@@ -395,3 +425,4 @@ Planning must preserve the approved public/config clean break, no domain/adapter
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-19 | @imp designer | Define approved profile selection, protected rendering, common public envelope, emergency delivery and fixed startup recovery; map existing production/test boundaries and explicit cleanup without implementation. |
+| 0.2 | 2026-10-19 | @imp designer | Close QA P1: expose native canonical-serialization failure through the existing publisher receipt, preserve original diagnostics/outcome, define independent inline-failure delivery and core rendering without full JSON serialization, and adapt the existing fidelity behavior case. |

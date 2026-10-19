@@ -3,7 +3,7 @@
 # Issue \#529 — Harness delivery and complete-output access
 
 **Status:** FINAL — Research content approved by independent QA; workflow aligned for Design  
-**Version:** 1.3  
+**Version:** 1.4  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -307,6 +307,10 @@ Owner-approved direction, with exact field names and defaults deferred to Design
 
 Profile-focused tests should prove the operation outcome is retained, oversized emergency details are safely bounded, Unicode/protocol output stays valid, instructions and truncation status survive, and no unavailable resource is advertised. Test the public response/error behavior rather than production strings or concrete harnesses. No implementation or test execution was performed for this clarification.
 
+### Design QA completeness counterexample
+
+Independent Design QA at 46703d7c found that serialize_cached_response can substitute SerializationError JSON while ResponseCacheManager.put reports success. The existing test_cache_fidelity_v3.py explicitly exercises this. Therefore a receipt is trustworthy only when the complete operation actually serialized; a readable diagnostic resource is not proof of full operation availability. Design closes the existing hidden failure conversion through the existing serialization/publisher/presentation error boundaries, preserving normal representation, cache ownership/paging and the actual operation outcome. This operational error correction implements the approved truthful failure strategy; it adds neither a cache redesign nor a compatibility path.
+
 ## Questions
 
 None at the Research strategy boundary. On 2026-10-19 the owner explicitly approved the general envelope and instructed: preserve the mandatory core always and bound only diagnostic details. These decisions close the two earlier policy questions.
@@ -395,3 +399,4 @@ The owner approved refactor and the one-time registration correction before Desi
 | 1.1 | 2026-10-19 | @imp researcher | Record explicit owner approval of the public envelope and mandatory-core preservation with only diagnostic details bounded; close Research policy questions and request independent QA for Design, subject to workflow alignment. |
 | 1.2 | 2026-10-19 | @imp researcher | Record independent content GO and the owner-authorized chore-to-refactor registration repair; verify preservation of all unrelated state and history before normal Design transition. |
 | 1.3 | 2026-10-19 | @imp designer | Record the owner's additional startup-recovery decision: configuration-independent, complete dual-channel recovery using the common envelope; normal startup restores profile selection. |
+| 1.4 | 2026-10-19 | @imp designer | Record Design QA's concrete false-completeness counterexample and bounded correction within existing serialization/publisher/presentation error boundaries. |
