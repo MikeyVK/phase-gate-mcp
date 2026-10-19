@@ -3,12 +3,12 @@
 # Issue \#524 — Cache-notice correction plan
 
 **Status:** Planning completed; independent review requested  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Summary
 
-One compact mechanical cycle corrects three existing notice values and adapts existing behavior evidence. No interface/config admission/transport/cache policy changes. No artificial RED or prose snapshots: the fix changes authored text values, while tests prove routing and data preservation.
+C_1 remains completed and unchanged. Add only C_2 to repair a missed existing pipeline-test consumer exposed by the required full suite. The correction remains mechanical test maintenance; no production, interface, configuration-admission or output-policy change.
 
 ## Milestones
 
@@ -84,6 +84,35 @@ The three notice values are truthful; focused cache/text/operation controls and 
 - Stop for owner if a new delivery/config-admission policy or larger responsibility change is needed.
 - Do not weaken criteria or excuse failing evidence. Return causally through the authorized earlier-phase route when required.
 
+### C_2 — pipeline-test-consumer-repair
+
+**Cycle Number:** 2
+
+**Goal:** Repair the missed existing test consumer without expanding production scope.
+
+**Depends on:** Completed C_1; do not replace or mutate its committed block.
+
+#### D_2.1
+
+Adapt the missed pipeline cache-fallback consumer to configured marker and structured/JSON behavior assertions; remove unconditional cache-reference instruction from its test configurations and preserve cache-success controls.
+
+**Validates:** file_exists — tests/mcp_server/integration/test_pipeline_e2e.py
+
+#### Exit Criteria
+
+Existing pipeline cases pass without old-prose assertions or fabricated cache references; exact operation, fallback JSON and publisher calls remain verified; focused checks pass with no production changes.
+
+#### Scope and verification
+
+- Only tests/mcp_server/integration/test_pipeline_e2e.py. Replace the old-prose assertion with configured marker / exact structured DTO and JSON checks. Use the existing automatic cache-reference path rather than unconditionally rendering uri_reference as a follow-up instruction.
+- Existing suite failure is retained: 1 failed / 2999 passed in 579.99s, native exit 1, receipt 1f1a5644fb0e405fa413a07002e7e610. The failure is the old fallback sentence assertion at line 231; it is a missed consumer, not a second product defect.
+- Mechanical test maintenance requires no new RED case or prose snapshot. Use the existing failure as negative evidence and commit GREEN with cycle_number=2.
+- run_tests(scope="targets", targets=["tests/mcp_server/integration/test_pipeline_e2e.py"], tests=["python_tests"], timeout_seconds=300).
+- run_checks(scope="targets", targets=["tests/mcp_server/integration/test_pipeline_e2e.py"], checks=["python_format","python_lint","python_pyright"], timeout_seconds=300).
+- Validation repeats the required configured suite after this repair and the branch gate for its expanded file inventory. Reuse the fresh configured production-Mypy result (192 source files, passed) while production/native configuration remains unchanged.
+- The initial broad Python/YAML/Markdown gates all passed. No test failure or skipped gate is waived. Resume Implementation explicitly with resume_cycle="C_2", after independent Planning QA.
+- A Planning-update information note emitted an unrelated scalar-sequence formatting error. Structured save/readback succeeded and confirmed both complete cycles; leave that generic note-formatting issue for Co triage, outside this notice-value correction.
+
 ## Phase Deliverables
 
 ### Validation
@@ -120,3 +149,5 @@ Clarify cache-failure wording versus actual operation delivery and client access
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp planner | Record one mechanical correction cycle, exact file gates and phase-owned validation. |
+| 1.1 | 2026-10-19 | @imp planner | Append C_2 for the missed pipeline-test consumer; retain failed Validation and C_1 unchanged. |
+

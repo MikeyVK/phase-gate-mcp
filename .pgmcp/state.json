@@ -4,9 +4,9 @@
   "parent_branch": "main",
   "issue_number": 524,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "planning",
   "current_cycle": 1,
-  "last_cycle": null,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -18,7 +18,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Validation failed on one missed existing pipeline test consumer that snapshots the corrected presenter fallback; append a bounded test-maintenance recovery cycle, preserve C_1 and all negative evidence. No gate exception.",
   "issue_title": "Cache-failure notice incorrectly reports result details as unavailable",
   "created_at": "2026-10-19T07:49:11.558262+00:00",
   "transitions": [
@@ -45,8 +45,24 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-10-19T08:06:37.464903+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-10-19T08:18:25.097665+00:00",
+      "human_approval_message": "Owner standing approval granted 2026-10-18 for necessary audited forced returns to earlier phases in this and future sessions; autonomous issue execution authorized. Return only to repair the missed test consumer; independent QA governs progression.",
+      "forced": true,
+      "skip_reason": "Validation failed on one missed existing pipeline test consumer that snapshots the corrected presenter fallback; append a bounded test-maintenance recovery cycle, preserve C_1 and all negative evidence. No gate exception."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
