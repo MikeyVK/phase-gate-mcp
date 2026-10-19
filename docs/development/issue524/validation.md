@@ -52,7 +52,7 @@ Validate C_1 notice-value correction (cf6ccde6be0ac295d1d82d3b3466c910d4e32667) 
 
 ### Final relevant branch gates
 
-All five checks passed, each native exit 0. Ruff formatted four changed Python files with no lint findings; branch Pyright selected the changed production file and reported zero errors/warnings. YAML passed. Markdown: 16 successful local link occurrences, one external offline exclusion, zero errors. Python tests also have fresh explicit-target Pyright passes from C_1/C_2; no test strict-Mypy requirement was introduced.
+All five checks passed, each native exit 0. Ruff reported four changed Python files already formatted, with no lint findings; branch Pyright selected the changed production file and reported zero errors/warnings. YAML passed. Markdown: 16 successful local link occurrences, one external offline exclusion, zero errors. Python tests also have fresh explicit-target Pyright passes from C_1/C_2; no test strict-Mypy requirement was introduced.
 
 **Sources:**
 
@@ -94,7 +94,7 @@ Original DTOs, diagnostics and success/error flags are unchanged. Server-owned s
 
 ## Containment
 
-Post-suite git_status showed only the expected state.json phase audit as modified. Project-plan readback still contained unchanged C_1/D_1.1–D_1.2 and appended C_2/D_2.1. No production/test/planning mutation occurred during the suite.
+Post-suite git_status showed only the expected state.json phase audit as modified. Project-plan readback still contained unchanged C_1/D_1.1–D_1.2 and appended C_2/D_2.1. No persistent production/test/planning mutation was observed in the post-suite status and plan readback.
 
 ## Deferred Work
 
