@@ -323,3 +323,64 @@ class TestPresentationAlignment:
 
         with pytest.raises(ConfigError):
             validate_presentation_alignment(presenter, _contracts())
+
+
+class TestResponseProfiles:
+    """Process-local selection resolves complete immutable capabilities."""
+
+    def test_resolves_default_and_selected_profiles_without_mutating_definitions(self) -> None:
+        global_config = _global_config(max_bytes=1)
+        global_config.update(
+            default_response_profile="primary",
+            max_cache_failure_detail_bytes=37,
+            cache_read_budget_chars=23,
+        )
+        config = PresentationConfig.model_validate(
+            {
+                "version": "2.0.0",
+                "global": global_config,
+                "response_profiles": {
+                    "primary": {
+                        "presentation_channel": "both",
+                        "data_channel": "structured",
+                        "data_delivery": "inline",
+                    },
+                    "alternate": {
+                        "presentation_channel": "text",
+                        "data_channel": "text",
+                        "data_delivery": "resource",
+                        "max_text_response_bytes": 19,
+                        "max_cache_failure_detail_bytes": 17,
+                        "cache_read_budget_chars": 13,
+                    },
+                },
+            }
+        )
+
+        primary = config.resolve_response_profile()
+        alternate = config.resolve_response_profile("alternate")
+
+        assert primary.profile_id == "primary"
+        assert primary.presentation_channel == "both"
+        assert primary.data_channel == "structured"
+        assert primary.data_delivery == "inline"
+        assert primary.max_text_response_bytes == 1
+        assert primary.max_cache_failure_detail_bytes == 37
+        assert primary.cache_read_budget_chars == 23
+        assert alternate.profile_id == "alternate"
+        assert alternate.presentation_channel == "text"
+        assert alternate.data_channel == "text"
+        assert alternate.data_delivery == "resource"
+        assert alternate.max_text_response_bytes == 19
+        assert alternate.max_cache_failure_detail_bytes == 17
+        assert alternate.cache_read_budget_chars == 13
+        assert config.resolve_response_profile() == primary
+        assert config.response_profiles["primary"].max_text_response_bytes is None
+        with pytest.raises(ValidationError):
+            alternate.max_text_response_bytes = 2  # type: ignore[misc]
+        with pytest.raises(ValidationError):
+            config.response_profiles["primary"].data_delivery = "resource"  # type: ignore[misc]
+        with pytest.raises(ConfigError, match="unknown"):
+            config.resolve_response_profile("unknown")
+        with pytest.raises(ConfigError):
+            config.resolve_response_profile("")

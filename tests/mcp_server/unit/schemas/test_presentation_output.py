@@ -82,3 +82,40 @@ class TestPresentedOutput:
         """Verify PresentedOutput forbids extra fields."""
         with pytest.raises(ValidationError):
             PresentedOutput(text="Test", extra_prop="invalid")  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("delivery", ["inline", "resource"])
+def test_public_envelope_preserves_data_and_direct_attachments(delivery: str) -> None:
+    """The public carrier keeps operation facts distinct from direct schema data."""
+    import json  # noqa: PLC0415
+
+    from mcp_server.schemas.presentation_output import (  # noqa: PLC0415
+        InlineOperation,
+        PublicToolResponse,
+        ResourceOperation,
+    )
+
+    operation = {"success": False, "values": {"zero": 0, "empty": [], "null": None}}
+    resource = PresentationResource(uri="schema://validation", content='{"type":"object"}')
+    data = (
+        InlineOperation(delivery="inline", operation=operation)
+        if delivery == "inline"
+        else ResourceOperation(delivery="resource", uri="pgmcp://cache/runs/" + "a" * 32, size_chars=42)
+    )
+    response = PublicToolResponse(
+        success=False,
+        presentation="Required instruction",
+        data=data,
+        attachments=(resource,),
+        delivery_error=None,
+    )
+    payload = json.loads(response.model_dump_json())
+    assert payload["success"] is False
+    assert payload["presentation"] == response.presentation
+    assert payload["attachments"] == [resource.model_dump()]
+    if delivery == "inline":
+        assert payload["data"]["operation"] == operation
+    else:
+        assert isinstance(data, ResourceOperation)
+        assert payload["data"]["uri"] == data.uri
+        assert "operation" not in payload["data"]

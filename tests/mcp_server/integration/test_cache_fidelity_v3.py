@@ -18,8 +18,9 @@ from mcp.types import (
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.exceptions import ConfigError
 from mcp_server.resources.cache import CachedResponseResource
-from mcp_server.schemas.error_outputs import ExecutionErrorOutput
+from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from tests.mcp_server.test_support import connected_mcp_client
@@ -93,48 +94,85 @@ async def test_operation_roundtrip_retains_required_null_and_presence(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("serialization_fails", [False, True])
-async def test_error_cache_preserves_diagnosis_and_json_fallback(
+@pytest.mark.parametrize("failure_kind", ["none", "execution", "config"])
+async def test_error_cache_preserves_diagnosis_and_publication_facts(
     tmp_path: Path,
-    serialization_fails: bool,
+    failure_kind: str,
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     cause = OSError("serialization storage unavailable")
-    failure = RuntimeError("serialization failed")
+    failure = (
+        ConfigError("serialization configuration failed", file_path="operation.yaml")
+        if failure_kind == "config"
+        else RuntimeError("serialization failed")
+    )
 
     class BrokenErrorOutput(ExecutionErrorOutput):
         pass
 
-    if serialization_fails:
+    serialization_calls = 0
+    if failure_kind != "none":
 
         def fail_serialization(*_args: object, **_kwargs: object) -> str:
+            nonlocal serialization_calls
+            serialization_calls += 1
             raise failure from cause
 
         monkeypatch.setattr(BrokenErrorOutput, "model_dump_json", fail_serialization)
 
     operation = (
         BrokenErrorOutput(error_message="Failed", traceback="Original tool traceback")
-        if serialization_fails
+        if failure_kind != "none"
         else ExecutionErrorOutput(error_message="Failed")
     )
-    text = await _read_cached_operation(tmp_path, operation)
-    result = json.loads(text)
-    if serialization_fails:
-        assert result["success"] is False
-        assert result["error_type"] == "SerializationError"
-        assert result["dto_type"] == "BrokenErrorOutput"
-        assert result["error_message"] == "Failed"
-        assert result["traceback"] == "Original tool traceback"
-        assert "serialization failed" in result["message"]
+    if failure_kind != "none":
+        cache = ResponseCacheManager(max_size=2)
+        original = ExecutionErrorOutput(error_message="Earlier operation")
+        earlier = cache.put("earlier", original)
+        assert earlier.run_id is not None
+
+        publication = cache.put("example", operation)
+
+        assert not publication.success
+        assert publication.run_id is None
+        assert publication.size_chars is None
+        assert publication.error_code == "serialization_failed"
+        assert serialization_calls == 1
+        diagnosis = publication.diagnostic
+        assert diagnosis is not None
+        if failure_kind == "config":
+            assert isinstance(diagnosis, ConfigErrorOutput)
+            assert diagnosis.file_path == "operation.yaml"
+            assert diagnosis.error_code == "ERR_CONFIG"
+        else:
+            assert isinstance(diagnosis, ExecutionErrorOutput)
+            assert diagnosis.error_code is None
+        assert diagnosis.traceback is not None
+        assert "OSError: serialization storage unavailable" in diagnosis.traceback
+        assert type(failure).__name__ in diagnosis.traceback
+        assert str(failure) in diagnosis.traceback
+        assert diagnosis.error_message is not None
+        assert str(failure) in diagnosis.error_message
+        assert operation.error_message == "Failed"
+        assert operation.traceback == "Original tool traceback"
+
         record = caplog.records[-1]
         assert record.exc_info is not None
         assert record.exc_info[1] is failure
         assert failure.__cause__ is cause
         assert "OSError: serialization storage unavailable" in caplog.text
-        assert "RuntimeError: serialization failed" in caplog.text
+        assert str(failure) in caplog.text
+
+        # A failed publication consumes no capacity and evicts no existing entry.
+        following = cache.put("following", ExecutionErrorOutput(error_message="Following"))
+        assert following.run_id is not None
+        assert cache.get(earlier.run_id, ExecutionErrorOutput) is original
+        assert cache.exists(following.run_id)
         return
 
+    text = await _read_cached_operation(tmp_path, operation)
+    result = json.loads(text)
     assert result == {
         "success": False,
         "error_type": "ExecutionError",
