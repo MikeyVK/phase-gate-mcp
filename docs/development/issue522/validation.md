@@ -2,13 +2,13 @@
 
 # Issue \#522 — Selected-workspace Git validation
 
-**Status:** DRAFT  
-**Version:** 1.0  
+**Status:** REVIEW REQUESTED  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Purpose
 
-Validate GREEN e97833d7 against Research1.1, Design1.2 and Planning1.1. This authored report does not grant independent QA approval.
+Validate final source/test snapshot acd7c6bc (production correction e97833d7) against Research1.1, Design1.2 and Planning1.1. This authored report does not grant independent QA approval.
 
 ## Scope In
 
@@ -28,7 +28,7 @@ C_1
 
 ## Validation Status
 
-FAIL
+PASS
 
 ## Obligations
 
@@ -58,7 +58,7 @@ FAIL
 - [Explicit shared test composition](<../../../tests/mcp_server/test_support.py>)
 - [Opt-in Git preparation](<../../../tests/mcp_server/fixtures/suite_roots.py>)
 
-**Outcome:** MCPSystemError cause survives CommitHistoryUnavailableError; actual manager returns unavailable with no invented branch/head/protected cycles. Ten affected test modules select their own Git fixture without replacing assertions; obsolete shallow default-constructor case removed.
+**Outcome:** MCPSystemError cause survives CommitHistoryUnavailableError; actual manager returns unavailable with no invented branch/head/protected cycles. Nineteen affected test modules select their own Git fixture without replacing assertions; obsolete shallow default-constructor case removed.
 
 ### D\_1.4: installed package operates on another target without package installation inside it.
 
@@ -90,6 +90,16 @@ RED commit2b10b93b: three intended failures (wrong foreign branch; foreign succe
 
 **Invocation:** run_tests(scope="targets", tests=["python_tests"], args={"python_tests":["-q"]}, timeout_seconds=900), using the file groups below.
 
+### Consumer recovery after the first full run
+
+The first configured run on the e97833d7 source/test tree returned 2996 cases: 2959 passed, 27 failed, 10 setup errors, zero skips, native exit1 in572.38s. All37 negative cases contain the missing target-Git diagnosis; twelve surface through planning_readback_failed. This negative outcome was committed in98c67942 before the audited return to existing C_1 (zero skipped gates).
+
+Commit acd7c6bc adds explicit git_workspace selection in nine further modules and gives the shared fixture a real local baselinecommit with explicit identity. Production code and existing assertions remain unchanged. Independent QA authorized Implementation→Validation again on this snapshot; the complete configured run is repeated, not waived.
+
+- Nine repaired families: integration/templates/test_planning_artifact.py; integration/test_context_loaded_enforcement.py; integration/test_project_plan_readback.py; unit/managers/test_phase_state_engine_c2.py, test_phase_state_engine_c3.py, test_phase_state_engine_c4_issue257.py; unit/test_server.py; unit/tools/test_force_phase_transition_tool.py, test_transition_phase_tool.py. Paths are under tests/mcp_server/.
+- Reproduction: run_tests(scope="targets", targets=[these nine files], tests=["python_tests"], args={"python_tests":["-q","--tb=short"]}, timeout_seconds=900):75 passed in86.61s, exit0.
+- The ten earlier fixture consumers listed above were rerun with the same -q --tb=short route:224 passed in69.93s, exit0. Focused format/lint on the ten changed recovery Pythonfiles passed.
+
 ### Focused file gates
 
 Ruff0.17.1 format/lint passed for19 changed Pythonfiles, with final four import-block corrections rechecked. Mypy2.4.0 and Pyright1.1.414 passed for bootstrap.py, adapters/git_adapter.py and managers/git_manager.py; zero Pyright errors/warnings. Mypy notes an existing unused tests.* configuration section in production-only selection.
@@ -99,6 +109,32 @@ Ruff0.17.1 format/lint passed for19 changed Pythonfiles, with final four import-
 - [Production entry point](<../../../mcp_server/bootstrap.py>)
 
 **Invocation:** run_checks(scope="targets", targets=[changed Python files], checks=["python_format","python_lint"], timeout_seconds=900); production-only targets for ["python_types","python_pyright"].
+
+### Full configured acceptance after recovery
+
+```python
+run_tests(
+    scope="configured",
+    tests=["python_tests"],
+    args={"python_tests": ["-q", "--junitxml=.pgmcp/temp/issue522/validation.xml"]},
+    timeout_seconds=1200,
+)
+```
+
+On acd7c6bc: **2996 passed in535.40s (8m55s), native exit0**. The JUnit readback confirms2996 tests, zero failures, zero errors and zero skips. Native selection remains tests/mcp_server, Python3.15.0, pytest9.1.1, eight xdist workers, without coverage opt-in or extra exclusions. Captured stderr includes the informational child_exited line; native pytest completed successfully.
+
+The complete suite includes the public source/installed isolation and native/history controls above, so another demonstration run would duplicate fresh proof. The previous failed run and scoped repair remain recorded; final acceptance uses the repaired snapshot.
+
+### Final branch and configured gates
+
+On the acd7c6bc source/test snapshot:
+
+| Invocation | Native outcome |
+| --- | --- |
+| run_checks(scope="branch", checks=["python_format","python_lint","python_pyright"], timeout_seconds=900) | All passed; production Pyright has zero errors/warnings. |
+| run_checks(scope="configured", checks=["python_format","python_lint","python_types","python_pyright"], timeout_seconds=1200) | All passed:475 format targets, lint clean, Mypy192 source files, Pyright192 source files with zero errors/warnings. |
+
+Native tools: Ruff0.17.1, Mypy2.4.0 and Pyright1.1.414. The existing Mypy unused tests.* section is an informational note, not a new failure. Native quality policies, coverage opt-in and thresholds were not changed.
 
 ## Demonstration
 
@@ -122,7 +158,7 @@ All scenario repositories/configs/builds live under pytest tmp_path. Installed l
 
 ## Caveats
 
-- First configured run: 2996 cases, 2959 passed, 27 failed and10 setup errors in572.38s, native exit1. Invocation: run_tests(scope='configured', tests=['python_tests'], args={'python_tests':['-q','--junitxml=.pgmcp/temp/issue522/validation.xml']}, timeout_seconds=1200). Additional direct/shared Git test preparation remains incomplete; Validation is blocked. Branch format/lint/Pyright passed; configured format/lint/Mypy/Pyright passed (475 format targets;192 source type targets). Return to existing C_1 for scoped consumer repair, then obtain independent Implementation→Validation review and repeat full native proof; no gate exception.
+- Final native full-suite and branch/configured acceptance pass. No new release or active host installation was performed.
 - No atomic guarantee against arbitrary concurrent filesystem/config replacement is added. Linked worktrees retain normal shared native repository metadata.
 
 ## Related Documents
@@ -135,4 +171,5 @@ All scenario repositories/configs/builds live under pytest tmp_path. Installed l
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
-| 1.0 | 2026-10-19 | @imp validator | Record causal correction, focused evidence and full Validation outcomes. |
+| 1.0 | 2026-10-19 | @imp validator | Record causal correction, focused evidence and first full-suite FAIL. |
+| 1.1 | 2026-10-19 | @imp validator | Preserve the scoped consumer recovery and record final 2996-case configured acceptance and broad gates. |
