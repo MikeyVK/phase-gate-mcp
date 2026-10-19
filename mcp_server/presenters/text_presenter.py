@@ -326,7 +326,7 @@ class TextPresenter(ITextPresenter):
         if should_trigger_fallback:
             warning_note = self.get_next_instruction_texts().get(
                 "cache_publication_failed",
-                "*(Cache publication failed. Full details dumped inline)*",
+                "*(Cache publication failed; cached access is unavailable.)*",
             )
             json_dict = dict(data_dict)
             json_dict.pop("traceback", None)
