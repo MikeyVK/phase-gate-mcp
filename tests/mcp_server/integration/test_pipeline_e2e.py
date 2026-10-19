@@ -13,6 +13,7 @@ E2E pipeline integration tests verifying decorator wrapping, caching and present
 """
 
 # Standard library
+import json
 import re
 import shutil
 from collections.abc import Generator
@@ -141,7 +142,6 @@ class TestPipelineE2E:
             "tools": {
                 "dummy_core_tool": {
                     "template_success": "Success: {result}",
-                    "next_instructions": ["uri_reference"],
                 }
             },
         }
@@ -179,9 +179,7 @@ class TestPipelineE2E:
     async def test_pipeline_cache_fallback(
         self, temp_workspace: Path, isolated_server: MCPServer
     ) -> None:
-        """Verify that the pipeline functions correctly and falls back to run_id=None
-        if the cache manager returns None on put (simulating cache write failure).
-        """
+        """Preserve the operation and configured cache-failure evidence without a cache URI."""
         cache_manager = MagicMock(spec=ResponseCacheManager)
         cache_pub_fail = CachePublication(run_id=None, success=False, error_code="write_failed")
         cache_manager.put.return_value = cache_pub_fail
@@ -199,13 +197,13 @@ class TestPipelineE2E:
                     "uri_reference": (
                         "*(Full details available in the structured JSON payload. "
                         "View resource: pgmcp://cache/runs/{run_id})*"
-                    )
+                    ),
+                    "cache_publication_failed": "CACHE FAILURE MARKER",
                 },
             },
             "tools": {
                 "dummy_core_tool": {
                     "template_success": "Success: {result}",
-                    "next_instructions": ["uri_reference"],
                 }
             },
         }
@@ -227,10 +225,15 @@ class TestPipelineE2E:
 
         text_content = assert_itool_result(response)
         assert "Value: 100" in text_content
-        # Check that fallback warning and inline JSON dump are present
-        assert "*(Cache publication failed. Full details dumped inline)*" in text_content
-        assert '"result": "Value: 100"' in text_content
-        cache_manager.put.assert_called_once()
+        warning = config_data["global"]["next_instruction_texts"]["cache_publication_failed"]
+        assert warning in text_content
+        assert "pgmcp://cache/runs/" not in text_content
+        expected = DummyOutput(success=True, result="Value: 100")
+        assert not response.is_error
+        assert response.structured_content == expected.model_dump(mode="json", by_alias=True)
+        fallback = json.loads(text_content.split("```json\n", 1)[1].split("\n```", 1)[0])
+        assert fallback == expected.model_dump(mode="json")
+        cache_manager.put.assert_called_once_with("dummy_core_tool", expected)
 
     @pytest.mark.asyncio
     async def test_pipeline_enforcement_blocker(
