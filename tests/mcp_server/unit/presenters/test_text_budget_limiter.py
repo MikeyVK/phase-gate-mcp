@@ -1,20 +1,11 @@
-# tests/mcp_server/unit/presenters/test_text_budget_limiter.py
-# template=unit_test version=8825c0bb created=2026-08-22T00:00Z updated=2026-08-22
-"""UTF-8 text response budget enforcement contract tests.
-
-@layer: Tests (Unit)
-@dependencies: [pytest, presentation_config, text_budget_limiter]
-@responsibilities:
-    - Preserve under-budget and exact-budget text byte-for-byte
-    - Reserve truthful truncation tails and complete cache references
-    - Prefer readable Markdown and UTF-8-safe boundaries
-"""
+"""Public behavior of protected presentation and optional UTF-8 detail budgets."""
 
 import pytest
 
 from mcp_server.config.schemas.presentation_config import FormattingConfig
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
+from mcp_server.schemas.presentation_output import RenderedPresentation
 
 
 def _formatting() -> FormattingConfig:
@@ -27,93 +18,63 @@ def _formatting() -> FormattingConfig:
 
 
 def _limiter(max_bytes: int) -> TextBudgetLimiter:
-    return TextBudgetLimiter(
-        max_text_response_bytes=max_bytes,
-        formatting=_formatting(),
-    )
+    return TextBudgetLimiter(max_text_response_bytes=max_bytes, formatting=_formatting())
 
 
 class TestTextBudgetLimiter:
-    """Final text byte-ceiling behavior."""
+    """Required guidance is never part of a destructive prefix cut."""
 
-    @pytest.mark.parametrize("body", ["short body", "x" * 64])
-    def test_returns_under_and_exact_budget_text_unchanged(self, body: str) -> None:
-        limiter = _limiter(len(body.encode("utf-8")))
-
-        assert limiter.limit(body, cache_reference=None) == body
-
-    def test_overflow_keeps_complete_cache_reference_and_stays_bounded(self) -> None:
-        body = "first block\n\nsecond block\n\n" + "x" * 100
-        cache_reference = "View pgmcp://cache/runs/" + "a" * 32
-        limiter = _limiter(125)
-
-        result = limiter.limit(body, cache_reference=cache_reference)
-
-        assert len(result.encode("utf-8")) <= 125
-        assert cache_reference in result
-        assert _formatting().truncation_notice in result
-        assert result.startswith("first block")
-        assert result != body
-
-    def test_prefers_complete_block_then_complete_line(self) -> None:
-        cache_reference = "cache:" + "b" * 32
-        limiter = _limiter(100)
-
-        block_result = limiter.limit(
-            "block one\n\nblock two\n\npartial " + "x" * 100,
-            cache_reference,
+    @pytest.mark.parametrize("details", ["", "small details"])
+    def test_preserves_complete_under_budget_presentation(self, details: str) -> None:
+        core = "Required instruction"
+        expected = core + ("\n\n" + details if details else "")
+        result = _limiter(len(expected.encode("utf-8"))).limit(
+            RenderedPresentation(core=core, details=details), cache_available=True
         )
-        line_result = limiter.limit(
-            "line one\nline two\npartial " + "x" * 100,
-            cache_reference,
+        assert result.text == expected
+        assert not result.details_truncated
+
+    @pytest.mark.parametrize("cache_available", [False, True])
+    def test_limits_only_optional_details_and_protects_notices(
+        self, cache_available: bool
+    ) -> None:
+        core = "Required instruction\n\ncache:" + "a" * 32
+        result = _limiter(160).limit(
+            RenderedPresentation(core=core, details="First block\n\n" + "🚀" * 200),
+            cache_available=cache_available,
         )
+        assert result.text.startswith(core)
+        assert result.details_truncated
+        notice = (
+            _formatting().truncation_notice
+            if cache_available
+            else _formatting().cache_unavailable_truncation_notice
+        )
+        assert notice in result.text
+        assert len(result.text.encode("utf-8")) <= 160
+        assert "�" not in result.text
 
-        block_body = block_result.split(_formatting().truncation_notice)[0]
-        line_body = line_result.split(_formatting().truncation_notice)[0]
-        assert block_body.rstrip().endswith("block two")
-        assert line_body.rstrip().endswith("line two")
+    def test_preserves_oversized_core_and_reports_omitted_details(self) -> None:
+        core = "Required phase guidance " * 30
+        result = _limiter(1).limit(
+            RenderedPresentation(core=core, details="optional"),
+            cache_available=False,
+        )
+        assert result.text.startswith(core)
+        assert _formatting().cache_unavailable_truncation_notice in result.text
+        assert "optional" not in result.text
+        assert result.details_truncated
 
-    def test_multibyte_truncation_preserves_code_points(self) -> None:
-        cache_reference = "cache:" + "c" * 32
-        limiter = _limiter(96)
+    def test_closes_optional_fence_without_cutting_required_guidance(self) -> None:
+        result = _limiter(130).limit(
+            RenderedPresentation(core="Required", details="Before\n```text\n" + "inside\n" * 40),
+            cache_available=True,
+        )
+        assert result.text.startswith("Required")
+        assert result.text.count("```") % 2 == 0
+        assert result.details_truncated
+        assert len(result.text.encode("utf-8")) <= 130
 
-        result = limiter.limit("🚀" * 100, cache_reference)
-
-        assert len(result.encode("utf-8")) <= 96
-        assert "�" not in result
-        result.encode("utf-8").decode("utf-8")
-
-    def test_closes_intersected_fenced_markdown_before_tail(self) -> None:
-        cache_reference = "cache:" + "d" * 32
-        limiter = _limiter(135)
-        body = "Before\n```text\n" + "inside\n" * 30
-
-        result = limiter.limit(body, cache_reference)
-
-        body_part = result.split(_formatting().truncation_notice)[0].rstrip()
-        assert body_part.endswith("```")
-        assert body_part.count("```") % 2 == 0
-        assert len(result.encode("utf-8")) <= 135
-
-    def test_cache_unavailable_overflow_is_truthful_and_bounded(self) -> None:
-        limiter = _limiter(80)
-
-        result = limiter.limit("details " * 100, cache_reference=None)
-
-        assert len(result.encode("utf-8")) <= 80
-        assert _formatting().cache_unavailable_truncation_notice in result
-        assert _formatting().truncation_notice not in result
-        assert "pgmcp://cache/runs/" not in result
-
-    def test_exact_mandatory_tail_budget_retains_complete_tail(self) -> None:
-        cache_reference = "cache:" + "e" * 32
-        tail = f"{_formatting().truncation_notice}\n\n{cache_reference}"
-        limiter = _limiter(len(tail.encode("utf-8")))
-
-        assert limiter.limit("x" * 100, cache_reference) == tail
-
-    def test_rejects_budget_that_cannot_hold_mandatory_tail(self) -> None:
-        limiter = _limiter(10)
-
-        with pytest.raises(ConfigError, match="mandatory truncation tail"):
-            limiter.limit("x" * 100, cache_reference="cache:" + "e" * 32)
+    def test_rejects_nonpositive_budget(self) -> None:
+        with pytest.raises(ConfigError):
+            _limiter(0)

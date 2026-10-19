@@ -17,7 +17,7 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from mcp.types import CallToolRequest, CallToolRequestParams
+from mcp.types import CallToolRequest, CallToolRequestParams, TextContent
 from pydantic import BaseModel
 
 from mcp_server.bootstrap import ServerBootstrapper
@@ -27,6 +27,7 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.schemas.presentation_output import InlineOperation, PublicToolResponse
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.server import MCPServer
 from mcp_server.tools.git_tools import CreateBranchTool
@@ -856,3 +857,24 @@ async def test_degraded_health_tool_uses_normalized_pipeline(tmp_path: Path) -> 
     assert isinstance(execution.operation, HealthCheckOutput)
     assert execution.attachments == ()
     assert "Invalid configuration" in str(execution.operation)
+
+    async with connected_mcp_client(server) as client:
+        catalog = await client.list_tools()
+        response = await client.call_tool("health_check", {})
+
+    assert response.structured_content is not None
+    envelope = PublicToolResponse.model_validate(response.structured_content)
+    assert isinstance(envelope.data, InlineOperation)
+    observed = HealthCheckOutput.model_validate(envelope.data.operation)
+    assert observed.startup_diagnostic == execution.operation.startup_diagnostic
+    assert envelope.success is observed.success
+    assert response.is_error is not observed.success
+    assert envelope.delivery_error is None
+    assert envelope.attachments == ()
+    assert len(response.content) == 1
+    text = response.content[0]
+    assert isinstance(text, TextContent)
+    assert envelope.presentation == text.text
+    assert observed.startup_diagnostic is not None
+    assert observed.startup_diagnostic.message in text.text
+    assert catalog.tools[0].output_schema == PublicToolResponse.model_json_schema()
