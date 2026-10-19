@@ -2,8 +2,8 @@
 
 # Issue \#529 — Harness delivery and complete-output access
 
-**Status:** DRAFT — Investigation complete; public response-shape approval pending  
-**Version:** 1.0  
+**Status:** FINAL — Research complete; independent QA review requested  
+**Version:** 1.1  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -16,7 +16,7 @@ Configurable response profiles built on the existing presentation configuration,
 
 ## Scope Out
 
-No production implementation or active harness configuration changes in this Research step. The configurable-profile direction and a safely bounded emergency text response on cache-publication failure are approved directions. The concrete public response envelope still awaits owner approval below. No historical-version matrix, compatibility bridge, release or #528 implementation.
+No production implementation or active harness configuration changes in this Research step. The configurable-profile direction and a safely bounded emergency text response on cache-publication failure are approved directions. The owner has approved the common public structured envelope and preservation of the mandatory core outside the diagnostic-detail budget. No historical-version matrix, compatibility bridge, release or #528 implementation.
 
 ## Problem Statement
 
@@ -220,7 +220,7 @@ The peer deterministically supplies tool calls; it proves what the real agent ex
 
 ### Decision status after owner correction
 
-The earlier A/B recommendation remains withdrawn. After the capability probes, the owner stopped further probing and approved investigation of a minimal configurable response policy built on presentation.yaml. The owner requires short text and mandatory instructions to survive every supported profile, and explicitly requires independent use by multiple harnesses sharing one workspace. The owner subsequently approved presentation_channel and reiterated a clean break with no compatibility paths and profile/result-focused tests instead of harness-specific tests. The factual investigation is complete; there is no remaining probe campaign. The owner subsequently accepted the emergency text route subject to safe configurable diagnostic limits and no size-induced crash. This replaces the earlier unlimited-inline recommendation. Only the specific public-envelope decision remains open.
+The earlier A/B recommendation remains withdrawn. After the capability probes, the owner stopped further probing and approved investigation of a minimal configurable response policy built on presentation.yaml. The owner requires short text and mandatory instructions to survive every supported profile, and explicitly requires independent use by multiple harnesses sharing one workspace. The owner subsequently approved presentation_channel and reiterated a clean break with no compatibility paths and profile/result-focused tests instead of harness-specific tests. The factual investigation is complete; there is no remaining probe campaign. The owner subsequently accepted the emergency text route subject to safe configurable diagnostic limits and no size-induced crash. This replaces the earlier unlimited-inline recommendation. The owner has now explicitly approved the common public structured envelope and confirmed that the mandatory core must always remain complete; only diagnostic details may be bounded. No strategic owner choice remains open.
 
 ### Minimal response-profile proposal
 
@@ -267,15 +267,15 @@ The source supports this direction: [Settings](../../../mcp_server/config/settin
 - Preserve phase instructions embedded in get_work_context's template as well as configured next-instruction and recovery guidance. Do not recover these by parsing rendered Markdown or duplicating workflow text in a second configuration.
 - Presentation budgets may shorten optional details, not the protected explanation or instructions. When protected material exceeds the configured presentation budget, preserve it and permit an explicitly documented overrun. Inline mode also promises complete operation data; its bulk data is not truncated to fit the short-presentation budget. This is a proposed change from the current hard final-text ceiling, mandated by the owner's preservation requirement.
 - Keep attachment facts complete in the selected data channel. The cache currently stores operation DTOs only; resource mode must not imply that schema attachments are in that cache. Keep attachments directly available, with the existing embedded-resource representation where appropriate, rather than expanding cache ownership.
-- Preserve operation outcome, isError and complete diagnostic facts for success, policy failures and system exceptions. A presentation problem after a mutation must not be reported as though the mutation never occurred.
+- Preserve operation outcome, isError and mandatory explanation/instructions for success, policy failures and system exceptions. Normal delivery retains complete diagnostic facts; the explicitly approved cache-publication emergency route may bound verbose diagnostic details and must disclose their omission. A presentation problem after a mutation must not be reported as though the mutation never occurred.
 - Keep tools, managers, adapters and internal operation models free of client/profile branches. No automatic client fingerprinting, per-call profile switching, expression language, extra profile files, generic cache tool, or compatibility bridge is proposed.
 
-#### Genuine owner choices
+#### Owner decisions
 
-| Choice | Smallest recommended direction | Alternative / impact |
+| Boundary | Approved direction | Consequence |
 |---|---|---|
-| Public structured response shape | One common transport envelope containing the protected text, the actual operation data or its reference, and attachment representations. Internal operation DTOs remain intact. The selected profile governs both returned data and advertised outputSchema. | Keeping the bare DTO as the public structured response requires adding presentation fields across operation schemas or another defined schema strategy; a switch alone cannot preserve text for structured-only consumers. This public clean break must be explicit and guide #528. |
-| Cache publication failure in resource mode | Owner accepts emergency text delivery subject to safe configurable diagnostic bounds and no size-induced crash. Preserve the operation outcome, mandatory presentation and instructions; explicitly mark any missing diagnostic detail. | The earlier promise of complete unlimited inline delivery is superseded. This is an explicit potentially incomplete emergency response, not a complete-result guarantee. |
+| Public structured response shape | Owner approves one common transport envelope containing the selected protected presentation, the actual operation data or its reference, and attachment representations. Internal operation DTOs remain intact. | Clean break at the public response boundary, without a dual-format path. The selected projection governs the advertised outputSchema and guides #528. Exact envelope fields belong in Design. |
+| Cache publication failure in resource mode | Owner approves emergency text delivery: always preserve the mandatory core, including the actual operation outcome, explanation/instructions, cache-failure notice and any truncation notice; bound only diagnostic details configurably. | Mandatory material may exceed the detail/presentation budget. A labelled diagnostic excerpt need not parse as the original JSON, but the surrounding MCP response remains valid. No complete-result guarantee or fictitious resource reference. |
 
 StructuredContent is needed when either the presentation channel or the data channel selects structured delivery. For example, presentation_channel=structured with data_channel=text still needs structured content for the explanation/instructions. Only a profile routing both presentation and data exclusively to text omits structuredContent and its advertised outputSchema. The advertised schema follows the actually selected structured projection. The resource profile's schema must admit a truthful delivery-failure/incomplete-result variant from the outset when that variant includes structured content. Preserve the configured mandatory structured presentation where selected. An emergency text block cannot replace schema-required structured data without a schema-valid alternative; do not change the catalog after a call.
 
@@ -299,8 +299,8 @@ Owner-approved direction, with exact field names and defaults deferred to Design
 
 - Provide a readable emergency text response containing the actual operation outcome, cache-publication failure, required explanation/instructions and diagnostic details up to a configurable limit.
 - Add one explicit limit for emergency diagnostic detail, globally configured with optional profile override. A candidate name is max_cache_failure_detail_bytes; it limits UTF-8 detail bytes, not protected instructions. The existing 8,000-byte magnitude is a possible default, not a new global wire ceiling or an approved final field.
-- Truncate diagnostic strings or select bounded fields before final transport serialization. Never slice the final JSON-RPC/MCP JSON document or return a cut fragment falsely labelled as complete JSON. Plain diagnostic excerpts must be visibly labelled as excerpts; preserve valid Unicode and formatting closure.
-- A size overrun must not raise a new presentation failure. If the details do not fit, shorten those details and reserve the warning/truncation notice. Mandatory operation facts, explanation and instructions remain intact outside the detail allowance.
+- Truncate diagnostic strings or select bounded fields before final transport serialization. A labelled plain-text diagnostic excerpt may contain an incomplete JSON-derived fragment and need not parse as the original operation JSON. Do not present that excerpt as a complete DTO or application/json resource. Serialize the enclosing MCP/JSON-RPC response normally and completely; never slice its serialized bytes. Preserve valid Unicode and formatting closure.
+- A size overrun must not raise a new presentation failure. If the details do not fit, shorten those details. The mandatory core includes actual operation facts, explanation/instructions, cache-failure notice and any truncation notice. Always preserve it completely, even when that core alone exceeds the configured presentation budget; only diagnostic details consume the emergency detail allowance.
 - Mark cache availability and truncation truthfully. Do not emit a usable-looking URI with no published result, claim completeness after shortening, or claim the omitted result is available in a log/file unless that storage is actually established.
 - Retain the selected mandatory structured presentation and a schema-valid emergency indicator where the profile exposes structured content. Do not cause a second schema-validation failure while trying to deliver the text fallback.
 - This explicit emergency exception may lose verbose operation/error details when no complete result can be published. It does not change ordinary complete inline/resource delivery. If the publication failure involves serialization, the fallback must not simply retry the same failed full serializer.
@@ -309,9 +309,9 @@ Profile-focused tests should prove the operation outcome is retained, oversized 
 
 ## Questions
 
-One explicit boundary decision remains: approve the common public structured envelope, preserving internal operation DTOs and applying a clean break at the external boundary?
+None at the Research strategy boundary. On 2026-10-19 the owner explicitly approved the general envelope and instructed: preserve the mandatory core always and bound only diagnostic details. These decisions close the two earlier policy questions.
 
-The owner accepted emergency text delivery with safe configurable diagnostic bounds and no size-induced crash. Exact field names, default limits and emergency schema variants belong in Design. There is no further client probe campaign or consumer migration requirement. Do not mistake protocol admissibility or the owner's question about it for explicit approval of the particular envelope.
+Exact field names, default limits, envelope/schema variants and validation of supported profile combinations are Design work within this approved strategy. The current chore workflow has no Design phase; workflow alignment is an operational precondition to that transition, not an unresolved output-policy choice. There is no further client probe campaign or downstream consumer migration requirement.
 
 ## Approved Strategy
 
@@ -319,13 +319,13 @@ The owner accepted emergency text delivery with safe configurable diagnostic bou
 |---|---|
 | Presentation/configuration | Reuse presentation.yaml and the existing defaults/workspace-override loader. Use presentation_channel=text/structured/both, data_channel=text/structured and data_delivery=inline/resource. Preserve all short explanatory text and mandatory instructions in the selected presentation route. Clean break for changed configuration contracts; no old-key aliases or compatibility translation. |
 | Shared workspace / instance selection | Support independent harnesses on one workspace. Keep profile definitions shared and active selection local to each server instance; do not persist it into shared workflow state or infer behavior from client names. Use the existing launch/configuration composition boundary. Exact selector schema and diagnostics are Design work. |
-| Public response shape | Clean break is explicitly required. The previously proposed common envelope still awaits the specific owner decision above; no dual old/new public format or legacy response bridge. #528 must publish the schema appropriate to the approved shape and actual channel projection. |
+| Public response shape | Owner approves the common public envelope for selected presentation, operation data/reference and attachments. Internal operation DTOs remain intact. Clean break with no dual old/new public format or legacy response bridge. #528 must publish the schema appropriate to that shape, actual channel projection and emergency variants. |
 | Tool/manager/adapter internals | Keep operation DTOs, operation semantics and domain consumers intact. Route/serialize at the existing presentation and transport boundaries; do not add harness knowledge to tools or adapters. This unchanged surface is not a compatibility layer. |
-| Cache / diagnostics / errors | Reuse the raw-operation cache and paging contract. On publication failure, provide safely bounded emergency diagnostic text, preserve operation outcome and mandatory presentation/instructions, and disclose incompleteness. No size-induced presentation crash, fictitious cache URI or malformed transport JSON. Normal full-data guarantees have this explicit failure exception. No cache ownership expansion or new generic retrieval tool is selected. |
+| Cache / diagnostics / errors | Reuse the raw-operation cache and paging contract. On publication failure, provide emergency text with a configurable bound only on diagnostic details; always preserve the mandatory core, including operation outcome, explanation/instructions and failure/truncation notices, even beyond the presentation budget. Label diagnostic excerpts as potentially incomplete and non-parseable as the original JSON; retain schema-valid structured presentation where selected and disclose incompleteness. No size-induced presentation crash, fictitious cache URI or malformed transport JSON. Normal full-data guarantees have this explicit failure exception. No cache ownership expansion or new generic retrieval tool is selected. |
 | Tests | Test profiles and their observable results, including representative valid/invalid routes, preservation, error/attachment behavior and same-workspace instance isolation. Adapt valuable existing tests and remove obsolete assertions as needed. No concrete-harness/version matrix, dependency-version surveillance, legacy-path tests or tests whose only purpose is rejecting the old shape. |
 | Client evidence and support claims | Further probing is stopped. Existing observations prove only their exact routes and conditions. Validate pgmcp's own configurable contract and document installation prerequisites; do not claim delivery into every present or future client's model context. |
 
-Research has no remaining factual investigation work. It remains open only for the explicit public-envelope boundary decision; no Design transition or QA approval is claimed. The current chore workflow has no Design phase. Before progression, align the workflow with the owner-requested Design/Planning route without reinitializing the branch or erasing its existing state.
+Research is complete: the investigation, boundary-specific strategy and owner decisions are recorded. Independent QA is requested for the content go/no-go to Design; no QA approval or phase transition is claimed here. The current chore workflow has no Design phase. Before an actual transition, align the workflow with the owner-requested Design/Planning route without reinitializing the branch or erasing its existing state.
 
 ## Expected Results
 
@@ -342,7 +342,7 @@ Research has no remaining factual investigation work. It remains open only for t
 
 Publish operation data, rendered text, instructions and attachments through the current output boundary.
 
-**Impact:** Investigation only; a delivery change requires an explicit approved strategy and proportional scope assessment.
+**Impact:** The owner-approved strategy is recorded above. Design must specify the bounded presentation/transport change and its affected tests before implementation; no production changes have been made in Research.
 
 ### Harness model input and resource/file readers
 
@@ -391,3 +391,4 @@ Stop for an explicit scope/workflow decision before implementation when the sele
 | 0.8 | 2026-10-19 | @imp researcher | Record owner-approved configurable-profile direction; propose two delivery controls, per-instance selection, protected text/instructions and explicit public-envelope/cache-failure decisions without production changes. |
 | 0.9 | 2026-10-19 | @imp researcher | Add approved presentation_channel, replace fixed duplication with selected routing, record clean-break strategy per boundary and profile-focused tests; finish investigation while retaining the two explicit owner policy decisions before Design. |
 | 1.0 | 2026-10-19 | @imp researcher | Confirm no production structured-result readers in scope, verify official protocol/schema rules and record owner-directed bounded emergency text delivery; retain public-envelope approval as the sole policy question. |
+| 1.1 | 2026-10-19 | @imp researcher | Record explicit owner approval of the public envelope and mandatory-core preservation with only diagnostic details bounded; close Research policy questions and request independent QA for Design, subject to workflow alignment. |
