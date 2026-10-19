@@ -12,12 +12,12 @@ from git import Actor, Repo
 
 # Project
 from mcp_server.adapters.git_adapter import GitAdapter
+from mcp_server.core.exceptions import MCPSystemError
 from mcp_server.core.interfaces.git import (
     CommitHistorySnapshot,
     CommitHistoryUnavailableError,
     CommitRecord,
 )
-from mcp_server.core.exceptions import MCPSystemError
 from mcp_server.core.operation_notes import NoteContext
 from tests.mcp_server.test_support import make_git_manager
 
@@ -129,6 +129,7 @@ def test_detached_head_and_missing_execution_cycle_are_unavailable(
     detached = make_git_manager(adapter=adapter).read_cycle_evidence(491, "implementation")
     assert detached.reason_code == "git_head_detached"
     assert detached.status == "unavailable"
+
 
 def test_admission_conflict_preserves_history_unavailable(
     history: tuple[Repo, GitAdapter], tmp_path: Path, monkeypatch: pytest.MonkeyPatch

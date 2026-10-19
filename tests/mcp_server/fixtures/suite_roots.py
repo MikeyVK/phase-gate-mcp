@@ -12,6 +12,7 @@ from pathlib import Path, PureWindowsPath
 from shutil import copytree
 
 import pytest
+from git import Repo
 
 from mcp_server.config.settings import ServerSettings
 
@@ -132,3 +133,11 @@ def legacy_suite_roots(suite_roots: SuiteRoots, pytestconfig: pytest.Config) -> 
 def legacy_suite_workspace(legacy_suite_roots: SuiteRoots) -> Path:
     """Expose the isolated workspace to existing workspace-based test constructors."""
     return legacy_suite_roots.workspace
+
+
+@pytest.fixture
+def git_workspace(tmp_path: Path) -> Path:
+    """Explicitly prepare native branch context for workspace-based behavior tests."""
+    repository = Repo.init(tmp_path, initial_branch="main")
+    repository.close()
+    return tmp_path

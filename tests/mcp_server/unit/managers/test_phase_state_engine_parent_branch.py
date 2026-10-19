@@ -28,6 +28,9 @@ if TYPE_CHECKING:
     from mcp_server.managers.project_manager import ProjectManager
 
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
+
 class TestPhaseStateEngineParentBranch:
     """Test parent_branch functionality in PhaseStateEngine."""
 

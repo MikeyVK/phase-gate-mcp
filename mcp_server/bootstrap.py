@@ -365,10 +365,11 @@ class ServerBootstrapper:
     def bootstrap_target(self) -> MCPServer:
         """Compose and return the target V3 MCPServer under the DI-06 startup lock."""
         settings = self._settings
-        server_root = settings.server.resolved_server_root
+        server_root = settings.server.resolved_server_root.resolve()
         config_root = settings.server.resolved_config_root
         template_root = settings.server.resolved_template_root
-        workspace_root = Path(settings.server.workspace_root)
+        scope_paths = FileScopePaths(Path(settings.server.workspace_root))
+        workspace_root = scope_paths.workspace_root
 
         # Read only startup policy before acquiring the source-admission lock.
         contracts_loader = TemplateContractLoader(template_root)
@@ -537,7 +538,7 @@ class ServerBootstrapper:
                 contracts_config=contracts_config,
                 presentation_config=presentation_config,
             )
-            managers = self._build_manager_graph(configs)
+            managers = self._build_manager_graph(configs, workspace_root)
 
             # Target V3 service engines
             target_resolver = ArtifactTargetResolver(
@@ -586,7 +587,6 @@ class ServerBootstrapper:
                 content=ContentInputPreparer(scratch),
                 workspace_root=workspace_root,
             )
-            scope_paths = FileScopePaths(workspace_root)
             scope_resolver = ScopeResolver(
                 paths=scope_paths,
                 git=GitAdapter(repo_path=str(workspace_root)),
@@ -724,15 +724,15 @@ class ServerBootstrapper:
             bypass_version_check=self._settings.server.bypass_version_check,
         )
 
-    def _build_manager_graph(self, configs: ConfigLayer) -> ManagerGraph:
-        """Instantiate all managers and services."""
-        workspace_root = Path(self._settings.server.workspace_root)
+    def _build_manager_graph(self, configs: ConfigLayer, workspace_root: Path) -> ManagerGraph:
+        """Instantiate managers for the canonical selected workspace."""
         server_root = workspace_root / self._settings.server.server_root_dir
 
         scope_contract = ScopeContract(configs.workphases_config)
         scope_decoder = ScopeDecoder(scope_contract)
         git_manager = GitManager(
             git_config=configs.git_config,
+            adapter=GitAdapter(repo_path=str(workspace_root)),
             workphases_config=configs.workphases_config,
             scope_encoder=ScopeEncoder(scope_contract),
             scope_decoder=scope_decoder,

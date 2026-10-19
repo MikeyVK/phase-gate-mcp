@@ -364,10 +364,11 @@ class TestTargetStartup:
         assert initialized.returncode == 0, initialized.stdout + initialized.stderr
         assert (fresh / ".pgmcp/installation.json").is_file()
         assert not (fresh / ".pgmcp/.version").exists()
-        repo = GitRepo.init(str(fresh))
+        repo = GitRepo.init(str(fresh), initial_branch="main")
         marker = fresh / "README.md"
         marker.write_text("Candidate workspace\n", encoding="utf-8")
-        repo.index.add([str(marker)])
+        (fresh / ".gitignore").write_text(".pgmcp/\n", encoding="utf-8")
+        repo.index.add([str(marker), ".gitignore"])
         repo.index.commit("Initialize candidate workspace")
         manager = make_project_manager(fresh)
         manager.initialize_project(
@@ -484,6 +485,64 @@ class TestTargetStartup:
                 assert schema_text() == admitted
             finally:
                 held.rename(manifest)
+
+        neutral = tmp_path / "neutral-launch"
+        neutral.mkdir()
+        foreign_root = tmp_path / "foreign-launch"
+        foreign = GitRepo.init(foreign_root, initial_branch="foreign")
+        actor = Actor("Installed scenario", "installed@example.invalid")
+        foreign_marker = foreign_root / "README.md"
+        foreign_marker.write_text("Foreign baseline\n", encoding="utf-8")
+        foreign.index.add(["README.md"])
+        foreign.index.commit("Foreign baseline", author=actor, committer=actor)
+        foreign_before = (
+            foreign.head.commit.hexsha,
+            (foreign_root / ".git/index").read_bytes(),
+            foreign_marker.read_bytes(),
+            tuple(head.name for head in foreign.heads),
+        )
+        fresh_env.pop("GITHUB_TOKEN", None)
+        # This local Git scenario has no remote service. Keep the other admission rules.
+        (fresh / ".pgmcp/config/enforcement.yaml").write_text(
+            "enforcement:\n  rule_2:\n    $delete: true\n", encoding="utf-8"
+        )
+        try:
+            for number, launch_root in enumerate((neutral, foreign_root), start=1):
+                with run_server_process(
+                    launch, cwd=launch_root, env=fresh_env, timeout=120
+                ) as proc:
+                    proc.initialize(client_name="pytest-installed-git")
+                    for tool_name in ("git_status", "get_work_context"):
+                        response = proc.send_request(
+                            "tools/call", {"name": tool_name, "arguments": {}}
+                        )["result"]
+                        assert not response.get("isError", False), response
+                        payload = response["structuredContent"]
+                        field = "branch" if tool_name == "git_status" else "current_branch"
+                        assert payload[field] == "main"
+                    created = proc.send_request(
+                        "tools/call",
+                        {
+                            "name": "create_branch",
+                            "arguments": {
+                                "issue_number": 522,
+                                "name": f"installed-isolation-{number}",
+                                "branch_type": "feature",
+                                "base_branch": "main",
+                            },
+                        },
+                    )["result"]
+                    assert not created.get("isError", False), created
+                    assert f"feature/522-installed-isolation-{number}" in repo.heads
+                assert foreign_before == (
+                    foreign.head.commit.hexsha,
+                    (foreign_root / ".git/index").read_bytes(),
+                    foreign_marker.read_bytes(),
+                    tuple(head.name for head in foreign.heads),
+                )
+        finally:
+            foreign.close()
+            repo.close()
 
         legacy = tmp_path / "legacy_workspace"
         legacy.mkdir()
@@ -624,6 +683,7 @@ def test_exhausted_startup_exposes_original_lock_diagnosis(tmp_path: Path) -> No
             "BlockingIOError",
         }
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("has_repository", [True, False])
 async def test_selected_workspace_git_ignores_foreign_launch(
@@ -654,11 +714,15 @@ async def test_selected_workspace_git_ignores_foreign_launch(
     )
     monkeypatch.chdir(foreign)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
-    settings = Settings(server=ServerSettings(
-        workspace_root=str(target), server_root_dir=str(server_root),
-        config_root=str(config_root),
-        template_root=str(REPO_ROOT / ".pgmcp/template_suite"), bypass_version_check=True,
-    ))
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(target),
+            server_root_dir=str(server_root),
+            config_root=str(config_root),
+            template_root=str(REPO_ROOT / ".pgmcp/template_suite"),
+            bypass_version_check=True,
+        )
+    )
     try:
         server = ServerBootstrapper(settings).bootstrap_target()
         async with connected_mcp_client(server) as client:

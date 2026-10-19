@@ -31,6 +31,9 @@ if TYPE_CHECKING:
     from mcp_server.managers.project_manager import ProjectManager
 
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
+
 class TestPhaseStateEngineTransitions:
     """Test PhaseStateEngine with workflow validation."""
 

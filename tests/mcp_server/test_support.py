@@ -18,6 +18,7 @@ from unittest.mock import MagicMock
 
 from jinja2 import Environment
 
+from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import (
     ConfigLoader,
@@ -64,7 +65,6 @@ from mcp_server.tools.issue_tools import CreateIssueTool
 if TYPE_CHECKING:
     from mcp import Client
 
-    from mcp_server.adapters.git_adapter import GitAdapter
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
     from mcp_server.config.settings import Settings
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
@@ -257,6 +257,13 @@ def make_git_manager(
         _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
     )
     contract = ScopeContract(resolved_workphases)
+    if adapter is None:
+        selected_root = (
+            workspace_root
+            if workspace_root is not None
+            else RealSettings.from_env().server.workspace_root
+        )
+        adapter = GitAdapter(str(Path(selected_root).resolve()))
     return GitManager(
         git_config=resolved_git_config,
         adapter=adapter,
