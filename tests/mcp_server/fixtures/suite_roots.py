@@ -12,7 +12,7 @@ from pathlib import Path, PureWindowsPath
 from shutil import copytree
 
 import pytest
-from git import Repo
+from git import Actor, Repo
 
 from mcp_server.config.settings import ServerSettings
 
@@ -139,5 +139,7 @@ def legacy_suite_workspace(legacy_suite_roots: SuiteRoots) -> Path:
 def git_workspace(tmp_path: Path) -> Path:
     """Explicitly prepare native branch context for workspace-based behavior tests."""
     repository = Repo.init(tmp_path, initial_branch="main")
+    actor = Actor("Workspace fixture", "workspace@example.invalid")
+    repository.index.commit("Isolated workspace baseline", author=actor, committer=actor)
     repository.close()
     return tmp_path

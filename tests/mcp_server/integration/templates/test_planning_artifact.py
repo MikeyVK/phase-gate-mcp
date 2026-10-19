@@ -16,6 +16,8 @@ from tests.mcp_server.fixtures.delivered_templates import DeliveredTemplate, loa
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
 from tests.mcp_server.test_support import load_contracts_config, make_project_manager
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
 
 @pytest.fixture
 def planning(tmp_path: Path, pytestconfig: pytest.Config) -> DeliveredTemplate:

@@ -45,6 +45,8 @@ from mcp_server.server import MCPServer
 from tests.mcp_server.fixtures.suite_roots import SuiteRoots
 from tests.mcp_server.test_support import connected_mcp_client, make_project_manager
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
 
 class _CompleteEvidence:
     """Explicitly isolate planning mutations from the checkout's real Git."""

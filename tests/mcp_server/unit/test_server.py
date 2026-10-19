@@ -51,6 +51,9 @@ TRANSITION_ADVISORY_NOTE = (
 )
 
 
+pytestmark = pytest.mark.usefixtures("git_workspace")
+
+
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
     source_root = repo_root / get_default_server_root()
