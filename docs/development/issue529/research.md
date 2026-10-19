@@ -3,7 +3,7 @@
 # Issue \#529 — Harness delivery and complete-output access
 
 **Status:** FINAL — Research content approved by independent QA; workflow aligned for Design  
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -322,6 +322,7 @@ Exact field names, default limits, envelope/schema variants and validation of su
 | Public response shape | Owner approves the common public envelope for selected presentation, operation data/reference and attachments. Internal operation DTOs remain intact. Clean break with no dual old/new public format or legacy response bridge. #528 must publish the schema appropriate to that shape, actual channel projection and emergency variants. |
 | Tool/manager/adapter internals | Keep operation DTOs, operation semantics and domain consumers intact. Route/serialize at the existing presentation and transport boundaries; do not add harness knowledge to tools or adapters. This unchanged surface is not a compatibility layer. |
 | Cache / diagnostics / errors | Reuse the raw-operation cache and paging contract. On publication failure, provide emergency text with a configurable bound only on diagnostic details; always preserve the mandatory core, including operation outcome, explanation/instructions and failure/truncation notices, even beyond the presentation budget. Label diagnostic excerpts as potentially incomplete and non-parseable as the original JSON; retain schema-valid structured presentation where selected and disclose incompleteness. No size-induced presentation crash, fictitious cache URI or malformed transport JSON. Normal full-data guarantees have this explicit failure exception. No cache ownership expansion or new generic retrieval tool is selected. |
+| Startup recovery | On 2026-10-19 the owner approved retaining the existing configuration-independent recovery route. Until reliable presentation configuration is available, health_check/restart recovery results use fixed full recovery text/instructions in both channels and complete inline diagnosis in the common envelope, without cache or profile selection. This is an explicit recovery exception, not another configuration loader or a legacy response format. Normal startup restores the selected profile. |
 | Tests | Test profiles and their observable results, including representative valid/invalid routes, preservation, error/attachment behavior and same-workspace instance isolation. Adapt valuable existing tests and remove obsolete assertions as needed. No concrete-harness/version matrix, dependency-version surveillance, legacy-path tests or tests whose only purpose is rejecting the old shape. |
 | Client evidence and support claims | Further probing is stopped. Existing observations prove only their exact routes and conditions. Validate pgmcp's own configurable contract and document installation prerequisites; do not claim delivery into every present or future client's model context. |
 
@@ -393,3 +394,4 @@ The owner approved refactor and the one-time registration correction before Desi
 | 1.0 | 2026-10-19 | @imp researcher | Confirm no production structured-result readers in scope, verify official protocol/schema rules and record owner-directed bounded emergency text delivery; retain public-envelope approval as the sole policy question. |
 | 1.1 | 2026-10-19 | @imp researcher | Record explicit owner approval of the public envelope and mandatory-core preservation with only diagnostic details bounded; close Research policy questions and request independent QA for Design, subject to workflow alignment. |
 | 1.2 | 2026-10-19 | @imp researcher | Record independent content GO and the owner-authorized chore-to-refactor registration repair; verify preservation of all unrelated state and history before normal Design transition. |
+| 1.3 | 2026-10-19 | @imp designer | Record the owner's additional startup-recovery decision: configuration-independent, complete dual-channel recovery using the common envelope; normal startup restores profile selection. |

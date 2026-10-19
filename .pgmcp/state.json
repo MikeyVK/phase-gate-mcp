@@ -4,7 +4,7 @@
   "parent_branch": "main",
   "issue_number": 529,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "skip_reason": null,
   "issue_title": "Establish client delivery and structured payload guarantees",
   "created_at": "2026-10-19T09:20:58.285627+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-10-19T20:42:50.846334+00:00",
+      "human_approval_message": "Owner approved refactor workflow alignment preserving state/history and progression to Design; explicit one-time registration correction approved on 2026-10-19. Independent QA content GO at 3d919b27172b016eaceb278f81060a80373d6a9f; sole workflow precondition resolved in 9bdad1170f1cd99cdd430ac4b658cfe3b1032933.",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
