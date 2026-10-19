@@ -109,7 +109,7 @@ This is a research-only completion under the published #523 scope and the owner'
 | Presentation / attachments | Retain configured projection and separate attachment ownership. Report client limitations honestly; do not claim a total-response or model-context ceiling. |
 | Cache | Retain full operation publication and existing locators/reads. Do not reopen #462 or implement #524. |
 | Consumers / compatibility | Clean break remains the agreed migration policy; no historical-version tests, client routing bridge or compatibility layer. Unknown native-client behavior remains unknown. |
-| Verification | Temporary isolated observations and useful existing behavior tests only; no permanent regression cases, content snapshots or full-suite run for unchanged product code. |
+| Verification | Temporary isolated observations and useful existing behavior tests; no permanent regression cases or content snapshots. The Chore Validation contract still requires one configured test-suite run and branch checks after evidence packaging; do not add or repeat broad scopes beyond that requirement. |
 | Remaining workflow | Implementation owns evidence packaging only; Validation checks the research claims and relevant existing transport behavior; Documentation makes the final evidence/findings index reviewable. Independent QA governs each boundary. |
 
 A newly proposed runtime/schema/cache/compatibility change is the stop condition: discuss it with the owner before implementing rather than expanding this chore.
