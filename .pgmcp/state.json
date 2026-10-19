@@ -1,0 +1,27 @@
+{
+  "schema_version": "2.0.0",
+  "branch": "bug/522-bind-git-to-target-workspace",
+  "parent_branch": "main",
+  "issue_number": 522,
+  "workflow_name": "bug",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "Git operations are not consistently bound to the target workspace",
+  "created_at": "2026-10-19T04:56:36.663473+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}

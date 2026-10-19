@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "522": {
+      "issue_title": "Git operations are not consistently bound to the target workspace",
+      "workflow_name": "bug",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-19T04:56:36.651924+00:00"
+    }
+  }
+}
