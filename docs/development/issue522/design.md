@@ -3,7 +3,7 @@
 # Issue \#522 — One selected Git worktree per connection
 
 **Status:** REVIEW REQUESTED  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-10-19
 
 ## Problem Statement
@@ -13,7 +13,7 @@ An independently created CWD-bound Git adapter disagrees with the connection's s
 ## Functional Requirements
 
 - All ordinary Git tools, workflow/cycle context and branch check selection consume the same selected canonical workspace root.
-- Support an explicitly selected ordinary, nested or linked worktree root and external package/server/config roots. Never discover an ancestor or child repository.
+- Support an explicitly selected ordinary, nested or linked worktree root, external package/config/template roots and alternate workspace-contained server-data folders. Never discover an ancestor or child repository.
 - Refuse unavailable/unsupported/native-redirected Git context before mutation, preserving diagnostic facts. Non-Git startup remains independent of Git acquisition.
 - Keep native identity/credential/user/system configuration and public tool DTOs intact; require explicit internal dependencies without compatibility bridges.
 
@@ -76,6 +76,8 @@ Use mandatory existing dependency/path injection, lazy exact-worktree admission 
 
 ### Composition and ownership
 
+Research1.1 corrects the earlier external-server-data assumption: ArtifactTargetResolver requires its temporary artifact root to remain workspace-contained. This design does not add out-of-workspace artifact/state support. A target may use an external installed Python package and external config/templates while keeping server data in its selected workspace. Varying that supported server-data folder must not change Git selection.
+
 bootstrap_target resolves the existing workspace to its canonical absolute root before constructing managers or selectors. _build_manager_graph supplies GitAdapter(repo_path=that root) to GitManager; ScopeResolver receives the same selected root through its existing adapter and FileScopePaths. This is not a shared mutable singleton or new context service.
 
 GitManager requires its adapter and assigns it directly. GitAdapter requires a nonblank absolute repo_path; remove its Settings parameter/import and CWD fallback. Canonicalize the explicitly supplied path once and expose the existing repo_path name read-only. Path syntax/canonicalization is constructor work; repository opening stays lazy. Existing read interfaces and all domain Git operations retain their signatures.
@@ -116,7 +118,7 @@ Current broad operation wrappers may retain their existing diagnostic chaining; 
 | Existing adapter behavior family | Parameterize distinct unavailable inputs (missing path, no-repo container, parent subdirectory, bare/admin path); assert public refusal and no writes to B. Test outer versus explicitly selected nested root and a genuine linked worktree/.git file. |
 | Existing native boundary | Inherited selector refusal, including a selector added after successful use; explicit worktree pin versus misleading core.worktree. Assert diagnosis and unchanged nonselected repository, not helper calls/source strings. |
 | integration/test_git_cycle_evidence.py | One public history case supplies an admission conflict to the actual adapter/manager path. Verify the adapter's CommitHistoryUnavailableError retains its MCPSystemError cause and factual diagnosis; read_cycle_evidence returns its existing unavailable result with git_history_unavailable and no invented branch/HEAD/protected cycles. No new history framework or broad planning test matrix. |
-| unit/server/test_bootstrap.py / integration/test_target_startup.py | Public bootstrap/tool status and workflow context agree with selected A from neutral and foreign CWD, with external server/config roots. A valid non-Git workspace still reaches ordinary admission and Git use reports unavailability. Avoid private _build_manager_graph tests. |
+| unit/server/test_bootstrap.py / integration/test_target_startup.py | Public bootstrap/tool status and workflow context agree with selected A from neutral and foreign CWD, with external config/template roots and workspace-contained server data. A valid non-Git workspace still reaches ordinary admission and Git use reports unavailability. Avoid private _build_manager_graph tests. |
 | Existing installed candidate startup case | Reuse the one wheel build; initialize/use a target separate from installed package and neutral launch directory, then query public Git status/context and exercise a controlled selected-target mutation with B unchanged. Verify installed module provenance using existing fixture facts. |
 
 Use a reusable repository/adapter preparation helper for existing native mocks when stricter root metadata is required; do not edit semantic assertions en masse. Update test_support's missing-adapter path to supply an explicit adapter for the helper's selected workspace, using the helper's established canonical source root when no workspace was supplied. Tests intentionally avoiding real Git IO keep explicit fakes. Do not substitute a fake for real-history/integration cases.
@@ -177,7 +179,7 @@ Clean break for internal omitted adapters/paths and the Settings-bearing GitAdap
 
 ### One selected repository across reads/mutations/context/checks.
 
-**Method:** Focused public adapter/bootstrap cases plus installed neutral/foreign-CWD acceptance using distinct local repositories and external roots.
+**Method:** Focused public adapter/bootstrap cases plus installed neutral/foreign-CWD acceptance using distinct local repositories, external package/config/template roots and workspace-contained server data.
 
 **Expected Result:** A is selected regardless of launch/package root; controlled writes affect only A and B's observable state is unchanged.
 
@@ -213,3 +215,4 @@ Plan the smallest coherent defect-correction cycle(s) covering explicit composit
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp designer | Specify explicit Git composition, lazy exact-root admission and bounded native-context control. |
 | 1.1 | 2026-10-19 | @imp designer | Route admission errors through existing MCPSystemError/history unavailable conversion and require one focused cycle-evidence case after QA finding. |
+| 1.2 | 2026-10-19 | @imp designer | Align external roots with actual artifact admission; keep server data workspace-contained and preserve the Git correction architecture. |
