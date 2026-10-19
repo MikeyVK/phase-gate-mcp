@@ -3,7 +3,7 @@
 # Issue \#529 — Harness delivery and complete-output access
 
 **Status:** DRAFT — Research in progress; delivery strategy pending  
-**Version:** 0.2  
+**Version:** 0.3  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -60,7 +60,7 @@ Protocol result bytes, selected model-visible text, tokens and billed cost remai
 
 ### What each inspected harness gives its agent
 
-The table describes observed or documented behavior, not a recommendation or an accepted support guarantee. "Source" means code inspection; only the current Codex integration was exercised here.
+The table describes observed or documented behavior, not a recommendation or an accepted support guarantee. "Source" means code inspection; the current Codex integration and the isolated Pi 1.3.0 CLI were exercised here.
 
 | Harness / route | Model-facing result when text and structuredContent are both present | Agent access to additional/full output | Evidence and remaining gap |
 |---|---|---|---|
@@ -69,7 +69,7 @@ The table describes observed or documented behavior, not a recommendation or an 
 | Kilo Code, inspected direct-tool path | Text and embedded text resources. StructuredContent becomes text only when content is empty; it is not added when content already exists. | Agent-callable `read_mcp_resource`; large rendered output can also be stored with a file pointer. | [Catalog conversion](https://github.com/Kilo-Org/kilocode/blob/2a1903f29186e25adec0bace14f6ee589095f7eb/packages/opencode/src/mcp/catalog.ts#L54) plus [session conversion](https://github.com/Kilo-Org/kilocode/blob/2a1903f29186e25adec0bace14f6ee589095f7eb/packages/opencode/src/session/tools.ts#L522). Error results are raised using content text. No live harness run. |
 | Claude Code | Channel precedence remains unresolved. Conflicting issue reports cannot certify current model input. | Agent-callable resource readers are documented. Large successful text can be saved; error text has a separate shortening rule. | [Official MCP docs](https://code.claude.com/docs/en/mcp#use-mcp-resources). No current installed-client execution. |
 | Google Antigravity | Current channel precedence remains unresolved. | Autonomous pgmcp resource reads remain unproved. | Official docs establish MCP support; historical embedded-resource fixes do not prove current complete-output delivery. App, IDE and CLI must not be conflated. |
-| Pi, built-in MCP direct tools | Content blocks; structuredContent is a fallback when there are no content blocks. Codemode separately receives the complete CallToolResult. | Built-in `read_mcp_resource`. Model-facing text above 20 KiB gets shortened and saved with a file pointer. | [Pinned conversion](https://github.com/earendil-works/pi/blob/e28e708049650d9b5382bb83ef93be04a0322ffa/packages/coding-agent/src/extensions/mcp/tools.ts#L265), [protocol fallback](https://github.com/earendil-works/pi/blob/e28e708049650d9b5382bb83ef93be04a0322ffa/packages/mcp/src/protocol/content.ts#L112) and [resource docs](https://pi.dev/docs/latest/mcp#use-resources). No live harness run. |
+| Pi 1.3.0, built-in MCP direct tools | Executed: text and the independent instruction reached the model request; the structured-only marker did not. Fallback without content and codemode are still source evidence, not executed cases. | Executed: native read_mcp_resource retrieved four windows, reconstructing all 22,086 characters exactly. | Real npm-installed CLI through its declared bin entry, stdio MCP and a deterministic localhost model peer; details below. |
 | Kimi Code CLI | Pinned source processes content only and caps it at 100,000 characters. Current documentation instead describes both channels; actual release behavior is unresolved. | Complete pgmcp output retrieval is not established. | [Conversion source](https://github.com/MoonshotAI/kimi-cli/blob/9ab1286b8fe4e6bcd116949a27ce5e0ac3389c82/src/kimi_cli/soul/toolset.py#L1037) conflicts with [documentation](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html#tool-results-and-attachments). No live harness run. |
 | Z.ai / ZCode | Content followed by informative structuredContent, then the ordinary MCP model budget of 50,000 bytes. | Adapter resources exist for applications; agent-callable cache reading remains unproved. Ordinary MCP truncation does not itself promise a complete saved copy. | [Pinned bridge and budget](https://github.com/zai-org/ZCode/blob/0a1fc56d279fd1001f78387bd81aec1c26767411/apps/zcode-cli/packages/core/src/mcp/index.ts#L436). No live harness run. |
 | This Codex functions integration | Both channels are available to orchestration; this chat has received the rendered instructions. | MCP resource windows were actually read and reconstructed completely. | Executed evidence below; no claim about every Codex integration. |
@@ -80,7 +80,7 @@ The remaining harness source snapshots are dated pinned-main observations, not c
 
 ### Executed pgmcp route evidence
 
-No harness installs, authenticated model requests or active harness configuration changes were made.
+The initial Codex observations below used existing tooling. The subsequent isolated Pi probe installed one official CLI locally; it used no external model, account or active harness configuration.
 
 1. `get_work_context()` returned the active Research contract. The 821-character phase-instruction value was also fully present in rendered text. Rendered TODO guidance included `keep exactly one item in progress and update it after each material step.`; that same guidance was absent from the structured DTO. Combining this observed result with the installed VS Code routing condition identifies a concrete text-guidance loss risk. It is not a VS Code session execution.
 2. `scaffold_schema(artifact_type="python_class")` returned a visible short message, structured result and schema attachment. The complete structured JSON was 11,927 Unicode codepoints and 11,927 UTF-8 bytes. The embedded application/schema+json attachment parsed to exactly the same schema value as structured schema_data; its pretty-printed text was 12,635 characters.
@@ -90,13 +90,34 @@ No harness installs, authenticated model requests or active harness configuratio
 
 A repeat of steps 2–3 must use the URI from the new invocation. The previous run ID is transient evidence, not a durable dependency. The existing [cache guide](../../../mcp_server/resources/cache_reading.md) defines Unicode offsets, contiguous windows, full-content identity and safe recovery constraints.
 
+### Isolated real-harness feasibility: Pi 1.3.0
+
+The owner asked whether Codex could create isolated environments and execute real harnesses. This was demonstrated on 2026-10-19, rather than left as a proposed test.
+
+| Item | Executed setup or observation |
+|---|---|
+| Harness | Official npm package `@earendil-works/pi-coding-agent`, resolved to 1.3.0; launched through the package manifest's declared `bin.pi` entry with Node 24.14.0. |
+| Local installation | `.pgmcp/temp/issue529/pi-runtime`; npm cache, agent configuration and working directory are separate siblings under the same issue directory. No global install or PATH change. Initial sandbox network access failed with EACCES; the scoped download then succeeded through the approved network escalation. |
+| Isolation boundary | Separate process/configuration/workspace, not a VM or OS security boundary. No inherited provider credentials; explicit local-only provider. Context-file discovery, discovered extensions, skills and prompt templates disabled; only built-in MCP explicitly enabled. Automatic network activity and telemetry disabled using Pi's documented controls. |
+| MCP peer | Temporary stdio server using the installed Python MCP SDK's public Server callbacks. One tool returned independent random text/JSON markers and an instruction. One resource exposed a larger payload in explicit windows. |
+| Model peer | A localhost OpenAI-compatible streaming endpoint, not a language model. It recorded real provider requests from Pi and returned predetermined tool calls. No real-model reasoning, tool choice or instruction obedience is claimed. |
+| Direct delivery | Text marker and instruction present in captured tool-result model input; JSON marker absent. |
+| Full output | Four real `read_mcp_resource` calls at offsets 0, 6000, 12000 and 18000; all 22,086 characters recovered with exact equality. Six provider requests captured in total. |
+| Native execution | `run_tests(scope="targets", targets=[".pgmcp/temp/issue529/test_pi_probe.py"], tests=["python_tests"], args={"python_tests":["-n","0","-q","--tb=short"]}, timeout_seconds=180)`: one passed in 2.58 seconds, exit 0, Python 3.15.0 / pytest 9.1.1. |
+| Local inspection | Fixture `.pgmcp/temp/issue529/test_pi_probe.py`; report and captured requests under `pi-run/report.json` and `pi-run/model-requests.json`. These ignored temporary files supplement this committed invocation/outcome record; they are not permanent suite coverage or guaranteed future assets. |
+| Limits | One mixed-channel successful result and complete resource reading. Structured-only fallback, errors, schema attachments, truncation, codemode, another provider format and every other harness still need their own evidence. |
+
+To reproduce the method, install the pinned official Pi package locally, use a fresh `PI_CODING_AGENT_DIR`, define a localhost `openai-completions` provider and a direct-exposure stdio MCP server, and launch Pi with `--no-context-files --no-extensions --extension builtin:mcp --no-session --offline`. The local protocol peer first requests the mixed-channel tool and then the four resource windows. Compare actual role=tool messages in the provider requests against independently generated server markers and the full source payload. The installed harness performs its normal discovery, tool execution and result conversion; a copied converter is not substituted.
+
+The process/config isolation and custom provider route are documented by [Pi environment variables](https://pi.dev/docs/latest/environment-variables), [model configuration](https://pi.dev/docs/latest/models-configuration) and [CLI options](https://pi.dev/docs/latest/cli). Read-only inspection and a deterministic local peer are sufficient to measure result delivery, but not to certify model behavior or GUI variants.
+
 ### Material limits and uncertainties
 
 - [Claude report 79944](https://github.com/anthropics/claude-code/issues/79944) remains open and reports model text loss. The [consolidation target 45575](https://github.com/anthropics/claude-code/issues/45575), closed as not planned, instead describes UI-only text hiding with model delivery retained. Neither report proves the current local integration; do not present the symptom as a verified current Claude behavior.
 - ZCode's default MCP [budget declaration](https://github.com/zai-org/ZCode/blob/0a1fc56d279fd1001f78387bd81aec1c26767411/apps/zcode-cli/packages/core/src/mcp/index.ts#L150) uses truncation, while [artifact persistence](https://github.com/zai-org/ZCode/blob/0a1fc56d279fd1001f78387bd81aec1c26767411/apps/zcode-cli/packages/core/src/tool/executor/result-serialization.ts#L97) requires the separate artifact strategy and enabled setting. A complete saved copy cannot be assumed for ordinary pgmcp tools.
 - The current [text limiter](../../../mcp_server/presenters/text_budget_limiter.py) reserves a truncation notice and cache reference, not a separately protected instruction region. Because [TextPresenter](../../../mcp_server/presenters/text_presenter.py) appends guidance before that final limit, mandatory-guidance preservation also needs explicit treatment at the pgmcp boundary. This is source-derived reachability analysis, not a newly executed truncation scenario.
 - Only `code.cmd` and `codex.exe` were found among the requested CLI names on the current PATH. The VS Code launcher selects a versioned installation directory; an earlier check of an unversioned app path was inconclusive. Missing PATH entries do not prove that the other products are absent from all hosts or install locations.
-- No installed-agent execution for the seven requested harnesses is claimed. Closed-source behavior, resource-tool discoverability, permissions and actual model requests still require integration probes.
+- Pi 1.3.0 has now been exercised through its actual CLI and model-provider request boundary. No installed execution is claimed for the other six required harnesses. GUI variants and provider-specific behavior remain separate evidence obligations.
 
 ### Decision status after owner correction
 
@@ -164,4 +185,6 @@ Stop for an explicit scope/workflow decision before implementation when the sele
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-19 | @imp researcher | Capture mandatory direct instruction/text delivery, demonstrated complete-output access and explicit preferred routes for the owner-required harnesses; separate source findings from remaining execution evidence. |
 | 0.2 | 2026-10-19 | @imp researcher | Withdraw premature contract options; distinguish VS Code 1.142 Local and Copilot harnesses, correct the version basis and Kilo structured-only fallback, and replace route recommendations with a compact factual inventory. |
+| 0.3 | 2026-10-19 | @imp researcher | Execute an isolated official Pi 1.3.0 CLI probe; record captured model input, complete four-window resource retrieval, exact verification and the limits of a deterministic model peer. |
+
 
