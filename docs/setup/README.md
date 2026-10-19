@@ -84,6 +84,43 @@ See [the authoritative startup policy and migration note](../reference/server-co
 A policy change requires full proxy/child relaunch; child-only `restart_server` retains
 the old proxy deadline. Allow outer client startup margin (recommended 75 seconds).
 
+### Choose the response profile
+
+Presentation configuration version 2.0.0 defines named response profiles in
+`defaults/presentation.yaml`; root `presentation.yaml` holds workspace differences.
+Reconcile the new configuration when adopting this contract; `--upgrade` remains
+template-only and does not migrate owner configuration.
+
+The default `structured_inline` sends the short explanation and mandatory instructions
+in both text and structured presentation, with complete operation data and attachments
+in `structuredContent`. `structured_resource` uses both presentation channels and a
+successful operation-cache reference plus direct attachments. `text_inline` supplies
+presentation and complete data through text only.
+
+Choose `PGMCP_RESPONSE_PROFILE=<profile-id>` in each individual MCP launch environment
+when the configured default is unsuitable. Omission selects the workspace default.
+An explicit environment selector overrides launcher `server.response_profile`; empty
+or unknown selectors fail startup admission. Definitions are shared, selection is
+process-local: different hosts/chats can use one workspace without editing shared
+configuration to switch an active profile. The server does not detect the host/model.
+
+The independent controls are `presentation_channel` (text/structured/both),
+`data_channel` (text/structured) and `data_delivery` (inline/resource). See the
+[public envelope and budget contract](../reference/presentation_architecture.md).
+Short-presentation budgets protect required guidance and may be exceeded by that core;
+they do not bound complete inline data or attachments.
+
+After a profile change, relaunch the selected server connection and refresh
+`tools/list`; its output schema follows the selected profile. Verify that the actual
+agent receives the complete short response and phase instructions, and demonstrate
+complete operation/attachment readback through its selected channel or resource route.
+Server publication alone does not prove downstream model input. Choose a profile
+matching the host's real access rather than assuming support from a version label.
+
+Startup recovery is a fixed exception: complete recovery text in both channels and
+full inline diagnosis, without loading rejected profile/configuration or using cache.
+Confirm healthy admission after repair/restart before judging the normal profile.
+
 ### Choose the workspace quality policy
 
 Provision each required adapter's pinned native dependencies, then choose the native

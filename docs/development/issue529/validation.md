@@ -3,7 +3,7 @@
 # Issue \#529 — Response-profile validation
 
 **Status:** Completed producer validation — independent review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -245,8 +245,47 @@ Independent scoped issue; #529 establishes selected public envelope/schema polic
 - [Approved strategy](<research.md>)
 - [Quality standards](<../../coding_standards/QUALITY_GATES.md>)
 
+## Documentation Reconciliation
+
+Documentation phase updated only the current presentation architecture, launcher/setup
+reference, recovery reference and packaged cache-reading guide:
+
+- [Presentation contract](../../reference/presentation_architecture.md)
+- [Launcher field reference](../../reference/server-configuration.md)
+- [Profile selection and activation](../../setup/README.md#choose-the-response-profile)
+- [Recovery tools](../../reference/tools/discovery.md)
+- [Packaged cache guide](../../../mcp_server/resources/cache_reading.md)
+
+Exact documentation gate: run_checks(scope='targets',
+targets=['docs/reference/presentation_architecture.md','docs/reference/server-configuration.md',
+'docs/setup/README.md','docs/reference/tools/discovery.md','mcp_server/resources/cache_reading.md'],
+checks=['markdown_links'],timeout_seconds=300).
+Native outcome: passed, 64 successful link occurrences, six configured exclusions,
+zero errors, exit 0; receipt4d22cf51778e4b338797745c84b21c3f.
+
+Packaged-guide parity: run_tests(scope='targets',
+targets=['tests/mcp_server/integration/test_execution_presentation_v3.py'],
+tests=['python_tests'],
+args={'python_tests':['-n','0','-k','shipped_cache_delivery_preserves_operation']},
+timeout_seconds=180) returned five passed, 26 deselected in50.54s.
+The existing large published case reads the actual resource and compares its complete
+text with the packaged guide. Receipt57f50d31ce974aa8b734bc2c37f1b81d.
+No production/test code or native policy changed during Documentation; full Validation
+evidence remains applicable.
+
+Reviewed unchanged: [composition architecture](../../reference/config-loading-architecture.md)
+because loader/composition semantics are unchanged;
+[tool navigation](../../reference/tools/README.md) because it already links the current
+presentation contract; [bootstrap checklist](../../setup/agentic-bootstrap.md) because
+it delegates setup details to the central setup guide;
+[Architecture Principles](../../coding_standards/ARCHITECTURE_PRINCIPLES.md) because the
+existing presentation/config-first boundaries already apply. Agent/phase instructions
+and template inputs remain unchanged. The vision reference explicitly declares itself
+historical context and is preserved, along with historical issue artifacts.
+
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-20 | @imp validator | Record approved contract mapping, full native suite failures and bounded repair, final 3060-pass run, broad checks and live delivery evidence. |
+| 0.2 | 2026-10-20 | @imp documenter | Record current-document inventory, unchanged surfaces, final link checks and existing packaged-guide readback evidence. |
