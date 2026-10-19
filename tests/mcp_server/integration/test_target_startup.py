@@ -31,6 +31,7 @@ from pathlib import Path
 from threading import Barrier
 
 import pytest
+from git import Actor
 from git import Repo as GitRepo
 from jsonschema import Draft202012Validator
 
@@ -622,3 +623,65 @@ def test_exhausted_startup_exposes_original_lock_diagnosis(tmp_path: Path) -> No
             "PermissionError",
             "BlockingIOError",
         }
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("has_repository", [True, False])
+async def test_selected_workspace_git_ignores_foreign_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, has_repository: bool
+) -> None:
+    """Public Git status/context use the target, including honest Git absence."""
+    target = tmp_path / "selected"
+    target.mkdir()
+    foreign = tmp_path / "foreign"
+    server_root = target / "server-data"
+    server_root.mkdir()
+    config_root = tmp_path / "config"
+    shutil.copytree(REPO_ROOT / ".pgmcp/config", config_root)
+    foreign_repo = GitRepo.init(foreign, initial_branch="foreign-launch")
+    actor = Actor("Workspace test", "workspace@example.invalid")
+    foreign_file = foreign / "foreign.txt"
+    foreign_file.write_text("Foreign baseline\n", encoding="utf-8")
+    foreign_repo.index.add(["foreign.txt"])
+    foreign_repo.index.commit("Foreign baseline", author=actor, committer=actor)
+    target_repo = None
+    if has_repository:
+        target_repo = GitRepo.init(target, initial_branch="selected-target")
+        target_repo.index.commit("Selected baseline", author=actor, committer=actor)
+    before = (
+        foreign_repo.head.commit.hexsha,
+        (foreign / ".git/index").read_bytes(),
+        tuple(head.name for head in foreign_repo.heads),
+    )
+    monkeypatch.chdir(foreign)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    settings = Settings(server=ServerSettings(
+        workspace_root=str(target), server_root_dir=str(server_root),
+        config_root=str(config_root),
+        template_root=str(REPO_ROOT / ".pgmcp/template_suite"), bypass_version_check=True,
+    ))
+    try:
+        server = ServerBootstrapper(settings).bootstrap_target()
+        async with connected_mcp_client(server) as client:
+            health = await client.call_tool("health_check", {})
+            assert health.structured_content is not None
+            assert health.structured_content["status"] == "healthy"
+            result = await client.call_tool("git_status", {})
+            assert result.structured_content is not None
+            if has_repository:
+                assert not result.is_error, result
+                assert result.structured_content["branch"] == "selected-target"
+                context = await client.call_tool("get_work_context", {})
+                assert context.structured_content is not None
+                assert context.structured_content["current_branch"] == "selected-target"
+            else:
+                assert result.is_error
+                assert result.structured_content["success"] is False
+        assert before == (
+            foreign_repo.head.commit.hexsha,
+            (foreign / ".git/index").read_bytes(),
+            tuple(head.name for head in foreign_repo.heads),
+        )
+    finally:
+        foreign_repo.close()
+        if target_repo is not None:
+            target_repo.close()

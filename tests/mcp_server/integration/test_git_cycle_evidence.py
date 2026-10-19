@@ -17,6 +17,7 @@ from mcp_server.core.interfaces.git import (
     CommitHistoryUnavailableError,
     CommitRecord,
 )
+from mcp_server.core.exceptions import MCPSystemError
 from mcp_server.core.operation_notes import NoteContext
 from tests.mcp_server.test_support import make_git_manager
 
@@ -128,3 +129,26 @@ def test_detached_head_and_missing_execution_cycle_are_unavailable(
     detached = make_git_manager(adapter=adapter).read_cycle_evidence(491, "implementation")
     assert detached.reason_code == "git_head_detached"
     assert detached.status == "unavailable"
+
+def test_admission_conflict_preserves_history_unavailable(
+    history: tuple[Repo, GitAdapter], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cached adapter refuses native redirection through the existing history contract."""
+    repository, adapter = history
+    adapter.get_status()
+    try:
+        with monkeypatch.context() as context:
+            context.setenv("GIT_WORK_TREE", str(tmp_path / "foreign-tree"))
+            with pytest.raises(CommitHistoryUnavailableError) as caught:
+                adapter.read_issue_history("(#491)")
+            assert caught.value.reason_code == "git_history_unavailable"
+            assert isinstance(caught.value.__cause__, MCPSystemError)
+            assert "native_context_override" in str(caught.value.__cause__)
+            result = make_git_manager(adapter=adapter).read_cycle_evidence(491, "implementation")
+            assert result.status == "unavailable"
+            assert result.reason_code == "git_history_unavailable"
+            assert result.branch is None and result.head_sha is None
+            assert result.protected_cycle_numbers == ()
+    finally:
+        adapter.repo.close()
+        repository.close()
