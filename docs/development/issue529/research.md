@@ -3,7 +3,7 @@
 # Issue \#529 — Harness delivery and complete-output access
 
 **Status:** DRAFT — Research in progress; delivery strategy pending  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-19
 
 ## Purpose
@@ -58,20 +58,25 @@ For cache routes, establish that the agent can discover and invoke the reader, c
 
 Protocol result bytes, selected model-visible text, tokens and billed cost remain separate quantities. The existing 8,000-byte text ceiling does not bound structured output, attachments or the complete result.
 
-### Preferred routes and remaining proof, 2026-10-19
+### What each inspected harness gives its agent
 
-These are research recommendations, not approved delivery policy. "Source" establishes a specific code path; it is not a successful live agent session.
+The table describes observed or documented behavior, not a recommendation or an accepted support guarantee. "Source" means code inspection; only the current Codex integration was exercised here.
 
-| Harness | Preferred direct delivery under consideration | Preferred complete-output route | What is proved and what remains open |
+| Harness / route | Model-facing result when text and structuredContent are both present | Agent access to additional/full output | Evidence and remaining gap |
 |---|---|---|---|
-| VS Code built-in MCP agent | Include the complete readable response and guidance in whichever structured result is model-facing; alternatively omit structuredContent and use text. | Structured operation for ordinary results; MCP-backed file/resource reads for larger results and attachments. | Installed 1.141.0 build 2a59476c9bfcb90b3ddc372c36762471b7dfad1c contains the structured-preference condition. Its [matching source](https://github.com/microsoft/vscode/blob/2a59476c9bfcb90b3ddc372c36762471b7dfad1c/src/vs/workbench/contrib/mcp/common/mcpLanguageModelToolContribution.ts#L328) corroborates it. Resource filesystem support exists, but autonomous cache-URI discovery/read and full agent-input execution remain unproved. Current text-only guidance does not satisfy this route. |
-| Kilo Code | Content text carries the readable response and instructions. | Its agent-facing `read_mcp_resource` tool, using pgmcp windows; persisted output is secondary. | [Session tools](https://github.com/Kilo-Org/kilocode/blob/2a1903f29186e25adec0bace14f6ee589095f7eb/packages/opencode/src/session/tools.ts#L400) implement resource reads and content-based tool output. Structured-only fields are not part of that inspected conversion. Live CLI/extension execution is open. |
-| Claude Code | Preserve the readable response in both candidate model-facing channels until the actual path is verified. | Native MCP resource reader with bounded pgmcp windows; successful-output files are secondary. | [Vendor documentation](https://code.claude.com/docs/en/mcp#use-mcp-resources) establishes agent-callable resource readers. Success-file persistence does not prove error preservation. Public reports disagree about text visibility; no local execution has resolved that. |
-| Google Antigravity | Content text is the documented starting candidate; structured precedence is unresolved. | No accepted route yet. A standard resource reader must be demonstrated, or a normal MCP retrieval tool evaluated. | [CLI release notes](https://antigravity.google/docs/changelog?tab=cli) document an embedded-resource delivery fix in 1.1.5, not autonomous pgmcp cache reads or the IDE's routing. Those are still proof gaps. |
-| Pi, built-in MCP | Content text for direct tools; explicit forwarding of response/instructions when using codemode. | Built-in `read_mcp_resource`; codemode can additionally inspect the complete `CallToolResult`. | [Built-in MCP docs](https://pi.dev/docs/latest/mcp#use-resources) name resource tools; the pinned conversion retains a complete programmatic result separately from model text. Text above 20 KiB is shortened with a saved-file pointer. Live direct/codemode execution remains open. |
-| Kimi Code CLI | Content text is the conservative candidate for the inspected source. | No accepted route yet. Prove a native reader for pgmcp resources, or evaluate a normal MCP retrieval tool. | The pinned conversion reads content, caps it at 100,000 characters and returns an omission marker. It does not itself preserve an unabridged result for later reading. The newer documentary claim about both channels/attachment preservation conflicts with that source. Live execution is required. |
-| Z.ai / ZCode | Content text first; structured content is appended by the inspected bridge. | No accepted route yet. Model-callable resource access or a normal MCP retrieval tool must be demonstrated. | [Pinned bridge](https://github.com/zai-org/ZCode/blob/0a1fc56d279fd1001f78387bd81aec1c26767411/apps/zcode-cli/packages/core/src/mcp/index.ts#L436) combines both channels. Ordinary MCP output has a 50,000-byte model budget with head truncation. Adapter resource access for applications exists, but does not establish agent access. Live execution is open. |
-| This Codex integration | Visible text plus structured data through the existing functions orchestration. | `read_mcp_resource(server="phase_gate_mcp", uri=...)` with explicit windows. | Executed successfully here: complete schema result reconstructed, exact equality checked and SHA-256 verified once. This does not certify another Codex integration. |
+| VS Code 1.142.0, Local harness | StructuredContent replaces text in the inspected conversion. Images and resource links are handled separately. | The structured result is inline. A resource filesystem exists, but autonomous pgmcp cache reads remain unexecuted. | [Release-tag source](https://github.com/microsoft/vscode/blob/d956e8a6ac5d904486557eea07e1d6bd62a4d36f/src/vs/workbench/contrib/mcp/common/mcpLanguageModelToolContribution.ts#L328); installed 1.141.0 source was an older, separately identified observation. |
+| VS Code 1.142.0, Copilot harness / Agent Host | Not established by this research. The Local conversion must not be applied to this route by inference. | Not established. | [Official 1.142 release notes](https://code.visualstudio.com/updates/v1_142#_copilot-harness) document Copilot SDK routing and progressive default rollout. [Session launcher](https://github.com/microsoft/vscode/blob/d956e8a6ac5d904486557eea07e1d6bd62a4d36f/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts#L90) supplies MCP servers to the SDK. The SDK/CLI result-to-model path still needs verification. |
+| Kilo Code, inspected direct-tool path | Text and embedded text resources. StructuredContent becomes text only when content is empty; it is not added when content already exists. | Agent-callable `read_mcp_resource`; large rendered output can also be stored with a file pointer. | [Catalog conversion](https://github.com/Kilo-Org/kilocode/blob/2a1903f29186e25adec0bace14f6ee589095f7eb/packages/opencode/src/mcp/catalog.ts#L54) plus [session conversion](https://github.com/Kilo-Org/kilocode/blob/2a1903f29186e25adec0bace14f6ee589095f7eb/packages/opencode/src/session/tools.ts#L522). Error results are raised using content text. No live harness run. |
+| Claude Code | Channel precedence remains unresolved. Conflicting issue reports cannot certify current model input. | Agent-callable resource readers are documented. Large successful text can be saved; error text has a separate shortening rule. | [Official MCP docs](https://code.claude.com/docs/en/mcp#use-mcp-resources). No current installed-client execution. |
+| Google Antigravity | Current channel precedence remains unresolved. | Autonomous pgmcp resource reads remain unproved. | Official docs establish MCP support; historical embedded-resource fixes do not prove current complete-output delivery. App, IDE and CLI must not be conflated. |
+| Pi, built-in MCP direct tools | Content blocks; structuredContent is a fallback when there are no content blocks. Codemode separately receives the complete CallToolResult. | Built-in `read_mcp_resource`. Model-facing text above 20 KiB gets shortened and saved with a file pointer. | [Pinned conversion](https://github.com/earendil-works/pi/blob/e28e708049650d9b5382bb83ef93be04a0322ffa/packages/coding-agent/src/extensions/mcp/tools.ts#L265), [protocol fallback](https://github.com/earendil-works/pi/blob/e28e708049650d9b5382bb83ef93be04a0322ffa/packages/mcp/src/protocol/content.ts#L112) and [resource docs](https://pi.dev/docs/latest/mcp#use-resources). No live harness run. |
+| Kimi Code CLI | Pinned source processes content only and caps it at 100,000 characters. Current documentation instead describes both channels; actual release behavior is unresolved. | Complete pgmcp output retrieval is not established. | [Conversion source](https://github.com/MoonshotAI/kimi-cli/blob/9ab1286b8fe4e6bcd116949a27ce5e0ac3389c82/src/kimi_cli/soul/toolset.py#L1037) conflicts with [documentation](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html#tool-results-and-attachments). No live harness run. |
+| Z.ai / ZCode | Content followed by informative structuredContent, then the ordinary MCP model budget of 50,000 bytes. | Adapter resources exist for applications; agent-callable cache reading remains unproved. Ordinary MCP truncation does not itself promise a complete saved copy. | [Pinned bridge and budget](https://github.com/zai-org/ZCode/blob/0a1fc56d279fd1001f78387bd81aec1c26767411/apps/zcode-cli/packages/core/src/mcp/index.ts#L436). No live harness run. |
+| This Codex functions integration | Both channels are available to orchestration; this chat has received the rendered instructions. | MCP resource windows were actually read and reconstructed completely. | Executed evidence below; no claim about every Codex integration. |
+
+**Version correction:** on 2026-10-19 the current stable VS Code is 1.142.0, released on October 14. The local launcher selects installed 1.141.0. Inspection of an installed older version was valid local evidence but insufficient for a current general VS Code conclusion. The Local routing condition is independently confirmed in the 1.142.0 tag. Copilot Agent Host is a distinct, still unresolved path.
+
+The remaining harness source snapshots are dated pinned-main observations, not certified current released-binary measurements. Do not label those rows as latest-release guarantees.
 
 ### Executed pgmcp route evidence
 
@@ -93,17 +98,9 @@ A repeat of steps 2–3 must use the URI from the new invocation. The previous r
 - Only `code.cmd` and `codex.exe` were found among the requested CLI names on the current PATH. The VS Code launcher selects a versioned installation directory; an earlier check of an unversioned app path was inconclusive. Missing PATH entries do not prove that the other products are absent from all hosts or install locations.
 - No installed-agent execution for the seven requested harnesses is claimed. Closed-source behavior, resource-tool discoverability, permissions and actual model requests still require integration probes.
 
-### Feasible contract choices for owner discussion
+### Decision status after owner correction
 
-| Option | Instruction delivery | Complete-output access and cost | Consequence |
-|---|---|---|---|
-| Full structured operation plus the complete readable response/guidance; concise text retained | Both channel preferences have readable instructions. | Large DTOs remain inline for structured-preferring clients. Clients can still truncate; a working retrieval route remains necessary. | Less change to current full-operation delivery; no broad initial-context bound. |
-| Bounded shared result view containing readable response/guidance and an explicit complete-result locator, in both channels | A shared projection can cover both inspected preference classes without per-harness branching. | Large details are fetched in bounded pages. A proven resource or normal-tool reader is essential; cache failure and independently owned attachments must be explicit. | Changes the public structured contract chosen in #517 and determines the schema #528 must expose. |
-| Harness-specific configured projections/read routes | Can accommodate demonstrated integration differences. | Each profile still needs a real retrieval mechanism; configuration alone cannot give a client a resource reader. | Additional configuration, selection and proof obligations. No necessity for this mechanism has yet been established over a shared contract. |
-
-A normal MCP retrieval tool could reuse the existing read-only cache boundary and serialization rather than create a second cache. It is an unapproved public-tool option, not an implementation decision. Its necessity should be assessed against actual native reader gaps.
-
-Owner decisions remain: the output contract and measurable initial-response objective; whether an additional generic retrieval tool is acceptable if required harnesses lack an agent-callable resource reader; and the execution arrangement for real harness probes. A larger public-boundary change must not be treated as mechanical chore work.
+The owner rejected the early move to contract options. The earlier A/B recommendation is withdrawn. No output mechanism, generic retrieval tool or harness-specific configuration is selected. Complete the factual channel/read-route inventory and resolve material integration/version gaps before presenting solutions or requesting a boundary strategy. The mandatory direct text/instruction delivery and complete-output access requirements remain unchanged.
 
 ## Questions
 
@@ -166,3 +163,5 @@ Stop for an explicit scope/workflow decision before implementation when the sele
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-19 | @imp researcher | Capture mandatory direct instruction/text delivery, demonstrated complete-output access and explicit preferred routes for the owner-required harnesses; separate source findings from remaining execution evidence. |
+| 0.2 | 2026-10-19 | @imp researcher | Withdraw premature contract options; distinguish VS Code 1.142 Local and Copilot harnesses, correct the version basis and Kilo structured-only fallback, and replace route recommendations with a compact factual inventory. |
+
