@@ -52,15 +52,14 @@ class TestTextBudgetLimiter:
         assert len(result.text.encode("utf-8")) <= 160
         assert "�" not in result.text
 
-    def test_preserves_oversized_core_and_reports_omitted_details(self) -> None:
-        core = "Required phase guidance " * 30
-        result = _limiter(1).limit(
+    def test_final_bound_includes_large_main_text(self) -> None:
+        core = "Required phase guidance " * 500
+        result = _limiter(8_000).limit(
             RenderedPresentation(core=core, details="optional"),
             cache_available=False,
         )
-        assert result.text.startswith(core)
+        assert len(result.text.encode("utf-8")) <= 8_000
         assert _formatting().cache_unavailable_truncation_notice in result.text
-        assert "optional" not in result.text
         assert result.details_truncated
 
     def test_closes_optional_fence_without_cutting_required_guidance(self) -> None:
