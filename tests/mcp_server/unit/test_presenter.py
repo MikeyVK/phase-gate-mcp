@@ -434,6 +434,10 @@ def test_compact_recovery_routes_known_facts_without_normal_rendering(
         recovery_cache_unavailable="NO-EXISTING-REFERENCE",
         uri_reference="EXISTING-REFERENCE={run_id}",
     )
+    config_data["global"]["formatting"].update(
+        truncation_notice="DETAILS SHORTENED; RESULT AVAILABLE",
+        cache_unavailable_truncation_notice="DETAILS SHORTENED; NO CACHED RESULT",
+    )
     presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
     run_id = "b" * 32 if cached else None
     with (
@@ -448,7 +452,7 @@ def test_compact_recovery_routes_known_facts_without_normal_rendering(
         output = presenter.recover(
             operation_success=False,
             error_message="native processing failure",
-            traceback=None,
+            traceback="traceback diagnostic section\n\n" * 1000,
             cache_run_id=run_id,
             cache_size_chars=1_500_000 if cached else None,
         )
@@ -457,6 +461,11 @@ def test_compact_recovery_routes_known_facts_without_normal_rendering(
     assert "native processing failure" in output.text
     assert len(output.text.encode("utf-8")) <= config_data["global"]["max_text_response_bytes"]
     assert (f"EXISTING-REFERENCE={run_id}" if cached else "NO-EXISTING-REFERENCE") in output.text
+    formatting = config_data["global"]["formatting"]
+    expected_notice = formatting["truncation_notice" if cached else "cache_unavailable_truncation_notice"]
+    wrong_notice = formatting["cache_unavailable_truncation_notice" if cached else "truncation_notice"]
+    assert expected_notice in output.text
+    assert wrong_notice not in output.text
     assert output.resources == ()
     if mode == "resource":
         assert output.structured_content is None
@@ -468,8 +477,9 @@ def test_compact_recovery_routes_known_facts_without_normal_rendering(
         assert envelope.attachments == ()
         assert envelope.delivery_error is None
         assert envelope.processing_error is not None
-        assert envelope.processing_error.error_message == "native processing failure"
-        assert envelope.processing_error.params == {"diagnostic_details_truncated": False}
+        assert envelope.processing_error.error_message is not None
+        assert envelope.processing_error.error_message.startswith("native processing failure")
+        assert envelope.processing_error.params == {"diagnostic_details_truncated": True}
         assert envelope.data is not None if cached else envelope.data is None
         if cached:
             assert envelope.data is not None
@@ -530,3 +540,4 @@ def test_recovery_bounds_unicode_before_encoding_and_shares_diagnostic_allowance
     schema = presenter.output_schema()
     assert schema is not None
     Draft202012Validator(schema).validate(output.structured_content)
+
