@@ -9,7 +9,7 @@
 import re
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -26,6 +26,8 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas.presentation_config import PresentationConfig, ToolPresentationConfig
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.git import CycleEvidence, ICycleEvidenceReader
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
@@ -33,9 +35,16 @@ from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.schemas.deliverables import (
+    CycleInput, CyclesInput, DeliverableInput, SavePlanningModel, StoredPlanningModel,
+)
+from mcp_server.schemas.tool_outputs import ProjectPlanOutput
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
-from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
+from mcp_server.tools.project_tools import GetProjectPlanTool, UpdatePlanningDeliverablesTool
+from tests.mcp_server.test_support import (
+    connected_mcp_client, make_config_loader, make_project_manager, make_response_presenter,
+)
 
 
 class Status(StrEnum):
@@ -539,3 +548,68 @@ async def test_independent_serialization_failure_retains_actual_outcome(
         assert "pgmcp://cache/runs/" not in body["presentation"]
     if failure_stage in {"inline", "both"}:
         assert calls["inline"] == 1
+
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("git_workspace")
+async def test_planning_update_note_preserves_independent_readback(
+    configured_workspace: Path,
+) -> None:
+    """A readable evidence note cannot stand in for independent stored-plan proof."""
+    head_sha = "planning-evidence-head"
+    evidence = MagicMock(spec=ICycleEvidenceReader)
+    evidence.read_cycle_evidence.return_value = CycleEvidence(
+        status="complete",
+        branch="bug/530-note",
+        head_sha=head_sha,
+        execution_phase="implementation",
+        protected_cycle_numbers=(1,),
+    )
+    manager = make_project_manager(configured_workspace, cycle_evidence_reader=evidence)
+    manager.initialize_project(530, "Note behavior", "feature", parent_branch="main")
+    original = CycleInput(
+        cycle_name="Existing",
+        deliverables=[DeliverableInput(deliverable_name="Keep", description="Keep description")],
+        exit_criteria="Keep criteria",
+    )
+    manager.save_planning_deliverables(530, SavePlanningModel(cycles=CyclesInput(cycles=[original])))
+    before = manager.get_project_plan(530)
+    assert before is not None
+    snapshot = StoredPlanningModel.model_validate(before["planning_deliverables"], strict=True)
+    added = CycleInput(
+        cycle_name="Appended",
+        deliverables=[DeliverableInput(deliverable_name="New", description="New description")],
+        exit_criteria="New criteria",
+    )
+    factory = ToolFactory(MagicMock(spec=EnforcementRunner), configured_workspace)
+    cores = [UpdatePlanningDeliverablesTool(manager), GetProjectPlanTool(manager)]
+    server = MCPServer(
+        Settings(server=ServerSettings(workspace_root=str(configured_workspace))),
+        tools=[factory.create_tool(cast(ICoreTool[BaseModel, BaseModel], core)) for core in cores],
+        resources=[],
+        presenter=make_response_presenter(
+            make_config_loader(configured_workspace).load_presentation_config(),
+            profile_id="structured_inline",
+        ),
+    )
+    async with connected_mcp_client(server) as client:
+        update = await client.call_tool("update_planning_deliverables", {
+            "issue_number":530,
+            "operations":[{"op":"append_cycle", "cycle":added.model_dump(mode="json")}],
+        })
+        readback = await client.call_tool("get_project_plan", {"issue_number":530})
+    assert not update.is_error and not readback.is_error
+    assert update.structured_content is not None
+    assert update.structured_content["success"] is True
+    assert readback.structured_content is not None
+    plan = ProjectPlanOutput.model_validate(readback.structured_content["data"]["operation"])
+    assert plan.planning_deliverables is not None and plan.planning_deliverables.cycles is not None
+    stored = plan.planning_deliverables.cycles.cycles
+    assert snapshot.cycles is not None
+    assert stored[0] == snapshot.cycles.cycles[0]
+    assert stored[1].cycle_id == "C_2"
+    assert stored[1].deliverables[0].deliverable_id == "D_2.1"
+    assert stored[1].deliverables[0].description == added.deliverables[0].description
+    assert stored[1].exit_criteria == added.exit_criteria
+    assert head_sha in update.content[0].text
