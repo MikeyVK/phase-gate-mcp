@@ -2,8 +2,8 @@
 
 # Issue \#518 — source-owner repair and native validation
 
-**Status:** Validation failed — bounded test-consumer repair required  
-**Version:** 0.2  
+**Status:** Validation evidence complete — independent review requested  
+**Version:** 1.0  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -20,11 +20,11 @@ Dependency/version migration, compatibility routes, permanent diagnostic/version
 
 ## Validation Status
 
-FAIL
+Required native suite and quality gates passed on the repaired candidate. Independent Validation → Documentation review is requested; this report does not grant progression.
 
 ## Scope
 
-Refactor C_1–C_4 / D_1.1–D_4.2; source snapshot a433f05ef442609655a75a55bcbbed2f0eb5cb02. Independent Implementation admission GO: QA turn01a15901-85af-7281-b701-86ebfa4e383f. This report does not grant the next phase approval.
+Refactor C_1–C_4 / D_1.1–D_4.2; source snapshot a433f05ef442609655a75a55bcbbed2f0eb5cb02. Independent original Implementation admission GO: QA turn01a15901-85af-7281-b701-86ebfa4e383f. Test-only recovery candidate08fd15d9d720903f5cf7aa04fe114759f9614034 received exact-head Implementation→Validation GO in QA turn01a1591e-86df-7330-8879-492a583d705d; production/config/process fixtures remained unchanged. This report does not grant the next phase approval.
 
 ## Evidence
 
@@ -102,7 +102,7 @@ restart oldPID10980, prescribed3s wait, freshcontext, health healthyPID36620/ver
 
 ## Demonstration
 
-The first full native suite completed with3112passed and3failed in687.29s, native exit1, no termination problem. Invocation: run_tests(scope='configured',tests=['python_tests'],timeout_seconds=1800), no args override; supplemental receipt7a7405b5930f45d7a7ac29832b08ebda. Required branch and configured gates all passed; the suite failure still blocks acceptance.
+The first full native suite completed with3112passed and3failed in687.29s, native exit1, no termination problem. Invocation: run_tests(scope='configured',tests=['python_tests'],timeout_seconds=1800), no args override; supplemental receipt7a7405b5930f45d7a7ac29832b08ebda. Required branch and configured gates all passed in that first attempt. Its failed outcome is preserved below; final candidate acceptance evidence is the new complete run after actual test-consumer repair.
 
 The preservation route uses existing tests, not new diagnostic/version tests. For static sensitivity, create temporary modules below .pgmcp/temp/issue518 importing the actual core/prepared/outer interfaces, Literal exception/DTO consumers, ToolExecution/AdapterBinding and logging_extra. Valid model-only, widening-covariance and JSON producers must pass; None outside BaseModel bounds, wrong literal values, reverse variance and invalid JSON producers must produce native type-var/arg-type/assignment (Mypy) and corresponding argument/assignment/type-argument diagnostics (Pyright). Use a temporary pyright_probe.json extending ../../../pyrightconfig.json, explicit control-file include and extraPaths=["../../.."], then pass --project .pgmcp/temp/issue518/pyright_probe.json --outputjson. Inspect filesAnalyzed: hidden temporary paths can otherwise yield zero analyzed files. This is a reproduction route, not a permanent diagnostic suite or a promise of identical diagnostic counts after source changes.
 
@@ -318,7 +318,7 @@ Both calls completed with all selected checks passed, timeout600 and no args ove
 - run_checks(scope='branch',checks=['python_format','python_lint','python_pyright','markdown_links']); supplemental receipt e084f6f4b3c44df5bd16897e6dcb06e4.
 - run_checks(scope='configured',checks=['python_format','python_lint','python_types','python_pyright']); supplemental receipt a4fb4f47e5904fcfa9c99c51057dd4be.
 
-These positive quality results do not supersede the failed required suite. Return to Implementation is for three existing test consumers only; no production gate waiver, skip, native configuration relaxation or new architecture.
+Those first positive quality results did not supersede the failed required suite. The initial recovery direction considered three test consumers; actual repair changed only two, leaving the process fixture/deadlines untouched. No production gate waiver, skip, native configuration relaxation or new architecture was introduced.
 
 ## Bounded return to Implementation
 
@@ -332,7 +332,23 @@ A new required full native run is justified only by the actual two-consumer corr
 
 ### Focused recovery result
 
-run_tests(scope='targets',targets=['tests/mcp_server/integration/adapters/test_ruff_checks.py','tests/mcp_server/integration/adapters/test_mypy.py','tests/mcp_server/integration/execution/test_process_runtime.py'],tests=['python_tests'],timeout_seconds=600), no args override, completed with148passed in84.42s; native exit0; unchanged process deadlines. supplemental receipt1e8e41928da74f968ced325aa44fcd75. Both changed test files passed format/lint with RUF100 (timeout180), receipt1a542c27d5f94273be90ae51389142f6. The process fixture and production/config/deadline code are unchanged. Independent exact-head admission and a new full native suite remain required; focused success does not close the earlier full failure.
+run_tests(scope='targets',targets=['tests/mcp_server/integration/adapters/test_ruff_checks.py','tests/mcp_server/integration/adapters/test_mypy.py','tests/mcp_server/integration/execution/test_process_runtime.py'],tests=['python_tests'],timeout_seconds=600), no args override, completed with148passed in84.42s; native exit0; unchanged process deadlines. supplemental receipt1e8e41928da74f968ced325aa44fcd75. Both changed test files passed format/lint with RUF100 (timeout180), receipt1a542c27d5f94273be90ae51389142f6. The process fixture and production/config/deadline code are unchanged. Subsequently QA granted exact-head admission at08fd15d9, followed by the complete native candidate run below. Focused success alone did not close the earlier full failure.
+
+## Final repaired-candidate native acceptance
+
+After QA turn01a1591e-86df-7330-8879-492a583d705d granted Implementation→Validation at08fd15d9d720903f5cf7aa04fe114759f9614034, the normal transition and fresh work context selected Validation. No production, test, fixture, native configuration or timeout changes occurred during the run.
+
+| Invocation (no argument overrides) | Observed native outcome |
+| --- | --- |
+| run_tests(scope='configured', tests=['python_tests'], timeout_seconds=1800) | 3115passed, zero failed, 838.56s, pytest9.1.1/native exit0, no termination problem, native8workers. Supplemental receipt10eee661f83b4ac28d768f16780bd82a. |
+| run_checks(scope='branch', checks=['python_format','python_lint','python_pyright','markdown_links'], timeout_seconds=600) | All4checks passed/native0. Format149files; lint clean; Pyright94productionfiles, zero diagnostics; Lychee80successful link occurrences/48unique, zero exclusions/errors. Supplemental receiptaf6690e01db6454da05345b72fe8c76e. |
+| run_checks(scope='configured', checks=['python_format','python_lint','python_types','python_pyright'], timeout_seconds=600) | All4checks passed/native0. Format475files; lint clean; Mypy192productionfiles/noissues; Pyright192productionfiles/zero diagnostics. Supplemental receipt3044268e37ac4685b6ca8d244d8bbdea. |
+
+The native suite explicitly reports PASSED for the strict Ruff consumer, configured-versus-explicit Mypy consumer, and process passed-0 roundtrip. The original10s invoke/15s outer helper and negative1e-9preparation deadline remain unchanged. This is actual new acceptance on the two-test repaired candidate, not proof of the original Node timeout's root cause or a claimed timeout repair. The first3112passed/3failed run remains negative history; no unchanged-candidate full retries followed this passing run.
+
+Post-suite get_project_plan(518) matches the complete pre-suite planning_deliverables value: four cycles, eight cycle deliverables, one Validation and two Documentation deliverables. git_status shows only expected workflowstate plus the already-existing unrelated owner-requested docs/development/issue529/design.md edit. No unexpected source/test/config/planning mutation occurred. That unrelated file is neither staged nor published with #518; the worktree is not claimed wholly clean. Branch Markdown discovery also saw the existing unrelated document; this does not place it in #518 scope or commit contents.
+
+The final report edit receives its own targeted link validation. Required native source/test evidence remains fresh because only this report and workflow audit state change after it. Documentation still owns the two planned current-reference edits and independent QA owns the next phase decision.
 
 ## First full native suite failure
 
@@ -353,7 +369,7 @@ Post-suite planning readback is unchanged; git_status contains only expected wor
 
 ## Caveats
 
-- The full native suite failed; Ready is blocked. Required branch and configured gates all passed; the suite failure still blocks acceptance.
+- The first full native suite failed and is preserved above. The actual two-test repaired candidate now has a complete passing suite and required gates; independent phase QA remains required. The earlier Node timeout has no established root cause, and this passing observation is not represented as its repair.
 - Temporary cache receipts are supplemental navigation. Durable claims use the invocations/outcomes, source links, existing behavior tests and reproduction route in this report.
 - Unchanged test-local imports were not swept across the suite. In repaired files ordinary imports moved; actual runtime Settings lookup, CLI route selection and recovery health-clock timing remain explicit.
 - Existing hybrid type policy covers production by default. Remaining wider mock/Unknown test diagnostic debt is not declared resolved or silently suppressed.
@@ -372,3 +388,5 @@ Post-suite planning readback is unchanged; git_status contains only expected wor
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-20 | @imp validator | Record reviewed implementation evidence, exact dispositions and negative history; first native suite failed and quality gates passed. |
 | 0.2 | 2026-10-20 | @imp implementer | Record auditable test-consumer recovery and unchanged process deadlines; cause and final acceptance remain explicit. |
+
+| 1.0 | 2026-10-20 | @imp validator | Record exact-head independent recovery admission, full3115passed native candidate suite, all required quality gates, unchanged planning/process budgets and explicit preserved failure history/unrelated owner edit. Request independent Validation review. |
