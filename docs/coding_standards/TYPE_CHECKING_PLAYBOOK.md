@@ -22,7 +22,7 @@ This document standardizes how we resolve typing issues so that **all agents** (
 
 3. **If you must ignore, ignore precisely.**
    - Prefer error-code specific ignores.
-   - Add a short rationale comment.
+   - Add a short rationale and a concrete reassessment trigger.
 
 ---
 
@@ -32,7 +32,9 @@ When a typing issue appears, follow this sequence:
 
 ### 1) Fix the types at the source
 - Add missing annotations (parameters and return types).
-- Tighten `Any` where possible.
+- Tighten `Any` where possible; raw unknown values start as `object`.
+- Annotate stored `Literal` attributes and diagnosed collection/default factories at their owner.
+- A container guard proves only its actual check: `dict[object, object]` does not certify string keys or JSON values.
 - Prefer concrete types (e.g., `Mapping[str, str]`, `Sequence[int]`) over `Any`.
 
 ### 2) Narrow types using runtime checks
@@ -67,6 +69,8 @@ At system boundaries, convert “dynamic” input to typed objects once.
 **Preferred boundary patterns:**
 - Parse/validate into a Pydantic model (DTO) at the boundary.
 - Convert to a typed dataclass/model and pass that through the core.
+- Core and prepared tool inputs are model-only. `args_model` returns a `BaseModel` subclass; no-argument tools use an explicit empty model with unknown-key rejection, rather than a `None` admission route.
+- Use supported callable/protocol parameters for partially typed native operations. Keep runtime guards, native error distinctions, opaque mapping keys and intentional variance; do not coerce or add admission policy just to silence `Unknown`.
 
 ### 5) Targeted ignore (last resort)
 Only after 1–4 are not feasible.
@@ -103,19 +107,9 @@ value = cast(str, x)
 
 ## Standard Workarounds (Approved)
 
-### A) Pydantic FieldInfo false positives (often in tests)
-Some IDE type engines can treat Pydantic fields as `FieldInfo` instead of the runtime value.
+### A) Pydantic declarations
 
-**Preferred fix:** use `getattr` to avoid the false-positive member access.
-```python
-assert getattr(signal, "initiator_id").startswith("TCK_")
-```
-
-**Acceptable alternative:** normalize to a concrete type.
-```python
-initiator_id = str(signal.initiator_id)
-assert initiator_id.startswith("TCK_")
-```
+Check the actual field annotation, generic bindings, supported stubs and native checker plugin before choosing a workaround. Keep ordinary typed field access. Reflective `getattr` or `str(...)` solely to silence a diagnosis can hide an invalid value or change its meaning; neither proves the declared type. A verified library limitation may need a precise exception with runtime/schema evidence and a reassessment trigger.
 
 ### B) Optional fields
 Prefer narrowing:
@@ -125,13 +119,9 @@ assert value is not None
 assert value.startswith("ABC")
 ```
 
-### C) Generics + `Field(...)` edge cases
-If the runtime is correct but mypy/IDE still complains, use a **code-specific** ignore with rationale.
-```python
-from pydantic import Field
+### C) Generics and library limitations
 
-factors: list[ContextFactor] = Field(default_factory=list)  # type: ignore[valid-type]  # pydantic typing edge
-```
+Preserve deliberate covariance or invariance. Generic syntax conversion is appropriate only when the complete declaration retains its variance, construction, validation and schema behavior. Do not infer equivalence from a toy generic example. Use a precise source-local exception for a demonstrated checker/library limitation, and reassess it when the supported implementation can satisfy the same complete contract. Annotate only diagnosed factories; fresh default values remain a runtime invariant.
 
 ### D) Third-party missing/incorrect stubs
 Prefer:
@@ -150,7 +140,7 @@ Only if unavoidable, use targeted ignore(s) with rationale.
    - Yes → **Rewrite the test.** Do not suppress.
    - No → Is the private access a true test-infrastructure necessity? (e.g., injecting a test double into an attribute with no public setter or factory)
      - Yes → Add `# pyright: ignore[reportPrivateUsage]` **with a rationale comment**.
-     - No → The private method is unreachable dead code. Remove it.
+     - No → Inspect actual callers and registrations. Remove dead code only with source evidence; lack of a public setter does not prove that a private method is unreachable.
 
 **Forbidden:**
 ```python
@@ -174,10 +164,15 @@ See also: [ARCHITECTURE_PRINCIPLES.md §14 — Test via Public API](ARCHITECTURE
 
 ---
 
+## Native selection and evidence
+
+The configured strict type gate covers production sources; explicit test-file diagnosis does not create a whole-test Mypy/Pyright acceptance gate. Tests still use ordinary annotations and precise necessary fixture/interface/invalid-input exceptions instead of blanket ANN/ARG or untyped-definition exemptions. Workflow scope and timing remain governed by [Quality and Evidence Standards](QUALITY_GATES.md).
+
+Restore native defaults by removing unjustified overrides; this does not mean enabling every optional diagnostic. For static sensitivity, verify both clean positive cases and intended negative codes under the actual effective policy. Confirm that the checker analyzed the requested files: hidden temporary paths can otherwise produce a misleading zero-file result. Keep temporary diagnostic probes separate from durable behavior tests, without dependency-version or legacy-format test matrices.
+
 ## What Agents Should Do (Short Checklist)
 
 - Apply fixes in the **Resolution Order** above.
 - Prefer `assert` / `isinstance` narrowing over `cast`.
 - If ignoring: use **error-code specific** ignores + a brief reason.
 - Avoid global config changes to silence issues.
-

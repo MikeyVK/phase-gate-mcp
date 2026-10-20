@@ -4,7 +4,7 @@
 
 
 **Status:** DEFINITIVE
-**Version:** 1.6
+**Version:** 1.7
 **Last Updated:** 2026-10-20
 
 **Sources:** [launcher settings](../../mcp_server/config/settings.py), [ConfigLoader](../../mcp_server/config/loader.py) and [startup policy schema](../../mcp_server/config/schemas/server_config.py)
@@ -74,6 +74,18 @@ Without an explicit config/template root, each root is resolved under server_roo
 |---|---|---|---|
 | `LOG_LEVEL` | `logging.level` | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
 | `PGMCP_AUDIT_LOG` | `logging.audit_log` | *(logs_dir/mcp_audit.log)* | Override audit log path. Set to empty string to disable. |
+
+Structured logging uses the standard logger with `logging_extra(props)` for typed producers. The formatter also validates raw `LogRecord.props`, so bypassing that helper does not bypass payload admission. An absent payload is ordinary absence; an explicit `None` root is invalid. Nullable property values remain valid.
+
+| Output fact | Ownership and behavior |
+| --- | --- |
+| `timestamp`, `level`, `logger`, `message`, `exception` | Formatter-owned primary event metadata and original traceback; payload values cannot replace them. |
+| Valid non-reserved properties | Remain flat JSON fields. Invalid/non-JSON/nonfinite/cyclic values receive a safe diagnosis while valid siblings remain available. |
+| `logging_payload.issues` | Safe location/type facts for malformed properties or reserved-field collisions; no raw invalid input or exception context is copied into this diagnosis. |
+| `logging_payload.reserved_fields` | Preserves JSON-valid conflicting values under their original reserved names, including an attempted `logging_payload` collision. |
+| `event_timestamp` | Existing per-event ISO time from restart audit producers; distinct from the formatter timestamp. Restart response/marker timestamps and protocol signaling retain their existing contracts. |
+
+The existing [formatter](../../mcp_server/core/logging.py) owns payload admission and JSON presentation. Producers supply actual typed facts; cleanup directory/cause are included in the emitted payload. Logging does not introduce another exception presenter or change handler ownership.
 
 ### GitHub Integration
 
@@ -337,3 +349,4 @@ and [execution outcomes](tools/quality.md#deliberate-binding-setup).
 | 1.4 | 2026-10-18 | @imp documenter | Document composed startup admission policy, explicit migration and proxy relaunch boundary for #520. |
 | 1.5 | 2026-10-19 | @imp documenter | Document canonical selected-workspace Git binding, lazy refusal and supported root placement (#522). |
 | 1.6 | 2026-10-20 | @imp documenter | Document process-local response-profile selector, environment precedence and shared definitions (#529). |
+| 1.7 | 2026-10-20 | @imp documenter | Describe typed logging producers, formatter-owned event metadata and explicit safe payload/collision diagnosis (#518). |

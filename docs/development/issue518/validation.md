@@ -388,5 +388,4 @@ Post-suite planning readback is unchanged; git_status contains only expected wor
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-20 | @imp validator | Record reviewed implementation evidence, exact dispositions and negative history; first native suite failed and quality gates passed. |
 | 0.2 | 2026-10-20 | @imp implementer | Record auditable test-consumer recovery and unchanged process deadlines; cause and final acceptance remain explicit. |
-
 | 1.0 | 2026-10-20 | @imp validator | Record exact-head independent recovery admission, full3115passed native candidate suite, all required quality gates, unchanged planning/process budgets and explicit preserved failure history/unrelated owner edit. Request independent Validation review. |
