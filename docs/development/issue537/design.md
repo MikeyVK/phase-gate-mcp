@@ -3,7 +3,7 @@
 # Issue \#537 — Two response modes and independent attachments
 
 **Status:** Design — independent review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-20
 
 ## Problem Statement
@@ -92,6 +92,14 @@ Render normal text once. Compose its complete core/details, applicable attachmen
 
 In resource mode, data stays in the existing operation cache. Only bounded text plus independent attachments are transmitted. Full rendered text is not added to that cache. The cache's existing serialized operation and paging identity remain unchanged.
 
+### Publisher serialization guard
+
+MCPServer publishes before presentation. Treat CachePublication.error_code=serialization_failed as a prior failed full operation serializer in either mode. At ResponsePresenter entry, inspect that receipt before calling TextPresenter or any full operation model_dump/model_dump_json, traversal or JSON conversion. Do not attempt the structured operation projection after that failure. Only known success, the existing bounded native diagnostic and independent attachment facts may be processed; never feed the original operation into the compact failure assembly. Format separate attachments independently once if available, without touching or retrying the operation.
+
+Reuse the presenter's existing compact configured failure machinery, not a server-side replacement presenter. Add a fixed outcome notice with the same restricted success scalar vocabulary as response_processing_failed; pair it with operation_serialization_failed and the truthful unavailable footer. The structured delivery-failure variant has data=null, delivery_error.code=operation_serialization_failed, its details_truncated fact, processing_error=null and attachment references. The primary publisher diagnosis is retained as a bounded labelled excerpt in presentation; the raw operation is not claimed to be available. Resource mode emits the corresponding bounded readable facts and separate attachments without structured content. No mode promises normal rendered instructions after its full operation input cannot safely be processed; this is the existing explicit delivery-failure exception, not successful complete delivery.
+
+A cache storage/publication failure after successful canonical serialization is different: write_failed (or another non-serialization publication failure) does not preclude one independent structured JSON-mode conversion. If that succeeds, deliver the actual complete structured result; if it fails, retain its original diagnosis in the existing delivery-failure variant. The guard does not retry either serializer or republish. A later presenter/transport exception retains the separate server-to-recover path and processing_error variant below.
+
 ### Final limiter and feasible budgets
 
 The limiter counts UTF-8 bytes after joining all text parts. If body plus footer fits, preserve it. Otherwise reserve truncation notice, separators and the complete footer, shorten only the body prefix with existing readable UTF-8/fence handling, and report truncation. Never slice serialized MCP JSON or attachment content.
@@ -102,13 +110,14 @@ Attachment-reference wording is fixed-size: one generic notice points to all act
 
 ## Test Design
 
-Use the existing make_response_presenter helper with a typed optional mode selector, not a parallel testing renderer. Existing config/settings cases prove the explicit default/launcher/env path, invalid values and feasible budgets. Existing limiter cases become final byte-bound tests including UTF-8, fences, footer and exact under-budget preservation; the oversized-core expectation is replaced rather than retained as an old-behavior rejection. Existing SDK integrations exercise both modes, full structured instructions beyond inline clipping, exact operation roundtrip/cache paging and independent attachment bodies plus URI/MIME references. Reuse the existing processing-failure tests to verify known outcome, schema-valid recovery, no duplicate execution/publication/normal rendering and bounded native diagnosis. Test dynamic markers and facts, not production prose snapshots. No harness-specific tests or speculative instruction loss case.
+Use the existing make_response_presenter helper with a typed optional mode selector, not a parallel testing renderer. Existing config/settings cases prove the explicit default/launcher/env path, invalid values and feasible budgets. Existing limiter cases become final byte-bound tests including UTF-8, fences, footer and exact under-budget preservation; the oversized-core expectation is replaced rather than retained as an old-behavior rejection. Existing SDK integrations exercise both modes, full structured instructions beyond inline clipping, exact operation roundtrip/cache paging and independent attachment bodies plus URI/MIME references. Adapt the existing independent serialization-failure case with the real serializing ResponseCacheManager and call counters: a failing canonical serializer is called once, normal rendering and the subsequent JSON-mode operation serializer are not called, and the original outcome/diagnosis/unavailable footer remain. Keep a separate storage-failure case proving successful inline delivery is still allowed. Reuse the existing processing-failure tests to verify known outcome, schema-valid recovery, no duplicate execution/publication/normal rendering and bounded native diagnosis. Test dynamic markers and facts, not production prose snapshots. No harness-specific tests or speculative instruction loss case.
 
 ## State and Failures
 
 | Case | Normal text / structured result |
 |---|---|
-| Structured, operation serializes | Complete structured operation and full presentation; bounded text ends with structured notice. Cache publication failure may remain visible but cannot negate available inline facts. |
+| Structured, no earlier serialization failure | Complete structured operation and full presentation; bounded text ends with structured notice. A cache storage failure after successful serialization may remain visible but cannot negate available inline facts. |
+| Publisher reports serialization_failed, either mode | No normal renderer or further full operation serialization/traversal. Known outcome plus bounded publisher diagnosis and independently formatted attachments only. Structured: data=null, delivery_error.code=operation_serialization_failed, processing_error=null. Footer says complete data unavailable; resource mode has no structured content or fake URI. |
 | Resource, publication succeeds | Bounded text with real URI and optional paging advice; no structuredContent/schema. |
 | Resource publication fails | Preserve actual operation outcome and configured failure notice; append only bounded labelled diagnostic excerpt, then apply the final text bound with truthful unavailable footer. Do not retry serialization/publication or emit fictitious resource access. |
 | Structured serialization fails | Preserve delivery_error and actual outcome; existing cache reference may be offered if already published. Otherwise mark full data unavailable. Keep a schema-valid failure variant and bounded diagnostic projection; no repeat full serializer. |
@@ -160,3 +169,5 @@ Keep production/config and their direct tests together at coherent contract boun
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-20 | @imp designer | Define two-mode configuration/transport, final text budgets, independent attachments and preserved recovery at existing seams. |
+| 0.2 | 2026-10-20 | @imp designer | Resolve QA P2 with an explicit prior-serialization guard, distinct storage-failure route, bounded diagnostic/schema variant and real publisher call-count proof. |
+
