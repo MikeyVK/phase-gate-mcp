@@ -2,8 +2,8 @@
 
 # Issue #528 — compact response-processing recovery
 
-**Status:** Independent strategy-amendment / Design review requested  
-**Version:** 1.2  
+**Status:** Compact recovery contract — implementation under reviewed strategy  
+**Version:** 1.3  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -181,7 +181,7 @@ Do not weaken normal inline/resource constraints merely to admit recovery. Do no
 
 ## Diagnostic and Size Bounds
 
-Use the existing resolved max_cache_failure_detail_bytes allowance (default 8000) as one shared UTF-8 budget for error_message and traceback in recovery: message first, traceback only from remaining allowance. Use existing excerpt primitives on each string; do not concatenate or JSON-serialize a whole exception/operation/context and then trim it.
+Use the existing resolved max_cache_failure_detail_bytes allowance (default 8000) as one shared UTF-8 budget for error_message and traceback in recovery: message first, traceback only from remaining allowance. Bound each candidate string prefix before passing it to an excerpt primitive that encodes its argument, then enforce the remaining UTF-8 byte budget. This prevents recovery from encoding an unbounded diagnostic before truncation. Do not concatenate or JSON-serialize a whole exception/operation/context and then trim it.
 
 Set processing_error.params.diagnostic_details_truncated=true if either native string was shortened. The original full exception/cause stays in existing server logs; the optional cache reference does not point to that diagnosis. Diagnostic text may be an excerpt, while the enclosing JSON remains complete and valid.
 
@@ -237,7 +237,9 @@ Reuse existing profile/interface/startup test seams and shared SDK client helper
 
 The prior owner-inspection stop was lifted on 2026-10-20. Coordination relayed the direct owner instruction from the Co chat: “Pak je coordinatie rol weer op en zorg dat de uitvoer verder doorloopt, er zijn naar mijn idee geen beleidsbeslissingen meer nodig van mij op dit punt.” Source: Coordinatie, thread 01a013b6-356c-7f41-a0ad-ca30b843a991; no owner message ID was supplied or invented. This releases autonomous execution only within the already-approved compact boundary; it does not select a new policy or replace independent QA. Request strategy-amendment and Design→Planning review at the exact pushed commit; progress only on actual GO and subsequent workflow gates. A genuinely new or contradictory policy/scope question still returns to the owner.
 
-Only documentation is changed here. Later active presentation documentation must explain this bounded exception and remove obsolete wrapper-metadata repair reservations; historical #529 documents remain contextual evidence.
+The compact concrete response has been shown to the owner. Coordination reconfirmed the existing direct owner release after this preview: continue autonomous implementation within the approved compact boundary and independent phase gates. Version1.3 clarifies pre-encoding diagnostic bounding already required by Planning; it introduces no new policy, interface or scope. No live recovery behavior or completed verification is claimed by the example.
+
+Only documentation is changed in this revision. Later active presentation documentation must explain this bounded exception and remove obsolete wrapper-metadata repair reservations; historical #529 documents remain contextual evidence.
 
 ## Related Documents
 
@@ -258,3 +260,4 @@ Only documentation is changed here. Later active presentation documentation must
 | 1.0 | 2026-10-20 | @imp designer | Define full-data recovery for owner inspection; subsequently superseded due to repeated conversion/large-payload risk. |
 | 1.1 | 2026-10-20 | @imp designer | Apply owner's compact outcome/notice/bounded-diagnosis/existing-reference decision; remove full payload inputs/projection/replay and show amended response before progression. |
 | 1.2 | 2026-10-20 | @imp designer | Record direct owner release relayed from Co chat, lift inspection stop within approved scope and request independent strategy-amendment/Design review; no new policy or phase GO. |
+| 1.3 | 2026-10-20 | @imp designer | Clarify diagnostic bounding before encoding, show the compact response, and retain autonomous continuation under the existing owner release. |

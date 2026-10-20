@@ -74,6 +74,17 @@ class MockPresenter:
     ) -> PresentedOutput:
         return PresentedOutput(text="ok", structured_content=None)
 
+    def recover(
+        self,
+        *,
+        operation_success: bool,
+        error_message: str,
+        traceback: str | None,
+        cache_run_id: str | None,
+        cache_size_chars: int | None,
+    ) -> PresentedOutput:
+        return PresentedOutput(text=error_message, structured_content=None)
+
     def output_schema(self) -> dict[str, JsonValue] | None:
         return None
 

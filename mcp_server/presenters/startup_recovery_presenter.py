@@ -11,6 +11,7 @@ from pydantic import BaseModel, JsonValue
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter
 from mcp_server.core.operation_notes import NoteEntry
 from mcp_server.core.tool_execution import SchemaAttachment
+from mcp_server.presenters.response_presenter import processing_diagnostic
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.presentation_output import (
     InlineOperation,
@@ -88,6 +89,33 @@ class StartupRecoveryPresenter(IPresenter):
             delivery_error=None,
         )
         return PresentedOutput(text=text, structured_content=envelope.model_dump(mode="json"))
+
+    def recover(
+        self,
+        *,
+        operation_success: bool,
+        error_message: str,
+        traceback: str | None,
+        cache_run_id: str | None,
+        cache_size_chars: int | None,
+    ) -> PresentedOutput:
+        """Keep later processing failure independent of rejected configuration."""
+        del cache_run_id, cache_size_chars
+        notice = (
+            f"The operation reported success={operation_success}, but response processing failed. "
+            "This recovery response does not include the full result or normal guidance. "
+            "Verify the actual outcome before repeating the operation."
+        )
+        diagnostic = processing_diagnostic(error_message, traceback, max_bytes=8000)
+        envelope = PublicToolResponse(
+            success=operation_success,
+            presentation=notice,
+            data=None,
+            attachments=(),
+            delivery_error=None,
+            processing_error=diagnostic,
+        )
+        return PresentedOutput(text=notice, structured_content=envelope.model_dump(mode="json"))
 
     def output_schema(self) -> dict[str, JsonValue]:
         """Expose the fixed full recovery envelope without presentation configuration."""

@@ -74,6 +74,18 @@ class IPresenter(Protocol):
         """Present data, notes, and resources as a complete PresentedOutput."""
         ...
 
+    def recover(
+        self,
+        *,
+        operation_success: bool,
+        error_message: str,
+        traceback: str | None,
+        cache_run_id: str | None,
+        cache_size_chars: int | None,
+    ) -> PresentedOutput:
+        """Present known outcome and bounded diagnosis without original payloads."""
+        ...
+
     def output_schema(self) -> dict[str, JsonValue] | None:
         """Describe the selected structured projection for the connected catalog."""
         ...

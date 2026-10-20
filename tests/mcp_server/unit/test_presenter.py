@@ -18,16 +18,20 @@ from unittest.mock import patch
 
 # Third-party
 import pytest
+from jsonschema import Draft202012Validator
 from pydantic import BaseModel
 
 # Project modules
+from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.operation_notes import Note
 from mcp_server.core.tool_execution import SchemaAttachment, WholeToolSchemaIdentity
+from mcp_server.presenters.response_presenter import ResponsePresenter
 from mcp_server.presenters.schema_resource_presenter import (
     SchemaResourcePresenter,
 )
+from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.presenters.text_presenter import (
     TextPresenter,
     validate_presentation_alignment,
@@ -333,3 +337,145 @@ class TestTextPresenter:
             notes=[],
         )
         assert "🦄 Success: Dynamic emoji test" in text.core
+
+
+@pytest.mark.parametrize(
+    ("presentation_channel", "data_channel", "data_delivery"),
+    [
+        ("both", "structured", "inline"),
+        ("text", "text", "inline"),
+        ("structured", "text", "resource"),
+    ],
+)
+@pytest.mark.parametrize("cached", [False, True])
+def test_compact_recovery_routes_known_facts_without_normal_rendering(
+    presentation_channel: str,
+    data_channel: str,
+    data_delivery: str,
+    cached: bool,
+) -> None:
+    """Recovery channels preserve outcome and only an existing cache reference."""
+    config_data = make_config_loader().load_presentation_config().model_dump(by_alias=True)
+    config_data["response_profiles"]["recovery_probe"] = {
+        "presentation_channel": presentation_channel,
+        "data_channel": data_channel,
+        "data_delivery": data_delivery,
+    }
+    instructions = config_data["global"]["next_instruction_texts"]
+    instructions.update(
+        response_processing_failed="KNOWN-OUTCOME={success}",
+        recovery_cache_unavailable="NO-EXISTING-REFERENCE",
+        uri_reference="EXISTING-REFERENCE={run_id}",
+    )
+    presenter = make_response_presenter(
+        PresentationConfig.model_validate(config_data), profile_id="recovery_probe"
+    )
+    run_id = "b" * 32 if cached else None
+
+    with (
+        patch.object(TextPresenter, "present_text", side_effect=AssertionError("normal rendering")),
+        patch.object(
+            SchemaResourcePresenter,
+            "present_resources",
+            side_effect=AssertionError("attachment conversion"),
+        ),
+        patch.object(ResponsePresenter, "present", side_effect=AssertionError("normal projection")),
+    ):
+        output = presenter.recover(
+            operation_success=False,
+            error_message="native processing failure",
+            traceback=None,
+            cache_run_id=run_id,
+            cache_size_chars=1_500_000 if cached else None,
+        )
+
+    if data_channel == "text":
+        assert output.text is not None
+        encoded = output.text.split("```json\n", 1)[1].split("\n```", 1)[0]
+        data_envelope = PublicToolResponse.model_validate_json(encoded)
+    else:
+        assert output.structured_content is not None
+        data_envelope = PublicToolResponse.model_validate_json(
+            json.dumps(output.structured_content)
+        )
+    assert data_envelope.success is False
+    assert data_envelope.attachments == ()
+    assert data_envelope.delivery_error is None
+    assert data_envelope.processing_error is not None
+    assert data_envelope.processing_error.error_message == "native processing failure"
+    assert data_envelope.processing_error.params == {"diagnostic_details_truncated": False}
+    if cached:
+        assert data_envelope.data is not None
+        assert data_envelope.data.model_dump() == {
+            "delivery": "resource",
+            "uri": f"pgmcp://cache/runs/{run_id}",
+            "size_chars": 1_500_000,
+        }
+    else:
+        assert data_envelope.data is None
+
+    if presentation_channel == "text":
+        assert output.structured_content is None
+        assert presenter.output_schema() is None
+    else:
+        schema = presenter.output_schema()
+        assert schema is not None
+        assert output.structured_content is not None
+        Draft202012Validator(schema).validate(output.structured_content)
+        presentation = output.structured_content["presentation"]
+        assert isinstance(presentation, str)
+        assert "KNOWN-OUTCOME=False" in presentation
+        assert (
+            f"EXISTING-REFERENCE={run_id}" if cached else "NO-EXISTING-REFERENCE"
+        ) in presentation
+        if data_channel == "text":
+            assert output.structured_content["processing_error"] is None
+            assert output.structured_content["data"] is None
+
+
+@pytest.mark.parametrize("long_message", [False, True])
+def test_recovery_bounds_unicode_before_encoding_and_shares_diagnostic_allowance(
+    long_message: bool,
+) -> None:
+    """No full oversized diagnostic string is encoded, copied into output or replayed."""
+
+    class OversizedDiagnostic(str):
+        def encode(self, encoding: str = "utf-8", errors: str = "strict") -> bytes:
+            raise AssertionError("Full diagnostic was encoded before bounding")
+
+    allowance = 29
+    config_data = make_config_loader().load_presentation_config().model_dump(by_alias=True)
+    config_data["global"]["max_cache_failure_detail_bytes"] = allowance
+    config_data["global"]["next_instruction_texts"]["processing_diagnostic_truncated"] = (
+        "BOUNDED-DIAGNOSTIC"
+    )
+    presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
+    oversized = OversizedDiagnostic("🙂漢" * 100_000)
+    message = oversized if long_message else "short"
+    with patch.object(TextBudgetLimiter, "excerpt", wraps=TextBudgetLimiter.excerpt) as excerpts:
+        output = presenter.recover(
+            operation_success=True,
+            error_message=message,
+            traceback=oversized,
+            cache_run_id=None,
+            cache_size_chars=None,
+        )
+
+    assert all(len(call.args[0]) <= allowance for call in excerpts.call_args_list)
+    assert excerpts.call_count == 2
+    assert output.structured_content is not None
+    envelope = PublicToolResponse.model_validate_json(json.dumps(output.structured_content))
+    assert envelope.success is True
+    diagnosis = envelope.processing_error
+    assert diagnosis is not None
+    byte_count = len((diagnosis.error_message or "").encode("utf-8")) + len(
+        (diagnosis.traceback or "").encode("utf-8")
+    )
+    assert byte_count <= allowance
+    assert diagnosis.params == {"diagnostic_details_truncated": True}
+    assert envelope.presentation is not None
+    assert "BOUNDED-DIAGNOSTIC" in envelope.presentation
+    assert len(json.dumps(output.structured_content)) < 2_000
+    schema = presenter.output_schema()
+    assert schema is not None
+    Draft202012Validator(schema).validate(output.structured_content)

@@ -17,6 +17,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.schemas.presentation_output import (
     InlineOperation,
     PresentationResource,
@@ -109,3 +110,30 @@ def test_public_envelope_preserves_data_and_direct_attachments(delivery: str) ->
         assert isinstance(data, ResourceOperation)
         assert payload["data"]["uri"] == data.uri
         assert "operation" not in payload["data"]
+
+
+def test_public_envelope_keeps_successful_outcome_distinct_from_processing_error() -> None:
+    """A failed response-processing diagnosis cannot replace the actual outcome."""
+    diagnosis = ExecutionErrorOutput(
+        error_message="native processing failure",
+        traceback=None,
+        params={"diagnostic_details_truncated": True},
+    )
+    response = PublicToolResponse(
+        success=True,
+        presentation="Recovery notice",
+        data=None,
+        attachments=(),
+        delivery_error=None,
+        processing_error=diagnosis,
+    )
+
+    restored = PublicToolResponse.model_validate_json(response.model_dump_json())
+
+    assert restored.success is True
+    assert restored.processing_error == diagnosis
+    assert restored.processing_error is not None
+    assert restored.processing_error.success is False
+    assert restored.data is None
+    assert restored.delivery_error is None
+    assert restored.attachments == ()

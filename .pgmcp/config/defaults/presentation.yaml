@@ -45,6 +45,14 @@
     "operation_serialization_failed": "Operation data could not be serialized for the selected delivery route; the reported operation outcome remains unchanged."
     "diagnostic_excerpt_label": "Diagnostic excerpt (may be incomplete; not a complete JSON result):"
     "diagnostic_unavailable": "No additional diagnostic excerpt is available."
+    "response_processing_failed": >-
+      The operation reported success={success}, but response processing failed.
+      This recovery response does not include the full result or normal guidance.
+      Verify the actual outcome before repeating the operation.
+    "recovery_cache_unavailable": >-
+      No successful cache publication is available for this operation.
+    "processing_diagnostic_truncated": >-
+      Response-processing diagnostic details were shortened; the full exception is retained in server logs.
   "failures":
     "planning_cycle_protected": "Planning change rejected: cycles with implementation\
       \ commits cannot be replaced, removed or renumbered. ({error_code})"

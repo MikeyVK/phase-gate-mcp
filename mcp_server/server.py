@@ -32,6 +32,7 @@ from mcp_server.config.settings import Settings
 # Resources
 # Scaffolding infrastructure (Issue #72)
 from mcp_server.core.decorators import InputValidationDecorator, ToolErrorHandlerDecorator
+from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
@@ -39,6 +40,7 @@ from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublish
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.resources.base import BaseResource
+from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 
 # Tools
@@ -150,15 +152,17 @@ class MCPServer:
 
             for tool in self.tools:
                 if tool.name == name:
+                    operation_success: bool | None = None
+                    cache_pub: CachePublication | None = None
                     try:
                         note_context = NoteContext()
 
                         # 1. Execute the normalized pipeline; cache only the operation.
                         execution = await tool.execute(arguments or {}, note_context)
                         result_dto = execution.operation
+                        operation_success = bool(getattr(result_dto, "success", True))
 
                         # 2. Publish only the operation; receipts preserve delivery diagnosis.
-                        cache_pub = None
                         if self.response_cache_manager is not None:
                             cache_pub = self.response_cache_manager.put(tool.name, result_dto)
 
@@ -176,8 +180,7 @@ class MCPServer:
                         if presented.text is not None:
                             content.append({"type": "text", "text": presented.text})
 
-                        success = getattr(result_dto, "success", True)
-                        raw_result = ToolResult(content=content, is_error=not success)
+                        raw_result = ToolResult(content=content, is_error=not operation_success)
                         response_content = self._convert_tool_result_to_mcp_result(raw_result)
 
                         response_content.structured_content = presented.structured_content
@@ -219,9 +222,46 @@ class MCPServer:
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                     "error_type": type(e).__name__,
+                                    "operation_success": operation_success,
                                 }
                             },
                         )
+                        if operation_success is not None:
+                            try:
+                                diagnostic = capture_exception(e)
+                                publication = cache_pub if cache_pub and cache_pub.success else None
+                                recovered = self.presenter.recover(
+                                    operation_success=operation_success,
+                                    error_message=diagnostic.error_message or type(e).__name__,
+                                    traceback=diagnostic.traceback,
+                                    cache_run_id=publication.run_id if publication else None,
+                                    cache_size_chars=publication.size_chars
+                                    if publication
+                                    else None,
+                                )
+                                return CallToolResult(
+                                    content=(
+                                        [TextContent(type="text", text=recovered.text)]
+                                        if recovered.text is not None
+                                        else []
+                                    ),
+                                    structured_content=recovered.structured_content,
+                                    is_error=not operation_success,
+                                )
+                            except asyncio.CancelledError:
+                                raise
+                            except Exception:
+                                logger.exception(
+                                    "Response recovery failed",
+                                    extra={
+                                        "props": {
+                                            "call_id": call_id,
+                                            "tool_name": name,
+                                            "operation_success": operation_success,
+                                        }
+                                    },
+                                )
+                                raise
                         return CallToolResult(
                             content=[
                                 TextContent(
