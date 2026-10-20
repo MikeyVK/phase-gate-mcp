@@ -2,8 +2,8 @@
 
 # Issue #528 — compact response-processing recovery
 
-**Status:** Amended Design for owner inspection — no progression approval  
-**Version:** 1.1  
+**Status:** Independent strategy-amendment / Design review requested  
+**Version:** 1.2  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -235,7 +235,7 @@ Reuse existing profile/interface/startup test seams and shared SDK client helper
 
 ## Owner Inspection and Later Review
 
-The owner explicitly requested this amended concrete response before going further. Remain in Design. Do not initiate Planning, implementation or phase-progression QA until the owner has inspected and authorized continuation. The strategy amendment and completed Design then require the appropriate independent QA review; prior GO/owner strategy acceptance is not a new phase GO.
+The prior owner-inspection stop was lifted on 2026-10-20. Coordination relayed the direct owner instruction from the Co chat: “Pak je coordinatie rol weer op en zorg dat de uitvoer verder doorloopt, er zijn naar mijn idee geen beleidsbeslissingen meer nodig van mij op dit punt.” Source: Coordinatie, thread 01a013b6-356c-7f41-a0ad-ca30b843a991; no owner message ID was supplied or invented. This releases autonomous execution only within the already-approved compact boundary; it does not select a new policy or replace independent QA. Request strategy-amendment and Design→Planning review at the exact pushed commit; progress only on actual GO and subsequent workflow gates. A genuinely new or contradictory policy/scope question still returns to the owner.
 
 Only documentation is changed here. Later active presentation documentation must explain this bounded exception and remove obsolete wrapper-metadata repair reservations; historical #529 documents remain contextual evidence.
 
@@ -257,3 +257,4 @@ Only documentation is changed here. Later active presentation documentation must
 | 0.1 | 2026-10-20 | @imp designer | Record recovery seams and missing guidance guarantee pending owner choice. |
 | 1.0 | 2026-10-20 | @imp designer | Define full-data recovery for owner inspection; subsequently superseded due to repeated conversion/large-payload risk. |
 | 1.1 | 2026-10-20 | @imp designer | Apply owner's compact outcome/notice/bounded-diagnosis/existing-reference decision; remove full payload inputs/projection/replay and show amended response before progression. |
+| 1.2 | 2026-10-20 | @imp designer | Record direct owner release relayed from Co chat, lift inspection stop within approved scope and request independent strategy-amendment/Design review; no new policy or phase GO. |
