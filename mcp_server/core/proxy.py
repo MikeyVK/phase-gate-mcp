@@ -29,6 +29,11 @@ from mcp_server.presenters.startup_recovery_presenter import present_proxy_event
 RESTART_MARKER = "__MCP_RESTART_REQUEST__"
 
 
+def _is_dict(value: object) -> bool:
+    """Retain transport object admission without narrowing its dynamic field values."""
+    return isinstance(value, dict)
+
+
 def fix_json_surrogates(json_str: str) -> str:
     """Fix malformed Unicode surrogate pairs in JSON strings.
 
@@ -119,7 +124,7 @@ class _Child:
     process: subprocess.Popen[str]
     is_restart: bool
     started_at: float
-    pending: set[RpcId] = field(default_factory=set)
+    pending: set[RpcId] = field(default_factory=set[RpcId])
     initialize_request: dict[str, Any] | None = None
     initialize_response_seen: bool = False
     initialized: bool = False
@@ -412,7 +417,8 @@ class MCPProxy:
                     continue
                 try:
                     message: dict[str, Any] = json.loads(line)
-                    if not isinstance(message, dict):
+                    message_value: object = message
+                    if not _is_dict(message_value):
                         raise ValueError("jsonrpc_object_required")
                 except ValueError as error:
                     with self.lock:
@@ -586,7 +592,8 @@ class MCPProxy:
         """Validate the transport boundary and correlate every accepted request."""
         try:
             message: dict[str, Any] = json.loads(message_line)
-            if not isinstance(message, dict):
+            message_value: object = message
+            if not _is_dict(message_value):
                 raise ValueError("jsonrpc_object_required")
         except ValueError as error:
             self._event("client_json_failed", level="WARNING", error=str(error))

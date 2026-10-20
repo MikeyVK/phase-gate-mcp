@@ -116,13 +116,13 @@ class PhaseDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     name: str
     status: str
-    tasks: list[PhaseTaskDTO] = Field(default_factory=list)
+    tasks: list[PhaseTaskDTO] = Field(default_factory=list[PhaseTaskDTO])
 
 
 class ProjectPlanOutput(BaseToolOutput):
     issue_number: int
     workflow_name: str
-    phases: list[PhaseDTO] = Field(default_factory=list)
+    phases: list[PhaseDTO] = Field(default_factory=list[PhaseDTO])
     planning_deliverables: StoredPlanningModel | None = None
 
 
@@ -138,7 +138,7 @@ class PlanningDeliverablesOutput(BaseToolOutput):
     issue_number: int
     total_cycles: int
     total_deliverables: int
-    cycles: list[PlannedCycleSummary] = Field(default_factory=list)
+    cycles: list[PlannedCycleSummary] = Field(default_factory=list[PlannedCycleSummary])
     planning_deliverables: StoredPlanningModel | None = None
     error_code: str | None = None
 
@@ -165,7 +165,7 @@ class GitListBranchesOutput(BaseToolOutput):
     """Output for GitListBranchesTool."""
 
     current_branch: str
-    branches: list[BranchDetailDTO] = Field(default_factory=list)
+    branches: list[BranchDetailDTO] = Field(default_factory=list[BranchDetailDTO])
     branches_count: int = 0
 
 
@@ -335,7 +335,7 @@ class ListIssuesOutput(BaseToolOutput):
     """Output for ListIssuesTool."""
 
     issues_count: int
-    issues: list[IssueSummaryDTO] = Field(default_factory=list)
+    issues: list[IssueSummaryDTO] = Field(default_factory=list[IssueSummaryDTO])
 
 
 class PROutput(GitHubObjectOutput):
@@ -375,7 +375,7 @@ class ListPRsOutput(BaseToolOutput):
     """Output for ListPRsTool."""
 
     prs_count: int
-    pull_requests: list[PRSummaryDTO] = Field(default_factory=list)
+    pull_requests: list[PRSummaryDTO] = Field(default_factory=list[PRSummaryDTO])
 
 
 class LabelOutputModel(BaseModel):
@@ -392,7 +392,7 @@ class ListLabelsOutput(BaseToolOutput):
     """Output for ListLabelsTool."""
 
     total_labels: int
-    labels: list[LabelOutputModel] = Field(default_factory=list)
+    labels: list[LabelOutputModel] = Field(default_factory=list[LabelOutputModel])
 
 
 class CreateLabelOutput(BaseToolOutput):
@@ -429,7 +429,7 @@ class ListMilestonesOutput(BaseToolOutput):
     """Output for ListMilestonesTool."""
 
     total_milestones: int
-    milestones: list[MilestoneSummaryDTO] = Field(default_factory=list)
+    milestones: list[MilestoneSummaryDTO] = Field(default_factory=list[MilestoneSummaryDTO])
 
 
 class MilestoneOutput(GitHubObjectOutput):

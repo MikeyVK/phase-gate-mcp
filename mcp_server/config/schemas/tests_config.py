@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Annotated
+from typing import Annotated, TypeGuard
 
 from pydantic import (
     BaseModel,
@@ -23,15 +23,32 @@ from mcp_server.config.schemas.checks_config import ConfigurationChoice
 TestId = AdapterId
 
 
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_object_mapping(value: object) -> TypeGuard[Mapping[object, object]]:
+    return isinstance(value, Mapping)
+
+
+def _is_object_tuple(value: object) -> TypeGuard[tuple[object, ...]]:
+    return isinstance(value, tuple)
+
+
 def _sequence(value: object) -> object:
-    return tuple(value) if isinstance(value, list) else value
+    if _is_object_list(value):
+        items: list[object] = value
+        return tuple(items)
+    return value
 
 
 def _mapping(value: object) -> object:
-    if isinstance(value, Mapping):
-        return tuple(value.items())
-    if isinstance(value, tuple):
-        return value
+    if _is_object_mapping(value):
+        entries: Mapping[object, object] = value
+        return tuple(entries.items())
+    if _is_object_tuple(value):
+        items: tuple[object, ...] = value
+        return items
     raise ValueError("mapping_required")
 
 

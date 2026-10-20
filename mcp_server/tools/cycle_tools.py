@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeGuard
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -31,6 +31,10 @@ __all__ = [
     "TransitionCycleInput",
     "TransitionCycleTool",
 ]
+
+
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
 
 
 class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInput, TOutput]):
@@ -103,7 +107,7 @@ class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInp
         state_file = self.server_root / "state.json"
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
-            if isinstance(state_data, dict):
+            if _is_object_dict(state_data):
                 state_branch = state_data.get("branch")
                 if isinstance(state_branch, str) and state_branch:
                     return state_branch

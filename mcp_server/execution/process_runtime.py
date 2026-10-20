@@ -171,7 +171,7 @@ class _Invocation:
     stop_unconfirmed: bool = False
     stdout: StdoutBuffer = field(default_factory=StdoutBuffer)
     stderr: StderrBuffer = field(default_factory=StderrBuffer)
-    io_tasks: list[asyncio.Task[None]] = field(default_factory=list)
+    io_tasks: list[asyncio.Task[None]] = field(default_factory=list[asyncio.Task[None]])
     stop_requested: asyncio.Event = field(default_factory=asyncio.Event)
     stream_failure: AdapterCallFailure | None = None
     stop_deadline: float | None = None

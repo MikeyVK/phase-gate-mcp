@@ -317,7 +317,7 @@ class ListIssuesTool(ICoreTool[ListIssuesInput, ListIssuesOutput]):
             state_str = params.state
             issues = self.manager.list_issues(state=state_str or "open", labels=params.labels)
 
-            issues_list = []
+            issues_list: list[IssueSummaryDTO] = []
             for issue in issues:
                 assignees_summary = (
                     ", ".join(u.login for u in issue.assignees)

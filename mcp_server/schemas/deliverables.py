@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
@@ -11,6 +11,11 @@ from mcp_server.core.exceptions import MCPError
 
 PlanningText = Annotated[str, StringConstraints(strict=True, min_length=1, pattern=r"\S")]
 CycleRef = Annotated[str, Field(strict=True, pattern=r"^C_[1-9][0-9]*$")]
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    """Describe the existing dict shape without claiming a valid planning model."""
+    return isinstance(value, dict)
 
 
 class PlanningMutationError(MCPError):
@@ -88,7 +93,7 @@ class SavePlanningModel(PlanningValue):
     @model_validator(mode="before")
     @classmethod
     def reject_explicit_null_cycles(cls, value: object) -> object:
-        if isinstance(value, dict) and "cycles" in value and value["cycles"] is None:
+        if _is_dict(value) and "cycles" in value and value["cycles"] is None:
             raise ValueError("planning_cycles_null")
         return value
 

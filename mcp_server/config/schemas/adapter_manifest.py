@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 from pathlib import PurePosixPath, PureWindowsPath
-from typing import Annotated, Generic, Literal, Self, TypeVar
+from typing import Annotated, Generic, Literal, Self, TypeGuard, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -18,6 +18,15 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
 
 AdapterId = Annotated[
     str, StringConstraints(strict=True, pattern=re.compile(r"^[a-z][a-z0-9_]{0,63}$(?![\s\S])"))
@@ -66,7 +75,10 @@ def _relative_file(value: object) -> object:
 
 
 def _array(value: object) -> object:
-    return tuple(value) if isinstance(value, list) else value
+    if _is_object_list(value):
+        items: list[object] = value
+        return tuple(items)
+    return value
 
 
 ProgramName = Annotated[str, BeforeValidator(_program), StringConstraints(strict=True)]
@@ -153,7 +165,10 @@ class AdapterRole(_Declaration, Generic[CapabilityT]):  # noqa: UP046 -- Pydanti
     @field_validator("capabilities", mode="before")
     @classmethod
     def freeze_capabilities(cls, value: object) -> object:
-        return tuple(value.items()) if isinstance(value, dict) else value
+        if _is_object_dict(value):
+            entries: dict[object, object] = value
+            return tuple(entries.items())
+        return value
 
     @field_validator("capabilities")
     @classmethod

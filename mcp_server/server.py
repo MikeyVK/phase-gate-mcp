@@ -81,7 +81,7 @@ class MCPServer:
         """Set up the MCP protocol handlers."""
 
         async def handle_list_resources(
-            _ctx: ServerRequestContext[None], _params: PaginatedRequestParams | None
+            _ctx: ServerRequestContext[dict[str, Any]], _params: PaginatedRequestParams | None
         ) -> ListResourcesResult:
             return ListResourcesResult(
                 resources=[
@@ -96,7 +96,7 @@ class MCPServer:
             )
 
         async def handle_read_resource(
-            _ctx: ServerRequestContext[None], params: ReadResourceRequestParams
+            _ctx: ServerRequestContext[dict[str, Any]], params: ReadResourceRequestParams
         ) -> ReadResourceResult:
             uri = params.uri
             try:
@@ -116,9 +116,9 @@ class MCPServer:
                 raise MCPError(code=0, message=str(exc)) from exc
 
         async def handle_list_tools(
-            _ctx: ServerRequestContext[None], _params: PaginatedRequestParams | None
+            _ctx: ServerRequestContext[dict[str, Any]], _params: PaginatedRequestParams | None
         ) -> ListToolsResult:
-            tools_list = []
+            tools_list: list[Tool] = []
             for t in self.tools:
                 output_schema = self.presenter.output_schema()
                 tools_list.append(
@@ -132,7 +132,7 @@ class MCPServer:
             return ListToolsResult(tools=tools_list)
 
         async def handle_call_tool(
-            _ctx: ServerRequestContext[None], params: CallToolRequestParams
+            _ctx: ServerRequestContext[dict[str, Any]], params: CallToolRequestParams
         ) -> CallToolResult:
             name, arguments = params.name, params.arguments
             call_id = uuid.uuid4().hex
@@ -275,7 +275,7 @@ class MCPServer:
                 is_error=True,
             )
 
-        self.server = Server[None](
+        self.server = Server[dict[str, Any]](
             self._settings.server.name,
             on_list_resources=handle_list_resources,
             on_read_resource=handle_read_resource,

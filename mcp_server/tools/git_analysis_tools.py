@@ -53,7 +53,7 @@ class GitListBranchesTool(ICoreTool[GitListBranchesInput, GitListBranchesOutput]
         current_branch = self.manager.get_current_branch()
         raw_branches = self.manager.list_branches(verbose=params.verbose, remote=params.remote)
 
-        branches = []
+        branches: list[BranchDetailDTO] = []
         for line in raw_branches:
             line_str = line.strip()
             if not line_str:

@@ -20,9 +20,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 import yaml
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    """Narrow only the existing dictionary shape before inspecting its members."""
+    return isinstance(value, dict)
 
 
 class DeliverableCheckError(ValueError):
@@ -195,12 +200,12 @@ class DeliverableChecker:
             )
         content = path.read_text(encoding="utf-8")
         suffix = path.suffix.lower()
-        data: Any = json.loads(content) if suffix == ".json" else yaml.safe_load(content)
+        data: object = json.loads(content) if suffix == ".json" else yaml.safe_load(content)
 
         key_path: str = spec["path"]
-        current: Any = data
+        current: object = data
         for segment in key_path.split("."):
-            if not isinstance(current, dict) or segment not in current:
+            if not _is_dict(current) or segment not in current:
                 raise DeliverableCheckError(
                     f"[{deliverable_id}] key_path FAILED: "
                     f"'{key_path}' not found in '{spec['file']}' "

@@ -92,7 +92,7 @@ class ResponsePresenter(IPresenter):
             properties["attachments"]["maxItems"] = 0
         if self._profile.data_channel == "text":
             properties["processing_error"] = {"type": "null"}
-        schema["anyOf"] = [
+        alternatives: list[JsonValue] = [
             {
                 "properties": {
                     "data": normal_data,
@@ -108,8 +108,9 @@ class ResponsePresenter(IPresenter):
                 }
             },
         ]
+        schema["anyOf"] = alternatives
         if self._profile.data_channel == "structured":
-            schema["anyOf"].append(
+            alternatives.append(
                 {
                     "required": ["processing_error"],
                     "properties": {
@@ -225,7 +226,7 @@ class ResponsePresenter(IPresenter):
                 delivery_error=failure,
             )
             structured = envelope.model_dump(mode="json")
-        text_parts = []
+        text_parts: list[str] = []
         if self._text_presentation or failure is not None:
             text_parts.append(presentation)
         if self._profile.data_channel == "text":

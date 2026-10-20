@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeGuard
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StrictInt, model_validator
 
@@ -55,12 +55,22 @@ from mcp_server.execution.protocol import (
 )
 
 
+def _is_list(value: object) -> TypeGuard[list[object]]:
+    """Describe the existing list shape before Pydantic validates its members."""
+    return isinstance(value, list)
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    """Describe the existing dict shape without claiming valid keys or values."""
+    return isinstance(value, dict)
+
+
 def _sequence(value: object) -> object:
-    return tuple(value) if isinstance(value, list) else value
+    return tuple(value) if _is_list(value) else value
 
 
 def _arguments(value: object) -> object:
-    return tuple(value.items()) if isinstance(value, dict) else value
+    return tuple(value.items()) if _is_dict(value) else value
 
 
 class TestSelectionRequest(BaseModel):

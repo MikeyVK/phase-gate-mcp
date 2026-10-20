@@ -18,6 +18,11 @@ _PHASE_CONTRACTS_DISPLAY_PATH = "config/contracts.yaml"
 _WORKPHASES_DISPLAY_PATH = "config/workphases.yaml"
 
 
+def _is_dict(value: object) -> bool:
+    """Check runtime containers without refining the public dynamic plan contract."""
+    return isinstance(value, dict)
+
+
 @dataclass(frozen=True)
 class MergeReadinessContext:
     """Facade bundling merge-readiness data for EnforcementRunner handlers.
@@ -189,23 +194,23 @@ class PhaseContractResolver:
                 (
                     cycle
                     for cycle in cycles
-                    if isinstance(cycle, dict) and cycle.get("cycle_number") == cycle_number
+                    if _is_dict(cycle) and cycle.get("cycle_number") == cycle_number
                 ),
                 None,
             )
-            if isinstance(matching_cycle, dict):
+            if matching_cycle is not None and _is_dict(matching_cycle):
                 deliverables = matching_cycle.get("deliverables", [])
         else:
             phase_data = planning_deliverables.get("phases", {}).get(phase, {})
-            if isinstance(phase_data, dict):
+            if _is_dict(phase_data):
                 deliverables = phase_data.get("deliverables", [])
 
         resolved_issue_checks: list[CheckSpec] = []
         for deliverable in deliverables:
-            if not isinstance(deliverable, dict):
+            if not _is_dict(deliverable):
                 continue
             validates = deliverable.get("validates")
-            if not isinstance(validates, dict):
+            if validates is None or not _is_dict(validates):
                 continue
             issue_check_payload = {
                 "id": str(deliverable.get("deliverable_id", "issue-check")),

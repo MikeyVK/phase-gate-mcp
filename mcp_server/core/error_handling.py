@@ -32,6 +32,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _is_dict(value: object) -> bool:
+    """Preserve the native schema container dispatch at the dynamic core boundary."""
+    return isinstance(value, dict)
+
+
 def capture_exception(
     error: BaseException, *, params: dict[str, Any] | None = None
 ) -> ConfigErrorOutput | ExecutionErrorOutput:
@@ -107,7 +112,7 @@ def tool_error_handler[T](func: Callable[..., Awaitable[T]]) -> Callable[..., Aw
 
             # Special handling for ValidationError with schema
             if isinstance(exc, ValidationError) and hasattr(exc, "schema") and exc.schema:
-                schema_dict = exc.schema if isinstance(exc.schema, dict) else exc.schema.to_dict()
+                schema_dict = exc.schema if _is_dict(exc.schema) else exc.schema.to_dict()
                 schema_text = json.dumps(schema_dict, indent=2)
                 # Two text items: error message + schema JSON
                 # (inline, readable by agents without extra tool call)

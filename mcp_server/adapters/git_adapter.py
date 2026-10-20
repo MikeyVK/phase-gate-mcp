@@ -563,7 +563,7 @@ class GitAdapter:
     def list_branches(self, verbose: bool = False, remote: bool = False) -> list[str]:
         """List branches with optional verbose info and remotes."""
         try:
-            args = []
+            args: list[str] = []
             if remote:
                 args.append("-r")
             if verbose:

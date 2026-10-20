@@ -19,7 +19,7 @@ class GateReport:
 
     passing: tuple[str, ...] = ()
     blocking: tuple[str, ...] = ()
-    details: dict[str, str] = field(default_factory=dict)
+    details: dict[str, str] = field(default_factory=dict[str, str])
 
 
 class GateViolation(ValueError):  # noqa: N818 - domain event name, not a technical error type

@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeGuard
 from uuid import uuid4
 
 if TYPE_CHECKING:
@@ -71,6 +71,18 @@ _CONFLICTS = frozenset(
 )
 
 
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_string_list(value: object) -> TypeGuard[list[str]]:
+    return _is_object_list(value) and all(isinstance(item, str) for item in value)
+
+
 def _invalid(field: str | list[str] | None, code: str) -> tuple[dict[str, object], int]:
     location = field if isinstance(field, list) else [] if field is None else [field]
     return {
@@ -79,8 +91,8 @@ def _invalid(field: str | list[str] | None, code: str) -> tuple[dict[str, object
     }, 2
 
 
-def _validate_execution_context(value: object) -> tuple[dict[str, object], int] | None:
-    if not isinstance(value, dict):
+def _validate_execution_context(value: object) -> str | tuple[dict[str, object], int]:
+    if not _is_object_dict(value):
         return _invalid(["execution_context"], "wrong_type")
     unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
     if unknown:
@@ -92,13 +104,13 @@ def _validate_execution_context(value: object) -> tuple[dict[str, object], int] 
         return _invalid(["execution_context", "scratch_directory"], "wrong_type")
     if not directory or "\x00" in directory or _ABSOLUTE.fullmatch(directory) is None:
         return _invalid(["execution_context", "scratch_directory"], "invalid_value")
-    return None
+    return directory
 
 
 def _validate(
     value: object,
 ) -> tuple[str, list[str], list[str], str] | tuple[dict[str, object], int]:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid(None, "wrong_type")
     unknown = sorted(str(key) for key in set(value) - _KEYS)
     missing = sorted(_KEYS - set(value))
@@ -106,31 +118,33 @@ def _validate(
         return _invalid(unknown[0], "unknown_field")
     if missing:
         return _invalid(missing[0], "missing_field")
-    context_issue = _validate_execution_context(value["execution_context"])
-    if context_issue is not None:
-        return context_issue
-    if not isinstance(value["operation"], str):
+    scratch_directory = _validate_execution_context(value["execution_context"])
+    if not isinstance(scratch_directory, str):
+        return scratch_directory
+    operation = value["operation"]
+    if not isinstance(operation, str):
         return _invalid("operation", "wrong_type")
-    if value["operation"] not in {"format", "lint"}:
+    if operation not in {"format", "lint"}:
         return _invalid("operation", "invalid_value")
-    for field in ("targets", "args"):
-        if not isinstance(value[field], list) or any(
-            not isinstance(item, str) for item in value[field]
-        ):
-            return _invalid(field, "wrong_type")
-    if not value["targets"] or any(
+    targets = value["targets"]
+    if not _is_string_list(targets):
+        return _invalid("targets", "wrong_type")
+    args = value["args"]
+    if not _is_string_list(args):
+        return _invalid("args", "wrong_type")
+    if not targets or any(
         not path
         or "\x00" in path
         or _ABSOLUTE.fullmatch(path) is None
         or re.search(r"(?:[\\/]|(?:^|[\\/])\.{1,2})$", path) is not None
-        for path in value["targets"]
+        for path in targets
     ):
         return _invalid("targets", "invalid_value")
     return (
-        value["operation"],
-        value["targets"],
-        value["args"],
-        value["execution_context"]["scratch_directory"],
+        operation,
+        targets,
+        args,
+        scratch_directory,
     )
 
 
@@ -259,7 +273,7 @@ def _run(value: object) -> tuple[dict[str, object], int]:
 
 def main() -> int:
     try:
-        request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+        request: object = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     except UnicodeDecodeError, json.JSONDecodeError:
         result, code = _invalid(None, "invalid_value")
     else:

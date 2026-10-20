@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from pydantic import ValidationError
 
@@ -63,6 +63,21 @@ if TYPE_CHECKING:
 
 # Per-phase keys recognised in planning_deliverables (C8/GAP-15)
 # _known_phase_keys is removed (obsolete)
+
+
+def _is_dict(value: object) -> bool:
+    """Retain stored object admission independently of the dynamic plan annotation."""
+    return isinstance(value, dict)
+
+
+def _is_list(value: object) -> TypeGuard[list[object]]:
+    """Describe stored list contents before validating their element types."""
+    return isinstance(value, list)
+
+
+def _is_phase_operation(value: object) -> TypeGuard[SetPhase | RemovePhase]:
+    """Preserve rejection of unsupported runtime planning operations."""
+    return isinstance(value, (SetPhase, RemovePhase))
 
 
 @dataclass(frozen=True)
@@ -304,10 +319,11 @@ class ProjectManager:
         projects = self._read_projects()
         if self.deliverables_file.read_bytes() != snapshot:
             raise PlanningMutationError("planning_snapshot_conflict")
-        project = projects.get(str(issue_number))
+        project: dict[str, Any] | None = projects.get(str(issue_number))
         if project is None:
             raise PlanningMutationError("planning_project_missing")
-        if not isinstance(project, dict):
+        project_value: object = project
+        if not _is_dict(project_value):
             raise PlanningMutationError("planning_stored_invalid")
         return projects, project, snapshot
 
@@ -331,7 +347,7 @@ class ProjectManager:
             raise PlanningMutationError("planning_workflow_invalid")
         execution_phase = execution_phases[0] if execution_phases else None
         phases = project.get("required_phases")
-        if not isinstance(phases, list) or any(not isinstance(phase, str) for phase in phases):
+        if not _is_list(phases) or any(not isinstance(phase, str) for phase in phases):
             raise PlanningMutationError("planning_stored_invalid")
         if any(phase not in phases or phase == execution_phase for phase in model.phases):
             raise PlanningMutationError("planning_phase_invalid")
@@ -434,7 +450,7 @@ class ProjectManager:
                     replacements[operation.cycle_id] = operation.cycle
                 else:
                     removals.add(operation.cycle_id)
-            elif isinstance(operation, (SetPhase, RemovePhase)):
+            elif _is_phase_operation(operation):
                 target = ("phase", operation.phase)
                 if target in targets:
                     raise PlanningMutationError("planning_duplicate_target")
@@ -542,13 +558,15 @@ class ProjectManager:
         )
 
         content = self.deliverables_file.read_text(encoding="utf-8-sig")
-        data = json.loads(content)
-        if not isinstance(data, dict):
+        data: dict[str, Any] = json.loads(content)
+        data_value: object = data
+        if not _is_dict(data_value):
             return {}
-        projects = data.get("projects")
+        projects: dict[str, Any] | None = data.get("projects")
         if projects is None:
             projects = {k: v for k, v in data.items() if k != "schema_version"}
-        if not isinstance(projects, dict):
+        projects_value: object = projects
+        if not _is_dict(projects_value):
             return {}
         return projects
 

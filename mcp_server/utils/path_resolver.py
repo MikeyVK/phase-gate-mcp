@@ -111,7 +111,9 @@ class ArtifactTargetError(ValueError):
         message: str,
     ) -> None:
         super().__init__(message)
-        self.reason = reason
+        self.reason: Literal["outside_workspace", "force_required", "not_file", "unresolvable"] = (
+            reason
+        )
         self.path = path
 
 

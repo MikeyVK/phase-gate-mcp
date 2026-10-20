@@ -14,6 +14,8 @@ before the MCP server starts accepting requests.
 
 from __future__ import annotations
 
+from typing import Protocol
+
 from jsonschema import Draft202012Validator
 
 from mcp_server.config.schemas.artifact_locations import ArtifactLocationsConfig
@@ -35,6 +37,19 @@ from mcp_server.schemas import (
 )
 
 
+class _ContextSchemaValidator(Protocol):
+    """Describe native JSON Schema validation without assuming its dynamic inputs."""
+
+    def validate(self, instance: object) -> None: ...
+
+
+def _validate_context_schema(
+    validator: _ContextSchemaValidator, context: FrozenJsonObject
+) -> FrozenJsonObject:
+    validator.validate(thaw_json(context))
+    return context
+
+
 class ConfigValidator:
     """Validate cross-config relationships after ConfigLoader has loaded schemas."""
 
@@ -46,8 +61,7 @@ class ConfigValidator:
         if not isinstance(frozen, FrozenJsonObject):
             raise ValueError("template_context_object_required")
         schema_data = {key: thaw_json(value) for key, value in schema.items()}
-        Draft202012Validator(schema_data).validate(thaw_json(frozen))
-        return frozen
+        return _validate_context_schema(Draft202012Validator(schema_data), frozen)
 
     def validate_template_policy(self, policy: TemplatePolicy, profiles: frozenset[str]) -> None:
         """Require a known output profile from the composition-supplied capability authority."""
@@ -80,7 +94,7 @@ class ConfigValidator:
         )
         default_profile = config.run_checks.default_profile
         selection_profiles = (
-            frozenset({default_profile}) if default_profile is not None else frozenset()
+            frozenset({default_profile}) if default_profile is not None else frozenset[str]()
         )
         for input_kind, required_profiles in (
             ("content", content_profiles),

@@ -231,7 +231,7 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
                 current_phase = plan.get("current_phase", "")
                 curr_phase_name = current_phase.split(":")[0] if current_phase else ""
 
-                phases_list = []
+                phases_list: list[PhaseDTO] = []
                 current_found = False
                 for p_name in required_phases:
                     if p_name == curr_phase_name:

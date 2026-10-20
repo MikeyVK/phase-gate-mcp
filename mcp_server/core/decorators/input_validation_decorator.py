@@ -12,7 +12,7 @@ Decorator that validates incoming raw parameters dictionary into Pydantic models
 """
 
 # Standard library
-from typing import Any
+from typing import Any, TypeIs
 
 # Third-party
 import jsonschema
@@ -26,6 +26,13 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_execution import SchemaAttachment, ToolExecution, WholeToolSchemaIdentity
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
 from mcp_server.utils.schema_utils import resolve_schema_refs
+
+
+def _is_execution[TModel: BaseModel](
+    value: TModel | ToolExecution[TModel],
+) -> TypeIs[ToolExecution[TModel]]:
+    """Narrow the existing carrier without erasing its operation parameter."""
+    return isinstance(value, ToolExecution)
 
 
 class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErrorOutput]):
@@ -103,7 +110,7 @@ class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErr
             )
 
         result = await self._inner_tool.execute(validated, context)
-        if isinstance(result, ToolExecution):
+        if _is_execution(result):
             return result
         return ToolExecution(operation=result, attachments=())
 

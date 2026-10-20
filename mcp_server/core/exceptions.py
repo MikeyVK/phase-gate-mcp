@@ -15,6 +15,11 @@ Ensures consistent error handling across tools, managers, and adapters.
 from typing import Any
 
 
+def _is_dict(value: object) -> bool:
+    """Preserve the native schema container dispatch at the dynamic core boundary."""
+    return isinstance(value, dict)
+
+
 class MCPError(Exception):
     """Base class for all MCP server exceptions."""
 
@@ -89,7 +94,7 @@ class ValidationError(MCPError):
         }
 
         if self.schema:
-            data["schema"] = self.schema if isinstance(self.schema, dict) else self.schema.to_dict()
+            data["schema"] = self.schema if _is_dict(self.schema) else self.schema.to_dict()
 
         if self.missing or self.provided:
             data["validation"] = {"missing": self.missing, "provided": self.provided}
