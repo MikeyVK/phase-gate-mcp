@@ -2,8 +2,8 @@
 
 # Issue \#528 — compact recovery validation
 
-**Status:** Validation blocked — compact-schema repair required  
-**Version:** 1.0  
+**Status:** Renewed Validation complete — independent review requested  
+**Version:** 1.1  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -12,7 +12,7 @@ Verify truthful post-operation recovery without replaying original payloads or a
 
 ## Scope In
 
-C_1 / D_1.1–D_1.3 on implementation commit 3426baea7698bd46e65da44496b3ba10848202dc; existing normal profiles, output schemas and startup presentation.
+C_1 / D_1.1–D_1.3 and C_2 / D_2.1; final implementation commit eb2c090bdaf1592086aaf1597703ecbc6466b46a. Existing normal profiles, output schemas and startup presentation remain the preservation boundary.
 
 ## Scope Out
 
@@ -24,13 +24,13 @@ No legacy bridge, dependency/harness matrix, domain-operation change, new cache 
 
 ## Cycle
 
-C_1
+C_1, C_2
 
 ## Validation Status
 
-FAIL
+PASS
 
-Post-run self-review found that the compact schema alternative does not require its processing_error marker. An omitted marker can therefore admit recovery-shaped data without its diagnosis. The native results below remain factual, but do not prove that missing-marker constraint. This is a functional schema-contract gap requiring bounded repair and revalidation.
+C_2 repaired the independently confirmed missing-marker schema gap. Focused negative/positive verification and the renewed complete native selection now pass. This authored PASS records observed outcomes; independent QA determines progression.
 
 ## Obligations
 
@@ -62,6 +62,18 @@ Post-run self-review found that the compact schema alternative does not require 
 
 ## Evidence
 
+### C_2 requires an explicit compact-recovery diagnosis
+
+Independent QA confirmed the missing-marker P2 and withdrew the earlier Validation GO. The auditable return to Planning used the owner's standing 2026-10-18 approval; committed C_1 was preserved and C_2 / D_2.1 appended. Only the compact schema alternative now requires processing_error. No public DTO, profile, interface or configuration change was needed.
+
+**Invocation:** RED: run_tests(scope='targets', targets=['tests/mcp_server/integration/test_tool_attachment_transport.py'], tests=['python_tests'], args={'python_tests':['-n','0','-k','processing_failure']}, timeout_seconds=300).
+
+**Outcome:** 4 failed, 8 passed, 8 deselected in 49.61 s at the intended missing-marker negative control (7a1ffcd3cd3c438493279afaeec8b5df; RED commit da0b4993658f00fd58b004584626f4743f415eab). The existing uncached structured cases validate the real response and then reject a copy without its marker; no new test cases.
+
+**Invocation:** GREEN: run_tests(scope='targets', targets=['tests/mcp_server/integration/test_tool_attachment_transport.py','tests/mcp_server/integration/test_execution_presentation_v3.py','tests/mcp_server/unit/test_presenter.py'], tests=['python_tests'], timeout_seconds=600), no args override.
+
+**Outcome:** 76 passed in 22.32 s (7574f6188b064190acd09003bd7c4245). Target format/lint/Pyright on the two changed files passed (1f2f5be180474d289c06a59df6e707c4). Independent Implementation→Validation GO on exact eb2c090b closed this P2 at implementation level; renewed native verification subsequently passed, as recorded below.
+
 ### Behavioral RED then focused GREEN
 
 RED 5b28120c: 1 failed, 4 deselected in 1.48 s at incorrect is_error=true after successful operation (receipt 9ec02d903a494d90a46657586471ebb9). Corrected: 16 passed, 4 deselected in 2.33 s (a7461800564c411fa4661fa68b61b393). Poisoned original grows from 700 to 7,000,000 chars; output stays below 20,000 chars and sizes differ by less than 100; full original serialization is not retried.
@@ -85,7 +97,7 @@ RED 5b28120c: 1 failed, 4 deselected in 1.48 s at incorrect is_error=true after 
 
 ### Branch gates
 
-All five passed; native exits 0; per-check branch filters retained (bffbc074985a408bb18687146100652b).
+All five passed again after C_2; per-check branch filters retained (24b5db6fe6014e4587ae13195505a5a4). Earlier C_1 branch run also passed (bffbc074985a408bb18687146100652b).
 
 **Sources:**
 
@@ -95,7 +107,7 @@ All five passed; native exits 0; per-check branch filters retained (bffbc074985a
 
 ### Workspace configured Python gates
 
-All four passed, including production-scoped Mypy; no test-Mypy expansion or checker relaxation (fe92aee32d024c31810490c0ef73cca9).
+All four passed again after C_2, including production-scoped Mypy; no test-Mypy expansion or checker relaxation (1e5be3e608014031b2d942f970b37ffa). Earlier C_1 configured run also passed (fe92aee32d024c31810490c0ef73cca9).
 
 **Sources:**
 
@@ -104,6 +116,8 @@ All four passed, including production-scoped Mypy; no test-Mypy expansion or che
 **Invocation:** run_checks(scope='configured', checks=['python_format','python_lint','python_types','python_pyright'], timeout_seconds=600)
 
 ### Full native suite
+
+**Final C_2 run: 3098 passed in 660.31 s**, native exit 0, eight workers, no termination problem and no warnings/skips reported (4f67e8b5cc0c4317acdbb06a80869e65). Exact invocation below, no argument override. The following completed runs belong to C_1 and remain historical evidence; they were not substituted for C_2 verification.
 
 First required run: **1 failed, 3097 passed in 615.14 s**, native exit 1, no termination problem (c79015b2283642a1950ebbc9835f56ee). The unchanged Windows lifecycle case `test_failure_stops_live_children_and_keeps_primary_cause[late-timeout]` failed waiting for child PID files. A targeted recheck of all four variants with native eight workers passed: **4 passed in 51.37 s** (868668b7397e4c99b4b192401eee6844), using the same test file and `-k test_failure_stops_live_children_and_keeps_primary_cause`. Exact configured full-suite repeat, with the same unchanged native settings: **3098 passed in 554.83 s**, native exit 0, eight workers, no termination problem, no warnings/skips reported (3f1bdcb51de64043b28271dbab84710a). The repeat is a positive verification result, not causal repair of the earlier readiness failure.
 
@@ -115,7 +129,7 @@ First required run: **1 failed, 3097 passed in 615.14 s**, native exit 1, no ter
 
 ### Active instance and catalog evidence boundaries
 
-New active Imp instance PID 12808 healthy, normal structuredContent.processing_error=null; receipt 3da596ce2f7445ec9c79a6ad439cd52f. Actual tools/list and response-schema conformance exercised through real SDK clients against current source. QA's separate existing MCP process PID 70284 still returned earlier envelope; no claim all client catalogs were refreshed or that a live presenter crash was injected.
+After final C_2 activation the active Imp instance is healthy PID 54196, with fresh work context (3be31666fc7f4bafbbee005d944d8061). Initial C_1 activation was healthy PID 12808, normal structuredContent.processing_error=null (3da596ce2f7445ec9c79a6ad439cd52f). Actual tools/list and response-schema conformance exercised through real SDK clients against current source. QA's separate existing MCP process PID 70284 still returned earlier envelope; no claim all client catalogs were refreshed or that a live presenter crash was injected.
 
 **Sources:**
 
@@ -137,6 +151,7 @@ Diagnostic details alone are bounded. Complete recovery JSON, known outcome and 
 
 ## Failures
 
+- C_2 initial target formatting failed on a missing trailing comma (c91b75f08c7b45079364e5de3667362d). The first functional GREEN was committed before that formatting fix; final eb2c090b includes it and all target gates pass. No suppression or quality-policy change. A restart correctly invalidated the per-process work-context cache; blocked commit/push attempts made no mutations, then succeeded after fresh get_work_context.
 - First full native run: the lifecycle preparation timed out before the asserted stop checks, as detailed above. Source inspection shows that the late variant's one-second invocation budget includes parent/child startup, while the test requires published child PIDs before retaining their handles. Earlier runtime termination can therefore race test readiness; this is a source-supported mechanism, not a traced timing proof of this run. No production or test code, deadline, parallelism or quality policy was changed. The same case had also failed transiently during #529. The exact full native repeat passed, as recorded above. The intermittent readiness risk remains unresolved and requires explicit independent QA disposition; no rerun-until-green sequence or causal repair is claimed.
 - Earlier eight-file scope added integration/test_target_startup.py to the seven-file selection: 176 passed, 2 initialize-timeout failures in 249.91 s (d7779e7b19f14150a3d868007553006a). Both unchanged cases passed -n0 targeted recheck: 2 passed, 29 deselected in 21.44 s (485010ab40594cfd94d62c668ae6e2f1); independent QA repeated the same two with native eight workers: 2 passed in 22.29 s. Neither recheck proves the original timing cause; full native suite remains mandatory.
 - Initial SDK test setup 19a99bb37c97410bbb85b178279ffe81: 7 failed, 9 passed, 4 deselected in 3.10 s; six invalid failed-cache test receipts and one wrong expectation of a tool result instead of terminal SDK exception. Test setup corrected, no policy change.
@@ -145,7 +160,7 @@ Diagnostic details alone are bounded. Complete recovery JSON, known outcome and 
 
 ## Caveats
 
-- The first full suite failed and the unchanged exact repeat passed. The authored PASS reports the current native/gate outcomes; independent QA must explicitly decide whether the recurring readiness failure blocks progression. No phase approval or fix of that failure is claimed.
+- The first C_1 full suite failed and its unchanged exact repeat passed. Independent QA explicitly classified the recurring Windows readiness risk as non-blocking for #528 (turn 01a15813-5247-7ac3-bb30-819d2836e191), while preserving its unresolved status for Co triage. No causal fix is claimed. The final C_2 native run passes; no causal repair of the pre-existing lifecycle test is claimed.
 - In-process recovery cannot guarantee delivery after SDK/transport failure or memory exhaustion. A secondary recovery fault remains terminal; no third fallback.
 
 ## Related Documents
@@ -159,5 +174,4 @@ Diagnostic details alone are bounded. Complete recovery JSON, known outcome and 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-20 | @imp validator | Record compact recovery, both full native results, exact gates, negative history and explicit unresolved readiness risk for independent review. |
-
-
+| 1.1 | 2026-10-20 | @imp validator | Preserve C_1 history and QA risk disposition; add bounded C_2 marker repair, negative controls and renewed verification. |
