@@ -39,6 +39,7 @@ class MockTextPresenter:
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
     ) -> RenderedPresentation:
+        del tool_name, data, notes, cache_pub, success
         return RenderedPresentation(core="text", details="")
 
     def present_notes(
@@ -46,6 +47,7 @@ class MockTextPresenter:
         tool_name: str,
         notes: list[NoteEntry],
     ) -> str | None:
+        del tool_name, notes
         return "notes"
 
 
@@ -56,6 +58,7 @@ class MockResourcePresenter:
         self,
         attachments: tuple[SchemaAttachment, ...],
     ) -> tuple[PresentationResource, ...]:
+        del attachments
         return (PresentationResource(uri="schema://validation", content="{}"),)
 
 
@@ -72,6 +75,7 @@ class MockPresenter:
         *,
         attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
+        del tool_name, data, notes, cache_pub, success, attachments
         return PresentedOutput(text="ok", structured_content=None)
 
     def recover(
@@ -83,6 +87,7 @@ class MockPresenter:
         cache_run_id: str | None,
         cache_size_chars: int | None,
     ) -> PresentedOutput:
+        del operation_success, traceback, cache_run_id, cache_size_chars
         return PresentedOutput(text=error_message, structured_content=None)
 
     def output_schema(self) -> dict[str, JsonValue] | None:

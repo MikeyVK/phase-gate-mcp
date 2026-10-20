@@ -159,7 +159,7 @@ def workspace_loader(workspace_root: Path) -> ConfigLoader:
 
 
 @pytest.fixture
-def project_manager(workspace_root: Path, repo_loader: ConfigLoader) -> ProjectManager:  # noqa: ARG001
+def project_manager(workspace_root: Path) -> ProjectManager:
     """ProjectManager bound to the temp workspace."""
     return make_project_manager(
         workspace_root=workspace_root,

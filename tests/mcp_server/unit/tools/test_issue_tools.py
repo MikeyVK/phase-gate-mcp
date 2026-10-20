@@ -7,6 +7,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from mcp_server.config.schemas.milestone_config import MilestoneConfig, MilestoneEntry
 from mcp_server.core.operation_notes import NoteContext
@@ -234,7 +235,7 @@ def test_create_issue_input_body_is_str() -> None:
 
 def test_create_issue_input_body_rejects_dict() -> None:
     """C1 RED: CreateIssueInput.body must reject structured dicts (no IssueBody coercion)."""
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(ValidationError):
         CreateIssueInput(
             issue_type="feature",
             title="Test issue",

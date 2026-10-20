@@ -25,8 +25,13 @@ from mcp_server.core.interfaces.execution import (
     AdapterBinding,
     AdapterLaunch,
     AdapterPackageIdentity,
+    ResolvedScopePath,
 )
-from mcp_server.execution.catalog import AdapterCatalogLoader, FileAdapterPackageReader
+from mcp_server.execution.catalog import (
+    AdapterCatalog,
+    AdapterCatalogLoader,
+    FileAdapterPackageReader,
+)
 from mcp_server.execution.check_selection import CheckSelectionError, CheckSelectionFailureReason
 from mcp_server.execution.fix_service import FileFixScopePaths, FixManager, FixSelectionRequest
 from mcp_server.execution.invocation_scratch import FileInvocationScratch
@@ -99,6 +104,7 @@ class RecordingRuntime(AdapterProcessRuntime):
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
+        del request_contract
         self.calls.append(Call(launch, workspace_root, request, timeout_seconds))
         if self.effect is not None:
             self.effect(len(self.calls))
@@ -359,7 +365,7 @@ class ChangingPaths(FileFixScopePaths):
     escaped = False
     unreadable = False
 
-    def resolve(self, relative: str):
+    def resolve(self, relative: str) -> ResolvedScopePath:
         if self.escaped:
             raise CheckSelectionError(CheckSelectionFailureReason.INVALID_TARGETS, relative)
         return super().resolve(relative)
@@ -471,7 +477,7 @@ class NativeRuntime(AdapterProcessRuntime):
         )
 
 
-def catalog(root: Path, config_root: Path):
+def catalog(root: Path, config_root: Path) -> AdapterCatalog:
     loader = ConfigLoader(config_root)
     return AdapterCatalogLoader(
         root / "mcp_server/bundled_adapters",

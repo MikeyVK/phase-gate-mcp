@@ -307,7 +307,7 @@ class ProjectManager:
             if plan is None or plan.get("planning_deliverables") is None:
                 raise ValueError("Planning deliverables unavailable after persistence")
             return StoredPlanningModel.model_validate(plan["planning_deliverables"], strict=True)
-        except Exception as error:  # noqa: BLE001 -- Enrich post-write failure without discarding its cause.
+        except Exception as error:  # Enrich post-write failure without discarding its cause.
             raise PlanningMutationError(
                 "planning_readback_failed", params={"issue_number": issue_number, "persisted": True}
             ) from error

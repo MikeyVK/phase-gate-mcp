@@ -14,7 +14,7 @@ Defines typed label and pattern metadata loaded by the configuration layer.
 
 import re
 from dataclasses import FrozenInstanceError
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.workphases import WorkphasesConfig
@@ -78,7 +78,7 @@ class LabelConfig(BaseModel):
     _labels_by_name: dict[str, Label] = PrivateAttr(default_factory=dict)
     _labels_by_category: dict[str, list[Label]] = PrivateAttr(default_factory=dict)
 
-    def model_post_init(self, __context: Any) -> None:  # noqa: ANN401
+    def model_post_init(self, __context: object) -> None:
         self._build_caches()
 
     def _build_caches(self) -> None:

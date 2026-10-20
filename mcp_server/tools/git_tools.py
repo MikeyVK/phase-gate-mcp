@@ -436,11 +436,11 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 commit_type=commit_type or "",
                 files=commit_files or [],
             )
-        except Exception as exc:  # noqa: BLE001 -- Restore state before propagating to the wrapper.
+        except Exception as exc:  # Restore state before propagating to the wrapper.
             if self._state_engine is not None:
                 try:
                     self._state_engine.record_sub_phase(current_branch, old_sub_phase)
-                except Exception as rollback_err:  # noqa: BLE001 -- Preserve the original commit error.
+                except Exception as rollback_err:  # Preserve the original commit error.
                     exc.add_note(
                         "Sub-phase rollback failed:\n"
                         + "".join(traceback.format_exception(rollback_err))

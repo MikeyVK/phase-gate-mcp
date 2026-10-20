@@ -46,7 +46,7 @@ CapabilityT_co = TypeVar("CapabilityT_co", covariant=True)
 
 
 @dataclass(frozen=True)
-class AdapterBinding(Generic[CapabilityT_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
+class AdapterBinding(Generic[CapabilityT_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess when supported inference preserves this declared contract.
     """One qualified capability from an admitted package snapshot."""
 
     identity: AdapterPackageIdentity

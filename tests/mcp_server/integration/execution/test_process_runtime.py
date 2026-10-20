@@ -296,6 +296,7 @@ class ObservedBackend:
         self.starts = 0
 
     async def start(self, launch: AdapterLaunch, workspace_root: Path) -> AdapterProcess:
+        del launch, workspace_root
         self.starts += 1
         raise AssertionError("preparation failure must not launch a process")
 

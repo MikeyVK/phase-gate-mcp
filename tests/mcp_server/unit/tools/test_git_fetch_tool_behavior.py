@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 """Behavior tests for GitFetchTool.
 
 Also verifies the public input schema and argument defaults.
@@ -13,6 +12,7 @@ import pytest
 
 from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import GitFetchOutput
 from mcp_server.tools.git_fetch_tool import GitFetchInput, GitFetchTool
 
 
@@ -40,8 +40,6 @@ async def test_git_fetch_success_returns_text() -> None:
     with patch("mcp_server.tools.git_fetch_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitFetchInput(), NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitFetchOutput  # noqa: PLC0415
-
     assert isinstance(result, GitFetchOutput)
     assert result.success is True
     assert result.remote == "origin"
@@ -58,8 +56,6 @@ async def test_git_fetch_mcperror_returns_tool_error() -> None:
     run_sync = AsyncMock(side_effect=PreflightError("No remote"))
     with patch("mcp_server.tools.git_fetch_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitFetchInput(remote="origin"), NoteContext())
-
-    from mcp_server.schemas.tool_outputs import GitFetchOutput  # noqa: PLC0415
 
     assert isinstance(result, GitFetchOutput)
     assert result.success is False
@@ -78,8 +74,6 @@ async def test_git_fetch_runtime_error_returns_tool_error() -> None:
     run_sync = AsyncMock(side_effect=RuntimeError("boom"))
     with patch("mcp_server.tools.git_fetch_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitFetchInput(remote="origin"), NoteContext())
-
-    from mcp_server.schemas.tool_outputs import GitFetchOutput  # noqa: PLC0415
 
     assert isinstance(result, GitFetchOutput)
     assert result.success is False

@@ -4,7 +4,6 @@
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.resources.base
 """
-# pyright: reportCallIssue=false, reportAttributeAccessIssue=false
 
 # Third-party
 import pytest
@@ -18,7 +17,8 @@ class ConcreteResource(BaseResource):
 
     uri_pattern = "test://resource"
 
-    async def read(self, uri: str) -> str:  # noqa: ARG002
+    async def read(self, uri: str) -> str:
+        del uri
         return "content"
 
 
@@ -43,5 +43,4 @@ class TestBaseResource:
     async def test_abstract_class_instantiation(self) -> None:
         """Test BaseResource cannot be instantiated."""
         with pytest.raises(TypeError):
-            # pylint: disable=abstract-class-instantiated
-            BaseResource()  # type: ignore
+            BaseResource()  # type: ignore[abstract]  # pyright: ignore[reportAbstractUsage] -- Intentionally exercise abstract admission.

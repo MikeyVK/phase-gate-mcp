@@ -1,4 +1,3 @@
-# pyright: reportMissingImports=false
 """MCP Server Entrypoint."""
 
 import asyncio
@@ -42,6 +41,7 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+from mcp_server.schemas.tool_outputs import HealthCheckOutput, RestartServerOutput
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
@@ -112,7 +112,7 @@ class MCPServer:
                 raise ValueError(f"Resource not found: {uri}")
             except asyncio.CancelledError:
                 raise
-            except Exception as exc:  # noqa: BLE001 — terminal SDK boundary preserves the cause
+            except Exception as exc:  # terminal SDK boundary preserves the cause
                 raise MCPError(code=0, message=str(exc)) from exc
 
         async def handle_list_tools(
@@ -312,12 +312,8 @@ class DegradedMCPServer(MCPServer):
         self, settings: Settings, diagnostic: StartupDiagnostic, presenter: IPresenter
     ) -> None:
         """Keep recovery independent of rejected configuration and template admission."""
-        from mcp_server.schemas.tool_outputs import (  # noqa: PLC0415
-            HealthCheckOutput,
-            RestartServerOutput,
-        )
-        from mcp_server.tools.admin_tools import RestartServerTool  # noqa: PLC0415
-        from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
+        from mcp_server.tools.admin_tools import RestartServerTool  # noqa: PLC0415 -- Compose recovery tools only here; reassess if lifecycle ownership changes.
+        from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415 -- Preserve import-time uptime origin; reassess if clock ownership changes.
 
         health_tool = HealthCheckTool(settings, diagnostic)
         restart_tool = RestartServerTool(server_root=Path(settings.server.resolved_server_root))

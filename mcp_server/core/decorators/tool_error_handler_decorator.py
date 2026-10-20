@@ -34,7 +34,7 @@ TOutput = TypeVar("TOutput", bound=BaseModel)
 
 class ToolErrorHandlerDecorator(
     ITool[TOutput | ConfigErrorOutput | ExecutionErrorOutput],
-    Generic[TOutput],  # noqa: UP046 -- Preserve invariant wrapper contract; reassess in #513.
+    Generic[TOutput],  # noqa: UP046 -- Preserve invariant wrapper contract; reassess when supported inference preserves this declared contract.
 ):
     """Outermost decorator that traps unhandled exceptions and converts them to error DTOs."""
 

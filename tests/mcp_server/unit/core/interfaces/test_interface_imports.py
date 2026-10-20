@@ -26,7 +26,7 @@ from mcp_server.core.interfaces.workflow import IWorkflowStateMutator
 class TestInterfaceImports:
     """Test suite for gate."""
 
-    def test_imports(self):
+    def test_imports(self) -> None:
         """Verify that all interfaces and types can be imported from their sub-modules."""
         assert GateReport is not None
         assert GateViolation is not None

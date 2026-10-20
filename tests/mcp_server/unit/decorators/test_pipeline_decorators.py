@@ -43,7 +43,7 @@ from mcp_server.core.interfaces.tool_input_contract import (
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_execution import ToolExecution
-from mcp_server.managers.enforcement_runner import EnforcementRunner
+from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.schemas.error_outputs import (
     ConfigErrorOutput,
@@ -291,7 +291,14 @@ class TestPipelineDecorators:
         mock_runner = MagicMock(spec=EnforcementRunner)
 
         # Succeed on pre, fail on post
-        def side_effect(event, timing, tool_category, enforcement_ctx, note_context):
+        def side_effect(
+            event: str,
+            timing: str,
+            tool_category: str | None,
+            enforcement_ctx: EnforcementContext,
+            note_context: NoteContext,
+        ) -> None:
+            del event, tool_category, enforcement_ctx, note_context
             if timing == "post":
                 raise EnforcementValidationError(
                     "Post-check failed", error_code="ERR_POST", params={"extra": "post"}

@@ -10,7 +10,7 @@ Tests for configuration settings.
 from collections.abc import Iterator
 from importlib import metadata
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # Third-party
 import pytest
@@ -40,7 +40,8 @@ def test_default_settings() -> None:
     assert settings.logging.level == "INFO"
 
 
-def test_load_from_env(mock_env_vars: MagicMock) -> None:  # noqa: ARG001
+@pytest.mark.usefixtures("mock_env_vars")
+def test_load_from_env() -> None:
     """Test loading settings from environment variables."""
     settings = Settings.from_env()
     assert settings.logging.level == "DEBUG"

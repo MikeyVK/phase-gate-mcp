@@ -25,7 +25,7 @@ from pydantic import BaseModel
 from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
-from mcp_server.core.operation_notes import Note
+from mcp_server.core.operation_notes import Note, NoteEntry
 from mcp_server.core.tool_execution import SchemaAttachment, WholeToolSchemaIdentity
 from mcp_server.presenters.response_presenter import ResponsePresenter
 from mcp_server.presenters.schema_resource_presenter import (
@@ -36,6 +36,7 @@ from mcp_server.presenters.text_presenter import (
     TextPresenter,
     validate_presentation_alignment,
 )
+from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.schemas.presentation_output import (
     InlineOperation,
@@ -96,14 +97,16 @@ class TestResponsePresenter:
             def present_text(
                 self,
                 tool_name: str,
-                data: Any,
-                notes: Any = None,
-                cache_pub: Any = None,
-                success: Any = None,
+                data: BaseModel | dict[str, Any],
+                notes: list[NoteEntry] | None = None,
+                cache_pub: CachePublication | None = None,
+                success: bool | None = None,
             ) -> RenderedPresentation:
+                del tool_name, data, notes, cache_pub, success
                 return RenderedPresentation(core="Rendered Markdown", details="")
 
-            def present_notes(self, tool_name: str, notes: Any) -> str | None:
+            def present_notes(self, tool_name: str, notes: list[NoteEntry]) -> str | None:
+                del tool_name, notes
                 return None
 
         presenter = make_response_presenter(text_presenter=MockTextPres())
@@ -517,6 +520,7 @@ def test_recovery_bounds_unicode_before_encoding_and_shares_diagnostic_allowance
 
     class OversizedDiagnostic(str):
         def encode(self, encoding: str = "utf-8", errors: str = "strict") -> bytes:
+            del encoding, errors
             raise AssertionError("Full diagnostic was encoded before bounding")
 
     allowance = 29

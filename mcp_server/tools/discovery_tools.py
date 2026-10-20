@@ -1,6 +1,5 @@
 """Discovery tools for AI self-orientation."""
 
-# pyright: reportIncompatibleMethodOverride=false
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
@@ -84,10 +83,10 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
     async def execute(
         self,
         params: GetWorkContextInput,
-        context: NoteContext,  # noqa: ANN401, ARG002
+        context: NoteContext,
     ) -> GetWorkContextOutput:
         """Execute work context aggregation."""
-        _ = params  # GetWorkContextInput has no fields after C1 (issue #268)
+        del params, context
 
         branch = self._git_manager.get_current_branch()
 

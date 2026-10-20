@@ -11,6 +11,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from io import IOBase
 from pathlib import Path
 
 import pytest
@@ -758,14 +759,14 @@ def test_upgrade_lock_io_is_not_retried(
     original_open = Path.open
     original_error = OSError(errno.EACCES if stage == "open" else errno.EBADF, "injected IO")
 
-    def open_stream(target: Path, *args: object, **kwargs: object):
+    def open_stream(target: Path, *args: object, **kwargs: object) -> IOBase:
         if target == path and stage == "open":
             raise original_error
         stream = original_open(target, *args, **kwargs)
         streams.append(stream)
         return stream
 
-    def fail_native(*args: object) -> None:
+    def fail_native(*_args: object) -> None:
         raise original_error
 
     monkeypatch.setattr(Path, "open", open_stream)

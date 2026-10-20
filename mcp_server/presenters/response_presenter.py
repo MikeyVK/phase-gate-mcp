@@ -189,7 +189,7 @@ class ResponsePresenter(IPresenter):
                     else data
                 )
                 delivery = InlineOperation(delivery="inline", operation=operation)
-            except Exception as exc:  # noqa: BLE001 -- Presentation boundary preserves original cause.
+            except Exception as exc:  # Presentation boundary preserves original cause.
                 logger.exception("Inline operation serialization failed")
                 diagnostic = capture_exception(exc)
                 failure = DeliveryFailure(

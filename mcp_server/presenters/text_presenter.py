@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import string
-from collections.abc import Sequence, Sized
+from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, get_args, get_origin
 
@@ -45,10 +45,6 @@ logger = logging.getLogger(__name__)
 
 def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
     return isinstance(value, dict)
-
-
-def _is_sized_container(value: object) -> TypeGuard[Sized]:
-    return isinstance(value, (list, dict, set, tuple))
 
 
 def _is_model_type(value: object) -> TypeGuard[type[BaseModel]]:
@@ -88,16 +84,6 @@ class TextPresenter(ITextPresenter):
     def _get_default_failure_template(self) -> str:
         """Get the default failure template."""
         return self.global_config.default_failure_template
-
-    def _is_complex(self, val: object) -> bool:
-        """Check if a value represents complex structured data."""
-        if _is_sized_container(val):
-            return len(val) > 0
-        return (
-            isinstance(val, str)
-            and "\n" in val
-            and (val.startswith("diff ") or "@@ " in val or "\n+" in val or "\n-" in val)
-        )
 
     def get_none_value(self) -> str:
         """Get the placeholder string for None values."""

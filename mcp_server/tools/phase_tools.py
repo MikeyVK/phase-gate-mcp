@@ -28,6 +28,7 @@ from mcp_server.managers.workflow_state_mutator import StateMutationConflictErro
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.schemas.deliverables import CycleRef
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
 class TransitionPhaseInput(BaseModel):
@@ -134,8 +135,6 @@ class _BaseTransitionTool[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInpu
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
-
         schema = resolve_schema_refs(self.args_model.model_json_schema())
         if self._workphases_config is not None:
             schema["properties"]["to_phase"]["enum"] = list(self._workphases_config.phases.keys())

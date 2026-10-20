@@ -542,9 +542,9 @@ def test_native_selection_request_matches_published_wire_contract(
         assert validator.is_valid(payload), list(validator.iter_errors(payload))
 
 
+@pytest.mark.usefixtures("branch_repo")
 def test_deleted_file_replaced_by_directory_does_not_expand_branch_targets(
     tmp_path: Path,
-    branch_repo: Repo,
 ) -> None:
     (tmp_path / "deleted.ts").unlink()
     (tmp_path / "deleted.ts").mkdir()
@@ -598,6 +598,7 @@ def test_branch_configured_targets_and_explicit_intent(tmp_path: Path) -> None:
 
     class MixedBranch(EmptyBranch):
         def get_branch_changes(self, parent: str) -> BranchChanges:
+            del parent
             return BranchChanges(current_paths=tuple(reversed(names)), removed_paths=())
 
     config = configured_checks().model_copy(

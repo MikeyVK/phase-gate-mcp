@@ -1,5 +1,4 @@
 # tests/mcp_server/managers/test_phase_state_engine_async.py
-# pyright: reportPrivateUsage=false
 """
 Tests for async-safe phase tool operations in PhaseStateEngine.
 
@@ -19,8 +18,15 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from anyio import to_thread
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.tools.phase_tools import (
+    ForcePhaseTransitionInput,
+    ForcePhaseTransitionTool,
+    TransitionPhaseInput,
+    TransitionPhaseTool,
+)
 
 
 class TestPhaseToolsAsyncSafe:
@@ -34,13 +40,6 @@ class TestPhaseToolsAsyncSafe:
         blocks the event loop and hangs the MCP stream.
         Note: We must use anyio (not asyncio) because MCP server uses anyio internally.
         """
-        import anyio.to_thread  # noqa: PLC0415
-
-        from mcp_server.tools.phase_tools import (  # noqa: PLC0415
-            ForcePhaseTransitionInput,
-            ForcePhaseTransitionTool,
-        )
-
         # Setup
         tool = ForcePhaseTransitionTool(
             workspace_root=Path("."), server_root=Path("."), workphases_config=None
@@ -58,7 +57,7 @@ class TestPhaseToolsAsyncSafe:
 
         # Track if anyio.to_thread.run_sync is used
         run_sync_was_called = False
-        original_run_sync = anyio.to_thread.run_sync
+        original_run_sync = to_thread.run_sync
 
         async def tracking_run_sync(
             func: Callable[..., object], *args: object, **kwargs: object
@@ -89,13 +88,6 @@ class TestPhaseToolsAsyncSafe:
     @pytest.mark.asyncio
     async def test_transition_phase_uses_anyio_to_thread(self) -> None:
         """Verify TransitionPhaseTool wraps engine call in anyio.to_thread.run_sync()."""
-        import anyio.to_thread  # noqa: PLC0415
-
-        from mcp_server.tools.phase_tools import (  # noqa: PLC0415
-            TransitionPhaseInput,
-            TransitionPhaseTool,
-        )
-
         # Setup
         tool = TransitionPhaseTool(
             workspace_root=Path("."), server_root=Path("."), workphases_config=None
@@ -109,7 +101,7 @@ class TestPhaseToolsAsyncSafe:
         }
 
         run_sync_was_called = False
-        original_run_sync = anyio.to_thread.run_sync
+        original_run_sync = to_thread.run_sync
 
         async def tracking_run_sync(
             func: Callable[..., object], *args: object, **kwargs: object

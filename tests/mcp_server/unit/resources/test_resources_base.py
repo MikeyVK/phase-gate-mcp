@@ -14,7 +14,8 @@ class TestResource(BaseResource):
 
     uri_pattern = "test://resource"
 
-    async def read(self, uri: str) -> str:  # noqa: ARG002
+    async def read(self, uri: str) -> str:
+        del uri
         return "content"
 
 

@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 """Behavior tests for GitPullTool.
 
 Also verifies the public input schema and argument defaults.
@@ -15,6 +14,7 @@ from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError
+from mcp_server.schemas.tool_outputs import GitPullOutput
 from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool
 
 
@@ -48,8 +48,6 @@ async def test_git_pull_success_syncs_phase_state() -> None:
     ):
         result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitPullOutput  # noqa: PLC0415
-
     assert isinstance(result, GitPullOutput)
     assert result.success is True
     assert result.remote == "origin"
@@ -79,8 +77,6 @@ async def test_git_pull_phase_sync_failure_is_non_fatal() -> None:
     ):
         result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitPullOutput  # noqa: PLC0415
-
     assert isinstance(result, GitPullOutput)
     assert result.success is True
     assert result.remote == "origin"
@@ -101,8 +97,6 @@ async def test_git_pull_mcperror_returns_tool_error() -> None:
     with patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitPullOutput  # noqa: PLC0415
-
     assert isinstance(result, GitPullOutput)
     assert result.success is False
     assert result.error_message is not None
@@ -119,8 +113,6 @@ async def test_git_pull_runtime_error_returns_tool_error() -> None:
     run_sync = AsyncMock(side_effect=RuntimeError("boom"))
     with patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
-
-    from mcp_server.schemas.tool_outputs import GitPullOutput  # noqa: PLC0415
 
     assert isinstance(result, GitPullOutput)
     assert result.success is False
@@ -150,8 +142,6 @@ async def test_git_pull_branch_mismatch_is_non_fatal() -> None:
         patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync),
     ):
         result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
-
-    from mcp_server.schemas.tool_outputs import GitPullOutput  # noqa: PLC0415
 
     assert isinstance(result, GitPullOutput)
     assert result.success is True

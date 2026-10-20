@@ -180,7 +180,7 @@ class TestValidatorInversion:
 
         args = _stub_validate_startup_args(contracts, workphases)
         with pytest.raises(ConfigError, match="research|implementation"):
-            ConfigValidator().validate_startup(**args)  # type: ignore[arg-type]
+            ConfigValidator().validate_startup(**args)
 
     def test_all_phases_present_in_workphases_passes(self) -> None:
         """No error when all contracts.yaml phases exist in workphases.yaml."""
@@ -189,4 +189,4 @@ class TestValidatorInversion:
         workphases = _workphases(phases)
 
         args = _stub_validate_startup_args(contracts, workphases)
-        ConfigValidator().validate_startup(**args)  # type: ignore[arg-type]
+        ConfigValidator().validate_startup(**args)

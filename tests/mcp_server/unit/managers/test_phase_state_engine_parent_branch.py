@@ -179,7 +179,7 @@ class TestPhaseStateEngineParentBranch:
         )
         monkeypatch.setattr(
             "mcp_server.managers.phase_state_engine.subprocess.run",
-            lambda *args, **kwargs: CompletedProcess(
+            lambda *_args, **_kwargs: CompletedProcess(
                 args=[], returncode=0, stdout=" M state.json\n"
             ),
         )

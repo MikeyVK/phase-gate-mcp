@@ -15,7 +15,7 @@ signature verification and key behavioral delegation via ContractsConfig.
     - ProjectManager accepts contracts_config: ContractsConfig; workflow_config param removed
     - ProjectManager.initialize_project persists required_phases from contracts_config.get_phases
     - CreateIssueTool accepts contracts_config: ContractsConfig; workflow_config param removed
-    - CreateIssueTool._assemble_labels derives first phase from contracts_config.get_first_phase
+    - CreateIssueTool.execute sends the first configured phase label to the manager
 """
 
 from __future__ import annotations
@@ -35,10 +35,15 @@ from mcp_server.config.schemas.contracts_config import (
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
+from mcp_server.config.schemas.issue_config import IssueConfig
+from mcp_server.config.schemas.milestone_config import MilestoneConfig
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import BranchState
-from mcp_server.tools.issue_tools import CreateIssueTool
+from mcp_server.schemas import GitConfig
+from mcp_server.schemas.github_models import IssueReadModel
+from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from tests.mcp_server.test_support import get_default_server_root
 
 _STUB_INSTRUCTIONS = PhaseInstructionsSpec(
@@ -90,8 +95,6 @@ class TestPhaseStateEngineConstructorC4:
 class TestPhaseStateEngineTransitionC4:
     def _build_engine(self, tmp_path: Path, contracts: ContractsConfig) -> PhaseStateEngine:
         """Build a minimal PhaseStateEngine with injected contracts_config."""
-        from mcp_server.schemas import GitConfig  # noqa: PLC0415
-
         git_config = MagicMock(spec=GitConfig)
         project_manager = MagicMock()
         state_repository = MagicMock()
@@ -200,18 +203,31 @@ class TestCreateIssueToolConstructorC4:
 
 
 class TestCreateIssueToolFirstPhaseC4:
-    def test_assemble_labels_derives_first_phase_from_contracts(self) -> None:
-        """_assemble_labels must derive first phase via contracts_config.get_first_phase."""
-        from mcp_server.config.schemas.issue_config import IssueConfig  # noqa: PLC0415
-        from mcp_server.config.schemas.milestone_config import MilestoneConfig  # noqa: PLC0415
-        from mcp_server.tools.issue_tools import CreateIssueInput  # noqa: PLC0415
-
+    @pytest.mark.asyncio
+    async def test_assemble_labels_derives_first_phase_from_contracts(self) -> None:
+        """Issue creation derives its phase label from the configured first phase."""
         issue_config = MagicMock(spec=IssueConfig)
         issue_config.get_label.return_value = "type:feature"
         issue_config.get_workflow.return_value = "feature"
+        manager = MagicMock()
+        manager.create_issue.return_value = {"number": 1}
+        manager.get_issue.return_value = IssueReadModel(
+            number=1,
+            url="https://github.com/example/repo/issues/1",
+            title="Test issue",
+            body="Test body",
+            state="open",
+            labels=["type:feature", "scope:mcp-server", "priority:high", "phase:research"],
+            milestone=None,
+            assignees=[],
+            created_at="2026-01-01T00:00:00Z",
+            updated_at="2026-01-01T00:00:00Z",
+            closed_at=None,
+            author="alice",
+        )
 
         tool = CreateIssueTool(
-            manager=MagicMock(),
+            manager=manager,
             issue_config=issue_config,
             milestone_config=MagicMock(spec=MilestoneConfig),
             contracts_config=_minimal_contracts(first_phase="research"),
@@ -219,13 +235,15 @@ class TestCreateIssueToolFirstPhaseC4:
             scope_config=None,
             git_config=None,
         )
-        params = MagicMock(spec=CreateIssueInput)
-        params.is_epic = False
-        params.issue_type = "feature"
-        params.scope = "mcp-server"
-        params.priority = "high"
-        params.parent_issue = None
+        params = CreateIssueInput(
+            issue_type="feature",
+            title="Test issue",
+            priority="high",
+            scope="mcp-server",
+            body="Test body",
+        )
 
-        # test-only: verify protected method derives phase from contracts_config
-        labels = tool._assemble_labels(params)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
-        assert "phase:research" in labels
+        await tool.execute(params, NoteContext())
+
+        manager.create_issue.assert_called_once()
+        assert "phase:research" in manager.create_issue.call_args.kwargs["labels"]

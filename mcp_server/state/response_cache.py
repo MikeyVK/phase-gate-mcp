@@ -39,12 +39,13 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
         self._max_size = max_size
         self._cache: OrderedDict[str, BaseModel] = OrderedDict()
 
-    def put(self, tool_name: str, output: BaseModel) -> CachePublication:  # noqa: ARG002
+    def put(self, tool_name: str, output: BaseModel) -> CachePublication:
         # Keep the publisher's keyword contract; entries are keyed by run_id.
         """Publish the output DTO to the cache and return a CachePublication."""
+        del tool_name
         try:
             size_chars = len(serialize_cached_response(output))
-        except Exception as exc:  # noqa: BLE001 -- Publication boundary retains native diagnosis.
+        except Exception as exc:  # Publication boundary retains native diagnosis.
             logger.exception("Cache serialization failed")
             return CachePublication(
                 success=False,
@@ -64,7 +65,7 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
             if len(self._cache) > self._max_size:
                 self._cache.popitem(last=False)
             return CachePublication(run_id=run_id, success=True, size_chars=size_chars)
-        except Exception as exc:  # noqa: BLE001 -- Publication boundary retains native diagnosis.
+        except Exception as exc:  # Publication boundary retains native diagnosis.
             # Publication failure must not replace the underlying tool outcome.
             logger.exception("Cache publication failed")
             return CachePublication(

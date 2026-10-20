@@ -34,7 +34,7 @@ from tests.mcp_server.test_support import get_default_server_root
 
 
 # Test Helper
-class _MockLabel:  # pylint: disable=too-few-public-methods
+class _MockLabel:
     """Mock label object for testing (avoids Mock.name conflict)."""
 
     def __init__(self, name: str, color: str, description: str = "") -> None:

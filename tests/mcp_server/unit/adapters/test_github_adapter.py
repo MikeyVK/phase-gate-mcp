@@ -29,10 +29,11 @@ def injected_settings() -> GitHubSettings:
 
 @pytest.fixture
 def adapter(
-    mock_github_client: MagicMock,  # noqa: ARG001 -- Fixture patches the external client.
+    mock_github_client: MagicMock,
     injected_settings: GitHubSettings,
 ) -> GitHubAdapter:
     """Return an adapter with mocked client and explicit settings."""
+    del mock_github_client
     return GitHubAdapter(settings=injected_settings)
 
 
@@ -59,7 +60,7 @@ def test_init_incomplete_settings(
     mock_github_client.assert_not_called()
 
 
-def test_repo_property(adapter: GitHubAdapter, mock_github_client: MagicMock) -> None:  # noqa: ARG001
+def test_repo_property(adapter: GitHubAdapter) -> None:
     mock_repo = MagicMock()
     adapter.client.get_repo.return_value = mock_repo
 

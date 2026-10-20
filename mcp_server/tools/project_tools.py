@@ -112,7 +112,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
     async def execute(
         self,
         params: InitializeProjectInput,
-        context: NoteContext,  # noqa: ANN401, ARG002
+        context: NoteContext,
     ) -> InitializeProjectOutput:
         """Admit the branch, then initialize project metadata and branch state.
 
@@ -124,6 +124,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         Returns:
             InitializeProjectOutput
         """
+        del context
         # Step 0: Get current branch once and reuse
         with anyio.fail_after(5):
             branch = await anyio.to_thread.run_sync(self.git_manager.require_attached_branch)
@@ -216,7 +217,7 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
     async def execute(
         self,
         params: GetProjectPlanInput,
-        context: NoteContext,  # noqa: ANN401
+        context: NoteContext,
     ) -> ProjectPlanOutput:
         """Execute project plan retrieval.
 

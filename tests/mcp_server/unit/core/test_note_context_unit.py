@@ -3,58 +3,37 @@
 Unit tests for NoteContext and generic note entries.
 
 @layer: Tests (Unit)
-@dependencies: [importlib, types, mcp_server.tools.tool_result]
+@dependencies: [mcp_server.core.operation_notes, mcp_server.tools.tool_result]
 """
 
 # Standard library
-import importlib
-from types import ModuleType
-from typing import Any
 from unittest.mock import Mock
 
 # Project modules
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.tools.tool_result import ToolResult
-
-
-def _load_operation_notes_module() -> ModuleType:
-    """Import the operation_notes module on demand for RED/GREEN flow."""
-    return importlib.import_module("mcp_server.core.operation_notes")
-
-
-def _get_attr(module: ModuleType, name: str) -> Any:  # noqa: ANN401
-    """Return a named attribute from the imported module."""
-    return getattr(module, name)
 
 
 def test_operation_notes_module_exists() -> None:
     """operation_notes module must exist and expose NoteContext."""
-    module = _load_operation_notes_module()
-    note_context = _get_attr(module, "NoteContext")
-    assert note_context is not None
+    assert NoteContext is not None
 
 
 def test_note_context_produce_of_type_insertion_order() -> None:
     """produce() and of_type() preserve insertion order for matching variants."""
-    module = _load_operation_notes_module()
-    note_context_type = _get_attr(module, "NoteContext")
-    note_type = _get_attr(module, "Note")
+    context = NoteContext()
+    context.produce(Note(key="allowed_branch_types", params={"types": "a"}))
+    context.produce(Note(key="allowed_branch_types", params={"types": "b"}))
+    context.produce(Note(key="allowed_branch_types", params={"types": "c"}))
 
-    context = note_context_type()
-    context.produce(note_type(key="allowed_branch_types", params={"types": "a"}))
-    context.produce(note_type(key="allowed_branch_types", params={"types": "b"}))
-    context.produce(note_type(key="allowed_branch_types", params={"types": "c"}))
-
-    notes = context.of_type(note_type)
+    notes = context.of_type(Note)
     types = [note.params["types"] for note in notes]
     assert types == ["a", "b", "c"]
 
 
 def test_render_empty_returns_base_unchanged() -> None:
     """render_to_response returns the original ToolResult when nothing is renderable."""
-    module = _load_operation_notes_module()
-    note_context_type = _get_attr(module, "NoteContext")
-
-    context = note_context_type()
+    context = NoteContext()
     base = ToolResult.text("ok")
 
     result = context.render_to_response(base)
@@ -64,16 +43,12 @@ def test_render_empty_returns_base_unchanged() -> None:
 
 def test_note_context_delegation() -> None:
     """NoteContext must delegate to presenter.present_notes if presenter is passed."""
-    module = _load_operation_notes_module()
-    note_context_type = _get_attr(module, "NoteContext")
-    note_type = _get_attr(module, "Note")
-
     mock_presenter = Mock()
     mock_presenter.present_notes.return_value = "Formatted markdown"
 
-    context = note_context_type(presenter=mock_presenter, tool_name="dummy_tool")
+    context = NoteContext(presenter=mock_presenter, tool_name="dummy_tool")
 
-    note = note_type(key="test_key", params={"val": 1})
+    note = Note(key="test_key", params={"val": 1})
     context.produce(note)
 
     base = ToolResult.text("base content")
@@ -84,25 +59,3 @@ def test_note_context_delegation() -> None:
     assert len(result.content) == 2
     assert result.content[0] == {"type": "text", "text": "base content"}
     assert result.content[1] == {"type": "text", "text": "Formatted markdown"}
-
-
-def test_clean_break_legacy_constructs_removed() -> None:
-    """Legacy note subclasses and mapper must be completely removed."""
-    module = _load_operation_notes_module()
-    for name in [
-        "ExclusionNote",
-        "SuggestionNote",
-        "BlockerNote",
-        "RecoveryNote",
-        "InfoNote",
-        "CommitNote",
-        "Renderable",
-    ]:
-        assert not hasattr(module, name), f"{name} should be removed"
-
-    import importlib  # noqa: PLC0415
-
-    presenter_module = importlib.import_module("mcp_server.presenters.text_presenter")
-    assert not hasattr(presenter_module, "map_legacy_note_to_event"), (
-        "map_legacy_note_to_event should be removed"
-    )

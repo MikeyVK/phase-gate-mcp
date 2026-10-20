@@ -623,6 +623,7 @@ def test_native_cache_stores_and_reuses_loopback_response(
             self.do_GET()
 
         def log_message(self, format: str, *args: object) -> None:
+            del format, args
             return
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)

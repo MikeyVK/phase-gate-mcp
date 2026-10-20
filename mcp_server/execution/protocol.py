@@ -56,7 +56,7 @@ TRequest = TypeVar("TRequest", bound=BaseModel)
 
 
 @dataclass(frozen=True)
-class AdapterRequestContract(Generic[TRequest]):  # noqa: UP046 -- Preserve invariant request admission; reassess in #513.
+class AdapterRequestContract(Generic[TRequest]):  # noqa: UP046 -- Preserve invariant request admission; reassess when supported inference preserves this declared contract.
     """Pure composition of operation intent and the runtime's execution context."""
 
     wire_type: type[BaseModel]

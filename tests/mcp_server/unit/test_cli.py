@@ -9,14 +9,18 @@ Tests for CLI.
 # Standard library
 import contextlib
 import json
+import shutil
+from collections.abc import Callable, Iterable
+from os import PathLike
 from pathlib import Path
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 # Third-party
 import pytest
 
 from mcp_server.cli import main
 from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
 from mcp_server.services.template_renewal import RenewalOutcome, RenewalResult
@@ -92,14 +96,30 @@ def test_cli_init_result(
     }
     for section, data in copied_config.items():
         (mock_assets / "config" / f"{section}.yaml").write_text(json.dumps(data), encoding="utf-8")
-    import shutil  # noqa: PLC0415
 
     original_copytree = shutil.copytree
 
-    def mock_copytree(src, dst, *args, **kwargs):
+    def mock_copytree[Destination: (str, PathLike[str])](
+        src: str | PathLike[str],
+        dst: Destination,
+        symlinks: bool = False,
+        ignore: Callable[[str, list[str]], Iterable[str]] | None = None,
+        copy_function: Callable[[str, str], object] = shutil.copy2,
+        ignore_dangling_symlinks: bool = False,
+        dirs_exist_ok: bool = False,
+    ) -> Destination:
+        del src
         shutil.copytree = original_copytree
         try:
-            return shutil.copytree(mock_assets, dst, *args, **kwargs)
+            return shutil.copytree(
+                mock_assets,
+                dst,
+                symlinks=symlinks,
+                ignore=ignore,
+                copy_function=copy_function,
+                ignore_dangling_symlinks=ignore_dangling_symlinks,
+                dirs_exist_ok=dirs_exist_ok,
+            )
         finally:
             shutil.copytree = mock_copytree
 
@@ -202,9 +222,6 @@ def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
 def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
     """A target-bootstrap configuration error selects the degraded server."""
-    from unittest.mock import AsyncMock  # noqa: PLC0415
-
-    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
 
     workspace = tmp_path / "workspace"
     (workspace / ".pgmcp").mkdir(parents=True)
@@ -217,7 +234,7 @@ def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
             "mcp_server.bootstrap.ServerBootstrapper.bootstrap_target",
             side_effect=ConfigError("Corrupt artifacts.yaml config"),
         ),
-        patch("mcp_server.server.DegradedMCPServer") as degraded,
+        patch("mcp_server.cli.DegradedMCPServer") as degraded,
     ):
         degraded.return_value.run = AsyncMock()
         main(settings)
@@ -236,9 +253,6 @@ def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
 
 def test_cli_degraded_server_on_version_mismatch(tmp_path: Path) -> None:
     """A target-bootstrap version error selects the degraded server."""
-    from unittest.mock import AsyncMock  # noqa: PLC0415
-
-    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
 
     workspace = tmp_path / "workspace"
     (workspace / ".pgmcp").mkdir(parents=True)
@@ -251,7 +265,7 @@ def test_cli_degraded_server_on_version_mismatch(tmp_path: Path) -> None:
             "mcp_server.bootstrap.ServerBootstrapper.bootstrap_target",
             side_effect=ConfigError("Workspace version mismatch"),
         ),
-        patch("mcp_server.server.DegradedMCPServer") as degraded,
+        patch("mcp_server.cli.DegradedMCPServer") as degraded,
     ):
         degraded.return_value.run = AsyncMock()
         main(settings)
@@ -325,7 +339,6 @@ def test_cli_init_exception_preserves_diagnostic(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Initialization failures expose the original chained exception and facts."""
-    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
 
     settings = Settings(server=ServerSettings(workspace_root=str(tmp_path)))
     assets = tmp_path / "assets"

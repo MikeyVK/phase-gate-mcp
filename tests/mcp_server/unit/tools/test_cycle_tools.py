@@ -1,4 +1,3 @@
-# pyright: reportMissingImports=false
 # tests\mcp_server\unit\tools\test_cycle_tools.py
 # template=unit_test version=3d15d309 created=2026-03-13T11:30Z updated=
 """Unit tests for the renamed cycle tools module and dispatch hooks.
@@ -13,13 +12,14 @@ from shutil import copytree
 from unittest.mock import MagicMock, patch
 
 import pytest
-from mcp.types import CallToolRequest, CallToolRequestParams
-from pydantic import BaseModel
+from mcp.types import CallToolRequest, CallToolRequestParams, TextContent
+from pydantic import BaseModel, ValidationError
 
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.schemas.deliverables import SavePlanningModel
+from mcp_server.schemas.tool_outputs import CycleTransitionOutput, ForceCycleTransitionOutput
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -70,6 +70,12 @@ class FakeForceCycleStateEngine:
         return self._result
 
 
+def _text_content(item: object) -> str:
+    """Assert the SDK text block expected by these dispatch tests."""
+    assert isinstance(item, TextContent)
+    return item.text
+
+
 def _make_transition_advisory_execute(
     success: bool = True,
     to_cycle: int = 1,
@@ -78,11 +84,7 @@ def _make_transition_advisory_execute(
     is_force: bool = False,
 ) -> Callable[[object, object, NoteContext], Awaitable[BaseModel]]:
     async def execute(_self: object, _params: object, context: NoteContext) -> BaseModel:
-        from mcp_server.schemas.tool_outputs import (  # noqa: PLC0415
-            CycleTransitionOutput,
-            ForceCycleTransitionOutput,
-        )
-
+        del context
         # No legacy InfoNote produced
         if is_force:
             return ForceCycleTransitionOutput(
@@ -251,9 +253,9 @@ class TestCycleTools:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "✅" in response.content[0].text
+        assert "✅" in _text_content(response.content[0])
         assert len(response.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
+        assert TRANSITION_ADVISORY_NOTE in _text_content(response.content[0])
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -324,9 +326,11 @@ class TestCycleTools:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "Force-transitioned from Cycle - to Cycle 2/2 (One)" in (response.content[0].text)
+        assert "Force-transitioned from Cycle - to Cycle 2/2 (One)" in (
+            _text_content(response.content[0])
+        )
         assert len(response.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
+        assert TRANSITION_ADVISORY_NOTE in _text_content(response.content[0])
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -437,7 +441,7 @@ class TestCycleTools:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        texts = [item.text for item in response.content]
+        texts = [_text_content(item) for item in response.content]
         assert len(response.content) == 1
         assert "cycle hook failed" in texts[0]
         assert all(TRANSITION_ADVISORY_NOTE not in text for text in texts)
@@ -514,7 +518,7 @@ class TestCycleTools:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        text = response.content[0].text
+        text = _text_content(response.content[0])
         assert len(response.content) == 1
         assert "cycle hook failed" in text
         assert "⚠️" not in text
@@ -574,8 +578,6 @@ class TestTransitionCycleToolAdvisoryNote:
         )
         context = NoteContext()
 
-        from mcp_server.schemas.tool_outputs import CycleTransitionOutput  # noqa: PLC0415
-
         result = await tool.execute(
             TransitionCycleInput(to_cycle=3, issue_number=257),
             context,
@@ -630,8 +632,6 @@ class TestForceCycleToolAdvisoryNote:
             context,
         )
 
-        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
-
         assert isinstance(result, ForceCycleTransitionOutput)
         assert result.success
         assert len(context.entries) == 0
@@ -678,8 +678,6 @@ class TestForceCycleToolFormatting:
             ),
             NoteContext(),
         )
-
-        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
 
         assert isinstance(result, ForceCycleTransitionOutput)
         assert result.success
@@ -728,8 +726,6 @@ class TestForceCycleToolFormatting:
             NoteContext(),
         )
 
-        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
-
         assert isinstance(result, ForceCycleTransitionOutput)
         assert result.success
         assert result.skipped_gates == []
@@ -739,10 +735,6 @@ class TestForceCycleToolFormatting:
 
     def test_force_cycle_transition_input_rejects_boolean_approval(self) -> None:
         """Reject boolean input for human_approval_message (C_CYCLE_TOOLS.3)."""
-        from pydantic import ValidationError  # noqa: PLC0415
-
-        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput  # noqa: PLC0415
-
         for approval in (True, False):
             with pytest.raises(ValidationError, match="human_approval_message"):
                 ForceCycleTransitionInput.model_validate(
@@ -755,10 +747,6 @@ class TestForceCycleToolFormatting:
 
     def test_force_cycle_transition_input_rejects_empty_approval_and_reason(self) -> None:
         """Reject empty/whitespace approval/reason (C_CYCLE_TOOLS.3)."""
-        from pydantic import ValidationError  # noqa: PLC0415
-
-        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput  # noqa: PLC0415
-
         with pytest.raises(ValidationError, match="String should have at least 1 character"):
             ForceCycleTransitionInput(
                 to_cycle=2,

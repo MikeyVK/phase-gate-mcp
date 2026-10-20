@@ -34,7 +34,7 @@ class IToolInputContract(Protocol[TInput_co]):
 
 
 @dataclass(frozen=True)
-class PreparedToolInputContract(Generic[TInput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
+class PreparedToolInputContract(Generic[TInput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess when supported inference preserves this declared contract.
     """Hold the composition root's schema and admission without reload capability."""
 
     schema: FrozenJsonObject

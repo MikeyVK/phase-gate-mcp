@@ -155,7 +155,7 @@ class FixCapability(_Declaration):
 CapabilityT = TypeVar("CapabilityT", bound=BaseModel)
 
 
-class AdapterRole(_Declaration, Generic[CapabilityT]):  # noqa: UP046 -- Pydantic 2.11 cannot resolve validator TypeVars after migration; reassess in #513.
+class AdapterRole(_Declaration, Generic[CapabilityT]):  # noqa: UP046 -- Full Pydantic generic declaration requires classic TypeVars; reassess when its complete schema and validation support PEP 695.
     """One role protocol and immutable named capability declarations."""
 
     contract_version: Annotated[int, Field(strict=True, ge=1, le=1)]

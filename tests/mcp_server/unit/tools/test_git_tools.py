@@ -24,11 +24,19 @@ from mcp_server.schemas.tool_outputs import (
     GitCheckoutOutput,
     GitCommitOutput,
     GitDeleteBranchOutput,
+    GitDiffOutput,
+    GitListBranchesOutput,
     GitMergeOutput,
     GitPushOutput,
     GitRestoreOutput,
     GitStashOutput,
     GitStatusOutput,
+)
+from mcp_server.tools.git_analysis_tools import (
+    GitDiffInput,
+    GitDiffTool,
+    GitListBranchesInput,
+    GitListBranchesTool,
 )
 from mcp_server.tools.git_tools import (
     CheckMergeInput,
@@ -77,25 +85,25 @@ def mock_git_manager() -> MagicMock:
 @pytest.mark.asyncio
 async def test_create_branch_tool_requires_base_branch() -> None:
     """Test that base_branch parameter is required."""
-    with pytest.raises(Exception):  # noqa: B017 — Pydantic validation error; exact type varies by version
+    with pytest.raises(ValidationError):
         CreateBranchInput(issue_number=123, name="test-branch", branch_type="feature")
 
 
 @pytest.mark.asyncio
 async def test_create_branch_tool_requires_issue_number() -> None:
     """Test that CreateBranchInput requires issue_number."""
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(ValidationError):
         CreateBranchInput(name="test-branch", branch_type="feature", base_branch="HEAD")
 
 
 @pytest.mark.asyncio
 async def test_create_branch_tool_rejects_non_positive_issue_number() -> None:
     """Test that CreateBranchInput rejects issue_number < 1."""
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(ValidationError):
         CreateBranchInput(
             issue_number=0, name="test-branch", branch_type="feature", base_branch="HEAD"
         )
-    with pytest.raises(Exception):  # noqa: B017
+    with pytest.raises(ValidationError):
         CreateBranchInput(
             issue_number=-5, name="test-branch", branch_type="feature", base_branch="HEAD"
         )
@@ -208,7 +216,6 @@ async def test_git_commit_tool_docs(mock_git_manager: MagicMock) -> None:
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -249,7 +256,6 @@ async def test_git_commit_tool_resolves_commit_type_from_phase_contracts(
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -280,7 +286,6 @@ async def test_git_commit_tool_with_workflow_phase(mock_git_manager: MagicMock) 
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -314,7 +319,6 @@ async def test_git_commit_tool_with_workflow_phase_and_subphase(
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -346,7 +350,6 @@ async def test_git_commit_tool_with_cycle_number(mock_git_manager: MagicMock) ->
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -379,7 +382,6 @@ async def test_git_commit_tool_with_workflow_phase_and_files(mock_git_manager: M
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -421,7 +423,6 @@ async def test_git_commit_tool_with_commit_type_override(mock_git_manager: Magic
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -467,7 +468,6 @@ async def test_git_commit_tool_execute_with_valid_commit_type(mock_git_manager: 
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
@@ -587,8 +587,6 @@ async def test_git_commit_integration_workflow_phases() -> None:
     params1 = GitCommitInput(message="investigate alternatives", workflow_phase="research")
     result1 = await tool.execute(params1, NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
-
     assert isinstance(result1, GitCommitOutput)
     assert result1.success is True
     assert result1.commit_hash == "integration123"
@@ -648,7 +646,6 @@ async def test_git_checkout_tool(mock_git_manager: MagicMock) -> None:
 
     mock_git_manager.checkout.assert_called_once_with("main")
     mock_engine.get_state.assert_called_once_with("main")
-    from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCheckoutOutput)
     assert result.success is True
@@ -676,7 +673,6 @@ async def test_git_checkout_tool_displays_parent_branch(mock_git_manager: MagicM
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.checkout.assert_called_once_with("feature/79-test")
-    from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCheckoutOutput)
     assert result.success is True
@@ -705,7 +701,6 @@ async def test_git_checkout_tool_no_parent_branch(mock_git_manager: MagicMock) -
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.checkout.assert_called_once_with("main")
-    from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
 
     assert isinstance(result, GitCheckoutOutput)
     assert result.success is True
@@ -1609,11 +1604,6 @@ async def test_check_merge_manager_delegates_to_adapter() -> None:
 @pytest.mark.asyncio
 async def test_git_list_branches_tool(mock_git_manager: MagicMock) -> None:
     """Test GitListBranchesTool returns GitListBranchesOutput DTO."""
-    from mcp_server.schemas.tool_outputs import GitListBranchesOutput  # noqa: PLC0415
-    from mcp_server.tools.git_analysis_tools import (  # noqa: PLC0415
-        GitListBranchesInput,
-        GitListBranchesTool,
-    )
 
     tool = GitListBranchesTool(manager=mock_git_manager)
     mock_git_manager.get_current_branch.return_value = "feature/402"
@@ -1639,8 +1629,6 @@ async def test_git_list_branches_tool(mock_git_manager: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_git_diff_tool(mock_git_manager: MagicMock) -> None:
     """Test GitDiffTool returns GitDiffOutput DTO."""
-    from mcp_server.schemas.tool_outputs import GitDiffOutput  # noqa: PLC0415
-    from mcp_server.tools.git_analysis_tools import GitDiffInput, GitDiffTool  # noqa: PLC0415
 
     tool = GitDiffTool(manager=mock_git_manager)
     mock_git_manager.compare_branches.return_value = (

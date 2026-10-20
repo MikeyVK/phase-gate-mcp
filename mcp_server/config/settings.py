@@ -63,6 +63,7 @@ class ServerSettings(BaseModel):
             return Path(self.template_root)
         return self.resolved_server_root / "template_suite"
 
+    # Mypy cannot combine computed_field and property; reassess when its plugin supports both.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def version(self) -> str:

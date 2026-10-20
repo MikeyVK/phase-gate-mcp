@@ -23,8 +23,9 @@ class StandardsResource(BaseResource):
         self._tests = tests
         self._fixes = fixes
 
-    async def read(self, uri: str) -> str:  # noqa: ARG002
+    async def read(self, uri: str) -> str:
         """Project configured policy facts, without claiming execution results."""
+        del uri
         policy = {
             "schema_version": 1,
             "run_checks": {
