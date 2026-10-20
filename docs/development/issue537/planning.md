@@ -3,7 +3,7 @@
 # Issue \#537 — Planning
 
 **Status:** Planning — independent review requested  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -147,7 +147,7 @@ Existing focused target files:
 
 ##### Changed-file gates
 
-**Method:** Derive current changed Python paths from Git before the call; run_checks(scope='targets', targets=<only changed .py/.pyi>, checks=['python_format','python_lint','python_pyright'], timeout_seconds=600). Separately check changed YAML via yaml_configuration; Markdown uses its document link checks. Production-only Mypy runs in Validation as configured.
+**Method:** Derive current changed Python paths from Git before each call. Run run_checks(scope='targets', targets=<all changed production/test/helper .py/.pyi files>, checks=['python_format','python_lint'], timeout_seconds=600). Separately run run_checks(scope='targets', targets=<only changed production .py/.pyi files under mcp_server>, checks=['python_pyright'], timeout_seconds=600). Test/helper typechecks are narrow diagnostics, not a new required strict gate over existing wider mock/Unknown debt; investigate concrete new contract violations without widening the cycle. Check changed YAML separately via yaml_configuration; Markdown uses its document link checks. Configured Mypy/Pyright in Validation retain their native production selection and strictness.
 
 **Expected Result:** Suitable file types per check; no Markdown/YAML routed to Python checks.
 
@@ -193,3 +193,5 @@ Current response delivery references.
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-20 | @imp planner | Register one coherent cycle and phase deliverables with focused implementation evidence and full Validation obligations. |
+| 0.2 | 2026-10-20 | @imp planner | Resolve QA P2 by separating production Pyright gates from test/helper format/lint and bounded diagnostic typechecks. |
+
