@@ -16,7 +16,77 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-19T22:22:51.547264+00:00"
+      "created_at": "2026-10-19T22:22:51.547264+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Compact post-operation response recovery",
+              "deliverables": [
+                {
+                  "deliverable_name": "Compact recovery contract and presentation",
+                  "description": "Implement the approved small IPresenter.recover contract in existing presenters, nullable processing_error on shared models, normal/recovery schema alternatives and configured notices. Bound Unicode candidate prefixes before encoding. No operation/notes/attachments/context objects or normal data projection enter recovery.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/presenters/response_presenter.py"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Known-outcome server boundary",
+                  "description": "Remember actual outcome before presentation; on later exception pass only outcome, native diagnostic strings and successful cache receipt scalars to one recovery attempt. Preserve original cause/outcome and finite terminal behavior, no second server presenter, payload conversion or side effect retry.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/server.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                },
+                {
+                  "deliverable_name": "Behavior evidence and consumer alignment",
+                  "description": "Adapt existing public SDK failure test and directly affected model/profile/config/interface/startup tests. Prove success/failure, reference/null, channel/schema truth, poisoned/large payload independence, bounded Unicode diagnosis and finite recovery; no snapshots/legacy tests or broad test rewrite.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_tool_attachment_transport.py"
+                  },
+                  "deliverable_id": "D_1.3"
+                }
+              ],
+              "exit_criteria": "Meaningful RED then GREEN evidence for the post-operation defect; compact outcome/notice/bounded-diagnosis/existing-reference recovery conforms to selected schemas/channels without original-payload conversion, normal projection/render retry, publication or retrieval; affected consumers aligned; focused tests and applicable target checks pass; no waiver or new policy."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Compact durable validation evidence",
+                "description": "Record exact native full-suite and configured/branch checks, focused evidence, negative outcomes and independent review entrypoints; no transient run IDs as sole proof.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue528/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Current presentation boundary reference",
+                "description": "Document compact recovery/output schema and original-data/guidance limitations; remove obsolete active wrapper-metadata reservation without rewriting historical529 docs.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/reference/presentation_architecture.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
