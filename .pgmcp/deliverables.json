@@ -16,7 +16,68 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-10-20T07:34:11.554324+00:00"
+      "created_at": "2026-10-20T07:34:11.554324+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Restore configured normal note rendering",
+              "deliverables": [
+                {
+                  "deliverable_name": "Connect existing note formatting policy",
+                  "description": "Supply existing global FormattingConfig and selected tool max_items at TextPresenter.present_notes; preserve template priority, grouping, raw parameters and native error handling. No defaults, producer, public contract or config change.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/presenters/text_presenter.py"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Prove readable notes and independent planning persistence",
+                  "description": "Use existing SDK/fixture surfaces for one isolated append plus independent get_project_plan readback; retain full original/appended facts. Add a small public note policy parametrization and missing-limit/nested-value diagnostic checks; reuse existing scalar/syntax/formatter coverage without prose snapshots or copying the research probe.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_execution_presentation_v3.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                }
+              ],
+              "exit_criteria": "Meaningful public SDK RED then GREEN; readable evidence note follows existing policy and independent readback proves preserved C_1/new C_2 facts; focused note/formatter/composition behavior and exact changed-file gates pass; no policy/default/public-shape change or unrelated fix."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Durable native validation evidence",
+                "description": "Record exact full native run, branch/configured gates, behavioral proof, preservation and honest negative/incomplete history.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue530/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Current note formatting contract",
+                "description": "Clarify the existing global formatting/per-tool limit semantics for normal notes in the common presentation reference; no agent instruction expansion.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/reference/presentation_architecture.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }
