@@ -73,7 +73,7 @@ class ApplyFixesTool(ICoreTool[FixSelectionRequest, ApplyFixesOutput]):
         return "Apply selected fixes and report their factual native outcomes."
 
     @property
-    def args_model(self) -> type[FixSelectionRequest] | None:
+    def args_model(self) -> type[FixSelectionRequest]:
         return self._input_model
 
     @property

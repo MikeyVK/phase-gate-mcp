@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path, PureWindowsPath
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeGuard
 
 from pydantic import (
     AfterValidator,
@@ -60,12 +60,22 @@ def _absolute_path(value: str) -> str:
     return value
 
 
+def _is_list(value: object) -> TypeGuard[list[object]]:
+    """Describe the existing list shape before Pydantic validates its members."""
+    return isinstance(value, list)
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    """Describe the existing dict shape without claiming valid keys or values."""
+    return isinstance(value, dict)
+
+
 def _tuple(value: object) -> object:
-    return tuple(value) if isinstance(value, list) else value
+    return tuple(value) if _is_list(value) else value
 
 
 def _args_map(value: object) -> object:
-    return tuple(value.items()) if isinstance(value, dict) else value
+    return tuple(value.items()) if _is_dict(value) else value
 
 
 WorkspaceRelativePath = Annotated[
@@ -155,7 +165,7 @@ class CheckScopeError(CheckSelectionError):
     ) -> None:
         super().__init__(CheckSelectionFailureReason.INVALID_TARGETS, target)
         self.target = target
-        self.scope_reason = scope_reason
+        self.scope_reason: Literal["missing", "outside_workspace", "unresolvable"] = scope_reason
         self.message = message
 
 

@@ -1,4 +1,3 @@
-# pyright: reportMissingImports=false
 """MCP Server Entrypoint."""
 
 import asyncio
@@ -37,11 +36,12 @@ from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+from mcp_server.schemas.tool_outputs import HealthCheckOutput, RestartServerOutput
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
@@ -81,7 +81,7 @@ class MCPServer:
         """Set up the MCP protocol handlers."""
 
         async def handle_list_resources(
-            _ctx: ServerRequestContext[None], _params: PaginatedRequestParams | None
+            _ctx: ServerRequestContext[dict[str, Any]], _params: PaginatedRequestParams | None
         ) -> ListResourcesResult:
             return ListResourcesResult(
                 resources=[
@@ -96,7 +96,7 @@ class MCPServer:
             )
 
         async def handle_read_resource(
-            _ctx: ServerRequestContext[None], params: ReadResourceRequestParams
+            _ctx: ServerRequestContext[dict[str, Any]], params: ReadResourceRequestParams
         ) -> ReadResourceResult:
             uri = params.uri
             try:
@@ -112,13 +112,13 @@ class MCPServer:
                 raise ValueError(f"Resource not found: {uri}")
             except asyncio.CancelledError:
                 raise
-            except Exception as exc:  # noqa: BLE001 — terminal SDK boundary preserves the cause
+            except Exception as exc:  # terminal SDK boundary preserves the cause
                 raise MCPError(code=0, message=str(exc)) from exc
 
         async def handle_list_tools(
-            _ctx: ServerRequestContext[None], _params: PaginatedRequestParams | None
+            _ctx: ServerRequestContext[dict[str, Any]], _params: PaginatedRequestParams | None
         ) -> ListToolsResult:
-            tools_list = []
+            tools_list: list[Tool] = []
             for t in self.tools:
                 output_schema = self.presenter.output_schema()
                 tools_list.append(
@@ -132,7 +132,7 @@ class MCPServer:
             return ListToolsResult(tools=tools_list)
 
         async def handle_call_tool(
-            _ctx: ServerRequestContext[None], params: CallToolRequestParams
+            _ctx: ServerRequestContext[dict[str, Any]], params: CallToolRequestParams
         ) -> CallToolResult:
             name, arguments = params.name, params.arguments
             call_id = uuid.uuid4().hex
@@ -141,13 +141,13 @@ class MCPServer:
 
             logger.debug(
                 "Tool call received",
-                extra={
-                    "props": {
+                extra=logging_extra(
+                    {
                         "call_id": call_id,
                         "tool_name": name,
-                        "argument_keys": argument_keys,
+                        "argument_keys": [*argument_keys],
                     }
-                },
+                ),
             )
 
             for tool in self.tools:
@@ -188,26 +188,26 @@ class MCPServer:
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.debug(
                             "Tool call completed",
-                            extra={
-                                "props": {
+                            extra=logging_extra(
+                                {
                                     "call_id": call_id,
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                 }
-                            },
+                            ),
                         )
                         return response_content
                     except asyncio.CancelledError:
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.info(
                             "Tool call cancelled",
-                            extra={
-                                "props": {
+                            extra=logging_extra(
+                                {
                                     "call_id": call_id,
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                 }
-                            },
+                            ),
                         )
                         raise
                     except Exception as e:
@@ -216,15 +216,15 @@ class MCPServer:
                             "Response processing failed: %s",
                             e,
                             exc_info=True,
-                            extra={
-                                "props": {
+                            extra=logging_extra(
+                                {
                                     "call_id": call_id,
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                     "error_type": type(e).__name__,
                                     "operation_success": operation_success,
                                 }
-                            },
+                            ),
                         )
                         if operation_success is not None:
                             try:
@@ -253,13 +253,13 @@ class MCPServer:
                             except Exception:
                                 logger.exception(
                                     "Response recovery failed",
-                                    extra={
-                                        "props": {
+                                    extra=logging_extra(
+                                        {
                                             "call_id": call_id,
                                             "tool_name": name,
                                             "operation_success": operation_success,
                                         }
-                                    },
+                                    ),
                                 )
                                 raise
                         return CallToolResult(
@@ -275,7 +275,7 @@ class MCPServer:
                 is_error=True,
             )
 
-        self.server = Server[None](
+        self.server = Server[dict[str, Any]](
             self._settings.server.name,
             on_list_resources=handle_list_resources,
             on_read_resource=handle_read_resource,
@@ -312,12 +312,8 @@ class DegradedMCPServer(MCPServer):
         self, settings: Settings, diagnostic: StartupDiagnostic, presenter: IPresenter
     ) -> None:
         """Keep recovery independent of rejected configuration and template admission."""
-        from mcp_server.schemas.tool_outputs import (  # noqa: PLC0415
-            HealthCheckOutput,
-            RestartServerOutput,
-        )
-        from mcp_server.tools.admin_tools import RestartServerTool  # noqa: PLC0415
-        from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
+        from mcp_server.tools.admin_tools import RestartServerTool  # noqa: PLC0415 -- Compose recovery tools only here; reassess if lifecycle ownership changes.
+        from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415 -- Preserve import-time uptime origin; reassess if clock ownership changes.
 
         health_tool = HealthCheckTool(settings, diagnostic)
         restart_tool = RestartServerTool(server_root=Path(settings.server.resolved_server_root))

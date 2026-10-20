@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from pydantic.main import IncEx
+
+
+def _is_object_sequence(value: object) -> TypeGuard[list[object] | tuple[object, ...]]:
+    return isinstance(value, (list, tuple))
+
+
+def _is_opaque_dict(value: object) -> TypeGuard[dict[Any, object]]:
+    # Keys remain opaque for native Pydantic exclusion; no string-key claim or coercion.
+    return isinstance(value, dict)
 
 
 def _absent_optional_nulls(value: object) -> IncEx:
@@ -23,15 +32,15 @@ def _absent_optional_nulls(value: object) -> IncEx:
                 if nested:
                     fields[name] = nested
         return fields
-    if isinstance(value, (list, tuple)):
+    if _is_object_sequence(value):
         elements: dict[int, IncEx | bool] = {}
         for index, item in enumerate(value):
             nested = _absent_optional_nulls(item)
             if nested:
                 elements[index] = nested
         return elements
-    if isinstance(value, dict):
-        members: dict[str, IncEx | bool] = {}
+    if _is_opaque_dict(value):
+        members: dict[Any, IncEx | bool] = {}
         for key, item in value.items():
             nested = _absent_optional_nulls(item)
             if nested:

@@ -41,7 +41,7 @@ class FileAdapterPackageReader:
             return ()
         if not root.is_dir():
             raise ConfigError("adapter_root_not_directory", str(root))
-        packages = []
+        packages: list[Path] = []
         for candidate in sorted(root.iterdir()):
             if candidate.is_dir() and (candidate / "manifest.yaml").exists():
                 resolved = candidate.resolve()
@@ -164,7 +164,7 @@ class AdapterCatalogLoader:
         self, directory: Path, manifest: AdapterManifest, manifest_path: Path
     ) -> tuple[tuple[str, Path, bytes], ...]:
         selected = {manifest_path}
-        result = []
+        result: list[tuple[str, Path, bytes]] = []
         for name in manifest.files:
             path = self._resolve_file(directory, name)
             if path in selected:

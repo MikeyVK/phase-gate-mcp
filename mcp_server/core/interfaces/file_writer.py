@@ -28,8 +28,8 @@ class FileCreationError(OSError):
         housekeeping: tuple[WriteHousekeepingIssue, ...] = (),
     ) -> None:
         super().__init__(message)
-        self.stage = stage
-        self.reason = reason
+        self.stage: Literal["write_staging", "create"] = stage
+        self.reason: Literal["permission_denied", "io_error"] = reason
         self.housekeeping = housekeeping
 
 
@@ -96,7 +96,7 @@ class OriginalReadError(OSError):
     ) -> None:
         super().__init__(message)
         self.path = path
-        self.reason = reason
+        self.reason: Literal["permission_denied", "invalid_encoding", "io_error"] = reason
         self.housekeeping = housekeeping
 
 
@@ -126,8 +126,8 @@ class FileReplacementError(OSError):
         housekeeping: tuple[WriteHousekeepingIssue, ...] = (),
     ) -> None:
         super().__init__(message)
-        self.stage = stage
-        self.reason = reason
+        self.stage: Literal["write_staging", "replace"] = stage
+        self.reason: Literal["permission_denied", "io_error"] = reason
         self.housekeeping = housekeeping
 
 

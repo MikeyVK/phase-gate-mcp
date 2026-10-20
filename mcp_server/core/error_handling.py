@@ -14,7 +14,7 @@ import json
 import logging
 import traceback
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from mcp_server.core.exceptions import (
     ConfigError,
@@ -24,23 +24,21 @@ from mcp_server.core.exceptions import (
     PreflightError,
     ValidationError,
 )
+from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 from mcp_server.tools.tool_result import ToolResult
 
-if TYPE_CHECKING:
-    from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
-
 logger = logging.getLogger(__name__)
+
+
+def _is_dict(value: object) -> bool:
+    """Preserve the native schema container dispatch at the dynamic core boundary."""
+    return isinstance(value, dict)
 
 
 def capture_exception(
     error: BaseException, *, params: dict[str, Any] | None = None
 ) -> ConfigErrorOutput | ExecutionErrorOutput:
     """Capture original diagnostic facts without presentation or exception dispatch."""
-    from mcp_server.schemas.error_outputs import (  # noqa: PLC0415 -- Avoid eager core/schema imports.
-        ConfigErrorOutput,
-        ExecutionErrorOutput,
-    )
-
     trace = "".join(traceback.format_exception(error))
     error_code = error.code if isinstance(error, MCPError) else None
     error_params = error.params if isinstance(error, MCPError) else {}
@@ -62,11 +60,11 @@ def capture_exception(
     )
 
 
-def tool_error_handler[T](func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
+def tool_error_handler[T, **P](func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
     """Catch expected tool exceptions and return structured errors."""
 
     @functools.wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> T:  # noqa: ANN401
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             result: T = await func(*args, **kwargs)
         except (
@@ -107,7 +105,7 @@ def tool_error_handler[T](func: Callable[..., Awaitable[T]]) -> Callable[..., Aw
 
             # Special handling for ValidationError with schema
             if isinstance(exc, ValidationError) and hasattr(exc, "schema") and exc.schema:
-                schema_dict = exc.schema if isinstance(exc.schema, dict) else exc.schema.to_dict()
+                schema_dict = exc.schema if _is_dict(exc.schema) else exc.schema.to_dict()
                 schema_text = json.dumps(schema_dict, indent=2)
                 # Two text items: error message + schema JSON
                 # (inline, readable by agents without extra tool call)
@@ -133,11 +131,12 @@ def tool_error_handler[T](func: Callable[..., Awaitable[T]]) -> Callable[..., Aw
                         file_path=file_path,
                     ),
                 )
-        except Exception as exc:  # noqa: BLE001
+        # Terminal wrapper retains native causes; reassess if the boundary moves.
+        except Exception as exc:
             message = f"Unexpected error: {type(exc).__name__}: {exc}"
             logger.exception("[BUG] %s: %s", func.__name__, message)
             result = cast(T, ToolResult.error(message))
 
         return result
 
-    return cast(Callable[..., Awaitable[T]], wrapper)
+    return wrapper

@@ -12,6 +12,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeGuard
 
 _CONTENT_KEYS = frozenset({"operation", "target_path", "input_path", "args", "execution_context"})
 _SELECTION_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
@@ -53,9 +54,29 @@ class _Options:
 
 @dataclass(frozen=True)
 class _Prerequisites:
-    module: str
+    module: object
     external_tools: tuple[dict[str, str | None], ...]
     error: str | None = None
+
+
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_string_list(value: object) -> TypeGuard[list[str]]:
+    return _is_object_list(value) and all(isinstance(item, str) for item in value)
+
+
+def _descriptor_member(value: object, key: str) -> object:
+    """Read a native descriptor field without replacing its malformed-input cause."""
+    if _is_object_dict(value):
+        return value[key]
+    # Preserve native failed indexing; reassess only if descriptor failure policy changes.
+    return value[key]  # type: ignore[index]  # pyright: ignore[reportIndexIssue]
 
 
 def _issue(location: list[str | int], code: str) -> dict[str, object]:
@@ -82,7 +103,7 @@ def _absolute(value: object, *, file: bool = False) -> bool:
 
 
 def _validate(value: object) -> _Request | dict[str, object]:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid([], "wrong_type")
     content = "input_path" in value or "target_path" in value
     expected = _CONTENT_KEYS if content else _SELECTION_KEYS
@@ -98,7 +119,7 @@ def _validate(value: object) -> _Request | dict[str, object]:
     if operation not in {"yaml_configuration", "json_schema"}:
         return _invalid(["operation"], "invalid_value")
     context = value["execution_context"]
-    if not isinstance(context, dict):
+    if not _is_object_dict(context):
         return _invalid(["execution_context"], "wrong_type")
     if set(context) != {"scratch_directory"}:
         unknown = sorted(str(key) for key in set(context) - {"scratch_directory"})
@@ -111,7 +132,7 @@ def _validate(value: object) -> _Request | dict[str, object]:
     if not _absolute(context["scratch_directory"]):
         return _invalid(["execution_context", "scratch_directory"], "invalid_value")
     args = value["args"]
-    if not isinstance(args, list) or any(not isinstance(arg, str) for arg in args):
+    if not _is_string_list(args):
         return _invalid(["args"], "wrong_type")
     files: tuple[str, ...]
     if content:
@@ -123,7 +144,7 @@ def _validate(value: object) -> _Request | dict[str, object]:
         files = (str(value["input_path"]),)
     else:
         targets = value["targets"]
-        if not isinstance(targets, list):
+        if not _is_object_list(targets):
             return _invalid(["targets"], "wrong_type")
         for index, target in enumerate(targets):
             if not isinstance(target, str):
@@ -137,16 +158,16 @@ def _validate(value: object) -> _Request | dict[str, object]:
 def _prerequisites() -> _Prerequisites:
     """Read authoritative exact pins and verify imports in this interpreter."""
     external: list[dict[str, str | None]] = []
-    module = ""
+    module: object = ""
     try:
         root = Path(__file__).parent
-        descriptor = json.loads((root / "dependencies.json").read_text(encoding="utf-8"))
-        native_tools = descriptor["native_tools"]
-        if not isinstance(native_tools, list) or len(native_tools) != 1:
+        descriptor: object = json.loads((root / "dependencies.json").read_text(encoding="utf-8"))
+        native_tools = _descriptor_member(descriptor, "native_tools")
+        if not _is_object_list(native_tools) or len(native_tools) != 1:
             raise ValueError("Invalid native dependency descriptor.")
         native = native_tools[0]
-        module = native["module"]
-        filename = native["requirements_file"]
+        module = _descriptor_member(native, "module")
+        filename = _descriptor_member(native, "requirements_file")
         if not isinstance(module, str) or not re.fullmatch(r"[a-zA-Z_][\w.]*", module):
             raise ValueError("Invalid native module declaration.")
         if not isinstance(filename, str) or Path(filename).name != filename:
@@ -182,6 +203,7 @@ def _prerequisites() -> _Prerequisites:
 def _options(args: tuple[str, ...]) -> _Options:
     entries: list[tuple[str, str | bool]] = []
     files: list[str] = []
+    pending: list[tuple[str, str | None]]
     index = 0
     while index < len(args):
         token = args[index]
@@ -280,13 +302,13 @@ class _NativeReport:
 
 def _complete_report(stdout: str, native_code: int) -> _NativeReport | None:
     try:
-        report = json.loads(stdout)
+        report: object = json.loads(stdout)
     except json.JSONDecodeError:
         return None
-    if not isinstance(report, dict):
+    if not _is_object_dict(report):
         return None
     errors, parse_errors = report.get("errors", []), report.get("parse_errors", [])
-    if not isinstance(errors, list) or not isinstance(parse_errors, list):
+    if not _is_object_list(errors) or not _is_object_list(parse_errors):
         return None
     if native_code == 0 and report.get("status") == "ok" and not errors and not parse_errors:
         return _NativeReport(None)
@@ -294,7 +316,7 @@ def _complete_report(stdout: str, native_code: int) -> _NativeReport | None:
         return None
     messages: list[str] = []
     for item in [*errors, *parse_errors]:
-        if not isinstance(item, dict):
+        if not _is_object_dict(item):
             return None
         message = item.get("message")
         if not isinstance(message, str) or not message.strip():
@@ -307,13 +329,15 @@ def _execute(request: _Request) -> tuple[dict[str, object], int]:
     prerequisites = _prerequisites()
     if prerequisites.error:
         return _unavailable(request, prerequisites, "dependency_unavailable", prerequisites.error)
+    module = prerequisites.module
+    assert isinstance(module, str)
     options = _options(request.args)
     guard = _guard(request, options)
     if guard:
         return _unavailable(request, prerequisites, "unsupported_input", guard)
     try:
         completed = subprocess.run(
-            [sys.executable, "-m", prerequisites.module, *request.args, *request.files],
+            [sys.executable, "-m", module, *request.args, *request.files],
             stdin=subprocess.DEVNULL,
             capture_output=True,
             check=False,

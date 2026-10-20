@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 from shutil import which
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeGuard
 
 if TYPE_CHECKING:
     from mcp_server.core.interfaces.artifact_header_reader import IArtifactHeaderReader
@@ -85,12 +85,30 @@ const {pathToFileURL} = require("node:url");
 """
 
 
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_string_list(value: object) -> TypeGuard[list[str]]:
+    return _is_object_list(value) and all(isinstance(item, str) for item in value)
+
+
+def _sorted_request_keys(keys: set[object]) -> list[object]:
+    """Keep native comparison failures for direct non-wire helper inputs."""
+    # JSON object keys are strings; a wire-only boundary would remove this exception.
+    return sorted(keys)  # type: ignore[type-var]  # pyright: ignore[reportArgumentType]
+
+
 def _invalid(location: list[str | int], code: str) -> dict[str, object]:
     return {"reason": "invalid_request", "details": [{"location": location, "code": code}]}
 
 
 def _validate_execution_context(value: object) -> dict[str, object] | None:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid(["execution_context"], "wrong_type")
     unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
     if unknown:
@@ -106,21 +124,24 @@ def _validate_execution_context(value: object) -> dict[str, object] | None:
 
 
 def _validate(value: object) -> tuple[str, list[str]] | dict[str, object]:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid([], "wrong_type")
-    for key in sorted(set(value) - _REQUEST_KEYS):
+    for key in _sorted_request_keys(set(value) - _REQUEST_KEYS):
         return _invalid([str(key)], "unknown_field")
     for key in sorted(_REQUEST_KEYS - set(value)):
         return _invalid([key], "missing_field")
     context_issue = _validate_execution_context(value["execution_context"])
     if context_issue is not None:
         return context_issue
+    fields: dict[str, str] = {}
     for key in ("operation", "target_path", "content"):
-        if not isinstance(value[key], str):
+        field_value = value[key]
+        if not isinstance(field_value, str):
             return _invalid([key], "wrong_type")
-    if value["operation"] != "message":
+        fields[key] = field_value
+    if fields["operation"] != "message":
         return _invalid(["operation"], "invalid_value")
-    path = value["target_path"]
+    path = fields["target_path"]
     if (
         not path
         or "\x00" in path
@@ -131,9 +152,9 @@ def _validate(value: object) -> tuple[str, list[str]] | dict[str, object]:
     ):
         return _invalid(["target_path"], "invalid_value")
     args = value["args"]
-    if not isinstance(args, list) or any(not isinstance(arg, str) for arg in args):
+    if not _is_string_list(args):
         return _invalid(["args"], "wrong_type")
-    return value["content"], list(args)
+    return fields["content"], list(args)
 
 
 def _unavailable(
@@ -174,7 +195,7 @@ def _evidence(
 def _empty_rules(stdout: bytes) -> bool:
     text = stdout.decode("utf-8", errors="replace")
     try:
-        report = json.loads(text)
+        report: object = json.loads(text)
     except json.JSONDecodeError:
         # Default native formatter: inspect the final diagnostic before its summary,
         # never the echoed input or a caller-supplied help URL.
@@ -185,17 +206,20 @@ def _empty_rules(stdout: bytes) -> bool:
             and summary.startswith("1 problems, 0 warnings")
             and diagnostics.endswith(" [empty-rules]")
         )
-    if not isinstance(report, dict) or not isinstance(report.get("results"), list):
+    if not _is_object_dict(report):
         return False
-    return any(
-        isinstance(result, dict)
-        and isinstance(result.get("errors"), list)
-        and any(
-            isinstance(error, dict) and error.get("name") == "empty-rules"
-            for error in result["errors"]
-        )
-        for result in report["results"]
-    )
+    results = report.get("results")
+    if not _is_object_list(results):
+        return False
+    for result in results:
+        if not _is_object_dict(result):
+            continue
+        errors = result.get("errors")
+        if not _is_object_list(errors):
+            continue
+        if any(_is_object_dict(error) and error.get("name") == "empty-rules" for error in errors):
+            return True
+    return False
 
 
 def _failure_reason(result: subprocess.CompletedProcess[bytes]) -> str | None:
@@ -268,10 +292,10 @@ def _run(
     except OSError as exc:
         return _unavailable("execution_error", str(exc))
     try:
-        info = json.loads(guard.stdout)
+        info: object = json.loads(guard.stdout)
     except UnicodeDecodeError, json.JSONDecodeError:
         return _unavailable("invalid_result", "Native prerequisite probe returned invalid data.")
-    if not isinstance(info, dict) or guard.returncode:
+    if not _is_object_dict(info) or guard.returncode:
         return _unavailable("execution_error", "Native prerequisite probe could not complete.")
     version = info.get("version")
     if not isinstance(version, str):
@@ -314,7 +338,7 @@ def _run(
 def main() -> int:
     """Compose the installed pure reader and run exactly one supplied request."""
     try:
-        request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+        request: object = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     except UnicodeDecodeError, json.JSONDecodeError:
         response, code = _invalid([], "invalid_value"), 2
     else:

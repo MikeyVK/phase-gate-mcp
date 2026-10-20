@@ -138,7 +138,7 @@ class CreateIssueTool(ICoreTool[CreateIssueInput, IssueOutput]):
         return "Create a new GitHub issue"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CreateIssueInput
 
     def __init__(
@@ -161,7 +161,6 @@ class CreateIssueTool(ICoreTool[CreateIssueInput, IssueOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         schema = self.args_model.model_json_schema()
         schema["properties"]["issue_type"]["enum"] = list(self._issue_config.issue_types)
         if self._label_config is not None:
@@ -262,7 +261,7 @@ class GetIssueTool(ICoreTool[GetIssueInput, IssueOutput]):
         return "Get detailed information about a specific GitHub issue"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GetIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
@@ -270,7 +269,6 @@ class GetIssueTool(ICoreTool[GetIssueInput, IssueOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GetIssueInput, context: NoteContext) -> IssueOutput:
@@ -303,7 +301,7 @@ class ListIssuesTool(ICoreTool[ListIssuesInput, ListIssuesOutput]):
         return "List GitHub issues with optional filtering by state and labels"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ListIssuesInput
 
     def __init__(self, manager: GitHubManager) -> None:
@@ -311,7 +309,6 @@ class ListIssuesTool(ICoreTool[ListIssuesInput, ListIssuesOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: ListIssuesInput, context: NoteContext) -> ListIssuesOutput:
@@ -320,7 +317,7 @@ class ListIssuesTool(ICoreTool[ListIssuesInput, ListIssuesOutput]):
             state_str = params.state
             issues = self.manager.list_issues(state=state_str or "open", labels=params.labels)
 
-            issues_list = []
+            issues_list: list[IssueSummaryDTO] = []
             for issue in issues:
                 assignees_summary = (
                     ", ".join(u.login for u in issue.assignees)
@@ -382,7 +379,7 @@ class UpdateIssueTool(ICoreTool[UpdateIssueInput, IssueOutput]):
         return "Update title, body, state, labels, milestone, or assignees for an issue"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return UpdateIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
@@ -390,7 +387,6 @@ class UpdateIssueTool(ICoreTool[UpdateIssueInput, IssueOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: UpdateIssueInput, context: NoteContext) -> IssueOutput:
@@ -432,7 +428,7 @@ class CloseIssueTool(ICoreTool[CloseIssueInput, CloseIssueOutput]):
         return "Close a GitHub issue with an optional comment"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CloseIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
@@ -440,7 +436,6 @@ class CloseIssueTool(ICoreTool[CloseIssueInput, CloseIssueOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: CloseIssueInput, context: NoteContext) -> CloseIssueOutput:

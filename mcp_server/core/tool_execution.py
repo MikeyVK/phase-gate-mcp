@@ -50,7 +50,7 @@ class SchemaAttachment(BaseModel):
     ]
 
 
-class ToolExecution(BaseModel, Generic[TOutput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
+class ToolExecution(BaseModel, Generic[TOutput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess when supported inference preserves this declared contract.
     """Keep the operation separate from resources attached to this execution."""
 
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")

@@ -23,7 +23,12 @@ from mcp_server.core.exceptions import PlanningVersionMismatchError, StateCorrup
 from mcp_server.core.interfaces.git import CycleEvidence
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
+from mcp_server.managers.state_repository import (
+    FileStateRepository,
+    StateBranchMismatchError,
+    StateNotFoundError,
+)
+from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.schemas import ContractsConfig
 from mcp_server.schemas.deliverables import (
     AppendCycle,
@@ -114,9 +119,8 @@ class TestProjectManagerWorkflows:
             == "autonomous"
         )
 
-    def test_initialize_project_with_feature_workflow(
-        self, manager: ProjectManager, workspace_root: Path
-    ) -> None:
+    @pytest.mark.usefixtures("workspace_root")
+    def test_initialize_project_with_feature_workflow(self, manager: ProjectManager) -> None:
         """Test initialize_project with feature workflow."""
         result = manager.initialize_project(
             issue_number=42,
@@ -136,9 +140,8 @@ class TestProjectManagerWorkflows:
         assert plan["execution_mode"] == "interactive"
         assert len(plan["required_phases"]) == 7
 
-    def test_initialize_project_with_hotfix_workflow(
-        self, manager: ProjectManager, workspace_root: Path
-    ) -> None:
+    @pytest.mark.usefixtures("workspace_root")
+    def test_initialize_project_with_hotfix_workflow(self, manager: ProjectManager) -> None:
         """Test initialize_project with hotfix workflow.
 
         contracts.yaml SSOT — execution_mode defaults to interactive.
@@ -159,9 +162,8 @@ class TestProjectManagerWorkflows:
         assert plan is not None
         assert plan["execution_mode"] == "interactive"
 
-    def test_initialize_project_with_execution_mode_override(
-        self, manager: ProjectManager, workspace_root: Path
-    ) -> None:
+    @pytest.mark.usefixtures("workspace_root")
+    def test_initialize_project_with_execution_mode_override(self, manager: ProjectManager) -> None:
         """Test execution_mode override (feature normally interactive)."""
         result = manager.initialize_project(
             issue_number=77,
@@ -177,9 +179,8 @@ class TestProjectManagerWorkflows:
         assert plan is not None
         assert plan["execution_mode"] == "autonomous"
 
-    def test_initialize_project_with_custom_phases(
-        self, manager: ProjectManager, workspace_root: Path
-    ) -> None:
+    @pytest.mark.usefixtures("workspace_root")
+    def test_initialize_project_with_custom_phases(self, manager: ProjectManager) -> None:
         """Test initialize_project with custom phases."""
         custom_phases = (
             "research",
@@ -903,8 +904,9 @@ class TestGetProjectPlanGracefulDegradation:
         mock_resolver = MagicMock()
         mock_resolver.resolve_current.side_effect = resolver_side_effect
 
-        manager = make_project_manager(legacy_suite_workspace)
-        manager._workflow_status_resolver = mock_resolver  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001 — inject test double: no public setter
+        manager = make_project_manager(
+            legacy_suite_workspace, workflow_status_resolver=mock_resolver
+        )
 
         # Seed the project plan
         manager.initialize_project(
@@ -942,7 +944,7 @@ class TestGetProjectPlanGracefulDegradation:
         assert plan is not None
         assert plan is not None
         assert "current_phase" not in plan
-        assert "parent_branch" not in plan or "parent" not in plan  # type: ignore[operator]
+        assert "parent_branch" not in plan or "parent" not in plan
 
 
 class TestProjectManagerVersioning:
@@ -1035,9 +1037,6 @@ class TestProjectManagerVersioning:
 def test_indirect_plan_status_read_preserves_invalid_state_and_backup(
     configured_workspace: Path,
 ) -> None:
-    from mcp_server.managers.state_repository import FileStateRepository  # noqa: PLC0415
-    from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver  # noqa: PLC0415
-
     state_file = configured_workspace / get_default_server_root() / "state.json"
     git_reader = MagicMock()
     git_reader.get_current_branch.return_value = "feature/503-work"

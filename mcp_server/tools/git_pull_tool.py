@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import IContextLoadedWriter, ICoreTool
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import GitManager
@@ -68,7 +68,7 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         return "Pull updates from a remote"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitPullInput
 
     def __init__(
@@ -101,7 +101,7 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         except MCPError as exc:
             logger.error(
                 "git_pull failed",
-                extra={"props": {"remote": params.remote, "error": str(exc)}},
+                extra=logging_extra({"remote": params.remote, "error": str(exc)}),
             )
             return GitPullOutput(
                 success=False,
@@ -113,7 +113,7 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         except (OSError, ValueError, RuntimeError) as exc:
             logger.error(
                 "git_pull failed (runtime)",
-                extra={"props": {"remote": params.remote, "error": str(exc)}},
+                extra=logging_extra({"remote": params.remote, "error": str(exc)}),
             )
             return GitPullOutput(
                 success=False,
@@ -134,7 +134,7 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         except (MCPError, ValueError, OSError, StateBranchMismatchError) as exc:
             logger.warning(
                 "Phase state sync failed after pull",
-                extra={"props": {"error": str(exc)}},
+                extra=logging_extra({"error": str(exc)}),
             )
 
         return GitPullOutput(
@@ -145,7 +145,5 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         )
 
 
-def _input_schema(model: type[BaseModel] | None) -> dict[str, Any]:
-    if model is None:
-        return {}
+def _input_schema(model: type[BaseModel]) -> dict[str, Any]:
     return model.model_json_schema()

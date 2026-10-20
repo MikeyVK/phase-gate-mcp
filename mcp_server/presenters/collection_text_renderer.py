@@ -27,6 +27,15 @@ from mcp_server.config.schemas.presentation_config import (
 from mcp_server.core.exceptions import ConfigError
 
 
+def _is_object_sequence(value: object) -> TypeGuard[list[object] | tuple[object, ...]]:
+    return isinstance(value, (list, tuple))
+
+
+def _is_model_item(value: object) -> TypeGuard[BaseModel | Mapping[Any, object]]:
+    # Mapping keys stay opaque; native **kwargs retains its string-key rejection.
+    return isinstance(value, (Mapping, BaseModel))
+
+
 class SequenceKind(StrEnum):
     """Supported ordered-sequence item categories."""
 
@@ -137,7 +146,7 @@ class SafeNoneFormatter(string.Formatter):
         """Format one scalar value or supported ordered scalar sequence."""
         if value is None:
             return self._none_value
-        if isinstance(value, (list, tuple)):
+        if _is_object_sequence(value):
             return self._format_sequence(value)
         if isinstance(value, (set, dict, BaseModel)):
             raise ConfigError(
@@ -205,14 +214,14 @@ class CollectionTextRenderer:
 
     def _render_collection(
         self,
-        data: Mapping[str, Any] | BaseModel,
+        data: Mapping[Any, object] | BaseModel,
         *,
         declaration: CollectionPresentationConfig,
         max_items: int,
         path: str,
     ) -> list[str]:
         container = self._read_field(data, declaration.field, path)
-        if not isinstance(container, (list, tuple)):
+        if not _is_object_sequence(container):
             raise ConfigError(f"Collection runtime field '{path}' must be a list or tuple")
         if not container:
             return []
@@ -222,7 +231,7 @@ class CollectionTextRenderer:
         if not placeholders and container:
             expects_model = isinstance(container[0], (Mapping, BaseModel))
 
-        self._validate_items(
+        model_items = self._validate_items(
             container,
             expects_model=expects_model,
             path=path,
@@ -239,8 +248,13 @@ class CollectionTextRenderer:
         retained = container[:max_items]
         for index, item in enumerate(retained):
             item_path = f"{path}[{index}]"
-            if expects_model:
-                item_values = item.model_dump() if isinstance(item, BaseModel) else dict(item)
+            if model_items is not None:
+                model_item = model_items[index]
+                item_values: dict[Any, object] = (
+                    model_item.model_dump()
+                    if isinstance(model_item, BaseModel)
+                    else dict(model_item)
+                )
                 try:
                     lines.append(
                         formatter.format(
@@ -256,7 +270,7 @@ class CollectionTextRenderer:
                 for child in declaration.children.values():
                     lines.extend(
                         self._render_collection(
-                            item,
+                            model_item,
                             declaration=child,
                             max_items=max_items,
                             path=f"{item_path}.{child.field}",
@@ -285,7 +299,7 @@ class CollectionTextRenderer:
 
     @staticmethod
     def _read_field(
-        data: Mapping[str, Any] | BaseModel,
+        data: Mapping[Any, object] | BaseModel,
         field: str,
         path: str,
     ) -> object:
@@ -314,13 +328,16 @@ class CollectionTextRenderer:
         *,
         expects_model: bool,
         path: str,
-    ) -> None:
+    ) -> list[BaseModel | Mapping[Any, object]] | None:
+        model_items: list[BaseModel | Mapping[Any, object]] = []
         for index, item in enumerate(items):
             item_path = f"{path}[{index}]"
             if expects_model:
-                if not isinstance(item, (Mapping, BaseModel)):
+                if not _is_model_item(item):
                     raise ConfigError(
                         f"Collection runtime item '{item_path}' must be a model or mapping"
                     )
+                model_items.append(item)
             elif not _is_runtime_scalar(item):
                 raise ConfigError(f"Collection runtime item '{item_path}' must be scalar")
+        return model_items if expects_model else None

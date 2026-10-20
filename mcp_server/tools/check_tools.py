@@ -79,7 +79,7 @@ class RunChecksTool(ICoreTool[CheckSelectionRequest, RunChecksOutput]):
         return "Run selected checks and report their factual native outcomes."
 
     @property
-    def args_model(self) -> type[CheckSelectionRequest] | None:
+    def args_model(self) -> type[CheckSelectionRequest]:
         return self._input_model
 
     @property

@@ -1,9 +1,8 @@
 """Discovery tools for AI self-orientation."""
 
-# pyright: reportIncompatibleMethodOverride=false
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
 
 from pydantic import BaseModel, ConfigDict
 
@@ -22,6 +21,10 @@ if TYPE_CHECKING:
     from mcp_server.config.schemas.contracts_config import ContractsConfig
     from mcp_server.core.interfaces import IContextLoadedWriter
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+
+
+def _is_string(value: object) -> TypeGuard[str]:
+    return isinstance(value, str)
 
 
 class GetWorkContextInput(BaseModel):
@@ -47,12 +50,11 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GetWorkContextInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     def __init__(
@@ -81,10 +83,10 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
     async def execute(
         self,
         params: GetWorkContextInput,
-        context: NoteContext,  # noqa: ANN401, ARG002
+        context: NoteContext,
     ) -> GetWorkContextOutput:
         """Execute work context aggregation."""
-        _ = params  # GetWorkContextInput has no fields after C1 (issue #268)
+        del params, context
 
         branch = self._git_manager.get_current_branch()
 
@@ -101,12 +103,12 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
 
         try:
             state = self._state_engine.get_state(branch)
-            workflow_name = state.workflow_name if isinstance(state.workflow_name, str) else ""
-            phase = state.current_phase if isinstance(state.current_phase, str) else ""
+            workflow_name = state.workflow_name if _is_string(state.workflow_name) else ""
+            phase = state.current_phase if _is_string(state.current_phase) else ""
 
             if isinstance(state.issue_number, int) and not isinstance(state.issue_number, bool):
                 issue_number = state.issue_number
-            if isinstance(state.parent_branch, str):
+            if _is_string(state.parent_branch):
                 parent_branch = state.parent_branch
             if isinstance(state.current_sub_phase, str):
                 sub_phase = state.current_sub_phase

@@ -34,7 +34,7 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.exceptions import ValidationError as EnforcementValidationError
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.itool import ITool
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
+from mcp_server.core.interfaces.template_catalog import thaw_json
 from mcp_server.core.interfaces.tool_input_contract import (
     PreparedToolInputContract,
     prepare_model_input,
@@ -43,7 +43,7 @@ from mcp_server.core.interfaces.tool_input_contract import (
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_execution import ToolExecution
-from mcp_server.managers.enforcement_runner import EnforcementRunner
+from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.schemas.error_outputs import (
     ConfigErrorOutput,
@@ -64,6 +64,12 @@ class DummyInput(BaseModel):
 
 class DummyOutput(BaseModel):
     result: str
+
+
+class EmptyInput(BaseModel):
+    """Admit the empty object used by no-argument tools."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
 
 
 class TestPipelineDecorators:
@@ -181,11 +187,11 @@ class TestPipelineDecorators:
         assert result.params == {"extra_field": "forbidden"}
 
     @pytest.mark.asyncio
-    async def test_input_validation_decorator_no_args_model(self) -> None:
-        """InputValidation should bypass validation if args_model is None."""
+    async def test_input_validation_decorator_admits_empty_model(self) -> None:
+        """Empty arguments still reach the core as a validated model."""
         mock_inner = AsyncMock(spec=ICoreTool)
         mock_inner.name = "dummy"
-        mock_inner.args_model = None
+        mock_inner.args_model = EmptyInput
 
         expected_output = DummyOutput(result="ok")
         mock_inner.execute.return_value = expected_output
@@ -195,7 +201,15 @@ class TestPipelineDecorators:
         result = await decorator.execute({}, context)
         assert result.operation is expected_output
         assert result.attachments == ()
-        mock_inner.execute.assert_awaited_once_with(None, context)
+        admitted = mock_inner.execute.await_args.args[0]
+        assert isinstance(admitted, EmptyInput)
+        mock_inner.execute.assert_awaited_once_with(admitted, context)
+
+        rejected = await decorator.execute({"unexpected": True}, context)
+        assert isinstance(rejected.operation, ValidationErrorOutput)
+        assert rejected.operation.params == {"unexpected": True}
+        assert len(rejected.attachments) == 1
+        mock_inner.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_enforcement_decorator_success(self) -> None:
@@ -277,7 +291,14 @@ class TestPipelineDecorators:
         mock_runner = MagicMock(spec=EnforcementRunner)
 
         # Succeed on pre, fail on post
-        def side_effect(event, timing, tool_category, enforcement_ctx, note_context):
+        def side_effect(
+            event: str,
+            timing: str,
+            tool_category: str | None,
+            enforcement_ctx: EnforcementContext,
+            note_context: NoteContext,
+        ) -> None:
+            del event, tool_category, enforcement_ctx, note_context
             if timing == "post":
                 raise EnforcementValidationError(
                     "Post-check failed", error_code="ERR_POST", params={"extra": "post"}
@@ -327,16 +348,14 @@ class RecordingCore:
 
     name = "prepared"
     description = "Echo admitted content"
-    args_model: type[BaseModel] | None = StaticInput
+    args_model: type[BaseModel] = StaticInput
 
     def __init__(self) -> None:
-        self.inputs: list[BaseModel | None] = []
+        self.inputs: list[BaseModel] = []
 
-    async def execute(self, params: BaseModel | None, context: NoteContext) -> BaseModel:
+    async def execute(self, params: BaseModel, context: NoteContext) -> BaseModel:
         del context
         self.inputs.append(params)
-        if params is None:
-            return EchoOutput(success=True, content={})
         assert isinstance(params, StaticInput)
         return EchoOutput(success=True, content=params.content)
 
@@ -405,17 +424,23 @@ async def test_rejection_preserves_whole_tool_schema_and_skips_execution(
 
 
 @pytest.mark.asyncio
-async def test_explicit_no_argument_contract_keeps_none_execution() -> None:
-    schema = freeze_json({"type": "object", "properties": {}})
-    assert isinstance(schema, FrozenJsonObject)
-    contract: PreparedToolInputContract[None] = PreparedToolInputContract(
-        schema=schema, admit=lambda _raw: None
-    )
-    core = RecordingCore()
-    core.args_model = None
+async def test_prepared_empty_model_matches_exposure_and_admission() -> None:
+    contract: PreparedToolInputContract[EmptyInput] = prepare_model_input(EmptyInput)
+    core = AsyncMock(spec=ICoreTool)
+    core.name = "prepared_empty"
+    core.args_model = EmptyInput
+    output = EchoOutput(success=True, content={})
+    core.execute.return_value = output
     wrapped = InputValidationDecorator(core, input_contract=contract)
-    result = await wrapped.execute({}, NoteContext())
+    context = NoteContext()
+
+    result = await wrapped.execute({}, context)
+
     assert result.attachments == ()
-    assert isinstance(result.operation, EchoOutput)
-    assert core.inputs == [None]
-    assert wrapped.input_schema == thaw_json(schema)
+    assert result.operation is output
+    admitted = core.execute.await_args.args[0]
+    assert isinstance(admitted, EmptyInput)
+    core.execute.assert_awaited_once_with(admitted, context)
+    assert wrapped.args_model is EmptyInput
+    assert wrapped.input_schema == thaw_json(contract.schema)
+    assert wrapped.input_schema["additionalProperties"] is False

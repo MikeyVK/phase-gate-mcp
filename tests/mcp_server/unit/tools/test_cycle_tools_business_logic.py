@@ -322,9 +322,9 @@ class TestForceCycleTransitionTool:
         )
 
     @pytest.fixture()
-    def setup_forced_project(self, tmp_path: Path) -> tuple[Path, int]:
+    def setup_forced_project(self, git_workspace: Path) -> tuple[Path, int]:
         """Create project in cycle-based phase at cycle 2 for forced transitions."""
-        workspace_root = tmp_path
+        workspace_root = git_workspace
         issue_number = 146
 
         project_manager = make_project_manager(workspace_root)
@@ -481,10 +481,9 @@ class TestForceCycleTransitionTool:
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         assert state.current_cycle == 4
 
-    def test_force_blocks_without_skip_reason(self, setup_forced_project: tuple[Path, int]) -> None:
+    @pytest.mark.usefixtures("setup_forced_project")
+    def test_force_blocks_without_skip_reason(self) -> None:
         """Test that forced transition blocks when skip_reason is empty."""
-        from pydantic import ValidationError  # noqa: PLC0415
-
         with pytest.raises(
             ValidationError, match="skip_reason|String should have at least 1 character"
         ):
@@ -494,12 +493,9 @@ class TestForceCycleTransitionTool:
                 human_approval_message="John approved on 2026-02-17",
             )
 
-    def test_force_blocks_without_human_approval_message(
-        self, setup_forced_project: tuple[Path, int]
-    ) -> None:
+    @pytest.mark.usefixtures("setup_forced_project")
+    def test_force_blocks_without_human_approval_message(self) -> None:
         """Test that forced transition blocks when human_approval_message is empty."""
-        from pydantic import ValidationError  # noqa: PLC0415
-
         with pytest.raises(
             ValidationError, match="human_approval_message|String should have at least 1 character"
         ):

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeGuard
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -31,6 +31,10 @@ __all__ = [
     "TransitionCycleInput",
     "TransitionCycleTool",
 ]
+
+
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
 
 
 class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInput, TOutput]):
@@ -56,12 +60,7 @@ class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInp
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model:
-            return resolve_schema_refs(self.args_model.model_json_schema())
-        return {
-            "type": "object",
-            "properties": {},
-        }
+        return resolve_schema_refs(self.args_model.model_json_schema())
 
     def _create_project_manager(self) -> ProjectManager:
         """Return the injected ProjectManager."""
@@ -108,7 +107,7 @@ class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInp
         state_file = self.server_root / "state.json"
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
-            if isinstance(state_data, dict):
+            if _is_object_dict(state_data):
                 state_branch = state_data.get("branch")
                 if isinstance(state_branch, str) and state_branch:
                     return state_branch
@@ -148,7 +147,7 @@ class TransitionCycleTool(_BaseIToolTransition[TransitionCycleInput, CycleTransi
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return TransitionCycleInput
 
     async def execute(
@@ -268,7 +267,7 @@ class ForceCycleTransitionTool(
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ForceCycleTransitionInput
 
     async def execute(

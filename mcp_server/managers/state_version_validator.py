@@ -14,6 +14,7 @@ Validator service for dynamic state files schema versions and corruptions.
 
 import json
 from pathlib import Path
+from typing import TypeGuard
 
 from mcp_server.core.exceptions import (
     PlanningVersionMismatchError,
@@ -21,6 +22,11 @@ from mcp_server.core.exceptions import (
     StateNotFoundError,
     StateVersionMismatchError,
 )
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    """Narrow only the existing dictionary shape before inspecting its members."""
+    return isinstance(value, dict)
 
 
 class StateVersionValidator:
@@ -45,7 +51,7 @@ class StateVersionValidator:
         """
         try:
             content = file_path.read_text(encoding="utf-8")
-            data = json.loads(content)
+            data: object = json.loads(content)
         except FileNotFoundError as exc:
             raise StateNotFoundError(
                 f"State file does not exist: {file_path.name}", str(file_path)
@@ -55,7 +61,7 @@ class StateVersionValidator:
                 f"Corrupted or malformed JSON in state file: {e}", str(file_path)
             ) from e
 
-        if not isinstance(data, dict):
+        if not _is_dict(data):
             raise StateCorruptedError("State file content must be a JSON object", str(file_path))
 
         actual_version = data.get("schema_version")

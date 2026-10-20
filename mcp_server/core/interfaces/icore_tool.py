@@ -22,7 +22,7 @@ TOutput = TypeVar("TOutput", bound=BaseModel)
 
 
 @runtime_checkable
-class ICoreTool(Protocol, Generic[TInput, TOutput]):  # type: ignore[misc]  # pyright: ignore[reportInvalidTypeVarUse]  # noqa: UP046 -- Preserve invariant protocol parameters; reassess in #513.
+class ICoreTool(Protocol, Generic[TInput, TOutput]):  # type: ignore[misc]  # pyright: ignore[reportInvalidTypeVarUse]  # noqa: UP046 -- Preserve invariant protocol parameters; reassess when supported inference preserves this declared contract.
     """Generic interface for typed core tool execution."""
 
     @property
@@ -36,7 +36,7 @@ class ICoreTool(Protocol, Generic[TInput, TOutput]):  # type: ignore[misc]  # py
         ...
 
     @property
-    def args_model(self) -> type[BaseModel] | None: ...
+    def args_model(self) -> type[BaseModel]: ...
 
     async def execute(
         self, params: TInput, context: NoteContext

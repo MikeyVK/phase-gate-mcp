@@ -15,7 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import cast
+from typing import TypeGuard, cast
 
 from mcp_server.core.exceptions import ConfigError, StateNotFoundError, ValidationError
 from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, IStateReader, PRStatus
@@ -29,6 +29,11 @@ from mcp_server.tools.tool_result import ToolResult
 _ENFORCEMENT_DISPLAY_PATH = "config/enforcement.yaml"
 _GIT_TIMEOUT_SECONDS = 2
 logger = logging.getLogger(__name__)
+
+
+def _is_dict(value: object) -> TypeGuard[dict[object, object]]:
+    """Describe the existing dict check without assuming parameter keys or values."""
+    return isinstance(value, dict)
 
 
 def _git_command_env() -> dict[str, str]:
@@ -100,7 +105,7 @@ class EnforcementContext:
         """Read one parameter from Pydantic models, namespaces, or dicts."""
         if hasattr(self.params, name):
             return cast(object, getattr(self.params, name))
-        if isinstance(self.params, dict):
+        if _is_dict(self.params):
             return self.params.get(name)
         return None
 

@@ -12,7 +12,6 @@
 """
 
 from enum import StrEnum
-from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -57,8 +56,8 @@ def _formatting() -> FormattingConfig:
     )
 
 
-def _collection(**overrides: Any) -> CollectionPresentationConfig:
-    values: dict[str, Any] = {
+def _collection(**overrides: object) -> CollectionPresentationConfig:
+    values: dict[str, object] = {
         "order": 10,
         "field": "phases",
         "heading": "Phases",

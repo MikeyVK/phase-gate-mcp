@@ -1,4 +1,3 @@
-# pyright: reportMissingImports=false
 """Tests for MCP Server tool registration and dispatch hooks.
 
 @layer: Tests (Unit)
@@ -18,25 +17,32 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams, TextContent
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mcp_server.bootstrap import ServerBootstrapper
+from mcp_server.config import settings as settings_module
+from mcp_server.config.settings import ServerSettings
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces import ICoreTool, PRStatus
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_execution import ToolExecution
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.presenters import SchemaResourcePresenter
+from mcp_server.presenters.startup_recovery_presenter import StartupRecoveryPresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.presentation_output import (
     InlineOperation,
     PresentedOutput,
     PublicToolResponse,
 )
-from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
-from mcp_server.server import MCPServer
+from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+from mcp_server.schemas.tool_outputs import HealthCheckOutput, PhaseTransitionOutput
+from mcp_server.server import DegradedMCPServer, MCPServer
+from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
@@ -45,6 +51,7 @@ from mcp_server.tools.phase_tools import (
 from mcp_server.tools.pr_tools import SubmitPRTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
+    RealSettings,
     connected_mcp_client,
     get_default_server_root,
     make_dispatch_dependencies,
@@ -61,6 +68,19 @@ TRANSITION_ADVISORY_NOTE = (
 
 
 pytestmark = pytest.mark.usefixtures("git_workspace")
+
+
+class EmptyInput(BaseModel):
+    """Admit empty tool arguments through the real validation pipeline."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+
+
+class CallLoggingInput(BaseModel):
+    """Preserve the logged argument payload while admitting a concrete model."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    a: int
 
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
@@ -85,8 +105,6 @@ def _patch_server_settings(
     workspace_root: str | None = None,
 ) -> None:
     """Configure a Settings class mock for server tests."""
-    from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
-
     resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[3])
     server_root_dir = get_default_server_root()
 
@@ -144,20 +162,6 @@ def _run_git(workspace_root: Path, *args: str) -> None:
     )
 
 
-def _track_branch_local_artifacts(workspace_root: Path) -> None:
-    deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
-    if not deliverables_file.exists():
-        deliverables_file.write_text("{}\n", encoding="utf-8")
-
-    _run_git(workspace_root, "init")
-    _run_git(
-        workspace_root,
-        "add",
-        f"{get_default_server_root()}/state.json",
-        f"{get_default_server_root()}/deliverables.json",
-    )
-
-
 def _make_submit_pr_request() -> CallToolRequest:
     return CallToolRequest(
         params=CallToolRequestParams(
@@ -170,12 +174,19 @@ def _make_submit_pr_request() -> CallToolRequest:
     )
 
 
+def _text_content(item: object) -> str:
+    """Assert the SDK text block expected by these dispatch tests."""
+    assert isinstance(item, TextContent)
+    return item.text
+
+
 def _make_transition_advisory_execute(
     _text: str,
 ) -> Callable[[object, object, NoteContext], Awaitable[PhaseTransitionOutput]]:
     async def execute(
         _self: object, _params: object, context: NoteContext
     ) -> PhaseTransitionOutput:
+        del context
         # No legacy InfoNote produced
         return PhaseTransitionOutput(
             success=True,
@@ -253,7 +264,7 @@ class TestServerToolRegistration:
     ) -> None:
         """call_tool handler should log correlation id and duration."""
 
-        class DummyTool(ICoreTool[BaseModel, ToolResult]):
+        class DummyTool(ICoreTool[CallLoggingInput, ToolResult]):
             """Dummy tool for testing server call_tool logging."""
 
             @property
@@ -265,10 +276,10 @@ class TestServerToolRegistration:
                 return "Dummy tool"
 
             @property
-            def args_model(self) -> type[BaseModel] | None:
-                return None
+            def args_model(self) -> type[CallLoggingInput]:
+                return CallLoggingInput
 
-            async def execute(self, params: BaseModel | None, context: NoteContext) -> ToolResult:
+            async def execute(self, params: CallLoggingInput, context: NoteContext) -> ToolResult:
                 del params, context
                 return ToolResult.text("ok")
 
@@ -363,7 +374,7 @@ class TestServerToolRegistration:
             async with connected_mcp_client(server) as client:
                 response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "cannot be created from base" in response.content[0].text
+        assert "cannot be created from base" in _text_content(response.content[0])
         manager.create_branch.assert_not_called()
 
     @pytest.mark.asyncio
@@ -419,7 +430,7 @@ class TestServerToolRegistration:
                         _make_submit_pr_request().params.arguments,
                     )
 
-        text = "\n".join(c.text for c in response.content if hasattr(c, "text"))
+        text = "\n".join(c.text for c in response.content if isinstance(c, TextContent))
         assert response.is_error is True
         assert "requires phase 'ready'" in text
         assert "Current phase: 'documentation'" in text
@@ -497,9 +508,9 @@ class TestServerToolRegistration:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "Transitioned 'research' → 'planning'" in response.content[0].text
+        assert "Transitioned 'research' → 'planning'" in _text_content(response.content[0])
         assert len(response.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
+        assert TRANSITION_ADVISORY_NOTE in _text_content(response.content[0])
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -554,9 +565,9 @@ class TestServerToolRegistration:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        assert "Force-transitioned 'research' → 'planning'" in response.content[0].text
+        assert "Force-transitioned 'research' → 'planning'" in _text_content(response.content[0])
         assert len(response.content) == 1
-        assert TRANSITION_ADVISORY_NOTE in response.content[0].text
+        assert TRANSITION_ADVISORY_NOTE in _text_content(response.content[0])
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -630,7 +641,7 @@ class TestServerToolRegistration:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        texts = [item.text for item in response.content]
+        texts = [_text_content(item) for item in response.content]
         assert len(response.content) == 1
         assert "post hook failed" in texts[0]
         assert all(TRANSITION_ADVISORY_NOTE not in text for text in texts)
@@ -691,7 +702,7 @@ class TestServerToolRegistration:
                 async with connected_mcp_client(server) as client:
                     response = await client.call_tool(req.params.name, req.params.arguments)
 
-        text = response.content[0].text
+        text = _text_content(response.content[0])
         assert len(response.content) == 1
         assert "post hook failed" in text
         assert "⚠️" not in text
@@ -727,11 +738,8 @@ class TestServerToolRegistration:
 @pytest.mark.asyncio
 async def test_handle_call_tool_cache_error_intercept() -> None:
     """Retain complete inline operation data when cache publication fails."""
-    from pydantic import BaseModel  # noqa: PLC0415
 
-    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
-
-    class DummyTool(ICoreTool[BaseModel, ToolResult]):
+    class DummyTool(ICoreTool[EmptyInput, ToolResult]):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -741,10 +749,11 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
             return "Dummy Tool"
 
         @property
-        def args_model(self) -> type[BaseModel] | None:
-            return None
+        def args_model(self) -> type[EmptyInput]:
+            return EmptyInput
 
-        async def execute(self, params: BaseModel, context: NoteContext) -> ToolResult:
+        async def execute(self, params: EmptyInput, context: NoteContext) -> ToolResult:
+            del params, context
             return ToolResult.text("success")
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
@@ -754,12 +763,15 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
 
         managers = make_dispatch_dependencies(mock_settings_cls.from_env.return_value)
         workspace_root = Path(mock_settings_cls.from_env.return_value.server.workspace_root)
-        server = make_dispatch_server(mock_settings_cls.from_env.return_value)
-        server.presenter = presenter
         tool = DummyTool()
         cache_manager = ResponseCacheManager()
-        server.response_cache = cache_manager
-        server.response_cache_manager = cache_manager
+        server = MCPServer(
+            settings=mock_settings_cls.from_env.return_value,
+            tools=[],
+            resources=[],
+            presenter=presenter,
+            publisher=cache_manager,
+        )
         factory = ToolFactory(managers.enforcement_runner, workspace_root)
         server.tools = [factory.create_tool(tool)]
 
@@ -819,18 +831,8 @@ def test_server_constructor_clean() -> None:
 @pytest.mark.asyncio
 async def test_degraded_health_tool_uses_normalized_pipeline(tmp_path: Path) -> None:
     """The config-error fallback remains callable through the outer tool contract."""
-    from mcp_server.config.settings import ServerSettings, Settings  # noqa: PLC0415
-    from mcp_server.core.interfaces.template_catalog import FrozenJsonObject  # noqa: PLC0415
-    from mcp_server.presenters import SchemaResourcePresenter  # noqa: PLC0415
-    from mcp_server.presenters.startup_recovery_presenter import (  # noqa: PLC0415
-        StartupRecoveryPresenter,
-    )
-    from mcp_server.schemas.startup_diagnostic import StartupDiagnostic  # noqa: PLC0415
-    from mcp_server.schemas.tool_outputs import HealthCheckOutput  # noqa: PLC0415
-    from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
-
     server = DegradedMCPServer(
-        Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        settings_module.Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         StartupDiagnostic(
             exception_type="mcp_server.core.exceptions.ConfigError",
             message="Invalid configuration",
@@ -875,7 +877,6 @@ async def test_server_transfers_selected_structured_projection(
     tmp_path: Path, operation_success: bool
 ) -> None:
     """Forward the presenter schema and projection without requiring tool output metadata."""
-    from mcp_server.config.settings import ServerSettings, Settings  # noqa: PLC0415
 
     class Operation(BaseModel):
         success: bool
@@ -899,7 +900,7 @@ async def test_server_transfers_selected_structured_projection(
     tool.input_schema = {"type": "object", "properties": {}}
     tool.execute = AsyncMock(return_value=ToolExecution(operation=operation, attachments=()))
     server = MCPServer(
-        settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        settings=settings_module.Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[tool],
         resources=[],
         presenter=presenter,

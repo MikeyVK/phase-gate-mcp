@@ -45,6 +45,12 @@ from mcp_server.server import MCPServer
 from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
 
 
+class EmptyInput(BaseModel):
+    """Admit the empty object used by no-argument tools."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+
+
 class Operation(BaseModel):
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
     success: bool
@@ -56,12 +62,12 @@ class AttachedCore:
 
     name = "attached"
     description = "Return operation and independently owned schema"
-    args_model = None
+    args_model: type[EmptyInput] = EmptyInput
 
     def __init__(self, execution: ToolExecution[BaseModel]) -> None:
         self.execution = execution
 
-    async def execute(self, params: BaseModel, context: NoteContext) -> ToolExecution[BaseModel]:
+    async def execute(self, params: EmptyInput, context: NoteContext) -> ToolExecution[BaseModel]:
         del params, context
         return self.execution
 

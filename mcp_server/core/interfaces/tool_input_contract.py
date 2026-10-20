@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Generic, Protocol, TypeVar
 
 from jsonschema import Draft202012Validator
+from jsonschema.protocols import Validator
 from pydantic import BaseModel, JsonValue, ValidationError
 from pydantic_core import InitErrorDetails
 
@@ -16,7 +17,7 @@ from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 type JsonObject = dict[str, JsonValue]
-TInput_co = TypeVar("TInput_co", bound=BaseModel | None, covariant=True)
+TInput_co = TypeVar("TInput_co", bound=BaseModel, covariant=True)
 
 
 class IToolInputContract(Protocol[TInput_co]):
@@ -33,7 +34,7 @@ class IToolInputContract(Protocol[TInput_co]):
 
 
 @dataclass(frozen=True)
-class PreparedToolInputContract(Generic[TInput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess in #513.
+class PreparedToolInputContract(Generic[TInput_co]):  # noqa: UP046 -- Preserve explicit covariance; reassess when supported inference preserves this declared contract.
     """Hold the composition root's schema and admission without reload capability."""
 
     schema: FrozenJsonObject
@@ -44,6 +45,18 @@ class PreparedToolInputContract(Generic[TInput_co]):  # noqa: UP046 -- Preserve 
         return self.admit(raw)
 
 
+def _input_errors(validator: Validator, raw: JsonObject) -> list[InitErrorDetails]:
+    return [
+        {
+            "type": "value_error",
+            "loc": tuple(error.absolute_path),
+            "input": error.instance,
+            "ctx": {"error": ValueError(error.message)},
+        }
+        for error in validator.iter_errors(raw)
+    ]
+
+
 def prepare_model_input[TModel: BaseModel](
     model: type[TModel],
 ) -> PreparedToolInputContract[TModel]:
@@ -52,18 +65,10 @@ def prepare_model_input[TModel: BaseModel](
     if not isinstance(schema, FrozenJsonObject):
         raise TypeError("tool_input_schema_must_be_object")
     schema_data = {key: thaw_json(value) for key, value in schema.items()}
-    validator = Draft202012Validator(schema_data)
+    validator: Validator = Draft202012Validator(schema_data)
 
     def admit(raw: JsonObject) -> TModel:
-        errors: list[InitErrorDetails] = [
-            {
-                "type": "value_error",
-                "loc": tuple(error.absolute_path),
-                "input": error.instance,
-                "ctx": {"error": ValueError(error.message)},
-            }
-            for error in validator.iter_errors(raw)
-        ]
+        errors = _input_errors(validator, raw)
         if errors:
             raise ValidationError.from_exception_data(model.__name__, errors)
         return model.model_validate(raw)

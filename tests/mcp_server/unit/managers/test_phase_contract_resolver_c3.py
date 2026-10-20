@@ -11,13 +11,13 @@ Unit tests for PhaseConfigContext contracts field rename (issue #271 C3)
     - PhaseConfigContext accepts contracts: ContractsConfig (field renamed)
     - PhaseConfigContext.phase_contracts field no longer exists
     - PhaseContractResolver resolves via contracts field
-    - _PHASE_CONTRACTS_DISPLAY_PATH constant equals
-      f"{get_default_server_root()}/config/contracts.yaml"
+    - Missing commit mappings identify config/contracts.yaml through ConfigError.file_path
 """
 
 # Standard library
-import importlib
 from unittest.mock import MagicMock
+
+import pytest
 
 # Project modules
 from mcp_server.config.schemas.contracts_config import (
@@ -29,6 +29,7 @@ from mcp_server.config.schemas.contracts_config import (
     WorkflowPhaseEntry,
 )
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
+from mcp_server.core.exceptions import ConfigError
 from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -106,6 +107,15 @@ class TestPhaseContractResolverUsesContracts:
 
 class TestPhaseContractsDisplayPath:
     def test_display_path_equals_contracts_yaml(self) -> None:
-        """_PHASE_CONTRACTS_DISPLAY_PATH must equal 'config/contracts.yaml'."""
-        module = importlib.import_module("mcp_server.managers.phase_contract_resolver")
-        assert module._PHASE_CONTRACTS_DISPLAY_PATH == "config/contracts.yaml"  # noqa: SLF001
+        """Missing commit mappings report the contracts configuration path."""
+        resolver = PhaseContractResolver(
+            PhaseConfigContext(
+                workphases=_minimal_workphases(),
+                contracts=_minimal_contracts(),
+            ),
+            MagicMock(),
+        )
+        with pytest.raises(ConfigError) as exc_info:
+            resolver.resolve_commit_type("feature", "research", "red")
+
+        assert exc_info.value.file_path == "config/contracts.yaml"

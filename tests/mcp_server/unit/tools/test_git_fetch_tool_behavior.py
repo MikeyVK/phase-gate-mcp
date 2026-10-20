@@ -1,7 +1,6 @@
-# pyright: reportPrivateUsage=false
 """Behavior tests for GitFetchTool.
 
-Also covers input schema helpers for 100% module coverage.
+Also verifies the public input schema and argument defaults.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, unittest.mock, mcp_server.tools.git_fetch_tool]
@@ -13,30 +12,20 @@ import pytest
 
 from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.git_fetch_tool import GitFetchInput, GitFetchTool, _input_schema
-
-
-def test_git_fetch_input_schema_helper_handles_none() -> None:
-    """_input_schema(None) returns an empty schema."""
-
-    assert _input_schema(None) == {}
-
-
-def test_git_fetch_input_schema_helper_returns_model_schema() -> None:
-    """_input_schema(model) returns a JSON schema dict."""
-
-    schema = _input_schema(GitFetchInput)
-    assert isinstance(schema, dict)
-    assert "properties" in schema
+from mcp_server.schemas.tool_outputs import GitFetchOutput
+from mcp_server.tools.git_fetch_tool import GitFetchInput, GitFetchTool
 
 
 def test_git_fetch_tool_input_schema_property() -> None:
-    """Tool.input_schema delegates to _input_schema(args_model)."""
+    """Expose the concrete argument model and its remote-operation defaults."""
 
     tool = GitFetchTool(manager=Mock())
     schema = tool.input_schema
     assert isinstance(schema, dict)
-    assert "properties" in schema
+    assert tool.args_model is GitFetchInput
+    assert schema["properties"]["remote"]["default"] == "origin"
+    assert schema["properties"]["prune"]["default"] is False
+    assert schema["additionalProperties"] is False
 
 
 @pytest.mark.asyncio
@@ -50,8 +39,6 @@ async def test_git_fetch_success_returns_text() -> None:
     run_sync = AsyncMock(return_value=manager.fetch.return_value)
     with patch("mcp_server.tools.git_fetch_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitFetchInput(), NoteContext())
-
-    from mcp_server.schemas.tool_outputs import GitFetchOutput  # noqa: PLC0415
 
     assert isinstance(result, GitFetchOutput)
     assert result.success is True
@@ -70,8 +57,6 @@ async def test_git_fetch_mcperror_returns_tool_error() -> None:
     with patch("mcp_server.tools.git_fetch_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitFetchInput(remote="origin"), NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitFetchOutput  # noqa: PLC0415
-
     assert isinstance(result, GitFetchOutput)
     assert result.success is False
     assert result.error_message is not None
@@ -89,8 +74,6 @@ async def test_git_fetch_runtime_error_returns_tool_error() -> None:
     run_sync = AsyncMock(side_effect=RuntimeError("boom"))
     with patch("mcp_server.tools.git_fetch_tool.anyio.to_thread.run_sync", new=run_sync):
         result = await tool.execute(GitFetchInput(remote="origin"), NoteContext())
-
-    from mcp_server.schemas.tool_outputs import GitFetchOutput  # noqa: PLC0415
 
     assert isinstance(result, GitFetchOutput)
     assert result.success is False

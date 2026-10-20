@@ -20,6 +20,7 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager, suppress
 from pathlib import Path
+from types import TracebackType
 from typing import Any, TextIO
 
 
@@ -259,7 +260,13 @@ class ServerProcess:
     def __enter__(self) -> ServerProcess:
         return self.start()
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        del exc_type, exc_val, exc_tb
         self.close()
 
 

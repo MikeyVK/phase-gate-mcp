@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeGuard
 
 from pydantic import (
     AfterValidator,
@@ -30,21 +30,49 @@ ProfileId = AdapterId
 ConfigurationChoice = Literal["native_discovery", "configured_arguments", "not_applicable"]
 
 
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_object_mapping(value: object) -> TypeGuard[Mapping[object, object]]:
+    return isinstance(value, Mapping)
+
+
+def _is_object_tuple(value: object) -> TypeGuard[tuple[object, ...]]:
+    return isinstance(value, tuple)
+
+
+def _is_object_sequence(value: object) -> TypeGuard[tuple[object, ...] | list[object]]:
+    return isinstance(value, (tuple, list))
+
+
 def _sequence(value: object) -> object:
-    if isinstance(value, list):
-        return tuple(value)
+    if _is_object_list(value):
+        items: list[object] = value
+        return tuple(items)
     return value
 
 
+def _validated_mapping_items(
+    items: tuple[object, ...],
+) -> TypeGuard[tuple[tuple[object, ...] | list[object], ...]]:
+    for item in items:
+        if not _is_object_sequence(item):
+            raise ValueError("mapping_items_required")
+        pair: tuple[object, ...] | list[object] = item
+        if len(pair) != 2:
+            raise ValueError("mapping_items_required")
+    return True
+
+
 def _mapping_items(value: object) -> object:
-    if isinstance(value, Mapping):
-        return tuple(value.items())
-    if isinstance(value, tuple):
-        items = value
-        for item in items:
-            if not isinstance(item, (tuple, list)) or len(item) != 2:
-                raise ValueError("mapping_items_required")
-        return tuple((item[0], item[1]) for item in items)
+    if _is_object_mapping(value):
+        entries: Mapping[object, object] = value
+        return tuple(entries.items())
+    if _is_object_tuple(value):
+        items: tuple[object, ...] = value
+        if _validated_mapping_items(items):
+            return tuple((item[0], item[1]) for item in items)
     raise ValueError("mapping_required")
 
 
@@ -206,7 +234,7 @@ class ChecksConfig(_ChecksBase):
             raise ValueError("default_profile_reference_unknown")
         return self
 
-    def match_for_filename(self, filename: str) -> tuple[str, str] | None:
+    def match_for_filename(self, filename: object) -> tuple[str, str] | None:
         if not isinstance(filename, str) or not filename or "/" in filename or "\\" in filename:
             raise ValueError("basename_required")
         if "\x00" in filename:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Protocol, TypeGuard, TypeVar
 
 import yaml
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -41,19 +41,45 @@ from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_tuple(value: object) -> TypeGuard[tuple[object, ...]]:
+    return isinstance(value, tuple)
+
+
+class _YamlObjectConstructor(Protocol):
+    """Describe the native construction operation used by both YAML loaders."""
+
+    def construct_object(self, node: yaml.Node, deep: bool = False) -> object: ...
+
+
+def _construct_yaml_object(
+    constructor: _YamlObjectConstructor, node: yaml.Node, deep: bool
+) -> object:
+    return constructor.construct_object(node, deep)
+
+
+def _is_string_keyed_dict(value: object) -> TypeGuard[dict[str, object]]:
+    if not _is_object_dict(value):
+        return False
+    entries: dict[object, object] = value
+    return all(isinstance(key, str) for key in entries)
+
+
 class _AdapterYamlLoader(yaml.SafeLoader):
     """Reject duplicate or non-string keys before immutable declaration admission."""
 
     def construct_mapping(self, node: yaml.Node, deep: bool = False) -> dict[Hashable, object]:
         if not isinstance(node, yaml.MappingNode):
             raise yaml.YAMLError("adapter_mapping_required")
-        construct: Callable[[yaml.Node, bool], object] = self.construct_object
         result: dict[Hashable, object] = {}
         for key_node, value_node in node.value:
-            key = construct(key_node, deep)
+            key = _construct_yaml_object(self, key_node, deep)
             if not isinstance(key, str) or key in result:
                 raise yaml.YAMLError("duplicate_or_invalid_adapter_key")
-            result[key] = construct(value_node, deep)
+            result[key] = _construct_yaml_object(self, value_node, deep)
         return result
 
 
@@ -64,13 +90,12 @@ class _ConfigYamlLoader(yaml.SafeLoader):
         if not isinstance(node, yaml.MappingNode):
             raise yaml.YAMLError("configuration_mapping_required")
         self.flatten_mapping(node)
-        construct: Callable[[yaml.Node, bool], object] = self.construct_object
         result: dict[Hashable, object] = {}
         for key_node, value_node in node.value:
-            key = construct(key_node, deep)
+            key = _construct_yaml_object(self, key_node, deep)
             if not isinstance(key, (str, int)) or isinstance(key, bool) or key in result:
                 raise yaml.YAMLError("duplicate_or_invalid_configuration_key")
-            result[key] = construct(value_node, deep)
+            result[key] = _construct_yaml_object(self, value_node, deep)
         return result
 
 
@@ -259,7 +284,7 @@ class ConfigLoader:
         file_name: str | Path,
         config_path: Path | None = None,
         allow_missing: bool = False,
-    ) -> tuple[dict[str, Any], Path]:
+    ) -> tuple[dict[str, object], Path]:
         resolved_path = self._resolve_yaml_path(file_name, config_path=config_path)
 
         if not resolved_path.exists():
@@ -272,14 +297,14 @@ class ConfigLoader:
 
         try:
             with resolved_path.open(encoding="utf-8") as file_handle:
-                loaded = yaml.load(file_handle, Loader=_ConfigYamlLoader)
+                loaded: object = yaml.load(file_handle, Loader=_ConfigYamlLoader)
         except (OSError, yaml.YAMLError) as exc:
             raise ConfigError(
                 f"Invalid YAML in {resolved_path.name}: {exc}",
                 file_path=str(resolved_path),
             ) from exc
 
-        if not isinstance(loaded, dict) or any(not isinstance(key, str) for key in loaded):
+        if not _is_string_keyed_dict(loaded):
             raise ConfigError(
                 f"Invalid YAML root in {resolved_path.name}: expected mapping",
                 file_path=str(resolved_path),
@@ -296,8 +321,8 @@ class ConfigLoader:
         # Resolve expected version dynamically from schema type annotation
         version_field = schema_cls.model_fields.get("version")
         annotation = version_field.annotation if version_field else None
-        args = getattr(annotation, "__args__", None)
-        if args and isinstance(args, tuple) and len(args) > 0:
+        args: object = getattr(annotation, "__args__", None)
+        if args and _is_object_tuple(args) and len(args) > 0:
             expected_val = str(args[0])
         else:
             expected_val = "1.0.0"

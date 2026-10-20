@@ -15,6 +15,7 @@ from mcp_server.presenters.renewal_presenter import RenewalPresenter
 from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
 from mcp_server.presenters.startup_recovery_presenter import StartupRecoveryPresenter
 from mcp_server.schemas.startup_diagnostic import StartupDiagnostic
+from mcp_server.server import DegradedMCPServer
 
 
 def _capture_startup_diagnostic(
@@ -65,13 +66,12 @@ def main(settings: Settings | None = None) -> None:
 
     args, unknown = parser.parse_known_args()
     if args.upgrade:
-        from mcp_server.cli_renewal import main as renewal_main  # noqa: PLC0415
+        from mcp_server.cli_renewal import main as renewal_main  # noqa: PLC0415 -- Load renewal only on its selected CLI route; reassess if dispatch changes.
 
         sys.exit(renewal_main(sys.argv[1:], settings=_settings))
     if unknown:
         parser.error(f"unrecognized arguments: {' '.join(unknown)}")
     if args.version:
-        # pylint: disable=no-member
         print(f"Phase-Gate MCP Server v{_settings.server.version}")  # noqa: T201
         sys.exit(0)
 
@@ -95,7 +95,7 @@ def main(settings: Settings | None = None) -> None:
                 dirs_exist_ok=True,
             )
 
-            from mcp_server.cli_renewal import build_default_operation  # noqa: PLC0415
+            from mcp_server.cli_renewal import build_default_operation  # noqa: PLC0415 -- Load renewal only for initialization; reassess if dispatch changes.
 
             operation = build_default_operation(_settings)
             operation.execute()
@@ -125,8 +125,6 @@ def main(settings: Settings | None = None) -> None:
             file=sys.stderr,
         )
         sys.exit(1)
-
-    from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
 
     bootstrapper = ServerBootstrapper(_settings)
     try:

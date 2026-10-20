@@ -19,6 +19,7 @@ from mcp_server.schemas.presentation_output import PublicToolResponse
 from mcp_server.server import MCPServer
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
+    RealSettings,
     connected_mcp_client,
     get_default_server_root,
     make_test_server,
@@ -30,8 +31,6 @@ from tests.mcp_server.test_support import (
 
 
 def _patch_server_settings(mock: MagicMock, workspace_root: Path) -> None:
-    from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
-
     repo_root = Path(__file__).resolve().parents[4]
     server_root_dir = get_default_server_root()
 
@@ -72,10 +71,11 @@ class MockSimpleTool(ICoreTool[SimpleInput, ToolResult]):
         return "Mock simple tool"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[SimpleInput]:
         return SimpleInput
 
-    async def execute(self, params: SimpleInput, context: NoteContext) -> ToolResult:  # noqa: ARG002
+    async def execute(self, params: SimpleInput, context: NoteContext) -> ToolResult:
+        del params, context
         return ToolResult(content=[{"type": "text", "text": "OK"}])
 
     @property

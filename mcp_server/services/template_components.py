@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
+from typing import Literal, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -156,7 +156,7 @@ def select_components(
     """Select complete components without changing any input mapping."""
 
     maps = tuple(_validated_map(states) for states in (adopted, actual, candidate))
-    keys = set().union(*(mapping.keys() for mapping in maps))
+    keys = set[ComponentKey]().union(*(mapping.keys() for mapping in maps))
     result: list[ComponentSelection] = []
     for kind, component_id in _ordered_component_keys(dict.fromkeys(keys)):
         key = (kind, component_id)
@@ -188,21 +188,32 @@ def select_components(
     return tuple(result)
 
 
+def _mapping_container(value: object) -> bool:
+    return isinstance(value, Mapping)
+
+
+def _object_tuple(value: object) -> TypeGuard[tuple[object, ...]]:
+    return isinstance(value, tuple)
+
+
+def _valid_state_entry(component_key: object, state: object) -> bool:
+    return (
+        _object_tuple(component_key)
+        and len(component_key) == 2
+        and isinstance(component_key[0], str)
+        and isinstance(component_key[1], str)
+        and isinstance(state, ComponentState)
+        and state.key == component_key
+    )
+
+
 def _validated_map(
     states: Mapping[ComponentKey, ComponentState],
 ) -> dict[ComponentKey, ComponentState]:
-    if not isinstance(states, Mapping):
+    if not _mapping_container(states):
         raise TypeError("component_states_must_be_mapping")
     result = dict(states)
-    if any(
-        not isinstance(component_key, tuple)
-        or len(component_key) != 2
-        or not isinstance(component_key[0], str)
-        or not isinstance(component_key[1], str)
-        or not isinstance(state, ComponentState)
-        or state.key != component_key
-        for component_key, state in result.items()
-    ):
+    if any(not _valid_state_entry(component_key, state) for component_key, state in result.items()):
         raise ValueError("component_state_map_invalid")
     return result
 

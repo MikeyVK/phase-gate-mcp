@@ -133,7 +133,7 @@ class ScaffoldArtifactTool(ICoreTool[ScaffoldArtifactInput, ScaffoldOperationOut
         return "Generate and persist one selected template artifact."
 
     @property
-    def args_model(self) -> type[ScaffoldArtifactInput] | None:
+    def args_model(self) -> type[ScaffoldArtifactInput]:
         return self._input_model
 
     @property

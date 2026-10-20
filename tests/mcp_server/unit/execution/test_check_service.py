@@ -56,9 +56,11 @@ class EmptyBranch:
         return "fixture"
 
     def get_branch_changes(self, parent: str) -> BranchChanges:
+        del parent
         return BranchChanges(current_paths=(), removed_paths=())
 
     def get_parent_branch(self, branch: str) -> str:
+        del branch
         return "parent"
 
 
@@ -83,6 +85,7 @@ class RecordingRuntime(AdapterProcessRuntime):
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse] | InvocationFailed | InvocationCancelled:
+        del launch, workspace_root, request_contract
         self.requests.append((request, timeout_seconds))
         if "input_path" in type(request).model_fields:
             assert Path(str(request.input_path)).read_bytes() == b"proposed\r\n"

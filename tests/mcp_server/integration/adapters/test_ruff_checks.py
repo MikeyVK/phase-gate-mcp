@@ -354,7 +354,7 @@ def test_missing_dependency_is_observed_in_the_selected_interpreter(
     assert response["external_tools"] == [{"tool_id": "ruff", "version": None}]
 
 
-def test_approved_native_settings_remove_only_the_declared_exemptions(
+def test_native_settings_keep_production_and_test_annotations_strict(
     ruff_package: RuffPackage,
     pytestconfig: pytest.Config,
 ) -> None:
@@ -385,7 +385,7 @@ def test_approved_native_settings_remove_only_the_declared_exemptions(
     test_codes = {item["code"] for item in reports if item["filename"] == str(test_source)}
     assert {"ANN401", "ARG002"} <= production_codes
     assert {"N806", "SIM117", "SIM105"} <= test_codes
-    assert not any(code.startswith(("ANN", "ARG")) for code in test_codes)
+    assert {"ANN001", "ANN201", "ARG001"} <= test_codes
     code, response = invoke(package, "lint", (production, test_source), args)
     assert code == 1
     assert_native_evidence(response, result)

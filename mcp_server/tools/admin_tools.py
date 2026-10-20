@@ -16,10 +16,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from mcp_server.core.interfaces import ICoreTool
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import RestartServerOutput
 
@@ -29,8 +29,8 @@ from mcp_server.schemas.tool_outputs import RestartServerOutput
 def _create_audit_props(
     reason: str,
     event_type: str,
-    **extra_props: Any,  # noqa: ANN401
-) -> dict[str, Any]:
+    **extra_props: JsonValue,
+) -> dict[str, JsonValue]:
     """Create structured props for audit logging.
 
     Args:
@@ -41,10 +41,10 @@ def _create_audit_props(
     Returns:
         Dictionary with standard audit props
     """
-    props = {
+    props: dict[str, JsonValue] = {
         "reason": reason,
         "pid": os.getpid(),
-        "timestamp": datetime.now(UTC).isoformat(),
+        "event_timestamp": datetime.now(UTC).isoformat(),
         "event_type": event_type,
     }
     props.update(extra_props)
@@ -100,7 +100,7 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
         return "Restart MCP server to reload code changes"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return RestartServerInput
 
     def __init__(self, server_root: Path) -> None:
@@ -114,8 +114,6 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
     @property
     def input_schema(self) -> dict[str, Any]:
         """Return the input schema for the tool."""
-        if self.args_model is None:
-            return {}
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -152,18 +150,18 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
         restart_time = datetime.now(UTC)
         logger.info(
             "Server restart requested",
-            extra={
-                "props": _create_audit_props(
+            extra=logging_extra(
+                _create_audit_props(
                     reason=params.reason,
                     event_type="server_restart_requested",
                 )
-            },
+            ),
         )
 
         # Write restart marker file (for verification)
         marker_path = self._get_restart_marker_path()
         marker_path.parent.mkdir(exist_ok=True)
-        marker_content = {
+        marker_content: dict[str, JsonValue] = {
             "timestamp": restart_time.timestamp(),
             "pid": os.getpid(),
             "reason": params.reason,
@@ -175,14 +173,14 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
         # Audit log: Marker written
         logger.info(
             "Restart marker written",
-            extra={
-                "props": _create_audit_props(
+            extra=logging_extra(
+                _create_audit_props(
                     reason=params.reason,
                     event_type="restart_marker_written",
                     marker_path=str(marker_path),
                     marker_content=marker_content,
                 )
-            },
+            ),
         )
 
         # Schedule delayed exit in background (supervisor will restart)
@@ -206,13 +204,13 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
             # Audit log: Exiting for restart
             logger.info(
                 "Server exiting for restart (supervisor will spawn new instance)",
-                extra={
-                    "props": _create_audit_props(
+                extra=logging_extra(
+                    _create_audit_props(
                         reason=params.reason,
                         event_type="server_exiting_for_restart",
                         exit_code=42,
                     )
-                },
+                ),
             )
 
             # Final flush
@@ -312,12 +310,12 @@ def verify_server_restarted(
     # Audit log verification
     logger.info(
         "Server restart verification",
-        extra={
-            "props": {
+        extra=logging_extra(
+            {
                 "result": result,
                 "since_timestamp": since_timestamp,
             }
-        },
+        ),
     )
 
     return result

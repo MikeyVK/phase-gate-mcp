@@ -18,8 +18,9 @@ class StatusResource(BaseResource):
         self._git = git_context_reader
         self._state_reader = state_reader
 
-    async def read(self, uri: str) -> str:  # noqa: ARG002
+    async def read(self, uri: str) -> str:
         """Read status."""
+        del uri
         try:
             git_status = self._git.get_status()
             branch = git_status["branch"]

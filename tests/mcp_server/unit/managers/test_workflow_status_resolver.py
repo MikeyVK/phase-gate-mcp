@@ -101,7 +101,8 @@ class TestIGitContextReader:
             def get_current_branch(self) -> str:
                 return "feature/99-test"
 
-            def get_recent_commits(self, limit: int = 5) -> list[str]:  # noqa: ARG002
+            def get_recent_commits(self, limit: int = 5) -> list[str]:
+                del limit
                 return []
 
             def get_status(self) -> dict[str, Any]:

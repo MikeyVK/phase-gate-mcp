@@ -1,4 +1,3 @@
-# pyright: reportCallIssue=false, reportAttributeAccessIssue=false
 """
 Cycle 4 — CreateIssueInput schema refactor.
 

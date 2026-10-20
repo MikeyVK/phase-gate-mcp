@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import ICoreTool
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.schemas.tool_outputs import GitFetchOutput
@@ -65,7 +65,7 @@ class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
         return "Fetch updates from a remote"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitFetchInput
 
     def __init__(self, manager: GitManager) -> None:
@@ -90,7 +90,7 @@ class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
         except MCPError as exc:
             logger.error(
                 "git_fetch failed",
-                extra={"props": {"remote": params.remote, "error": str(exc)}},
+                extra=logging_extra({"remote": params.remote, "error": str(exc)}),
             )
             return GitFetchOutput(
                 success=False,
@@ -102,7 +102,7 @@ class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
         except (OSError, ValueError, RuntimeError) as exc:
             logger.error(
                 "git_fetch failed (runtime)",
-                extra={"props": {"remote": params.remote, "error": str(exc)}},
+                extra=logging_extra({"remote": params.remote, "error": str(exc)}),
             )
             return GitFetchOutput(
                 success=False,
@@ -113,7 +113,5 @@ class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
             )
 
 
-def _input_schema(model: type[BaseModel] | None) -> dict[str, Any]:
-    if model is None:
-        return {}
+def _input_schema(model: type[BaseModel]) -> dict[str, Any]:
     return model.model_json_schema()

@@ -19,6 +19,7 @@ from unittest.mock import patch
 
 import pytest
 
+from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.project_tools import InitializeProjectInput, InitializeProjectTool
 from tests.mcp_server.test_support import (
@@ -223,10 +224,10 @@ class TestInitializeProjectToolMode1:
             assert rejected.value is failure
 
     @pytest.mark.asyncio
+    @pytest.mark.usefixtures("workspace_root")
     async def test_error_handling_state_creation_failure(
         self,
         tool: InitializeProjectTool,
-        workspace_root: Path,  # noqa: ARG002
     ) -> None:
         """Test error handling when state.json creation fails."""
         with patch.object(tool.git_manager, "require_attached_branch") as mock_git:
@@ -321,8 +322,6 @@ class TestInitializeProjectToolMode1:
 async def test_invalid_identity_refuses_before_any_project_write(
     configured_workspace: Path, branch: str, issue_number: int, parent: str
 ) -> None:
-    from mcp_server.core.exceptions import PreflightError  # noqa: PLC0415
-
     manager = make_project_manager(configured_workspace)
     git = make_git_manager(configured_workspace)
     tool = InitializeProjectTool(

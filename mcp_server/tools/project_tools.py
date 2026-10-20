@@ -82,7 +82,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return InitializeProjectInput
 
     def __init__(
@@ -102,8 +102,6 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model is None:
-            return {}
         schema = resolve_schema_refs(self.args_model.model_json_schema())
         if self._contracts_config is not None:
             schema["properties"]["workflow_name"]["enum"] = list(
@@ -114,7 +112,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
     async def execute(
         self,
         params: InitializeProjectInput,
-        context: NoteContext,  # noqa: ANN401, ARG002
+        context: NoteContext,
     ) -> InitializeProjectOutput:
         """Admit the branch, then initialize project metadata and branch state.
 
@@ -126,6 +124,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         Returns:
             InitializeProjectOutput
         """
+        del context
         # Step 0: Get current branch once and reuse
         with anyio.fail_after(5):
             branch = await anyio.to_thread.run_sync(self.git_manager.require_attached_branch)
@@ -204,13 +203,11 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
         return "Get project phases and complete stored planning deliverables for an issue"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GetProjectPlanInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model is None:
-            return {}
         return resolve_schema_refs(self.args_model.model_json_schema())
 
     def __init__(self, manager: IProjectPlanReader) -> None:
@@ -220,7 +217,7 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
     async def execute(
         self,
         params: GetProjectPlanInput,
-        context: NoteContext,  # noqa: ANN401
+        context: NoteContext,
     ) -> ProjectPlanOutput:
         """Execute project plan retrieval.
 
@@ -235,7 +232,7 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
                 current_phase = plan.get("current_phase", "")
                 curr_phase_name = current_phase.split(":")[0] if current_phase else ""
 
-                phases_list = []
+                phases_list: list[PhaseDTO] = []
                 current_found = False
                 for p_name in required_phases:
                     if p_name == curr_phase_name:

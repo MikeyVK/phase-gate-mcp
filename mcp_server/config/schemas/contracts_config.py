@@ -79,7 +79,9 @@ class PhaseContractPhase(BaseModel):
     commit_type_map: dict[str, str] = Field(default_factory=dict)
     cycle_based: bool = False
     exit_requires: OrderedRequirements = Field(default_factory=dict)
-    cycle_exit_requires: dict[int, OrderedRequirements] = Field(default_factory=dict)
+    cycle_exit_requires: dict[int, OrderedRequirements] = Field(
+        default_factory=dict[int, dict[ConfigId, ConfigCheckRequirement]]
+    )
 
     @model_validator(mode="after")
     def validate_cycle_based_commit_map(self) -> PhaseContractPhase:

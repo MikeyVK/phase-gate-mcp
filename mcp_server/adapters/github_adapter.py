@@ -21,7 +21,7 @@ class GitHubAdapter:
     def __init__(self, settings: GitHubSettings) -> None:
         """Initialize with explicitly resolved GitHub settings."""
         github_settings = settings
-        if not github_settings.token:  # pylint: disable=no-member
+        if not github_settings.token:
             raise MCPSystemError(
                 "GitHub token not configured",
                 fallback="Configure GITHUB_TOKEN environment variable",
@@ -31,9 +31,9 @@ class GitHubAdapter:
         if any(value is None or not value.strip() for value in identity):
             raise MCPSystemError("GitHub repository identity is incomplete")
 
-        self.client = Github(github_settings.token)  # pylint: disable=no-member
+        self.client = Github(github_settings.token)
         self._repo: Repository | None = None
-        self._repo_name = f"{github_settings.owner}/{github_settings.repo}"  # pylint: disable=no-member
+        self._repo_name = f"{github_settings.owner}/{github_settings.repo}"
 
     @property
     def repo(self) -> Repository:

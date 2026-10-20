@@ -43,6 +43,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_model_type(value: object) -> TypeGuard[type[BaseModel]]:
+    return isinstance(value, type) and issubclass(value, BaseModel)
+
+
 class TextPresenter(ITextPresenter):
     """Formats structured tool outputs into markdown text fallbacks using templates."""
 
@@ -77,16 +85,6 @@ class TextPresenter(ITextPresenter):
         """Get the default failure template."""
         return self.global_config.default_failure_template
 
-    def _is_complex(self, val: object) -> bool:
-        """Check if a value represents complex structured data."""
-        if isinstance(val, (list, dict, set, tuple)):
-            return len(val) > 0
-        return (
-            isinstance(val, str)
-            and "\n" in val
-            and (val.startswith("diff ") or "@@ " in val or "\n+" in val or "\n-" in val)
-        )
-
     def get_none_value(self) -> str:
         """Get the placeholder string for None values."""
         return self.global_config.formatting.none_value
@@ -109,8 +107,8 @@ class TextPresenter(ITextPresenter):
             for _, field_name, _, _ in formatter.parse(template)
             if field_name is not None
         ]
-        params = data.get("params", {}) or {}
-        error_params = data.get("error_params", {}) or {}
+        params = data.get("params", dict[str, object]()) or dict[str, object]()
+        error_params = data.get("error_params", dict[str, object]()) or dict[str, object]()
         values: dict[str, object] = {}
         for placeholder in placeholders:
             if placeholder == "run_id" and run_id is not None:
@@ -150,10 +148,7 @@ class TextPresenter(ITextPresenter):
         )
         resolved_cat = "query"
         if tool_cfg is not None:
-            if isinstance(tool_cfg, ToolPresentationConfig):
-                resolved_cat = tool_cfg.category or "query"
-            else:
-                resolved_cat = tool_cfg.get("category") or "query"
+            resolved_cat = tool_cfg.category or "query"
         # 2. Convert DTO/dict to a flat dictionary for formatting
         data_dict = (
             {name: getattr(data, name) for name in type(data).model_fields}
@@ -168,41 +163,31 @@ class TextPresenter(ITextPresenter):
 
         # 4. Bepaal template op basis van success
         template = None
-        next_instructions = []
+        next_instructions: list[str] = []
 
         if tool_cfg is not None:
-            # Support both Pydantic model and raw dict for tool config
-            if isinstance(tool_cfg, ToolPresentationConfig):
-                template = (
-                    tool_cfg.template_success if resolved_success else tool_cfg.template_failure
-                )
-                next_instructions = tool_cfg.next_instructions
-            else:
-                template = (
-                    tool_cfg.get("template_success")
-                    if resolved_success
-                    else tool_cfg.get("template_failure")
-                )
-                next_instructions = tool_cfg.get("next_instructions") or []
+            template = tool_cfg.template_success if resolved_success else tool_cfg.template_failure
+            next_instructions = tool_cfg.next_instructions
 
         # Fallback for failure template
         if not resolved_success and not template:
             # Try to resolve template via error_code if present
-            error_code = None
+            # Foreign DTO values keep their native dictionary lookup/error behavior.
+            error_code: Any = None
             if isinstance(data, BaseModel):
                 error_code = getattr(data, "error_code", None)
-                if not error_code and hasattr(data, "params") and isinstance(data.params, dict):
-                    error_code = data.params.get("error_code")
-            elif isinstance(data, dict):
+                if not error_code:
+                    raw_params = getattr(data, "params", None)
+                    if _is_object_dict(raw_params):
+                        error_code = raw_params.get("error_code")
+            elif _is_object_dict(data):
                 error_code = data.get("error_code")
-                if not error_code and isinstance(data.get("params"), dict):
-                    error_code = data.get("params", {}).get("error_code")
+                if not error_code:
+                    raw_params = data.get("params")
+                    if _is_object_dict(raw_params):
+                        error_code = raw_params.get("error_code")
 
-            failures: dict[str, str] = {}
-            if isinstance(self.global_config, dict):
-                failures = self.global_config.get("failures", {})
-            else:
-                failures = getattr(self.global_config, "failures", {})
+            failures = self.global_config.failures
 
             if error_code and error_code in failures:
                 template = failures[error_code]
@@ -273,7 +258,7 @@ class TextPresenter(ITextPresenter):
                 if raw_text:
                     # Parse placeholders in the next instruction template
                     try:
-                        placeholders = []
+                        placeholders: list[str] = []
                         none_val = self.get_none_value()
                         formatter = SafeNoneFormatter(
                             none_val,
@@ -284,7 +269,7 @@ class TextPresenter(ITextPresenter):
                             if field_name is not None:
                                 placeholders.append(field_name.split(".")[0].split("[")[0])
 
-                        format_dict = {}
+                        format_dict: dict[str, object] = {}
                         for k in placeholders:
                             if k == "run_id":
                                 format_dict[k] = placeholder_run_id
@@ -339,7 +324,7 @@ class TextPresenter(ITextPresenter):
                 local_tmpl = None
                 if tool_cfg is not None:
                     group_dict = getattr(tool_cfg, group, {})
-                    if isinstance(group_dict, dict):
+                    if _is_object_dict(group_dict):
                         local_tmpl = group_dict.get(key)
 
                 if isinstance(local_tmpl, str):
@@ -360,7 +345,7 @@ class TextPresenter(ITextPresenter):
 
             if found_template is not None and found_group is not None:
                 # Fill missing keys in params with None to trigger SafeNoneFormatter
-                placeholders = []
+                placeholders: list[str] = []
                 try:
                     for _, field_name, _, _ in formatter.parse(found_template):
                         if field_name is not None:
@@ -368,7 +353,7 @@ class TextPresenter(ITextPresenter):
                 except ValueError:
                     pass
 
-                format_dict = {}
+                format_dict: dict[str, object] = {}
                 for p_key in placeholders:
                     format_dict[p_key] = params.get(p_key, None)
 
@@ -379,7 +364,7 @@ class TextPresenter(ITextPresenter):
                     # One malformed note must not hide the remaining operation evidence.
                     logger.exception("Note %s formatting failed for %s", key, tool_name)
                     grouped_texts[found_group].append(f"Format error: {exc}")
-        lines = []
+        lines: list[str] = []
         for group in group_names:
             items = grouped_texts[group]
             if not items:
@@ -440,7 +425,7 @@ def validate_presentation_alignment(
         "ERR_CACHE": {"message", "params", "success", "error_type", "traceback"},
         "cache": {"message", "params", "success", "error_type", "traceback"},
     }
-    generic_note_fields = {
+    generic_note_fields: dict[str, set[str]] = {
         "allowed_bases_suggestion": {"bases"},
         "initialize_project_suggestion": {"issue_number"},
         "close_open_pr_suggestion": set(),
@@ -732,7 +717,7 @@ def validate_presentation_alignment(
     missing = supported_names - configured_names
     unknown = configured_names - supported_names
     if missing or unknown:
-        details = []
+        details: list[str] = []
         if missing:
             details.append(f"missing: {', '.join(sorted(missing))}")
         if unknown:
@@ -747,7 +732,7 @@ def validate_presentation_alignment(
     for contract in contracts:
         tool_name = contract.name
         output_model = contract.output_model
-        if not (isinstance(output_model, type) and issubclass(output_model, BaseModel)):
+        if not _is_model_type(output_model):
             raise ConfigError(f"Supported tool '{tool_name}' has no concrete Pydantic output model")
 
         tool_cfg = presenter.tools_config[tool_name]

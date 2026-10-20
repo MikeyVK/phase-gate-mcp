@@ -10,6 +10,7 @@ import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeGuard
 
 _REQUEST_CONTENT_KEYS = frozenset(
     {"operation", "target_path", "input_path", "args", "execution_context"}
@@ -108,6 +109,18 @@ class _Options:
     inputs: tuple[str, ...]
 
 
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_string_list(value: object) -> TypeGuard[list[str]]:
+    return _is_object_list(value) and all(isinstance(item, str) for item in value)
+
+
 def _issue(location: list[str | int], code: str) -> dict[str, object]:
     return {"location": location, "code": code}
 
@@ -128,13 +141,13 @@ def _valid_absolute_file_path(value: object) -> bool:
 
 
 def _validate_args(args: object) -> tuple[str, ...] | dict[str, object]:
-    if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
+    if not _is_string_list(args):
         return _invalid([_issue(["args"], "wrong_type")])
     return tuple(args)
 
 
 def _validate_execution_context(value: object) -> dict[str, object] | None:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid([_issue(["execution_context"], "wrong_type")])
     unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
     if unknown:
@@ -152,7 +165,7 @@ def _validate_execution_context(value: object) -> dict[str, object] | None:
 def _validate_request(
     value: object,
 ) -> tuple[str, tuple[str, ...], tuple[str, ...]] | dict[str, object]:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid([_issue([], "wrong_type")])
     content = "input_path" in value or "target_path" in value
     expected = _REQUEST_CONTENT_KEYS if content else _REQUEST_SELECTION_KEYS
@@ -173,26 +186,33 @@ def _validate_request(
     if isinstance(args, dict):
         return args
     if content:
+        files: list[str] = []
         for field in ("target_path", "input_path"):
-            if not isinstance(value[field], str):
+            path = value[field]
+            if not isinstance(path, str):
                 return _invalid([_issue([field], "wrong_type")])
-            if not _valid_absolute_file_path(value[field]):
+            if not _valid_absolute_file_path(path):
                 return _invalid([_issue([field], "invalid_value")])
-        return "content", (value["target_path"], value["input_path"]), args
-    if not isinstance(value["targets"], list):
+            files.append(path)
+        return "content", tuple(files), args
+    targets = value["targets"]
+    if not _is_object_list(targets):
         return _invalid([_issue(["targets"], "wrong_type")])
-    for index, item in enumerate(value["targets"]):
+    admitted: list[str] = []
+    for index, item in enumerate(targets):
         if not isinstance(item, str):
             return _invalid([_issue(["targets", index], "wrong_type")])
         if not item or "\x00" in item or _ABSOLUTE_PATH.fullmatch(item) is None:
             return _invalid([_issue(["targets", index], "invalid_value")])
-    return "selection", tuple(value["targets"]), args
+        admitted.append(item)
+    return "selection", tuple(admitted), args
 
 
 def _option_parts(args: tuple[str, ...]) -> _Options:
     """Read native token boundaries without interpreting its rule configuration."""
     entries: list[tuple[str, str | bool]] = []
     inputs: list[str] = []
+    pending: list[tuple[str, str | None]]
     index = 0
     while index < len(args):
         token = args[index]
@@ -228,13 +248,13 @@ def _option_parts(args: tuple[str, ...]) -> _Options:
     return _Options(tuple(entries), tuple(inputs))
 
 
-def _section(data: dict[str, object], keys: tuple[str, ...]) -> dict[str, object] | None:
+def _section(data: dict[str, object], keys: tuple[str, ...]) -> dict[object, object] | None:
     value: object = data
     for key in keys:
-        if not isinstance(value, dict):
+        if not _is_object_dict(value):
             return None
         value = value.get(key)
-    return value if isinstance(value, dict) else None
+    return value if _is_object_dict(value) else None
 
 
 def _config_projection(path: Path) -> dict[str, object] | None:
@@ -247,10 +267,14 @@ def _config_projection(path: Path) -> dict[str, object] | None:
     elif path.name == "pyproject.toml":
         selected = _section(data, ("tool", "lychee"))
     else:
-        selected = data
+        selected = _section(data, ())
     if selected is None:
         return None
-    return {key: value for key, value in selected.items() if key in _BOUNDARY_FIELDS}
+    return {
+        key: value
+        for key, value in selected.items()
+        if isinstance(key, str) and key in _BOUNDARY_FIELDS
+    }
 
 
 def _effective_settings(options: _Options) -> dict[str, object]:
@@ -264,7 +288,7 @@ def _effective_settings(options: _Options) -> dict[str, object]:
             if projected is not None:
                 # Native optional fields replace; remaps chain with later files first.
                 remaps, previous = projected.get("remap"), settings.get("remap", [])
-                if isinstance(remaps, list) and isinstance(previous, list):
+                if _is_object_list(remaps) and _is_object_list(previous):
                     projected["remap"] = remaps + previous
                 settings.update(projected)
     else:
@@ -280,7 +304,7 @@ def _effective_settings(options: _Options) -> dict[str, object]:
         if key in _BOUNDARY_FIELDS:
             if key == "remap":
                 previous = settings.get(key, [])
-                settings[key] = [value, *previous] if isinstance(previous, list) else [value]
+                settings[key] = [value, *previous] if _is_object_list(previous) else [value]
             else:
                 settings[key] = value
     return settings
@@ -343,7 +367,7 @@ def _unavailable(
 def _native_evidence(stdout: str, stderr: str, json_mode: bool) -> dict[str, object] | None:
     if json_mode and not stderr.strip():
         try:
-            parsed = json.loads(stdout)
+            parsed: object = json.loads(stdout)
         except json.JSONDecodeError:
             parsed = None
         if parsed is not None:
@@ -367,15 +391,16 @@ def _run(request: object) -> tuple[dict[str, object], int]:
 
 def _declared_version() -> str:
     """Read the package's exact main-tool prerequisite before native interpretation."""
-    declaration = json.loads(
+    declaration: object = json.loads(
         Path(__file__).with_name("dependencies.json").read_text(encoding="utf-8")
     )
-    if not isinstance(declaration, dict) or not isinstance(declaration.get("native_tools"), list):
+    if not _is_object_dict(declaration):
+        raise ValueError("Lychee prerequisites must declare native_tools.")
+    native_tools = declaration.get("native_tools")
+    if not _is_object_list(native_tools):
         raise ValueError("Lychee prerequisites must declare native_tools.")
     tools = [
-        item
-        for item in declaration["native_tools"]
-        if isinstance(item, dict) and item.get("tool_id") == "lychee"
+        item for item in native_tools if _is_object_dict(item) and item.get("tool_id") == "lychee"
     ]
     if len(tools) != 1:
         raise ValueError("Lychee prerequisites must declare one main-tool version.")
@@ -515,7 +540,7 @@ def _selection_stdin(targets: tuple[str, ...]) -> bytes:
 
 def main() -> int:
     try:
-        request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+        request: object = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     except UnicodeDecodeError, json.JSONDecodeError:
         response, exit_code = _invalid([_issue([], "invalid_value")]), 2
     else:

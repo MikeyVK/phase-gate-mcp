@@ -90,8 +90,9 @@ class TestEnforcementRunner:
             action: EnforcementAction,
             context: EnforcementContext,
             workspace_root: Path,
-            note_context: NoteContext,  # noqa: ARG001
+            note_context: NoteContext,
         ) -> None:
+            del note_context
             calls.append((action.policy, context.tool_name))
             assert workspace_root == tmp_path
 
@@ -172,6 +173,7 @@ class TestEnforcementRunner:
             workspace_root: Path,
             note_context: NoteContext,
         ) -> None:
+            del context, workspace_root, note_context
             calls.append(action.type)
 
         runner = _make_runner(tmp_path, config, registry={"check_pr_status": fake_handler})

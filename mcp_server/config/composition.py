@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any
+from typing import TypeGuard
 
 from pydantic_settings import (
     BaseSettings,
@@ -14,6 +14,14 @@ from pydantic_settings import (
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
+
+
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
 
 
 class _ConfigurationSources(BaseSettings):
@@ -55,29 +63,32 @@ def compose_configuration(
 
 def validate_complete_configuration(value: object, path: tuple[str, ...] = ()) -> None:
     """Reject reserved commands in complete sources and literal value lists."""
-    if isinstance(value, dict):
-        if "$delete" in value:
+    if _is_object_dict(value):
+        entries: dict[object, object] = value
+        if "$delete" in entries:
             raise ValueError(f"configuration_delete_command_not_allowed: {'.'.join(path)}")
-        for key, child in value.items():
+        for key, child in entries.items():
             validate_complete_configuration(child, (*path, str(key)))
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
+    elif _is_object_list(value):
+        items: list[object] = value
+        for index, child in enumerate(items):
             validate_complete_configuration(child, (*path, str(index)))
 
 
-def _prepare_deletions(
-    basis: dict[str, Any], changes: dict[str, Any], path: tuple[str, ...]
+def _prepare_deletions[Key](
+    basis: dict[Key, object], changes: dict[Key, object], path: tuple[str, ...]
 ) -> None:
     """Remove tombstones on detached trees; leave all ordinary merging to Settings."""
     if "$delete" in changes:
         raise ValueError(f"configuration_delete_invalid_command: {'.'.join(path)}")
     for key, value in tuple(changes.items()):
         target = (*path, str(key))
-        if not isinstance(value, dict):
+        if not _is_object_dict(value):
             validate_complete_configuration(value, target)
             continue
-        if "$delete" in value:
-            if len(value) != 1 or value["$delete"] is not True:
+        entries: dict[object, object] = value
+        if "$delete" in entries:
+            if len(entries) != 1 or entries["$delete"] is not True:
                 raise ValueError(f"configuration_delete_invalid_command: {'.'.join(target)}")
             if key not in basis:
                 raise ValueError(f"configuration_delete_unknown_target: {'.'.join(target)}")
@@ -85,10 +96,13 @@ def _prepare_deletions(
             del changes[key]
         else:
             # Detach each addressed path: deepcopy alone preserves YAML alias sharing.
-            value = deepcopy(value)
-            changes[key] = value
+            detached = deepcopy(entries)
+            changes[key] = detached
             inherited = basis.get(key)
-            if isinstance(inherited, dict):
-                inherited = deepcopy(inherited)
-                basis[key] = inherited
-            _prepare_deletions(inherited if isinstance(inherited, dict) else {}, value, target)
+            if _is_object_dict(inherited):
+                inherited_entries: dict[object, object] = inherited
+                inherited_mapping = deepcopy(inherited_entries)
+                basis[key] = inherited_mapping
+            else:
+                inherited_mapping = {}
+            _prepare_deletions(inherited_mapping, detached, target)

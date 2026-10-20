@@ -3,22 +3,27 @@
 """Pure YAML emission for admitted finite JSON-shaped template data."""
 
 from collections.abc import Mapping
+from typing import Protocol
 
 import yaml
 from pydantic import JsonValue
 from yaml.nodes import MappingNode, ScalarNode
 
 
+class _StringScalarRepresenter(Protocol):
+    def represent_scalar(self, tag: str, value: str, style: str | None = None) -> ScalarNode: ...
+
+
 class YamlDumper(yaml.SafeDumper):
     """Isolate template string representation from other PyYAML consumers."""
 
 
-def _string_node(dumper: yaml.SafeDumper, value: str) -> ScalarNode:
+def _string_node(dumper: _StringScalarRepresenter, value: str) -> ScalarNode:
     """Delegate escaping and chomping to PyYAML, preserving multiline values."""
     literal = "\n" in value and all(
         char == "\n" or (ord(char) >= 32 and char not in "\x85\u2028\u2029") for char in value
     )
-    return dumper.represent_scalar("tag:yaml.org,2002:str", value, style="|" if literal else '"')
+    return dumper.represent_scalar("tag:yaml.org,2002:str", value, "|" if literal else '"')
 
 
 def _mapping_node(dumper: yaml.SafeDumper, value: dict[str, JsonValue]) -> MappingNode:

@@ -58,7 +58,7 @@ class ListPRsTool(ICoreTool[ListPRsInput, ListPRsOutput]):
         return "List pull requests with optional state/base/head filters"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ListPRsInput
 
     def __init__(self, manager: GitHubManager, git_config: GitConfig) -> None:
@@ -67,7 +67,6 @@ class ListPRsTool(ICoreTool[ListPRsInput, ListPRsOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: ListPRsInput, context: NoteContext) -> ListPRsOutput:
@@ -119,7 +118,7 @@ class MergePRTool(ICoreTool[MergePRInput, MergePROutput]):
         return "Merge a pull request with optional commit message and method"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return MergePRInput
 
     def __init__(
@@ -134,7 +133,6 @@ class MergePRTool(ICoreTool[MergePRInput, MergePROutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: MergePRInput, context: NoteContext) -> MergePROutput:
@@ -177,7 +175,7 @@ class GetPRTool(ICoreTool[GetPRInput, PROutput]):
         return "Get detailed information about a specific pull request"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GetPRInput
 
     def __init__(self, manager: GitHubManager) -> None:
@@ -185,7 +183,6 @@ class GetPRTool(ICoreTool[GetPRInput, PROutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GetPRInput, context: NoteContext) -> PROutput:
@@ -228,7 +225,7 @@ class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
         return "Atomically neutralize, commit, push, and create a PR for the current branch"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return SubmitPRInput
 
     def __init__(
@@ -249,7 +246,6 @@ class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: SubmitPRInput, context: NoteContext) -> PROutput:

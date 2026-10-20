@@ -9,11 +9,10 @@ Decorator that validates incoming raw parameters dictionary into Pydantic models
 @responsibilities:
     - Validate raw dictionaries to Pydantic models
     - Return ValidationErrorOutput DTO on validation failure
-    - Bypass validation if no args_model is defined
 """
 
 # Standard library
-from typing import Any
+from typing import Any, TypeIs
 
 # Third-party
 import jsonschema
@@ -29,6 +28,13 @@ from mcp_server.schemas.error_outputs import ValidationErrorOutput
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
+def _is_execution[TModel: BaseModel](
+    value: TModel | ToolExecution[TModel],
+) -> TypeIs[ToolExecution[TModel]]:
+    """Narrow the existing carrier without erasing its operation parameter."""
+    return isinstance(value, ToolExecution)
+
+
 class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErrorOutput]):
     """Bridges the untyped transport layer with the typed core execution layer."""
 
@@ -36,7 +42,7 @@ class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErr
         self,
         inner_tool: ICoreTool[BaseModel, TOutput],
         *,
-        input_contract: IToolInputContract[BaseModel | None] | None = None,
+        input_contract: IToolInputContract[BaseModel] | None = None,
     ) -> None:
         self._inner_tool = inner_tool
         self._input_contract = input_contract
@@ -50,7 +56,7 @@ class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErr
         return self._inner_tool.description
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return self._inner_tool.args_model
 
     @property
@@ -65,12 +71,7 @@ class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErr
     def input_schema(self) -> dict[str, Any]:
         if self._input_contract is not None:
             return {key: thaw_json(value) for key, value in self._input_contract.schema.items()}
-        if self.args_model:
-            return resolve_schema_refs(self.args_model.model_json_schema())
-        return {
-            "type": "object",
-            "properties": {},
-        }
+        return resolve_schema_refs(self.args_model.model_json_schema())
 
     async def execute(
         self, params: JsonObject, context: NoteContext
@@ -89,9 +90,7 @@ class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErr
                 # Preserve the public wire contract before Python model construction.
                 schema_data = {key: thaw_json(value) for key, value in attachment_schema.items()}
                 jsonschema.validate(instance=params, schema=schema_data)
-                validated = (
-                    self.args_model.model_validate(params) if self.args_model is not None else None
-                )
+                validated = self.args_model.model_validate(params)
         except jsonschema.ValidationError as error:
             return input_validation_failure(
                 self.name,
@@ -110,12 +109,8 @@ class InputValidationDecorator[TOutput: BaseModel](ITool[TOutput | ValidationErr
                 ],
             )
 
-        if validated is None:
-            # Preserve the existing no-argument core contract.
-            result = await self._inner_tool.execute(None, context)  # type: ignore[arg-type]
-        else:
-            result = await self._inner_tool.execute(validated, context)
-        if isinstance(result, ToolExecution):
+        result = await self._inner_tool.execute(validated, context)
+        if _is_execution(result):
             return result
         return ToolExecution(operation=result, attachments=())
 

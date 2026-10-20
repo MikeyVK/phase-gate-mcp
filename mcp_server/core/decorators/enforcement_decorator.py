@@ -14,7 +14,7 @@ Decorator that executes policy preflights and rules checks (both pre and post ex
 
 # Standard library
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeIs, TypeVar
 
 # Third-party
 from pydantic import BaseModel
@@ -29,6 +29,13 @@ from mcp_server.schemas.error_outputs import EnforcementErrorOutput, ToolErrorOu
 
 TInput = TypeVar("TInput", bound=BaseModel)
 TOutput = TypeVar("TOutput", bound=BaseModel)
+
+
+def _is_execution[TModel: BaseModel](
+    value: TModel | ToolExecution[TModel],
+) -> TypeIs[ToolExecution[TModel]]:
+    """Narrow the existing carrier without erasing its operation parameter."""
+    return isinstance(value, ToolExecution)
 
 
 class EnforcementDecorator(ICoreTool[TInput, TOutput | EnforcementErrorOutput]):
@@ -53,7 +60,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput | EnforcementErrorOutput]):
         return self._inner_tool.description
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return self._inner_tool.args_model
 
     @property
@@ -94,7 +101,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput | EnforcementErrorOutput]):
         result = await self._inner_tool.execute(params, context)
 
         # Skip "post" checks if tool execution returned a validation or other error DTO
-        operation = result.operation if isinstance(result, ToolExecution) else result
+        operation = result.operation if _is_execution(result) else result
         if isinstance(operation, ToolErrorOutput):
             return result
 

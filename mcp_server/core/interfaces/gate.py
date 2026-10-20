@@ -19,10 +19,10 @@ class GateReport:
 
     passing: tuple[str, ...] = ()
     blocking: tuple[str, ...] = ()
-    details: dict[str, str] = field(default_factory=dict)
+    details: dict[str, str] = field(default_factory=dict[str, str])
 
 
-class GateViolation(ValueError):  # noqa: N818 - domain event name, not a technical error type
+class GateViolation(ValueError):  # noqa: N818 -- Domain violation is the public error name; reassess only if that contract changes.
     """Raised when enforce mode encounters a blocking gate."""
 
     def __init__(self, message: str, report: GateReport) -> None:

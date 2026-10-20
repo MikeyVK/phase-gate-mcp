@@ -4,8 +4,6 @@
 @dependencies: pytest, mcp_server.managers.git_manager, mcp_server.config.schemas
 """
 
-# pyright: reportCallIssue=false, reportAttributeAccessIssue=false, reportPrivateUsage=false
-# Suppress Pydantic false positives; reportPrivateUsage allows protected member access in test setup
 # Standard library
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -25,6 +23,7 @@ from mcp_server.managers.git_manager import GitManager, GitPushResult
 from tests.mcp_server.test_support import get_default_server_root, make_git_manager
 
 _TEST_WORKPHASES = WorkphasesConfig(
+    version="1.0.0",
     phases={
         "research": PhaseDefinition(commit_type_hint="docs"),
         "implementation": PhaseDefinition(
@@ -36,7 +35,7 @@ _TEST_WORKPHASES = WorkphasesConfig(
             subphases=["delegation", "sync", "review"],
             terminal=True,
         ),
-    }
+    },
 )
 
 
@@ -565,9 +564,12 @@ class TestGitManagerPrepareSubmission:
 
         neutralize_to_base must be called with only the path that has a net diff.
         """
-        mock_adapter.has_net_diff_for_path.side_effect = lambda path, _base: (
-            path == f"{get_default_server_root()}/state.json"
-        )
+
+        def has_state_diff(path: str, base: str) -> bool:
+            del base
+            return path == f"{get_default_server_root()}/state.json"
+
+        mock_adapter.has_net_diff_for_path.side_effect = has_state_diff
         context = NoteContext()
 
         manager.prepare_submission(

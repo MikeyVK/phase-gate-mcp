@@ -50,6 +50,11 @@ from mcp_server.schemas.deliverables import StoredPlanningModel
 logger = logging.getLogger(__name__)
 
 
+def _is_dict(value: object) -> bool:
+    """Retain runtime container admission independently of typed plan values."""
+    return isinstance(value, dict)
+
+
 @dataclass(frozen=True)
 class TransitionRecord:
     """Phase transition record for audit trail.
@@ -599,7 +604,7 @@ class PhaseStateEngine:
             (
                 cycle
                 for cycle in cycles
-                if isinstance(cycle, dict) and cycle.get("cycle_number") == current_cycle
+                if _is_dict(cycle) and cycle.get("cycle_number") == current_cycle
             ),
             None,
         )
@@ -619,7 +624,7 @@ class PhaseStateEngine:
             (
                 cycle
                 for cycle in cycles
-                if isinstance(cycle, dict) and cycle.get("cycle_number") == to_cycle
+                if _is_dict(cycle) and cycle.get("cycle_number") == to_cycle
             ),
             None,
         )

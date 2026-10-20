@@ -7,7 +7,12 @@
   - Host only top-level cross-suite pytest configuration
 """
 
+import os
+from pathlib import Path
+
 import pytest
+
+from mcp_server.config.settings import Settings
 
 pytest_plugins = [
     "tests.mcp_server.fixtures.workflow_fixtures",
@@ -17,11 +22,6 @@ pytest_plugins = [
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     """Set PGMCP_TEMPLATE_ROOT dynamically before running tests."""
-    import os  # noqa: PLC0415
-    from pathlib import Path  # noqa: PLC0415
-
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
-
     _project_root = Path(session.config.rootdir)
     default_settings = Settings()
     dev_server_root = default_settings.server.server_root_dir

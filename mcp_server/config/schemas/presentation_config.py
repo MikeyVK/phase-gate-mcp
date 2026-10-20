@@ -203,7 +203,9 @@ class GlobalPresentationConfig(BaseModel):
             text = self.next_instruction_texts.get(key, "")
             if not text.strip():
                 raise ValueError(f"next_instruction_texts.{key} must be nonempty")
-            allowed = frozenset({"success"}) if key == "response_processing_failed" else frozenset()
+            allowed = (
+                frozenset({"success"}) if key == "response_processing_failed" else frozenset[str]()
+            )
             _validate_placeholders(text, allowed=allowed, field_name=key)
             for _, placeholder, format_spec, conversion in string.Formatter().parse(text):
                 if placeholder is not None and (

@@ -390,6 +390,7 @@ async def test_branch_no_applicable_outcomes(
 
     class ChangedBranch(EmptyBranch):
         def get_branch_changes(self, parent: str) -> BranchChanges:
+            del parent
             return BranchChanges(current_paths=("source.py",), removed_paths=())
 
     composition, runtime = compose(

@@ -124,7 +124,7 @@ class ScaffoldSchemaTool(ICoreTool[ScaffoldSchemaInput, ScaffoldSchemaOutput]):
         return "Return the complete resolved context schema for one template package."
 
     @property
-    def args_model(self) -> type[ScaffoldSchemaInput] | None:
+    def args_model(self) -> type[ScaffoldSchemaInput]:
         return self._input_model
 
     @property

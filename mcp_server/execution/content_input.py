@@ -15,6 +15,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    JsonValue,
     StrictStr,
     StringConstraints,
     WithJsonSchema,
@@ -49,7 +50,7 @@ def _absolute_file_path(value: str) -> str:
     return value
 
 
-def _closed_alternatives(schema: dict[str, object]) -> None:
+def _closed_alternatives(schema: dict[str, JsonValue]) -> None:
     """The closed text/file shapes are mutually exclusive on the wire."""
     schema["oneOf"] = schema.pop("anyOf")
 

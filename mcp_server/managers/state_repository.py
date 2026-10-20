@@ -38,13 +38,13 @@ class BranchState(BaseModel):
     current_phase: str
     current_cycle: int | None = None
     last_cycle: int | None = None
-    cycle_history: list[dict[str, Any]] = Field(default_factory=list)
+    cycle_history: list[dict[str, Any]] = Field(default_factory=list[dict[str, Any]])
     required_phases: list[str] = Field(default_factory=list)
     execution_mode: str = "normal"
     skip_reason: str | None = None
     issue_title: str | None = None
     created_at: str | None = None
-    transitions: list[dict[str, Any]] = Field(default_factory=list)
+    transitions: list[dict[str, Any]] = Field(default_factory=list[dict[str, Any]])
     reconstructed: bool = False
     current_sub_phase: str | None = None
 

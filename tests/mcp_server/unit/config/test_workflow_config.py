@@ -18,7 +18,7 @@ Quality Requirements:
 from pathlib import Path
 
 import pytest
-import yaml  # type: ignore[import-untyped]
+import yaml
 from pydantic import ValidationError
 
 from mcp_server.config.loader import ConfigLoader

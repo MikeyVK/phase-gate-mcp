@@ -75,7 +75,7 @@ class DummyCoreTool(ICoreTool[DummyInput, DummyOutput]):
         return "Dummy core tool for E2E testing"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[DummyInput]:
         return DummyInput
 
     async def execute(self, params: DummyInput, context: NoteContext) -> DummyOutput:

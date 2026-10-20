@@ -9,7 +9,6 @@
 
 import re
 from collections.abc import Mapping
-from typing import Any
 
 from jinja2 import Environment, Template
 from pydantic import JsonValue
@@ -43,7 +42,7 @@ class TemplateEngine:
         """
         return self.env.get_template(template_name)
 
-    def render(self, template_name: str, **kwargs: Any) -> str:  # noqa: ANN401
+    def render(self, template_name: str, **kwargs: object) -> str:
         """Render a template with variables.
 
         Args:

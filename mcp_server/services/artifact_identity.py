@@ -147,7 +147,7 @@ def derive_artifact_identities(
                 visited.add(path)
                 pending.extend(adjacency.get(path, ()))
         closures[package.directory] = frozenset(visited)
-    reached = set().union(*closures.values())
+    reached = set[str]().union(*closures.values())
     for path in generation:
         if not path.startswith("shared/") and path not in reached:
             raise _source_error("generation_private_source_unreachable", path)

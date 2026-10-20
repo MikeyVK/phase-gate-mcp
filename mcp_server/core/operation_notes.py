@@ -34,7 +34,7 @@ class Note:
     """
 
     key: str
-    params: dict[str, Any] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 NoteEntry = Note
@@ -53,7 +53,7 @@ class NoteContext:
 
     presenter: Any | None = None
     tool_name: str | None = None
-    _entries: list[NoteEntry] = field(default_factory=list, init=False)
+    _entries: list[NoteEntry] = field(default_factory=list[NoteEntry], init=False)
 
     def produce(self, note: NoteEntry) -> None:
         """Write a note. Preserves insertion order."""

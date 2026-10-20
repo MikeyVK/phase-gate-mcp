@@ -11,12 +11,18 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from math import isfinite
+from typing import TypeGuard
 
 from pydantic import ConfigDict, JsonValue, RootModel
 
 type FrozenJsonValue = (
     str | bool | int | float | None | tuple[FrozenJsonValue, ...] | FrozenJsonObject
 )
+
+
+def _is_object_tuple(value: object) -> TypeGuard[tuple[object, ...]]:
+    """Describe a tuple before validating its immutable JSON members."""
+    return isinstance(value, tuple)
 
 
 @dataclass(frozen=True)
@@ -26,11 +32,12 @@ class FrozenJsonObject(Mapping[str, FrozenJsonValue]):
     entries: tuple[tuple[str, FrozenJsonValue], ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.entries, tuple):
+        entries: object = self.entries
+        if not _is_object_tuple(entries):
             raise TypeError("mutable_json_object_entries")
         seen: set[str] = set()
-        for entry in self.entries:
-            if not isinstance(entry, tuple) or len(entry) != 2:
+        for entry in entries:
+            if not _is_object_tuple(entry) or len(entry) != 2:
                 raise TypeError("invalid_json_object_entry")
             key, value = entry
             if not isinstance(key, str) or key in seen:
@@ -81,8 +88,8 @@ def thaw_json(value: FrozenJsonValue) -> JsonValue:
     return value
 
 
-def _validate_frozen(value: FrozenJsonValue) -> None:
-    if isinstance(value, tuple):
+def _validate_frozen(value: object) -> None:
+    if _is_object_tuple(value):
         for item in value:
             _validate_frozen(item)
     elif isinstance(value, float):

@@ -115,7 +115,10 @@ class TestGitHubManager:
         manager.list_issues(state="closed")
         mock_adapter.list_issues.assert_called_with(state="closed", labels=None)
 
-    def test_get_issue_normalization(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
+    @pytest.mark.parametrize("nullable_fields", [False, True])
+    def test_get_issue_normalization(
+        self, manager: GitHubManager, mock_adapter: MagicMock, nullable_fields: bool
+    ) -> None:
         label_mock = MagicMock()
         label_mock.name = "type:feature"
         assignee_mock = MagicMock()
@@ -131,14 +134,16 @@ class TestGitHubManager:
         issue_mock.number = 354
         issue_mock.html_url = "https://github.com/owner/repo/issues/354"
         issue_mock.title = "Add get_pr tool"
-        issue_mock.body = "Description"
+        issue_mock.body = None if nullable_fields else "Description"
         issue_mock.state = "closed"
         issue_mock.labels = [label_mock]
-        issue_mock.milestone = milestone_mock
+        issue_mock.milestone = None if nullable_fields else milestone_mock
         issue_mock.assignees = [assignee_mock]
         issue_mock.created_at.isoformat.return_value = "2026-01-01T00:00:00+00:00"
         issue_mock.updated_at.isoformat.return_value = "2026-05-27T12:00:00+00:00"
         issue_mock.closed_at.isoformat.return_value = "2026-05-27T12:00:00+00:00"
+        if nullable_fields:
+            issue_mock.closed_at = None
         issue_mock.user = user_mock
         mock_adapter.get_issue.return_value = issue_mock
 
@@ -148,18 +153,20 @@ class TestGitHubManager:
         assert result.number == 354
         assert result.url == "https://github.com/owner/repo/issues/354"
         assert result.title == "Add get_pr tool"
-        assert result.body == "Description"
+        assert result.body == ("" if nullable_fields else "Description")
         assert result.state == "closed"
         assert result.labels == ["type:feature"]
-        assert result.milestone is not None
-        assert isinstance(result.milestone, MilestoneReadModel)
-        assert result.milestone.number == 5
-        assert result.milestone.title == "v2.0"
-        assert result.milestone.state == "open"
+        if nullable_fields:
+            assert result.milestone is None
+        else:
+            assert isinstance(result.milestone, MilestoneReadModel)
+            assert result.milestone.number == 5
+            assert result.milestone.title == "v2.0"
+            assert result.milestone.state == "open"
         assert result.assignees == ["alice"]
         assert result.created_at == "2026-01-01T00:00:00+00:00"
         assert result.updated_at == "2026-05-27T12:00:00+00:00"
-        assert result.closed_at == "2026-05-27T12:00:00+00:00"
+        assert result.closed_at == (None if nullable_fields else "2026-05-27T12:00:00+00:00")
         assert result.author == "bob"
 
     def test_close_issue(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
@@ -216,7 +223,10 @@ class TestGitHubManager:
             pr_number=1, commit_message="Merged", merge_method="merge"
         )
 
-    def test_get_pr_normalization(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
+    @pytest.mark.parametrize("body", ["PR body", None])
+    def test_get_pr_normalization(
+        self, manager: GitHubManager, mock_adapter: MagicMock, body: str | None
+    ) -> None:
         mock_pr = MagicMock()
         mock_pr.number = 42
         mock_pr.title = "Test PR"
@@ -225,7 +235,7 @@ class TestGitHubManager:
         mock_pr.head.ref = "feature/42-test"
         mock_pr.merged_at = None
         mock_pr.merge_commit_sha = None
-        mock_pr.body = "PR body"
+        mock_pr.body = body
         mock_pr.html_url = "https://github.com/owner/repo/pull/42"
         mock_adapter.get_pr.return_value = mock_pr
 
@@ -239,7 +249,7 @@ class TestGitHubManager:
         assert result.head_branch == "feature/42-test"
         assert result.merged_at is None
         assert result.merge_sha is None
-        assert result.body == "PR body"
+        assert result.body == (body if body is not None else "")
         assert result.html_url == "https://github.com/owner/repo/pull/42"
 
 

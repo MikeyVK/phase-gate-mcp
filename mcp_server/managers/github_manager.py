@@ -137,7 +137,6 @@ class GitHubManager:
             ],
         }
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def create_issue(
         self,
         title: str,
@@ -152,7 +151,6 @@ class GitHubManager:
         )
         return {"number": issue.number, "url": issue.html_url, "title": issue.title}
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def create_pr(
         self, title: str, body: str, head: str, base: str, draft: bool = False
     ) -> dict[str, Any]:
@@ -172,7 +170,7 @@ class GitHubManager:
         """Get a specific issue and return as a read model."""
         issue = self.adapter.get_issue(issue_number)
         milestone: MilestoneReadModel | None = None
-        if issue.milestone is not None:
+        if issue.milestone is not None:  # pyright: ignore[reportUnnecessaryComparison] -- Preserve nullable REST observations; reassess upstream PyGithub annotations.
             milestone = MilestoneReadModel(
                 number=issue.milestone.number,
                 title=issue.milestone.title,
@@ -182,14 +180,14 @@ class GitHubManager:
             number=issue.number,
             url=issue.html_url,
             title=issue.title,
-            body=issue.body if issue.body is not None else "",
+            body=issue.body if issue.body is not None else "",  # pyright: ignore[reportUnnecessaryComparison] -- Preserve nullable REST observations; reassess upstream PyGithub annotations.
             state=issue.state,
             labels=[label.name for label in issue.labels],
             milestone=milestone,
             assignees=[a.login for a in issue.assignees],
             created_at=issue.created_at.isoformat(),
             updated_at=issue.updated_at.isoformat(),
-            closed_at=issue.closed_at.isoformat() if issue.closed_at is not None else None,
+            closed_at=issue.closed_at.isoformat() if issue.closed_at is not None else None,  # pyright: ignore[reportUnnecessaryComparison] -- Preserve nullable REST observations; reassess upstream PyGithub annotations.
             author=issue.user.login,
         )
 
@@ -213,7 +211,6 @@ class GitHubManager:
         """Remove labels from an issue or PR."""
         self.adapter.remove_labels(issue_number, labels)
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def update_issue(
         self,
         issue_number: int,
@@ -280,7 +277,7 @@ class GitHubManager:
             head_branch=pr.head.ref,
             merged_at=pr.merged_at.isoformat() if pr.merged_at is not None else None,
             merge_sha=pr.merge_commit_sha,
-            body=pr.body if pr.body is not None else "",
+            body=pr.body if pr.body is not None else "",  # pyright: ignore[reportUnnecessaryComparison] -- Preserve nullable REST observations; reassess upstream PyGithub annotations.
             html_url=pr.html_url,
         )
 

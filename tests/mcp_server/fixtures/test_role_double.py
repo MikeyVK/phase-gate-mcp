@@ -124,6 +124,7 @@ class RecordingTestRuntime(AdapterProcessRuntime):
         response_contract: AdapterResponseContract[TResponse],
         timeout_seconds: float,
     ) -> InvocationCompleted[TResponse]:
+        del request_contract
         self.calls.append(RecordedTestCall(launch, workspace_root, request, timeout_seconds))
         raw, code = next(self.answers)
         empty = StreamCapture(observed_bytes=0, head="", tail="", truncated=False)

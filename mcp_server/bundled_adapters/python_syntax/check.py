@@ -7,10 +7,23 @@ import json
 import platform
 import re
 import sys
+from typing import TypeGuard
 
 _REQUEST_KEYS = frozenset({"operation", "target_path", "content", "args", "execution_context"})
 _ABSOLUTE_PATH = re.compile(r"^(?:/|[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)[\s\S]*$")
 _BARE_UNC_ROOT = re.compile(r"^\\\\[^\\/]+[\\/][^\\/]+$")
+
+
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_string_list(value: object) -> TypeGuard[list[str]]:
+    return _is_object_list(value) and all(isinstance(item, str) for item in value)
 
 
 def _external_tools() -> list[dict[str, str]]:
@@ -39,7 +52,7 @@ def _valid_absolute_file_path(value: object) -> bool:
 
 
 def _validate_request(value: object) -> tuple[str, str, str, tuple[str, ...]] | dict[str, object]:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid([_issue([], "wrong_type")])
     keys = set(value)
     unknown = sorted(str(key) for key in keys - _REQUEST_KEYS)
@@ -49,7 +62,7 @@ def _validate_request(value: object) -> tuple[str, str, str, tuple[str, ...]] | 
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
     context = value["execution_context"]
-    if not isinstance(context, dict):
+    if not _is_object_dict(context):
         return _invalid([_issue(["execution_context"], "wrong_type")])
     unknown_context = sorted(str(key) for key in set(context) - {"scratch_directory"})
     if unknown_context:
@@ -76,7 +89,7 @@ def _validate_request(value: object) -> tuple[str, str, str, tuple[str, ...]] | 
     if not isinstance(content, str):
         return _invalid([_issue(["content"], "wrong_type")])
     args = value["args"]
-    if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
+    if not _is_string_list(args):
         return _invalid([_issue(["args"], "wrong_type")])
 
     return "syntax", target_path, content, tuple(args)
@@ -119,7 +132,7 @@ def _run(request: object) -> tuple[dict[str, object], int]:
 
 def main() -> int:
     try:
-        request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+        request: object = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     except UnicodeDecodeError, json.JSONDecodeError:
         response, exit_code = _invalid([_issue([], "invalid_value")]), 2
     else:

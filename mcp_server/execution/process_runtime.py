@@ -24,6 +24,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterProcessSetupError,
     InvocationScratchDirectories,
 )
+from mcp_server.core.logging import logging_extra
 from mcp_server.execution.models import (
     AdapterCallFailure,
     AdapterCallFailureReason,
@@ -170,7 +171,7 @@ class _Invocation:
     stop_unconfirmed: bool = False
     stdout: StdoutBuffer = field(default_factory=StdoutBuffer)
     stderr: StderrBuffer = field(default_factory=StderrBuffer)
-    io_tasks: list[asyncio.Task[None]] = field(default_factory=list)
+    io_tasks: list[asyncio.Task[None]] = field(default_factory=list[asyncio.Task[None]])
     stop_requested: asyncio.Event = field(default_factory=asyncio.Event)
     stream_failure: AdapterCallFailure | None = None
     stop_deadline: float | None = None
@@ -281,7 +282,7 @@ class AdapterProcessRuntime:
                 )
                 logging.getLogger(__name__).error(
                     "invocation_cleanup_failed",
-                    extra={"directory": str(directory.directory), "cause": str(exc)},
+                    extra=logging_extra({"directory": str(directory.directory), "cause": str(exc)}),
                 )
                 if isinstance(result, InvocationCompleted) and (
                     result.capture.exit_code != AdapterExitCode.INVALID_REQUEST

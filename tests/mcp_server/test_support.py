@@ -13,12 +13,16 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from shutil import copy2, copytree
-from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, cast
+from unittest.mock import MagicMock, Mock
 
 from jinja2 import Environment
+from mcp import Client
+from mcp.types import CallToolResult, TextContent
 
 from mcp_server.adapters.git_adapter import GitAdapter
+from mcp_server.bootstrap import ServerBootstrapper
+from mcp_server.config import settings as settings_module
 from mcp_server.config.github_resolution import resolve_github_settings
 from mcp_server.config.loader import (
     ConfigLoader,
@@ -26,7 +30,7 @@ from mcp_server.config.loader import (
 )
 from mcp_server.config.settings import Settings as RealSettings
 from mcp_server.config.validator import ConfigValidator
-from mcp_server.core.interfaces import GateReport
+from mcp_server.core.interfaces import GateReport, IContextLoadedWriter, IWorkflowStateMutator
 from mcp_server.core.interfaces.git import ICycleEvidenceReader
 from mcp_server.core.interfaces.project_plan import IProjectPlanReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
@@ -46,6 +50,11 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
+from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
+from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.presenters.response_presenter import ResponsePresenter
+from mcp_server.presenters.schema_resource_presenter import SchemaResourcePresenter
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas import (
     ContractsConfig,
     GitConfig,
@@ -53,6 +62,7 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.schemas.template_identity import ArtifactIdentity
+from mcp_server.server import MCPServer
 from mcp_server.services.template_catalog import TemplateCatalogLoader, TemplateInputValidator
 from mcp_server.services.template_contract_loader import TemplateContractLoader
 from mcp_server.services.template_engine import register_template_filters
@@ -60,27 +70,20 @@ from mcp_server.services.template_graph import TemplateGraphResolver
 from mcp_server.services.template_proposal import SuiteSnapshot, admit_template_suite
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
+from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
-    from mcp import Client
-
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
     from mcp_server.config.schemas.presentation_config import PresentationConfig
     from mcp_server.config.settings import Settings
     from mcp_server.core.interfaces.ipresenter import ITextPresenter
-    from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
-    from mcp_server.presenters.response_presenter import ResponsePresenter
-    from mcp_server.server import MCPServer
 
 
 def get_default_server_root() -> str:
     """Get the default server root directory name from Settings."""
-    from unittest.mock import Mock  # noqa: PLC0415
-
-    from mcp_server.config.settings import Settings  # noqa: PLC0415
-
-    settings = Settings.from_env()
+    # Resolve the module attribute on invocation; callers patch Settings.
+    settings = settings_module.Settings.from_env()
     if isinstance(settings, Mock) or isinstance(getattr(settings, "server", None), Mock):
         return ".pgmcp"
     val = settings.server.server_root_dir
@@ -312,10 +315,6 @@ def make_project_manager(
         _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
     )
     if workflow_status_resolver is None:
-        from mcp_server.managers.workflow_status_resolver import (  # noqa: PLC0415
-            WorkflowStatusResolver,
-        )
-
         workspace_path = Path(workspace_root)
         _git_reader = resolved_git_manager or make_git_manager(workspace_root)
         _state_reader = FileStateRepository(
@@ -343,8 +342,8 @@ def make_phase_state_engine(
     project_manager: IProjectPlanReader | None = None,
     state_repository: object | None = None,
     workflow_gate_runner: object | None = None,
-    workflow_state_mutator: object | None = None,
-    context_loaded_writer: object | None = None,
+    workflow_state_mutator: IWorkflowStateMutator | None = None,
+    context_loaded_writer: IContextLoadedWriter | None = None,
 ) -> PhaseStateEngine:
     """Build a PhaseStateEngine with explicit config objects and injected seams."""
     workspace_path = Path(workspace_root)
@@ -359,8 +358,6 @@ def make_phase_state_engine(
     )
     resolved_workflow_gate_runner = workflow_gate_runner or _NopGateRunner(contracts_config)
     if workflow_state_mutator is None:
-        from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
-
         workflow_state_mutator = WorkflowStateMutator(
             state_repository=resolved_state_repository,
         )
@@ -371,9 +368,9 @@ def make_phase_state_engine(
         contracts_config=contracts_config,
         state_repository=resolved_state_repository,
         workflow_gate_runner=resolved_workflow_gate_runner,
-        workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
+        workflow_state_mutator=workflow_state_mutator,
         server_root=workspace_path / get_default_server_root(),
-        context_loaded_writer=context_loaded_writer,  # type: ignore[arg-type]
+        context_loaded_writer=context_loaded_writer,
     )
 
 
@@ -471,10 +468,7 @@ def copy_server_startup_inputs(source_workspace: Path, target_workspace: Path) -
 
 def make_test_server(settings: Settings | None = None) -> MCPServer:
     """Create a fully bootstrapped MCPServer for tests using ServerBootstrapper."""
-    from mcp_server.bootstrap import ServerBootstrapper  # noqa: PLC0415
-    from mcp_server.config.settings import Settings as ServerSettings  # noqa: PLC0415
-
-    resolved_settings = settings or ServerSettings.from_env()
+    resolved_settings = settings or settings_module.Settings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
     return bootstrapper.bootstrap_target()
 
@@ -550,10 +544,6 @@ def make_dispatch_dependencies(settings: Settings) -> DispatchDependencies:
 
 def make_dispatch_server(settings: Settings) -> MCPServer:
     """Compose the current request handler for focused tool-dispatch tests."""
-    from mcp_server.config.loader import ConfigLoader  # noqa: PLC0415
-    from mcp_server.server import MCPServer  # noqa: PLC0415
-    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
-
     server_root = Path(settings.server.workspace_root) / settings.server.server_root_dir
     presentation = ConfigLoader(
         config_root=server_root / "config",
@@ -568,29 +558,15 @@ def make_dispatch_server(settings: Settings) -> MCPServer:
 
 
 def assert_itool_result(
-    result: Any,  # noqa: ANN401
+    result: CallToolResult,
     text_contains: str | None = None,
 ) -> str:
-    """Verifies the ToolResult structure for ITool (pure text, no JSON)."""
-    is_err = result.is_error
-    assert not is_err, f"Expected successful tool result, got error: {result}"
+    """Verify the SDK tool response contains exactly one text block."""
+    assert not result.is_error, f"Expected successful tool result, got error: {result}"
 
-    json_blocks = []
-    text_blocks = []
-    for c in result.content:
-        c_type = c.get("type") if isinstance(c, dict) else getattr(c, "type", None)
-        if c_type == "json":
-            json_blocks.append(c)
-        elif c_type == "text":
-            text_blocks.append(c)
-
-    assert len(json_blocks) == 0, f"Expected no json block, got {len(json_blocks)}"
+    text_blocks = [block for block in result.content if isinstance(block, TextContent)]
     assert len(text_blocks) == 1, f"Expected exactly one text block, got {len(text_blocks)}"
-
-    first_text = text_blocks[0]
-    text_content = (
-        first_text["text"] if isinstance(first_text, dict) else getattr(first_text, "text", "")
-    )
+    text_content = text_blocks[0].text
 
     if text_contains:
         assert text_contains in text_content
@@ -653,9 +629,6 @@ def make_template_suite_admission(
 @asynccontextmanager
 async def connected_mcp_client(server: MCPServer) -> AsyncGenerator[Client]:
     """Expose the native initialized MCP client without request/result translation."""
-    # Non-protocol consumers of this shared helper must not eagerly load the SDK client.
-    from mcp import Client  # noqa: PLC0415
-
     async with Client(server.server, mode="legacy", cache=None) as client:
         yield client
 
@@ -667,12 +640,6 @@ def make_response_presenter(
     profile_id: str | None = None,
 ) -> ResponsePresenter:
     """Compose the actual selected presenter for focused output behavior tests."""
-    from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
-    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
-        SchemaResourcePresenter,
-    )
-    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
-
     resolved = config if config is not None else make_config_loader().load_presentation_config()
     return ResponsePresenter(
         text_presenter=text_presenter

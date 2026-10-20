@@ -20,14 +20,17 @@ class DummyModel(BaseModel):
 
 class DummyPublisher:
     def put(self, tool_name: str, output: BaseModel) -> CachePublication:
+        del tool_name, output
         return CachePublication(run_id="run-123", success=True)
 
 
 class DummyReader:
     def get(self, run_id: str, response_model: type[BaseModel]) -> BaseModel | None:
+        del run_id, response_model
         return DummyModel(value=42)
 
     def exists(self, run_id: str) -> bool:
+        del run_id
         return True
 
 

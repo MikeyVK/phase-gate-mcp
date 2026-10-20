@@ -93,8 +93,8 @@ def _response_profiles() -> dict[str, dict[str, str]]:
     }
 
 
-def _tool_config(**overrides: Any) -> dict[str, Any]:
-    config: dict[str, Any] = {"template_success": "{title}"}
+def _tool_config(**overrides: object) -> dict[str, object]:
+    config: dict[str, object] = {"template_success": "{title}"}
     config.update(overrides)
     return config
 

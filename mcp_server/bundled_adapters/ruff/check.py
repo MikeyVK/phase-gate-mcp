@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import TypeGuard
 from uuid import uuid4
 
 _REQUEST_KEYS = frozenset({"operation", "targets", "args", "execution_context"})
@@ -31,6 +32,18 @@ _CONFLICTING_FLAGS = (
 )
 
 
+def _is_object_dict(value: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
+
+
+def _is_string_list(value: object) -> TypeGuard[list[str]]:
+    return _is_object_list(value) and all(isinstance(item, str) for item in value)
+
+
 def _issue(location: list[str | int], code: str) -> dict[str, object]:
     return {"location": location, "code": code}
 
@@ -48,8 +61,8 @@ def _valid_absolute_path(value: object) -> bool:
     )
 
 
-def _validate_execution_context(value: object) -> dict[str, object] | None:
-    if not isinstance(value, dict):
+def _validate_execution_context(value: object) -> str | dict[str, object]:
+    if not _is_object_dict(value):
         return _invalid([_issue(["execution_context"], "wrong_type")])
     unknown = sorted(str(key) for key in set(value) - {"scratch_directory"})
     if unknown:
@@ -61,11 +74,11 @@ def _validate_execution_context(value: object) -> dict[str, object] | None:
         return _invalid([_issue(["execution_context", "scratch_directory"], "wrong_type")])
     if not directory or "\x00" in directory or _ABSOLUTE_PATH.fullmatch(directory) is None:
         return _invalid([_issue(["execution_context", "scratch_directory"], "invalid_value")])
-    return None
+    return directory
 
 
 def _validate_request(value: object) -> tuple[str, list[str], list[str], str] | dict[str, object]:
-    if not isinstance(value, dict):
+    if not _is_object_dict(value):
         return _invalid([_issue([], "wrong_type")])
     keys = set(value)
     unknown = sorted(str(key) for key in keys - _REQUEST_KEYS)
@@ -74,16 +87,16 @@ def _validate_request(value: object) -> tuple[str, list[str], list[str], str] | 
     missing = sorted(_REQUEST_KEYS - keys)
     if missing:
         return _invalid([_issue([key], "missing_field") for key in missing])
-    context_issue = _validate_execution_context(value["execution_context"])
-    if context_issue is not None:
-        return context_issue
+    scratch_directory = _validate_execution_context(value["execution_context"])
+    if isinstance(scratch_directory, dict):
+        return scratch_directory
     operation = value["operation"]
     if not isinstance(operation, str):
         return _invalid([_issue(["operation"], "wrong_type")])
     if operation not in {"format", "lint"}:
         return _invalid([_issue(["operation"], "invalid_value")])
     targets = value["targets"]
-    if not isinstance(targets, list):
+    if not _is_object_list(targets):
         return _invalid([_issue(["targets"], "wrong_type")])
     target_issues: list[dict[str, object]] = []
     for index, target in enumerate(targets):
@@ -94,13 +107,13 @@ def _validate_request(value: object) -> tuple[str, list[str], list[str], str] | 
     if target_issues:
         return _invalid(target_issues)
     args = value["args"]
-    if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
+    if not _is_string_list(args):
         return _invalid([_issue(["args"], "wrong_type")])
     return (
         operation,
         [str(target) for target in targets],
         list(args),
-        value["execution_context"]["scratch_directory"],
+        scratch_directory,
     )
 
 
@@ -139,7 +152,7 @@ def _evidence(stdout: bytes, stderr: bytes) -> dict[str, object] | None:
 
 
 def _diagnostic_from_json(value: object) -> str | None:
-    if isinstance(value, dict):
+    if _is_object_dict(value):
         message = value.get("message")
         if isinstance(message, str) and message.strip():
             parts: list[str] = []
@@ -150,7 +163,7 @@ def _diagnostic_from_json(value: object) -> str | None:
             if isinstance(filename, str) and filename.strip():
                 parts.append(filename.strip())
             location = value.get("location")
-            if isinstance(location, dict):
+            if _is_object_dict(location):
                 row = location.get("row")
                 column = location.get("column")
                 if isinstance(row, int) or isinstance(column, int):
@@ -164,7 +177,7 @@ def _diagnostic_from_json(value: object) -> str | None:
             diagnostic = _diagnostic_from_json(item)
             if diagnostic is not None:
                 return diagnostic
-    elif isinstance(value, list):
+    elif _is_object_list(value):
         for item in value:
             diagnostic = _diagnostic_from_json(item)
             if diagnostic is not None:
@@ -174,7 +187,7 @@ def _diagnostic_from_json(value: object) -> str | None:
 
 def _message(stdout: bytes, stderr: bytes, operation: str) -> str | None:
     try:
-        parsed = json.loads(stdout.decode("utf-8"))
+        parsed: object = json.loads(stdout.decode("utf-8"))
     except UnicodeDecodeError, json.JSONDecodeError:
         parsed = None
     diagnostic = _diagnostic_from_json(parsed)
@@ -394,7 +407,7 @@ def _run(request: object) -> tuple[dict[str, object], int]:
 
 def main() -> int:
     try:
-        request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+        request: object = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     except UnicodeDecodeError, json.JSONDecodeError:
         response, exit_code = _invalid([_issue([], "invalid_value")]), 2
     else:

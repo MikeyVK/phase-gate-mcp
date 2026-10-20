@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 class ToolResult(BaseModel):
     """Result of a tool execution."""
 
-    content: list[dict[str, Any]] = Field(default_factory=list)
+    content: list[dict[str, Any]] = Field(default_factory=list[dict[str, Any]])
     is_error: bool = False
     error_code: str | None = None
     file_path: str | None = None

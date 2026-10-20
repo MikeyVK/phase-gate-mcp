@@ -215,22 +215,22 @@ class GitAdapter:
         logger = core_logging.get_logger("git_adapter")
 
         if base == "HEAD":
-            base_ref = self.repo.head.commit
-            resolved_base = f"HEAD ({base_ref.hexsha[:7]})"
+            base_ref = self.repo.head.commit.hexsha
+            resolved_base = f"HEAD ({base_ref[:7]})"
         else:
-            base_ref = base  # type: ignore[assignment]
+            base_ref = base
             resolved_base = base
 
         logger.debug(
             "Creating git branch",
-            extra={
-                "props": {
+            extra=core_logging.logging_extra(
+                {
                     "branch_name": branch_name,
                     "base": base,
                     "resolved_base": resolved_base,
                     "current_branch": self.get_current_branch(),
                 }
-            },
+            ),
         )
 
         try:
@@ -241,14 +241,18 @@ class GitAdapter:
 
             logger.info(
                 "Created branch",
-                extra={"props": {"branch_name": branch_name, "base": resolved_base}},
+                extra=core_logging.logging_extra(
+                    {"branch_name": branch_name, "base": resolved_base}
+                ),
             )
         except ExecutionError:
             raise
         except Exception as e:
             logger.error(
                 "Failed to create branch",
-                extra={"props": {"branch_name": branch_name, "base": base, "error": str(e)}},
+                extra=core_logging.logging_extra(
+                    {"branch_name": branch_name, "base": base, "error": str(e)}
+                ),
             )
             raise ExecutionError(f"Failed to create branch {branch_name}: {e}") from e
 
@@ -559,7 +563,7 @@ class GitAdapter:
     def list_branches(self, verbose: bool = False, remote: bool = False) -> list[str]:
         """List branches with optional verbose info and remotes."""
         try:
-            args = []
+            args: list[str] = []
             if remote:
                 args.append("-r")
             if verbose:
