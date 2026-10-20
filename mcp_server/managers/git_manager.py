@@ -26,7 +26,7 @@ from mcp_server.core.interfaces.git import (
     CommitHistoryUnavailableError,
     CycleEvidence,
 )
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.scope_encoder import ScopeEncoder
@@ -135,15 +135,15 @@ class GitManager:
 
         logger.info(
             "Creating branch",
-            extra={
-                "props": {
+            extra=logging_extra(
+                {
                     "issue_number": issue_number,
                     "full_name": full_name,
                     "branch_type": branch_type,
                     "base_branch": base_branch,
                     "current_branch": current_branch,
                 }
-            },
+            ),
         )
 
         # Pre-flight check
@@ -164,7 +164,7 @@ class GitManager:
 
         logger.info(
             "Branch created successfully",
-            extra={"props": {"full_name": full_name, "base_branch": base_branch}},
+            extra=logging_extra({"full_name": full_name, "base_branch": base_branch}),
         )
 
         return full_name

@@ -37,7 +37,7 @@ from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.cache_publication import CachePublication
@@ -141,13 +141,13 @@ class MCPServer:
 
             logger.debug(
                 "Tool call received",
-                extra={
-                    "props": {
+                extra=logging_extra(
+                    {
                         "call_id": call_id,
                         "tool_name": name,
-                        "argument_keys": argument_keys,
+                        "argument_keys": [*argument_keys],
                     }
-                },
+                ),
             )
 
             for tool in self.tools:
@@ -188,26 +188,26 @@ class MCPServer:
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.debug(
                             "Tool call completed",
-                            extra={
-                                "props": {
+                            extra=logging_extra(
+                                {
                                     "call_id": call_id,
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                 }
-                            },
+                            ),
                         )
                         return response_content
                     except asyncio.CancelledError:
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.info(
                             "Tool call cancelled",
-                            extra={
-                                "props": {
+                            extra=logging_extra(
+                                {
                                     "call_id": call_id,
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                 }
-                            },
+                            ),
                         )
                         raise
                     except Exception as e:
@@ -216,15 +216,15 @@ class MCPServer:
                             "Response processing failed: %s",
                             e,
                             exc_info=True,
-                            extra={
-                                "props": {
+                            extra=logging_extra(
+                                {
                                     "call_id": call_id,
                                     "tool_name": name,
                                     "duration_ms": duration_ms,
                                     "error_type": type(e).__name__,
                                     "operation_success": operation_success,
                                 }
-                            },
+                            ),
                         )
                         if operation_success is not None:
                             try:
@@ -253,13 +253,13 @@ class MCPServer:
                             except Exception:
                                 logger.exception(
                                     "Response recovery failed",
-                                    extra={
-                                        "props": {
+                                    extra=logging_extra(
+                                        {
                                             "call_id": call_id,
                                             "tool_name": name,
                                             "operation_success": operation_success,
                                         }
-                                    },
+                                    ),
                                 )
                                 raise
                         return CallToolResult(

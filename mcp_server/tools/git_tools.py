@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import IContextLoadedWriter, ICoreTool, IStateReader
-from mcp_server.core.logging import get_logger
+from mcp_server.core.logging import get_logger, logging_extra
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
@@ -152,14 +152,14 @@ class CreateBranchTool(ICoreTool[CreateBranchInput, CreateBranchOutput]):
     async def execute(self, params: CreateBranchInput, context: NoteContext) -> CreateBranchOutput:
         logger.info(
             "Branch creation requested",
-            extra={
-                "props": {
+            extra=logging_extra(
+                {
                     "issue_number": params.issue_number,
                     "name": params.name,
                     "branch_type": params.branch_type,
                     "base_branch": params.base_branch,
                 }
-            },
+            ),
         )
 
         branch_name = self.manager.create_branch(
@@ -349,7 +349,7 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
 
             logger.info(
                 "Auto-detected workflow_phase from state.json",
-                extra={"props": {"branch": current_branch, "workflow_phase": workflow_phase}},
+                extra=logging_extra({"branch": current_branch, "workflow_phase": workflow_phase}),
             )
         else:
             issue_number = self.manager.git_config.extract_issue_number(current_branch)
@@ -571,7 +571,7 @@ class GitCheckoutTool(ICoreTool[GitCheckoutInput, GitCheckoutOutput]):
         except (MCPError, ValueError, OSError, StateBranchMismatchError) as exc:
             logger.warning(
                 "Phase state sync failed after checkout",
-                extra={"props": {"branch": params.branch, "error": str(exc)}},
+                extra=logging_extra({"branch": params.branch, "error": str(exc)}),
             )
 
         if self._context_loaded_writer is not None:

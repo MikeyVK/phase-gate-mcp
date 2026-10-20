@@ -14,8 +14,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from pydantic import JsonValue, TypeAdapter
 from pytest import MonkeyPatch
 
+from mcp_server.core.logging import StructuredFormatter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.admin_tools import (
     RestartServerInput,
@@ -54,7 +56,9 @@ async def test_restart_returns_before_exit_and_records_marker_and_audit(
             assert result.pid == os.getpid()
             assert len(tasks) == 1
             assert not exit_calls
-            marker = json.loads((tmp_path / ".restart_marker").read_text(encoding="utf-8"))
+            marker = TypeAdapter(dict[str, JsonValue]).validate_json(
+                (tmp_path / ".restart_marker").read_text(encoding="utf-8")
+            )
             assert marker == {
                 "timestamp": result.timestamp,
                 "pid": result.pid,
@@ -63,26 +67,43 @@ async def test_restart_returns_before_exit_and_records_marker_and_audit(
             }
             assert isinstance(marker["timestamp"], float)
             assert marker["timestamp"] > 0
-            assert datetime.fromisoformat(marker["iso_time"]).tzinfo is not None
+            marker_iso_time = marker["iso_time"]
+            assert isinstance(marker_iso_time, str)
+            assert datetime.fromisoformat(marker_iso_time).tzinfo is not None
         finally:
             await asyncio.gather(*tasks)
 
     assert exit_calls == [42]
     assert capsys.readouterr().err.splitlines() == ["__MCP_RESTART_REQUEST__"]
-    events = [
-        record.__dict__["props"]["event_type"]
-        for record in caplog.records
-        if record.name == "mcp_server.tools.admin"
+    records = [record for record in caplog.records if record.name == "mcp_server.tools.admin"]
+    formatter = StructuredFormatter()
+    payloads = [
+        TypeAdapter(dict[str, JsonValue]).validate_json(formatter.format(record))
+        for record in records
     ]
-    assert events == [
+    assert [payload["event_type"] for payload in payloads] == [
         "server_restart_requested",
         "restart_marker_written",
         "server_exiting_for_restart",
     ]
+    for record, payload in zip(records, payloads, strict=True):
+        props = TypeAdapter(dict[str, JsonValue]).validate_python(record.__dict__["props"])
+        event_timestamp = payload["event_timestamp"]
+        assert isinstance(event_timestamp, str)
+        assert datetime.fromisoformat(event_timestamp).tzinfo is not None
+        assert event_timestamp == props["event_timestamp"]
+        assert payload["timestamp"] == formatter.formatTime(record)
+        assert payload["reason"] == reason
+        assert payload["pid"] == result.pid
+        assert "logging_payload" not in payload
+    assert payloads[1]["marker_content"] == marker
+    assert payloads[1]["marker_path"] == str(tmp_path / ".restart_marker")
+    assert payloads[2]["exit_code"] == 42
 
 
 def test_verify_server_restarted_with_valid_marker(
     tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """RED: Test verify_server_restarted with valid marker.
 
@@ -102,7 +123,8 @@ def test_verify_server_restarted_with_valid_marker(
     }
     marker_path.write_text(json.dumps(marker_data), encoding="utf-8")
 
-    result = verify_server_restarted(since_timestamp=past_time, server_root=tmp_path)
+    with caplog.at_level(logging.INFO, logger="mcp_server.tools.admin"):
+        result = verify_server_restarted(since_timestamp=past_time, server_root=tmp_path)
 
     assert result["restarted"] is True
     assert result["previous_pid"] == 99999
@@ -110,6 +132,15 @@ def test_verify_server_restarted_with_valid_marker(
     assert result["restart_timestamp"] == past_time + 5
     assert "current_pid" in result
     assert "time_since_restart" in result
+    records = [record for record in caplog.records if record.name == "mcp_server.tools.admin"]
+    assert len(records) == 1
+    payload = TypeAdapter(dict[str, JsonValue]).validate_json(
+        StructuredFormatter().format(records[0])
+    )
+    assert payload["message"] == "Server restart verification"
+    assert payload["result"] == result
+    assert payload["since_timestamp"] == past_time
+    assert "logging_payload" not in payload
 
 
 def test_verify_server_restarted_no_marker(

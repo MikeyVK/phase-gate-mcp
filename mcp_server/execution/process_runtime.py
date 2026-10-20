@@ -24,6 +24,7 @@ from mcp_server.core.interfaces.execution import (
     AdapterProcessSetupError,
     InvocationScratchDirectories,
 )
+from mcp_server.core.logging import logging_extra
 from mcp_server.execution.models import (
     AdapterCallFailure,
     AdapterCallFailureReason,
@@ -281,7 +282,7 @@ class AdapterProcessRuntime:
                 )
                 logging.getLogger(__name__).error(
                     "invocation_cleanup_failed",
-                    extra={"directory": str(directory.directory), "cause": str(exc)},
+                    extra=logging_extra({"directory": str(directory.directory), "cause": str(exc)}),
                 )
                 if isinstance(result, InvocationCompleted) and (
                     result.capture.exit_code != AdapterExitCode.INVALID_REQUEST

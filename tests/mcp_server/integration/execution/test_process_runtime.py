@@ -12,12 +12,13 @@ from uuid import UUID
 
 import pytest
 from jsonschema import Draft202012Validator
-from pydantic import ValidationError
+from pydantic import JsonValue, TypeAdapter, ValidationError
 
 from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.fixes_config import FixesConfig
 from mcp_server.config.schemas.tests_config import TestsConfig as ExecutionTestsConfig
 from mcp_server.core.interfaces.execution import AdapterLaunch, AdapterProcess, InvocationDirectory
+from mcp_server.core.logging import StructuredFormatter
 from mcp_server.execution.check_selection import (
     CheckSelectionRequest,
     CheckSelector,
@@ -347,6 +348,7 @@ class DeniedInvocationRemoval:
 
 async def test_owned_cleanup_failure_keeps_completion_capture_and_reports_operational_failure(
     process_fixture: ProcessFixture,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     provider = FileInvocationScratch(process_fixture.workspace / "invocations")
     identifier = UUID(int=3)
@@ -370,6 +372,21 @@ async def test_owned_cleanup_failure_keeps_completion_capture_and_reports_operat
     assert result.termination_problem is None
     assert allocation.directory.is_dir()
     provider.remove(allocation)
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "mcp_server.execution.process_runtime"
+        and record.getMessage() == "invocation_cleanup_failed"
+    ]
+    assert len(records) == 1
+    payload = TypeAdapter(dict[str, JsonValue]).validate_json(
+        StructuredFormatter().format(records[0])
+    )
+    assert payload["message"] == "invocation_cleanup_failed"
+    assert payload["level"] == "ERROR"
+    assert payload["directory"] == str(allocation.directory)
+    assert payload["cause"] == f"fixture denied invocation removal: {allocation.directory}"
+    assert "logging_payload" not in payload
 
 
 async def test_encoding_failure_cleans_owned_directory_without_launch(
