@@ -314,7 +314,12 @@ class TextPresenter(ITextPresenter):
         grouped_texts: dict[str, list[str]] = {g: [] for g in group_names}
 
         none_val = self.get_none_value()
-        formatter = SafeNoneFormatter(none_val)
+        tool_cfg = self.tools_config.get(tool_name)
+        formatter = SafeNoneFormatter(
+            none_val,
+            formatting=self.global_config.formatting,
+            max_items=tool_cfg.max_items if tool_cfg is not None else None,
+        )
 
         # Retrieve group configuration
         # global.notes.groups
@@ -331,7 +336,6 @@ class TextPresenter(ITextPresenter):
 
             for group in group_names:
                 # 1. Local tool config lookup
-                tool_cfg = self.tools_config.get(tool_name)
                 local_tmpl = None
                 if tool_cfg is not None:
                     group_dict = getattr(tool_cfg, group, {})

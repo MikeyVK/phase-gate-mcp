@@ -36,14 +36,21 @@ from mcp_server.presenters.text_presenter import TextPresenter, validate_present
 from mcp_server.resources.cache import CachedResponseResource, CacheReadGuideResource
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.deliverables import (
-    CycleInput, CyclesInput, DeliverableInput, SavePlanningModel, StoredPlanningModel,
+    CycleInput,
+    CyclesInput,
+    DeliverableInput,
+    SavePlanningModel,
+    StoredPlanningModel,
 )
 from mcp_server.schemas.tool_outputs import ProjectPlanOutput
 from mcp_server.server import MCPServer
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.project_tools import GetProjectPlanTool, UpdatePlanningDeliverablesTool
 from tests.mcp_server.test_support import (
-    connected_mcp_client, make_config_loader, make_project_manager, make_response_presenter,
+    connected_mcp_client,
+    make_config_loader,
+    make_project_manager,
+    make_response_presenter,
 )
 
 
@@ -550,7 +557,6 @@ async def test_independent_serialization_failure_retains_actual_outcome(
         assert calls["inline"] == 1
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("git_workspace")
 async def test_planning_update_note_preserves_independent_readback(
@@ -573,7 +579,9 @@ async def test_planning_update_note_preserves_independent_readback(
         deliverables=[DeliverableInput(deliverable_name="Keep", description="Keep description")],
         exit_criteria="Keep criteria",
     )
-    manager.save_planning_deliverables(530, SavePlanningModel(cycles=CyclesInput(cycles=[original])))
+    manager.save_planning_deliverables(
+        530, SavePlanningModel(cycles=CyclesInput(cycles=[original]))
+    )
     before = manager.get_project_plan(530)
     assert before is not None
     snapshot = StoredPlanningModel.model_validate(before["planning_deliverables"], strict=True)
@@ -594,11 +602,14 @@ async def test_planning_update_note_preserves_independent_readback(
         ),
     )
     async with connected_mcp_client(server) as client:
-        update = await client.call_tool("update_planning_deliverables", {
-            "issue_number":530,
-            "operations":[{"op":"append_cycle", "cycle":added.model_dump(mode="json")}],
-        })
-        readback = await client.call_tool("get_project_plan", {"issue_number":530})
+        update = await client.call_tool(
+            "update_planning_deliverables",
+            {
+                "issue_number": 530,
+                "operations": [{"op": "append_cycle", "cycle": added.model_dump(mode="json")}],
+            },
+        )
+        readback = await client.call_tool("get_project_plan", {"issue_number": 530})
     assert not update.is_error and not readback.is_error
     assert update.structured_content is not None
     assert update.structured_content["success"] is True
