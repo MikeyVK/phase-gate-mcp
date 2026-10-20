@@ -3,7 +3,7 @@
 # Presentation Architecture and Response Profiles
 
 **Status:** DEFINITIVE  
-**Version:** 3.0.1  
+**Version:** 3.0.2  
 **Last Updated:** 2026-10-20
 
 **Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
@@ -186,6 +186,8 @@ A tool presentation entry uses template_success/template_failure, max_items, ord
 
 Only exact list[T] and variadic tuple[T, ...] sequence annotations are supported, with scalar or Pydantic model items. Flat scalar sequences can appear in templates; structured sequences use declared collections. Each depth applies max_items independently. Arbitrary iterable discovery, sorting/filtering and tool-specific renderer branches are unsupported.
 
+Normal note templates use the same global formatting policy and the selected tool's max_items as other flat scalar sequence formatting. Lists and tuples retain source order; the configured separator, omission text and none_value determine their textual projection. Rendering does not modify note parameters. A tool without max_items receives no invented limit: a sequence requiring that policy, or an unsupported nested value, retains the existing visible formatting diagnostic. All successfully rendered notes remain part of the protected core; this formatting policy does not remove fields from the operation or change its persisted facts.
+
 For example:
 
 ```yaml
@@ -257,3 +259,4 @@ apply_fixes runs selected fixes in request order and stops when work cannot cont
 | 2.4.1 | 2026-10-19 | @imp documenter | Distinguish cache/text availability notices from operation delivery and client access. |
 | 3.0.0 | 2026-10-20 | @imp documenter | Document process-local profiles, selected common envelope/schema, protected core, independent serialization failures and fixed recovery. |
 | 3.0.1 | 2026-10-20 | @imp documenter | Document compact known-outcome processing recovery, required schema marker, channel/budget/cache limitations and fixed startup exception; remove obsolete wrapper-metadata reservation. |
+| 3.0.2 | 2026-10-20 | @imp documenter | Clarify existing global formatting and selected-tool limits for normal notes, immutable source parameters and visible invalid-policy/value diagnostics. |

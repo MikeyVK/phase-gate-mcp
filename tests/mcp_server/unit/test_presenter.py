@@ -275,6 +275,82 @@ class TestTextPresenter:
         else:
             assert "Try re-running the test" in text
 
+    @pytest.mark.parametrize(
+        ("location", "values", "expected"),
+        [
+            ("global", ["first", "second", "third"], "first | second | MORE(1)"),
+            ("local", ("first", "second", "third"), "first | second | MORE(1)"),
+            ("global", [], "EMPTY"),
+        ],
+    )
+    def test_present_notes_uses_configured_sequence_policy(
+        self,
+        mock_yaml_config: dict[str, Any],
+        location: str,
+        values: list[str] | tuple[str, ...],
+        expected: str,
+    ) -> None:
+        """Declared policy controls values without mutating note facts."""
+        mock_yaml_config["global"]["formatting"].update(
+            none_value="EMPTY",
+            inline_sequence_separator=" | ",
+            inline_sequence_omission_template="MORE({omitted_count})",
+        )
+        mock_yaml_config["tools"]["dummy_tool"]["max_items"] = 2
+        mock_yaml_config["global"]["notes"]["templates"]["suggestions"]["sequence_probe"] = (
+            "GLOBAL {values}"
+        )
+        if location == "local":
+            mock_yaml_config["tools"]["dummy_tool"]["suggestions"] = {
+                "sequence_probe": "LOCAL {values}"
+            }
+        before = list(values)
+        note = Note(key="sequence_probe", params={"values": values})
+        presenter = TextPresenter(config_data=mock_yaml_config)
+        output = presenter.present_notes("dummy_tool", [note])
+        assert output is not None
+        assert f"{location.upper()} {expected}" in output
+        if location == "local":
+            assert "GLOBAL" not in output
+        assert list(values) == before
+        assert note.params["values"] is values
+
+    @pytest.mark.parametrize("invalid", ["missing_limit", "nested_value"])
+    def test_present_notes_preserves_real_failure_diagnostics(
+        self,
+        mock_yaml_config: dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+        invalid: str,
+    ) -> None:
+        """No invented limit or hidden failure replaces the operation or other notes."""
+        mock_yaml_config["tools"]["dummy_tool"]["max_items"] = (
+            None if invalid == "missing_limit" else 2
+        )
+        mock_yaml_config["global"]["notes"]["templates"]["suggestions"]["sequence_probe"] = (
+            "VALUES {values}"
+        )
+        values = ["first"] if invalid == "missing_limit" else [{"nested": "value"}]
+        operation = DummyOutput(result="ACTUAL_OUTCOME")
+        presenter = TextPresenter(config_data=mock_yaml_config)
+        rendered = presenter.present_text(
+            "dummy_tool",
+            operation,
+            notes=[
+                Note(key="sequence_probe", params={"values": values}),
+                Note(key="try_this", params={"action": "SURVIVING_NOTE"}),
+            ],
+        )
+        assert operation.success
+        assert "ACTUAL_OUTCOME" in rendered.core
+        assert "SURVIVING_NOTE" in rendered.core
+        causes = []
+        for record in caplog.records:
+            if record.exc_info is not None:
+                causes.append(record.exc_info[1])
+        assert len(causes) == 1
+        assert isinstance(causes[0], ConfigError)
+        assert str(causes[0]) in rendered.core
+
     def test_drift_validator_generic_notes_invalid_placeholder(
         self, mock_yaml_config: dict[str, Any]
     ) -> None:
