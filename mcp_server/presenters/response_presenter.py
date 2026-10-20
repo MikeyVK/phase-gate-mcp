@@ -111,6 +111,7 @@ class ResponsePresenter(IPresenter):
         if self._profile.data_channel == "structured":
             schema["anyOf"].append(
                 {
+                    "required": ["processing_error"],
                     "properties": {
                         "data": {
                             "anyOf": [
