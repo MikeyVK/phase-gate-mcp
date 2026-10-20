@@ -1,158 +1,285 @@
 <!-- pgmcp:v1 id=design pv=1.0.0 pf=Uk1D2XWpiag1c6nn sf=WI5iXHBKVOU91bYE -->
 
-# Issue \#528 — response-processing recovery boundary
+# Issue #528 — bounded response-processing recovery
 
-**Status:** Design draft — mandatory-guidance recovery decision pending  
-**Version:** 0.1  
+**Status:** Design for owner inspection — not implementation approval  
+**Version:** 1.0  
 **Last Updated:** 2026-10-20
 
 ## Purpose
 
-Design the smallest correction after a known operation when normal presentation fails. Record the remaining mandatory-guidance policy choice before selecting a recovery contract.
+Define the exact response after a known operation when normal response processing fails, its construction owner, schema, preserved facts and limits. The owner approved the bounded guidance exception and requested this finished Design before any further progression.
 
 ## Scope In
 
-Outer response-processing boundary, actual outcome preservation, common model/profile/schema coherence and independence from failed rendering.
+Existing server response boundary; a minimal separate recovery entrypoint in the existing presentation layer; shared public models and profile projection; native diagnosis; directly affected behavior tests and active presentation documentation.
 
 ## Scope Out
 
-Wrapper metadata forwarding, per-tool output schemas, compatibility routes, a second renderer, new exception framework, harness-specific behavior, and implementation before the owner decision.
+Wrapper metadata forwarding, per-tool output schemas, a parallel server presenter, second normal renderer, independent profile/schema inventory, new exception framework, unconditional both-channel fallback, retrying the operation, harness/version matrices and compatibility paths. No production code is changed by this document.
 
 ## Problem Statement
 
-The server currently catches an unexpected post-operation presenter failure and returns only isError=true/text diagnosis. It loses the known outcome from the response and omits structuredContent despite a connected structured schema. Research→Design was independently approved on39832b9b. Design inspection exposes a remaining constraint: a rendering-free recovery can preserve the actual operation, but some mandatory guidance exists only in presentation configuration and has not yet been rendered.
+Research on merge a7256c0a67cecb58a433861b3ed3a612bd1e3b6a shows normal schema publication was already delivered by #529/PR #531. Its remaining contract defect is the outer catch after a known operation: an unexpected presenter failure replaces the known outcome with bare isError=true and no structuredContent.
+
+The actual operation and its attachments, raw notes and publication receipt still exist outside the failed call. Normal formatted guidance may not exist: main templates, enum explanations, next instructions and note advice are constructed inside TextPresenter. Research records independent Research→Design GO on39832b9b and the subsequent direct owner approval of a narrowly disclosed guidance exception.
 
 ## Functional Requirements
 
-- Retain an existing actual operation's success/error facts and distinguish the later processing failure.
-- Keep the connected schema truthful for structured recovery responses; retain intentional text-only schema absence.
-- Reuse shared public models, selected profile and presentation configuration; no second server schema/profile inventory.
-- Do not repeat the tool operation, normal present(), failed text rendering or collection rendering as the recovery strategy.
-- Preserve native exception/cause and attachments/available publication facts through existing boundaries.
-- Do not silently claim all mandatory guidance survived when its rendering failed; owner decision is required for a narrowly disclosed exception.
+- Preserve the original operation success/error facts and available original result data.
+- Report the later processing failure separately, through the existing public envelope.
+- Keep isError equal to the actual operation's failure flag when an operation exists.
+- Preserve source instruction fields and raw note facts; disclose that normal formatted guidance may be unavailable.
+- Match the connected profile's channels and advertised schema; no unconditional extra channel.
+- Catch outside the failed normal presenter invocation; do not rerun the operation or normal rendering.
+- Preserve original exception/cause and distinguish processing failure from data-delivery failure.
+- Do not fabricate an operation when none exists.
 
 ## Nonfunctional Requirements
 
-- Keep the repair bounded to existing server/presentation/contracts and directly affected behavior tests.
-- Clean break; no legacy/compatibility paths, version/harness surveillance tests or wording snapshots.
-- Do not turn server.py into a second presenter or add an independent configuration reader.
-- Prefer adapting existing transport/profile tests and reuse Research probes until source changes invalidate them.
+- Existing models remain the authoritative field/type contract; the resolved profile remains the channel policy.
+- Readable recovery wording remains in presentation configuration; server.py only orchestrates known facts and SDK transfer.
+- Reuse the existing diagnostic DTOs, capture_exception, resource attachment converter, JSON conversion and text-budget primitives.
+- Clean break, no legacy/compatibility path and no new per-error exception/DTO framework.
+- Focused behavior coverage; adapt existing valuable tests rather than preserving old broken output or adding wording snapshots.
 
-## Constraints
+## Decision and Rationale
 
-- Existing #529 policy requires short text and mandatory instructions to survive selected routes.
-- The direct owner supports truthful recovery outside the failed presenter and explicitly requested the SSOT check. This does not itself approve dropping normally rendered mandatory guidance.
-- The owner has not approved unconditional dual-channel recovery, a protocol-only exception, or a new renderer.
-- No production/configuration/permanent test changes are included in this draft.
+Choose one minimal separate recover() entrypoint on the existing IPresenter/ResponsePresenter. The server invokes it once after catching a response-processing exception with a known ToolExecution. It supplies the original operation, notes, attachments, any real publication receipt, and the captured native diagnosis.
 
-## Options
+The recovery method bypasses present(), TextPresenter, tool templates, enum/collection rendering and note-advice rendering. It uses one simple validated configured notice and the same internal data/profile/envelope projection used by normal responses. Calling a different independent method on the existing presenter instance does not repeat the failed normal call.
 
-### 1. Rendering-free recovery through the existing response contract
+Add one nullable field, processing_error, to PublicToolResponse, using the existing ConfigErrorOutput | ExecutionErrorOutput diagnostic types. Keep delivery_error exclusively about unavailable operation-data delivery. This avoids classifying a rendering failure as serialization failure or forcing data=null when complete operation data remains available.
 
-Server catches outside the failed present() call. A separate recovery entrypoint on the existing presentation responsibility can reuse the same model/profile projection, retain the actual operation and original evidence, and issue a configured processing-failure notice. It does not run the failed normal renderer again. Missing normal rendered guidance must be explicitly disclosed.
+The owner-approved exception applies only here: normal formatted explanation/advice may be unavailable and the recovery notice must say so. Available source instruction fields and raw evidence are retained. Ordinary successful/normalized-error presentation keeps #529's full guidance requirements.
 
-**Pros:**
+## Alternatives
 
-- Small, focused repair within existing layers.
-- Actual operation and the later processing failure remain distinguishable.
-- No independent server schema or duplicated normal renderer.
-
-**Cons:**
-
-- Requires a bounded owner-approved exception to the normal mandatory-guidance guarantee.
-- Raw note facts are not equivalent to rendered advice; carrying them directly requires a shared response-contract decision.
-
-### 2. Regenerate the full normal protected core
-
-Attempt to produce all main-template, enum-case, instruction and note text again through another rendering route.
-
-**Pros:**
-
-- A successful independent renderer could reproduce more normal explanation.
-
-**Cons:**
-
-- The current system has no such independent route.
-- Calling the same renderer/helper again can repeat the original defect.
-- A second general renderer broadens architecture and maintenance; it is not the focused correction requested.
-
-### 3. Keep the existing bare processing error
-
-Return the present catch response without a known operation or structured envelope.
-
-**Pros:**
-
-- No implementation cost.
-
-**Cons:**
-
-- Independent QA already rejected unconditional closure on this behavior.
-- Does not satisfy known-outcome preservation or the published structured contract.
-
-## Decision
-
-Pending one explicit owner choice: may an unexpected post-operation presentation failure disclose that normal rendered explanation/guidance is unavailable, while preserving the actual operation and available original evidence via the selected output routes? Recommend the bounded rendering-free direction; do not implement or treat the exception as approved before the answer.
-
-## Rationale
-
-The server still owns the actual operation, notes, attachments, publication receipt and caught exception. The existing presenter owns the immutable profile and configuration. These are enough for bounded delivery recovery without forwarding wrapper metadata. They are not proof that configured advice which never rendered has survived.
-
-## Questions
-
-- Owner: accept the narrow disclosed exception that normal rendered guidance may be unavailable after its own unexpected rendering failure, while preserving original operation/evidence and a truthful configured recovery notice? If not, select the required stronger guarantee before architecture is expanded.
+| Alternative | Assessment |
+|---|---|
+| Minimal recovery on existing presentation responsibility | Chosen: preserves known facts and profile/schema ownership without normal rendering retry |
+| Catch inside present() only | Insufficient: the observed fault can interrupt the whole call; outer boundary still needs recovery |
+| Format a second response in server.py | Rejected: duplicates field/profile/presentation knowledge and violates the owner boundary |
+| Rerun present_text() or a second instruction renderer | Rejected: may repeat the failing step and adds maintenance to regain a guarantee the owner has explicitly bounded |
+| Use delivery_error for the presenter crash | Rejected: existing semantics concern unavailable data, while this recovery often retains full data |
+| Keep bare isError=true after a known successful operation | Rejected by independent Research QA: loses operation facts and violates the structured contract |
+| Repair wrapper output_model forwarding | Outside scope: current public catalog does not consume it |
 
 ## Production Design
 
-### Confirmed available facts versus generated guidance
+### Construction ownership
 
-| Carrier | Available outside failed present() | Limit |
+| Component | Owns | Does not own |
 |---|---|---|
-| Original operation DTO | Yes, after tool.execute returns | Includes phase_instructions/handover_template for get_work_context, but not every configured next instruction |
-| NoteContext.entries | Yes | Contains note keys/parameters, not their configured human-readable advice |
-| Original attachments | Yes | Formatting them is separate from already having the original immutable schema facts |
-| CachePublication | Yes if publication returned | Use only real successful receipts; do not invent a URI |
-| Native exception | Yes at server catch | Capture existing error DTO/cause and log original exception |
-| Normal protected presentation | Not necessarily | Main template, enum cases, next instructions and note text are generated inside TextPresenter |
+| MCPServer.handle_call_tool | Original execution facts, native exception capture/logging, one recovery invocation, isError and transfer to SDK result | Recovery wording, channel policy, envelope field inventory or schema construction |
+| IPresenter / ResponsePresenter.recover | Minimal configured recovery notice, bounded diagnostic projection, existing selected-profile data/envelope projection | Re-executing the tool or retrying normal text/template/collection rendering |
+| PublicToolResponse / existing diagnostic models | Public fields, types and JSON-schema base | Configuration loading or workflow knowledge |
+| ResponsePresenter.output_schema | Derivation/refinement for the same resolved profile | Independent tool-specific response definitions or catalog publication |
+| ConfigLoader / presentation.yaml | Validated notice and existing immutable profile/budgets | Call-specific failure state |
+| Existing SDK converter | Transfer of prepared text/structured output to MCP CallToolResult | Repairing or reinterpreting the operation |
 
-### Concrete source constraints
+Normal and recovery construction share the current projection logic inside ResponsePresenter: selecting data delivery, projecting attachments/processing diagnosis into the data channel, building PublicToolResponse and producing PresentedOutput. This is a cohesion refactor inside the existing class, not a new service, factory, policy engine or second presenter. It must not copy the current envelope construction into recover().
 
-[TextPresenter](../../../mcp_server/presenters/text_presenter.py) renders the main template and enum cases, then collections, then next instructions and notes. A collection error can therefore prevent the entire RenderedPresentation from being returned, including guidance not yet appended. Moving only next_instructions and notes into a helper would not recover all protected core. Calling an instruction helper again also repeats failed rendering when that helper caused the original exception.
+### Interface contracts
 
-[ResponsePresenter](../../../mcp_server/presenters/response_presenter.py) already owns profile selection and common envelope construction. Its existing emergency method expects presentation text already to exist and addresses publication/serialization failure. It is not a complete substitute for the missing post-operation recovery boundary.
+Add to IPresenter and its two production implementations:
 
-The [public response models](../../../mcp_server/schemas/presentation_output.py) currently have no raw-notes carrier. DeliveryFailure admits only cache_publication_failed / operation_serialization_failed. The selected schema permits non-null delivery_error only with data=null. A processing failure with retained data therefore requires a deliberate small shared-contract adjustment; simply changing an error label is insufficient.
+```python
+def recover(
+    self,
+    tool_name: str,
+    data: BaseModel,
+    diagnostic: ConfigErrorOutput | ExecutionErrorOutput,
+    *,
+    notes: list[NoteEntry],
+    cache_pub: CachePublication | None,
+    attachments: tuple[SchemaAttachment, ...],
+) -> PresentedOutput: ...
+```
 
-A shared recovery/projection seam belongs with the existing presentation responsibility. The server remains the catcher/orchestrator and supplies known facts, rather than inventing field lists, channel rules or recovery advice. Concrete signatures, additional fields, schema alternatives and secondary-failure semantics remain unfinished until the policy choice is resolved.
+The operation is the actual model returned by the normalized tool pipeline. diagnostic describes the later processing exception. notes and attachments are original invocation facts, not regenerated tool results. No new constructor dependency or separate fallback presenter is required.
 
-## Test Design
+In the shared PublicToolResponse contract, add:
 
-After the policy decision, adapt the existing processing-failure transport case to use the actual selected schema and real profile composition. Prove original success and original failure followed by an injected presentation error; assert actual operation facts and distinct processing diagnosis, not wording. Explicitly validate structured error results because the SDK skips automatic validation on is_error. Include applicable text-only/resource delivery and preserved attachment/guidance facts. Prove no repeated operation or failed normal rendering; use existing public-boundary helpers. Final case count and execution scopes belong in Planning.
+```python
+processing_error: ConfigErrorOutput | ExecutionErrorOutput | None = None
+```
+
+All existing fields remain. A normal response sets processing_error=null. In the selected data-bearing envelope, a non-null value means normal response processing failed and normal formatted guidance is not certified complete. It does not change operation success. There is no new processing-error subclass or success-only error union.
+
+The existing [StartupRecoveryPresenter](../../../mcp_server/presenters/startup_recovery_presenter.py) implements the same method using its existing fixed, configuration-independent full-both-channels/inline contract and shared models. Its ordinary health/restart presentation is unchanged. It must not invoke its failed present() again. This is a required interface consumer adjustment, not a second normal-workspace recovery policy.
+
+### Exact response semantics
+
+| Field/fact | Known operation succeeds; later processing fails | Known operation fails; later processing fails |
+|---|---|---|
+| CallToolResult.isError | false | true |
+| PublicToolResponse.success | true | false |
+| data.operation or resource payload | Original successful operation | Original failed operation, including its own diagnosis |
+| processing_error | Separate native diagnosis of the later failure | Separate native diagnosis of the later failure |
+| delivery_error | null when operation data is available | null when operation data is available |
+| Normal formatted guidance | Explicitly marked potentially unavailable | Explicitly marked potentially unavailable |
+
+No operation, new cache URI or successful delivery is invented. A later error cannot turn written=true into written=false, or replace a real failed operation with a new unrelated failed DTO.
+
+### Concrete default-profile response
+
+Illustrative safe_edit_file success followed by RuntimeError in presentation. The operation below is intentionally shortened for readability; implementation must retain the complete original DTO. Text and JSON values shown are design examples, not an executed result.
+
+```json
+{
+  "isError": false,
+  "content": [
+    {
+      "type": "text",
+      "text": "Response processing failed after the operation returned success=True. Normal formatted explanation and advice may be unavailable. Inspect the operation result before repeating an action."
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "presentation": "Response processing failed after the operation returned success=True. Normal formatted explanation and advice may be unavailable. Inspect the operation result before repeating an action.",
+    "data": {
+      "delivery": "inline",
+      "operation": {
+        "success": true,
+        "path": "example.py",
+        "written": true
+      }
+    },
+    "attachments": [],
+    "delivery_error": null,
+    "processing_error": {
+      "success": false,
+      "error_type": "ExecutionError",
+      "error_message": "RuntimeError: presentation unavailable",
+      "traceback": "Traceback (most recent call last):\n...\nRuntimeError: presentation unavailable",
+      "error_params": {},
+      "params": {
+        "notes": [],
+        "diagnostic_details_truncated": false
+      },
+      "error_code": null
+    }
+  }
+}
+```
+
+The nested processing_error.success=false belongs to the existing diagnostic DTO. The top-level success=true and isError=false describe the actual operation. No new flag meaning is invented by the recovery code.
+
+For an original failed operation, the two outer flags become success=false / isError=true; the original data remains and processing_error describes only the additional failure.
+
+### Profiles and schema
+
+| Existing profile | Recovery presentation | Complete original operation | Processing diagnosis / raw notes |
+|---|---|---|---|
+| structured_inline | Existing presentation selection (default both) | Inline in structured data | processing_error in structured data-bearing envelope |
+| structured_resource | Existing presentation selection | Existing successful cache URI/size | Direct in structured data-bearing envelope, as attachments already are |
+| text_inline | Text | Complete fenced JSON data segment | processing_error in that JSON segment; no structuredContent/outputSchema |
+
+All other admitted combinations follow the same existing controls, not profile-ID branches. With data_channel=text, the full processing_error is in the JSON text data carrier. If presentation also selects structured, its presentation-only envelope has processing_error=null, data=null and empty attachments. The short recovery notice is complete in the selected presentation channel(s).
+
+The schema is still derived from PublicToolResponse.model_json_schema() and refined by the resolved profile. Structured data admits the nullable existing diagnostic union; presentation-only structured output restricts processing_error to null just like other unselected data. The existing normal-versus-delivery_error alternatives remain about operation data availability. A retained-data processing_error does not require changing those delivery semantics.
+
+Schemas describe the normal and recovery shape at catalog publication; no per-call schema mutation or catalog switch. Wholly textual profiles still advertise no structured schema. Do not rely on SDK is_error validation bypass.
+
+### Raw facts and diagnosis
+
+The original operation is neither altered nor wrapped in another operation DTO. Its phase_instructions, handover_template and post_tool_instruction fields remain where originally returned.
+
+The server supplies capture_exception(primary_exception) without application context, so its diagnostic.params starts empty; native exception parameters remain separately in error_params. Recovery adds original notes as key/params facts under processing_error.params.notes and the diagnostic-shortening flag beside them. These are diagnostic context, not a claim that note advice was rendered. Do not overwrite native error_params or the original operation diagnosis. Use existing Pydantic JSON conversion, with textual representation for non-JSON diagnostic-context values, rather than a custom note serializer or silently dropping notes. No raw notes are added to the operation cache.
+
+The full original processing exception/cause is logged at the existing server boundary. The existing max_cache_failure_detail_bytes allowance also bounds verbose processing diagnostic string details (error_message/traceback) supplied by recovery. Use UTF-8-safe excerpts before JSON serialization. Set params.diagnostic_details_truncated=true if shortened and append the configured processing-diagnostic truncation notice. The whole JSON carrier remains valid; never cut serialized JSON.
+
+Original operation data, attachments, raw note facts and stable outcome/recovery notice are not diagnostic excerpts. Do not truncate them to fit that allowance. This does not introduce a new global MCP output ceiling.
+
+### Presentation configuration
+
+Add two validated entries to global.next_instruction_texts in the existing defaults presentation.yaml:
+
+```yaml
+response_processing_failed: >-
+  Response processing failed after the operation returned success={success}.
+  Normal formatted explanation and advice may be unavailable.
+  Inspect the operation result before repeating an action.
+processing_diagnostic_truncated: >-
+  Response-processing diagnostic details were shortened; the full exception is retained in server logs.
+```
+
+The recovery notice accepts only the scalar success placeholder; validate nonempty values and placeholder syntax in the existing presentation configuration model. Use the already-loaded configuration, without tool-specific template selection or normal TextPresenter rendering. Ordinary cache guidance may refer only to an actual successful receipt. Never imply that a cache of the operation also contains the later processing traceback.
+
+The recovery notice, any diagnostic-truncation notice and actual outcome facts are protected core. The approved exception concerns unavailable normal explanation/advice, not loss of this recovery notice.
 
 ## State and Failures
 
-No workflow or persistent state model change is proposed. Before-operation errors must not fabricate an operation. After-operation recovery must not convert an already completed operation into an unexecuted one. The secondary-failure behavior and exact recovery schema are not approved merely by this draft.
+The broad existing server catch must distinguish whether ToolExecution was obtained. Before that point, keep the existing explicit error boundary; do not fabricate an operation or invoke this known-operation recovery method.
+
+After that point, retain the operation, raw notes, raw attachments and any publication receipt. Capture/log the primary exception with known operation_success and invoke recover() once. Reuse the existing SDK transfer; do not call the tool or publisher again.
+
+If operation data also cannot be delivered, retain existing truthful delivery_error behavior, never a fictitious reference. processing_error remains the diagnosis of the original processing failure; a failed publication receipt or serialization diagnosis is not overwritten by it. Recovering a valid cache reference must not claim that attachments or processing diagnosis are inside that cache.
+
+This is a bounded single-failure recovery, not tolerance of arbitrary simultaneous failures in JSON conversion, attachment conversion, model construction or the SDK transport. If the minimal recovery/SDK transfer itself raises, preserve both causes and the known operation outcome in logs and propagate through the existing terminal SDK boundary. No third presenter, bespoke third wire shape, operation retry or falsely claimed recovered response. End-to-end delivery cannot be promised when delivery itself fails.
 
 ## Preservation
 
-Retain #529's ordinary profile/schema behavior, internal DTOs, raw-operation cache ownership, attachment identities, native diagnosis and immutable configuration. The proposed exception affects only the ability to reproduce normal rendered guidance after an unexpected rendering failure; it is not permission to discard source instructions or silently truncate operation data/raw notes.
+| Obligation | Carrier |
+|---|---|
+| Actual operation outcome and complete available result | Original model; existing inline/resource delivery |
+| Source phase instructions and other instruction fields | Unchanged original operation |
+| Original schema attachments | Existing selected data channel and identity conversion |
+| Original note keys/parameters | processing_error.params.notes |
+| Later failure and cause | Existing diagnostic DTO plus original server exception log |
+| Unavailable normal formatted guidance | Protected configured recovery notice |
+| Profile/schema authority | One resolved profile and shared envelope projection/model schema |
+| Startup degraded recovery | Existing fixed configuration-independent policy |
+| No repeated side effect | One tool execution; recovery has no tool/publisher dependency |
 
-## Planning Consequences
+## Test Design
 
-Do not plan or implement the recovery until the owner choice is explicit and the completed Design receives independent QA. No phase progression on this decision-pending artifact.
+Adapt the existing processing-failure case in [test_tool_attachment_transport.py](../../../tests/mcp_server/integration/test_tool_attachment_transport.py), using real ResponsePresenter/profile/schema composition instead of a schema-less MagicMock. Preserve the independent unknown-tool check without treating it as the new known-operation path.
 
-## Sources
+Use a small parametrized behavioral matrix: original success/original domain failure across the three shipped profiles. Supply input-derived operation fields, one raw note and one attachment. Inject a normal presenter or TextPresenter failure, assert one execution/no normal-render retry, preserve operation facts and attachments/note context, and explicitly validate advertised structured schemas even for isError responses. Read resource data through the existing resource route when selected. Assert semantics/identity, not exact production wording.
 
-- [Approved Research and QA boundaries](<research.md>)
-- [Shared public response models](<../../../mcp_server/schemas/presentation_output.py>)
-- [Outer server boundary](<../../../mcp_server/server.py>)
-- [Response projection and schema](<../../../mcp_server/presenters/response_presenter.py>)
-- [Configured text rendering](<../../../mcp_server/presenters/text_presenter.py>)
-- [Presentation configuration](<../../../.pgmcp/config/defaults/presentation.yaml>)
-- [Architecture principles](<../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md>)
-- [Existing processing failure behavior](<../../../tests/mcp_server/integration/test_tool_attachment_transport.py>)
+Extend the valuable existing presentation/profile tests only where necessary for the shared projection, mixed-channel diagnostic selection and UTF-8 diagnostic budget. A long native diagnostic must leave valid JSON, complete recovery notice and original data, with explicit shortening metadata. A bounded secondary recovery fault must not cause another recovery attempt or side effect.
+
+Update the directly affected protocol test doubles in [test_presenter_interfaces.py](../../../tests/mcp_server/unit/core/interfaces/test_presenter_interfaces.py) and any targeted startup-recovery consumer. No permanent harness/version matrix, legacy-wire tests or temporary Research probe promotion. Planning owns case grouping and run timing.
+
+## Validation Obligations
+
+| Obligation | Planned evidence |
+|---|---|
+| Actual public catalog/schema remains truthful | Normal bootstrap/catalog evidence plus schema validation of new recovery responses |
+| Primary defect removed | Original operation success and failure followed by presentation fault remain distinguishable |
+| Failure independence | Failed normal methods not retried; one tool execution/publication |
+| No parallel server presenter | Architectural review of server catch, shared models/projection, configuration and imports |
+| Profile behavior | Selected presentation/data channels; deliberate text-only schema absence |
+| Facts/diagnosis survive | Original DTO, notes, attachments, resource readback and original logged cause |
+| Bounded diagnostics | Valid JSON and UTF-8 excerpts; no truncation of operation or protected recovery notice |
+| Finite recovery | A secondary failure is terminal through existing boundary, with known outcome/cause logged |
+
+These are requirements for later evidence, not claims of executed tests or Design approval.
+
+## Planning Consequences and Review Boundary
+
+No new constructor graph, persistent state, package, dependency or cache/retrieval API is required. Production surfaces are server.py, the existing presenter interface and its two implementations, presentation_output.py, and the existing presentation configuration/defaults; affected tests remain consumers of those boundaries.
+
+Preserve the already-approved clean break. Correct the obsolete active presentation-reference reservation of wrapper metadata work during Documentation; historical #529 Research/Design remain contextual evidence. No implementation cycle sequencing is defined here.
+
+The owner requested this Design first. Do not request a phase transition, start Planning/implementation or treat this artifact as owner Design approval. Independent Design review and any required strategy-amendment review follow only after the owner has inspected it and authorized continuation.
+
+## Related Documents
+
+- [Research and approved bounded strategy](research.md)
+- [Architecture principles](../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)
+- [Current presenter interface](../../../mcp_server/core/interfaces/ipresenter.py)
+- [Current response models](../../../mcp_server/schemas/presentation_output.py)
+- [Current response presenter](../../../mcp_server/presenters/response_presenter.py)
+- [Current text renderer](../../../mcp_server/presenters/text_presenter.py)
+- [Current outer server boundary](../../../mcp_server/server.py)
+- [Native diagnosis models](../../../mcp_server/schemas/error_outputs.py)
 
 ## Version History
 
 | Version | Date | Author | Changes |
-| --- | --- | --- | --- |
-| 0.1 | 2026-10-20 | @imp designer | Record confirmed recovery seams and the exact missing guidance guarantee; leave policy and final recovery contract pending owner decision. |
+|---|---|---|---|
+| 0.1 | 2026-10-20 | @imp designer | Record confirmed recovery seams and the missing guidance guarantee; leave final contract pending owner choice. |
+| 1.0 | 2026-10-20 | @imp designer | Record owner-approved limits and finish concrete response, ownership, interface/model/profile contracts and bounded recovery for owner inspection before further progression. |

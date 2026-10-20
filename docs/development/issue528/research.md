@@ -2,8 +2,8 @@
 
 # Issue \#528 — catalog publication after \#529
 
-**Status:** Research findings — architecture-boundary re-review requested  
-**Version:** 1.1  
+**Status:** Research findings — bounded recovery strategy recorded  
+**Version:** 1.2  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -83,6 +83,14 @@ In the direct owner message 01a15795-3dbb-7602-b802-954e70f55df7, the owner expr
 
 The producer's source-backed answer distinguishes definition, derivation and publication. It does not treat the owner's question as approval for moving schema ownership or redesigning presentation. No owner instruction selects unconditional dual-channel fallback, a second output format, or suppression of the real operation outcome.
 
+### Bounded recovery decision after Design inspection
+
+On 2026-10-20 the owner explicitly approved the defended boundary in the producer conversation and requested the finished Design for inspection before any further progression. The approved exception is limited to an unexpected response-processing failure after a known operation: preserve the actual outcome, available original operation/evidence and diagnosis; disclose that normal formatted explanation/advice may be unavailable. Normal instruction guarantees remain unchanged. Source instructions already in the operation, such as phase_instructions, must not be discarded or claimed lost merely because their usual text rendering failed.
+
+The server catches and supplies known facts. Recovery remains a minimal separate entrypoint within the existing presentation responsibility, uses the shared response/profile contract, and does not rerun the operation, present(), present_text() or collection rendering. No parallel server presenter, second renderer, second schema/configuration source, unconditional dual-channel mode or chain of fallback presenters is approved. An exception from present() does not mean every independent method on the same instance has become unusable.
+
+This closes the narrowly identified guidance-policy question; it does not approve production code, a completed Design, or a phase transition. The owner requested the concrete wire response and ownership before continuing.
+
 ### Architectural authority and blast radius
 
 | Fact or action | Current authority | Boundary for the correction |
@@ -110,14 +118,14 @@ Likely affected surfaces are the existing server response boundary, shared publi
 
 ## Questions
 
-No new compatibility or broad output-policy choice is inferred. Independent QA must judge whether the direct owner's bounded direction plus the existing #529 preservation/common-envelope policy sufficiently fixes the Research boundary. If a materially new failure/channel/data-loss policy is needed, return that exact choice to the owner before designing it. The minimal recovery contract, existing model/profile reuse, schema alignment and proof of independence from failed rendering are Design questions.
+The owner-approved narrow guidance exception above closes the remaining identified policy question. Concrete recovery fields, interfaces, profile/schema alignment and bounded secondary-failure behavior are specified in Design for owner inspection first. Research→Design GO on39832b9b predates that explicit exception; neither that GO nor the owner's strategy approval is a Design approval. No new compatibility, channel override, output architecture or broader data-loss policy is inferred.
 
 ## Approved Strategy
 
 | Boundary | Binding direction and source |
 |---|---|
 | Normal catalog publication | Retain the already-approved #529 common envelope, profile-derived schema and intentional absence for wholly textual profiles. No wrapper-forwarding repair or per-tool refinement. |
-| Unexpected failure after a known operation | Preserve actual operation success/error facts and available result evidence; expose the later response-processing failure separately. The direct owner supports truthful handling outside the failed presenter. Reuse the existing common response contract rather than treating the operation as unexecuted or selecting a new protocol-only boundary. Exact failure fields and mechanism remain Design work under QA. |
+| Unexpected failure after a known operation | Preserve actual operation success/error facts and available result evidence; expose the later response-processing failure separately. The owner approved a narrow, disclosed inability to reproduce normally formatted explanation/advice after its own rendering failure, while original instruction fields/evidence remain available. Server catches outside failed rendering; minimal recovery stays in the existing presentation layer/common contract. No retrying the operation or failed rendering, no parallel server presenter, no second renderer or fallback chain. Exact fields remain Design work for owner inspection and later QA. |
 | Schema and presentation authority | Shared models define response fields; the resolved profile defines normal channel choices; presentation derives its schema; the server publishes and handles its outer boundary. No second field inventory, hidden profile rules or hardcoded recovery advice in server code. The owner explicitly requested this SSOT check; moving schema ownership is not an approved scope expansion. |
 | Compatibility and tests | Clean break, no legacy/compatibility path, no harness/version matrix or dependency-surveillance tests. Adapt useful existing behavior tests proportionately; no content snapshots or suite expansion solely to preserve the current misleading fallback. |
 | Scope and progression | Correct only the demonstrated after-operation boundary and necessary consumers/docs. No general exception framework or presentation redesign. Independent Research → Design GO is required; Coordination does not substitute for owner or QA. |
@@ -130,6 +138,7 @@ No new compatibility or broad output-policy choice is inferred. Independent QA m
 - A failure before an operation exists does not fabricate one. Original diagnostic facts/cause remain available through the established boundaries.
 - Focused behavior evidence covers actual success and failure outcomes before an injected later failure, the applicable structured/text routes, and independence from retrying the failed rendering step. Exact cases and gate timing belong in Design/Planning.
 - The repair does not introduce independent server field definitions, duplicated profile policy, domain-specific presentation branches or a new exception framework.
+- Only this unexpected post-operation failure may disclose unavailable normal formatted guidance; it preserves original instruction facts and does not weaken normal response guarantees.
 
 ## Evidence
 
@@ -211,4 +220,6 @@ Use actual public catalog consumer and approved generic envelope as the baseline
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp researcher | Re-evidence #528 after merged #529; record normal catalog contract, representative SDK calls and unexpected after-operation processing limitation without production changes. |
 | 1.1 | 2026-10-20 | @imp researcher | Record independent disposition NOGO, the direct owner's bounded outer-error-handling direction, schema/SSOT responsibilities and limited correction strategy; request architecture-boundary re-review before Design. |
+| 1.2 | 2026-10-20 | @imp designer | Record the direct owner's approved narrow guidance exception and recovery limits after Design inspection; owner must see the concrete finished Design before further progression. |
+
 
