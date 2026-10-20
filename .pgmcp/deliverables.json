@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "537": {
+      "issue_title": "Simplify response delivery and restore independent attachments",
+      "workflow_name": "refactor",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-10-20T20:15:01.933250+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 1,
+          "cycles": [
+            {
+              "cycle_id": "C_1",
+              "cycle_number": 1,
+              "cycle_name": "Coherent two-mode delivery cutover",
+              "deliverables": [
+                {
+                  "deliverable_name": "Two-mode configuration and carriers",
+                  "description": "Replace profile matrix/selector with typed structured/resource mode and shared budgets; migrate direct config/bootstrap/helper consumers and expose separate resources plus metadata-only attachment references.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/schemas/presentation_output.py"
+                  },
+                  "deliverable_id": "D_1.1"
+                },
+                {
+                  "deliverable_name": "Bounded presentation and native attachment transport",
+                  "description": "Restore final text cap and configured footer, full structured presentation, real resource locator, independent embedded attachments, prior-serialization guard and preserved compact recovery/startup exception.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/presenters/response_presenter.py"
+                  },
+                  "deliverable_id": "D_1.2"
+                },
+                {
+                  "deliverable_name": "Focused behavior proof and obsolete-case cleanup",
+                  "description": "Adapt existing two-route/config/limiter/SDK/recovery cases, prove real publisher call counts and storage-failure distinction, and remove obsolete combinations without extra harness or compatibility suites.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "tests/mcp_server/integration/test_execution_presentation_v3.py"
+                  },
+                  "deliverable_id": "D_1.3"
+                }
+              ],
+              "exit_criteria": "Two named modes and final UTF-8 text bounds work through real SDK delivery, separate attachments/references are preserved, publisher serialization failure is not replayed, normal recovery retains truth, directly affected tests/checks pass, and obsolete matrix/JSON-text branches are removed."
+            }
+          ]
+        },
+        "phases": {
+          "validation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Durable validation evidence",
+                "description": "Record full native suite, branch and configured gates, meaningful negatives and independent review on the actual candidate.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/development/issue537/validation.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          },
+          "documentation": {
+            "deliverables": [
+              {
+                "deliverable_name": "Current response delivery references",
+                "description": "Update presentation/setup/server/cache-reading guidance for two named modes, separate attachments, final text budget and preserved startup exception.",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/reference/presentation_architecture.md"
+                },
+                "deliverable_id": "D_1"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
