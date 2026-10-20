@@ -1,0 +1,27 @@
+{
+  "schema_version": "2.0.0",
+  "branch": "bug/530-fix-planning-update-note-formatting",
+  "parent_branch": "main",
+  "issue_number": 530,
+  "workflow_name": "bug",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "Planning update displays an internal formatting error in its note",
+  "created_at": "2026-10-20T07:34:11.565563+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
