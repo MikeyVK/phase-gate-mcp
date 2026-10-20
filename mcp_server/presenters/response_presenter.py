@@ -31,6 +31,27 @@ from mcp_server.schemas.presentation_output import (
 logger = logging.getLogger(__name__)
 
 
+def processing_diagnostic(
+    error_message: str, traceback: str | None, *, max_bytes: int
+) -> ExecutionErrorOutput:
+    """Project only bounded native strings, never arbitrary exception context."""
+    message_prefix = error_message[:max_bytes]
+    message = TextBudgetLimiter.excerpt(message_prefix, max_bytes=max_bytes)
+    remaining = max(max_bytes - len(message.text.encode("utf-8")), 0)
+    trace_text = None
+    truncated = len(message_prefix) < len(error_message) or message.details_truncated
+    if traceback is not None:
+        trace_prefix = traceback[:remaining]
+        trace = TextBudgetLimiter.excerpt(trace_prefix, max_bytes=remaining)
+        trace_text = trace.text
+        truncated = truncated or len(trace_prefix) < len(traceback) or trace.details_truncated
+    return ExecutionErrorOutput(
+        error_message=message.text,
+        traceback=trace_text,
+        params={"diagnostic_details_truncated": truncated},
+    )
+
+
 class ResponsePresenter(IPresenter):
     """Route shared rendered guidance and complete data using one immutable profile."""
 
@@ -69,20 +90,41 @@ class ResponsePresenter(IPresenter):
         else:
             normal_data = {"type": "null"}
             properties["attachments"]["maxItems"] = 0
+        if self._profile.data_channel == "text":
+            properties["processing_error"] = {"type": "null"}
         schema["anyOf"] = [
             {
                 "properties": {
                     "data": normal_data,
                     "delivery_error": {"type": "null"},
+                    "processing_error": {"type": "null"},
                 }
             },
             {
                 "properties": {
                     "data": {"type": "null"},
                     "delivery_error": {"$ref": "#/$defs/DeliveryFailure"},
+                    "processing_error": {"type": "null"},
                 }
             },
         ]
+        if self._profile.data_channel == "structured":
+            schema["anyOf"].append(
+                {
+                    "required": ["processing_error"],
+                    "properties": {
+                        "data": {
+                            "anyOf": [
+                                {"$ref": "#/$defs/ResourceOperation"},
+                                {"type": "null"},
+                            ]
+                        },
+                        "attachments": {"maxItems": 0},
+                        "delivery_error": {"type": "null"},
+                        "processing_error": {"$ref": "#/$defs/ExecutionErrorOutput"},
+                    },
+                }
+            )
         return schema
 
     @property
@@ -195,6 +237,61 @@ class ResponsePresenter(IPresenter):
                 delivery_error=failure,
             ).model_dump_json()
             text_parts.append(f"```json\n{text_payload}\n```")
+        return PresentedOutput(
+            text=self._join(*text_parts) if text_parts else None,
+            structured_content=structured,
+        )
+
+    def recover(
+        self,
+        *,
+        operation_success: bool,
+        error_message: str,
+        traceback: str | None,
+        cache_run_id: str | None,
+        cache_size_chars: int | None,
+    ) -> PresentedOutput:
+        """Deliver small known facts without the original payload or rendering."""
+        diagnostic = processing_diagnostic(
+            error_message, traceback, max_bytes=self._profile.max_cache_failure_detail_bytes
+        )
+        notice = self._word("response_processing_failed").format(success=operation_success)
+        reference = None
+        if cache_run_id is not None:
+            receipt = CachePublication(run_id=cache_run_id, size_chars=cache_size_chars)
+            reference = ResourceOperation(
+                delivery="resource",
+                uri=f"pgmcp://cache/runs/{cache_run_id}",
+                size_chars=cache_size_chars,
+            )
+            notice = self._join(notice, self._cache_guidance(receipt))
+        else:
+            notice = self._join(notice, self._word("recovery_cache_unavailable"))
+        if diagnostic.params["diagnostic_details_truncated"]:
+            notice = self._join(notice, self._word("processing_diagnostic_truncated"))
+        structured = None
+        if self._has_structured:
+            structured = PublicToolResponse(
+                success=operation_success,
+                presentation=notice if self._structured_presentation else None,
+                data=reference if self._profile.data_channel == "structured" else None,
+                attachments=(),
+                delivery_error=None,
+                processing_error=(
+                    diagnostic if self._profile.data_channel == "structured" else None
+                ),
+            ).model_dump(mode="json")
+        text_parts = [notice] if self._text_presentation else []
+        if self._profile.data_channel == "text":
+            envelope = PublicToolResponse(
+                success=operation_success,
+                presentation=None,
+                data=reference,
+                attachments=(),
+                delivery_error=None,
+                processing_error=diagnostic,
+            )
+            text_parts.append(f"```json\n{envelope.model_dump_json()}\n```")
         return PresentedOutput(
             text=self._join(*text_parts) if text_parts else None,
             structured_content=structured,

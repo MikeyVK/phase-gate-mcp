@@ -192,6 +192,26 @@ class GlobalPresentationConfig(BaseModel):
 
         return self
 
+    @model_validator(mode="after")
+    def validate_recovery_templates(self) -> GlobalPresentationConfig:
+        """Keep recovery wording independent of ordinary rendering inputs."""
+        for key in (
+            "response_processing_failed",
+            "recovery_cache_unavailable",
+            "processing_diagnostic_truncated",
+        ):
+            text = self.next_instruction_texts.get(key, "")
+            if not text.strip():
+                raise ValueError(f"next_instruction_texts.{key} must be nonempty")
+            allowed = frozenset({"success"}) if key == "response_processing_failed" else frozenset()
+            _validate_placeholders(text, allowed=allowed, field_name=key)
+            for _, placeholder, format_spec, conversion in string.Formatter().parse(text):
+                if placeholder is not None and (
+                    placeholder not in allowed or format_spec or conversion
+                ):
+                    raise ValueError(f"{key} contains an unsupported scalar placeholder")
+        return self
+
 
 class ToolPresentationConfig(BaseModel):
     """Presentation settings for a specific tool."""

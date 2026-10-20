@@ -3,7 +3,7 @@
 # Presentation Architecture and Response Profiles
 
 **Status:** DEFINITIVE  
-**Version:** 3.0.0  
+**Version:** 3.0.1  
 **Last Updated:** 2026-10-20
 
 **Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
@@ -97,11 +97,12 @@ When presentation or data selects structured, structuredContent is the common en
   "presentation": "Planning updated. Read the refreshed work context.",
   "data": {"delivery": "inline", "operation": {"success": true}},
   "attachments": [],
-  "delivery_error": null
+  "delivery_error": null,
+  "processing_error": null
 }
 ```
 
-All five outer fields are present. presentation is null if structured presentation is unselected. data is null and attachments is empty if the data channel is text. success always represents the actual operation outcome; delivery_error describes a separate delivery failure.
+Generated envelopes include all six outer fields. presentation is null if structured presentation is unselected. data and processing_error are null and attachments is empty in a structured presentation-only projection when the data channel is text. success always represents the actual operation outcome; delivery_error describes a separate normal delivery failure, while processing_error describes a later response-processing failure. Normal output has processing_error=null.
 
 Normal data alternatives:
 
@@ -111,7 +112,7 @@ Normal data alternatives:
 
 With data_channel=text, one distinct fenced JSON segment carries the complete envelope data/attachments after any selected presentation. That segment is outside the short-presentation budget. No unconditional embedded-resource or unselected-channel copy is added. With entirely structured normal output, content can be empty. With both channels exclusively text, outputSchema and structuredContent are absent.
 
-The presenter generates the selected outputSchema from the same frozen public models and resolved profile used for delivery. It admits the normal alternative and applicable delivery-error alternative, with channel-specific null restrictions. MCPServer uses it for the connected tool catalog; it does not advertise each internal operation DTO as the public response shape. Decorator metadata work in issue #528 remains a separate concern.
+The presenter generates the selected outputSchema from the same frozen public models and resolved profile used for delivery. It admits normal delivery, applicable delivery errors and compact processing recovery, with channel-specific restrictions. The compact alternative requires a non-null processing_error diagnosis; merely omitting that field cannot admit otherwise invalid recovery-shaped data. Normal inline/resource restrictions remain intact. MCPServer uses this profile-derived schema for the connected tool catalog; it does not advertise each internal operation DTO as the public response shape.
 
 Unknown-tool requests and processing/transport errors before a normalized operation exists remain genuine explicit errors at their existing boundary. They do not invent an operation DTO.
 
@@ -146,9 +147,34 @@ Emergency output retains actual outcome, explanation, instructions, notes and ne
 
 Only native diagnostic details are bounded by max_cache_failure_detail_bytes (default 8000), including excerpt label/formatting closure. The core remains protected even when larger. The excerpt is labelled potentially incomplete diagnostic text, not a complete JSON result. The outer MCP response and selected structured variant remain serializable/schema-valid. These are output bounds, not streaming or memory guarantees for arbitrary objects.
 
+## Compact Response-Processing Recovery
+
+An unexpected failure after an operation has returned is distinct from the normal cache/serialization delivery failures above. MCPServer remembers the known boolean outcome before further processing, logs the original exception and invokes the existing presenter's recover() once. The server passes only that outcome, native diagnostic strings and optional UUID/size from an already-successful cache receipt. It owns no recovery wording, profile projection or response-schema definition.
+
+| Recovery field | Meaning |
+| --- | --- |
+| success / MCP isError | Actual known operation outcome; a successful operation stays success=true / isError=false |
+| presentation | Short configured notice in the selected presentation channel(s) |
+| data | Already-existing ResourceOperation reference or null; never a replayed InlineOperation |
+| attachments | Empty; original attachments are not inspected or converted |
+| delivery_error | null; this route makes no new full-data delivery attempt |
+| processing_error | Existing ExecutionErrorOutput containing only bounded native text and a diagnostic_details_truncated flag; its success=false describes the later processing failure |
+
+Recovery does not receive or serialize the original operation, notes, source instruction fields, attachments or arbitrary exception parameters. It calls neither normal present()/rendering nor the publisher/resource reader. The explicit recovery exception therefore does not promise the full result, normal advice, raw notes or phase instructions that had not yet been rendered. Its short notice instructs the caller to verify the actual outcome before repeating an operation.
+
+A successful existing receipt can supply a reference even when normal delivery is inline. That is an explicit small recovery alternative, not a profile change or automatic publication. The reference points only to the already-cached operation; it does not contain attachments, raw notes or the later diagnosis. Cache lifetime and client access are not guaranteed. With no successful receipt, data=null and the configured no-publication notice is shown; no replacement dump or invented URI is emitted.
+
+Recovery consults only already-resolved presentation_channel/data_channel flags. For textual data, a complete small fenced JSON envelope carries the diagnosis/reference; a separate structured presentation-only envelope keeps data and processing_error null. A wholly textual profile still advertises no outputSchema. No extra unconditional channel or normal large-data projection is introduced.
+
+The existing max_cache_failure_detail_bytes allowance (default 8000) is one shared UTF-8 budget: error_message first, traceback from the remainder. Candidate string prefixes are bounded before encoding, then safely excerpted. Original exception parameters/context are not copied. Shortened details set processing_error.params.diagnostic_details_truncated=true and add the configured notice. The enclosing JSON remains complete and parseable; full native cause/trace remains in existing server logs. Protected notices and ordinary JSON/channel overhead mean this is not a new whole-response byte ceiling.
+
+The existing global.next_instruction_texts configuration owns response_processing_failed, recovery_cache_unavailable and processing_diagnostic_truncated. Startup validation requires nonempty messages and permits only plain {success} in the first; the other two are constants. Existing reference/pagination wording is reused only for an already-successful receipt.
+
+There is one recovery attempt. A secondary recovery/SDK failure ends through existing logging and the terminal SDK boundary, retaining the known outcome and original/secondary causes in logs; there is no third format or operation retry. Unknown-tool errors and failures before a known outcome retain their existing genuine-error handling.
+
 ## Startup Recovery
 
-When startup configuration is rejected, StartupRecoveryPresenter does not load another config, select a profile or depend on cache access. Its fixed exception is full recovery text/instructions in both content and presentation, complete inline operation diagnosis, direct attachments and delivery_error=null. Healthy startup restores the configured profile.
+When startup configuration is rejected, StartupRecoveryPresenter does not load another config, select a profile or depend on cache access. Its fixed exception is full recovery text/instructions in both content and presentation, complete inline operation diagnosis, direct attachments and delivery_error=null. Healthy startup restores the configured profile. If this fixed normal presentation itself fails after a known outcome, the compact exception above applies: outcome and short notice appear in both presentation channels, with the bounded processing diagnosis in the common structured envelope. It has a fixed 8000-byte diagnostic allowance, no cache reference and no profile/configuration dependency. This stays inside StartupRecoveryPresenter; the server does not add a fallback presenter.
 
 A health query can succeed while reporting rejected admission; a restart receipt does not prove that the replacement admitted successfully. Check health and refresh tools/list after replacement. Raw proxy failures before an MCP response remain proxy-event presentation, without invented tool outcomes.
 
@@ -204,6 +230,8 @@ apply_fixes runs selected fixes in request order and stops when work cannot cont
 - [Budget limiter](../../mcp_server/presenters/text_budget_limiter.py)
 - [Startup recovery presenter](../../mcp_server/presenters/startup_recovery_presenter.py)
 - [Cache resource](../../mcp_server/resources/cache.py)
+- [Known-outcome recovery and missing-marker SDK cases](../../tests/mcp_server/integration/test_tool_attachment_transport.py)
+- [Issue #528 validation](../development/issue528/validation.md)
 - [Profile/SDK/serializer behavior tests](../../tests/mcp_server/integration/test_execution_presentation_v3.py)
 - [Protected composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
 - [Startup and instance-isolation tests](../../tests/mcp_server/integration/test_target_startup.py)
@@ -228,3 +256,4 @@ apply_fixes runs selected fixes in request order and stops when work cannot cont
 | 2.4.0 | 2026-10-18 | @imp documenter | Document server-owned structured operation delivery, SDK2 ownership and retained cache/attachment semantics. |
 | 2.4.1 | 2026-10-19 | @imp documenter | Distinguish cache/text availability notices from operation delivery and client access. |
 | 3.0.0 | 2026-10-20 | @imp documenter | Document process-local profiles, selected common envelope/schema, protected core, independent serialization failures and fixed recovery. |
+| 3.0.1 | 2026-10-20 | @imp documenter | Document compact known-outcome processing recovery, required schema marker, channel/budget/cache limitations and fixed startup exception; remove obsolete wrapper-metadata reservation. |

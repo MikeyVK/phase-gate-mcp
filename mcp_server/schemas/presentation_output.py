@@ -7,6 +7,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput
+
 
 class PresentationResource(BaseModel):
     """An attachment's complete identity, media type and textual contents."""
@@ -70,6 +72,7 @@ class PublicToolResponse(BaseModel):
     data: OperationDelivery | None
     attachments: tuple[PresentationResource, ...]
     delivery_error: DeliveryFailure | None
+    processing_error: ExecutionErrorOutput | None = None
 
 
 class PresentedOutput(BaseModel):

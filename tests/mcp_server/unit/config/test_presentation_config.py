@@ -76,6 +76,9 @@ def _global_config(max_bytes: int = 8_000) -> dict[str, Any]:
             "operation_serialization_failed": "Operation serialization unavailable.",
             "diagnostic_excerpt_label": "Incomplete diagnostic excerpt:",
             "diagnostic_unavailable": "Diagnostic unavailable.",
+            "response_processing_failed": "Operation success={success}; presentation failed.",
+            "recovery_cache_unavailable": "No cached operation is available.",
+            "processing_diagnostic_truncated": "Diagnostic details shortened.",
         },
     }
 
@@ -182,6 +185,49 @@ class TestPresentationConfig:
         with pytest.raises(ValidationError, match="placeholder"):
             PresentationConfig.model_validate(
                 {"global": global_config, "response_profiles": _response_profiles(), "tools": {}}
+            )
+
+    @pytest.mark.parametrize(
+        ("key", "text"),
+        [
+            ("response_processing_failed", "{unknown}"),
+            ("response_processing_failed", "{success.real}"),
+            ("response_processing_failed", "{success[0]}"),
+            ("response_processing_failed", "{success!r}"),
+            ("response_processing_failed", "{success:>10}"),
+            ("response_processing_failed", "{success"),
+            ("recovery_cache_unavailable", "{success}"),
+            ("processing_diagnostic_truncated", "{success}"),
+        ],
+    )
+    def test_rejects_unsupported_recovery_placeholders(self, key: str, text: str) -> None:
+        global_config = _global_config()
+        global_config["next_instruction_texts"][key] = text
+
+        with pytest.raises(ValidationError, match="placeholder"):
+            PresentationConfig.model_validate(
+                {"global": global_config, "response_profiles": _response_profiles()}
+            )
+
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "response_processing_failed",
+            "recovery_cache_unavailable",
+            "processing_diagnostic_truncated",
+        ],
+    )
+    @pytest.mark.parametrize("text", [None, " "])
+    def test_requires_nonempty_recovery_notices(self, key: str, text: str | None) -> None:
+        global_config = _global_config()
+        if text is None:
+            del global_config["next_instruction_texts"][key]
+        else:
+            global_config["next_instruction_texts"][key] = text
+
+        with pytest.raises(ValidationError, match=key):
+            PresentationConfig.model_validate(
+                {"global": global_config, "response_profiles": _response_profiles()}
             )
 
     def test_accepts_positive_budget_smaller_than_protected_cache_reference(self) -> None:
