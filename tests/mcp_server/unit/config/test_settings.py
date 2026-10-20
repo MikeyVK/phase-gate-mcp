@@ -345,35 +345,32 @@ def test_github_config_validation_hides_input_values(tmp_path: Path, malformed_y
     assert "private-fixture-value" not in str(caught.value.__cause__)
 
 
-@pytest.mark.parametrize("environment_profile", [None, "environment-profile", ""])
-def test_response_profile_launcher_and_explicit_environment_precedence(
+@pytest.mark.parametrize("environment_mode", [None, "structured", "resource", ""])
+def test_response_mode_launcher_and_environment_precedence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    environment_profile: str | None,
+    environment_mode: str | None,
 ) -> None:
-    """An explicit selector wins over YAML; an explicit empty value is invalid."""
+    """An explicit valid environment choice wins over the launcher."""
     config_file = tmp_path / "settings.yaml"
-    config_file.write_text("server:\n  response_profile: launcher-profile\n", encoding="utf-8")
+    config_file.write_text("server:\n  response_mode: resource\n", encoding="utf-8")
     monkeypatch.setenv("PGMCP_CONFIG_PATH", str(config_file))
-    if environment_profile is None:
-        monkeypatch.delenv("PGMCP_RESPONSE_PROFILE", raising=False)
+    if environment_mode is None:
+        monkeypatch.delenv("PGMCP_RESPONSE_MODE", raising=False)
     else:
-        monkeypatch.setenv("PGMCP_RESPONSE_PROFILE", environment_profile)
-
-    if environment_profile == "":
-        with pytest.raises(ValidationError, match="response_profile"):
+        monkeypatch.setenv("PGMCP_RESPONSE_MODE", environment_mode)
+    if environment_mode == "":
+        with pytest.raises(ValidationError, match="response_mode"):
             Settings.from_env()
     else:
-        settings = Settings.from_env()
-        assert settings.server.response_profile == (environment_profile or "launcher-profile")
+        assert Settings.from_env().server.response_mode == (environment_mode or "resource")
 
 
-@pytest.mark.parametrize("selector", [None, "selected", ""])
-def test_response_profile_setting_is_optional_but_nonempty(selector: str | None) -> None:
-    """Unset selection uses configuration; explicitly empty selection is invalid."""
-    assert ServerSettings().response_profile is None
-    if selector == "":
-        with pytest.raises(ValidationError, match="response_profile"):
-            ServerSettings(response_profile=selector)
+@pytest.mark.parametrize("selector", [None, "structured", "resource", "", "unknown"])
+def test_response_mode_setting_is_optional_but_constrained(selector: str | None) -> None:
+    assert ServerSettings().response_mode is None
+    if selector in {"", "unknown"}:
+        with pytest.raises(ValidationError, match="response_mode"):
+            ServerSettings.model_validate({"response_mode": selector})
     else:
-        assert ServerSettings(response_profile=selector).response_profile == selector
+        assert ServerSettings.model_validate({"response_mode": selector}).response_mode == selector

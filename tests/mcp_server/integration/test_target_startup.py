@@ -756,7 +756,7 @@ async def test_selected_workspace_git_ignores_foreign_launch(
             target_repo.close()
 
 
-def test_two_stdio_instances_select_independent_profiles_from_shared_config(tmp_path: Path) -> None:
+def test_two_stdio_instances_select_independent_modes_from_shared_config(tmp_path: Path) -> None:
     """Launch selectors stay local while both servers read the same authored settings."""
     workspace = copy_server_startup_inputs(REPO_ROOT, tmp_path)
     config_root = workspace / ".pgmcp/config"
@@ -787,11 +787,11 @@ def test_two_stdio_instances_select_independent_profiles_from_shared_config(tmp_
         PGMCP_WORKSPACE_ROOT=str(workspace),
         PGMCP_SERVER_PROJECT_DIR=".pgmcp",
         PGMCP_CONFIG_ROOT=str(config_root),
-        PGMCP_RESPONSE_PROFILE="structured_inline",
+        PGMCP_RESPONSE_MODE="structured",
     )
     for key in ("PGMCP_TEMPLATE_ROOT", "PGMCP_CONFIG_PATH"):
         env.pop(key, None)
-    text_env = {**env, "PGMCP_RESPONSE_PROFILE": "text_inline"}
+    text_env = {**env, "PGMCP_RESPONSE_MODE": "resource"}
     launch = [sys.executable, "-m", "mcp_server.core.proxy"]
     with run_server_process(launch, cwd=workspace, env=env, timeout=75) as structured:
         structured.initialize(client_name="profile-structured")
@@ -811,9 +811,10 @@ def test_two_stdio_instances_select_independent_profiles_from_shared_config(tmp_
             assert text_result.get("structuredContent") is None
             text_content = "\n".join(item["text"] for item in text_result["content"])
             assert marker in text_content and instruction in text_content
-            delivered = json.loads(text_content.rsplit("```json\n", 1)[1].split("\n```", 1)[0])
-            assert delivered["data"]["delivery"] == "inline"
-            text_health = HealthCheckOutput.model_validate(delivered["data"]["operation"])
+            match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text_content)
+            assert match is not None
+            cached = text.send_request("resources/read", {"uri": match.group()})["result"]
+            text_health = HealthCheckOutput.model_validate_json(cached["contents"][0]["text"])
             assert text_health.success and text_health.status == "healthy"
 
             # Query the first instance after the second is active to expose shared selection.

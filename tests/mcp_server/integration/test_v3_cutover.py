@@ -65,14 +65,15 @@ def _assert_v3_catalog(workspace: Path, env: dict[str, str]) -> None:
                 json.dumps(response["result"]["structuredContent"])
             )
             schema_attachments = [
-                attachment
-                for attachment in envelope.attachments
-                if attachment.uri.startswith("schema://")
+                item["resource"]
+                for item in response["result"]["content"]
+                if item["type"] == "resource"
             ]
             assert schema_attachments
             for attachment in schema_attachments:
-                assert attachment.mime_type == "application/schema+json"
-                assert isinstance(json.loads(attachment.content), dict)
+                assert attachment["mimeType"] == "application/schema+json"
+                assert isinstance(json.loads(attachment["text"]), dict)
+            assert envelope.attachments
 
 
 class TestV3Cutover:

@@ -9,7 +9,7 @@ from pydantic import BaseModel, JsonValue
 
 from mcp_server.config.schemas.presentation_config import (
     GlobalPresentationConfig,
-    ResolvedResponseProfile,
+    ResponseMode,
 )
 from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter, ITextPresenter
@@ -19,12 +19,13 @@ from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 from mcp_server.schemas.presentation_output import (
+    AttachmentReference,
     DeliveryFailure,
     InlineOperation,
     OperationDelivery,
+    PresentationResource,
     PresentedOutput,
     PublicToolResponse,
-    RenderedPresentation,
     ResourceOperation,
 )
 
@@ -53,49 +54,33 @@ def processing_diagnostic(
 
 
 class ResponsePresenter(IPresenter):
-    """Route shared rendered guidance and complete data using one immutable profile."""
+    """Deliver bounded text and one supplementary route with separate resources."""
 
     def __init__(
         self,
         text_presenter: ITextPresenter,
         resource_presenter: IResourcePresenter,
-        profile: ResolvedResponseProfile,
+        mode: ResponseMode,
         global_config: GlobalPresentationConfig,
     ) -> None:
         self._text_presenter = text_presenter
         self._resource_presenter = resource_presenter
-        self._profile = profile
+        self._mode = mode
         self._global = global_config
         self._limiter = TextBudgetLimiter(
-            max_text_response_bytes=profile.max_text_response_bytes,
-            formatting=global_config.formatting,
+            max_text_response_bytes=global_config.max_text_response_bytes,
         )
 
     def output_schema(self) -> dict[str, JsonValue] | None:
-        """Describe the selected common envelope and its admitted emergency variant."""
-        if not self._has_structured:
+        """Describe full structured delivery and its truthful failure variants."""
+        if self._mode == "resource":
             return None
         schema = PublicToolResponse.model_json_schema()
-        properties = schema["properties"]
-        properties["presentation"] = (
-            {"type": "string"} if self._structured_presentation else {"type": "null"}
-        )
-        if self._profile.data_channel == "structured":
-            selected = (
-                "InlineOperation"
-                if self._profile.data_delivery == "inline"
-                else "ResourceOperation"
-            )
-            normal_data: dict[str, JsonValue] = {"$ref": f"#/$defs/{selected}"}
-        else:
-            normal_data = {"type": "null"}
-            properties["attachments"]["maxItems"] = 0
-        if self._profile.data_channel == "text":
-            properties["processing_error"] = {"type": "null"}
-        alternatives: list[JsonValue] = [
+        schema["properties"]["presentation"] = {"type": "string"}
+        schema["anyOf"] = [
             {
                 "properties": {
-                    "data": normal_data,
+                    "data": {"$ref": "#/$defs/InlineOperation"},
                     "delivery_error": {"type": "null"},
                     "processing_error": {"type": "null"},
                 }
@@ -107,38 +92,22 @@ class ResponsePresenter(IPresenter):
                     "processing_error": {"type": "null"},
                 }
             },
-        ]
-        schema["anyOf"] = alternatives
-        if self._profile.data_channel == "structured":
-            alternatives.append(
-                {
-                    "required": ["processing_error"],
-                    "properties": {
-                        "data": {
-                            "anyOf": [
-                                {"$ref": "#/$defs/ResourceOperation"},
-                                {"type": "null"},
-                            ]
-                        },
-                        "attachments": {"maxItems": 0},
-                        "delivery_error": {"type": "null"},
-                        "processing_error": {"$ref": "#/$defs/ExecutionErrorOutput"},
+            {
+                "required": ["processing_error"],
+                "properties": {
+                    "data": {
+                        "anyOf": [
+                            {"$ref": "#/$defs/ResourceOperation"},
+                            {"type": "null"},
+                        ]
                     },
-                }
-            )
+                    "attachments": {"maxItems": 0},
+                    "delivery_error": {"type": "null"},
+                    "processing_error": {"$ref": "#/$defs/ExecutionErrorOutput"},
+                },
+            },
+        ]
         return schema
-
-    @property
-    def _has_structured(self) -> bool:
-        return self._structured_presentation or self._profile.data_channel == "structured"
-
-    @property
-    def _structured_presentation(self) -> bool:
-        return self._profile.presentation_channel in {"structured", "both"}
-
-    @property
-    def _text_presentation(self) -> bool:
-        return self._profile.presentation_channel in {"text", "both"}
 
     def present(
         self,
@@ -150,7 +119,7 @@ class ResponsePresenter(IPresenter):
         *,
         attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
-        """Render once, preserve the outcome, then select transport projections."""
+        """Project one execution without replaying a failed operation serializer."""
         resolved_success = (
             success
             if success is not None
@@ -158,6 +127,13 @@ class ResponsePresenter(IPresenter):
             if isinstance(data, dict)
             else getattr(data, "success", True)
         )
+        resources = self._resource_presenter.present_resources(attachments)
+        diagnostic = cache_pub.diagnostic if cache_pub is not None else None
+        if cache_pub is not None and cache_pub.error_code == "serialization_failed":
+            return self._delivery_failure(
+                resolved_success, resources, diagnostic, "operation_serialization_failed"
+            )
+
         rendered = self._text_presenter.present_text(
             tool_name=tool_name,
             data=data,
@@ -165,23 +141,10 @@ class ResponsePresenter(IPresenter):
             cache_pub=cache_pub,
             success=resolved_success,
         )
-        resources = self._resource_presenter.present_resources(attachments)
-        cache_available = cache_pub is not None and cache_pub.success
-        core = rendered.core
-        if cache_available:
-            assert cache_pub is not None
-            core = self._join(core, self._cache_guidance(cache_pub))
-        elif cache_pub is not None:
-            core = self._join(core, self._word("cache_publication_failed"))
-        bounded = self._limiter.limit(
-            RenderedPresentation(core=core, details=rendered.details),
-            cache_available=cache_available,
-        )
-        presentation = bounded.text
+        body = self._join(rendered.core, rendered.details)
         delivery: OperationDelivery | None = None
         failure: DeliveryFailure | None = None
-        diagnostic = cache_pub.diagnostic if cache_pub is not None else None
-        if self._profile.data_delivery == "inline":
+        if self._mode == "structured":
             try:
                 operation = (
                     data.model_dump(mode="json", by_alias=True)
@@ -189,58 +152,72 @@ class ResponsePresenter(IPresenter):
                     else data
                 )
                 delivery = InlineOperation(delivery="inline", operation=operation)
-            except Exception as exc:  # Presentation boundary preserves original cause.
+            except Exception as exc:  # Presentation boundary retains the native cause.
                 logger.exception("Inline operation serialization failed")
                 diagnostic = capture_exception(exc)
                 failure = DeliveryFailure(
                     code="operation_serialization_failed", details_truncated=False
                 )
-        elif cache_available:
-            assert cache_pub is not None
-            delivery = ResourceOperation(
-                delivery="resource",
-                uri=f"pgmcp://cache/runs/{cache_pub.run_id}",
-                size_chars=cache_pub.size_chars,
-            )
-        else:
-            failure = DeliveryFailure(
-                code=(
-                    "operation_serialization_failed"
-                    if cache_pub is not None and cache_pub.error_code == "serialization_failed"
-                    else "cache_publication_failed"
-                ),
-                details_truncated=False,
-            )
+        elif cache_pub is None or not cache_pub.success:
+            failure = DeliveryFailure(code="cache_publication_failed", details_truncated=False)
+
         if failure is not None:
-            presentation, truncated = self._emergency(
-                presentation, data, diagnostic, failure.code, cache_available
+            excerpt, truncated = self._diagnostic_excerpt(diagnostic)
+            body = self._join(
+                body,
+                self._word("delivery_failure_outcome").format(success=resolved_success),
+                self._word(failure.code),
+                excerpt,
             )
             failure = failure.model_copy(update={"details_truncated": truncated})
+        elif cache_pub is not None and not cache_pub.success:
+            body = self._join(body, self._word("cache_publication_failed"))
+
+        footer = self._footer(resources, cache_pub, structured_complete=delivery is not None)
+        full_presentation = self._join(body, footer)
         structured = None
-        if self._has_structured:
-            envelope = PublicToolResponse(
+        if self._mode == "structured":
+            structured = PublicToolResponse(
                 success=resolved_success,
-                presentation=presentation if self._structured_presentation else None,
-                data=delivery if self._profile.data_channel == "structured" else None,
-                attachments=resources if self._profile.data_channel == "structured" else (),
-                delivery_error=failure,
-            )
-            structured = envelope.model_dump(mode="json")
-        text_parts: list[str] = []
-        if self._text_presentation or failure is not None:
-            text_parts.append(presentation)
-        if self._profile.data_channel == "text":
-            text_payload = PublicToolResponse(
-                success=resolved_success,
-                presentation=None,
+                presentation=full_presentation,
                 data=delivery,
-                attachments=resources,
+                attachments=self._references(resources),
                 delivery_error=failure,
-            ).model_dump_json()
-            text_parts.append(f"```json\n{text_payload}\n```")
+            ).model_dump(mode="json")
+        text = self._bound(body, footer, complete=failure is None)
+        return PresentedOutput(text=text, structured_content=structured, resources=resources)
+
+    def _delivery_failure(
+        self,
+        success: bool,
+        resources: tuple[PresentationResource, ...],
+        diagnostic: ConfigErrorOutput | ExecutionErrorOutput | None,
+        code: str,
+    ) -> PresentedOutput:
+        """Use known facts only after an earlier full serializer failed."""
+        excerpt, truncated = self._diagnostic_excerpt(diagnostic)
+        body = self._join(
+            self._word("delivery_failure_outcome").format(success=success),
+            self._word(code),
+            excerpt,
+        )
+        footer = self._footer(resources, None, structured_complete=False)
+        failure = DeliveryFailure(
+            code="operation_serialization_failed", details_truncated=truncated
+        )
+        structured = None
+        if self._mode == "structured":
+            structured = PublicToolResponse(
+                success=success,
+                presentation=self._join(body, footer),
+                data=None,
+                attachments=self._references(resources),
+                delivery_error=failure,
+            ).model_dump(mode="json")
         return PresentedOutput(
-            text=self._join(*text_parts) if text_parts else None,
+            text=self._bound(body, footer, complete=False),
             structured_content=structured,
+            resources=resources,
         )
 
     def recover(
@@ -252,99 +229,111 @@ class ResponsePresenter(IPresenter):
         cache_run_id: str | None,
         cache_size_chars: int | None,
     ) -> PresentedOutput:
-        """Deliver small known facts without the original payload or rendering."""
+        """Deliver known outcome and bounded diagnosis without normal rendering."""
         diagnostic = processing_diagnostic(
-            error_message, traceback, max_bytes=self._profile.max_cache_failure_detail_bytes
+            error_message,
+            traceback,
+            max_bytes=self._global.max_cache_failure_detail_bytes,
         )
         notice = self._word("response_processing_failed").format(success=operation_success)
-        reference = None
-        if cache_run_id is not None:
-            receipt = CachePublication(run_id=cache_run_id, size_chars=cache_size_chars)
-            reference = ResourceOperation(
-                delivery="resource",
-                uri=f"pgmcp://cache/runs/{cache_run_id}",
-                size_chars=cache_size_chars,
-            )
-            notice = self._join(notice, self._cache_guidance(receipt))
-        else:
-            notice = self._join(notice, self._word("recovery_cache_unavailable"))
+        publication = (
+            CachePublication(run_id=cache_run_id, size_chars=cache_size_chars)
+            if cache_run_id is not None
+            else None
+        )
+        footer = self._footer((), publication, structured_complete=False)
         if diagnostic.params["diagnostic_details_truncated"]:
-            notice = self._join(notice, self._word("processing_diagnostic_truncated"))
+            footer = self._join(footer, self._word("processing_diagnostic_truncated"))
+        body = self._join(
+            notice,
+            self._word("diagnostic_excerpt_label"),
+            diagnostic.error_message or "",
+            diagnostic.traceback or "",
+        )
         structured = None
-        if self._has_structured:
+        if self._mode == "structured":
+            reference = (
+                ResourceOperation(
+                    delivery="resource",
+                    uri=f"pgmcp://cache/runs/{cache_run_id}",
+                    size_chars=cache_size_chars,
+                )
+                if cache_run_id is not None
+                else None
+            )
             structured = PublicToolResponse(
                 success=operation_success,
-                presentation=notice if self._structured_presentation else None,
-                data=reference if self._profile.data_channel == "structured" else None,
-                attachments=(),
-                delivery_error=None,
-                processing_error=(
-                    diagnostic if self._profile.data_channel == "structured" else None
-                ),
-            ).model_dump(mode="json")
-        text_parts = [notice] if self._text_presentation else []
-        if self._profile.data_channel == "text":
-            envelope = PublicToolResponse(
-                success=operation_success,
-                presentation=None,
+                presentation=self._join(notice, footer),
                 data=reference,
                 attachments=(),
                 delivery_error=None,
                 processing_error=diagnostic,
-            )
-            text_parts.append(f"```json\n{envelope.model_dump_json()}\n```")
+            ).model_dump(mode="json")
         return PresentedOutput(
-            text=self._join(*text_parts) if text_parts else None,
+            text=self._bound(body, footer, complete=False),
             structured_content=structured,
         )
 
-    def _cache_guidance(self, publication: CachePublication) -> str:
-        instructions = self._global.next_instruction_texts
-        reference = instructions.get("uri_reference", "").format(run_id=publication.run_id)
-        if (
-            publication.size_chars is not None
-            and publication.size_chars > self._profile.cache_read_budget_chars
-        ):
-            reference = self._join(reference, instructions.get("pagination_reference", ""))
-        return reference
-
-    def _emergency(
+    def _footer(
         self,
-        presentation: str,
-        data: BaseModel | dict[str, Any],
-        diagnostic: ConfigErrorOutput | ExecutionErrorOutput | None,
-        code: str,
-        cache_available: bool,
-    ) -> tuple[str, bool]:
-        """Retain protected guidance and add only bounded, labelled native detail."""
-        warning = self._word(code)
-        core = self._join(presentation, warning) if warning not in presentation else presentation
-        if diagnostic is not None:
-            details = diagnostic.traceback or diagnostic.error_message or ""
+        resources: tuple[PresentationResource, ...],
+        publication: CachePublication | None,
+        *,
+        structured_complete: bool,
+    ) -> str:
+        attachment_notice = self._word("attachment_reference") if resources else ""
+        if structured_complete:
+            reference = self._word("structured_reference")
+        elif publication is not None and publication.success:
+            reference = self._word("uri_reference").format(run_id=publication.run_id)
+            if (
+                publication.size_chars is not None
+                and publication.size_chars > self._global.cache_read_budget_chars
+            ):
+                reference = self._join(
+                    reference, self._global.next_instruction_texts.get("pagination_reference", "")
+                )
         else:
-            values = (
-                {name: getattr(data, name) for name in type(data).model_fields}
-                if isinstance(data, BaseModel)
-                else data
-            )
-            details = "\n".join(
-                f"{key}: {value}" for key, value in values.items() if isinstance(value, str)
-            )
-        if not details:
-            return self._join(core, self._word("diagnostic_unavailable")), False
+            reference = self._word("recovery_cache_unavailable")
+        return self._join(attachment_notice, reference)
+
+    def _bound(self, body: str, footer: str, *, complete: bool) -> str:
+        notice = (
+            self._global.formatting.truncation_notice
+            if complete
+            else self._global.formatting.cache_unavailable_truncation_notice
+        )
+        return self._limiter.limit(body, footer=footer, truncation_notice=notice).text
+
+    def _diagnostic_excerpt(
+        self,
+        diagnostic: ConfigErrorOutput | ExecutionErrorOutput | None,
+    ) -> tuple[str, bool]:
+        if diagnostic is None:
+            return self._word("diagnostic_unavailable"), False
         label = self._word("diagnostic_excerpt_label")
-        allowance = self._profile.max_cache_failure_detail_bytes
-        label_bytes = len(label.encode("utf-8")) + 2
-        excerpt = self._limiter.excerpt(details, max_bytes=max(allowance - label_bytes, 0))
-        diagnostic_text = self._join(label, excerpt.text) if excerpt.text else ""
-        if excerpt.details_truncated:
-            notice = (
-                self._global.formatting.truncation_notice
-                if cache_available
-                else self._global.formatting.cache_unavailable_truncation_notice
-            )
-            core = self._join(core, notice)
-        return self._join(core, diagnostic_text), excerpt.details_truncated
+        allowance = max(
+            self._global.max_cache_failure_detail_bytes - len(label.encode("utf-8")) - 4, 0
+        )
+        bounded = processing_diagnostic(
+            diagnostic.error_message or "",
+            diagnostic.traceback,
+            max_bytes=allowance,
+        )
+        truncated = bool(bounded.params["diagnostic_details_truncated"])
+        text = self._join(label, bounded.error_message or "", bounded.traceback or "")
+        if truncated:
+            text = self._join(text, self._word("processing_diagnostic_truncated"))
+        return text, truncated
+
+    @staticmethod
+    def _references(
+        resources: tuple[PresentationResource, ...],
+    ) -> tuple[AttachmentReference, ...]:
+        return tuple(
+            AttachmentReference(uri=resource.uri, mime_type=resource.mime_type)
+            for resource in resources
+        )
 
     def _word(self, key: str) -> str:
         return self._global.next_instruction_texts[key]
