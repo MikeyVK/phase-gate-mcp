@@ -122,7 +122,7 @@ class ResponsePresenter(IPresenter):
                         "attachments": {"maxItems": 0},
                         "delivery_error": {"type": "null"},
                         "processing_error": {"$ref": "#/$defs/ExecutionErrorOutput"},
-                    }
+                    },
                 }
             )
         return schema
