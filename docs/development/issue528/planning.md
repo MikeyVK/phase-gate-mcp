@@ -2,13 +2,13 @@
 
 # Issue \#528 — compact recovery execution plan
 
-**Status:** Planning — independent review requested  
-**Version:** 1.0  
+**Status:** Repair planning — independent review requested  
+**Version:** 1.1  
 **Last Updated:** 2026-10-20
 
 ## Purpose
 
-Execute the approved bounded correction in one coherent implementation cycle, with narrow implementation evidence and full native/configured Validation.
+Execute the approved bounded correction in C_1 and its narrowly scoped schema repair in C_2, with narrow implementation evidence and full native/configured Validation.
 
 ## Scope In
 
@@ -20,7 +20,7 @@ Full DTO/notes/attachments replay, normal payload projection or rendering in rec
 
 ## Summary
 
-One cycle C_1, three deliverables D_1.1–D_1.3. Start with the existing SDK post-operation failure test exposing the actual-outcome loss (RED), then implement the approved contract and server boundary together to GREEN. Align only affected consumers and run exact focused tests/target checks. Independent QA governs phase progression. Preserve negative evidence and use no gate waivers.
+C_1 / D_1.1–D_1.3 remains unchanged. Append C_2 / D_2.1 after the independently confirmed missing-marker schema blocker. Start with the existing SDK post-operation failure test exposing the actual-outcome loss (RED), then implement the approved contract and server boundary together to GREEN. Align only affected consumers and run exact focused tests/target checks. Independent QA governs phase progression. Preserve negative evidence and use no gate waivers.
 
 ## Dependencies
 
@@ -145,6 +145,35 @@ Meaningful RED then GREEN evidence for the post-operation defect; compact outcom
 - Required gates unavailable/incomplete/failed remain unresolved evidence, not passes; technical defects get bounded repair/review.
 - Active runtime/client catalog cannot be refreshed through supported existing routes: preserve status and identify required external action; do not claim new runtime behavior from tests alone.
 
+### C_2 — Require explicit compact-recovery diagnosis
+
+**Cycle Number:** 2
+
+**Owner:** @imp implementer
+
+**Dependency:** C_1 remains immutable. Independent Validation NOGO on 497cc9b5 (QA turn 01a15813-5247-7ac3-bb30-819d2836e191) confirmed that a properties-only constraint does not require the recovery marker. This repairs the existing Design requirement; no strategy or public DTO change.
+
+**Scope:** Only mcp_server/presenters/response_presenter.py and the existing SDK matrix in tests/mcp_server/integration/test_tool_attachment_transport.py. Exclude lifecycle-test changes, thresholds, skips, new test cases, compatibility routes, interfaces, configuration and new machinery.
+
+#### D_2.1 — Guard compact schema admission with its recovery marker
+
+Require processing_error only inside ResponsePresenter.output_schema's compact alternative. Extend the existing uncached structured SDK scenarios to remove that field and prove rejection by the actual advertised schema, retaining positive recovery and normal profile behavior. No new test cases, DTO/interface/config change or lifecycle-test repair.
+
+**Validates:** file_exists, mcp_server/presenters/response_presenter.py.
+
+**Exit Criteria:** Existing SDK matrix gives meaningful RED on missing-marker acceptance, then GREEN with compact required marker; positive normal/recovery channel/schema cases pass; target format/lint/Pyright pass; no compatibility path or native quality policy change. Re-enter renewed native Validation and independent review; previous full green does not prove the repaired negative property.
+
+**Verification:**
+
+- Resume implementation explicitly with resume_cycle='C_2' after independent Planning admission.
+- RED: run_tests(scope='targets', targets=['tests/mcp_server/integration/test_tool_attachment_transport.py'], tests=['python_tests'], args={'python_tests':['-n','0','-k','processing_failure']}, timeout_seconds=300). Existing cases remove processing_error only after validating the real positive response. Expect the four uncached structured cases to expose the unintended schema acceptance. Commit meaningful RED under cycle_number=2.
+- GREEN: require the marker solely in the compact schema branch, then run_tests(scope='targets', targets=['tests/mcp_server/integration/test_tool_attachment_transport.py','tests/mcp_server/integration/test_execution_presentation_v3.py','tests/mcp_server/unit/test_presenter.py'], tests=['python_tests'], timeout_seconds=600), native defaults/no argument override. Existing normal/profile controls remain valid. No new test count.
+- Target gates: run_checks(scope='targets', targets=['mcp_server/presenters/response_presenter.py','tests/mcp_server/integration/test_tool_attachment_transport.py'], checks=['python_format','python_lint','python_pyright'], timeout_seconds=300). Commit/push GREEN under cycle_number=2 and activate with existing restart/health/context route.
+- Request independent Implementation→Validation admission. Repeat the exact native full-suite and branch/configured gates from Milestones because production schema behavior changed. Update the existing validation report, retain both earlier native runs and all negative findings, then request renewed independent Validation→Documentation review.
+- Independent QA has separately classified the pre-existing Windows readiness failure as non-blocking for #528 with unresolved residual risk. Preserve that judgement and negative history; do not claim causal repair or introduce a rerun-until-green route. A new concrete failure still needs diagnosis/review.
+
+**Stop Conditions:** New policy/scope or a schema repair requiring a DTO/profile redesign; missing meaningful RED; failing/incomplete required verification. No gate exception.
+
 ## Phase Deliverables
 
 ### Validation
@@ -182,3 +211,4 @@ Document compact recovery/output schema and original-data/guidance limitations; 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-20 | @imp planner | One bounded RED/GREEN cycle, exact focused and native/configured gates, runtime activation, evidence/documentation/Ready obligations and no-waiver stops. |
+| 1.1 | 2026-10-20 | @imp planner | Preserve committed C_1; append bounded C_2 for explicit compact-schema marker and negative controls in existing SDK cases, with renewed validation and independent gates. |

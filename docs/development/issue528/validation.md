@@ -2,7 +2,7 @@
 
 # Issue \#528 — compact recovery validation
 
-**Status:** Validation complete — independent review requested  
+**Status:** Validation blocked — compact-schema repair required  
 **Version:** 1.0  
 **Last Updated:** 2026-10-20
 
@@ -28,7 +28,9 @@ C_1
 
 ## Validation Status
 
-PASS
+FAIL
+
+Post-run self-review found that the compact schema alternative does not require its processing_error marker. An omitted marker can therefore admit recovery-shaped data without its diagnosis. The native results below remain factual, but do not prove that missing-marker constraint. This is a functional schema-contract gap requiring bounded repair and revalidation.
 
 ## Obligations
 

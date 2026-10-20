@@ -19,7 +19,7 @@
       "created_at": "2026-10-19T22:22:51.547264+00:00",
       "planning_deliverables": {
         "cycles": {
-          "total": 1,
+          "total": 2,
           "cycles": [
             {
               "cycle_id": "C_1",
@@ -55,6 +55,23 @@
                 }
               ],
               "exit_criteria": "Meaningful RED then GREEN evidence for the post-operation defect; compact outcome/notice/bounded-diagnosis/existing-reference recovery conforms to selected schemas/channels without original-payload conversion, normal projection/render retry, publication or retrieval; affected consumers aligned; focused tests and applicable target checks pass; no waiver or new policy."
+            },
+            {
+              "cycle_id": "C_2",
+              "cycle_number": 2,
+              "cycle_name": "Require explicit compact-recovery diagnosis",
+              "deliverables": [
+                {
+                  "deliverable_name": "Guard compact schema admission with its recovery marker",
+                  "description": "Require processing_error only inside ResponsePresenter.output_schema's compact alternative. Extend the existing uncached structured SDK scenarios to remove that field and prove rejection by the actual advertised schema, retaining positive recovery and normal profile behavior. No new test cases, DTO/interface/config change or lifecycle-test repair.",
+                  "validates": {
+                    "type": "file_exists",
+                    "file": "mcp_server/presenters/response_presenter.py"
+                  },
+                  "deliverable_id": "D_2.1"
+                }
+              ],
+              "exit_criteria": "Existing SDK matrix gives meaningful RED on missing-marker acceptance, then GREEN with compact required marker; positive normal/recovery channel/schema cases pass; target format/lint/Pyright pass; no compatibility path or native quality policy change. Re-enter renewed native Validation and independent review; previous full green does not prove the repaired negative property."
             }
           ]
         },
