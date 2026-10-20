@@ -79,7 +79,7 @@ Reuse configured_workspace and existing factory/SDK helpers for one durable isol
 ### Unchanged public entrypoint
 
 ```python
-present_notes(self, tool_name: str, notes: list[NoteEntry]) -> str | None
+def present_notes(self, tool_name: str, notes: list[NoteEntry]) -> str | None: ...
 ```
 No signature or model addition. Empty/unmatched notes still produce no text; scalar notes remain renderable even without a sequence limit.
 
