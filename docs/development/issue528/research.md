@@ -2,9 +2,9 @@
 
 # Issue \#528 — catalog publication after \#529
 
-**Status:** Research findings — independent disposition review requested  
-**Version:** 1.0  
-**Last Updated:** 2026-10-19
+**Status:** Research findings — architecture-boundary re-review requested  
+**Version:** 1.1  
+**Last Updated:** 2026-10-20
 
 ## Purpose
 
@@ -16,17 +16,17 @@ Normal tools/list publication; tokenless and credential-selected registrations; 
 
 ## Scope Out
 
-No production changes, wrapper metadata forwarding, per-tool schema refinement, permanent test additions, authenticated GitHub calls, active harness changes, or new output policy.
+Research makes no production or permanent test changes. Exclude wrapper metadata forwarding, per-tool schema refinement, authenticated GitHub calls, active harness changes, compatibility paths, and a general exception/presentation redesign.
 
 ## Problem Statement
 
-Issue #523 observed zero output schemas because the then-current catalog inspected output_model on registration wrappers that did not expose it. Issue #529 subsequently changed the public answer and schema owner. Re-evidence #528 against merge a7256c0a67cecb58a433861b3ed3a612bd1e3b6a before designing a repair for an obsolete path. The missing catalog schema does not reproduce on normal structured profiles; a separate unexpected processing-error boundary remains explicit for independent disposition review.
+Issue #523 observed zero output schemas because the then-current catalog inspected output_model on registration wrappers that did not expose it. Issue #529 subsequently changed the public answer and schema owner. Re-evidence #528 against merge a7256c0a67cecb58a433861b3ed3a612bd1e3b6a before designing a repair for an obsolete path. The missing catalog schema does not reproduce on normal structured profiles; a reproducible unexpected after-operation processing-error boundary remains for bounded correction and independent architecture review.
 
 ## Goals
 
 - Compare actual tools/list with the approved #529 profile contract without injecting output metadata.
 - Exercise representative actual success and normalized errors through the SDK and identify intentional schema absence.
-- Expose counterevidence and limitations before asking whether #528 has already been delivered by PR #531.
+- Separate the catalog behavior already delivered by PR #531 from the remaining processing-error contract and its architectural boundaries.
 
 ## Background
 
@@ -58,7 +58,7 @@ Each of the six isolated normal servers executed all three calls below (18 calls
 | Call | Actual result | Observation |
 |---|---|---|
 | health_check({}) | success=true; isError=false | Valid selected structured envelope, or parseable complete text data segment |
-| scaffold_schema({artifact_type: intentionally_unregistered}) | ValidationError; success=false; isError=true | Same profile contract, one complete schema attachment |
+| scaffold_schema({artifact_type: intentionally_unregistered}) | ValidationError; success=false; isError=true | Same profile contract, one schema attachment |
 | git_status({}) in copied non-Git workspace | ExecutionError; success=false; isError=true | Same profile contract; native Git diagnosis/cause present |
 
 For structured profiles, Draft202012Validator explicitly validated both successes and errors. Removing required outer success from an actual envelope was rejected as a negative control. For structured_resource, the real SDK read_resource route returned JSON operation data from the advertised resource. The probe checked available/nonempty operation data and outcome facts, not byte-for-byte equality of every DTO field.
@@ -69,25 +69,67 @@ The extended probe additionally injected RuntimeError("isolated528processingfaul
 
 The general server catch preserves this existing processing-error response and logs the original exception. The existing [processing-failure behavior test](../../../tests/mcp_server/integration/test_tool_attachment_transport.py) also proves a presenter exception after a successful operation, but sets mock output_schema=None. It cannot establish the structured-profile contract for this path.
 
-#529 Design explicitly preserves processing errors before an operation exists and excludes a general rewrite of all server exception paths. It does not describe the after-operation presenter-crash case equally explicitly. This is a real observed boundary limitation, not an accidental loss of catalog schemas and not evidence that the injected crash occurs during ordinary presentation. Research does not silently choose a new fallback policy or certify this path as conforming.
+#529 Design explicitly preserves processing errors before an operation exists and excludes a general rewrite of all server exception paths. It does not describe the after-operation presenter-crash case equally explicitly. This is a real observed boundary limitation, not an accidental loss of catalog schemas and not evidence that the injected crash occurs during ordinary presentation. The initial Research did not choose a fallback policy or certify this path as conforming. Independent QA subsequently rejected unconditional closure; the owner discussion below bounds the correction.
 
 ### Scope residue and disposition
 
 #529 Design and the active [presentation reference](../../../docs/reference/presentation_architecture.md) still reserve decorator-metadata work for #528. That reservation is not evidence of a current catalog defect. Forwarding unused wrapper metadata would not change the current public catalog. Claiming that such forwarding or per-tool refinement has been implemented would be false.
 
-Request independent QA to assess whether the original schema-publication issue is already delivered by #529/PR #531, and whether the explicitly recorded processing-error limitation prevents that disposition. Do not infer universal response conformance from catalog completeness. Remain in Research until that assessment and Coordination's administrative hand-off; do not manufacture Design/Implementation phases to close an absent normal-path defect.
+The independent disposition review of c5a4dfc90c91ec20722b840bf1e86d394eb42296 confirmed the original catalog omission is fixed but returned P1 NOGO for unconditional closure. Issue #528 explicitly includes processing/fallback outcomes, while #529's approved preservation rule forbids hiding an actual operation behind a presentation failure. Remain in Research until independent review accepts the bounded strategy below; no phase GO is claimed here.
+
+### Owner direction and its limits
+
+In the direct owner message 01a15795-3dbb-7602-b802-954e70f55df7, the owner expressed agreement with error handling that truthfully describes what happened and proposed a focused repair outside the failed presenter, for example in the server. The same message explicitly challenged whether schema provision by the presenter violates SSOT. This is the source of the bounded direction; Coordination's subsequent process message is not additional owner policy.
+
+The producer's source-backed answer distinguishes definition, derivation and publication. It does not treat the owner's question as approval for moving schema ownership or redesigning presentation. No owner instruction selects unconditional dual-channel fallback, a second output format, or suppression of the real operation outcome.
+
+### Architectural authority and blast radius
+
+| Fact or action | Current authority | Boundary for the correction |
+|---|---|---|
+| Public response fields/types | [PublicToolResponse and related models](../../../mcp_server/schemas/presentation_output.py) | Reuse these models; no independently handwritten server response contract |
+| Channel/delivery selection | Existing resolved response profile | No new hidden selector or duplicate configuration source |
+| Normal response representation and derived schema | [ResponsePresenter](../../../mcp_server/presenters/response_presenter.py) | Derivation starts with model_json_schema(); presenter does not publish the catalog itself |
+| Public catalog and outer error boundary | [MCPServer](../../../mcp_server/server.py) | Publish the supplied schema; catch failures outside the failed rendering call; retain a known actual operation |
+| Diagnostic capture and readable guidance | Existing error boundaries and presentation/configuration responsibilities | Preserve original exception/cause; no tool-specific recovery strings or second general presenter in server code |
+
+The applicable [architecture principles](../../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md) are SRP, SSOT, Config-First and pragmatic failure presentation (§§1.1, 2, 3, 15.1). An automatically derived schema is a representation of the authoritative models, not an independent field inventory. The current presenter additionally narrows the model schema using profile rules that it also applies while constructing results. That is a concrete drift-sensitive boundary for Design to keep coherent, not proof that moving schema publication into the tool wrappers would improve SSOT.
+
+The server's broad try/catch currently covers execution, publication, presentation and transport packaging. A correction must distinguish an existing operation from a failure before one exists; it must not assume every caught exception is a presenter failure. State/workflow engines, tool domain logic, wrapper metadata, adapter contracts and dependencies need no change for this boundary.
+
+Likely affected surfaces are the existing server response boundary, shared public response models/schema derivation if a failure variant requires it, existing presentation configuration for readable guidance, and focused transport/presentation behavior tests. The active presentation reference must eventually explain the actual boundary and remove its obsolete metadata-work reservation. Historical #529 artifacts remain evidence, not a documentation-rewrite target.
+
+### Strategy comparison
+
+| Direction | Benefit / impact | Disposition |
+|---|---|---|
+| Focused outer-boundary handling retaining real operation facts in the existing public response contract | Addresses the demonstrated misleading response; keeps model/profile/schema authority together; requires focused error-path behavior evidence | Owner-supported direction; concrete minimal contract is Design work |
+| Keep a bare generic processing error after an operation exists | Little code impact, but discards known outcome from the response and conflicts with the existing preservation rule | Not accepted as unconditional closure by independent QA |
+| Rebuild wrapper metadata or introduce another response/exception framework | Does not repair this catalog or demonstrated post-operation boundary; expands coupling and maintenance | Outside scope |
+
 
 ## Questions
 
-- Does independent QA accept already-delivered disposition for the original omission, with intentional text-only absence and the observed unexpected processing boundary explicitly retained? If not, identify the exact unmet approved contract and any owner policy decision required before Design.
+No new compatibility or broad output-policy choice is inferred. Independent QA must judge whether the direct owner's bounded direction plus the existing #529 preservation/common-envelope policy sufficiently fixes the Research boundary. If a materially new failure/channel/data-loss policy is needed, return that exact choice to the owner before designing it. The minimal recovery contract, existing model/profile reuse, schema alignment and proof of independence from failed rendering are Design questions.
 
 ## Approved Strategy
 
-Retain the owner-approved #529 clean break: one general public envelope; internal operation DTOs unchanged; profile-selected schema publication; no outputSchema for wholly textual output; no compatibility bridge or harness/version test matrix. Reuse that decision for the original catalog-publication boundary. No new per-tool schema or unexpected-after-operation fallback policy is approved here. The current Research contract requires stopping when the reported defect is not evidenced; Coordination has requested independent QA disposition before administrative handling.
+| Boundary | Binding direction and source |
+|---|---|
+| Normal catalog publication | Retain the already-approved #529 common envelope, profile-derived schema and intentional absence for wholly textual profiles. No wrapper-forwarding repair or per-tool refinement. |
+| Unexpected failure after a known operation | Preserve actual operation success/error facts and available result evidence; expose the later response-processing failure separately. The direct owner supports truthful handling outside the failed presenter. Reuse the existing common response contract rather than treating the operation as unexecuted or selecting a new protocol-only boundary. Exact failure fields and mechanism remain Design work under QA. |
+| Schema and presentation authority | Shared models define response fields; the resolved profile defines normal channel choices; presentation derives its schema; the server publishes and handles its outer boundary. No second field inventory, hidden profile rules or hardcoded recovery advice in server code. The owner explicitly requested this SSOT check; moving schema ownership is not an approved scope expansion. |
+| Compatibility and tests | Clean break, no legacy/compatibility path, no harness/version matrix or dependency-surveillance tests. Adapt useful existing behavior tests proportionately; no content snapshots or suite expansion solely to preserve the current misleading fallback. |
+| Scope and progression | Correct only the demonstrated after-operation boundary and necessary consumers/docs. No general exception framework or presentation redesign. Independent Research → Design GO is required; Coordination does not substitute for owner or QA. |
 
 ## Expected Results
 
-Independent review can distinguish three factual claims: (1) the old normal catalog omission is no longer present, (2) intentional text-only absence is the approved behavior, and (3) unexpected presenter failure after a successful operation remains a separate response-contract limitation. No Design transition or administrative closure is claimed by the producer.
+- Actual normal catalog/profile publication remains the already-established #529 behavior.
+- If an operation exists before response processing fails, the client can distinguish that operation's actual outcome from the later processing failure; it is not invited to infer the operation never happened.
+- Structured responses conform to the connected catalog contract, including the designed recovery path. Text-only profiles retain their intentional schema absence. Do not use SDK error-validation bypass as evidence.
+- A failure before an operation exists does not fabricate one. Original diagnostic facts/cause remain available through the established boundaries.
+- Focused behavior evidence covers actual success and failure outcomes before an injected later failure, the applicable structured/text routes, and independence from retrying the failed rendering step. Exact cases and gate timing belong in Design/Planning.
+- The repair does not introduce independent server field definitions, duplicated profile policy, domain-specific presentation branches or a new exception framework.
 
 ## Evidence
 
@@ -168,3 +210,5 @@ Use actual public catalog consumer and approved generic envelope as the baseline
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-19 | @imp researcher | Re-evidence #528 after merged #529; record normal catalog contract, representative SDK calls and unexpected after-operation processing limitation without production changes. |
+| 1.1 | 2026-10-20 | @imp researcher | Record independent disposition NOGO, the direct owner's bounded outer-error-handling direction, schema/SSOT responsibilities and limited correction strategy; request architecture-boundary re-review before Design. |
+
