@@ -3,7 +3,7 @@
 # Issue \#518 — source-owner repair and native validation
 
 **Status:** Validation failed — bounded test-consumer repair required  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-20
 
 ## Purpose
@@ -320,13 +320,27 @@ Both calls completed with all selected checks passed, timeout600 and no args ove
 
 These positive quality results do not supersede the failed required suite. Return to Implementation is for three existing test consumers only; no production gate waiver, skip, native configuration relaxation or new architecture.
 
+## Bounded return to Implementation
+
+The failed Validation and passing native quality gates were committed/pushed as495df460fabc440e8069d17b4aeb2ab28bdac984. force_phase_transition returned Validation→Implementation/C_4 with the owner's standing18October approval, explicit reason and no forward waiver. The stored plan is unchanged.
+
+Only two test files change: existing Ruff native-policy/parity coverage now expects ANN/ARG diagnoses for intentionally untyped/unused test input; existing Mypy configured-versus-explicit-target coverage keeps production-only configured selection and expects no-untyped-def on explicitly selected test input. No new test cases, production changes, config relaxation or deadline change.
+
+Before any deadline change, the unchanged process baseline was run with targets=['tests/mcp_server/integration/execution/test_process_runtime.py'], tests=['python_tests'], args={'python_tests':['-k','domain_outcomes or expired','--durations=10']}, timeout180:5passed62.21s. Four actual roundtrip calls took0.26–0.42s (passed-0:0.37s); expired preparation still asserts TIMEOUT, no backend start, zero captured bytes and cleanup. Receipt87e8616c2ee44b55b2e4a1fb45e3de54 supplements these facts. This does not prove the cause of the full-run timeout or declare it repaired. The original10s/15s and1e-9negative inputs remain unchanged.
+
+A new required full native run is justified only by the actual two-consumer correction, after exact-head independent Implementation admission. It is not an unchanged-candidate retry-until-green. Any repeated process failure requires further diagnosis, not another blind full rerun.
+
+### Focused recovery result
+
+run_tests(scope='targets',targets=['tests/mcp_server/integration/adapters/test_ruff_checks.py','tests/mcp_server/integration/adapters/test_mypy.py','tests/mcp_server/integration/execution/test_process_runtime.py'],tests=['python_tests'],timeout_seconds=600), no args override, completed with148passed in84.42s; native exit0; unchanged process deadlines. supplemental receipt1e8e41928da74f968ced325aa44fcd75. Both changed test files passed format/lint with RUF100 (timeout180), receipt1a542c27d5f94273be90ae51389142f6. The process fixture and production/config/deadline code are unchanged. Independent exact-head admission and a new full native suite remain required; focused success does not close the earlier full failure.
+
 ## First full native suite failure
 
 | Actual case | Observed failure | Bounded repair direction |
 | --- | --- | --- |
 | integration/adapters/test_ruff_checks.py::test_approved_native_settings_remove_only_the_declared_exemptions | Still expects tests not to receive ANN/ARG diagnoses. | Adapt this existing native-policy/parity case to the approved strict test selection; no legacy-preservation assertion. |
 | integration/adapters/test_mypy.py::test_configured_roots_and_explicit_tests_use_native_selection | Still expects no no-untyped-def on an explicit test target. | Keep configured production selection and explicit-target parity, with current native strict diagnostics. |
-| integration/execution/test_process_runtime.py::test_domain_outcomes_are_completed_and_keep_concrete_resource_payload[passed-0] | Normal roundtrip hit the helper's10s invocation deadline before stdout; result correctly reports TIMEOUT, not InvocationCompleted. | Repair the finite normal-roundtrip test allowance, separately from the existing explicit expired-deadline behavior test. No production/proxy/startup timeout or asserted result changes. Workload scheduling is a hypothesis, not a traced OS cause. |
+| integration/execution/test_process_runtime.py::test_domain_outcomes_are_completed_and_keep_concrete_resource_payload[passed-0] | Normal roundtrip hit the helper's10s invocation deadline before stdout; result correctly reports TIMEOUT, not InvocationCompleted. | No deadline/budget change. The unchanged10s invoke/15s outer helper passes a focused baseline, but no OS/load cause is established. Keep the original failure and require fresh full-suite acceptance after the two separate native-policy consumer repairs; a repeated failure remains blocking. |
 
 Post-suite planning readback is unchanged; git_status contains only expected workflow state and this report. No unexpected production/test/config writes occurred. These failures are not a pass or gate exception.
 
@@ -356,4 +370,5 @@ Post-suite planning readback is unchanged; git_status contains only expected wor
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
-| 0.1 | 2026-10-20 | @imp validator | Record reviewed implementation evidence, exact dispositions and negative history; final native acceptance is pending. |
+| 0.1 | 2026-10-20 | @imp validator | Record reviewed implementation evidence, exact dispositions and negative history; first native suite failed and quality gates passed. |
+| 0.2 | 2026-10-20 | @imp implementer | Record auditable test-consumer recovery and unchanged process deadlines; cause and final acceptance remain explicit. |

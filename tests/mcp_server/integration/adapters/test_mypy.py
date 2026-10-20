@@ -221,7 +221,11 @@ def test_configured_roots_and_explicit_tests_use_native_selection(
         direct = native(package.workspace, "types", targets, args)
         code, response = invoke(package, "types", targets, args)
         assert direct.returncode == code == expected
-        assert b"no-untyped-def" not in direct.stdout + direct.stderr
+        if targets:
+            assert b"[assignment]" in direct.stdout + direct.stderr
+            assert b"[no-untyped-def]" in direct.stdout + direct.stderr
+        else:
+            assert b"no-untyped-def" not in direct.stdout + direct.stderr
         assert_native_evidence(response, direct)
     for roots in ('modules = ["tests.sample"]', 'packages = ["tests"]'):
         (package.workspace / "pyproject.toml").write_text(

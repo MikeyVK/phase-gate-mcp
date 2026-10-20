@@ -4,9 +4,9 @@
   "parent_branch": "main",
   "issue_number": 518,
   "workflow_name": "refactor",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": 4,
-  "last_cycle": 4,
+  "last_cycle": null,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -37,7 +37,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Validation exposed two stale native-policy test consumers and a finite positive process-fixture deadline. Return to existing C4 for test-only repair and fresh independent admission review; preserve failed suite and all passing gates, no production/threshold/config waiver.",
   "issue_title": "Repair remaining checker suppressions on the migrated baseline",
   "created_at": "2026-10-20T08:33:10.347099+00:00",
   "transitions": [
@@ -72,8 +72,17 @@
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-10-20T11:34:38.808976+00:00",
+      "human_approval_message": "Owner standing approval granted 2026-10-18 covers necessary forced returns to earlier phases in this and future sessions; current autonomous issue518 authorization remains in force. Independent QA still governs forward progression.",
+      "forced": true,
+      "skip_reason": "Validation exposed two stale native-policy test consumers and a finite positive process-fixture deadline. Return to existing C4 for test-only repair and fresh independent admission review; preserve failed suite and all passing gates, no production/threshold/config waiver.",
+      "resume_cycle": "C_4"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "refactor"
 }
