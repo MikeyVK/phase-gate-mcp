@@ -75,8 +75,8 @@ from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
-    from mcp_server.config.schemas.presentation_config import PresentationConfig, ResponseMode
-    from mcp_server.config.settings import Settings
+    from mcp_server.config.schemas.presentation_config import PresentationConfig
+    from mcp_server.config.settings import ResponseMode, Settings
     from mcp_server.core.interfaces.ipresenter import ITextPresenter
 
 

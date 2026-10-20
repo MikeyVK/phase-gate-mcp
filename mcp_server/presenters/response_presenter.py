@@ -9,8 +9,8 @@ from pydantic import BaseModel, JsonValue
 
 from mcp_server.config.schemas.presentation_config import (
     GlobalPresentationConfig,
-    ResponseMode,
 )
+from mcp_server.config.settings import ResponseMode
 from mcp_server.core.error_handling import capture_exception
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter, ITextPresenter
 from mcp_server.core.operation_notes import NoteEntry
@@ -184,7 +184,11 @@ class ResponsePresenter(IPresenter):
                 attachments=self._references(resources),
                 delivery_error=failure,
             ).model_dump(mode="json")
-        text = self._bound(body, footer, complete=failure is None)
+        text = self._bound(
+            body,
+            footer,
+            available=delivery is not None or (cache_pub is not None and cache_pub.success),
+        )
         return PresentedOutput(text=text, structured_content=structured, resources=resources)
 
     def _delivery_failure(
@@ -215,7 +219,7 @@ class ResponsePresenter(IPresenter):
                 delivery_error=failure,
             ).model_dump(mode="json")
         return PresentedOutput(
-            text=self._bound(body, footer, complete=False),
+            text=self._bound(body, footer, available=False),
             structured_content=structured,
             resources=resources,
         )
@@ -270,7 +274,7 @@ class ResponsePresenter(IPresenter):
                 processing_error=diagnostic,
             ).model_dump(mode="json")
         return PresentedOutput(
-            text=self._bound(body, footer, complete=False),
+            text=self._bound(body, footer, available=publication is not None),
             structured_content=structured,
         )
 
@@ -297,10 +301,10 @@ class ResponsePresenter(IPresenter):
             reference = self._word("recovery_cache_unavailable")
         return self._join(attachment_notice, reference)
 
-    def _bound(self, body: str, footer: str, *, complete: bool) -> str:
+    def _bound(self, body: str, footer: str, *, available: bool) -> str:
         notice = (
             self._global.formatting.truncation_notice
-            if complete
+            if available
             else self._global.formatting.cache_unavailable_truncation_notice
         )
         return self._limiter.limit(body, footer=footer, truncation_notice=notice).text

@@ -462,8 +462,12 @@ def test_compact_recovery_routes_known_facts_without_normal_rendering(
     assert len(output.text.encode("utf-8")) <= config_data["global"]["max_text_response_bytes"]
     assert (f"EXISTING-REFERENCE={run_id}" if cached else "NO-EXISTING-REFERENCE") in output.text
     formatting = config_data["global"]["formatting"]
-    expected_notice = formatting["truncation_notice" if cached else "cache_unavailable_truncation_notice"]
-    wrong_notice = formatting["cache_unavailable_truncation_notice" if cached else "truncation_notice"]
+    expected_notice = formatting[
+        "truncation_notice" if cached else "cache_unavailable_truncation_notice"
+    ]
+    wrong_notice = formatting[
+        "cache_unavailable_truncation_notice" if cached else "truncation_notice"
+    ]
     assert expected_notice in output.text
     assert wrong_notice not in output.text
     assert output.resources == ()
@@ -540,4 +544,3 @@ def test_recovery_bounds_unicode_before_encoding_and_shares_diagnostic_allowance
     schema = presenter.output_schema()
     assert schema is not None
     Draft202012Validator(schema).validate(output.structured_content)
-
