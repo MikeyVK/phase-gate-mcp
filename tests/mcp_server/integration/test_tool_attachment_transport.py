@@ -10,10 +10,11 @@ import json
 import shutil
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import anyio
 import pytest
+from jsonschema import Draft202012Validator
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import (
@@ -191,28 +192,44 @@ async def test_v3_stdio_startup_and_handshake(tmp_path: Path, pytestconfig: pyte
 async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
-    """Processing failures remain explicit tool errors with the original logged exception."""
+    """A later processing fault cannot replace a known successful operation."""
     failure = RuntimeError("presentation unavailable")
     operation = Operation(success=True, value=1)
     wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
         AttachedCore(ToolExecution(operation=operation, attachments=()))
     )
-    presenter = MagicMock()
-    presenter.present.side_effect = failure
-    presenter.output_schema.return_value = None
+    presenter = make_response_presenter()
+    publisher = MagicMock(spec=IToolResponsePublisher)
+    publisher.put.return_value = CachePublication(run_id="b" * 32, size_chars=123)
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[wrapped],
         resources=[],
         presenter=presenter,
+        publisher=publisher,
     )
-    async with connected_mcp_client(server) as client:
-        response = await client.call_tool("attached", {})
-        missing = await client.call_tool("missing", {})
-    assert response.is_error
-    assert response.structured_content is None
-    assert "presentation unavailable" in response.content[0].text
+    with patch.object(presenter, "present", side_effect=failure) as normal:
+        async with connected_mcp_client(server) as client:
+            listing = await client.list_tools()
+            response = await client.call_tool("attached", {})
+            missing = await client.call_tool("missing", {})
+    assert not response.is_error
+    payload = response.structured_content
+    assert payload is not None
+    assert payload["success"] is True
+    assert payload["data"] == {
+        "delivery": "resource",
+        "uri": "pgmcp://cache/runs/" + "b" * 32,
+        "size_chars": 123,
+    }
+    assert payload["attachments"] == []
+    assert "presentation unavailable" in payload["processing_error"]["error_message"]
+    schema = listing.tools[0].output_schema
+    assert schema is not None
+    Draft202012Validator(schema).validate(payload)
+    publisher.put.assert_called_once_with("attached", operation)
+    normal.assert_called_once()
     assert any(record.exc_info and record.exc_info[1] is failure for record in caplog.records)
     assert missing.is_error
     assert missing.structured_content is None
-    assert missing.content[0].text == "Tool not found: missing"
+    assert "missing" in missing.content[0].text
