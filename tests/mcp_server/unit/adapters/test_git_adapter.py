@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from git import Actor, GitCommandError, Repo
+from git.refs.head import Head
 from git.remote import PushInfo
 
 from mcp_server.adapters.git_adapter import GitAdapter
@@ -645,26 +646,28 @@ class TestGitAdapterCreateBranch:
             with pytest.raises(TypeError, match="base"):
                 adapter.create_branch("test-branch")  # Missing base parameter
 
-    def test_create_branch_with_head(self) -> None:
-        """RED: Should create from current HEAD when base='HEAD'."""
-        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
-            mock_repo = _mock_repository()
-            mock_head = MagicMock()
-            mock_commit = MagicMock()
-            mock_commit.hexsha = "abc123f"
-            mock_head.commit = mock_commit
-            mock_repo.head = mock_head
-            mock_repo.heads = []
-            mock_new_branch = MagicMock()
-            mock_repo.create_head.return_value = mock_new_branch
-            mock_repo_class.return_value = mock_repo
+    def test_create_branch_with_head(self, tmp_path: Path) -> None:
+        """Create from the resolved snapshot even if HEAD advances before creation."""
+        with Repo.init(tmp_path) as repository:
+            actor = Actor("Test Author", "test@example.com")
+            selected = repository.index.commit("selected", author=actor, committer=actor)
+            later = repository.index.commit("later", author=actor, committer=actor)
+            repository.head.reference.set_commit(selected.hexsha)
+            active_branch = repository.active_branch.name
+            create_head = repository.create_head
 
-            adapter = GitAdapter(str(_mock_root()))
-            adapter.create_branch("test-branch", base="HEAD")
+            def advance_and_create(name: str, reference: str) -> Head:
+                repository.head.reference.set_commit(later.hexsha)
+                return create_head(name, reference)
 
-            # Should resolve HEAD to commit and create from it
-            mock_repo.create_head.assert_called_once_with("test-branch", mock_commit)
-            mock_new_branch.checkout.assert_not_called()
+            with patch("mcp_server.adapters.git_adapter.Repo", return_value=repository):
+                adapter = GitAdapter(str(tmp_path))
+                with patch.object(repository, "create_head", side_effect=advance_and_create):
+                    adapter.create_branch("test-branch", base="HEAD")
+
+            assert repository.heads["test-branch"].commit.hexsha == selected.hexsha
+            assert repository.head.commit.hexsha == later.hexsha
+            assert repository.active_branch.name == active_branch
 
     def test_create_branch_with_branch_name(self) -> None:
         """RED: Should create from specified branch name."""

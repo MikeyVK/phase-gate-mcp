@@ -36,7 +36,7 @@ class GitListBranchesTool(ICoreTool[GitListBranchesInput, GitListBranchesOutput]
         return "List git branches with optional verbose info and remotes"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitListBranchesInput
 
     def __init__(self, manager: GitManager) -> None:
@@ -44,7 +44,6 @@ class GitListBranchesTool(ICoreTool[GitListBranchesInput, GitListBranchesOutput]
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -120,7 +119,7 @@ class GitDiffTool(ICoreTool[GitDiffInput, GitDiffOutput]):
         return "Get diff statistics between two branches"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitDiffInput
 
     def __init__(self, manager: GitManager) -> None:
@@ -128,7 +127,6 @@ class GitDiffTool(ICoreTool[GitDiffInput, GitDiffOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitDiffInput, context: NoteContext) -> GitDiffOutput:

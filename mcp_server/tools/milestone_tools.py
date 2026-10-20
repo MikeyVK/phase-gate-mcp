@@ -39,7 +39,7 @@ class ListMilestonesTool(ICoreTool[ListMilestonesInput, ListMilestonesOutput]):
         return "List milestones with optional state filter"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ListMilestonesInput
 
     def __init__(self, manager: GitHubManager | None = None) -> None:
@@ -47,7 +47,6 @@ class ListMilestonesTool(ICoreTool[ListMilestonesInput, ListMilestonesOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -97,7 +96,7 @@ class CreateMilestoneTool(ICoreTool[CreateMilestoneInput, MilestoneOutput]):
         return "Create a new milestone in the repository"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CreateMilestoneInput
 
     def __init__(self, manager: GitHubManager | None = None) -> None:
@@ -105,7 +104,6 @@ class CreateMilestoneTool(ICoreTool[CreateMilestoneInput, MilestoneOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: CreateMilestoneInput, context: NoteContext) -> MilestoneOutput:
@@ -145,7 +143,7 @@ class CloseMilestoneTool(ICoreTool[CloseMilestoneInput, MilestoneOutput]):
         return "Close a milestone by number"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CloseMilestoneInput
 
     def __init__(self, manager: GitHubManager | None = None) -> None:
@@ -153,7 +151,6 @@ class CloseMilestoneTool(ICoreTool[CloseMilestoneInput, MilestoneOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: CloseMilestoneInput, context: NoteContext) -> MilestoneOutput:

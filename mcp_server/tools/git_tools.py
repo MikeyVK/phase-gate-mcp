@@ -122,7 +122,7 @@ class CreateBranchTool(ICoreTool[CreateBranchInput, CreateBranchOutput]):
         return "Create a new branch from specified base branch"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CreateBranchInput
 
     enforcement_event = "create_branch"
@@ -144,7 +144,6 @@ class CreateBranchTool(ICoreTool[CreateBranchInput, CreateBranchOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         schema = self.args_model.model_json_schema()
         schema["properties"]["branch_type"]["enum"] = list(self.manager.git_config.branch_types)
         schema["properties"]["name"]["pattern"] = self.manager.git_config.branch_name_pattern
@@ -192,7 +191,7 @@ class GitStatusTool(ICoreTool[GitStatusInput, GitStatusOutput]):
         return "Check current git status"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitStatusInput
 
     def __init__(
@@ -212,7 +211,6 @@ class GitStatusTool(ICoreTool[GitStatusInput, GitStatusOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -295,7 +293,7 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
         return "Commit changes with workflow phase scope (e.g., test(P_TDD_SP_RED): message)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitCommitInput
 
     enforcement_event: str | None = "git_add_or_commit"
@@ -318,7 +316,6 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         schema = self.args_model.model_json_schema()
         schema["properties"]["commit_type"]["enum"] = list(self.manager.git_config.commit_types)
         return schema
@@ -475,7 +472,7 @@ class GitRestoreTool(ICoreTool[GitRestoreInput, GitRestoreOutput]):
         return "Restore files to a git ref (discard local changes)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitRestoreInput
 
     def __init__(
@@ -495,7 +492,6 @@ class GitRestoreTool(ICoreTool[GitRestoreInput, GitRestoreOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitRestoreInput, context: NoteContext) -> GitRestoreOutput:
@@ -532,7 +528,7 @@ class GitCheckoutTool(ICoreTool[GitCheckoutInput, GitCheckoutOutput]):
         return "Switch to an existing branch"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitCheckoutInput
 
     def __init__(
@@ -554,7 +550,6 @@ class GitCheckoutTool(ICoreTool[GitCheckoutInput, GitCheckoutOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitCheckoutInput, context: NoteContext) -> GitCheckoutOutput:
@@ -613,7 +608,7 @@ class GitPushTool(ICoreTool[GitPushInput, GitPushOutput]):
         return "Push current branch to origin remote"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitPushInput
 
     def __init__(
@@ -633,7 +628,6 @@ class GitPushTool(ICoreTool[GitPushInput, GitPushOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitPushInput, context: NoteContext) -> GitPushOutput:
@@ -670,7 +664,7 @@ class GitMergeTool(ICoreTool[GitMergeInput, GitMergeOutput]):
         return "Merge a branch into the current branch"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitMergeInput
 
     def __init__(
@@ -690,7 +684,6 @@ class GitMergeTool(ICoreTool[GitMergeInput, GitMergeOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitMergeInput, context: NoteContext) -> GitMergeOutput:
@@ -728,7 +721,7 @@ class GitDeleteBranchTool(ICoreTool[GitDeleteBranchInput, GitDeleteBranchOutput]
         return "Delete a git branch (cannot delete protected branches)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitDeleteBranchInput
 
     def __init__(
@@ -748,7 +741,6 @@ class GitDeleteBranchTool(ICoreTool[GitDeleteBranchInput, GitDeleteBranchOutput]
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -795,7 +787,7 @@ class GitStashTool(ICoreTool[GitStashInput, GitStashOutput]):
         return "Stash the changes in a dirty working directory (git stash)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitStashInput
 
     def __init__(
@@ -815,7 +807,6 @@ class GitStashTool(ICoreTool[GitStashInput, GitStashOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: GitStashInput, context: NoteContext) -> GitStashOutput:
@@ -862,7 +853,7 @@ class GetParentBranchTool(ICoreTool[GetParentBranchInput, GetParentBranchOutput]
         return "Detect parent branch for a branch (via PhaseStateEngine state)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GetParentBranchInput
 
     def __init__(
@@ -882,7 +873,6 @@ class GetParentBranchTool(ICoreTool[GetParentBranchInput, GetParentBranchOutput]
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -935,7 +925,7 @@ class CheckMergeTool(ICoreTool[CheckMergeInput, CheckMergeOutput]):
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CheckMergeInput
 
     enforcement_event: str | None = None
@@ -947,7 +937,6 @@ class CheckMergeTool(ICoreTool[CheckMergeInput, CheckMergeOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: CheckMergeInput, context: NoteContext) -> CheckMergeOutput:

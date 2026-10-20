@@ -42,7 +42,7 @@ class ListLabelsTool(ICoreTool[ListLabelsInput, ListLabelsOutput]):
         return "List all labels in the repository"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ListLabelsInput
 
     def __init__(self, manager: GitHubManager, label_config: LabelConfig) -> None:
@@ -51,7 +51,6 @@ class ListLabelsTool(ICoreTool[ListLabelsInput, ListLabelsOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: ListLabelsInput, context: NoteContext) -> ListLabelsOutput:
@@ -105,7 +104,7 @@ class CreateLabelTool(ICoreTool[CreateLabelInput, CreateLabelOutput]):
         return "Create a new label in the repository"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return CreateLabelInput
 
     def __init__(
@@ -120,7 +119,6 @@ class CreateLabelTool(ICoreTool[CreateLabelInput, CreateLabelOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: CreateLabelInput, context: NoteContext) -> CreateLabelOutput:
@@ -180,7 +178,7 @@ class DeleteLabelTool(ICoreTool[DeleteLabelInput, DeleteLabelOutput]):
         return "Delete a label from the repository"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return DeleteLabelInput
 
     def __init__(self, manager: GitHubManager, label_config: LabelConfig) -> None:
@@ -189,7 +187,6 @@ class DeleteLabelTool(ICoreTool[DeleteLabelInput, DeleteLabelOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: DeleteLabelInput, context: NoteContext) -> DeleteLabelOutput:
@@ -222,7 +219,7 @@ class RemoveLabelsTool(ICoreTool[RemoveLabelsInput, LabelOperationOutput]):
         return "Remove labels from an issue or PR"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return RemoveLabelsInput
 
     def __init__(self, manager: GitHubManager, label_config: LabelConfig) -> None:
@@ -231,7 +228,6 @@ class RemoveLabelsTool(ICoreTool[RemoveLabelsInput, LabelOperationOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(
@@ -272,7 +268,7 @@ class AddLabelsTool(ICoreTool[AddLabelsInput, LabelOperationOutput]):
         return "Add labels to an issue or PR"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return AddLabelsInput
 
     def __init__(
@@ -287,7 +283,6 @@ class AddLabelsTool(ICoreTool[AddLabelsInput, LabelOperationOutput]):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: AddLabelsInput, context: NoteContext) -> LabelOperationOutput:

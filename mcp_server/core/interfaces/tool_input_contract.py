@@ -16,7 +16,7 @@ from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 type JsonObject = dict[str, JsonValue]
-TInput_co = TypeVar("TInput_co", bound=BaseModel | None, covariant=True)
+TInput_co = TypeVar("TInput_co", bound=BaseModel, covariant=True)
 
 
 class IToolInputContract(Protocol[TInput_co]):

@@ -65,7 +65,7 @@ class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
         return "Fetch updates from a remote"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitFetchInput
 
     def __init__(self, manager: GitManager) -> None:
@@ -113,7 +113,5 @@ class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
             )
 
 
-def _input_schema(model: type[BaseModel] | None) -> dict[str, Any]:
-    if model is None:
-        return {}
+def _input_schema(model: type[BaseModel]) -> dict[str, Any]:
     return model.model_json_schema()

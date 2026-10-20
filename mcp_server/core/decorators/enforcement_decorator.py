@@ -53,7 +53,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput | EnforcementErrorOutput]):
         return self._inner_tool.description
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return self._inner_tool.args_model
 
     @property

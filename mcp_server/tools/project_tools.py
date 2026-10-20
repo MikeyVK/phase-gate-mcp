@@ -82,7 +82,7 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return InitializeProjectInput
 
     def __init__(
@@ -102,8 +102,6 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model is None:
-            return {}
         schema = resolve_schema_refs(self.args_model.model_json_schema())
         if self._contracts_config is not None:
             schema["properties"]["workflow_name"]["enum"] = list(
@@ -204,13 +202,11 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
         return "Get project phases and complete stored planning deliverables for an issue"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GetProjectPlanInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model is None:
-            return {}
         return resolve_schema_refs(self.args_model.model_json_schema())
 
     def __init__(self, manager: IProjectPlanReader) -> None:

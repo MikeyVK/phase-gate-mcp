@@ -37,7 +37,7 @@ class ITool(Protocol, Generic[TOutput_co]):
         ...
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         """Args model of the tool."""
         ...
 

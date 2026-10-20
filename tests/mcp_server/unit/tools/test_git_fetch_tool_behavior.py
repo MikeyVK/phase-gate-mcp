@@ -1,7 +1,7 @@
 # pyright: reportPrivateUsage=false
 """Behavior tests for GitFetchTool.
 
-Also covers input schema helpers for 100% module coverage.
+Also verifies the public input schema and argument defaults.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, unittest.mock, mcp_server.tools.git_fetch_tool]
@@ -13,30 +13,19 @@ import pytest
 
 from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.git_fetch_tool import GitFetchInput, GitFetchTool, _input_schema
-
-
-def test_git_fetch_input_schema_helper_handles_none() -> None:
-    """_input_schema(None) returns an empty schema."""
-
-    assert _input_schema(None) == {}
-
-
-def test_git_fetch_input_schema_helper_returns_model_schema() -> None:
-    """_input_schema(model) returns a JSON schema dict."""
-
-    schema = _input_schema(GitFetchInput)
-    assert isinstance(schema, dict)
-    assert "properties" in schema
+from mcp_server.tools.git_fetch_tool import GitFetchInput, GitFetchTool
 
 
 def test_git_fetch_tool_input_schema_property() -> None:
-    """Tool.input_schema delegates to _input_schema(args_model)."""
+    """Expose the concrete argument model and its remote-operation defaults."""
 
     tool = GitFetchTool(manager=Mock())
     schema = tool.input_schema
     assert isinstance(schema, dict)
-    assert "properties" in schema
+    assert tool.args_model is GitFetchInput
+    assert schema["properties"]["remote"]["default"] == "origin"
+    assert schema["properties"]["prune"]["default"] is False
+    assert schema["additionalProperties"] is False
 
 
 @pytest.mark.asyncio

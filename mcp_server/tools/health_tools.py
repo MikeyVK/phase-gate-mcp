@@ -46,12 +46,11 @@ class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
         return "Check server health status"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return HealthCheckInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
         return self.args_model.model_json_schema()
 
     async def execute(self, params: HealthCheckInput, context: NoteContext) -> HealthCheckOutput:

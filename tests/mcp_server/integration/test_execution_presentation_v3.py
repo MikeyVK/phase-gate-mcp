@@ -86,15 +86,21 @@ class CollectionProjection(BaseModel):
     detail: Row | str
 
 
+class EmptyInput(BaseModel):
+    """Admit the empty object used by no-argument tools."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+
+
 class ProjectionCore:
     name = "projection"
     description = "Return a typed projection"
-    args_model = None
+    args_model: type[EmptyInput] = EmptyInput
 
     def __init__(self, operation: Projection) -> None:
         self.operation = operation
 
-    async def execute(self, params: BaseModel, context: NoteContext) -> Projection:
+    async def execute(self, params: EmptyInput, context: NoteContext) -> Projection:
         del params, context
         return self.operation
 

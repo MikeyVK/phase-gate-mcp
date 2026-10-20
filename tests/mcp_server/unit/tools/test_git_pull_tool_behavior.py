@@ -1,7 +1,7 @@
 # pyright: reportPrivateUsage=false
 """Behavior tests for GitPullTool.
 
-Also covers input schema helpers for 100% module coverage.
+Also verifies the public input schema and argument defaults.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, unittest.mock, mcp_server.tools.git_pull_tool]
@@ -15,30 +15,19 @@ from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool, _input_schema
-
-
-def test_git_pull_input_schema_helper_handles_none() -> None:
-    """_input_schema(None) returns an empty schema."""
-
-    assert _input_schema(None) == {}
-
-
-def test_git_pull_input_schema_helper_returns_model_schema() -> None:
-    """_input_schema(model) returns a JSON schema dict."""
-
-    schema = _input_schema(GitPullInput)
-    assert isinstance(schema, dict)
-    assert "properties" in schema
+from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool
 
 
 def test_git_pull_tool_input_schema_property() -> None:
-    """Tool.input_schema delegates to _input_schema(args_model)."""
+    """Expose the concrete argument model and its remote-operation defaults."""
 
     tool = GitPullTool(manager=Mock())
     schema = tool.input_schema
     assert isinstance(schema, dict)
-    assert "properties" in schema
+    assert tool.args_model is GitPullInput
+    assert schema["properties"]["remote"]["default"] == "origin"
+    assert schema["properties"]["rebase"]["default"] is False
+    assert schema["additionalProperties"] is False
 
 
 @pytest.mark.asyncio

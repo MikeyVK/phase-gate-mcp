@@ -275,7 +275,7 @@ def _resolve_generic_output_models(tool_type: type[Any]) -> tuple[type[BaseModel
             if not isinstance(origin, type) or origin is object:
                 continue
             parameters = getattr(origin, "__parameters__", ())
-            child_bindings = dict(zip(parameters, arguments, strict=False))
+            child_bindings: dict[object, object] = dict(zip(parameters, arguments, strict=False))
             visit(origin, child_bindings)
 
     visit(tool_type, {})

@@ -68,7 +68,7 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         return "Pull updates from a remote"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return GitPullInput
 
     def __init__(
@@ -145,7 +145,5 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
         )
 
 
-def _input_schema(model: type[BaseModel] | None) -> dict[str, Any]:
-    if model is None:
-        return {}
+def _input_schema(model: type[BaseModel]) -> dict[str, Any]:
     return model.model_json_schema()

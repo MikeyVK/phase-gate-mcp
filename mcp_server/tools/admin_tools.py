@@ -100,7 +100,7 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
         return "Restart MCP server to reload code changes"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return RestartServerInput
 
     def __init__(self, server_root: Path) -> None:
@@ -114,8 +114,6 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
     @property
     def input_schema(self) -> dict[str, Any]:
         """Return the input schema for the tool."""
-        if self.args_model is None:
-            return {}
         return self.args_model.model_json_schema()
 
     async def execute(

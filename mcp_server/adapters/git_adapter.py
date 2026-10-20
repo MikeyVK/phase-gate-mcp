@@ -215,10 +215,10 @@ class GitAdapter:
         logger = core_logging.get_logger("git_adapter")
 
         if base == "HEAD":
-            base_ref = self.repo.head.commit
-            resolved_base = f"HEAD ({base_ref.hexsha[:7]})"
+            base_ref = self.repo.head.commit.hexsha
+            resolved_base = f"HEAD ({base_ref[:7]})"
         else:
-            base_ref = base  # type: ignore[assignment]
+            base_ref = base
             resolved_base = base
 
         logger.debug(

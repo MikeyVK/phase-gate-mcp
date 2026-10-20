@@ -72,7 +72,7 @@ class MockSimpleTool(ICoreTool[SimpleInput, ToolResult]):
         return "Mock simple tool"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[SimpleInput]:
         return SimpleInput
 
     async def execute(self, params: SimpleInput, context: NoteContext) -> ToolResult:  # noqa: ARG002

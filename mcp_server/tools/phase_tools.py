@@ -134,19 +134,12 @@ class _BaseTransitionTool[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInpu
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model:
-            from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
+        from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
 
-            schema = resolve_schema_refs(self.args_model.model_json_schema())
-            if self._workphases_config is not None:
-                schema["properties"]["to_phase"]["enum"] = list(
-                    self._workphases_config.phases.keys()
-                )
-            return schema
-        return {
-            "type": "object",
-            "properties": {},
-        }
+        schema = resolve_schema_refs(self.args_model.model_json_schema())
+        if self._workphases_config is not None:
+            schema["properties"]["to_phase"]["enum"] = list(self._workphases_config.phases.keys())
+        return schema
 
     def _create_project_manager(self) -> ProjectManager:
         """Return the injected ProjectManager."""
@@ -178,7 +171,7 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
         return "Transition branch to next phase (strict sequential)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return TransitionPhaseInput
 
     async def execute(
@@ -268,7 +261,7 @@ class ForcePhaseTransitionTool(
         return "Force non-sequential phase transition (skip/jump with reason)"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ForcePhaseTransitionInput
 
     async def execute(

@@ -108,7 +108,7 @@ class SafeEditTool(ICoreTool[SafeEditInput, EditOperationOutput]):
         return "Apply one validated edit to an existing file; final text uses LF line endings."
 
     @property
-    def args_model(self) -> type[SafeEditInput] | None:
+    def args_model(self) -> type[SafeEditInput]:
         return self._input_model
 
     @property

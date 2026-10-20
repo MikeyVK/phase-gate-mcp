@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams, TextContent
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.core.exceptions import ConfigError
@@ -61,6 +61,19 @@ TRANSITION_ADVISORY_NOTE = (
 
 
 pytestmark = pytest.mark.usefixtures("git_workspace")
+
+
+class EmptyInput(BaseModel):
+    """Admit empty tool arguments through the real validation pipeline."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+
+
+class CallLoggingInput(BaseModel):
+    """Preserve the logged argument payload while admitting a concrete model."""
+
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    a: int
 
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
@@ -253,7 +266,7 @@ class TestServerToolRegistration:
     ) -> None:
         """call_tool handler should log correlation id and duration."""
 
-        class DummyTool(ICoreTool[BaseModel, ToolResult]):
+        class DummyTool(ICoreTool[CallLoggingInput, ToolResult]):
             """Dummy tool for testing server call_tool logging."""
 
             @property
@@ -265,10 +278,10 @@ class TestServerToolRegistration:
                 return "Dummy tool"
 
             @property
-            def args_model(self) -> type[BaseModel] | None:
-                return None
+            def args_model(self) -> type[CallLoggingInput]:
+                return CallLoggingInput
 
-            async def execute(self, params: BaseModel | None, context: NoteContext) -> ToolResult:
+            async def execute(self, params: CallLoggingInput, context: NoteContext) -> ToolResult:
                 del params, context
                 return ToolResult.text("ok")
 
@@ -727,11 +740,9 @@ class TestServerToolRegistration:
 @pytest.mark.asyncio
 async def test_handle_call_tool_cache_error_intercept() -> None:
     """Retain complete inline operation data when cache publication fails."""
-    from pydantic import BaseModel  # noqa: PLC0415
-
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
 
-    class DummyTool(ICoreTool[BaseModel, ToolResult]):
+    class DummyTool(ICoreTool[EmptyInput, ToolResult]):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -741,10 +752,10 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
             return "Dummy Tool"
 
         @property
-        def args_model(self) -> type[BaseModel] | None:
-            return None
+        def args_model(self) -> type[EmptyInput]:
+            return EmptyInput
 
-        async def execute(self, params: BaseModel, context: NoteContext) -> ToolResult:
+        async def execute(self, params: EmptyInput, context: NoteContext) -> ToolResult:
             return ToolResult.text("success")
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:

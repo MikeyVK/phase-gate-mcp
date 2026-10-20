@@ -80,7 +80,7 @@ class RunTestsTool(ICoreTool[TestSelectionRequest, RunTestsOutput]):
         return "Run selected tests and report their factual native outcomes."
 
     @property
-    def args_model(self) -> type[TestSelectionRequest] | None:
+    def args_model(self) -> type[TestSelectionRequest]:
         return self._input_model
 
     @property

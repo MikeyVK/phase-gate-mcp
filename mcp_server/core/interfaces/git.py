@@ -24,7 +24,7 @@ class BranchBasisUnavailableError(ExecutionError):
         message: str,
     ) -> None:
         super().__init__(message)
-        self.reason = reason
+        self.reason: Literal["parent_unavailable", "merge_base_unavailable"] = reason
         self.message = message
 
 

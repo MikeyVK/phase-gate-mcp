@@ -56,12 +56,7 @@ class _BaseIToolTransition[TInput: BaseModel, TOutput: BaseModel](ICoreTool[TInp
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        if self.args_model:
-            return resolve_schema_refs(self.args_model.model_json_schema())
-        return {
-            "type": "object",
-            "properties": {},
-        }
+        return resolve_schema_refs(self.args_model.model_json_schema())
 
     def _create_project_manager(self) -> ProjectManager:
         """Return the injected ProjectManager."""
@@ -148,7 +143,7 @@ class TransitionCycleTool(_BaseIToolTransition[TransitionCycleInput, CycleTransi
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return TransitionCycleInput
 
     async def execute(
@@ -268,7 +263,7 @@ class ForceCycleTransitionTool(
         )
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[BaseModel]:
         return ForceCycleTransitionInput
 
     async def execute(
