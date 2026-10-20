@@ -238,7 +238,12 @@ async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
         payload = response.structured_content
         assert payload is not None
         assert schema is not None
-        Draft202012Validator(schema).validate(payload)
+        validator = Draft202012Validator(schema)
+        validator.validate(payload)
+        if not cache_available:
+            missing_marker = dict(payload)
+            missing_marker.pop("processing_error")
+            assert not validator.is_valid(missing_marker)
     assert payload["success"] is operation_success
     assert payload["data"] == (
         {"delivery": "resource", "uri": "pgmcp://cache/runs/" + "b" * 32, "size_chars": 123}
