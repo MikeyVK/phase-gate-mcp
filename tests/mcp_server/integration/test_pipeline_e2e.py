@@ -127,7 +127,9 @@ class TestPipelineE2E:
         server = isolated_server
         server.response_cache_manager = cache_manager
         config_data = _presentation_config()
-        server.presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
+        server.presenter = make_response_presenter(
+            PresentationConfig.model_validate(config_data), mode="resource"
+        )
         server.tools = [decorated_tool]
 
         # Act - Trigger tool call request
@@ -152,10 +154,8 @@ class TestPipelineE2E:
         cached_dto = cache_manager.get(run_id, DummyOutput)
         assert cached_dto is not None
         assert cached_dto.result == "Value: 42"
-        assert response.structured_content is not None
-        envelope = PublicToolResponse.model_validate_json(json.dumps(response.structured_content))
-        assert isinstance(envelope.data, InlineOperation)
-        assert envelope.data.operation == cached_dto.model_dump(mode="json", by_alias=True)
+        assert response.structured_content is None
+        assert cached_dto == DummyOutput(success=True, result="Value: 42")
 
     @pytest.mark.asyncio
     async def test_pipeline_cache_fallback(
@@ -226,7 +226,9 @@ class TestPipelineE2E:
         server.response_cache_manager = cache_manager
         config_data = _presentation_config()
         config_data["global"]["failures"] = {"dirty_workdir": "Branch {branch} is dirty!"}
-        server.presenter = make_response_presenter(PresentationConfig.model_validate(config_data))
+        server.presenter = make_response_presenter(
+            PresentationConfig.model_validate(config_data), mode="resource"
+        )
         server.tools = [decorated_tool]
 
         req = CallToolRequest(

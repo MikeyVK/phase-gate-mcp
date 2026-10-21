@@ -10,9 +10,18 @@ from __future__ import annotations
 import string
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    model_validator,
+)
 
 from mcp_server.config.ordering import ConfigId, OrderedConfigEntry, ordered_mapping
+from mcp_server.config.settings import ResponseMode
 from mcp_server.core.exceptions import ConfigError
 
 
@@ -124,33 +133,6 @@ class EnumCasePresentationConfig(OrderedConfigEntry):
     cases: dict[str, str] = Field(min_length=1)
 
 
-class ResponseProfileConfig(BaseModel):
-    """Shared capabilities and optional per-profile presentation budgets."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    presentation_channel: Literal["text", "structured", "both"]
-    data_channel: Literal["text", "structured"]
-    data_delivery: Literal["inline", "resource"]
-    max_text_response_bytes: int | None = Field(default=None, gt=0)
-    max_cache_failure_detail_bytes: int | None = Field(default=None, gt=0)
-    cache_read_budget_chars: int | None = Field(default=None, gt=0)
-
-
-class ResolvedResponseProfile(BaseModel):
-    """Immutable process-local capabilities with every budget resolved."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    profile_id: ConfigId
-    presentation_channel: Literal["text", "structured", "both"]
-    data_channel: Literal["text", "structured"]
-    data_delivery: Literal["inline", "resource"]
-    max_text_response_bytes: int = Field(gt=0)
-    max_cache_failure_detail_bytes: int = Field(gt=0)
-    cache_read_budget_chars: int = Field(gt=0)
-
-
 class GlobalPresentationConfig(BaseModel):
     """Global presentation settings."""
 
@@ -162,34 +144,58 @@ class GlobalPresentationConfig(BaseModel):
     formatting: FormattingConfig
     notes: GlobalNotesConfig = Field(default_factory=GlobalNotesConfig)
     failures: dict[str, str] = Field(default_factory=dict)
-    default_response_profile: ConfigId
+    response_mode: ResponseMode
     max_text_response_bytes: int = Field(default=8_000, gt=0)
     max_cache_failure_detail_bytes: int = Field(default=8_000, gt=0)
     cache_read_budget_chars: int = Field(default=6_000, gt=0)
 
     @model_validator(mode="after")
-    def validate_cache_reference_template(self) -> GlobalPresentationConfig:
-        """Reject malformed cache references independently of positive budgets."""
-        for key in (
+    def validate_delivery_templates(self) -> GlobalPresentationConfig:
+        """Validate delivery wording and its conservative fixed notice reserve."""
+        required = (
+            "uri_reference",
+            "structured_reference",
+            "attachment_reference",
+            "delivery_failure_outcome",
             "cache_publication_failed",
             "operation_serialization_failed",
             "diagnostic_excerpt_label",
             "diagnostic_unavailable",
-        ):
-            if not self.next_instruction_texts.get(key):
-                raise ValueError(f"next_instruction_texts.{key} must be nonempty")
-        uri_template = "\n".join(
-            text
-            for key in ("uri_reference", "pagination_reference")
-            if (text := self.next_instruction_texts.get(key, ""))
+            "response_processing_failed",
+            "recovery_cache_unavailable",
+            "processing_diagnostic_truncated",
         )
-        try:
-            uri_template.format(run_id="x" * 32)
-        except (KeyError, ValueError) as exc:
+        rendered: list[str] = []
+        for key in (*required, "pagination_reference"):
+            text = self.next_instruction_texts.get(key, "")
+            if key in required and not text.strip():
+                raise ValueError(f"next_instruction_texts.{key} must be nonempty")
+            allowed = (
+                frozenset({"run_id"})
+                if key == "uri_reference"
+                else frozenset({"success"})
+                if key in {"response_processing_failed", "delivery_failure_outcome"}
+                else frozenset[str]()
+            )
+            _validate_placeholders(text, allowed=allowed, field_name=key)
+            for _, placeholder, format_spec, conversion in string.Formatter().parse(text):
+                if placeholder is not None and (
+                    placeholder not in allowed or format_spec or conversion
+                ):
+                    raise ValueError(f"{key} contains an unsupported scalar placeholder")
+            rendered.append(text.format(run_id="x" * 32, success=False))
+        rendered.extend(
+            (
+                self.formatting.truncation_notice,
+                self.formatting.cache_unavailable_truncation_notice,
+            )
+        )
+        reserve = sum(len(text.encode("utf-8")) for text in rendered)
+        reserve += 2 * (len(rendered) + 1) + len("\n```")
+        if self.max_text_response_bytes < reserve:
             raise ValueError(
-                f"next_instruction_texts.uri_reference has invalid placeholder syntax: {exc}"
-            ) from exc
-
+                f"max_text_response_bytes cannot contain configured notices (minimum {reserve})"
+            )
         return self
 
     @model_validator(mode="after")
@@ -256,41 +262,13 @@ class PresentationConfig(BaseModel):
 
     version: Literal["2.0.0"] = Field("2.0.0", description="Config schema version")
     global_settings: GlobalPresentationConfig = Field(alias="global")
-    response_profiles: dict[ConfigId, ResponseProfileConfig] = Field(min_length=1)
     tools: dict[str, ToolPresentationConfig] = Field(default_factory=dict)
 
-    @model_validator(mode="after")
-    def validate_default_response_profile(self) -> PresentationConfig:
-        """Require the configured default to identify a shared profile."""
-        if self.global_settings.default_response_profile not in self.response_profiles:
-            raise ValueError("default_response_profile must identify a configured response profile")
-        return self
-
-    def resolve_response_profile(self, selector: str | None = None) -> ResolvedResponseProfile:
-        """Resolve one selection without changing shared definitions or defaults."""
-        profile_id = self.global_settings.default_response_profile if selector is None else selector
-        if profile_id not in self.response_profiles:
-            raise ConfigError(f"Unknown response profile: {profile_id!r}")
-        profile = self.response_profiles[profile_id]
-        global_settings = self.global_settings
-        return ResolvedResponseProfile(
-            profile_id=profile_id,
-            presentation_channel=profile.presentation_channel,
-            data_channel=profile.data_channel,
-            data_delivery=profile.data_delivery,
-            max_text_response_bytes=(
-                global_settings.max_text_response_bytes
-                if profile.max_text_response_bytes is None
-                else profile.max_text_response_bytes
-            ),
-            max_cache_failure_detail_bytes=(
-                global_settings.max_cache_failure_detail_bytes
-                if profile.max_cache_failure_detail_bytes is None
-                else profile.max_cache_failure_detail_bytes
-            ),
-            cache_read_budget_chars=(
-                global_settings.cache_read_budget_chars
-                if profile.cache_read_budget_chars is None
-                else profile.cache_read_budget_chars
-            ),
-        )
+    def resolve_response_mode(self, selector: ResponseMode | None = None) -> ResponseMode:
+        """Resolve one local choice without changing shared configuration."""
+        if selector is None:
+            return self.global_settings.response_mode
+        try:
+            return TypeAdapter(ResponseMode).validate_python(selector)
+        except ValidationError as exc:
+            raise ConfigError(f"Invalid response mode: {selector}") from exc

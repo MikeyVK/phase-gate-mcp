@@ -19,6 +19,7 @@ from pydantic import ValidationError
 
 from mcp_server.schemas.error_outputs import ExecutionErrorOutput
 from mcp_server.schemas.presentation_output import (
+    AttachmentReference,
     InlineOperation,
     PresentationResource,
     PresentedOutput,
@@ -97,13 +98,17 @@ def test_public_envelope_preserves_data_and_direct_attachments(delivery: str) ->
         success=False,
         presentation="Required instruction",
         data=data,
-        attachments=(resource,),
+        attachments=(AttachmentReference(uri=resource.uri, mime_type=resource.mime_type),),
         delivery_error=None,
     )
     payload = json.loads(response.model_dump_json())
     assert payload["success"] is False
     assert payload["presentation"] == response.presentation
-    assert payload["attachments"] == [resource.model_dump()]
+    assert payload["attachments"] == [{"uri": resource.uri, "mime_type": resource.mime_type}]
+    output = PresentedOutput(
+        text=response.presentation, structured_content=payload, resources=(resource,)
+    )
+    assert output.resources[0].content == resource.content
     if delivery == "inline":
         assert payload["data"]["operation"] == operation
     else:

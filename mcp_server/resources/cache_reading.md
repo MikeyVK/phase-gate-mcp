@@ -1,23 +1,32 @@
 # Reading cached tool results
 
-Use the selected response profile's complete inline operation when the client exposes
-it: `data.operation` in the structured envelope, or the designated JSON text segment.
-Schema attachments are separate, complete `uri`, `mime_type`, `content` objects in that
-selected data channel; the operation cache does not contain them.
+Every normal response starts with bounded readable inline text. In structured mode,
+use `data.operation` in the structured envelope when the client exposes it;
+`presentation` contains the full rendered explanation before inline clipping.
+Resource mode instead ends the inline text with a real
+`pgmcp://cache/runs/<run_id>` locator for the complete canonical operation.
+No complete JSON envelope is appended to text.
 
-A successful publication also supplies `pgmcp://cache/runs/<run_id>` for the complete
-canonical JSON operation. Resource profiles use that reference as their operation-data
-route. Failed publication supplies no usable URI: inspect the explicit delivery facts
-and configured warning rather than trying to read a fabricated resource. Normal inline
-data can remain complete despite a cache failure. An emergency diagnostic excerpt is
-labelled potentially incomplete and is not a complete JSON result.
+Available schema attachments are always separate native MCP embedded-resource content
+blocks with URI, MIME type and full text. Structured `attachments` contains only
+URI/MIME references to those blocks, without another body copy. A `schema://` identity
+does not by itself promise a registered reader. The operation cache does not store
+independent attachments or rendered presentation; existing schema fields owned by an
+operation remain part of it.
 
-Only results exceeding the resolved profile's `cache_read_budget_chars` (inherited from
-`global.cache_read_budget_chars`, default 6000 Unicode codepoints) also link here.
-This is a conservative read-advice threshold, not a client truncation guarantee.
-Profile selection is process-local; use the same connected server that produced a
-reference. Cache state is transient. For durable evidence, record the exact invocation,
-scope and observed outcome; a run ID or cache URI alone is insufficient.
+A failed publication supplies no usable URI. Inspect the warning/outcome instead of
+trying a fabricated resource. Structured operation data can remain complete after a
+cache storage failure. A prior operation serialization failure is not retried.
+Diagnostic excerpts are labelled potentially incomplete; they are not complete JSON
+results. Compact processing recovery can reference an already-successful publication
+without executing or publishing the operation again.
+
+A published operation exceeding `global.cache_read_budget_chars` (default 6000 Unicode
+codepoints) also gets paging advice when its URI is offered. This is a read-advice
+threshold, not a client truncation guarantee. Mode selection and cache state are
+process-local: use the same connected server that produced the reference.
+For durable evidence, record the exact invocation, scope and observed outcome;
+a run ID or cache URI alone is insufficient.
 
 ## Bounded reads
 

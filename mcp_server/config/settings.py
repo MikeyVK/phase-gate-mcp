@@ -17,11 +17,13 @@ overrides for server and logging configuration.
 import os
 from importlib import metadata
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 # Third-party
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, computed_field
+
+type ResponseMode = Literal["structured", "resource"]
 
 
 class LogSettings(BaseModel):
@@ -40,7 +42,7 @@ class ServerSettings(BaseModel):
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
     template_root: str | None = None
-    response_profile: str | None = Field(default=None, min_length=1)
+    response_mode: ResponseMode | None = None
     server_root_dir: str = ".pgmcp"
     logs_dir: str = "logs"
     bypass_version_check: bool = Field(
@@ -116,8 +118,8 @@ class Settings(BaseModel):
             server_data["config_root"] = env_config_root
         if env_template_root := os.environ.get("PGMCP_TEMPLATE_ROOT"):
             server_data["template_root"] = env_template_root
-        if (env_response_profile := os.environ.get("PGMCP_RESPONSE_PROFILE")) is not None:
-            server_data["response_profile"] = env_response_profile
+        if (env_response_mode := os.environ.get("PGMCP_RESPONSE_MODE")) is not None:
+            server_data["response_mode"] = env_response_mode
         if env_bypass_version_check := os.environ.get("PGMCP_BYPASS_VERSION_CHECK"):
             server_data["bypass_version_check"] = env_bypass_version_check.lower() in (
                 "true",

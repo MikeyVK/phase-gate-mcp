@@ -10,7 +10,7 @@ import re
 from enum import StrEnum
 from pathlib import Path
 from typing import Literal, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from mcp.types import (
@@ -116,7 +116,6 @@ def _presenter(config: PresentationConfig, tool: ToolPresentationConfig) -> Text
         config=PresentationConfig.model_validate(
             {
                 "global": config.global_settings,
-                "response_profiles": config.response_profiles,
                 "tools": {"projection": tool},
             }
         )
@@ -170,7 +169,7 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
         tools=[wrapped],
         resources=[CachedResponseResource(cache)],
         publisher=cache,
-        presenter=make_response_presenter(config, text_presenter=presenter),
+        presenter=make_response_presenter(config, text_presenter=presenter, mode="resource"),
     )
     async with connected_mcp_client(server) as client:
         response = await client.call_tool("projection", {})
@@ -313,32 +312,11 @@ async def test_shipped_cache_delivery_preserves_operation(
         )
         text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
         assert len(text.encode("utf-8")) <= config.global_settings.max_text_response_bytes
-        match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
-        guide_uri = CacheReadGuideResource.uri_pattern
+        assert re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text) is None
+        assert text.endswith(config.global_settings.next_instruction_texts["structured_reference"])
         if cache_failure:
-            assert match is None
-            assert guide_uri not in text
-            notices = config.global_settings.next_instruction_texts
-            assert notices["cache_publication_failed"] in text
-            assert response.structured_content["delivery_error"] is None
-            return
-
-        assert match is not None
-        readback = await client.read_resource(match.group())
-        assert isinstance(readback, ReadResourceResult)
-        content = readback.contents[0]
-        assert isinstance(content, TextResourceContents)
-        assert Projection.model_validate_json(content.text) == operation
-        paged = len(content.text) > config.global_settings.cache_read_budget_chars
-        assert (guide_uri in text) is paged
-        assert len(text) < 200
-        if paged:
-            guide = await client.read_resource(guide_uri)
-            assert isinstance(guide, ReadResourceResult)
-            assert isinstance(guide.contents[0], TextResourceContents)
-            assert guide.contents[0].text == (
-                Path(__file__).parents[3] / "mcp_server/resources/cache_reading.md"
-            ).read_text(encoding="utf-8")
+            assert config.global_settings.next_instruction_texts["cache_publication_failed"] in text
+        assert response.structured_content["delivery_error"] is None
 
 
 @pytest.mark.parametrize("names", [(), ("missing",), ("projection", "projection")])
@@ -365,7 +343,6 @@ def test_alignment_rejects_unsupported_diagnostic_placeholders(
     policy = PresentationConfig.model_validate(
         {
             "global": global_settings,
-            "response_profiles": config.response_profiles,
             "tools": {"projection": {"template_success": "{title}"}},
         }
     )
@@ -377,26 +354,13 @@ def test_alignment_rejects_unsupported_diagnostic_placeholders(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("presentation_channel", "data_channel", "delivery"),
-    [
-        ("both", "structured", "inline"),
-        ("both", "structured", "resource"),
-        ("text", "text", "inline"),
-        ("structured", "text", "inline"),
-        ("structured", "structured", "inline"),
-        ("text", "structured", "resource"),
-        ("both", "text", "resource"),
-    ],
-)
-async def test_selected_profiles_preserve_guidance_and_complete_output(
+@pytest.mark.parametrize("mode", ["structured", "resource"])
+async def test_selected_modes_preserve_guidance_and_complete_output(
     config: PresentationConfig,
     tmp_path: Path,
-    presentation_channel: str,
-    data_channel: str,
-    delivery: str,
+    mode: str,
 ) -> None:
-    """Real SDK consumers receive exactly the selected projections and full data."""
+    """The SDK exposes one data route and a finally bounded text projection."""
     import json  # noqa: PLC0415
     from uuid import uuid4  # noqa: PLC0415
 
@@ -404,20 +368,15 @@ async def test_selected_profiles_preserve_guidance_and_complete_output(
 
     raw = config.model_dump(by_alias=True)
     marker = "required-guidance-" + uuid4().hex
+    raw["global"]["response_mode"] = mode
     raw["global"]["next_instruction_texts"]["probe_instruction"] = marker
-    raw["global"]["default_response_profile"] = "probe"
-    raw["response_profiles"]["probe"] = {
-        "presentation_channel": presentation_channel,
-        "data_channel": data_channel,
-        "data_delivery": delivery,
-    }
     raw["tools"] = {
         "projection": {"template_success": "{title}", "next_instructions": ["probe_instruction"]}
     }
     policy = PresentationConfig.model_validate(raw)
     operation = Projection(
         success=True,
-        title="Operation summary",
+        title="Operation summary " * 700,
         count=0,
         labels=None,
         status=None,
@@ -439,41 +398,43 @@ async def test_selected_profiles_preserve_guidance_and_complete_output(
         listing = await client.list_tools()
         response = await client.call_tool("projection", {})
         text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
-        structured = response.structured_content
-        has_structured = (
-            presentation_channel in {"both", "structured"} or data_channel == "structured"
-        )
-        assert (listing.tools[0].output_schema is not None) is has_structured
-        assert (structured is not None) is has_structured
-        if has_structured:
+        assert len(text.encode("utf-8")) <= policy.global_settings.max_text_response_bytes
+        assert policy.global_settings.formatting.truncation_notice in text
+        assert (listing.tools[0].output_schema is not None) is (mode == "structured")
+        assert (response.structured_content is not None) is (mode == "structured")
+        assert operation.detail not in text
+        if mode == "structured":
+            structured = response.structured_content
             assert structured is not None
+            assert marker in structured["presentation"]
+            assert operation.title in structured["presentation"]
+            assert structured["data"]["operation"] == operation.model_dump(
+                mode="json", by_alias=True
+            )
             schema = listing.tools[0].output_schema
             assert schema is not None
             Draft202012Validator(schema).validate(structured)
-            assert (structured["presentation"] is not None) is (presentation_channel != "text")
-            if structured["presentation"] is not None:
-                assert marker in structured["presentation"]
-        if presentation_channel in {"text", "both"}:
-            assert marker in text
+            assert text.endswith(
+                policy.global_settings.next_instruction_texts["structured_reference"]
+            )
         else:
-            assert marker not in text
-        if data_channel == "text":
-            bundle = json.loads(text.split("```json\n", 1)[1].split("\n```", 1)[0])
-            assert structured is None or structured["data"] is None
-        else:
-            assert structured is not None
-            bundle = structured
-            assert isinstance(operation.detail, str)
-            assert operation.detail not in text
-        selected_data = bundle["data"]
-        if delivery == "inline":
-            assert selected_data["operation"] == operation.model_dump(mode="json", by_alias=True)
-        else:
-            recovered = await client.read_resource(selected_data["uri"])
-            content = recovered.contents[0]
-            assert isinstance(content, TextResourceContents)
-            assert Projection.model_validate_json(content.text) == operation
-        assert not response.is_error
+            match = re.search(r"pgmcp://cache/runs/[a-f0-9]{32}", text)
+            assert match is not None
+            parts: list[str] = []
+            offset = 0
+            while True:
+                recovered = await client.read_resource(
+                    f"{match.group()}?offset={offset}&limit=6000"
+                )
+                content = recovered.contents[0]
+                assert isinstance(content, TextResourceContents)
+                chunk = json.loads(content.text)
+                parts.append(chunk["text"])
+                if chunk["next_offset"] is None:
+                    break
+                offset = chunk["next_offset"]
+            assert Projection.model_validate_json("".join(parts)) == operation
+    assert not response.is_error
 
 
 @pytest.mark.asyncio
@@ -484,6 +445,7 @@ async def test_selected_profiles_preserve_guidance_and_complete_output(
         ("inline", "inline", True),
         ("both", "inline", False),
         ("cache", "resource", True),
+        ("storage", "inline", True),
     ],
 )
 async def test_independent_serialization_failure_retains_actual_outcome(
@@ -506,30 +468,36 @@ async def test_independent_serialization_failure_retains_actual_outcome(
         rows=(),
         detail="native detail",
     )
-    expected = operation.model_dump(mode="json", by_alias=True)
     calls = {"cache": 0, "inline": 0}
     original_dump = Projection.model_dump
-    if failure_stage in {"cache", "both"}:
+    original_json = Projection.model_dump_json
 
-        def fail_cache(*_args: object, **_kwargs: object) -> str:
-            calls["cache"] += 1
+    def tracked_cache(self: Projection, **kwargs: object) -> str:
+        calls["cache"] += 1
+        if failure_stage in {"cache", "both"}:
             raise RuntimeError("canonical serializer failed") from OSError("native canonical cause")
+        return original_json(self, **kwargs)
 
-        monkeypatch.setattr(Projection, "model_dump_json", fail_cache)
-    if failure_stage in {"inline", "both"}:
+    monkeypatch.setattr(Projection, "model_dump_json", tracked_cache)
+    if failure_stage == "storage":
+        failing_uuid = MagicMock()
+        failing_uuid.uuid4.side_effect = OSError("cache storage unavailable")
+        monkeypatch.setattr("mcp_server.state.response_cache.uuid", failing_uuid)
 
-        def fail_inline(self: Projection, **kwargs: object) -> dict[str, object]:
-            if kwargs.get("mode") == "json":
-                calls["inline"] += 1
+    def tracked_inline(self: Projection, **kwargs: object) -> dict[str, object]:
+        if kwargs.get("mode") == "json":
+            calls["inline"] += 1
+            if failure_stage in {"inline", "both"}:
                 raise RuntimeError("inline serializer failed") from OSError("native inline cause")
-            return original_dump(self, **kwargs)
+        return original_dump(self, **kwargs)
 
-        monkeypatch.setattr(Projection, "model_dump", fail_inline)
+    monkeypatch.setattr(Projection, "model_dump", tracked_inline)
     raw = config.model_dump(by_alias=True)
+    raw["global"]["response_mode"] = "structured" if delivery == "inline" else "resource"
     raw["tools"] = {"projection": {"template_success": "{title}", "template_failure": "{title}"}}
     policy = PresentationConfig.model_validate(raw)
-    profile = "structured_inline" if delivery == "inline" else "structured_resource"
     cache = ResponseCacheManager()
+    renderer = TextPresenter(config=policy)
     wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
         ProjectionCore(operation)
     )
@@ -538,29 +506,47 @@ async def test_independent_serialization_failure_retains_actual_outcome(
         tools=[wrapped],
         resources=[CachedResponseResource(cache)],
         publisher=cache,
-        presenter=make_response_presenter(policy, profile_id=profile),
+        presenter=make_response_presenter(policy, text_presenter=renderer),
     )
-    async with connected_mcp_client(server) as client:
-        listing = await client.list_tools()
-        response = await client.call_tool("projection", {})
+    with patch.object(renderer, "present_text", wraps=renderer.present_text) as render:
+        async with connected_mcp_client(server) as client:
+            listing = await client.list_tools()
+            response = await client.call_tool("projection", {})
     assert response.is_error is (not operation_success)
-    body = response.structured_content
-    assert body is not None and body["success"] is operation_success
-    assert operation.title in body["presentation"]
-    schema = listing.tools[0].output_schema
-    assert schema is not None
-    Draft202012Validator(schema).validate(body)
-    if failure_stage == "cache" and delivery == "inline":
-        assert body["data"]["operation"] == expected
+    text = "\n".join(item.text for item in response.content if isinstance(item, TextContent))
+    assert len(text.encode("utf-8")) <= policy.global_settings.max_text_response_bytes
+    if failure_stage == "storage":
+        body = response.structured_content
+        assert body is not None
+        assert body["data"]["operation"] == original_dump(operation, mode="json", by_alias=True)
         assert body["delivery_error"] is None
+        assert calls == {"cache": 1, "inline": 1}
+        render.assert_called_once()
+        assert text.endswith(policy.global_settings.next_instruction_texts["structured_reference"])
+        return
+    assert policy.global_settings.next_instruction_texts["structured_reference"] not in text
+    if failure_stage in {"cache", "both"}:
+        assert calls == {"cache": 1, "inline": 0}
+        render.assert_not_called()
+        assert "canonical serializer failed" in text
+        assert "native canonical cause" in text
+        assert "pgmcp://cache/runs/" not in text
     else:
+        assert calls["inline"] == 1
+        render.assert_called_once()
+        assert "inline serializer failed" in text
+    if delivery == "inline":
+        body = response.structured_content
+        assert body is not None and body["success"] is operation_success
         assert body["data"] is None
         assert body["delivery_error"]["code"] == "operation_serialization_failed"
-    if failure_stage in {"cache", "both"}:
-        assert calls["cache"] == 1
-        assert "pgmcp://cache/runs/" not in body["presentation"]
-    if failure_stage in {"inline", "both"}:
-        assert calls["inline"] == 1
+        assert body["processing_error"] is None
+        schema = listing.tools[0].output_schema
+        assert schema is not None
+        Draft202012Validator(schema).validate(body)
+    else:
+        assert response.structured_content is None
+        assert listing.tools[0].output_schema is None
 
 
 @pytest.mark.asyncio
@@ -604,7 +590,7 @@ async def test_planning_update_note_preserves_independent_readback(
         resources=[],
         presenter=make_response_presenter(
             make_config_loader(configured_workspace).load_presentation_config(),
-            profile_id="structured_inline",
+            mode="structured",
         ),
     )
     async with connected_mcp_client(server) as client:

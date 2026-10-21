@@ -1,4 +1,4 @@
-"""Protected composition, truthful delivery and direct complete attachments."""
+"""Shared composition, bounded delivery and separate complete attachments."""
 
 import json
 from enum import StrEnum
@@ -11,7 +11,7 @@ from mcp_server.core.operation_notes import Note
 from mcp_server.core.tool_execution import SchemaAttachment, WholeToolSchemaIdentity
 from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.cache_publication import CachePublication
-from mcp_server.schemas.error_outputs import ValidationErrorOutput
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput, ValidationErrorOutput
 from tests.mcp_server.test_support import make_config_loader, make_response_presenter
 
 
@@ -34,7 +34,7 @@ class _Output(BaseModel):
 
 
 def _config(
-    *, max_bytes: int = 800, template_success: str = "SCALAR {name}: {labels}"
+    *, max_bytes: int = 2000, template_success: str = "SCALAR {name}: {labels}"
 ) -> PresentationConfig:
     source = make_config_loader().load_presentation_config().model_dump(by_alias=True)
     source["global"]["max_text_response_bytes"] = max_bytes
@@ -96,45 +96,40 @@ class TestTextPresenterComposition:
         assert "- ITEM first: a, b, … 1 more" in rendered.details
         assert data.model_dump() == before
 
-    def test_oversized_required_core_survives_budget_and_keeps_cache_reference(self) -> None:
-        config = _config(max_bytes=180, template_success="SCALAR {payload}")
-        data = _output(payload="🚀" * 300)
-        output = make_response_presenter(config).present(
+    def test_final_bound_keeps_resource_footer_and_valid_unicode(self) -> None:
+        config = _config(max_bytes=2000, template_success="SCALAR {payload}")
+        data = _output(payload="🚀" * 1000)
+        output = make_response_presenter(config, mode="resource").present(
             "synthetic_tool",
             data,
             cache_pub=CachePublication(run_id="b" * 32),
         )
         assert output.text is not None
-        assert data.payload in output.text
-        assert len(output.text.encode("utf-8")) > 180
+        assert data.payload not in output.text
+        assert len(output.text.encode("utf-8")) <= 2000
         assert output.text.count("pgmcp://cache/runs/" + "b" * 32) == 1
         assert "[TRUNCATED]" in output.text
         assert "�" not in output.text
 
-    def test_resource_failure_bounds_diagnostic_details_and_keeps_required_guidance(self) -> None:
-        config = _config(max_bytes=100)
-        presenter = make_response_presenter(config, profile_id="structured_resource")
-        output = presenter.present(
+    def test_resource_failure_bounds_native_diagnosis_and_reports_outcome(self) -> None:
+        config = _config(max_bytes=2000)
+        native = "diagnostic-value " * 200
+        output = make_response_presenter(config, mode="resource").present(
             "synthetic_tool",
-            _output(payload="diagnostic-value " * 200),
+            _output(),
             notes=[Note(key="composition_note", params={"value": "required-recovery"})],
-            cache_pub=CachePublication(success=False, error_code="write_failed"),
+            cache_pub=CachePublication(
+                success=False,
+                error_code="write_failed",
+                diagnostic=ExecutionErrorOutput(error_message=native),
+            ),
         )
-        assert output.text is not None and output.structured_content is not None
+        assert output.text is not None and output.structured_content is None
         assert "INSTRUCTION sample" in output.text and "required-recovery" in output.text
         assert "pgmcp://cache/runs/" not in output.text
-        assert output.structured_content["success"] is True
-        assert output.structured_content["data"] is None
-        assert output.structured_content["delivery_error"] == {
-            "code": "cache_publication_failed",
-            "details_truncated": True,
-        }
-        label = config.global_settings.next_instruction_texts["diagnostic_excerpt_label"]
-        if label in output.text:
-            assert (
-                len(output.text.split(label, 1)[1].encode("utf-8")) + len(label.encode("utf-8"))
-                <= 96
-            )
+        assert "diagnostic-value" in output.text and native not in output.text
+        assert "success=True" in output.text
+        assert len(output.text.encode("utf-8")) <= 2000
 
     def test_failure_rendering_does_not_require_absent_success_collections(self) -> None:
         rendered = TextPresenter(config=_config()).present_text(
@@ -144,7 +139,7 @@ class TestTextPresenterComposition:
         assert rendered.details == ""
 
     def test_direct_schema_and_operation_remain_complete_outside_presentation_budget(self) -> None:
-        source = _config(max_bytes=1).model_dump(by_alias=True)
+        source = _config(max_bytes=2000).model_dump(by_alias=True)
         source["tools"]["synthetic_tool"] = {
             "template_success": "UNUSED",
             "template_failure": "{error_message}",
@@ -157,7 +152,7 @@ class TestTextPresenterComposition:
         frozen = freeze_json(schema)
         assert isinstance(frozen, FrozenJsonObject)
         data = ValidationErrorOutput(
-            error_message="x" * 1000, validation_errors=[], input_schema=schema
+            error_message="x" * 5000, validation_errors=[], input_schema=schema
         )
         output = make_response_presenter(config).present(
             "synthetic_tool",
@@ -171,10 +166,13 @@ class TestTextPresenterComposition:
         )
         assert output.text is not None
         assert data.error_message is not None
-        assert data.error_message in output.text
+        assert data.error_message not in output.text
+        assert len(output.text.encode("utf-8")) <= 2000
         payload = output.structured_content
         assert payload is not None
         attachments = payload["attachments"]
         assert isinstance(attachments, list) and isinstance(attachments[0], dict)
-        assert json.loads(str(attachments[0]["content"])) == schema
+        assert attachments[0] == {"uri": "schema://validation", "mime_type": "application/json"}
+        assert json.loads(output.resources[0].content) == schema
+        assert payload["data"]["operation"]["input_schema"] == schema
         assert data.input_schema == schema

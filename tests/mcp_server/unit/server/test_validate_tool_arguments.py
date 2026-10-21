@@ -9,7 +9,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from mcp.types import CallToolRequest, CallToolRequestParams
+from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource, TextResourceContents
 from pydantic import BaseModel, Field
 
 from mcp_server.core.interfaces.icore_tool import ICoreTool
@@ -168,7 +168,9 @@ class TestValidateToolArgumentsFailurePath:
             f"Expected application/json, got {resource.mime_type}"
         )
 
-        schema = json.loads(resource.content)
+        block = next(item.resource for item in result.content if isinstance(item, EmbeddedResource))
+        assert isinstance(block, TextResourceContents)
+        schema = json.loads(block.text)
         assert isinstance(schema, dict), "schema must be a dict"
         assert "properties" in schema, "schema must have properties"
         assert "required_field" in schema["properties"], "required_field must be in properties"
@@ -254,7 +256,9 @@ class TestValidateToolArgumentsFailurePath:
         envelope = PublicToolResponse.model_validate_json(json.dumps(result.structured_content))
         resource_items = [a for a in envelope.attachments if a.uri == "schema://validation"]
         assert resource_items
-        schema = json.loads(resource_items[0].content)
+        block = next(item.resource for item in result.content if isinstance(item, EmbeddedResource))
+        assert isinstance(block, TextResourceContents)
+        schema = json.loads(block.text)
 
         assert "$defs" not in schema, "Schema must not contain $defs (Cycle 1 guarantee)"
         assert "$ref" not in json.dumps(schema), "Schema must not contain $ref anywhere"

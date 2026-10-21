@@ -84,42 +84,49 @@ See [the authoritative startup policy and migration note](../reference/server-co
 A policy change requires full proxy/child relaunch; child-only `restart_server` retains
 the old proxy deadline. Allow outer client startup margin (recommended 75 seconds).
 
-### Choose the response profile
+### Choose the response mode
 
-Presentation configuration version 2.0.0 defines named response profiles in
+Presentation configuration version 2.0.0 requires `global.response_mode` in
 `defaults/presentation.yaml`; root `presentation.yaml` holds workspace differences.
-Reconcile the new configuration when adopting this contract; `--upgrade` remains
-template-only and does not migrate owner configuration.
+Reconcile configuration when adopting this clean contract change; `--upgrade`
+remains template-only and does not migrate owner configuration.
 
-The default `structured_inline` sends the short explanation and mandatory instructions
-in both text and structured presentation, with complete operation data and attachments
-in `structuredContent`. `structured_resource` uses both presentation channels and a
-successful operation-cache reference plus direct attachments. `text_inline` supplies
-presentation and complete data through text only.
+| Mode | Agent-visible result |
+| --- | --- |
+| `structured` (shipped default) | Bounded inline text plus complete operation and full rendered guidance in `structuredContent`; separate native resource attachments. |
+| `resource` | Bounded inline text with a successful operation-cache URI; separate native resource attachments, no normal `structuredContent` or `outputSchema`. |
 
-Choose `PGMCP_RESPONSE_PROFILE=<profile-id>` in each individual MCP launch environment
-when the configured default is unsuitable. Omission selects the workspace default.
-An explicit environment selector overrides launcher `server.response_profile`; empty
-or unknown selectors fail startup admission. Definitions are shared, selection is
-process-local: different hosts/chats can use one workspace without editing shared
-configuration to switch an active profile. The server does not detect the host/model.
+Inline text ends with the appropriate full-data notice and, when applicable, a
+generic notice for the supplied attachments. Attachment metadata in structured output
+refers to the separate blocks without duplicating their bodies. A `schema://` attachment
+identity does not by itself register a resource reader. Full operation JSON is never
+appended to inline text.
 
-The independent controls are `presentation_channel` (text/structured/both),
-`data_channel` (text/structured) and `data_delivery` (inline/resource). See the
-[public envelope and budget contract](../reference/presentation_architecture.md).
-Short-presentation budgets protect required guidance and may be exceeded by that core;
-they do not bound complete inline data or attachments.
+Choose `PGMCP_RESPONSE_MODE=structured` or `PGMCP_RESPONSE_MODE=resource` in each
+individual MCP launch environment when the shared default is unsuitable. An explicit
+environment selector overrides launcher `server.response_mode`; omission uses
+`global.response_mode`. Empty/unknown values reject healthy startup. There are no
+old-selector aliases or independent presentation/data/channel profiles.
 
-After a profile change, relaunch the selected server connection and refresh
-`tools/list`; its output schema follows the selected profile. Verify that the actual
-agent receives the complete short response and phase instructions, and demonstrate
-complete operation/attachment readback through its selected channel or resource route.
-Server publication alone does not prove downstream model input. Choose a profile
-matching the host's real access rather than assuming support from a version label.
+Selection is process-local: different hosts/chats can share one workspace without
+editing shared configuration to switch another connection. No host/model detection
+is performed. Shared budgets remain in presentation configuration; normal inline text
+is finally limited to `max_text_response_bytes` (default 8000 UTF-8 bytes), including
+footer, shortening notice and fence closure. A too-small configured reserve is rejected.
+Structured presentation/data, attachments and total response size are outside that cap.
+Instruction shortening is explicitly signalled; the resource cache stores operation
+facts and does not add a copy of rendered instructions.
 
-Startup recovery is a fixed exception: complete recovery text in both channels and
-full inline diagnosis, without loading rejected profile/configuration or using cache.
-Confirm healthy admission after repair/restart before judging the normal profile.
+After a mode change, relaunch the selected connection and refresh `tools/list`;
+normal output-schema presence follows the selected mode. Verify that the actual agent
+receives the explanation and phase instructions and can retrieve the complete operation
+and separate attachments through the selected route. Server publication alone does not
+prove downstream model input. For resource mode use the same server connection's cache
+reader and [paging guide](../../mcp_server/resources/cache_reading.md).
+
+Startup recovery remains a fixed exception: complete recovery text in both channels
+and full inline diagnosis, without rejected configuration, mode selection or cache.
+Confirm healthy admission after repair/restart before judging normal mode behavior.
 
 ### Choose the workspace quality policy
 
@@ -263,6 +270,3 @@ Return to the [authoritative checklist's verification levels](agentic-bootstrap.
 | `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
 | `GITHUB_TOKEN` | Credential when GitHub paths are selected | Deliver through the host environment/secret facility; never track its value |
 | Launch environment | Selected Python environment | Install the chosen package and only intended native prerequisites; verify interpreter/package identity |
-
-
-
