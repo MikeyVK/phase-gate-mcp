@@ -233,7 +233,7 @@ Inspect the chosen environment's actual MCP registration and launch support. The
 agent and owner select the supported configuration file or settings surface,
 scope and format; this guide does not prescribe host directories or ship
 host-specific launcher/rule/skill variants. The uniform source is the installed
-`<server-root>/agents/` map, deployed through the checklist's section 3.2.
+`<server-root>/agents/` map, deployed through the checklist's section 3.3 after source reconciliation.
 
 Configure one connection with the exact environment interpreter, module
 `mcp_server.core.proxy`, working directory and explicit workspace root. Deliver

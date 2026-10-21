@@ -4,7 +4,7 @@
 
 **Status:** External installation trial accepted; final release pending
 
-**Version:** 0.7
+**Version:** 0.8
 
 **Last Updated:** 2026-10-21
 
@@ -364,11 +364,20 @@ was repeated: **1 passed in48.88s**, native exit0. Its package/installed-byte pr
 does not itself prove manual source reconciliation; that remains an explicit
 installation-agent responsibility subject to independent document review.
 
+Independent QA closed the P2 and gave GO for Documentation → Ready on exact
+pushed f4d81bf4f1364d2d9cbbd60e43e1fbaba84e9a8c (review turn
+01a15f4d-d498-7602-9a25-65f1b0f6c5ad). Its sole P3 was stale prose numbering
+for deployment. The checklist's fresh/role rows, root README and setup reference
+now distinguish source reconciliation3.2 from host deployment3.3. This is a
+numbering correction with unchanged link targets, source/layout and behavior;
+the 48.88s package evidence precedes those prose-only corrections, while
+per-edit link validation passes. Final exact-artifact verification remains open.
+
 ## Evidence locations and remaining issue work
 
 Local candidate directory .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/ contains build.log, install.log, init.log, catalog.log and artifact-evidence.json with exact values. This committed report carries the material invocations/outcomes and identities independently of transient cache IDs.
 
-The bounded archive/release procedure, 4.0.0 metadata, release notes and migration instructions are complete for review. Workflow Validation has an independent exit GO with the native failure and owner-accepted #533 risk retained. Documentation/Ready review, integrated release source, final wheel/sdist verification, owner exact-artifact acceptance and publication approval, merge/publication and final issue closure remain open. Nothing here authorizes tags/uploads.
+The bounded archive/release procedure, 4.0.0 metadata, release notes and migration instructions are complete for review. Workflow Validation has an independent exit GO with the native failure and owner-accepted #533 risk retained. Documentation has an independent exit GO. Ready/PR review, integrated release source, final wheel/sdist verification, owner exact-artifact acceptance and publication approval, merge/publication and final issue closure remain open. Nothing here authorizes tags/uploads.
 
 ## Related Documents
 
@@ -387,3 +396,4 @@ The bounded archive/release procedure, 4.0.0 metadata, release notes and migrati
 | 0.5 | 2026-10-21 | @imp implementer | Record owner-approved archival, source-content comparison, unchanged historical link failures and the workspace-only publication sequence. |
 | 0.6 | 2026-10-21 | @imp documenter | Reconcile 4.0.0 release/migration sources, independent Validation disposition, remaining release steps and focused installed-document parity. |
 | 0.7 | 2026-10-21 | @imp documenter | Close QA's upgrade-source P2 through exact-package discovery and owner-preserving effective-root reconciliation before host activation; record focused rechecks. |
+| 0.8 | 2026-10-21 | @imp documenter | Record independent Documentation GO and correct the remaining deployment section numbers without claiming new artifact acceptance. |

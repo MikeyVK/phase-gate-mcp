@@ -109,8 +109,8 @@ Do not turn an unknown value into a copied acknowledgement or a guessed default.
    actual copied configuration; initialization does not make arbitrary assets
    portable or erase their existing acknowledgements.
 3. Complete the workspace decisions below, configure the connection using section
-   3.1 and deploy the shared instructions using section 3.2. Then activate and
-   demonstrate the three verification levels in section 4.
+   3.1, reconcile current sources through section 3.2 and deploy through section
+   3.3. Then activate and demonstrate the three verification levels in section 4.
 4. If the repository or usable Git history needed by a selected workflow is
    absent, mark that path blocked and return it to the owner/coordination.
    Do not automatically run Git initialization, create a main commit or push.
@@ -155,7 +155,7 @@ published packages do not acquire that layout through this checklist.
 | Git and identity | For branch/commit/workflow use: repository, usable branch/HEAD, author identity and any signing policy. Review remote/base/branch conventions in `git.yaml`; coordination supplies the explicit parent when registering a **real** issue branch. No default main writes. |
 | Workflow and enforcement | Review workflows, phase/tool admission and branch-lock/PR-status rules against intended use. Preserve protection; explain dependencies such as GitHub lookups even for a local edit. Change policy only through an explicit workspace decision, never as an automatic bypass. |
 | Roots, artifacts and labels | Choose production/test/artifact roots, configured branch target sets, workflow scopes/types/priorities and relevant label declarations. Derive them from this workspace, not the pgmcp repository's example names. Review GitHub labels/permissions separately if remote workflows are selected. |
-| Host and roles | Inspect actual registration and instruction/role/command capabilities. Deploy the shared agents protocol and the coordination, implementation and independent-QA roles through section 3.2. Agree the supported locations/formats with the owner; preserve content, permissions and existing settings. Keep machine paths and credentials outside tracked configuration. |
+| Host and roles | Inspect actual registration and instruction/role/command capabilities. Deploy the shared agents protocol and the coordination, implementation and independent-QA roles through section 3.3 after source reconciliation. Agree the supported locations/formats with the owner; preserve content, permissions and existing settings. Keep machine paths and credentials outside tracked configuration. |
 | Checks/tests/fixes | Review selected bindings, adapter IDs/capabilities, native pins/executables, source and test discovery, arguments, exclusions and intended native policy. Verify the real launch environment's `PATH` resolves the intended adapter programs; the server's absolute interpreter path does not select them. Confirm branch `configured_targets` separately from native configuration; tests/fixes retain their own selection contracts. |
 | Response delivery | Choose `structured` or `resource` per connection from actual agent-visible capabilities. Demonstrate inline instructions, complete operation data through the chosen route and separate attachments. Neither healthy startup nor client UI visibility proves the agent received those fields. See the [shared mode guidance](README.md#choose-the-response-mode). |
 | Quality acknowledgement | Set each applicable `configuration_choice` only after that review. Missing/null may permit health but refuse selected quality use. An acknowledgement does not prove native configuration was consumed. Follow the [quality policy reference](README.md#choose-the-workspace-quality-policy). |

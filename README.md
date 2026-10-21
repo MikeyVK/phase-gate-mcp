@@ -115,7 +115,7 @@ python -m mcp_server.core.proxy
 - **`pgmcp --init`**: Initialize a new server root from packaged assets. It refuses when the configured server root already exists; it does not merge into or replace an existing root.
 - **`pgmcp --upgrade`**: Reconcile the managed template suite with a staged candidate. A missing trustworthy baseline may return `checkpoint_required` with exit code `2`; review the local suite, then explicitly accept it with `--accept-template-baseline` or replace the managed suite with `--force-template-upgrade`. Force replacement creates a backup. Neither action overwrites the external configuration root. See the **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)**.
 
-For MCP connection configuration and deployment, follow the same [setup checklist](docs/setup/agentic-bootstrap.md), sections 3.1–3.2. The agent selects the active environment's supported registry, files and formats while preserving the shared content.
+For MCP connection configuration and deployment, follow the same [setup checklist](docs/setup/agentic-bootstrap.md), sections 3.1–3.3. The agent selects the active environment's supported registry, files and formats while preserving the shared content.
 
 ---
 
