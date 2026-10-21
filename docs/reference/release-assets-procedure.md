@@ -3,7 +3,7 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.7
+**Version:** 1.8
 
 **Last Updated:** 2026-10-21
 
@@ -165,7 +165,7 @@ retain the assembled assets so it can rebuild a complete wheel.
 Reconstruct notes from the selected Git revision, merged PRs and durable issue
 evidence. The mixed `docs/development/` inventory is not a release-change source
 of truth. State breaking contracts, native prerequisites, owner migration and known
-limits. For v3, record the final source SHA; prepare notes and artifact identities
+limits. For each new release, record the final source SHA; prepare notes and artifact identities
 for review before requesting publication approval.
 
 ### 3.2 Reconstruct the historical releases
@@ -215,6 +215,59 @@ Creating tags, publishing releases, uploading assets and external rollout requir
 separate human approval of the reviewed notes, exact source SHAs, artifact hashes
 and concrete execution procedure. Select the intended latest release explicitly
 when publishing historical versions.
+
+### 3.4 Publish the next release from integrated source
+
+Use this procedure only in the PGMCP source workspace. It is deliberately absent
+from the release manifest and installed assets; target workspaces follow
+`docs/setup/agentic-bootstrap.md`. The historical reconstruction in section 3.2
+is not a step to repeat for a new release.
+
+1. Agree the exact next version with the owner. Reconstruct release notes from
+   the previous release tag through the intended merged changes, not from issue
+   folder membership. Include breaking contracts, supported Python/native
+   prerequisites, configuration migration and remaining limits. Align the package
+   metadata, release manifest version and notes; no automatic version inference.
+2. Finish the bounded issue changes and independent Implementation review before
+   entering Validation. Run the active workflow's required configured tests and
+   checks there, retain failed/incomplete evidence, and obtain the subsequent
+   phase verdicts. A documentation GO or an installation smoke test is not full
+   Validation. Any later candidate changes require a review of affected evidence
+   before merge and publication.
+3. Complete the issue PR and Coordinate its merge into main. When publication is
+   still outstanding, the PR must reference the release issue without an
+   automatic closing directive. Keep that issue open until publication is
+   verified. A merge GO does not authorize a tag or release.
+4. Select the exact integrated source SHA after merge. Export that committed
+   source to a separate disposable build directory and run the existing
+   `scripts/build_package.py` there with the selected build environment. Do not
+   assemble into the active server's assets, install over its environment or copy
+   owner overrides. Record the source, interpreter, build/backend versions and
+   resolved dependencies. A wheel prepared before merge remains preliminary
+   until its relationship to the integrated source is established.
+5. Verify the actual wheel and sdist as required by section 3.3. Check manifest
+   assets, hidden files, bundled adapters, the complete generic `agents/` map
+   and absence of owner overrides, host examples and this procedure. Verify
+   isolated initialization/startup/catalog behavior and the relevant renewal
+   and owner-preservation outcomes. Reuse earlier evidence only where later
+   source or artifact changes have not invalidated it. Record filenames and
+   SHA-256 values for the files that will actually be offered for download.
+6. Present one compact acceptance dossier: exact integrated source and proposed
+   tag/version, artifact identities, release notes and migration instructions,
+   live observations, automated/independent QA evidence, limitations and the
+   concrete publication operation. Obtain the owner's explicit acceptance and
+   publication approval for that dossier. The accepted external trial of a
+   preliminary wheel does not approve a different final artifact.
+7. Only after that approval, create the reviewed tag at the accepted SHA and
+   publish the reviewed notes and exact accepted files to GitHub Releases.
+   Verify the remote tag target, release status, intended latest designation and
+   uploaded asset sizes/digests. Do not rebuild or substitute accepted files
+   silently; material candidate changes require renewed affected verification
+   and owner acceptance.
+8. Record actual publication and cleanup outcomes in the release issue, then
+   close it through Coordination. Preserve acceptance evidence, owner files and
+   recovery material. Repository archival and cleanup are separate from package
+   assembly; they do not authorize deleting ignored local environments or backups.
 
 ---
 
@@ -288,3 +341,4 @@ part of this procedure.
 | 1.5 | 2026-10-21 | @imp implementer | Exclude host-specific instruction/example bundles; use shared capability-based setup while leaving source examples and existing owner files untouched. |
 | 1.6 | 2026-10-21 | @imp implementer | Package the complete generic agents source and explicit setup documents; retain one deployment entry and exclude host launcher examples. |
 | 1.7 | 2026-10-21 | @imp implementer | Preserve README-relative navigation by installing root metadata beside docs; align the manifest example. |
+| 1.8 | 2026-10-21 | @imp implementer | Define the next-release sequence from independent Validation through integrated-source build, exact-artifact owner approval, publication verification and issue closure. |

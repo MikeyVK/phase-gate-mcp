@@ -128,8 +128,8 @@ Owner decision recorded on 2026-10-20:
 
 Read-only Git source inspection at cf6ccde6 and immediately before 98378e6e confirmed the final TextBudgetLimiter call, 8000-byte default, run-ID-based locator condition and 6000-character pagination-advice threshold. #523 records #462's closure without implementation.
 
-- [#523 historical decisions](<../issue523/research.md>)
-- [#524 cache/limiter contract](<../issue524/design.md>)
+- [#523 historical decisions](<../archive/issue523/research.md>)
+- [#524 cache/limiter contract](<../archive/issue524/design.md>)
 - [#456 original budget validation](<../archive/issue456/validation.md>)
 
 **Invocation:** git show cf6ccde6:mcp_server/presenters/text_presenter.py; git show cf6ccde6:mcp_server/presenters/text_budget_limiter.py; git show cf6ccde6:.pgmcp/config/defaults/presentation.yaml
@@ -140,7 +140,7 @@ Read-only Git source inspection at cf6ccde6 and immediately before 98378e6e conf
 
 The selected VS Code/Claude routes lost separate text when both text and structured content were present. Kilo/Pi/the tested Antigravity route received text and read resources. These observations do not establish a client that cannot process a text-only response but independently reads its cache. No demonstrated instruction-truncation harm was found.
 
-- [#529 measured routes and acceptance limits](<../issue529/research.md>)
+- [#529 measured routes and acceptance limits](<../archive/issue529/research.md>)
 
 ### Current ownership explains the bounded implementation surface
 

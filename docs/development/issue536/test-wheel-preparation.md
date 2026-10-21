@@ -4,7 +4,7 @@
 
 **Status:** External installation trial accepted; final release pending
 
-**Version:** 0.4
+**Version:** 0.5
 
 **Last Updated:** 2026-10-21
 
@@ -14,11 +14,11 @@ Identify the exact preliminary artifacts for an owner-led fresh installation on 
 
 ## Scope In
 
-Manifest asset selection, shared installation/deployment documentation, one complete generic agents map, source-only release procedure, two existing distribution/startup tests and exact candidate preparation.
+Manifest asset selection, shared installation/deployment documentation, one complete generic agents map, source-only release procedure, two existing distribution/startup tests, exact candidate preparation and the owner-approved archival of 19 closed issue directories.
 
 ## Scope Out
 
-Builder/runtime/loader changes, a new test suite, global cleanup, final release-version selection, remote installation changes performed by this producer, tags and final release publication. Full #536 Validation is not claimed.
+Builder/runtime/loader changes, a new test suite, dependency/cache/backup deletion, final release-version selection, remote installation changes performed by this producer, tags and final release publication. Full #536 Validation is not claimed.
 
 ## Summary
 
@@ -253,11 +253,54 @@ Markdown links on the four corrected documents and diff whitespace checks pass.
 No new test, runtime change, phase transition, compatibility alias or downloadable
 wheel replacement is part of these corrections.
 
+## Source-workspace archive and release procedure — 2026-10-21
+
+The owner approved archiving the 19 closed issue directories: #319, #500,
+#503–#508, #513, #517–#518, #520, #522–#524, #528–#530 and #537.
+The live GitHub open-issue inventory contains none of them. Controlled PowerShell
+`Move-Item -LiteralPath` operations moved them under `docs/development/archive/`
+after checking workspace containment, absent destinations and reparse points.
+All 67 files matched their pre-move SHA-256 identities before link correction.
+Only issue536 and the two existing maintenance guides remain outside the archive.
+
+Relative Markdown destinations were retargeted to preserve the original referenced
+paths. Comparison with HEAD for all 67 relocated files and the three referring
+documents found **70/70 exact matches after applying only the declared link
+replacements and normalizing line endings**. Historical descriptions, example
+commands and original evidence facts were not reconciled to today's code.
+The three referring documents are this issue's response-delivery research,
+the presentation architecture reference and the developer isolation guide.
+
+Before and after archival, `run_checks(scope="targets", targets=<the same 67
+documents at their old/new paths>, checks=["markdown_links"],
+timeout_seconds=300)` reported **1215 occurrences, 1011 successful, 201 excluded
+and the same three errors, native exit 1**. These are existing historical links:
+issue319/research to removed `mcp_server/core/policy_engine.py`;
+issue504/research to removed `tests/mcp_server/config/test_operation_policies.py`;
+issue529/validation to removed `choose-the-response-profile` setup anchor.
+No new broken destination was introduced; the archive check is not recorded as
+passing and no exclusion or gate policy was changed. The separate focused
+markdown_links call on the release procedure, this report, the issue536 research
+and the two referring active guides passed: **72 occurrences, 65 successful,
+7 configured exclusions, zero errors, native exit 0**. Source diff review and
+whitespace checks found no unrelated code/config/test changes in this slice.
+
+The workspace-only release procedure now defines version/notes preparation,
+phase-owned Validation, Coordination's merge, isolated build from the integrated
+source, exact wheel/sdist verification, owner acceptance/publication approval,
+remote verification and final issue closure. A release PR references #536 without
+closing it before publication. The next exact version, final artifacts and owner
+publication approval remain open; no tag, build or upload was performed here.
+
+Dependencies, caches, runtime/locks, config/state, local packages, old probe
+environments and backups remain intact. No runtime/builder/test change is part
+of this cleanup. The procedure remains excluded from the release manifest.
+
 ## Evidence locations and remaining issue work
 
 Local candidate directory .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/ contains build.log, install.log, init.log, catalog.log and artifact-evidence.json with exact values. This committed report carries the material invocations/outcomes and identities independently of transient cache IDs.
 
-The source-workspace housekeeping/release procedure completion, final release version/notes/source, full workflow Validation and independent subsequent phase reviews remain within #536. Owner acceptance of exact final artifacts and publication approval remain separate hard gates. Nothing here closes #536 or authorizes tags/uploads.
+The bounded source-workspace archival and release-procedure update are complete. Final release version/notes/source, full workflow Validation and independent subsequent phase reviews remain within #536. Owner acceptance of exact final artifacts and publication approval remain separate hard gates. Nothing here closes #536 or authorizes tags/uploads.
 
 ## Related Documents
 
@@ -273,3 +316,4 @@ The source-workspace housekeeping/release procedure completion, final release ve
 | 0.2 | 2026-10-21 | @imp implementer | Record owner-accepted external installation, actual agent operations, setup remedies and remaining limits without broadening release acceptance. |
 | 0.3 | 2026-10-21 | @imp implementer | Consolidate the complete generic agent source, one workspace-specific installation/deployment route and current package/init inventory proof. |
 | 0.4 | 2026-10-21 | @imp implementer | Record independent document review and owner-approved fixes to README placement and canonical lifecycle naming, with focused package verification. |
+| 0.5 | 2026-10-21 | @imp implementer | Record owner-approved archival, source-content comparison, unchanged historical link failures and the workspace-only publication sequence. |

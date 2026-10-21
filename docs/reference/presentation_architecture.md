@@ -219,12 +219,12 @@ apply_fixes runs selected fixes in request order and stops when work cannot cont
 - [Startup recovery presenter](../../mcp_server/presenters/startup_recovery_presenter.py)
 - [Cache resource](../../mcp_server/resources/cache.py)
 - [Known-outcome recovery and missing-marker SDK cases](../../tests/mcp_server/integration/test_tool_attachment_transport.py)
-- [Issue #528 validation](../development/issue528/validation.md)
+- [Issue #528 validation](../development/archive/issue528/validation.md)
 - [Mode/SDK/serializer behavior tests](../../tests/mcp_server/integration/test_execution_presentation_v3.py)
 - [Rendering composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
 - [Startup and instance-isolation tests](../../tests/mcp_server/integration/test_target_startup.py)
-- [Issue #529 historical validation](../development/issue529/validation.md)
-- [Issue #537 validation](../development/issue537/validation.md)
+- [Issue #529 historical validation](../development/archive/issue529/validation.md)
+- [Issue #537 validation](../development/archive/issue537/validation.md)
 
 ## Related Documentation
 
