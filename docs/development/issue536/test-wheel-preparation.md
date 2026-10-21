@@ -4,7 +4,7 @@
 
 **Status:** External installation trial accepted; final release pending
 
-**Version:** 0.6
+**Version:** 0.7
 
 **Last Updated:** 2026-10-21
 
@@ -335,6 +335,35 @@ suite/policies and complete generic role/procedure content. Existing native
 Validation and substantive instruction reviews remain applicable to those surfaces.
 No new tests, full-suite repeat, active deployment or release publication occurred.
 
+## Independent Documentation review and source-route correction
+
+Independent QA returned NOGO on e7e52132f53b0cbbf637e686c1af2d3315ca4ea4
+for one P2: a package upgrade makes the new checklist available but does not
+populate an existing root's new generic agents/docs sources. The remaining release
+notes, migration contracts and accepted #533 disposition had no blocking finding.
+
+The leading checklist v2.3 now makes exact-package asset discovery and explicit
+owner-preserving source reconciliation a prerequisite to host deployment.
+Its section3.2 maps current package agents/docs and applicable root documentation
+to the effective server root; section3.3 reads/deploys only after that verification.
+Fresh copied roots can record already-current sources; existing roots compare,
+preserve/back up owner additions and resolve conflicts before adoption. There is
+no whole-root mirror, implicit deletion, package mutation, new CLI or automatic
+upgrade mechanism. The upgrade guide links both steps in that order.
+
+Read-through covered fresh current roots, an existing root with missing generic
+sources, stale copied docs and customized files: the current package is the
+source, reconciliation precedes reading root-bound protocols/standards, and
+unresolved conflicts block affected deployment. This is procedural review, not
+a claim of a new live external upgrade or host-activation trial.
+
+The two corrected guides' native linkcheck passed: **39 occurrences, 35 successful,
+four existing exclusions, zero errors, native exit0**. After the shipped checklist
+bytes changed, the same existing installed-distribution invocation recorded above
+was repeated: **1 passed in48.88s**, native exit0. Its package/installed-byte proof
+does not itself prove manual source reconciliation; that remains an explicit
+installation-agent responsibility subject to independent document review.
+
 ## Evidence locations and remaining issue work
 
 Local candidate directory .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/ contains build.log, install.log, init.log, catalog.log and artifact-evidence.json with exact values. This committed report carries the material invocations/outcomes and identities independently of transient cache IDs.
@@ -357,3 +386,4 @@ The bounded archive/release procedure, 4.0.0 metadata, release notes and migrati
 | 0.4 | 2026-10-21 | @imp implementer | Record independent document review and owner-approved fixes to README placement and canonical lifecycle naming, with focused package verification. |
 | 0.5 | 2026-10-21 | @imp implementer | Record owner-approved archival, source-content comparison, unchanged historical link failures and the workspace-only publication sequence. |
 | 0.6 | 2026-10-21 | @imp documenter | Reconcile 4.0.0 release/migration sources, independent Validation disposition, remaining release steps and focused installed-document parity. |
+| 0.7 | 2026-10-21 | @imp documenter | Close QA's upgrade-source P2 through exact-package discovery and owner-preserving effective-root reconciliation before host activation; record focused rechecks. |

@@ -3,7 +3,7 @@
 # Agent-guided Workspace Setup and Upgrade
 
 **Status:** Active  
-**Version:** 2.2
+**Version:** 2.3
 
 **Last Updated:** 2026-10-21
 
@@ -52,8 +52,9 @@ A host-independent invocation is:
 > invent an issue or overwrite settings as a setup shortcut. Report each applicable
 > item as done, open, blocked or N/A with decisions, operation evidence and limitations.
 
-Use this checklist as the sole setup route. After initialization, its operational
-instruction source is `<server-root>/agents/agents.md`, with the three roles in
+Use this checklist as the sole setup route. After fresh initialization or the
+[explicit upgrade-source reconciliation](#32-reconcile-shared-sources), its current
+operational source is `<server-root>/agents/agents.md`, with the three roles in
 `agents/roles/` and named procedures in `agents/workflows/`. The agent investigates
 the environment's real MCP, instruction, role and command/skill mechanisms and
 agrees deployment with the owner. Change location, registration metadata or file
@@ -133,7 +134,11 @@ Do not turn an unknown value into a copied acknowledgement or a guessed default.
    replacement decision; it is not activation success. Follow the upgrade
    guide's acceptance, backup and external-root rules. Do not use `--init` on
    an existing root or overwrite custom templates to silence the outcome.
-5. Revisit the decision rows affected by the delta, their dependencies and the
+5. Reconcile the selected package's shared instruction/document sources through
+   [section 3.2](#32-reconcile-shared-sources) before reading/deploying the effective
+   root's agent map. Package installation and template renewal do not perform
+   this step on an existing root.
+6. Revisit the decision rows affected by the delta, their dependencies and the
    resulting representative operations. Retain unaffected evidence with its
    version/scope and reason for reuse; an upgrade is not an instruction to reset
    every setting or re-run every check.
@@ -184,9 +189,50 @@ config/template roots; choose external roots only deliberately and record them.
 If the host cannot express a necessary launch value, mark the connection blocked
 instead of falling back to ambient CWD or another workspace's server.
 
-### 3.2 Deploy the Shared Agents Map
+### 3.2 Reconcile Shared Sources
 
-Read `<server-root>/agents/agents.md` and all three role protocols before choosing
+Before host deployment, establish the current instruction/document source from
+the **exact selected package**. The wheel contains it under `mcp_server/assets/`;
+the selected installed distribution contains the same `assets/` directory.
+Locate it with that environment's interpreter, without starting MCP:
+
+```text
+<env-python> -c "from importlib.resources import files; print(files('mcp_server').joinpath('assets'))"
+```
+
+Record the selected package/version and asset location. Do not substitute this
+development repository or another environment. Installing a wheel updates package
+assets; template-only `--upgrade` does not copy shared sources into an existing
+server root. Fresh `--init` copies them only into a previously absent root.
+
+Stage and inspect the applicable package sources, then reconcile them to the
+effective server-root locations used by the shared protocol:
+
+| Selected package asset | Effective source before deployment |
+| --- | --- |
+| `assets/agents/` | `<server-root>/agents/`, retaining the complete general protocol, three roles and five named procedures together. |
+| `assets/docs/` | Applicable current guides, standards, manuals and references under `<server-root>/docs/`, preserving their relative layout and the sources referenced by the protocol. |
+| `assets/README.md`, `CHANGELOG.md`, `LICENSE` | Corresponding files beside `<server-root>/docs/` when supplied by the selected package. These are server-data files, not the workspace project's own root files. |
+
+For a fresh root whose copied sources already match the selected package, record
+that fact and avoid another copy. For an upgrade, compare package-owned paths with
+existing files, preserve owner additions and unrelated files, and make the intended
+changes explicit. Back up customized files before an authorized replacement;
+surface unresolved content/authority conflicts to the owner. Do not blindly mirror
+or delete an existing directory, modify installed package assets, or copy the whole
+asset root over populated config, state, templates or recovery material.
+
+Verify that the effective `agents/` map and its required `docs/` reading paths
+contain the current reviewed sources; record source → effective path and any
+owner reconciliation. Missing/currently conflicting sources block the affected
+deployment, rather than falling back to old copied instructions. This source
+reconciliation does not register host files, activate roles or refresh runtime
+configuration. Continue to host deployment only after it is complete.
+
+### 3.3 Deploy the Shared Agents Map
+
+After [source reconciliation](#32-reconcile-shared-sources), read the current
+`<server-root>/agents/agents.md` and all three role protocols before choosing
 host destinations. Inspect actual host documentation/capabilities for always-on
 instructions, separate role sessions and command/skill invocation. Do not infer
 registration from a familiar directory name or from copied files.
@@ -310,3 +356,4 @@ remains unverified or blocked. Hand real issue lifecycle work back to coordinati
 | 2.0 | 2026-10-17 | @imp documenter | Replace unsafe automatic bootstrap with the authoritative fresh/upgrade checklist, explicit invocation, owner decisions and separate readiness evidence. |
 | 2.1 | 2026-10-21 | @imp implementer | Apply external installation feedback through shared dependency, executable-resolution, capability-based instruction placement and response-delivery guidance. |
 | 2.2 | 2026-10-21 | @imp implementer | Make this the sole installation/deployment route; prefer workspace-bound setup and explicitly map complete shared protocols, roles and procedures into actual host capabilities. |
+| 2.3 | 2026-10-21 | @imp documenter | Close the upgrade-source handoff: locate exact package agents/docs, reconcile effective root sources with owner preservation, then deploy/activate through the host. |

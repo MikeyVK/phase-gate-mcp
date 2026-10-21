@@ -36,11 +36,13 @@ Before switching the active connection:
 2. Prepare a coherent 4.0.0 config basis and explicit workspace overrides as
    described below. Reconcile GitHub identity, quality choices, startup policy,
    response mode and any existing branch state before normal writes.
-3. Use the existing template-renewal route only for the active suite. Separately
-   deploy the package's generic `agents/` content and current shared guides
-   through the host mechanisms, following the setup checklist. Installing the
-   wheel or running template-only `--upgrade` does not copy these into an
-   already populated root or activate an agent.
+3. Use the existing template-renewal route only for the active suite. First
+   [reconcile current instruction/document sources](agentic-bootstrap.md#32-reconcile-shared-sources)
+   from the selected package to the effective server-root `agents/` and relevant
+   `docs/` paths, preserving owner additions. Verify those current sources before
+   [deploying through the host](agentic-bootstrap.md#33-deploy-the-shared-agents-map).
+   Installing the wheel or running template-only `--upgrade` does not perform
+   this source reconciliation on a populated root or activate an agent.
 4. Relaunch the complete proxy/child connection in the selected environment,
    refresh discovery and demonstrate the selected capabilities. Keep the previous
    environment/configuration recoverable until owner acceptance.
