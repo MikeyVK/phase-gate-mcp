@@ -2,8 +2,8 @@
 
 # Issue \#536 — Validation of the 4.0.0 candidate
 
-**Status:** BLOCKED — full-suite failure requires investigation  
-**Version:** 0.1  
+**Status:** Evidence complete — known limitation accepted by owner; QA review requested  
+**Version:** 0.2  
 **Last Updated:** 2026-10-21
 
 ## Purpose
@@ -24,7 +24,11 @@ Runtime or test repairs in Validation, dependency or threshold changes, release-
 
 ## Validation Status
 
-FAIL
+PARTIAL
+
+The native configured suite remains FAIL (exit1). The owner accepted its known
+readiness failure as non-blocking for #536, tracked by #533; independent QA owns
+the phase verdict. No all-tests-passed claim is made.
 
 ## Scope
 
@@ -90,11 +94,11 @@ The final status check showed only .pgmcp/state.json changed by the legitimate p
 
 ## Containment
 
-No repair, timeout increase, exclusion, new skip, suppression, test addition or second full-suite run was performed. The negative suite result remains authoritative. Diagnosis is limited to the failing existing case and read-only runtime/test inspection.
+No repair, timeout increase, exclusion, new skip, suppression, test addition or second full-suite run was performed. The negative suite result remains authoritative. Diagnosis is limited to the failing existing case, read-only runtime/test inspection and comparison with the existing #533 tracking and prior #529/#528 evidence.
 
 ## Failures
 
-- Required configured suite: unresolved lifecycle readiness timeout in test_failure_stops_live_children_and_keeps_primary_cause[late-timeout]. A targeted pass does not establish cause or repair and does not permit Documentation progression.
+- Required configured suite: unresolved lifecycle readiness timeout in test_failure_stops_live_children_and_keeps_primary_cause[late-timeout], native exit1. The owner-approved non-blocking disposition and existing #533 follow-up are recorded below. A targeted pass does not establish cause or repair; independent QA decides phase progression against the explicit owner decision.
 
 ## Caveats
 
@@ -103,6 +107,34 @@ No repair, timeout increase, exclusion, new skip, suppression, test addition or 
 - Release notes and migration instructions remain planned Documentation work. No production defect is established by the current traceback; its runtime result was not captured by this failing test path.
 
 ## Deferred Work
+
+### Known Windows lifecycle readiness risk — tracked by #533
+
+The current failure has the same test ID and readiness wait as the retained
+#529/#528 failures: `test_failure_stops_live_children_and_keeps_primary_cause[late-timeout]`
+times out waiting for child PID files before the stop-result assertions.
+The [#529 record](../archive/issue529/validation.md#failures) and
+[#528 record](../archive/issue528/validation.md#failures) retain those negative
+observations. The [#528 caveats](../archive/issue528/validation.md#caveats)
+also record independent QA's prior non-blocking disposition for that issue.
+This is a matching failure signature, not proof of an identical underlying cause.
+
+[Open epic #533](https://github.com/MikeyVK/phase-gate-mcp/issues/533) explicitly
+owns investigation of recurring Windows child-process readiness and its still
+unknown timing cause. On 2026-10-21 the owner reviewed this match and approved
+keeping repair under #533 while treating this recurrence as non-blocking for #536.
+This is an explicit, issue-specific acceptance disposition for the recorded
+failure; it does not change the native exit1, global quality policy, test selection
+or any other release/publication approval requirement. The targeted pass is not
+the basis for declaring a fix or a green full suite.
+
+Impact: the failed execution does not prove its intended child-stop assertions;
+this run supplies no demonstrated production regression. The timing risk remains
+unresolved and visible. Existing test/runtime code is unchanged on #536.
+Follow-up/triage state: #533 is open under Coordination's epic ownership; this
+recurrence is indexed here, with no duplicate issue, child creation or #533
+implementation on this branch. Independent QA must assess the Validation exit
+using this owner decision and the unchanged native evidence.
 
 ### Three existing historical archive links point to removed sources/anchor; no new deferral or follow-up issue was created.
 
@@ -123,3 +155,4 @@ The owner-approved archive preserves historical evidence rather than rewriting i
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-21 | @imp validator | Record required native suite/branch outcomes, bounded lifecycle diagnosis and the unresolved Validation blocker. |
+| 0.2 | 2026-10-21 | @imp validator | Link the matching prior readiness failures and open #533; record the owner's issue-specific non-blocking disposition without changing native outcomes or quality policy. |
