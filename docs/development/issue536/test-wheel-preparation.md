@@ -4,7 +4,7 @@
 
 **Status:** External installation trial accepted; final release pending
 
-**Version:** 0.2
+**Version:** 0.3
 
 **Last Updated:** 2026-10-21
 
@@ -14,7 +14,7 @@ Identify the exact preliminary artifacts for an owner-led fresh installation on 
 
 ## Scope In
 
-Manifest asset selection, five direct documentation links, source-only release procedure, one existing installed-distribution test and exact candidate preparation.
+Manifest asset selection, shared installation/deployment documentation, one complete generic agents map, source-only release procedure, two existing distribution/startup tests and exact candidate preparation.
 
 ## Scope Out
 
@@ -103,7 +103,9 @@ fallback is authorized.
 The existing wheel remains the tested artifact; subsequent documentation edits do
 not modify or retroactively validate a rebuilt candidate.
 
-## Focused verification of post-trial corrections
+## Earlier focused verification of post-trial corrections
+
+The following results belong to commit da6f4438, before the subsequent generic-map consolidation.
 
 After the explicit owner choice to exclude host bundles, the existing integration
 tests were adapted in place: inventory the shipped setup documentation, require
@@ -133,6 +135,92 @@ The final targeted Markdown link check across the six changed documents reported
 exit 0. The complete diff has no whitespace errors. No full suite or new test was
 added for this bounded correction.
 
+## Complete generic agents source and deployment correction
+
+After the owner identified the loss of instruction content, the accepted correction
+keeps one complete source at `docs/agents/shared/`, installed as `agents/`:
+
+| Installed document | Existing source used and preserved responsibility |
+| --- | --- |
+| `agents/agents.md` | General protocol: architecture, tool matrix/restrictions, testing, strategy approval, scaffolding, three-agent model and hand-over contracts. |
+| `agents/roles/co.md` | Coordination sub-roles, child/epic ownership, startup and mutation limits. |
+| `agents/roles/imp.md` | Initialized child execution, scope/strategy discipline, architecture and review hand-over. |
+| `agents/roles/qa.md` | Independent read-only review, evidence precedence, required versus diagnostic gates, suppression discipline and GO/NOGO authority. |
+| `agents/workflows/start.md`, `go.md` | Session startup and active-phase execution/discussion/adjustment. |
+| `agents/workflows/create-issue.md`, `start-issue.md`, `end-issue.md` | Coordination lifecycle input, exact sequences, explicit authorization, stop conditions and merge reachability. |
+
+The substantive role and procedure bodies were consolidated from the existing
+Codex/Antigravity sources, whose three role bodies were identical and whose
+create/start/end issue bodies were identical after removing frontmatter. The
+VS Code variant additionally differed by minor wording and an omitted pre-commit
+reality check; the fuller shared rule is retained. This is a content-preserving
+source consolidation, not a new role/workflow engine.
+
+Removed assumptions include host-specific registration/frontmatter, fixed tracker
+#320, the development workspace's priority/parent/language assumptions and its
+historical Mypy/suppression-path exceptions. Generic QA instead points to the actual
+workspace's required scope and shared no-global-disables/precise-rationale rules.
+The source's duplicate initialization heading and incomplete exit-authorization
+sentence are corrected; approval and role boundaries are retained. Issue responses
+are read through the actual selected structured/resource route, not assumed flat JSON.
+The duplicate fresh/start reminder is represented by the existing start procedure;
+per-host skill wrappers and host-specific standalone research facilities are not
+another instruction source. The three workflow roles retain their existing
+research responsibilities and producer-delegation limits.
+
+`docs/setup/agentic-bootstrap.md` is the single entry before installation as well
+as after init/upgrade. It gives the wheel member/installed-package location,
+recommends workspace-bound environments and roots, separates the host launcher,
+workspace overrides and server.yaml startup timing, and maps every shared
+instruction to a supported host destination/invocation with actual activation proof.
+The agent investigates its environment; local adaptations change registration,
+location, metadata or format without rewriting authority or operating content.
+Dynamic phase instructions stay in configuration/get_work_context.
+
+Only the generic child directory is selected, not the old host variants.
+The four shared setup documents are selected explicitly, excluding the source-only
+`docs/setup/mcp.json` launcher. Source examples and active local host files are not
+deleted or reconfigured. Production Python, runtime/build algorithms and dependency
+pins remain unchanged. The accepted downloadable wheel still identifies the older
+db7fdaa7 source; it is not rebuilt or relabelled by these changes.
+
+## Verification of the complete shared map
+
+The two existing selected integration cases passed after updating the manifest,
+inventory and init assertions: **2 passed, 10 deselected in 166.91s**, exit 0.
+Invocation: `run_tests(scope="targets",
+targets=["tests/mcp_server/integration/test_installed_distribution_v3.py",
+"tests/mcp_server/integration/test_target_startup.py"], tests=["python_tests"],
+args={"python_tests":["-n","0","-k","complete_wheel_and_installed_catalogs_and_entrypoints or installed_candidate_init_migration_and_mcp_handshake","--tb=short"]},
+timeout_seconds=600)`.
+
+They prove the complete generic map is present in an actual built/installed wheel,
+required protocol/role/procedure entry paths exist, all shared instruction files
+match source bytes, fresh `--init` copies the complete map, the four selected setup
+guides are present, and the source-only launcher is absent. Existing installed
+catalog, provenance, adapter entrypoint and MCP init/migration behavior remain
+exercised. The test count is unchanged.
+
+After final instruction wording/Markdown whitespace cleanup, the installed-inventory
+case alone was repeated on the final assets:
+`run_tests(scope="targets",
+targets=["tests/mcp_server/integration/test_installed_distribution_v3.py"],
+tests=["python_tests"], args={"python_tests":["-n","0","--tb=short"]},
+timeout_seconds=300)`: **1 passed in 36.69s**, exit 0.
+
+Targeted `python_format/python_lint` on the two changed test files pass after native
+`apply_fixes(fixes=["python_format"])` addressed one long tuple. Targeted
+`yaml_configuration` on the manifest and `markdown_links` on the changed shared
+instructions and installation/reference documents pass. The earlier six diagnostic
+Pyright observations remain visible above; no broader type run, suppression,
+new test function or full suite was added for consolidation.
+
+This establishes installation payload/CLI behavior, not actual automatic instruction
+loading in every host. That last step is deliberately the installing agent's
+explicit deployment/activation proof through the single checklist, rather than a
+new host-specific implementation. A newly published candidate will need its own
+exact artifact identity; no existing wheel is silently replaced.
+
 ## Evidence locations and remaining issue work
 
 Local candidate directory .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/ contains build.log, install.log, init.log, catalog.log and artifact-evidence.json with exact values. This committed report carries the material invocations/outcomes and identities independently of transient cache IDs.
@@ -151,3 +239,4 @@ The source-workspace housekeeping/release procedure completion, final release ve
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-21 | @imp implementer | Record source/artifact identities, manifest-only portability changes, focused checks and isolated installed-wheel proof. |
 | 0.2 | 2026-10-21 | @imp implementer | Record owner-accepted external installation, actual agent operations, setup remedies and remaining limits without broadening release acceptance. |
+| 0.3 | 2026-10-21 | @imp implementer | Consolidate the complete generic agent source, one workspace-specific installation/deployment route and current package/init inventory proof. |

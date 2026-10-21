@@ -3,7 +3,7 @@
 # Agent Instructions Model
 
 **Status:** DEFINITIVE  
-**Version:** 2.2
+**Version:** 2.3
 
 **Last Updated:** 2026-10-21
 
@@ -19,10 +19,10 @@ developers, integrators, and agents; it does not replace the executable contract
 
 | Concern | Authoritative source | Consumers |
 |---|---|---|
-| Target installation and instruction placement | `docs/setup/agentic-bootstrap.md` and the owner's selected shared rules | Agent-selected supported host surfaces; no packaged host instruction bundle |
+| Target installation and instruction placement | `docs/setup/agentic-bootstrap.md` | Sole setup route; agent-selected supported host surfaces |
 | Workflow and phase behavior | `.pgmcp/config/contracts.yaml` | `get_work_context`, phase transitions, agents |
 | Phase vocabulary | `.pgmcp/config/workphases.yaml` | Contract loading and phase metadata |
-| Role capabilities and startup | Owner-approved role/delegation arrangement based on this shared model | The selected environment's supported instruction surfaces |
+| General protocol, role capabilities and startup | `docs/agents/shared/agents.md` and `roles/` in that shared source | Installed `agents/` and traceable local host registration |
 | Shared documentation quality | `docs/coding_standards/DOCUMENTATION_STANDARD.md` | Governed project documents |
 | Architecture rules | `docs/coding_standards/ARCHITECTURE_PRINCIPLES.md` | Applicable production and test code |
 
@@ -35,23 +35,29 @@ The static and dynamic layers have different jobs:
 - Human requests provide the task intent but do not silently override binding workspace
   or workflow boundaries.
 
-Target installations use the [shared setup checklist](../setup/agentic-bootstrap.md).
+Target installations start only at the [shared setup checklist](../setup/agentic-bootstrap.md).
+The complete maintained instruction source is `docs/agents/shared/`, installed as
+`<server-root>/agents/`. It contains the general protocol, the coordination,
+implementation and independent-QA roles, plus session/lifecycle procedures. This
+reference explains the model; it does not substitute for those full instructions.
 The agent inspects the selected environment's capabilities and agrees instruction
-files, formats, locations and invocation with the owner. Host-specific example
-bundles are excluded from installation assets; no source example's project context
-or directory layout is target policy.
+files, formats, locations and invocation with the owner. Per-host example bundles
+are excluded; no source example's project identity or directory layout is target policy.
 
 ## Workspace Instruction Surfaces
 
-Reference shared instructions rather than maintaining one packaged variant per host.
-Use the environment's actual discovery, configuration and delegation capabilities
-to select where the agreed rules and roles live. Preserve existing owner files and
-verify what the agent loads.
+Reference the installed shared `agents/` instructions rather than maintaining one
+packaged variant per host. Use actual discovery, configuration and delegation
+capabilities to select where the agreed rules, three roles and procedures live.
+Slash commands, skills and prompts are registration forms for the same procedures,
+not separate content authorities. Preserve existing owner files, retain source
+traceability for necessary local copies and verify what the real agent loads.
+Runtime phase instructions remain in workflow contracts, not copied into skills.
 
 The PGMCP source workspace retains its own active host files and examples under
 its local agent protocol. They are outside the target installation contract and
-excluded from the release manifest. Target setup does not copy, synchronize or
-maintain those source-workspace variants. Build assets remain generated outputs,
+excluded from the release manifest except for the generic `shared/` source. Target
+setup deploys that complete generic set, not the old source-workspace variants. Build assets remain generated outputs,
 not another instruction source.
 
 ## Runtime Workflow Context
@@ -228,3 +234,4 @@ composition mechanism.
 | 1.1 | 2026-05-17 | Agent | Consolidate the always-on VS Code instruction file |
 | 1.0 | 2026-05-17 | Agent | Initial model |
 | 2.2 | 2026-10-21 | @imp implementer | Separate shared target setup and capability-based instruction placement from source-workspace host examples; exclude host bundles from release assets. |
+| 2.3 | 2026-10-21 | @imp implementer | Restore complete generic protocol/roles/procedures as the shared source; make setup the single deployment route and host adaptation structural only. |

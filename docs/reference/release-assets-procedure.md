@@ -3,7 +3,7 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.5
+**Version:** 1.6
 
 **Last Updated:** 2026-10-21
 
@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the template suite, and shared setup/reference documentation into the installable pip wheel.
+Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the template suite, complete generic agent instructions, and shared setup/reference documentation into the installable pip wheel.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ Defines a strict build-time copy regime from the selected workspace sources to m
 
 ---
 
-- Keep host-specific source examples outside installable assets
+- Ship the complete `docs/agents/shared/` source as one `agents/` map; exclude host-specific variants
 - Introduce release_manifest.yaml to declare release-bound files
 - Explicitly assemble and verify declared assets before the package build
 
@@ -38,12 +38,15 @@ The agent inspects its environment's MCP/instruction capabilities and agrees the
 required files, formats and locations with the owner. Shared role/review boundaries
 remain documented in the instruction model and active workflow contracts.
 
-`docs/agents/` contains this development repository's existing host examples.
-It is excluded from the manifest; active checkout host files and machine-specific
-launcher settings are not target installation assets. This change neither deletes
-source examples nor modifies an existing target's instructions. No per-host
-deployment generator, instruction synchronization step or automatic cleanup is
-added to package building or initialization.
+`docs/agents/shared/` is the maintained complete generic source: `agents.md`, the
+three role protocols and five workflow procedures. The manifest maps that directory
+to one installed `agents/` map. The shared checklist deploys its content through the
+actual host's mechanisms; the builder only copies declared bytes.
+
+Other directories under `docs/agents/` contain this development repository's existing
+host examples and remain excluded, as do active checkout host files and machine-local
+launchers. This change neither deletes those examples nor mutates an existing target.
+No per-host generator, source-content transformer or automatic cleanup is added.
 
 ---
 
@@ -61,6 +64,8 @@ assets:
     target: "config/check_schemas"
   - source: ".pgmcp/template_suite"
     target: "template_suite"
+  - source: "docs/agents/shared"
+    target: "agents"
   - source: "docs/coding_standards"
     target: "docs/coding_standards"
   - source: "docs/manuals"
@@ -73,8 +78,14 @@ assets:
   # This workspace-only procedure is deliberately not selected.
   - source: "docs/development/schema-template-maintenance.md"
     target: "docs/development/schema-template-maintenance.md"
-  - source: "docs/setup"
-    target: "docs/setup"
+  - source: "docs/setup/agentic-bootstrap.md"
+    target: "docs/setup/agentic-bootstrap.md"
+  - source: "docs/setup/README.md"
+    target: "docs/setup/README.md"
+  - source: "docs/setup/workspace-upgrade.md"
+    target: "docs/setup/workspace-upgrade.md"
+  - source: "docs/setup/dev-isolation.md"
+    target: "docs/setup/dev-isolation.md"
   - source: "CHANGELOG.md"
     target: "docs/CHANGELOG.md"
   - source: "README.md"
@@ -97,7 +108,8 @@ repository source URL. A new distributable reference requires an explicit manife
 The repository manifest is the source of truth for package asset mappings.
 Build assets are generated outputs, not separately edited sources. Shared setup
 and instruction references are included through their normal documentation mappings;
-host-specific bundles are excluded.
+only the generic `agents/` set is included. Setup documents are selected explicitly,
+so the source-only `docs/setup/mcp.json` launcher example is not installed.
 
 Official adapters are authored under `mcp_server/bundled_adapters/` and remain in
 that package path in the wheel. They are package data, not release-manifest assets,
@@ -272,3 +284,4 @@ part of this procedure.
 | 1.3 | 2026-10-16 | @imp documenter | Correct explicit assembly ordering, disposable-root boundaries and fail-closed diagnostics/build behavior for #505. |
 | 1.4 | 2026-10-21 | @imp implementer | Select generic configuration defaults/shared schemas and explicit installable references; retain release procedure only in the source workspace. |
 | 1.5 | 2026-10-21 | @imp implementer | Exclude host-specific instruction/example bundles; use shared capability-based setup while leaving source examples and existing owner files untouched. |
+| 1.6 | 2026-10-21 | @imp implementer | Package the complete generic agents source and explicit setup documents; retain one deployment entry and exclude host launcher examples. |

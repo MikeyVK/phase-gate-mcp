@@ -16,8 +16,8 @@ An MCP (Model Context Protocol) server that enforces structured software develop
 
 > **STOP. Do not guess. Do not scan random files.**
 >
-> Read **[AGENTS.md](AGENTS.md)** immediately to initialize your cooperation protocol.
-> It contains the binding tool priority matrix, TDD cycle protocol, three-agent model, and all operating constraints.
+> For installation, follow the **[single setup checklist](docs/setup/agentic-bootstrap.md)**. It deploys the complete shared protocol from `<server-root>/agents/agents.md`, including tool priority, the three-agent model, roles and workflow procedures.
+> When working on this source repository, its active root `AGENTS.md` remains the local cooperation protocol; it is not a target-workspace launcher or installation shortcut.
 >
 For MCP server architecture details, see [docs/reference/mcp_vision_reference.md](docs/reference/mcp_vision_reference.md).
 
@@ -115,7 +115,7 @@ python -m mcp_server.core.proxy
 - **`pgmcp --init`**: Initialize a new server root from packaged assets. It refuses when the configured server root already exists; it does not merge into or replace an existing root.
 - **`pgmcp --upgrade`**: Reconcile the managed template suite with a staged candidate. A missing trustworthy baseline may return `checkpoint_required` with exit code `2`; review the local suite, then explicitly accept it with `--accept-template-baseline` or replace the managed suite with `--force-template-upgrade`. Force replacement creates a backup. Neither action overwrites the external configuration root. See the **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)**.
 
-For MCP client configuration, see [docs/setup/mcp.json](docs/setup/mcp.json) for a reference server definition.
+For MCP connection configuration and deployment, follow the same [setup checklist](docs/setup/agentic-bootstrap.md), sections 3.1–3.2. The agent selects the active environment's supported registry, files and formats while preserving the shared content.
 
 ---
 

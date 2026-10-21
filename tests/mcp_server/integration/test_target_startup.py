@@ -353,7 +353,13 @@ class TestTargetStartup:
         )
         assert initialized.returncode == 0, initialized.stdout + initialized.stderr
         assert (fresh / ".pgmcp/installation.json").is_file()
-        assert not (fresh / ".pgmcp/agents").exists()
+        agent_source = REPO_ROOT / "docs/agents/shared"
+        for path in agent_source.rglob("*"):
+            if path.is_file():
+                installed = fresh / ".pgmcp/agents" / path.relative_to(agent_source)
+                assert installed.read_bytes() == path.read_bytes()
+        assert (fresh / ".pgmcp/agents/agents.md").is_file()
+        assert not (fresh / ".pgmcp/docs/setup/mcp.json").exists()
         assert (fresh / ".pgmcp/docs/setup/agentic-bootstrap.md").is_file()
         assert not (fresh / ".pgmcp/.version").exists()
         repo = GitRepo.init(str(fresh), initial_branch="main")

@@ -6,6 +6,10 @@ For agent-led setup or an upgrade, start with the single
 commands launches an agent. This page supplies technical details, not a separate
 readiness procedure.
 
+Prefer the workspace-specific installation unit described by the checklist: one
+selected environment, one workspace server root and explicitly bound host connections.
+This reference supplies details for that route; it is not another entry procedure.
+
 ## Prerequisites
 
 - Select a Python interpreter supported by the chosen package. Current source
@@ -227,7 +231,8 @@ acknowledgements.
 Inspect the chosen environment's actual MCP registration and launch support. The
 agent and owner select the supported configuration file or settings surface,
 scope and format; this guide does not prescribe host directories or ship
-host-specific launcher/rule/skill files.
+host-specific launcher/rule/skill variants. The uniform source is the installed
+`<server-root>/agents/` map, deployed through the checklist's section 3.2.
 
 Configure one connection with the exact environment interpreter, module
 `mcp_server.core.proxy`, working directory and explicit workspace root. Deliver
@@ -261,9 +266,11 @@ does not establish instruction activation. If the environment cannot support a
 selected role or independent review boundary, report that limitation for an owner
 decision rather than weakening it silently.
 
-Source-workspace examples under `docs/agents/` are not installed assets and are
-not a target setup dependency. No automatic deployment, migration or deletion of
-existing owner-managed host files occurs.
+The complete generic instruction source is authored under `docs/agents/shared/`
+and installed as `<server-root>/agents/`: `agents.md`, three role protocols and
+five workflow procedures. The checklist owns their deployment and activation.
+Other source-workspace host examples under `docs/agents/` are not installed assets.
+No automatic deployment, migration or deletion of owner-managed host files occurs.
 
 ---
 

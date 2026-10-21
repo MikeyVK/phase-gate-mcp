@@ -3,7 +3,7 @@
 # Adding a First-Class Workflow
 
 **Status:** DEFINITIVE  
-**Version:** 1.2
+**Version:** 1.3
 
 **Last Updated:** 2026-10-21
 
@@ -54,7 +54,7 @@ are mapping keys; use explicit order where sequence affects behavior. See the
 | Branch type | `.pgmcp/config/git.yaml` | Branch prefix and issue-number extraction namespace |
 | Allowed base branches | `.pgmcp/config/enforcement.yaml` | Branch creation policy |
 | Phase vocabulary | `.pgmcp/config/workphases.yaml` | Globally known phase metadata |
-| Shared target setup | `docs/setup/agentic-bootstrap.md` | Capability-based instruction placement with the owner; no host-specific bundle |
+| Shared target setup and instructions | `docs/setup/agentic-bootstrap.md` and `docs/agents/shared/` | One setup entry deploying complete generic protocols/roles/procedures; host-specific registration only |
 | Active lifecycle entry | Host workflow or prompt file | Daily start sequence |
 
 These sets may intentionally differ. For example, an issue type may share a
@@ -192,8 +192,9 @@ types.
 Use the [shared setup checklist](../setup/agentic-bootstrap.md) and
 [shared instruction model][agent-model] to reconcile the selected workspace's actual
 instruction surfaces. The agent and owner select files, formats and locations from
-the environment's capabilities. Keep phase behavior in workflow contracts rather
-than distributing parallel host-specific copies.
+the environment's capabilities. Keep phase behavior in workflow contracts; maintain operational instructions once
+under `docs/agents/shared/`, packaged as `agents/`, rather than distributing parallel
+host-specific copies. Reconcile only needed local registration and structural metadata.
 
 Source-repository host examples and their local authoring conventions are outside
 the target installation contract. They are not packaged or deployed by this
@@ -287,4 +288,5 @@ Confirm these relationships explicitly:
 | 1.1 | 2026-10-10 | @imp documenter | Document zero/one cycle-phase admission and planning/resumption policy boundaries (#491) |
 | 1.0 | 2026-08-18 | Agent | Initial deterministic workflow-extension procedure |
 | 1.2 | 2026-10-21 | @imp implementer | Separate source-workspace host examples from shared target setup; remove the claim that host bundles are distributed. |
+| 1.3 | 2026-10-21 | @imp implementer | Identify the complete generic agents source while retaining runtime phase contracts and one target setup/deployment route. |
 

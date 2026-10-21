@@ -37,13 +37,37 @@ def test_complete_wheel_and_installed_catalogs_and_entrypoints(
         (source / ".pgmcp/template_suite", "mcp_server/assets/template_suite"),
         (source / ".pgmcp/config/defaults", "mcp_server/assets/config/defaults"),
         (source / ".pgmcp/config/check_schemas", "mcp_server/assets/config/check_schemas"),
-        (source / "docs/setup", "mcp_server/assets/docs/setup"),
+        (source / "docs/agents/shared", "mcp_server/assets/agents"),
         (source / "mcp_server/bundled_adapters", "mcp_server/bundled_adapters"),
         (source / "mcp_server/execution/contracts", "mcp_server/execution/contracts"),
     )
     with ZipFile(distribution.wheel) as wheel:
         names = set(wheel.namelist())
-        assert not any(name.startswith("mcp_server/assets/agents/") for name in names)
+        agent_root = source / "docs/agents/shared"
+        agent_members = {
+            "mcp_server/assets/agents/" + path.relative_to(agent_root).as_posix()
+            for path in agent_root.rglob("*")
+            if path.is_file()
+        }
+        assert {name for name in names if name.startswith("mcp_server/assets/agents/")} == (
+            agent_members
+        )
+        assert "mcp_server/assets/agents/agents.md" in agent_members
+        for role in ("co", "imp", "qa"):
+            assert f"mcp_server/assets/agents/roles/{role}.md" in agent_members
+        for command in ("start", "go", "create-issue", "start-issue", "end-issue"):
+            assert f"mcp_server/assets/agents/workflows/{command}.md" in agent_members
+        for guide in (
+            "agentic-bootstrap.md",
+            "README.md",
+            "workspace-upgrade.md",
+            "dev-isolation.md",
+        ):
+            member = "mcp_server/assets/docs/setup/" + guide
+            expected = (source / "docs/setup" / guide).read_bytes()
+            assert wheel.read(member) == expected
+            assert (distribution.root / member).read_bytes() == expected
+        assert "mcp_server/assets/docs/setup/mcp.json" not in names
         assert not any(name.startswith("mcp_server/assets/bundled_adapters/") for name in names)
         assert not any("/workspace_adapters/" in name for name in names)
         config_prefix = "mcp_server/assets/config/"

@@ -7,8 +7,9 @@ assets:
     target: "config/check_schemas"
   - source: ".pgmcp/template_suite"
     target: "template_suite"
-  # Shared setup/instruction guidance is shipped through docs/setup and references.
-  # Host-specific source examples are not target installation assets.
+  # One complete shared instruction source; no per-host variants or launchers.
+  - source: "docs/agents/shared"
+    target: "agents"
   - source: "docs/coding_standards"
     target: "docs/coding_standards"
   - source: "docs/manuals"
@@ -48,8 +49,15 @@ assets:
     target: "docs/reference/workflow-extension-guide.md"
   - source: "docs/development/schema-template-maintenance.md"
     target: "docs/development/schema-template-maintenance.md"
-  - source: "docs/setup"
-    target: "docs/setup"
+  # Explicit shared setup documents; exclude the source-only launcher example.
+  - source: "docs/setup/agentic-bootstrap.md"
+    target: "docs/setup/agentic-bootstrap.md"
+  - source: "docs/setup/README.md"
+    target: "docs/setup/README.md"
+  - source: "docs/setup/workspace-upgrade.md"
+    target: "docs/setup/workspace-upgrade.md"
+  - source: "docs/setup/dev-isolation.md"
+    target: "docs/setup/dev-isolation.md"
   - source: "CHANGELOG.md"
     target: "docs/CHANGELOG.md"
   - source: "README.md"
