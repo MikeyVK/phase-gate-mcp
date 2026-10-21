@@ -180,6 +180,18 @@ class MCPServer:
                         if presented.text is not None:
                             content.append({"type": "text", "text": presented.text})
 
+                        for resource in presented.resources:
+                            content.append(
+                                {
+                                    "type": "resource",
+                                    "resource": {
+                                        "uri": resource.uri,
+                                        "mimeType": resource.mime_type,
+                                        "text": resource.content,
+                                    },
+                                }
+                            )
+
                         raw_result = ToolResult(content=content, is_error=not operation_success)
                         response_content = self._convert_tool_result_to_mcp_result(raw_result)
 

@@ -20,8 +20,17 @@ class PresentationResource(BaseModel):
     content: str
 
 
+class AttachmentReference(BaseModel):
+    """Identity and media type of a separately supplied attachment."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    uri: str
+    mime_type: str
+
+
 class RenderedPresentation(BaseModel):
-    """Required guidance separated from optional rendered details."""
+    """Shared main presentation and optional rendered detail projection."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -70,7 +79,7 @@ class PublicToolResponse(BaseModel):
     success: bool
     presentation: str | None
     data: OperationDelivery | None
-    attachments: tuple[PresentationResource, ...]
+    attachments: tuple[AttachmentReference, ...]
     delivery_error: DeliveryFailure | None
     processing_error: ExecutionErrorOutput | None = None
 
@@ -82,10 +91,11 @@ class PresentedOutput(BaseModel):
 
     text: str | None
     structured_content: dict[str, JsonValue] | None
+    resources: tuple[PresentationResource, ...] = ()
 
 
 class BoundedPresentation(BaseModel):
-    """A readable projection with explicit optional-detail omission."""
+    """A bounded readable projection with an explicit truncation fact."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 

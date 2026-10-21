@@ -429,9 +429,7 @@ class ServerBootstrapper:
             enforcement_config = config_loader.load_enforcement_config()
             contracts_config = config_loader.load_contracts_config()
             presentation_config = config_loader.load_presentation_config()
-            response_profile = presentation_config.resolve_response_profile(
-                settings.server.response_profile
-            )
+            response_mode = presentation_config.resolve_response_mode(settings.server.response_mode)
 
             validator = ConfigValidator()
 
@@ -693,7 +691,7 @@ class ServerBootstrapper:
             presenter = ResponsePresenter(
                 text_presenter=text_presenter,
                 resource_presenter=resource_presenter,
-                profile=response_profile,
+                mode=response_mode,
                 global_config=presentation_config.global_settings,
             )
 

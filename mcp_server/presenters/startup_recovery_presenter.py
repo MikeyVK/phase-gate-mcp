@@ -14,6 +14,7 @@ from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.presenters.response_presenter import processing_diagnostic
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.presentation_output import (
+    AttachmentReference,
     InlineOperation,
     PresentedOutput,
     PublicToolResponse,
@@ -81,14 +82,20 @@ class StartupRecoveryPresenter(IPresenter):
                 ensure_ascii=False,
                 indent=2,
             )
+        resources = self._resource_presenter.present_resources(attachments)
         envelope = PublicToolResponse(
             success=operation_success,
             presentation=text,
             data=InlineOperation(delivery="inline", operation=payload),
-            attachments=self._resource_presenter.present_resources(attachments),
+            attachments=tuple(
+                AttachmentReference(uri=resource.uri, mime_type=resource.mime_type)
+                for resource in resources
+            ),
             delivery_error=None,
         )
-        return PresentedOutput(text=text, structured_content=envelope.model_dump(mode="json"))
+        return PresentedOutput(
+            text=text, structured_content=envelope.model_dump(mode="json"), resources=resources
+        )
 
     def recover(
         self,

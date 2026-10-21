@@ -63,11 +63,11 @@ For example:
 This is an excerpt, not the full health DTO. Recovery publishes the complete readable
 text in both MCP content and the common envelope's presentation, with the complete
 operation inline in data.operation and its matching output schema. It does not load
-rejected presentation configuration, select a profile or use a response cache. An
+rejected presentation configuration, select a mode or use a response cache. An
 agent can diagnose from that text, repair the source externally and request restart.
-Healthy startup restores the selected response profile; the limited recovery surface
+Healthy startup restores the selected response mode; the limited recovery surface
 does not promise healthy-server interface or performance parity. See the
-[profile and recovery contract](../presentation_architecture.md).
+[mode and recovery contract](../presentation_architecture.md).
 
 Admission remains strict: invalid content is not admitted, and restart performs a
 fresh bootstrap. Failures before the recovery boundary, such as invalid Settings or

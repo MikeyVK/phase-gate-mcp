@@ -76,7 +76,7 @@ from mcp_server.tools.issue_tools import CreateIssueTool
 if TYPE_CHECKING:
     from mcp_server.config.schemas.milestone_config import MilestoneConfig
     from mcp_server.config.schemas.presentation_config import PresentationConfig
-    from mcp_server.config.settings import Settings
+    from mcp_server.config.settings import ResponseMode, Settings
     from mcp_server.core.interfaces.ipresenter import ITextPresenter
 
 
@@ -637,7 +637,7 @@ def make_response_presenter(
     config: PresentationConfig | None = None,
     *,
     text_presenter: ITextPresenter | None = None,
-    profile_id: str | None = None,
+    mode: ResponseMode | None = None,
 ) -> ResponsePresenter:
     """Compose the actual selected presenter for focused output behavior tests."""
     resolved = config if config is not None else make_config_loader().load_presentation_config()
@@ -646,6 +646,6 @@ def make_response_presenter(
         if text_presenter is not None
         else TextPresenter(config=resolved),
         resource_presenter=SchemaResourcePresenter(),
-        profile=resolved.resolve_response_profile(profile_id),
+        mode=resolved.resolve_response_mode(mode),
         global_config=resolved.global_settings,
     )

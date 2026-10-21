@@ -20,7 +20,9 @@ from mcp.client.stdio import stdio_client
 from mcp.shared.exceptions import MCPError as ProtocolError
 from mcp.types import (
     CallToolResult,
+    EmbeddedResource,
     ListToolsResult,
+    TextResourceContents,
 )
 from pydantic import BaseModel, ConfigDict, model_serializer
 
@@ -42,7 +44,11 @@ from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ToolErrorOutput
 from mcp_server.schemas.presentation_output import RenderedPresentation
 from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import connected_mcp_client, make_response_presenter
+from tests.mcp_server.test_support import (
+    connected_mcp_client,
+    make_config_loader,
+    make_response_presenter,
+)
 
 
 class EmptyInput(BaseModel):
@@ -74,8 +80,9 @@ class AttachedCore:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("error", [False, True], ids=["success", "domain-error"])
+@pytest.mark.parametrize("mode", ["structured", "resource"])
 async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
-    tmp_path: Path, error: bool
+    tmp_path: Path, error: bool, mode: str
 ) -> None:
     schema = freeze_json({"type": "object", "properties": {"value": {"type": "integer"}}})
     assert isinstance(schema, FrozenJsonObject)
@@ -115,31 +122,47 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
         return RenderedPresentation(core="Operation result", details="")
 
     text.present_text.side_effect = present_text
+    policy = make_config_loader().load_presentation_config()
     server = MCPServer(
         settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
         tools=[wrapped],
         resources=[],
         publisher=publisher,
-        presenter=make_response_presenter(text_presenter=text),
+        presenter=make_response_presenter(policy, text_presenter=text, mode=mode),
     )
     async with connected_mcp_client(server) as client:
         response = await client.call_tool("attached", {})
     assert isinstance(response, CallToolResult)
     assert response.is_error is error
-    payload = response.structured_content
-    assert payload is not None
-    assert payload["data"] == {
-        "delivery": "inline",
-        "operation": operation.model_dump(mode="json", by_alias=True),
-    }
-    assert len(response.content) == 1
-    attachment = payload["attachments"][0]
-    assert attachment["uri"] == "schema://template/order%2Fbook/context"
-    assert attachment["mime_type"] == "application/schema+json"
-    assert json.loads(attachment["content"]) == {
+    assert len(response.content) == 2
+    assert response.content[0].type == "text"
+    notice = policy.global_settings.next_instruction_texts["attachment_reference"]
+    assert notice in response.content[0].text
+    block = next(item.resource for item in response.content if isinstance(item, EmbeddedResource))
+    assert isinstance(block, TextResourceContents)
+    assert str(block.uri) == "schema://template/order%2Fbook/context"
+    assert block.mime_type == "application/schema+json"
+    assert json.loads(block.text) == {
         "type": "object",
         "properties": {"value": {"type": "integer"}},
     }
+    payload = response.structured_content
+    if mode == "resource":
+        assert payload is None
+    else:
+        assert payload is not None
+        assert payload["data"] == {
+            "delivery": "inline",
+            "operation": operation.model_dump(mode="json", by_alias=True),
+        }
+        assert notice in payload["presentation"]
+        assert payload["attachments"] == [
+            {
+                "uri": str(block.uri),
+                "mime_type": block.mime_type,
+            }
+        ]
+        assert block.text not in json.dumps(payload)
 
 
 @pytest.mark.asyncio
@@ -197,13 +220,13 @@ async def test_v3_stdio_startup_and_handshake(tmp_path: Path, pytestconfig: pyte
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("profile_id", ["structured_inline", "structured_resource", "text_inline"])
+@pytest.mark.parametrize("mode", ["structured", "resource"])
 @pytest.mark.parametrize("operation_success", [True, False], ids=["success", "operation-failure"])
 @pytest.mark.parametrize("cache_available", [True, False], ids=["cached", "uncached"])
 async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
     tmp_path: Path,
     caplog: pytest.LogCaptureFixture,
-    profile_id: str,
+    mode: str,
     operation_success: bool,
     cache_available: bool,
 ) -> None:
@@ -212,7 +235,7 @@ async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
     operation = Operation(success=operation_success, value=1)
     core = AttachedCore(ToolExecution(operation=operation, attachments=()))
     wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(core)
-    presenter = make_response_presenter(profile_id=profile_id)
+    presenter = make_response_presenter(mode=mode)
     publisher = MagicMock(spec=IToolResponsePublisher)
     publisher.put.return_value = (
         CachePublication(run_id="b" * 32, size_chars=123)
@@ -236,29 +259,31 @@ async def test_processing_failure_preserves_diagnosis_and_unknown_tool_result(
             missing = await client.call_tool("missing", {})
     assert response.is_error is not operation_success
     schema = listing.tools[0].output_schema
-    if profile_id == "text_inline":
+    text_result = response.content[0]
+    assert text_result.type == "text"
+    assert "presentation unavailable" in text_result.text
+    assert len(text_result.text.encode("utf-8")) <= 8000
+    if mode == "resource":
         assert response.structured_content is None
         assert schema is None
-        payload = json.loads(response.content[0].text.split("```json\n", 1)[1].split("\n```", 1)[0])
     else:
         payload = response.structured_content
-        assert payload is not None
-        assert schema is not None
+        assert payload is not None and schema is not None
         validator = Draft202012Validator(schema)
         validator.validate(payload)
         if not cache_available:
             missing_marker = dict(payload)
             missing_marker.pop("processing_error")
             assert not validator.is_valid(missing_marker)
-    assert payload["success"] is operation_success
-    assert payload["data"] == (
-        {"delivery": "resource", "uri": "pgmcp://cache/runs/" + "b" * 32, "size_chars": 123}
-        if cache_available
-        else None
-    )
-    assert payload["attachments"] == []
-    assert payload["delivery_error"] is None
-    assert "presentation unavailable" in payload["processing_error"]["error_message"]
+        assert payload["success"] is operation_success
+        assert payload["data"] == (
+            {"delivery": "resource", "uri": "pgmcp://cache/runs/" + "b" * 32, "size_chars": 123}
+            if cache_available
+            else None
+        )
+        assert payload["attachments"] == []
+        assert payload["delivery_error"] is None
+        assert "presentation unavailable" in payload["processing_error"]["error_message"]
     publisher.put.assert_called_once_with("attached", operation)
     execute.assert_awaited_once()
     normal.assert_called_once()

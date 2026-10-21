@@ -200,6 +200,7 @@ async def test_stored_planning_survives_fresh_bootstrap_cache(
             workspace_root=str(legacy_suite_roots.workspace),
             server_root_dir=legacy_suite_roots.server.name,
             config_root=str(legacy_suite_roots.config),
+            response_mode="resource",
             template_root=str(legacy_suite_roots.server / "template_suite"),
             bypass_version_check=False,
         )
@@ -278,6 +279,7 @@ async def test_saved_file_glob_reaches_bootstrap_gates_and_refreshes_after_updat
             workspace_root=str(workspace),
             server_root_dir=legacy_suite_roots.server.name,
             config_root=str(legacy_suite_roots.config),
+            response_mode="resource",
             template_root=str(legacy_suite_roots.server / "template_suite"),
             bypass_version_check=True,
         )
