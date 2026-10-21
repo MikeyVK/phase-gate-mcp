@@ -3,7 +3,7 @@
 # Issue \#536 — Live response-mode observations
 
 **Status:** Partial live observations — owner acceptance pending  
-**Version:** 0.1  
+**Version:** 0.2  
 **Last Updated:** 2026-10-21
 
 ## Purpose
@@ -46,10 +46,41 @@ get_issue(536) inline text: structured 7953 UTF-8 bytes, resource 7643 bytes; bo
 
 ## Restoration and observations not claimed
 
-The workspace presentation override was restored to its original comment plus empty mapping and restarted. Health confirms structured mode; git_status was clean before this document. Native YAML validation passed on both temporary edits. No production/launcher/state/plan modifications remain. An initial post-restart attempt to scaffold this observation was correctly refused with context_not_loaded/written=false; get_work_context then restored normal admission. Optional resources/templates/list discovery returned method-not-found, while resources/list and actual resources/read worked. No universal client support, refreshed outputSchema catalog, cache-failure recovery, complete oversized instructional text or final owner release acceptance is claimed.
+The workspace presentation override was restored to its original comment plus empty mapping and restarted. Health confirms structured mode; git_status was clean before this document. Native YAML validation passed on both temporary edits. No production/launcher/state/plan modifications remain. An initial post-restart attempt to scaffold this observation was correctly refused with context_not_loaded/written=false; get_work_context then restored normal admission. Optional resources/templates/list discovery returned method-not-found, while resources/list and actual resources/read worked. This initial comparison did not inspect the catalog. The subsequent bounded catalog observation below covers fresh protocol connections; no universal client support, cache-failure recovery, complete oversized instructional text or final owner release acceptance is claimed.
+
+## Catalog, quality and input validation — 2026-10-21
+
+The owner requested these bounded probes and discussion before any phase transition or test-wheel preparation. Source code remains the candidate above; observation-only commit 02568afeda946d4c9ad48a4c450bbec7d3d53178 does not change running code.
+
+### Native catalog
+
+A temporary stdin-fed Python smoke command used the existing ServerProcess fixture to launch the configured .venv315 Python with -m mcp_server.core.proxy twice, sequentially, against this workspace. Each child received its own PGMCP_RESPONSE_MODE, followed initialize, tools/list and tools/call health_check, and closed through the existing context manager. It did not invoke pytest, save a new script/test, replace the active connection or edit the shared default.
+
+| Observation | structured | resource |
+| --- | --- | --- |
+| Published tools / unique names | 49 / 49 | 49 / 49, identical name set |
+| Tools with outputSchema | 49 | 0 |
+| Health structuredContent | Present | Absent |
+| Health response | isError=false; structured envelope validates against the advertised health schema | isError=false; expected text-only operation route |
+
+The probe exited 0. Schema presence was inspected for all 49 tools; response-to-schema validation exercised health_check only. This is native catalog evidence from two fresh protocol connections, not proof that this Codex chat refreshed an already cached catalog. The actual agent response/cache paths were separately observed in the earlier round.
+
+### Live quality calls
+
+run_checks(scope='targets', targets=['docs/development/issue536/live-observations.md'], checks=['markdown_links'], timeout_seconds=120) returned operation success=true, run_status=passed, native exit 0. Its only discovered URI was an excluded schema identity: zero successful links, one protocol exclusion, zero errors. This proves invocation/reporting, not meaningful document link coverage.
+
+A second equally narrow call selected only [the current presentation reference](../../reference/presentation_architecture.md), with the same check and timeout. It returned success=true, run_status=passed, native Lychee 0.24.2 exit 0, 26 successful link occurrences, two configured schema-protocol exclusions, zero errors. No native policy, exclusion or scope was broadened to produce success; no full suite ran. Link results are not a claim of semantic document quality.
+
+### Live invalid model input
+
+get_project_plan(issue_number='536-not-an-integer') through the actual Codex tool connection returned MCP isError=true, structured success=false, error_type=ValidationError and validation_errors naming issue_number with its integer-type failure. A separate schema://validation embedded resource contains the complete advertised GetProjectPlanInput JSON Schema; structured attachments references its URI/MIME without another attachment body. The diagnostic includes the rejected input, so an agent can correct it.
+
+A subsequent valid get_project_plan(536) succeeded, still Research with other phases pending and planning_deliverables=null. health_check confirmed healthy structured output from the unchanged active child PID 22824. git_status was clean before recording this addition. No phase/state/planning/configuration mutation, production repair, wheel preparation or owner acceptance followed these probes.
+
 
 ## Version History
 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-21 | @imp researcher | Record paired live requests, byte counts, real cache readback and configuration restoration. |
+| 0.2 | 2026-10-21 | @imp researcher | Record native two-mode catalog discovery, meaningful focused link evidence and actual agent input rejection; preserve limitations and phase boundary. |
