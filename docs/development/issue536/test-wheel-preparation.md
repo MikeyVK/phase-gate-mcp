@@ -31,7 +31,7 @@ Source commit: db7fdaa7d27310fda9ac7e14ef6aa12486632920. Exported committed file
 | phase_gate_mcp-3.0.0-py3-none-any.whl | 823238 | 7b10e0bb3e6d0610b3abc22829dd6c0c5dff12e15fbda8dc1f7d416f6e15dca6 |
 | phase_gate_mcp-3.0.0.tar.gz | 611016 | 2bfd4e44b1cb64816494e9faf9964d5eba5cd88bfe07de54a69161fbd9c2d6e1 |
 
-Local output directory: .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/dist/. These are local artifacts, not GitHub release assets. Portable wheel tag: py3-none-any; Requires-Python: >=3.15. No broader platform claim is made for third-party dependencies.
+Local build output directory: .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/dist/. At the owner's request, an identical copy of the wheel is tracked at [test-wheel/phase_gate_mcp-3.0.0-py3-none-any.whl](test-wheel/phase_gate_mcp-3.0.0-py3-none-any.whl) on this issue branch for download on another machine. Its size and SHA-256 match the table above. This is preliminary test-artifact distribution, not a GitHub release or final publication; the sdist remains local. Portable wheel tag: py3-none-any; Requires-Python: >=3.15. No broader platform claim is made for third-party dependencies.
 
 ## Changed distribution boundary
 
