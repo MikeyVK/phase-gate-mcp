@@ -3,7 +3,7 @@
 # Agent Instructions Model
 
 **Status:** DEFINITIVE  
-**Version:** 2.3
+**Version:** 2.4
 
 **Last Updated:** 2026-10-21
 
@@ -79,7 +79,7 @@ Branch-mutating tools remain blocked until this context has been loaded. Because
 `phase_instructions` are an output of `get_work_context`, they must not instruct the
 agent to call `get_work_context` again.
 
-The `open-issue` and `end-issue` lifecycle operations are explicit boundary
+The `start-issue` and `end-issue` lifecycle operations are explicit boundary
 exceptions: their bootstrap or exit sequence may run before control returns to a normal
 `get_work_context`-first session.
 
@@ -235,3 +235,4 @@ composition mechanism.
 | 1.0 | 2026-05-17 | Agent | Initial model |
 | 2.2 | 2026-10-21 | @imp implementer | Separate shared target setup and capability-based instruction placement from source-workspace host examples; exclude host bundles from release assets. |
 | 2.3 | 2026-10-21 | @imp implementer | Restore complete generic protocol/roles/procedures as the shared source; make setup the single deployment route and host adaptation structural only. |
+| 2.4 | 2026-10-21 | @imp implementer | Match the lifecycle startup exception to the canonical start-issue procedure. |

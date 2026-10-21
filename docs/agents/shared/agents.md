@@ -4,7 +4,7 @@
 
 **Status:** Active
 
-**Version:** 1.0
+**Version:** 1.1
 
 **Last Updated:** 2026-10-21
 
@@ -290,7 +290,7 @@ return the workflow's evidence-backed GO/NOGO.
 ### Startup Protocol
 
 Each agent has its own startup protocol defined in its `.agent.md` file. Normal chat sessions call
-`get_work_context` as the first tool invocation. `open-issue` and `end-issue` are explicit
+`get_work_context` as the first tool invocation. `start-issue` and `end-issue` are explicit
 lifecycle-boundary exceptions that may run their scripted bootstrap or exit sequence before
 control returns to a normal `get_work_context`-first session. See:
 - [`@co` startup](roles/co.md)
@@ -346,3 +346,4 @@ delegation; epic review and lifecycle continuation remain with `@co`.
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-21 | @imp implementer | Consolidate existing PGMCP instruction content into one shared source; remove host metadata and fixed workspace assumptions. |
+| 1.1 | 2026-10-21 | @imp implementer | Use the canonical start-issue procedure name for the lifecycle startup exception. |

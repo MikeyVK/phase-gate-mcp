@@ -59,9 +59,9 @@ assets:
   - source: "docs/setup/dev-isolation.md"
     target: "docs/setup/dev-isolation.md"
   - source: "CHANGELOG.md"
-    target: "docs/CHANGELOG.md"
+    target: "CHANGELOG.md"
   - source: "README.md"
-    target: "docs/README.md"
+    target: "README.md"
   - source: "LICENSE"
     target: "LICENSE"
 

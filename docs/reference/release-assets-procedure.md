@@ -3,7 +3,7 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.6
+**Version:** 1.7
 
 **Last Updated:** 2026-10-21
 
@@ -87,9 +87,9 @@ assets:
   - source: "docs/setup/dev-isolation.md"
     target: "docs/setup/dev-isolation.md"
   - source: "CHANGELOG.md"
-    target: "docs/CHANGELOG.md"
+    target: "CHANGELOG.md"
   - source: "README.md"
-    target: "docs/README.md"
+    target: "README.md"
   - source: "LICENSE"
     target: "LICENSE"
 ```
@@ -104,6 +104,8 @@ is a workspace build input, not target-workspace configuration.
 This release procedure remains in the PGMCP source workspace and is not an installed asset.
 Installable references are explicitly selected; their links to this procedure use the
 repository source URL. A new distributable reference requires an explicit manifest entry.
+The top-level README, CHANGELOG and LICENSE are installed beside the docs directory;
+this preserves the source README's relative documentation and metadata links.
 
 The repository manifest is the source of truth for package asset mappings.
 Build assets are generated outputs, not separately edited sources. Shared setup
@@ -285,3 +287,4 @@ part of this procedure.
 | 1.4 | 2026-10-21 | @imp implementer | Select generic configuration defaults/shared schemas and explicit installable references; retain release procedure only in the source workspace. |
 | 1.5 | 2026-10-21 | @imp implementer | Exclude host-specific instruction/example bundles; use shared capability-based setup while leaving source examples and existing owner files untouched. |
 | 1.6 | 2026-10-21 | @imp implementer | Package the complete generic agents source and explicit setup documents; retain one deployment entry and exclude host launcher examples. |
+| 1.7 | 2026-10-21 | @imp implementer | Preserve README-relative navigation by installing root metadata beside docs; align the manifest example. |

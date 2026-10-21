@@ -67,6 +67,11 @@ def test_complete_wheel_and_installed_catalogs_and_entrypoints(
             expected = (source / "docs/setup" / guide).read_bytes()
             assert wheel.read(member) == expected
             assert (distribution.root / member).read_bytes() == expected
+        for root_document in ("README.md", "CHANGELOG.md", "LICENSE"):
+            member = "mcp_server/assets/" + root_document
+            expected = (source / root_document).read_bytes()
+            assert wheel.read(member) == expected
+            assert (distribution.root / member).read_bytes() == expected
         assert "mcp_server/assets/docs/setup/mcp.json" not in names
         assert not any(name.startswith("mcp_server/assets/bundled_adapters/") for name in names)
         assert not any("/workspace_adapters/" in name for name in names)

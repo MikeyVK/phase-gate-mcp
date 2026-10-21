@@ -4,7 +4,7 @@
 
 **Status:** Active
 
-**Version:** 1.0
+**Version:** 1.1
 
 **Last Updated:** 2026-10-21
 
@@ -111,7 +111,7 @@ Rebuild state from scratch every time.
 1. Call `get_work_context` - active branch, phase, issue.
 2. Call `list_issues(state="open")` when backlog or dependency context matters.
 3. For tracker sub-role: identify the actual parent/tracker issue from authoritative workspace context and read it with `get_issue`; ask if that identity is missing or ambiguous.
-4. For ordinary chat sessions, keep the `get_work_context`-first rule. `open-issue` and `end-issue` are lifecycle-boundary exceptions that follow their own scripted bootstrap or exit sequence before control returns to a normal `@co` session.
+4. For ordinary chat sessions, keep the `get_work_context`-first rule. `start-issue` and `end-issue` are lifecycle-boundary exceptions that follow their own scripted bootstrap or exit sequence before control returns to a normal `@co` session.
 5. When reading `.pgmcp/state.json` on an epic branch: it is a branch-local artifact committed with the branch. Do not treat it as runtime-only or ephemeral — it carries the authoritative phase audit trail until `submit_pr` neutralizes it.
 
 ## Role Boundary
@@ -196,3 +196,4 @@ When coordination delegates child technical work, produce a hand-over so `@imp` 
 | Version | Date | Author | Changes |
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-21 | @imp implementer | Consolidate existing PGMCP instruction content into one shared source; remove host metadata and fixed workspace assumptions. |
+| 1.1 | 2026-10-21 | @imp implementer | Use the canonical start-issue procedure name for the lifecycle startup exception. |

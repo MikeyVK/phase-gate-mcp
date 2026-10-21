@@ -4,7 +4,7 @@
 
 **Status:** External installation trial accepted; final release pending
 
-**Version:** 0.3
+**Version:** 0.4
 
 **Last Updated:** 2026-10-21
 
@@ -221,6 +221,38 @@ explicit deployment/activation proof through the single checklist, rather than a
 new host-specific implementation. A newly published candidate will need its own
 exact artifact identity; no existing wheel is silently replaced.
 
+## Independent document review and focused P3 corrections
+
+Independent QA reviewed e2aaa92356d840d0179873adca988fec24525aca and returned GO
+for this document set within Implementation, with no substantive blocker. The
+review compared instruction content and deployment semantics, not just file/link
+presence. Full Validation and final release acceptance were not granted by that review.
+
+The owner approved the two P3 remedies:
+- Map the unchanged source README and CHANGELOG beside the installed docs directory,
+  as `<server-root>/README.md` and `<server-root>/CHANGELOG.md`; LICENSE already
+  occupies that level. This preserves the source README's relative documentation
+  and metadata navigation without rewriting its content or keeping a second variant.
+- Use the canonical `start-issue` name for the startup exception in the shared
+  general protocol, coordination role and instruction-model reference. The
+  procedure's exact bootstrap order remains unchanged; no alias is added.
+
+The existing installed-distribution case now verifies root README/CHANGELOG/LICENSE
+members and their byte equality in the built wheel and installed prefix.
+`run_tests(scope="targets",
+targets=["tests/mcp_server/integration/test_installed_distribution_v3.py"],
+tests=["python_tests"], args={"python_tests":["-n","0","--tb=short"]},
+timeout_seconds=300)`: **1 passed in 60.26s**, exit 0. The unchanged README's
+source-relative navigation was already link-checked; the manifest now preserves
+that same root-relative layout in the package. An optional attempt to locate the
+post-run pytest installation for an additional manual link readback found no
+retained candidate; it supplies no extra installed-link evidence.
+
+Targeted format/lint on the changed existing test, YAML validation of the manifest,
+Markdown links on the four corrected documents and diff whitespace checks pass.
+No new test, runtime change, phase transition, compatibility alias or downloadable
+wheel replacement is part of these corrections.
+
 ## Evidence locations and remaining issue work
 
 Local candidate directory .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/ contains build.log, install.log, init.log, catalog.log and artifact-evidence.json with exact values. This committed report carries the material invocations/outcomes and identities independently of transient cache IDs.
@@ -240,3 +272,4 @@ The source-workspace housekeeping/release procedure completion, final release ve
 | 0.1 | 2026-10-21 | @imp implementer | Record source/artifact identities, manifest-only portability changes, focused checks and isolated installed-wheel proof. |
 | 0.2 | 2026-10-21 | @imp implementer | Record owner-accepted external installation, actual agent operations, setup remedies and remaining limits without broadening release acceptance. |
 | 0.3 | 2026-10-21 | @imp implementer | Consolidate the complete generic agent source, one workspace-specific installation/deployment route and current package/init inventory proof. |
+| 0.4 | 2026-10-21 | @imp implementer | Record independent document review and owner-approved fixes to README placement and canonical lifecycle naming, with focused package verification. |
