@@ -1,9 +1,10 @@
 # Setup — Runtime and Host Reference
 
 For agent-led setup or an upgrade, start with the single
-[workspace checklist](agentic-bootstrap.md). After installation, `--init` or
-`--upgrade`, explicitly give that page to the chosen agent chat; none of those
-commands launches an agent. This page supplies technical details, not a separate
+[workspace checklist](agentic-bootstrap.md). Use the checklist supplied by the selected package; an existing
+server root can retain older copied guides after a package upgrade. Explicitly give
+the current page to the chosen agent chat; installation, `--init` and `--upgrade`
+do not launch an agent. This page supplies technical details, not a separate
 readiness procedure.
 
 Prefer the workspace-specific installation unit described by the checklist: one
@@ -45,7 +46,7 @@ Use the exact interpreter chosen for the launch environment, for example
 
 ```powershell
 & 'C:/chosen/Python/python.exe' -m venv 'C:/chosen/pgmcp-env'
-& 'C:/chosen/pgmcp-env/Scripts/python.exe' -m pip install 'C:/reviewed/phase_gate_mcp-3.0.0-py3-none-any.whl'
+& 'C:/chosen/pgmcp-env/Scripts/python.exe' -m pip install 'C:/reviewed/phase_gate_mcp-4.0.0-py3-none-any.whl'
 ```
 
 The example names a wheel, not a promise of PyPI availability or newly published
@@ -117,7 +118,7 @@ to replace an existing root.
 
 The unreleased branch-registration contract requires coordination to supply an
 explicit parent for a **real** issue branch. Read the
-[registration/recovery guidance](workspace-upgrade.md#unreleased-branch-registration-contract)
+[registration/recovery guidance](workspace-upgrade.md#branch-registration-contract)
 when adopting it; workspace initialization is not issue registration.
 
 ### Choose startup budgets

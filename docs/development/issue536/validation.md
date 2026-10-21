@@ -2,8 +2,8 @@
 
 # Issue \#536 — Validation of the 4.0.0 candidate
 
-**Status:** Evidence complete — known limitation accepted by owner; QA review requested  
-**Version:** 0.2  
+**Status:** Completed with owner-accepted known risk; independent GO for Documentation  
+**Version:** 0.3  
 **Last Updated:** 2026-10-21
 
 ## Purpose
@@ -102,6 +102,7 @@ No repair, timeout increase, exclusion, new skip, suppression, test addition or 
 
 ## Caveats
 
+- Independent QA reviewed the native results, matching #529/#528 history and the owner's explicit disposition, and gave GO for Validation → Documentation on exact pushed commit 1b2c9787c8b80dfbb1556a257c90ba38b75452bf (review turn 01a15f35-9376-7341-b3ce-fcf40dc91e63). Native FAIL/PARTIAL and the open #533 risk remain unchanged; publication is not approved by this verdict.
 - The archive link check remains the independently accepted historical baseline: 1215 occurrences, 1011 successful, 201 excluded, same three errors, native exit1 before and after archival. The separate active-document check passed. This is not a gate waiver.
 - Existing package/install evidence remains bound to its reported source/artifacts. A definitive 4.0.0 wheel/sdist must be built and verified from the later selected integrated source before owner publication approval.
 - Release notes and migration instructions remain planned Documentation work. No production defect is established by the current traceback; its runtime result was not captured by this failing test path.
@@ -156,3 +157,4 @@ The owner-approved archive preserves historical evidence rather than rewriting i
 | --- | --- | --- | --- |
 | 0.1 | 2026-10-21 | @imp validator | Record required native suite/branch outcomes, bounded lifecycle diagnosis and the unresolved Validation blocker. |
 | 0.2 | 2026-10-21 | @imp validator | Link the matching prior readiness failures and open #533; record the owner's issue-specific non-blocking disposition without changing native outcomes or quality policy. |
+| 0.3 | 2026-10-21 | @imp documenter | Record the independent Validation exit GO while preserving native failure, accepted risk and publication boundaries. |

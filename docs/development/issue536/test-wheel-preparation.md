@@ -4,7 +4,7 @@
 
 **Status:** External installation trial accepted; final release pending
 
-**Version:** 0.5
+**Version:** 0.6
 
 **Last Updated:** 2026-10-21
 
@@ -296,11 +296,50 @@ Dependencies, caches, runtime/locks, config/state, local packages, old probe
 environments and backups remain intact. No runtime/builder/test change is part
 of this cleanup. The procedure remains excluded from the release manifest.
 
+## Documentation reconciliation — 2026-10-21
+
+The owner selected package/manifest version4.0.0; commit
+f28d0d1dcdd31bf627fc0dc98faa6c01c6e60cb2 changes only those two metadata fields.
+The [Validation report](validation.md) preserves the native 3080 passed/1 failed
+result and the explicitly accepted #533 readiness limitation. Independent QA
+gave GO for Documentation on1b2c9787c8b80dfbb1556a257c90ba38b75452bf.
+
+The [4.0.0 changelog](../../../CHANGELOG.md#400) is the release-note source.
+Its inventory comes from Git merges reachable after v3.0.0 plus this branch's
+reviewed #536 changes, not from the archived directory set. Material source PRs
+are #502, #509–#512, #514–#515, #519, #521, #525, #527, #532, #534–#535 and #538;
+research-only PRs #516/#526 and superseded interim output behavior are not claimed
+as separate final runtime features. Exact final integrated source is selected
+after merge; no publication date or final artifact identity is invented.
+
+The [upgrade guide](../../setup/workspace-upgrade.md) now covers runtime/dependency
+selection, required bases and explicit overrides/delete/order, GitHub/quality/state
+reconciliation, startup timing, response modes, generic instruction deployment and
+template-only renewal ownership. It preserves one authoritative checklist and
+existing backup/checkpoint behavior. The setup reference points to the current
+package's checklist; both active branch-registration links use the current anchor.
+
+Focused markdown_links on CHANGELOG, workspace-upgrade, setup README and the
+project reference passed: **120 occurrences, 56 successful, 64 existing external
+exclusions, zero errors, native exit0**. The existing installed-distribution case
+was rerun because shipped document bytes changed:
+`run_tests(scope="targets",
+targets=["tests/mcp_server/integration/test_installed_distribution_v3.py"],
+tests=["python_tests"], args={"python_tests":["-n","0","--tb=short"]},
+timeout_seconds=300)`: **1 passed in38.15s**, native exit0. It verifies actual
+wheel/installed-prefix asset inventories and source-byte parity. It does not
+approve or substitute for the final downloadable 4.0.0 artifacts.
+
+Reviewed unchanged: runtime/builder, dependencies, config bases/overrides, template
+suite/policies and complete generic role/procedure content. Existing native
+Validation and substantive instruction reviews remain applicable to those surfaces.
+No new tests, full-suite repeat, active deployment or release publication occurred.
+
 ## Evidence locations and remaining issue work
 
 Local candidate directory .pgmcp/temp/issue536/test-wheel-db7fdaa7d273/ contains build.log, install.log, init.log, catalog.log and artifact-evidence.json with exact values. This committed report carries the material invocations/outcomes and identities independently of transient cache IDs.
 
-The bounded source-workspace archival and release-procedure update are complete. Final release version/notes/source, full workflow Validation and independent subsequent phase reviews remain within #536. Owner acceptance of exact final artifacts and publication approval remain separate hard gates. Nothing here closes #536 or authorizes tags/uploads.
+The bounded archive/release procedure, 4.0.0 metadata, release notes and migration instructions are complete for review. Workflow Validation has an independent exit GO with the native failure and owner-accepted #533 risk retained. Documentation/Ready review, integrated release source, final wheel/sdist verification, owner exact-artifact acceptance and publication approval, merge/publication and final issue closure remain open. Nothing here authorizes tags/uploads.
 
 ## Related Documents
 
@@ -317,3 +356,4 @@ The bounded source-workspace archival and release-procedure update are complete.
 | 0.3 | 2026-10-21 | @imp implementer | Consolidate the complete generic agent source, one workspace-specific installation/deployment route and current package/init inventory proof. |
 | 0.4 | 2026-10-21 | @imp implementer | Record independent document review and owner-approved fixes to README placement and canonical lifecycle naming, with focused package verification. |
 | 0.5 | 2026-10-21 | @imp implementer | Record owner-approved archival, source-content comparison, unchanged historical link failures and the workspace-only publication sequence. |
+| 0.6 | 2026-10-21 | @imp documenter | Reconcile 4.0.0 release/migration sources, independent Validation disposition, remaining release steps and focused installed-document parity. |

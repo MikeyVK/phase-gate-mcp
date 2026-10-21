@@ -539,7 +539,7 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
 **Behavior:**
 - Version/syntax validation uses `StateVersionValidator`; the complete immutable `BranchState` validates the `2.0.0` envelope and distinct required branch/parent references. State stores one current registration, not a branch-keyed archive.
 - Initialization and ordinary workflow updates use one injected mutation boundary and lock. Updates validate the complete candidate and preserve registration identity; only initialization can create a registration.
-- Invalid-version, corrupt and unreadable source raises the existing diagnostic without changing the source or any prior backup. Reads do not rename, quarantine, reconstruct or reset state. Recovery is an explicit owner action; see the [workspace upgrade guide](../../setup/workspace-upgrade.md#unreleased-branch-registration-contract).
+- Invalid-version, corrupt and unreadable source raises the existing diagnostic without changing the source or any prior backup. Reads do not rename, quarantine, reconstruct or reset state. Recovery is an explicit owner action; see the [workspace upgrade guide](../../setup/workspace-upgrade.md#branch-registration-contract).
 - Synchronized by `git_checkout` (loads state when switching branches).
 - Treated as a branch-local artifact and neutralized before `submit_pr`.
 ---
