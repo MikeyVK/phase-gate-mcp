@@ -3,8 +3,9 @@
 # Agent-guided Workspace Setup and Upgrade
 
 **Status:** Active  
-**Version:** 2.0  
-**Last Updated:** 2026-10-17
+**Version:** 2.1
+
+**Last Updated:** 2026-10-21
 
 ## Purpose
 
@@ -38,11 +39,14 @@ A host-independent invocation is:
 > invent an issue or overwrite settings as a setup shortcut. Report each applicable
 > item as done, open, blocked or N/A with decisions, operation evidence and limitations.
 
-Use the selected host's existing role/instruction mechanism; no new setup role,
-skill or CLI mode is required. In a checkout the distributable host sources are
-under `docs/agents/`; after initialization their supplied copies are under
-`<server-root>/agents/`. Review the selected host's files before deploying them
-and reconcile them with existing instructions rather than copying over owner work.
+Use the selected environment's existing MCP and instruction capabilities; no new
+setup role, skill or CLI mode is required. The agent and owner determine which
+shared instructions apply and which files, formats and locations the environment
+actually supports. This checklist and the [shared instruction model](../reference/copilot-agent-instructions-model.md)
+are the entry points; host-specific example bundles are not installed. Reference
+shared material, resolve paths against the selected server root and preserve
+existing owner instructions. Verify actual instruction loading rather than
+assuming a copied file is active.
 
 ## 1. Establish the Target and Permissions
 
@@ -68,7 +72,9 @@ Do not turn an unknown value into a copied acknowledgement or a guessed default.
 1. Inspect the chosen package's requirements and assets. Select its launch
    interpreter and environment; install only the package and intended native
    prerequisites using the [manual reference](README.md#2-python-virtual-environment).
-   Installing an editable checkout does not assemble distributable assets.
+   Installing an editable checkout does not assemble distributable assets. Diagnose
+   dependency source-build failures separately; the manual records the bounded
+   PyYAML installation option established by the external trial.
 2. Resolve the intended roots before invoking the CLI. For a previously absent
    server root, run `pgmcp --init` using that exact environment. It copies the
    selected package's assets and establishes managed-template state. Review the
@@ -116,8 +122,9 @@ published packages do not acquire that layout through this checklist.
 | Git and identity | For branch/commit/workflow use: repository, usable branch/HEAD, author identity and any signing policy. Review remote/base/branch conventions in `git.yaml`; coordination supplies the explicit parent when registering a **real** issue branch. No default main writes. |
 | Workflow and enforcement | Review workflows, phase/tool admission and branch-lock/PR-status rules against intended use. Preserve protection; explain dependencies such as GitHub lookups even for a local edit. Change policy only through an explicit workspace decision, never as an automatic bypass. |
 | Roots, artifacts and labels | Choose production/test/artifact roots, configured branch target sets, workflow scopes/types/priorities and relevant label declarations. Derive them from this workspace, not the pgmcp repository's example names. Review GitHub labels/permissions separately if remote workflows are selected. |
-| Host and roles | Reconcile the chosen host's MCP connection, instruction/role/workflow files and existing local settings field by field. Keep machine paths and credentials out of tracked configuration; preserve unrelated settings. Use the existing coordination/implementation/independent-QA division where selected. |
-| Checks/tests/fixes | Review selected bindings, adapter IDs/capabilities, native pins/executables, source and test discovery, arguments, exclusions and intended native policy. Confirm branch `configured_targets` separately from native configuration; tests/fixes retain their own selection contracts. |
+| Host and roles | Inspect this environment's actual MCP registration, instruction discovery and available role/delegation capabilities. Agree with the owner which shared instructions and role boundaries apply, then select their supported file format, location and invocation. Preserve existing settings; do not deploy every role or assume a directory layout from another host. Keep machine paths and credentials outside tracked configuration. |
+| Checks/tests/fixes | Review selected bindings, adapter IDs/capabilities, native pins/executables, source and test discovery, arguments, exclusions and intended native policy. Verify the real launch environment's `PATH` resolves the intended adapter programs; the server's absolute interpreter path does not select them. Confirm branch `configured_targets` separately from native configuration; tests/fixes retain their own selection contracts. |
+| Response delivery | Choose `structured` or `resource` per connection from actual agent-visible capabilities. Demonstrate inline instructions, complete operation data through the chosen route and separate attachments. Neither healthy startup nor client UI visibility proves the agent received those fields. See the [shared mode guidance](README.md#choose-the-response-mode). |
 | Quality acknowledgement | Set each applicable `configuration_choice` only after that review. Missing/null may permit health but refuse selected quality use. An acknowledgement does not prove native configuration was consumed. Follow the [quality policy reference](README.md#choose-the-workspace-quality-policy). |
 | GitHub, if selected | Set explicit owner/repo and optional project metadata in `github.yaml`; deliver the token through the host environment/secret facility where possible. A configured-token alternative must remain outside tracked artifacts. Verify remote identity and permissions rather than inferring them from Git remotes or the token holder. See [GitHub setup](../manuals/github-setup.md). |
 
@@ -148,7 +155,7 @@ tokens. For example, run this read-only inspection with the exact launcher Pytho
 working directory and environment (replace the example executable):
 
 ```powershell
-& 'C:/chosen/environment/Scripts/python.exe' -c "import sys, mcp_server; from importlib.metadata import version; from mcp_server.config.settings import Settings; s=Settings.from_env().server; print(sys.executable); print(sys.version); print(version('phase-gate-mcp')); print(mcp_server.__file__); print(s.workspace_root); print(s.resolved_server_root); print(s.resolved_config_root); print(s.resolved_template_root)"
+& 'C:/chosen/environment/Scripts/python.exe' -c "import sys, shutil, mcp_server; from importlib.metadata import version; from mcp_server.config.settings import Settings; s=Settings.from_env().server; print(sys.executable); print(sys.version); print(version('phase-gate-mcp')); print(mcp_server.__file__); print(s.workspace_root); print(s.resolved_server_root); print(s.resolved_config_root); print(s.resolved_template_root); print(shutil.which('python'))"
 ```
 
 That command proves its own process context, not a different running server.
@@ -211,3 +218,4 @@ remains unverified or blocked. Hand real issue lifecycle work back to coordinati
 | 1.4 | 2026-10-16 | @imp documenter | Separate unchanged 3.0.0 package setup from deliberate adoption of unreleased layered configuration. |
 | 1.5 | 2026-10-17 | @imp documenter | Require the selected interpreter to satisfy the chosen package before creating its launch environment; link current prerequisites. |
 | 2.0 | 2026-10-17 | @imp documenter | Replace unsafe automatic bootstrap with the authoritative fresh/upgrade checklist, explicit invocation, owner decisions and separate readiness evidence. |
+| 2.1 | 2026-10-21 | @imp implementer | Apply external installation feedback through shared dependency, executable-resolution, capability-based instruction placement and response-delivery guidance. |

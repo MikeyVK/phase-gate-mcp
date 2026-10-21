@@ -51,6 +51,49 @@ native tools needed by the selected bindings, at the versions their adapters
 declare. Development requirements are for contributors who deliberately select
 that environment, not unconditional target-workspace prerequisites.
 
+### Dependency source builds
+
+A portable PGMCP wheel does not guarantee binary wheels for every pinned dependency
+on every supported Python/platform combination. In the external Python 3.15.1 Windows
+trial, PyYAML 6.0.3 selected a source build and its optional extension failed without
+the native build prerequisites. The agent completed installation with
+`PYYAML_FORCE_LIBYAML=0`, which explicitly disables that optional extension in
+[PyYAML 6.0.3's build contract](https://github.com/yaml/pyyaml/blob/6.0.3/setup.py).
+
+When that specific failure occurs, either provision the native build prerequisites
+or retry with that variable set to `0` only for the installation process and its
+children. For example, replace the two placeholders below with the chosen
+environment interpreter and wheel path:
+
+```text
+<env-python> -c "import os, subprocess, sys; e = os.environ.copy(); e['PYYAML_FORCE_LIBYAML'] = '0'; subprocess.run([sys.executable, '-m', 'pip', 'install', sys.argv[1]], env=e, check=True)" <wheel-path>
+```
+
+This keeps the declared dependency pins and Python requirement intact. Do not use
+`--ignore-requires-python` or omit required dependencies to obtain an apparent pass.
+Other dependency failures need their own diagnosis.
+
+### Choose adapter executable paths
+
+The proxy's absolute Python path selects the server interpreter. Adapter entrypoints
+such as `executable: python` are resolved separately through the launch process's
+`PATH`; see the [bootstrap resolver](https://github.com/MikeyVK/phase-gate-mcp/blob/main/mcp_server/bootstrap.py)
+and [Python syntax entrypoint](https://github.com/MikeyVK/phase-gate-mcp/blob/main/mcp_server/bundled_adapters/python_syntax/manifest.yaml).
+Launching an environment's Python directly does not itself prepend that environment's
+executable directory to `PATH`.
+
+Set the connection's actual launch environment so the intended executable directories
+precede other candidates while preserving required existing entries. A virtual
+environment normally uses `Scripts` on Windows or `bin` on POSIX, with the platform's
+path separator. Review this against each selected adapter's native executable and pin.
+Do not assume the host expands shell placeholders or inherits an activated terminal.
+
+Verify the resolved programs and versions in the same environment as the real
+connection, then demonstrate the selected check. A healthy server alone does not
+prove which interpreter or executable an adapter will run. This is launcher setup;
+it introduces no automatic interpreter fallback or adapter change. See the
+[Python virtual-environment reference](https://docs.python.org/3/library/venv.html#how-venvs-work).
+
 For a development checkout, the owner may choose an editable installation:
 `python -m pip install -e .`. The running server obtains its version exclusively
 from installed `phase-gate-mcp` metadata. Source edits are usable after restart;
@@ -117,6 +160,14 @@ Structured presentation/data, attachments and total response size are outside th
 Instruction shortening is explicitly signalled; the resource cache stores operation
 facts and does not add a copy of rendered instructions.
 
+Choose by demonstrated capability, without assigning modes to host brands: use
+`structured` when the actual agent receives its complete structured envelope; use
+`resource` when it can read the returned cache URI through the same connection.
+In either case verify inline instructions and separate attachments reach the agent.
+A visible client UI attachment alone does not prove model access. If a bridge drops
+structured data, try the existing resource route and demonstrate a real readback;
+if neither route works, report setup blocked rather than claiming full output access.
+
 After a mode change, relaunch the selected connection and refresh `tools/list`;
 normal output-schema presence follows the selected mode. Verify that the actual agent
 receives the explanation and phase instructions and can retrieve the complete operation
@@ -171,87 +222,48 @@ acknowledgements.
 
 ---
 
-## 3. IDE Configuration: VS Code vs. Google Antigravity
+## 3. Connect Through the Available Host Capabilities
 
-There are critical structural differences in how **VS Code** and **Google Antigravity** handle MCP server registration and agent rules. Choose the section below corresponding to your IDE:
+Inspect the chosen environment's actual MCP registration and launch support. The
+agent and owner select the supported configuration file or settings surface,
+scope and format; this guide does not prescribe host directories or ship
+host-specific launcher/rule/skill files.
 
-The host examples describe destination formats. Resolve supplied templates from
-`<server-root>/agents/` (or `docs/agents/` in a checkout); adapt the launcher to the
-chosen installed interpreter and roots. Use copies only for absent destinations.
-For existing files, review and merge the relevant fields/instructions while
-preserving unrelated settings. Do not copy a whole settings file over owner work.
-The host's actual configuration support determines environment/path expansion.
+Configure one connection with the exact environment interpreter, module
+`mcp_server.core.proxy`, working directory and explicit workspace root. Deliver
+the selected response mode, executable search path and credentials through the
+host's supported environment/secret mechanism. Preserve unrelated entries.
+Do not assume a copied JSON file is loaded or that environment placeholders expand.
 
-### Option A: VS Code Setup
+Set the outer client startup budget above the proxy initialization deadline; the
+default policy recommends at least 75 seconds. Size the tool-call window for native
+execution, bounded stopping and response delivery. The PGMCP development workspace
+uses an owner-approved 1800-second client window with a 1200-second configured
+full-suite call; another workspace chooses values for its actual workload and
+host capabilities. Keep focused calls focused, retain native arguments, and report
+timed-out/incomplete runs honestly. See [execution budgets](../coding_standards/QUALITY_GATES.md).
+Activate connection changes and refresh discovery; child-only server restart does
+not establish a changed host launcher or client timeout.
 
-The supplied VS Code assets use these destinations:
+## 4. Place Shared Instructions Using the Available Capabilities
 
-| Supplied material | Workspace destination / action |
-| --- | --- |
-| `agents/vscode/copilot/mcp.json` | Review/adapt the PGMCP entry in `.vscode/mcp.json`; choose the exact interpreter, working directory and roots. |
-| `agents/vscode/copilot/AGENTS.md` | Reconcile `AGENTS.md` with existing workspace rules. |
-| Selected Copilot role/prompt files | Reconcile their corresponding `.github/` destinations; preserve unrelated files. |
-| Always-on instruction setting | Add `"chat.useAgentsMdFile": true` to the existing settings object if this is the chosen instruction mechanism; do not replace the object. |
+Use the [shared setup checklist](agentic-bootstrap.md) as the installation entry.
+Review [shared role and review responsibilities](../reference/copilot-agent-instructions-model.md)
+and the supplied coding standards with the owner. The agent determines how the
+chosen environment can expose those instructions and support the intended roles,
+then agrees what files, formats, locations and invocation are needed.
 
-The supplied connection uses workspace/environment placeholders. Verify that the
-installed host resolves them and delivers the intended token without exposing it;
-otherwise use the owner's supported path/environment mechanism. Reload/reconnect
-as needed and inspect actual startup and tool discovery.
+Reference shared material rather than maintaining copied instruction sets for each
+host. Resolve documentation references against the actual selected server root;
+discard example project assumptions. Preserve owner instructions and settings.
+Inspect what the agent actually loads; file presence or package installation alone
+does not establish instruction activation. If the environment cannot support a
+selected role or independent review boundary, report that limitation for an owner
+decision rather than weakening it silently.
 
-### Option B: Google Antigravity Setup
-
-The supplied Antigravity material is under `agents/antigravity/`: review
-`mcp_config.json`, `AGENTS.md`, `rules/` and `workflows/`. The workspace-local
-example destinations are `.agents/mcp_config.json`, root `AGENTS.md`,
-`.agents/rules/` and `.agents/workflows/`.
-
-Replace the launch-path placeholders with the chosen absolute interpreter/workspace
-paths and use the installed host's actual MCP registration and environment delivery
-mechanism. Keep credential values outside tracked files. Reconcile existing files
-instead of overwriting them; inspect which instructions/roles the host really
-loaded. Reload/relaunch and connect explicitly when required. File presence alone
-does not prove automatic rule loading or MCP activation.
-
-### Option C: Codex Setup
-
-- Keep machine-specific paths and secrets in the Git-ignored `.codex/config.toml`.
-- Set the existing PGMCP connection's client window to the approved value:
-
-```toml
-[mcp_servers.phase_gate_mcp]
-startup_timeout_sec = 75
-tool_timeout_sec = 1800
-```
-
-- Preserve the connection's existing command, cwd, environment and other settings.
-- Activate the changed setting in the Codex client connection; restarting only PGMCP does not prove activation.
-- Keep normal check/test/fix calls focused and retain their configured default execution budgets.
-- For the required full native-configured suite, use `run_tests(scope="configured", timeout_seconds=1200)`. Keep native execution arguments unchanged.
-- The client window covers the complete MCP call, including adapter execution, bounded stopping and result delivery. Account for all selected bindings when choosing per-call budgets.
-- Do not partition a required full run solely because its known workload exceeds a short default timeout. A timed-out or incomplete run remains incomplete evidence.
-- Rationale: the client previously stopped waiting before the full-suite result could be delivered. The owner approved a 1800-second client window and a 1200-second full-test execution budget on 2026-10-04, superseding the [issue460 300-second/partition decision](https://github.com/MikeyVK/phase-gate-mcp/blob/8770607492aeb6d076dfe5aae1dc78f79515dd07/docs/development/issue460/validation.md#owner-decision--client-timeout-2026-09-26). Neither setting promises completion of an arbitrarily long run.
-
-This tracked setup policy and the tracked AGENTS.md instructions survive cloning and branch integration. On every host using main, apply this policy to the local connection and activate it. A Git merge cannot update or activate a Git-ignored client configuration; retain existing machine paths and secrets.
-
-## 4. Agent Files and Selected Host Instructions
-
-The distributed source material is `docs/agents/` in a checkout and
-`<server-root>/agents/` after initialization with those assets. Review the chosen
-host's `AGENTS.md`, roles, workflows and, for Codex, supplied skills. Copy only
-absent destinations; merge into existing instructions with owner changes preserved.
-Use that host's actual invocation/discovery mechanism rather than assuming every
-file is automatically loaded.
-
-The repository's current agent protocol remains [AGENTS.md](https://github.com/MikeyVK/phase-gate-mcp/blob/main/AGENTS.md).
-The checklist's invocation works by giving the installed/local document to a chosen
-agent chat. A package install, copied role file or Git merge does not start that chat.
-
-### Workspace Rule Synchronization
-
-When owner changes affect equivalent instructions for more than one selected host,
-reconcile those consumers deliberately and verify the host loaded the intended
-revision. Installing all host variants or replacing their unrelated settings is not
-a setup requirement. No instruction content changes are introduced by this guide.
+Source-workspace examples under `docs/agents/` are not installed assets and are
+not a target setup dependency. No automatic deployment, migration or deletion of
+existing owner-managed host files occurs.
 
 ---
 
@@ -261,12 +273,11 @@ Return to the [authoritative checklist's verification levels](agentic-bootstrap.
 
 ---
 
-## Untracked Files Overview
+## Local Configuration and Secrets
 
-| File | Description | Action |
-|---|---|---|
-| `.vscode/mcp.json` | Selected VS Code connection | Review the supplied VS Code template; copy only if absent, otherwise reconcile the existing entry |
-| `.agents/mcp_config.json` | Antigravity local MCP config | Create under `.agents/` directory (Antigravity only) |
-| `.codex/config.toml` | Codex local MCP config | Apply Option C; set tool_timeout_sec=1800 and activate the client connection |
-| `GITHUB_TOKEN` | Credential when GitHub paths are selected | Deliver through the host environment/secret facility; never track its value |
-| Launch environment | Selected Python environment | Install the chosen package and only intended native prerequisites; verify interpreter/package identity |
+| Item | Action |
+| --- | --- |
+| Selected host's active MCP configuration | Choose the supported location/scope; preserve other connections and keep machine paths/secrets outside tracked files. |
+| Selected instruction surface | Agree files/formats/locations with the owner and verify actual agent loading of shared rules. |
+| `GITHUB_TOKEN`, when selected | Deliver through the host environment/secret facility; never track its value. |
+| Launch environment | Verify interpreter/package identity, adapter executable resolution and intended native prerequisites. |

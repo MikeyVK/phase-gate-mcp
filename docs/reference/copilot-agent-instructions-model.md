@@ -3,14 +3,15 @@
 # Agent Instructions Model
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-08-20
+**Version:** 2.2
+
+**Last Updated:** 2026-10-21
 
 ---
 
 ## Purpose
 
-Explain how host-specific agent instructions, runtime workflow contracts, role profiles,
+Explain how shared workspace instructions, runtime workflow contracts, role boundaries,
 and review authority cooperate in pgmcp. This document describes the current model for
 developers, integrators, and agents; it does not replace the executable contracts.
 
@@ -18,10 +19,10 @@ developers, integrators, and agents; it does not replace the executable contract
 
 | Concern | Authoritative source | Consumers |
 |---|---|---|
-| Host-specific agent instructions | `docs/agents/<host>/` | Active host locations and release assets |
+| Target installation and instruction placement | `docs/setup/agentic-bootstrap.md` and the owner's selected shared rules | Agent-selected supported host surfaces; no packaged host instruction bundle |
 | Workflow and phase behavior | `.pgmcp/config/contracts.yaml` | `get_work_context`, phase transitions, agents |
 | Phase vocabulary | `.pgmcp/config/workphases.yaml` | Contract loading and phase metadata |
-| Role capabilities and startup | Host role profiles, such as `.github/agents/*.agent.md` | The corresponding harness |
+| Role capabilities and startup | Owner-approved role/delegation arrangement based on this shared model | The selected environment's supported instruction surfaces |
 | Shared documentation quality | `docs/coding_standards/DOCUMENTATION_STANDARD.md` | Governed project documents |
 | Architecture rules | `docs/coding_standards/ARCHITECTURE_PRINCIPLES.md` | Applicable production and test code |
 
@@ -34,23 +35,24 @@ The static and dynamic layers have different jobs:
 - Human requests provide the task intent but do not silently override binding workspace
   or workflow boundaries.
 
-No active consumer is an independent source of truth. Edit the matching
-`docs/agents/<host>/` source first, synchronize its tracked consumer, and verify parity.
-Release assets under `mcp_server/assets/` are generated from these sources during a
-package build and are not maintained as another source.
+Target installations use the [shared setup checklist](../setup/agentic-bootstrap.md).
+The agent inspects the selected environment's capabilities and agrees instruction
+files, formats, locations and invocation with the owner. Host-specific example
+bundles are excluded from installation assets; no source example's project context
+or directory layout is target policy.
 
-## Host Instruction Surfaces
+## Workspace Instruction Surfaces
 
-| Host | Authoritative source | Active or derived consumer |
-|---|---|---|
-| VS Code / Copilot | `docs/agents/vscode/copilot/` | Root `AGENTS.md` and applicable `.github/` files |
-| Codex | `docs/agents/codex/` | `.agents/` |
-| Antigravity | `docs/agents/antigravity/` | Host-managed Antigravity rules and workflows |
+Reference shared instructions rather than maintaining one packaged variant per host.
+Use the environment's actual discovery, configuration and delegation capabilities
+to select where the agreed rules and roles live. Preserve existing owner files and
+verify what the agent loads.
 
-Host sources may differ where the harness genuinely requires different metadata,
-capability declarations, or invocation syntax. A source and its mapped direct-copy
-consumer must not differ. See [Adding a First-Class Workflow][workflow-guide] and the
-[release-assets procedure][release-assets] for the synchronization rules.
+The PGMCP source workspace retains its own active host files and examples under
+its local agent protocol. They are outside the target installation contract and
+excluded from the release manifest. Target setup does not copy, synchronize or
+maintain those source-workspace variants. Build assets remain generated outputs,
+not another instruction source.
 
 ## Runtime Workflow Context
 
@@ -182,8 +184,9 @@ For the instruction layer specifically:
 3. Keep document reads conditional and verification proportional.
 4. Apply the canonical hand-over headings exactly.
 5. Preserve the workflow-neutral Ready contract across workflows.
-6. Update host instruction sources only when global workflow vocabulary, role ownership,
-   or lifecycle behavior changes; then synchronize mapped consumers.
+6. Reconcile the selected workspace's actual instruction surfaces only when shared
+   workflow vocabulary, role ownership or lifecycle behavior changes; preserve one
+   shared model rather than distributing parallel host variants.
 7. Restart the server after startup-loaded config changes and verify the rendered
    `get_work_context` output.
 
@@ -201,9 +204,6 @@ composition mechanism.
 - [Architecture Principles][arch-principles]
 - [Quality Gates][quality-gates]
 - [Root Agent Instructions][agents-md]
-- [VS Code Coordination Role][co-agent]
-- [VS Code Implementation Role][imp-agent]
-- [VS Code QA Role][qa-agent]
 
 <!-- Link definitions -->
 [tools-ref]: tools/README.md
@@ -213,10 +213,7 @@ composition mechanism.
 [documentation-standard]: ../coding_standards/DOCUMENTATION_STANDARD.md
 [arch-principles]: ../coding_standards/ARCHITECTURE_PRINCIPLES.md
 [quality-gates]: ../coding_standards/QUALITY_GATES.md
-[agents-md]: ../../AGENTS.md
-[co-agent]: ../../.github/agents/co.agent.md
-[imp-agent]: ../../.github/agents/imp.agent.md
-[qa-agent]: ../../.github/agents/qa.agent.md
+[agents-md]: https://github.com/MikeyVK/phase-gate-mcp/blob/main/AGENTS.md
 
 ---
 
@@ -230,3 +227,4 @@ composition mechanism.
 | 1.2 | 2026-05-24 | Agent | Document config-driven context and role ownership |
 | 1.1 | 2026-05-17 | Agent | Consolidate the always-on VS Code instruction file |
 | 1.0 | 2026-05-17 | Agent | Initial model |
+| 2.2 | 2026-10-21 | @imp implementer | Separate shared target setup and capability-based instruction placement from source-workspace host examples; exclude host bundles from release assets. |

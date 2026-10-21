@@ -37,11 +37,13 @@ def test_complete_wheel_and_installed_catalogs_and_entrypoints(
         (source / ".pgmcp/template_suite", "mcp_server/assets/template_suite"),
         (source / ".pgmcp/config/defaults", "mcp_server/assets/config/defaults"),
         (source / ".pgmcp/config/check_schemas", "mcp_server/assets/config/check_schemas"),
+        (source / "docs/setup", "mcp_server/assets/docs/setup"),
         (source / "mcp_server/bundled_adapters", "mcp_server/bundled_adapters"),
         (source / "mcp_server/execution/contracts", "mcp_server/execution/contracts"),
     )
     with ZipFile(distribution.wheel) as wheel:
         names = set(wheel.namelist())
+        assert not any(name.startswith("mcp_server/assets/agents/") for name in names)
         assert not any(name.startswith("mcp_server/assets/bundled_adapters/") for name in names)
         assert not any("/workspace_adapters/" in name for name in names)
         config_prefix = "mcp_server/assets/config/"

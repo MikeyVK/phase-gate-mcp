@@ -3,7 +3,7 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.4
+**Version:** 1.5
 
 **Last Updated:** 2026-10-21
 
@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the v3 template suite, agent instructions, and workflows into the installable pip wheel.
+Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the template suite, and shared setup/reference documentation into the installable pip wheel.
 
 ## Prerequisites
 
@@ -21,49 +21,29 @@ Read these first:
 
 ## Summary
 
-Defines a strict build-time copy regime from the workspace sources (including docs/agents/ and slash commands) to mcp_server/assets/ driven by a release_manifest.yaml, ensuring a clean and IDE-agnostic bootstrapping process.
+Defines a strict build-time copy regime from the selected workspace sources to mcp_server/assets/ driven by a release_manifest.yaml, ensuring a clean and IDE-agnostic bootstrapping process.
 
 ---
 
-- Define docs/agents/ as the SSOT for rules and slash commands
+- Keep host-specific source examples outside installable assets
 - Introduce release_manifest.yaml to declare release-bound files
 - Explicitly assemble and verify declared assets before the package build
 
 ---
 
-## 1. Specification: Agent Instruction Sources (SSOT)
+## 1. Shared Target Setup and Source-Workspace Instructions
 
-To avoid duplication debt across host-specific layouts, the repository designates
-`docs/agents/` as the single source of truth for distributable agent instructions,
-workflows, and Codex skills:
+Target installation starts at the shipped `docs/setup/agentic-bootstrap.md`.
+The agent inspects its environment's MCP/instruction capabilities and agrees the
+required files, formats and locations with the owner. Shared role/review boundaries
+remain documented in the instruction model and active workflow contracts.
 
-```text
-docs/agents/
-├── antigravity/                   # Google Antigravity instructions and workflows
-├── vscode/
-│   └── copilot/                   # VS Code/Copilot agents and prompts
-└── codex/                         # Codex rules, workflows, and discoverable skills
-```
-
-Each host directory preserves the structure needed to deploy that host's active files.
-Local MCP connection configuration, absolute workspace paths, credentials, runtime
-state, and other machine-specific settings are not part of this SSOT.
-
-### 1.1. Local Development Synchronization (Dev Sync)
-
-Authoritative changes are made under the appropriate `docs/agents/<host>/` directory
-and are then deployed to the host's active runtime locations:
-
-- `docs/agents/antigravity/` → the active Antigravity rules and workflows.
-- `docs/agents/vscode/copilot/` → `AGENTS.md`, `.github/agents/`, and
-  `.github/prompts/`.
-- `docs/agents/codex/` → `.agents/`, excluding local files such as
-  `mcp_config.json`.
-
-Active runtime copies may remain version-controlled when the host requires them in a
-repository checkout, but they are derived copies and must remain byte-equivalent to
-their authoritative source. The build manifest packages `docs/agents/` directly; it
-does not package active runtime locations.
+`docs/agents/` contains this development repository's existing host examples.
+It is excluded from the manifest; active checkout host files and machine-specific
+launcher settings are not target installation assets. This change neither deletes
+source examples nor modifies an existing target's instructions. No per-host
+deployment generator, instruction synchronization step or automatic cleanup is
+added to package building or initialization.
 
 ---
 
@@ -81,8 +61,6 @@ assets:
     target: "config/check_schemas"
   - source: ".pgmcp/template_suite"
     target: "template_suite"
-  - source: "docs/agents"
-    target: "agents"
   - source: "docs/coding_standards"
     target: "docs/coding_standards"
   - source: "docs/manuals"
@@ -116,9 +94,10 @@ This release procedure remains in the PGMCP source workspace and is not an insta
 Installable references are explicitly selected; their links to this procedure use the
 repository source URL. A new distributable reference requires an explicit manifest entry.
 
-The repository manifest is the source of truth for package asset mappings. Keep
-consumer copies of host instructions synchronized with their declared direct-copy
-sources; build assets are generated outputs, not separately edited sources.
+The repository manifest is the source of truth for package asset mappings.
+Build assets are generated outputs, not separately edited sources. Shared setup
+and instruction references are included through their normal documentation mappings;
+host-specific bundles are excluded.
 
 Official adapters are authored under `mcp_server/bundled_adapters/` and remain in
 that package path in the wheel. They are package data, not release-manifest assets,
@@ -292,3 +271,4 @@ part of this procedure.
 | 1.2 | 2026-10-11 | @imp documenter | Define bounded GitHub release preparation, historical reconstruction provenance, exact-artifact verification and separate publication approval. |
 | 1.3 | 2026-10-16 | @imp documenter | Correct explicit assembly ordering, disposable-root boundaries and fail-closed diagnostics/build behavior for #505. |
 | 1.4 | 2026-10-21 | @imp implementer | Select generic configuration defaults/shared schemas and explicit installable references; retain release procedure only in the source workspace. |
+| 1.5 | 2026-10-21 | @imp implementer | Exclude host-specific instruction/example bundles; use shared capability-based setup while leaving source examples and existing owner files untouched. |

@@ -103,7 +103,10 @@ def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
         candidate / "mcp_server",
         ignore=shutil.ignore_patterns("assets", "__pycache__", "*.pyc"),
     )
-    manifest = read_manifest(REPO_ROOT / ".pgmcp/config/release_manifest.yaml")
+    manifest_path = candidate / ".pgmcp/config/release_manifest.yaml"
+    manifest_path.parent.mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / ".pgmcp/config/release_manifest.yaml", manifest_path)
+    manifest = read_manifest(manifest_path)
     for mapping in manifest["assets"]:
         source = REPO_ROOT / mapping["source"]
         destination = candidate / mapping["source"]
@@ -114,25 +117,9 @@ def _installed_candidate(tmp_path: Path) -> InstalledDistribution:
             shutil.copy2(source, destination)
 
     launcher_python, _ = _selected_runtime()
-    distribution = build_installed_distribution(
+    return build_installed_distribution(
         candidate, tmp_path / "distribution", python_executable=launcher_python
     )
-    host_sources = (
-        "docs/agents/vscode/copilot/AGENTS.md",
-        "docs/agents/codex/AGENTS.md",
-        "docs/agents/antigravity/AGENTS.md",
-        "docs/agents/vscode/copilot/.github/agents/qa.agent.md",
-        "docs/agents/vscode/copilot/.github/agents/co.agent.md",
-        "docs/agents/codex/rules/research.agent.md",
-    )
-    for relative in host_sources:
-        mapped = relative.removeprefix("docs/agents/")
-        packaged = distribution.root / "mcp_server/assets/agents" / mapped
-        assert packaged.is_file(), f"packaged_host_asset_missing:{mapped}"
-        assert packaged.read_bytes() == (candidate / relative).read_bytes(), (
-            f"packaged_host_asset_mismatch:{mapped}"
-        )
-    return distribution
 
 
 def _selected_runtime() -> tuple[Path, str]:
@@ -366,6 +353,8 @@ class TestTargetStartup:
         )
         assert initialized.returncode == 0, initialized.stdout + initialized.stderr
         assert (fresh / ".pgmcp/installation.json").is_file()
+        assert not (fresh / ".pgmcp/agents").exists()
+        assert (fresh / ".pgmcp/docs/setup/agentic-bootstrap.md").is_file()
         assert not (fresh / ".pgmcp/.version").exists()
         repo = GitRepo.init(str(fresh), initial_branch="main")
         marker = fresh / "README.md"

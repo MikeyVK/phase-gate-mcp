@@ -3,8 +3,9 @@
 # Adding a First-Class Workflow
 
 **Status:** DEFINITIVE  
-**Version:** 1.1  
-**Last Updated:** 2026-10-10
+**Version:** 1.2
+
+**Last Updated:** 2026-10-21
 
 ---
 
@@ -53,7 +54,7 @@ are mapping keys; use explicit order where sequence affects behavior. See the
 | Branch type | `.pgmcp/config/git.yaml` | Branch prefix and issue-number extraction namespace |
 | Allowed base branches | `.pgmcp/config/enforcement.yaml` | Branch creation policy |
 | Phase vocabulary | `.pgmcp/config/workphases.yaml` | Globally known phase metadata |
-| Agent source assets | `docs/agents/<host>/` | Distributable host-specific instructions |
+| Shared target setup | `docs/setup/agentic-bootstrap.md` | Capability-based instruction placement with the owner; no host-specific bundle |
 | Active lifecycle entry | Host workflow or prompt file | Daily start sequence |
 
 These sets may intentionally differ. For example, an issue type may share a
@@ -188,21 +189,15 @@ a workflow. Explain intentional exceptions in the relevant current reference.
 Update current start workflows or prompts that enumerate supported workflow
 types.
 
-Edit authoritative agent sources first:
+Use the [shared setup checklist](../setup/agentic-bootstrap.md) and
+[shared instruction model][agent-model] to reconcile the selected workspace's actual
+instruction surfaces. The agent and owner select files, formats and locations from
+the environment's capabilities. Keep phase behavior in workflow contracts rather
+than distributing parallel host-specific copies.
 
-| Host | Authoritative source | Derived or active consumer |
-|---|---|---|
-| VS Code/Copilot | `docs/agents/vscode/copilot/` | `AGENTS.md` and applicable `.github/` files |
-| Codex | `docs/agents/codex/` | `.agents/` |
-| Antigravity | `docs/agents/antigravity/` | Active Antigravity rules and workflows |
-
-Synchronize tracked consumers after the source edit and verify that corresponding
-files are byte-equivalent where the host layout is a direct copy. Do not edit a
-derived consumer first. Local MCP connection settings, credentials, runtime
-state, and absolute paths are never part of the agent-source SSOT.
-
-See [Release Assets Procedure][release-assets] for packaging and host deployment
-boundaries.
+Source-repository host examples and their local authoring conventions are outside
+the target installation contract. They are not packaged or deployed by this
+procedure. See [Release Assets Procedure][release-assets] for that boundary.
 
 ### 7. Verify Runtime-Derived Surfaces
 
@@ -291,4 +286,5 @@ Confirm these relationships explicitly:
 |---|---|---|---|
 | 1.1 | 2026-10-10 | @imp documenter | Document zero/one cycle-phase admission and planning/resumption policy boundaries (#491) |
 | 1.0 | 2026-08-18 | Agent | Initial deterministic workflow-extension procedure |
+| 1.2 | 2026-10-21 | @imp implementer | Separate source-workspace host examples from shared target setup; remove the claim that host bundles are distributed. |
 
