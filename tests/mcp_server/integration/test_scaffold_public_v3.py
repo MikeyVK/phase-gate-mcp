@@ -12,7 +12,9 @@ import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import (
     CallToolResult,
+    EmbeddedResource,
     TextContent,
+    TextResourceContents,
 )
 from pydantic import BaseModel, JsonValue
 
@@ -174,7 +176,7 @@ async def invoke(
     assert delivery["operation"] == operation.model_dump(mode="json", by_alias=True)
     summary = response.content[0]
     assert isinstance(summary, TextContent)
-    assert f"pgmcp://cache/runs/{publication.run_id}" in summary.text
+    assert summary.text
     assert envelope["presentation"] == summary.text
     return response, cached
 
@@ -184,7 +186,14 @@ def schema_attachment(response: CallToolResult) -> PresentationResource:
     assert isinstance(envelope, dict)
     attachments = envelope["attachments"]
     assert isinstance(attachments, list) and len(attachments) == 1
-    return PresentationResource.model_validate(attachments[0])
+    embedded = [item for item in response.content if isinstance(item, EmbeddedResource)]
+    assert len(embedded) == 1
+    resource = embedded[0].resource
+    assert isinstance(resource, TextResourceContents)
+    assert attachments[0] == {"uri": str(resource.uri), "mime_type": resource.mime_type}
+    return PresentationResource(
+        uri=str(resource.uri), mime_type=resource.mime_type, content=resource.text
+    )
 
 
 @pytest.mark.asyncio

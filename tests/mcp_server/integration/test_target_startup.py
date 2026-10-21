@@ -424,7 +424,12 @@ class TestTargetStartup:
             "phases": {},
         }
         manager.save_planning_deliverables(53, author_plan)
-        with run_server_process(launch, cwd=fresh, env=fresh_env, timeout=120) as proc:
+        with run_server_process(
+            launch,
+            cwd=fresh,
+            env={**fresh_env, "PGMCP_RESPONSE_MODE": "resource"},
+            timeout=120,
+        ) as proc:
             assert "serverInfo" in proc.initialize(client_name="pytest-target")
             tools = proc.list_tools()
             names = [tool["name"] for tool in tools]
@@ -472,9 +477,11 @@ class TestTargetStartup:
                     "tools/call",
                     {"name": "scaffold_schema", "arguments": {"artifact_type": "research"}},
                 )
-                attachments = response["result"]["structuredContent"]["attachments"]
                 return next(
-                    item["content"] for item in attachments if item["uri"].startswith("schema://")
+                    item["resource"]["text"]
+                    for item in response["result"]["content"]
+                    if item["type"] == "resource"
+                    and item["resource"]["uri"].startswith("schema://")
                 )
 
             admitted = schema_text()

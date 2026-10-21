@@ -11,8 +11,10 @@ import pytest
 from jsonschema import Draft202012Validator
 from mcp.types import (
     CallToolResult,
+    EmbeddedResource,
     ListToolsResult,
     TextContent,
+    TextResourceContents,
 )
 from pydantic import BaseModel, JsonValue
 
@@ -109,12 +111,20 @@ async def invoke(
     async with connected_mcp_client(composition.server) as client:
         response = await client.call_tool("scaffold_schema", arguments)
     assert isinstance(response, CallToolResult)
-    assert len(response.content) == 1
+    assert len(response.content) == 2
+    assert isinstance(response.content[0], TextContent)
     envelope = response.structured_content
     assert isinstance(envelope, dict)
     attachments = envelope["attachments"]
     assert isinstance(attachments, list) and len(attachments) == 1
-    resource = PresentationResource.model_validate(attachments[0])
+    embedded = response.content[1]
+    assert isinstance(embedded, EmbeddedResource)
+    contents = embedded.resource
+    assert isinstance(contents, TextResourceContents)
+    assert attachments[0] == {"uri": str(contents.uri), "mime_type": contents.mime_type}
+    resource = PresentationResource(
+        uri=str(contents.uri), mime_type=contents.mime_type, content=contents.text
+    )
     delivery = envelope["data"]
     assert isinstance(delivery, dict) and delivery["delivery"] == "inline"
     operation = composition.text.present_text.call_args.kwargs["data"]
@@ -160,7 +170,7 @@ async def test_registered_schema_query_transfers_the_complete_catalog_view(
     summary = response.content[0]
     assert isinstance(summary, TextContent)
     assert selected.manifest.purpose in summary.text
-    assert f"pgmcp://cache/runs/{run_id}" in summary.text
+    assert response.structured_content["presentation"] == summary.text
     assert "attachments" not in cached
     assert "sf" not in cached
     operation = composition.cache.get(run_id, ScaffoldSchemaOutput)
