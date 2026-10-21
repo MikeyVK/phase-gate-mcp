@@ -1,4 +1,4 @@
-version: "3.0.0"
+version: "4.0.0"
 assets:
   # Ship the generic basis and shared validation schemas, never workspace overrides.
   - source: ".pgmcp/config/defaults"
