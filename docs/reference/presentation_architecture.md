@@ -247,5 +247,4 @@ apply_fixes runs selected fixes in request order and stops when work cannot cont
 | 3.0.0 | 2026-10-20 | @imp documenter | Document process-local profiles, selected common envelope/schema, protected core, independent serialization failures and fixed recovery. |
 | 3.0.1 | 2026-10-20 | @imp documenter | Document compact known-outcome processing recovery, required schema marker, channel/budget/cache limitations and fixed startup exception; remove obsolete wrapper-metadata reservation. |
 | 3.0.2 | 2026-10-20 | @imp documenter | Clarify existing global formatting and selected-tool limits for normal notes, immutable source parameters and visible invalid-policy/value diagnostics. |
-
 | 4.0.0 | 2026-10-21 | @imp documenter | Replace independent profiles with two named modes, final inline bounds, separate attachment bodies/metadata references and the prior-serialization guard; preserve compact/startup recovery ownership. |
