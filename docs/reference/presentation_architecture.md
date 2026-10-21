@@ -1,10 +1,11 @@
 <!-- docs/reference/presentation_architecture.md -->
 <!-- template=reference version=064954ea created=2026-08-19T19:43Z updated=2026-10-20 -->
-# Presentation Architecture and Response Profiles
+# Presentation Architecture and Response Modes
 
 **Status:** DEFINITIVE  
-**Version:** 3.0.2  
-**Last Updated:** 2026-10-20
+**Version:** 4.0.0
+
+**Last Updated:** 2026-10-21
 
 **Configuration basis:** [presentation.yaml](../../.pgmcp/config/defaults/presentation.yaml)  
 **Composition root:** [bootstrap.py](../../mcp_server/bootstrap.py)  
@@ -12,9 +13,9 @@
 
 ## Purpose
 
-The operation DTO owns tool-result facts. The presentation boundary projects those facts, configured instructions and separately owned attachments through a response profile. MCPServer transfers that projection without reconstructing DTOs from text. The cache retains the operation through its existing canonical serialization policy.
+The operation DTO owns tool-result facts. The presentation boundary supplies bounded readable text, one selected supplementary operation-data route and independently owned attachments. MCPServer transfers that projection without reconstructing DTOs from text. The existing cache retains only the operation.
 
-Configuration owns wording, presentation fields, collection ordering, item limits and profile definitions. Generic presenters own rendering, protected-core budgeting, selected-channel delivery and the matching public schema. This is a clean public-contract cutover; internal operation DTOs and ToolExecution retain their responsibilities.
+Configuration owns wording, field/collection declarations, ordering, item limits, shared budgets and the default mode. Generic presenters own rendering, final text limiting, mode selection and matching public schema. Internal operation DTOs and ToolExecution retain their responsibilities.
 
 ## End-to-End Flow
 
@@ -27,22 +28,21 @@ sequenceDiagram
     participant Presenter as ResponsePresenter
     participant Text as TextPresenter
     participant Budget as TextBudgetLimiter
-    participant Resources as SchemaResourcePresenter
     Client->>Server: tools/call(name, arguments)
     Server->>Tool: execute(arguments, NoteContext)
     Tool-->>Server: ToolExecution(operation, attachments)
     Server->>Cache: publish operation only
-    Cache-->>Server: CachePublication(success, run_id or diagnosis)
+    Cache-->>Server: CachePublication(run_id or diagnosis)
     Server->>Presenter: operation, notes, attachments, publication facts
-    Presenter->>Text: render configured explanation and guidance
+    Note over Presenter: Prior serialization failure bypasses normal rendering/conversion
+    Presenter->>Text: render configured explanation and guidance once
     Text-->>Presenter: RenderedPresentation(core, details)
-    Presenter->>Budget: protect core; limit optional details
-    Presenter->>Resources: serialize supplied attachments
-    Presenter-->>Server: PresentedOutput(text?, structured_content?)
-    Server-->>Client: selected channels; actual isError
+    Presenter->>Budget: bound body plus reserved footer and notices
+    Presenter-->>Server: text, optional structured content, separate resources
+    Server-->>Client: text + embedded resources + optional structuredContent; actual isError
 ```
 
-Normal publication precedes presentation. Limits on rendered details never remove fields from a normally delivered inline operation or from a successfully published cached operation.
+Normal publication precedes presentation. The final text limit does not remove fields from a complete structured operation or successfully cached operation. Attachment formatting remains in SchemaResourcePresenter.
 
 ## Ownership Boundaries
 
@@ -54,47 +54,40 @@ Normal publication precedes presentation. Limits on rendered details never remov
 | Attachment identity/schema facts | SchemaAttachment producer |
 | Attachment URI, media type and schema serialization | SchemaResourcePresenter |
 | Wording, field/collection declarations, ordering and item limits | presentation.yaml |
-| Profile definitions and default | PresentationConfig |
-| Per-process profile selection | Existing Settings / bootstrap |
+| Default mode and shared budgets | PresentationConfig |
+| Per-process mode selection | Existing Settings / bootstrap |
 | Scalar and collection formatting | TextPresenter / CollectionTextRenderer |
-| Protected core and optional-detail budget mechanics | TextBudgetLimiter |
+| Final UTF-8 text bound, footer reserve and safe excerpts | TextBudgetLimiter |
 | Selected public envelope, emergency projection and output schema | ResponsePresenter |
 | Transfer to MCP and real operation isError | MCPServer |
 
 Managers, tools and adapters do not compose user-facing policy explanations. Native diagnostics and original exception causes remain evidence at the existing error boundaries. See [Architecture Principles §15](../coding_standards/ARCHITECTURE_PRINCIPLES.md).
 
-## Process-Local Profiles
+## Process-Local Modes
 
-Presentation configuration version 2.0.0 defines response_profiles and global.default_response_profile. The existing loader composes defaults with workspace overrides. Each profile requires:
+Presentation configuration version 2.0.0 requires global.response_mode with exactly two values. The existing loader composes defaults with workspace overrides.
 
-| Field | Values | Meaning |
-| --- | --- | --- |
-| presentation_channel | text, structured, both | Where the complete short explanation and mandatory instructions appear |
-| data_channel | text, structured | Where complete operation data or its resource reference and direct attachments appear |
-| data_delivery | inline, resource | Whether operation data is inline or points to successful cache publication |
-
-Shipped profiles:
-
-| Profile | Presentation | Data channel | Operation delivery |
+| Mode | Inline text | Supplementary operation data | outputSchema |
 | --- | --- | --- | --- |
-| structured_inline (default) | both | structured | inline |
-| structured_resource | both | structured | resource |
-| text_inline | text | text | inline |
+| structured (shipped default) | Finally bounded; ends with structured-result notice | Complete operation and full rendered presentation in structuredContent | Matching common envelope |
+| resource | Finally bounded; ends with a real cache URI and paging advice when applicable | Existing operation cache, read through the same server connection | Absent for normal tools |
 
-Set PGMCP_RESPONSE_PROFILE on an individual launcher process to select a named profile. An explicit environment value overrides launcher-provided server.response_profile; omission selects the configured global default. Empty or unknown selectors fail startup admission. No harness/model detection or shared active-profile state exists. Two processes can read the same config root and select different profiles without editing shared configuration.
+Both modes deliver available attachments as separate native embedded-resource content blocks. No complete operation JSON is appended to text.
 
-Profile definitions may override max_text_response_bytes, max_cache_failure_detail_bytes and cache_read_budget_chars; omitted overrides inherit global values. All resolved budgets must be positive. Invalid literals, unknown fields, empty profile maps and invalid defaults fail configuration validation.
+Set PGMCP_RESPONSE_MODE=structured or resource on an individual launcher process. An explicit environment selector overrides launcher server.response_mode; omission uses global.response_mode. ResponseMode is defined once in pure [Settings](../../mcp_server/config/settings.py) and reused by presentation configuration. Invalid or empty values reject healthy startup admission. There is no profile dictionary, channel matrix, old-selector alias, harness detection or shared active-mode state. Different processes can select different modes against the same workspace without rewriting shared configuration.
 
-See [setup guidance](../setup/README.md#choose-the-response-profile) for activation and client verification.
+Shared max_text_response_bytes, max_cache_failure_detail_bytes and cache_read_budget_chars remain in global settings, with defaults 8000 UTF-8 bytes, 8000 UTF-8 bytes and 6000 Unicode codepoints respectively. Budgets must be positive; final-text feasibility is additionally validated against configured fixed notices and footer reserves.
+
+See [setup guidance](../setup/README.md#choose-the-response-mode) for activation and client verification.
 
 ## Public Envelope and Channels
 
-When presentation or data selects structured, structuredContent is the common envelope:
+Structured mode supplies the common envelope:
 
 ```json
 {
   "success": true,
-  "presentation": "Planning updated. Read the refreshed work context.",
+  "presentation": "Planning updated. Read the refreshed work context.\n\nFull result available in the structured response.",
   "data": {"delivery": "inline", "operation": {"success": true}},
   "attachments": [],
   "delivery_error": null,
@@ -102,59 +95,52 @@ When presentation or data selects structured, structuredContent is the common en
 }
 ```
 
-Generated envelopes include all six outer fields. presentation is null if structured presentation is unselected. data and processing_error are null and attachments is empty in a structured presentation-only projection when the data channel is text. success always represents the actual operation outcome; delivery_error describes a separate normal delivery failure, while processing_error describes a later response-processing failure. Normal output has processing_error=null.
+All six fields are emitted. Normal data is a complete JSON-mode operation with aliases. presentation contains the full configured rendering before inline clipping, plus the same attachment/route notices. success is the actual operation outcome; delivery_error describes a separate delivery failure and processing_error a later response-processing failure. Normal processing_error is null.
 
-Normal data alternatives:
+Resource mode emits bounded text and separate attachments without normal structuredContent or outputSchema. Its locator identifies only a successfully published operation. It does not duplicate rendered instructions in the cache.
 
-- Inline: delivery=inline and the complete operation serialized in JSON mode with aliases.
-- Resource: delivery=resource, a truthful pgmcp://cache/runs/<run_id> URI and optional size_chars. The resource points only to the operation.
-- Attachments: complete objects with uri, mime_type and content in the selected data channel, including resource profiles.
+Each available attachment is independently emitted after the text as a native MCP EmbeddedResource with uri, mimeType and text. In structured mode, attachments contains only uri/mime_type references to those same supplied blocks; there is no second body copy in this field. Existing schema fields owned by an operation DTO remain intact. A configured generic attachment notice appears in inline text and full structured presentation. A schema:// identity does not imply a registered resources/read route.
 
-With data_channel=text, one distinct fenced JSON segment carries the complete envelope data/attachments after any selected presentation. That segment is outside the short-presentation budget. No unconditional embedded-resource or unselected-channel copy is added. With entirely structured normal output, content can be empty. With both channels exclusively text, outputSchema and structuredContent are absent.
+ResponsePresenter derives outputSchema from the same frozen public models and selected mode used for delivery. Structured schema admits complete InlineOperation, explicit delivery failure or compact processing recovery. The recovery alternative requires non-null processing_error; omitting it cannot admit recovery-shaped data. MCPServer transfers the selected schema to tools/list and does not add an internal-DTO schema or another presenter.
 
-The presenter generates the selected outputSchema from the same frozen public models and resolved profile used for delivery. It admits normal delivery, applicable delivery errors and compact processing recovery, with channel-specific restrictions. The compact alternative requires a non-null processing_error diagnosis; merely omitting that field cannot admit otherwise invalid recovery-shaped data. Normal inline/resource restrictions remain intact. MCPServer uses this profile-derived schema for the connected tool catalog; it does not advertise each internal operation DTO as the public response shape.
+Unknown tools and errors before a normalized operation remain explicit errors at their existing boundary; they do not invent operation facts.
 
-Unknown-tool requests and processing/transport errors before a normalized operation exists remain genuine explicit errors at their existing boundary. They do not invent an operation DTO.
+## Final Presentation Budget
 
-## Protected Presentation and Budgets
+TextPresenter still returns core (main templates, enum explanations, instructions and notes) and details (configured collection projections). ResponsePresenter renders once, adds configured notices, and applies TextBudgetLimiter to the final inline projection.
 
-TextPresenter returns core and details separately:
+The default normal text allowance is 8000 UTF-8 bytes **including** route/attachment footer, separators, truncation notice and any required fence closure. The limiter reserves the complete footer and truthful truncation notice, then shortens the body prefix on safe UTF-8 boundaries. There is no protected-core overrun. The structured presentation retains the complete rendering; the operation cache retains only operation data.
 
-- core: complete configured success/failure template, enum explanation, next instructions and all notes. Phase instructions and hand-over text embedded in a main template therefore remain complete.
-- details: configured collection projections, retaining existing item limits.
+Startup rejects an allowance too small for the conservative configured fixed-notice/footer reserve, expanded cache ID and fence closure. It does not silently enlarge the budget. The generic limiter also rejects an impossible supplied footer. Configured URI and outcome messages admit only their limited scalar placeholders; attachment wording is fixed-size rather than an unbounded URI list.
 
-ResponsePresenter adds truthful cache/pagination or failure notices. TextBudgetLimiter reserves the core, separators and required truncation notice before admitting optional details. It cuts only details, on UTF-8-safe boundaries, preferring complete lines/blocks and closing an intersected fence within the allowance.
+Text shortening is explicitly signalled. Instruction truncation remains an owner-noted limitation, with no demonstrated practical failure in the reviewed investigation; this is not a universal guarantee of instructions reaching every model. Complete structured data, structured presentation, attachments and total wire/token size are outside the inline cap.
 
-The global presentation allowance is 8000 bytes by default. Protected content alone may exceed it and is never cut; optional details are then omitted with the configured notice. Complete inline data and attachments are outside this budget. This is not a universal wire/token/cost ceiling.
-
-cache_read_budget_chars (default 6000 Unicode codepoints) controls when to display pagination advice, not a resource read limit. The actual existing window API is unchanged.
+cache_read_budget_chars controls pagination advice, not resource read limits. A notice about supplementary data depends on actual availability, including an already-successful cache receipt when inline serialization or later processing fails.
 
 ## Cache and Serialization Failures
 
 | Situation | Delivered result |
 | --- | --- |
-| Cache succeeds; inline selected | Complete inline operation and attachments; truthful cache guidance |
-| Cache fails; inline serialization succeeds | Complete inline operation and attachments; configured cache-unavailable warning |
-| Resource selected; cache fails or publisher absent | No fabricated URI; protected emergency text, data=null and explicit delivery_error |
-| Inline serialization fails | Protected emergency text and operation_serialization_failed; actual success/isError retained |
-| Cache succeeds but inline serialization fails | Same explicit inline delivery error; any cache guidance remains truthful, without silently changing the selected route |
+| Structured conversion succeeds | Complete operation/full presentation in structuredContent; bounded text and separate attachments. A cache storage failure remains visible without negating complete structured facts. |
+| Resource mode, publication succeeds | Bounded text with real URI and optional paging advice; separate attachments, no structuredContent/schema. |
+| Resource mode, publication fails | Actual outcome and bounded labelled diagnosis; no fabricated URI or JSON dump. |
+| Publisher reports serialization_failed, either mode | Before normal TextPresenter or full operation conversion, use only known outcome, bounded publisher diagnosis and independently formatted attachments. Structured mode has data=null and operation_serialization_failed; resource mode stays text plus attachments. |
+| Later structured conversion fails | Explicit operation_serialization_failed with truthful existing cache guidance if available; otherwise complete data is unavailable. No repeat serializer. |
 
-Canonical cache serialization runs once before accepting an entry. Its native failure propagates to the existing publisher boundary, which captures the original exception/cause and returns CachePublication(success=False, error_code=serialization_failed, diagnostic=...). No entry or eviction occurs on failed serialization. Other publication failures report write_failed with diagnosis. The serializer never substitutes error JSON and reports it as complete operation publication.
+Canonical cache serialization runs once before accepting an entry. Its failure is captured at the existing publisher boundary as serialization_failed with the native diagnosis; no entry/eviction occurs and no substitute error JSON is claimed as the operation.
 
-The distinct inline JSON projection is attempted once when needed. A failure of canonical serialization does not establish failure of inline serialization, or vice versa. No failed full serializer is retried to construct an emergency excerpt.
+That prior failure is a guard against further full operation traversal/rendering/conversion. A storage failure after successful serialization (write_failed) is distinct: one independent structured JSON-mode conversion may still deliver complete data. No failed serializer, publisher or operation is retried.
 
-Emergency output retains actual outcome, explanation, instructions, notes and necessary failure/truncation notices. It emits text even for a normally structured-only presentation profile and also retains selected structured presentation. Complete attachments remain directly available. delivery_error.code is cache_publication_failed or operation_serialization_failed, with details_truncated.
-
-Only native diagnostic details are bounded by max_cache_failure_detail_bytes (default 8000), including excerpt label/formatting closure. The core remains protected even when larger. The excerpt is labelled potentially incomplete diagnostic text, not a complete JSON result. The outer MCP response and selected structured variant remain serializable/schema-valid. These are output bounds, not streaming or memory guarantees for arbitrary objects.
+Delivery failure retains actual success/isError. Its diagnosis is a labelled potentially incomplete native-text excerpt under max_cache_failure_detail_bytes; normal inline text also obeys its final cap. Structured failure fields remain complete valid JSON, not sliced serialized output. These bounds do not promise streaming or bounded memory for arbitrary objects.
 
 ## Compact Response-Processing Recovery
 
-An unexpected failure after an operation has returned is distinct from the normal cache/serialization delivery failures above. MCPServer remembers the known boolean outcome before further processing, logs the original exception and invokes the existing presenter's recover() once. The server passes only that outcome, native diagnostic strings and optional UUID/size from an already-successful cache receipt. It owns no recovery wording, profile projection or response-schema definition.
+An unexpected failure after an operation has returned is distinct from the normal cache/serialization delivery failures above. MCPServer remembers the known boolean outcome before further processing, logs the original exception and invokes the existing presenter's recover() once. The server passes only that outcome, native diagnostic strings and optional UUID/size from an already-successful cache receipt. It owns no recovery wording, mode projection or response-schema definition.
 
 | Recovery field | Meaning |
 | --- | --- |
 | success / MCP isError | Actual known operation outcome; a successful operation stays success=true / isError=false |
-| presentation | Short configured notice in the selected presentation channel(s) |
+| presentation | Short configured notice in text and, for structured mode, structured presentation |
 | data | Already-existing ResourceOperation reference or null; never a replayed InlineOperation |
 | attachments | Empty; original attachments are not inspected or converted |
 | delivery_error | null; this route makes no new full-data delivery attempt |
@@ -162,11 +148,11 @@ An unexpected failure after an operation has returned is distinct from the norma
 
 Recovery does not receive or serialize the original operation, notes, source instruction fields, attachments or arbitrary exception parameters. It calls neither normal present()/rendering nor the publisher/resource reader. The explicit recovery exception therefore does not promise the full result, normal advice, raw notes or phase instructions that had not yet been rendered. Its short notice instructs the caller to verify the actual outcome before repeating an operation.
 
-A successful existing receipt can supply a reference even when normal delivery is inline. That is an explicit small recovery alternative, not a profile change or automatic publication. The reference points only to the already-cached operation; it does not contain attachments, raw notes or the later diagnosis. Cache lifetime and client access are not guaranteed. With no successful receipt, data=null and the configured no-publication notice is shown; no replacement dump or invented URI is emitted.
+A successful existing receipt can supply a reference even when normal delivery is inline. That is an explicit small recovery alternative, not a mode change or automatic publication. The reference points only to the already-cached operation; it does not contain attachments, raw notes or the later diagnosis. Cache lifetime and client access are not guaranteed. With no successful receipt, data=null and the configured no-publication notice is shown; no replacement dump or invented URI is emitted.
 
-Recovery consults only already-resolved presentation_channel/data_channel flags. For textual data, a complete small fenced JSON envelope carries the diagnosis/reference; a separate structured presentation-only envelope keeps data and processing_error null. A wholly textual profile still advertises no outputSchema. No extra unconditional channel or normal large-data projection is introduced.
+Recovery uses the already-resolved mode. Both modes emit finally bounded text. Structured mode additionally carries the compact diagnosis and optional existing ResourceOperation in the common envelope; resource mode adds no structured channel or JSON text envelope.
 
-The existing max_cache_failure_detail_bytes allowance (default 8000) is one shared UTF-8 budget: error_message first, traceback from the remainder. Candidate string prefixes are bounded before encoding, then safely excerpted. Original exception parameters/context are not copied. Shortened details set processing_error.params.diagnostic_details_truncated=true and add the configured notice. The enclosing JSON remains complete and parseable; full native cause/trace remains in existing server logs. Protected notices and ordinary JSON/channel overhead mean this is not a new whole-response byte ceiling.
+max_cache_failure_detail_bytes (default 8000) is one UTF-8 diagnosis budget: error_message first, traceback from the remainder. Prefixes are bounded before encoding and safely excerpted. Original exception parameters/context are not copied. Shortened details set processing_error.params.diagnostic_details_truncated=true and add the configured notice. Full native cause/trace remains in existing server logs. The outer JSON remains parseable; there is no total-response-size promise.
 
 The existing global.next_instruction_texts configuration owns response_processing_failed, recovery_cache_unavailable and processing_diagnostic_truncated. Startup validation requires nonempty messages and permits only plain {success} in the first; the other two are constants. Existing reference/pagination wording is reused only for an already-successful receipt.
 
@@ -174,7 +160,7 @@ There is one recovery attempt. A secondary recovery/SDK failure ends through exi
 
 ## Startup Recovery
 
-When startup configuration is rejected, StartupRecoveryPresenter does not load another config, select a profile or depend on cache access. Its fixed exception is full recovery text/instructions in both content and presentation, complete inline operation diagnosis, direct attachments and delivery_error=null. Healthy startup restores the configured profile. If this fixed normal presentation itself fails after a known outcome, the compact exception above applies: outcome and short notice appear in both presentation channels, with the bounded processing diagnosis in the common structured envelope. It has a fixed 8000-byte diagnostic allowance, no cache reference and no profile/configuration dependency. This stays inside StartupRecoveryPresenter; the server does not add a fallback presenter.
+When startup configuration is rejected, StartupRecoveryPresenter does not load another config, select a mode or depend on cache access. Its fixed exception is full recovery text/instructions in both content and presentation, complete inline operation diagnosis, direct attachments and delivery_error=null. Healthy startup restores the configured mode. If this fixed normal presentation itself fails after a known outcome, the compact exception above applies: outcome and short notice appear in both presentation channels, with the bounded processing diagnosis in the common structured envelope. It has a fixed 8000-byte diagnostic allowance, no cache reference and no mode/configuration dependency. This stays inside StartupRecoveryPresenter; the server does not add a fallback presenter.
 
 A health query can succeed while reporting rejected admission; a restart receipt does not prove that the replacement admitted successfully. Check health and refresh tools/list after replacement. Raw proxy failures before an MCP response remain proxy-event presentation, without invented tool outcomes.
 
@@ -186,7 +172,7 @@ A tool presentation entry uses template_success/template_failure, max_items, ord
 
 Only exact list[T] and variadic tuple[T, ...] sequence annotations are supported, with scalar or Pydantic model items. Flat scalar sequences can appear in templates; structured sequences use declared collections. Each depth applies max_items independently. Arbitrary iterable discovery, sorting/filtering and tool-specific renderer branches are unsupported.
 
-Normal note templates use the same global formatting policy and the selected tool's max_items as other flat scalar sequence formatting. Lists and tuples retain source order; the configured separator, omission text and none_value determine their textual projection. Rendering does not modify note parameters. A tool without max_items receives no invented limit: a sequence requiring that policy, or an unsupported nested value, retains the existing visible formatting diagnostic. All successfully rendered notes remain part of the protected core; this formatting policy does not remove fields from the operation or change its persisted facts.
+Normal note templates use the same global formatting policy and the selected tool's max_items as other flat scalar sequence formatting. Lists and tuples retain source order; the configured separator, omission text and none_value determine their textual projection. Rendering does not modify note parameters. A tool without max_items receives no invented limit: a sequence requiring that policy, or an unsupported nested value, retains the existing visible formatting diagnostic. All successfully rendered notes remain part of the shared rendered body; this formatting policy does not remove fields from the operation or change its persisted facts.
 
 For example:
 
@@ -203,7 +189,7 @@ list_issues:
       item_template: "- #{number} [{state}] {title} — {html_url}"
 ```
 
-Successful output must have the declared field/container/item shapes. Generic failure DTOs may omit success-only collections; presentation never fabricates them. Startup rejects missing/unknown tool entries, duplicate names, unresolved output models, invalid placeholders/formatting, unsupported collections/children, invalid enum cases and inconsistent max_items declarations. A tiny positive budget is valid because required content can overrun it.
+Successful output must have the declared field/container/item shapes. Generic failure DTOs may omit success-only collections; presentation never fabricates them. Startup rejects missing/unknown tool entries, duplicate names, unresolved output models, invalid placeholders/formatting, unsupported collections/children, invalid enum cases and inconsistent max_items declarations. Configured global text budgets must also satisfy the fixed-notice/footer feasibility validation.
 
 ## Cache Representation and Client Guidance
 
@@ -213,31 +199,32 @@ Inline JSON mode with aliases and the cache's canonical field-presence policy re
 
 Use the selected complete inline data when available; otherwise read the successful resource reference. Check size before paging and follow the [packaged cache guide](../../mcp_server/resources/cache_reading.md). The cache is transient/process-local; a run ID alone is not durable proof. Record exact invocation, scope and observed outcome in committed evidence. Never replay a mutation merely to recover cached details.
 
-SchemaResourcePresenter maps attachment identity to schema://validation (application/json) or schema://template/<percent-encoded-template-id>/context (application/schema+json). The complete schema content travels in the selected data channel. Attachments never enter the operation cache.
+SchemaResourcePresenter maps attachment identity to schema://validation (application/json) or schema://template/<percent-encoded-template-id>/context (application/schema+json). The complete schema content travels in separate native MCP embedded-resource blocks in both modes. Structured attachment metadata references those blocks without another body copy. Attachments never enter the operation cache; existing operation-owned schema values remain.
 
 Server publication proves the selected server output, not delivery to every downstream model context. Installation must verify the chosen client's actual presentation and full-data readback route; no harness-version compatibility matrix is built into the presenter.
 
 ## Configured Execution Evidence
 
-run_checks, run_tests and apply_fixes use the same profile boundary. Inspect operation success/error_code separately from each native result's status, reason, evidence, adapter identity and capture. An accepted operation can contain a failed native check without becoming a protocol failure.
+run_checks, run_tests and apply_fixes use the same mode boundary. Inspect operation success/error_code separately from each native result's status, reason, evidence, adapter identity and capture. An accepted operation can contain a failed native check without becoming a protocol failure.
 
 apply_fixes runs selected fixes in request order and stops when work cannot continue or a fix does not pass. Earlier native changes may exist; rollback is not promised. Inspect the result and affected files before an authorized narrow recheck. Presentation never chains another fix/check automatically.
 
 ## Primary Implementation and Evidence
 
-- [Profile and presentation config](../../mcp_server/config/schemas/presentation_config.py)
+- [Mode and presentation config](../../mcp_server/config/schemas/presentation_config.py)
 - [Public envelope/value models](../../mcp_server/schemas/presentation_output.py)
 - [Response presenter](../../mcp_server/presenters/response_presenter.py)
-- [Protected text renderer](../../mcp_server/presenters/text_presenter.py)
+- [Configured text renderer](../../mcp_server/presenters/text_presenter.py)
 - [Budget limiter](../../mcp_server/presenters/text_budget_limiter.py)
 - [Startup recovery presenter](../../mcp_server/presenters/startup_recovery_presenter.py)
 - [Cache resource](../../mcp_server/resources/cache.py)
 - [Known-outcome recovery and missing-marker SDK cases](../../tests/mcp_server/integration/test_tool_attachment_transport.py)
 - [Issue #528 validation](../development/issue528/validation.md)
-- [Profile/SDK/serializer behavior tests](../../tests/mcp_server/integration/test_execution_presentation_v3.py)
-- [Protected composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
+- [Mode/SDK/serializer behavior tests](../../tests/mcp_server/integration/test_execution_presentation_v3.py)
+- [Rendering composition tests](../../tests/mcp_server/unit/presenters/test_text_presenter_composition.py)
 - [Startup and instance-isolation tests](../../tests/mcp_server/integration/test_target_startup.py)
-- [Issue #529 validation](../development/issue529/validation.md)
+- [Issue #529 historical validation](../development/issue529/validation.md)
+- [Issue #537 validation](../development/issue537/validation.md)
 
 ## Related Documentation
 
@@ -260,3 +247,5 @@ apply_fixes runs selected fixes in request order and stops when work cannot cont
 | 3.0.0 | 2026-10-20 | @imp documenter | Document process-local profiles, selected common envelope/schema, protected core, independent serialization failures and fixed recovery. |
 | 3.0.1 | 2026-10-20 | @imp documenter | Document compact known-outcome processing recovery, required schema marker, channel/budget/cache limitations and fixed startup exception; remove obsolete wrapper-metadata reservation. |
 | 3.0.2 | 2026-10-20 | @imp documenter | Clarify existing global formatting and selected-tool limits for normal notes, immutable source parameters and visible invalid-policy/value diagnostics. |
+
+| 4.0.0 | 2026-10-21 | @imp documenter | Replace independent profiles with two named modes, final inline bounds, separate attachment bodies/metadata references and the prior-serialization guard; preserve compact/startup recovery ownership. |
