@@ -56,7 +56,7 @@ user/system policy remain enabled. An initial conflicting native `core.worktree`
 refused; admitted commands remain explicitly bound to the selected worktree and Git
 directory. See the [composition root](../../mcp_server/bootstrap.py),
 [Git adapter](../../mcp_server/adapters/git_adapter.py) and
-[validated isolation proof](../development/issue522/validation.md).
+[validated isolation proof](../development/archive/issue522/validation.md).
 
 ```mermaid
 graph TD
@@ -161,7 +161,7 @@ No health-first gate is required for this reload procedure.
 ## Related Documentation
 
 - [Workspace upgrade guide](workspace-upgrade.md)
-- [Release assets procedure](../reference/release-assets-procedure.md)
+- [Release assets procedure](https://github.com/MikeyVK/phase-gate-mcp/blob/main/docs/reference/release-assets-procedure.md)
 - [Server configuration](../reference/server-configuration.md)
 - [Package source and build script](../../scripts/build_package.py)
 

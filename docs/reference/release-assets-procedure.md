@@ -3,14 +3,15 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.3  
-**Last Updated:** 2026-10-16
+**Version:** 1.8
+
+**Last Updated:** 2026-10-21
 
 ---
 
 ## Purpose
 
-Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the v3 template suite, agent instructions, and workflows into the installable pip wheel.
+Specify the folder structure, manifest format, and build-time synchronization procedure for packaging default configuration assets, the template suite, complete generic agent instructions, and shared setup/reference documentation into the installable pip wheel.
 
 ## Prerequisites
 
@@ -20,88 +21,97 @@ Read these first:
 
 ## Summary
 
-Defines a strict build-time copy regime from the workspace sources (including docs/agents/ and slash commands) to mcp_server/assets/ driven by a release_manifest.yaml, ensuring a clean and IDE-agnostic bootstrapping process.
+Defines a strict build-time copy regime from the selected workspace sources to mcp_server/assets/ driven by a release_manifest.yaml, ensuring a clean and IDE-agnostic bootstrapping process.
 
 ---
 
-- Define docs/agents/ as the SSOT for rules and slash commands
+- Ship the complete `docs/agents/shared/` source as one `agents/` map; exclude host-specific variants
 - Introduce release_manifest.yaml to declare release-bound files
 - Explicitly assemble and verify declared assets before the package build
 
 ---
 
-## 1. Specification: Agent Instruction Sources (SSOT)
+## 1. Shared Target Setup and Source-Workspace Instructions
 
-To avoid duplication debt across host-specific layouts, the repository designates
-`docs/agents/` as the single source of truth for distributable agent instructions,
-workflows, and Codex skills:
+Target installation starts at the shipped `docs/setup/agentic-bootstrap.md`.
+The agent inspects its environment's MCP/instruction capabilities and agrees the
+required files, formats and locations with the owner. Shared role/review boundaries
+remain documented in the instruction model and active workflow contracts.
 
-```text
-docs/agents/
-├── antigravity/                   # Google Antigravity instructions and workflows
-├── vscode/
-│   └── copilot/                   # VS Code/Copilot agents and prompts
-└── codex/                         # Codex rules, workflows, and discoverable skills
-```
+`docs/agents/shared/` is the maintained complete generic source: `agents.md`, the
+three role protocols and five workflow procedures. The manifest maps that directory
+to one installed `agents/` map. The shared checklist deploys its content through the
+actual host's mechanisms; the builder only copies declared bytes.
 
-Each host directory preserves the structure needed to deploy that host's active files.
-Local MCP connection configuration, absolute workspace paths, credentials, runtime
-state, and other machine-specific settings are not part of this SSOT.
-
-### 1.1. Local Development Synchronization (Dev Sync)
-
-Authoritative changes are made under the appropriate `docs/agents/<host>/` directory
-and are then deployed to the host's active runtime locations:
-
-- `docs/agents/antigravity/` → the active Antigravity rules and workflows.
-- `docs/agents/vscode/copilot/` → `AGENTS.md`, `.github/agents/`, and
-  `.github/prompts/`.
-- `docs/agents/codex/` → `.agents/`, excluding local files such as
-  `mcp_config.json`.
-
-Active runtime copies may remain version-controlled when the host requires them in a
-repository checkout, but they are derived copies and must remain byte-equivalent to
-their authoritative source. The build manifest packages `docs/agents/` directly; it
-does not package active runtime locations.
+Other directories under `docs/agents/` contain this development repository's existing
+host examples and remain excluded, as do active checkout host files and machine-local
+launchers. This change neither deletes those examples nor mutates an existing target.
+No per-host generator, source-content transformer or automatic cleanup is added.
 
 ---
 
 ## 2. Release Manifest Specification (`release_manifest.yaml`)
 
 The authoritative manifest is `.pgmcp/config/release_manifest.yaml`. The current
-manifest maps these repository sources into `mcp_server/assets/`:
+manifest maps selected repository sources into `mcp_server/assets/`. This excerpt
+shows the source boundaries; consult the manifest for the complete explicit reference-file list:
 
 ```yaml
 assets:
-  - source: ".pgmcp/config"
-    target: "config"
+  - source: ".pgmcp/config/defaults"
+    target: "config/defaults"
+  - source: ".pgmcp/config/check_schemas"
+    target: "config/check_schemas"
   - source: ".pgmcp/template_suite"
     target: "template_suite"
-  - source: "docs/agents"
+  - source: "docs/agents/shared"
     target: "agents"
   - source: "docs/coding_standards"
     target: "docs/coding_standards"
   - source: "docs/manuals"
     target: "docs/manuals"
-  - source: "docs/reference"
-    target: "docs/reference"
+  - source: "docs/reference/tools"
+    target: "docs/reference/tools"
+  - source: "docs/reference/presentation_architecture.md"
+    target: "docs/reference/presentation_architecture.md"
+  # Other installable reference files are explicitly selected in the manifest.
+  # This workspace-only procedure is deliberately not selected.
   - source: "docs/development/schema-template-maintenance.md"
     target: "docs/development/schema-template-maintenance.md"
-  - source: "docs/setup"
-    target: "docs/setup"
+  - source: "docs/setup/agentic-bootstrap.md"
+    target: "docs/setup/agentic-bootstrap.md"
+  - source: "docs/setup/README.md"
+    target: "docs/setup/README.md"
+  - source: "docs/setup/workspace-upgrade.md"
+    target: "docs/setup/workspace-upgrade.md"
+  - source: "docs/setup/dev-isolation.md"
+    target: "docs/setup/dev-isolation.md"
   - source: "CHANGELOG.md"
-    target: "docs/CHANGELOG.md"
+    target: "CHANGELOG.md"
   - source: "README.md"
-    target: "docs/README.md"
+    target: "README.md"
   - source: "LICENSE"
     target: "LICENSE"
 ```
 
 The single active maintenance guide is included at its existing documentation path so the template library and identity guides retain a delivered reading route. This mapping does not include the development archive or issue reports. Before distributing new or changed template packages, follow its [development and release review](../development/schema-template-maintenance.md#develop-and-release-a-package); asset assembly does not itself establish semantic conformance.
 
-The repository manifest is the source of truth for package asset mappings. Keep
-consumer copies of host instructions synchronized with their declared direct-copy
-sources; build assets are generated outputs, not separately edited sources.
+Only config/defaults and config/check_schemas are distributed. Root configuration overrides,
+repository identity and reviewed native quality choices belong to the receiving workspace;
+never copy this repository's root overrides into an installable package. The manifest itself
+is a workspace build input, not target-workspace configuration.
+
+This release procedure remains in the PGMCP source workspace and is not an installed asset.
+Installable references are explicitly selected; their links to this procedure use the
+repository source URL. A new distributable reference requires an explicit manifest entry.
+The top-level README, CHANGELOG and LICENSE are installed beside the docs directory;
+this preserves the source README's relative documentation and metadata links.
+
+The repository manifest is the source of truth for package asset mappings.
+Build assets are generated outputs, not separately edited sources. Shared setup
+and instruction references are included through their normal documentation mappings;
+only the generic `agents/` set is included. Setup documents are selected explicitly,
+so the source-only `docs/setup/mcp.json` launcher example is not installed.
 
 Official adapters are authored under `mcp_server/bundled_adapters/` and remain in
 that package path in the wheel. They are package data, not release-manifest assets,
@@ -143,16 +153,19 @@ claim protection against hostile concurrent filesystem changes.
 
 ### 3.1 Prepare reviewable release artifacts
 
-GitHub Releases is the selected publication destination for 1.0.0, 2.0.0 and 3.0.0.
-Prepare a wheel and source distribution (sdist) for each version. PyPI publication
-is outside this procedure's approved scope. Run the existing
+GitHub Releases is the selected publication destination. Versions 1.0.0, 2.0.0 and
+3.0.0 are historical publication records, not the next release-version decision.
+Prepare a wheel and source distribution (sdist) for the selected candidate. An early
+installation-test build may retain current package metadata when its exact source,
+artifact hash and provisional status are recorded; it is not an accepted release.
+PyPI publication remains outside this procedure's approved scope. Run the existing
 `scripts/build_package.py` utility to assemble assets and build; the sdist must
 retain the assembled assets so it can rebuild a complete wheel.
 
 Reconstruct notes from the selected Git revision, merged PRs and durable issue
 evidence. The mixed `docs/development/` inventory is not a release-change source
 of truth. State breaking contracts, native prerequisites, owner migration and known
-limits. For v3, record the final source SHA; prepare notes and artifact identities
+limits. For each new release, record the final source SHA; prepare notes and artifact identities
 for review before requesting publication approval.
 
 ### 3.2 Reconstruct the historical releases
@@ -202,6 +215,59 @@ Creating tags, publishing releases, uploading assets and external rollout requir
 separate human approval of the reviewed notes, exact source SHAs, artifact hashes
 and concrete execution procedure. Select the intended latest release explicitly
 when publishing historical versions.
+
+### 3.4 Publish the next release from integrated source
+
+Use this procedure only in the PGMCP source workspace. It is deliberately absent
+from the release manifest and installed assets; target workspaces follow
+`docs/setup/agentic-bootstrap.md`. The historical reconstruction in section 3.2
+is not a step to repeat for a new release.
+
+1. Agree the exact next version with the owner. Reconstruct release notes from
+   the previous release tag through the intended merged changes, not from issue
+   folder membership. Include breaking contracts, supported Python/native
+   prerequisites, configuration migration and remaining limits. Align the package
+   metadata, release manifest version and notes; no automatic version inference.
+2. Finish the bounded issue changes and independent Implementation review before
+   entering Validation. Run the active workflow's required configured tests and
+   checks there, retain failed/incomplete evidence, and obtain the subsequent
+   phase verdicts. A documentation GO or an installation smoke test is not full
+   Validation. Any later candidate changes require a review of affected evidence
+   before merge and publication.
+3. Complete the issue PR and Coordinate its merge into main. When publication is
+   still outstanding, the PR must reference the release issue without an
+   automatic closing directive. Keep that issue open until publication is
+   verified. A merge GO does not authorize a tag or release.
+4. Select the exact integrated source SHA after merge. Export that committed
+   source to a separate disposable build directory and run the existing
+   `scripts/build_package.py` there with the selected build environment. Do not
+   assemble into the active server's assets, install over its environment or copy
+   owner overrides. Record the source, interpreter, build/backend versions and
+   resolved dependencies. A wheel prepared before merge remains preliminary
+   until its relationship to the integrated source is established.
+5. Verify the actual wheel and sdist as required by section 3.3. Check manifest
+   assets, hidden files, bundled adapters, the complete generic `agents/` map
+   and absence of owner overrides, host examples and this procedure. Verify
+   isolated initialization/startup/catalog behavior and the relevant renewal
+   and owner-preservation outcomes. Reuse earlier evidence only where later
+   source or artifact changes have not invalidated it. Record filenames and
+   SHA-256 values for the files that will actually be offered for download.
+6. Present one compact acceptance dossier: exact integrated source and proposed
+   tag/version, artifact identities, release notes and migration instructions,
+   live observations, automated/independent QA evidence, limitations and the
+   concrete publication operation. Obtain the owner's explicit acceptance and
+   publication approval for that dossier. The accepted external trial of a
+   preliminary wheel does not approve a different final artifact.
+7. Only after that approval, create the reviewed tag at the accepted SHA and
+   publish the reviewed notes and exact accepted files to GitHub Releases.
+   Verify the remote tag target, release status, intended latest designation and
+   uploaded asset sizes/digests. Do not rebuild or substitute accepted files
+   silently; material candidate changes require renewed affected verification
+   and owner acceptance.
+8. Record actual publication and cleanup outcomes in the release issue, then
+   close it through Coordination. Preserve acceptance evidence, owner files and
+   recovery material. Repository archival and cleanup are separate from package
+   assembly; they do not authorize deleting ignored local environments or backups.
 
 ---
 
@@ -271,3 +337,8 @@ part of this procedure.
 | 1.1 | 2026-10-07 | @imp documenter | Include the active template maintenance guide as one asset and connect package review to distribution without changing activation behavior. |
 | 1.2 | 2026-10-11 | @imp documenter | Define bounded GitHub release preparation, historical reconstruction provenance, exact-artifact verification and separate publication approval. |
 | 1.3 | 2026-10-16 | @imp documenter | Correct explicit assembly ordering, disposable-root boundaries and fail-closed diagnostics/build behavior for #505. |
+| 1.4 | 2026-10-21 | @imp implementer | Select generic configuration defaults/shared schemas and explicit installable references; retain release procedure only in the source workspace. |
+| 1.5 | 2026-10-21 | @imp implementer | Exclude host-specific instruction/example bundles; use shared capability-based setup while leaving source examples and existing owner files untouched. |
+| 1.6 | 2026-10-21 | @imp implementer | Package the complete generic agents source and explicit setup documents; retain one deployment entry and exclude host launcher examples. |
+| 1.7 | 2026-10-21 | @imp implementer | Preserve README-relative navigation by installing root metadata beside docs; align the manifest example. |
+| 1.8 | 2026-10-21 | @imp implementer | Define the next-release sequence from independent Validation through integrated-source build, exact-artifact owner approval, publication verification and issue closure. |

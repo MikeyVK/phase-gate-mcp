@@ -6,34 +6,124 @@ All notable changes to Phase-Gate MCP Server are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 4.0.0
 
-- Require explicit coordination-supplied parent registration on the attached branch;
-  `submit_pr` accepts title/body/draft and takes both PR targets from matching state
-  before submission effects. Remove the default-base authority. Branch state now uses
-  schema `2.0.0`; deliverables remain `1.0.0`, with deliberate owner adoption and no
-  automatic migration. Invalid/unreadable state and planning validation preserve the
-  original source and prior backups; existing wrappers retain planning-domain diagnosis.
-  See the [workspace contract update](docs/setup/workspace-upgrade.md#unreleased-branch-registration-contract).
+These notes describe the 4.0.0 source candidate. Publication status, tag targets,
+dates and downloadable artifact identities are recorded on
+[GitHub Releases](https://github.com/MikeyVK/phase-gate-mcp/releases); this entry
+does not claim that publication has occurred. The change boundary is the merged
+history after `v3.0.0`, plus the reviewed #536 distribution/documentation changes.
+Development-folder membership is not the release inventory.
 
-- Require deliberate configuration_choice for applicable check/test/fix bindings,
-  including content preflight. Missing choices permit startup for setup but refuse
-  execution; native discovery and caller argument semantics remain unchanged.
-  Fresh initialization clears inherited acknowledgements. See the
-  [setup procedure](docs/setup/README.md#choose-the-workspace-quality-policy).
-- Retain guarded report-mode edits when quality setup prevents checks from starting,
-  reporting validation_status=not_executed without claiming validation.
-- Activate Ruff G004/BLE001/SLF001 with bounded repairs and preserve complete exception,
-  cleanup and CLI/renewal diagnosis through existing wrappers and presenters.
-- Remove personal GitHub identity defaults, require explicit settings injection, read
-  status phases from branchstate and remove unused config/template-root fallbacks.
-  Correct active setup examples and agent instructions.
+### Breaking changes
 
-A new release is explicitly postponed; no release version/date is assigned here.
+- **Runtime and SDK:** Require Python **>=3.15** and MCP SDK **2.3.0**, with aligned
+  runtime/development dependencies and native adapter prerequisites. SDK 1 Python
+  integration paths are removed without a compatibility bridge
+  ([PR #514](https://github.com/MikeyVK/phase-gate-mcp/pull/514),
+  [PR #519](https://github.com/MikeyVK/phase-gate-mcp/pull/519)).
+- **Workspace configuration:** Required product bases live under
+  `config/defaults/<file>.yaml`; optional root files contain workspace overrides.
+  Object collections use mapping-key identity, explicit `order` ranks where order
+  matters, and the exact `{$delete: true}` command for deletion. Literal lists are
+  replaced as complete values; `null` does not delete a key. Config roots are
+  self-contained, with no fallback or automatic conversion of older shapes.
+  GitHub identity/project settings move to `github.yaml`; a nonempty
+  `GITHUB_TOKEN` takes precedence over the explicit configured-token alternative.
+  Launcher GitHub settings are removed
+  ([PR #510](https://github.com/MikeyVK/phase-gate-mcp/pull/510)).
+- **Branch registration and PR targets:** Coordination must supply
+  `parent_branch` to `initialize_project`. The checked-out branch supplies head
+  identity; `submit_pr` accepts title/body/draft and uses matching registered
+  branch/parent state. Branch state uses schema `2.0.0`; deliverables remain
+  `1.0.0`. Owner reconciliation is explicit
+  ([PR #509](https://github.com/MikeyVK/phase-gate-mcp/pull/509)).
+- **Tool response delivery:** Choose `structured` or `resource` through
+  `PGMCP_RESPONSE_MODE` / `server.response_mode`, with
+  `presentation.yaml: global.response_mode` as the shared default. The interim
+  profile/channel matrix and old profile selectors are removed. Normal inline
+  text has a final UTF-8 byte limit including its footer. Structured mode carries
+  complete operation data and rendered presentation with a matching output schema;
+  resource mode supplies the existing operation-cache route without normal
+  structured content/output schemas. Available schema attachments remain separate native
+  resource blocks in both modes; structured attachment entries reference their URI/MIME
+  without duplicating bodies
+  ([PR #532](https://github.com/MikeyVK/phase-gate-mcp/pull/532),
+  [PR #538](https://github.com/MikeyVK/phase-gate-mcp/pull/538)).
+- **Internal contracts:** Core tool inputs require concrete Pydantic models,
+  including typed empty inputs. Structured logging requires a mapping with string
+  keys and finite JSON values; malformed properties are diagnosed while primary
+  metadata, valid sibling facts and original tracebacks remain available. The unused
+  operation-policy Python/config route is removed
+  ([PR #535](https://github.com/MikeyVK/phase-gate-mcp/pull/535),
+  [PR #512](https://github.com/MikeyVK/phase-gate-mcp/pull/512)).
 
-Release artifacts, tags and publication dates are recorded on
-[GitHub Releases](https://github.com/MikeyVK/phase-gate-mcp/releases).
-The release-preparation evidence records exact package verification and limitations.
+### Added and fixed
+
+- **Concurrent startup:** Ordinary lock contention retries within the required
+  `defaults/server.yaml` policy: 30-second lock budget, 0.25-second retry interval
+  and 60-second proxy initialization deadline by default. Genuine errors and
+  exhausted waits remain explicit; these values do not guarantee total startup
+  latency. Startup-policy changes require full proxy/child relaunch
+  ([PR #521](https://github.com/MikeyVK/phase-gate-mcp/pull/521)).
+- **Workspace-bound Git:** Git operations use the explicitly selected workspace,
+  including neutral/foreign launch directories, and reject conflicting inherited
+  repository selectors. Branch creation uses the resolved HEAD commit
+  ([PR #525](https://github.com/MikeyVK/phase-gate-mcp/pull/525),
+  [PR #535](https://github.com/MikeyVK/phase-gate-mcp/pull/535)).
+- **Diagnosis and editing:** Preserve domain/cleanup/CLI/renewal exception details
+  through existing wrappers/presenters. Invalid state/planning reads leave source
+  and prior backups intact. Guarded `safe_edit_file(validation="report")` remains
+  usable when quality setup prevents checks from starting, with truthful
+  `not_executed` validation. Planning-note punctuation, cache-failure wording and
+  compact response recovery are corrected
+  ([PR #502](https://github.com/MikeyVK/phase-gate-mcp/pull/502),
+  [PR #509](https://github.com/MikeyVK/phase-gate-mcp/pull/509),
+  [PR #527](https://github.com/MikeyVK/phase-gate-mcp/pull/527),
+  [PR #534](https://github.com/MikeyVK/phase-gate-mcp/pull/534),
+  [PR #538](https://github.com/MikeyVK/phase-gate-mcp/pull/538)).
+- **Distribution and setup:** Fail-closed manifest assembly rejects invalid or
+  indirect source/output paths before mutation. The #536 candidate distributes
+  generic config bases/shared schemas, templates and one complete `agents/` map,
+  with a single agent-guided setup entry. The installed asset set excludes this
+  repository's workspace overrides/native tool policies, host-specific examples,
+  launchers and source release procedure.
+  Fresh initialization preserves supplied choices; shipped quality choices are
+  unset until the receiving workspace reviews its selected capabilities
+  ([PR #511](https://github.com/MikeyVK/phase-gate-mcp/pull/511),
+  [PR #515](https://github.com/MikeyVK/phase-gate-mcp/pull/515),
+  [issue #536](https://github.com/MikeyVK/phase-gate-mcp/issues/536)).
+- **Maintainer quality:** Restore selected strict checker signals, tighten native
+  Ruff policy and replace broad catches/type exemptions with scoped source repairs
+  and justified boundary exceptions. No zero-suppression or whole-test typechecking
+  guarantee is made
+  ([PR #502](https://github.com/MikeyVK/phase-gate-mcp/pull/502),
+  [PR #535](https://github.com/MikeyVK/phase-gate-mcp/pull/535)).
+
+### Owner migration
+
+Follow the [single setup/upgrade checklist](docs/setup/agentic-bootstrap.md) and
+[4.0.0 migration guide](docs/setup/workspace-upgrade.md). Use a supported dedicated
+workspace environment, deliberately reconcile bases/overrides, identity, quality
+choices and branch state, deploy the generic role/procedure content through the
+actual host's mechanisms, and refresh the proxy/client catalog. Package installation
+and template-only `--upgrade` do not migrate owner configuration or agent settings.
+
+### Known limits and acceptance evidence
+
+The #536 configured suite completed with **3080 passed, 1 failed**. The recurring
+Windows `late-timeout` child-readiness failure occurs before process-stop assertions;
+a focused repeat passed but establishes no causal repair. The owner and independent
+QA accepted this known risk as non-blocking for #536, with investigation retained
+under [#533](https://github.com/MikeyVK/phase-gate-mcp/issues/533). The native full-suite
+result remains exit 1; no broader quality-policy change is implied.
+
+The owner accepted an external fresh installation of the exact preliminary 3.0.0
+test wheel. That proves its reported capability slice, not the identity or acceptance
+of a final 4.0.0 artifact. Final integrated-source wheel/sdist verification and explicit
+owner publication approval remain required. Available client capabilities still need
+to be demonstrated through the actual agent connection; there is no universal
+host/platform/version certification or PyPI publication.
 
 ## 3.0.0
 
