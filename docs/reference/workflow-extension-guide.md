@@ -280,7 +280,7 @@ Confirm these relationships explicitly:
 [git-tools]: tools/git.md
 [github-tools]: tools/github.md
 [config-loading]: config-loading-architecture.md
-[release-assets]: release-assets-procedure.md
+[release-assets]: https://github.com/MikeyVK/phase-gate-mcp/blob/main/docs/reference/release-assets-procedure.md
 [agent-model]: copilot-agent-instructions-model.md
 
 ---

@@ -60,7 +60,7 @@ not a reason to infer a version from repository files.
 For a previously absent server root, invoke `pgmcp --init` through that installed
 environment after resolving the roots. It requires assembled package assets;
 an editable checkout does not assemble them. Package preparation remains governed
-by the [Release Assets Procedure](../reference/release-assets-procedure.md), outside
+by the [Release Assets Procedure](https://github.com/MikeyVK/phase-gate-mcp/blob/main/docs/reference/release-assets-procedure.md), outside
 normal target setup.
 
 For an existing root, follow the [upgrade guide](workspace-upgrade.md) and the

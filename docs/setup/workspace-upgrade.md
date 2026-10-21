@@ -83,7 +83,7 @@ Use that environment's executable rather than an unrelated global `pgmcp`. A ver
 response confirms the invoked package; it does not prove workspace migration or healthy
 server admission. Use the GitHub release assets; this example does not assume a PyPI
 release. Source distributions follow the existing
-[release assets procedure](../reference/release-assets-procedure.md).
+[release assets procedure](https://github.com/MikeyVK/phase-gate-mcp/blob/main/docs/reference/release-assets-procedure.md).
 
 PGMCP does not install native adapter dependencies. Provision each selected adapter's
 declared executable/version through the environment's chosen installation process; see

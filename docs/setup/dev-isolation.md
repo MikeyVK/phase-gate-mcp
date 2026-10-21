@@ -161,7 +161,7 @@ No health-first gate is required for this reload procedure.
 ## Related Documentation
 
 - [Workspace upgrade guide](workspace-upgrade.md)
-- [Release assets procedure](../reference/release-assets-procedure.md)
+- [Release assets procedure](https://github.com/MikeyVK/phase-gate-mcp/blob/main/docs/reference/release-assets-procedure.md)
 - [Server configuration](../reference/server-configuration.md)
 - [Package source and build script](../../scripts/build_package.py)
 

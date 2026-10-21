@@ -35,7 +35,8 @@ def test_complete_wheel_and_installed_catalogs_and_entrypoints(
     distribution = build_installed_distribution(source, tmp_path / "distribution")
     inventories = (
         (source / ".pgmcp/template_suite", "mcp_server/assets/template_suite"),
-        (source / ".pgmcp/config", "mcp_server/assets/config"),
+        (source / ".pgmcp/config/defaults", "mcp_server/assets/config/defaults"),
+        (source / ".pgmcp/config/check_schemas", "mcp_server/assets/config/check_schemas"),
         (source / "mcp_server/bundled_adapters", "mcp_server/bundled_adapters"),
         (source / "mcp_server/execution/contracts", "mcp_server/execution/contracts"),
     )
@@ -43,6 +44,16 @@ def test_complete_wheel_and_installed_catalogs_and_entrypoints(
         names = set(wheel.namelist())
         assert not any(name.startswith("mcp_server/assets/bundled_adapters/") for name in names)
         assert not any("/workspace_adapters/" in name for name in names)
+        config_prefix = "mcp_server/assets/config/"
+        config_members = {name for name in names if name.startswith(config_prefix)}
+        assert config_members
+        assert all(
+            name.startswith((config_prefix + "defaults/", config_prefix + "check_schemas/"))
+            for name in config_members
+        )
+        assert not any(name.endswith("/release-assets-procedure.md") for name in names)
+        github = yaml.safe_load(wheel.read(config_prefix + "defaults/github.yaml"))
+        assert github["owner"] is github["repo"] is github["token"] is None
         for root, installed in inventories:
             files = [
                 path

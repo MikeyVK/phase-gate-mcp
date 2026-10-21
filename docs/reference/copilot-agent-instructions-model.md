@@ -209,7 +209,7 @@ composition mechanism.
 [tools-ref]: tools/README.md
 [vision-ref]: mcp_vision_reference.md
 [workflow-guide]: workflow-extension-guide.md
-[release-assets]: release-assets-procedure.md
+[release-assets]: https://github.com/MikeyVK/phase-gate-mcp/blob/main/docs/reference/release-assets-procedure.md
 [documentation-standard]: ../coding_standards/DOCUMENTATION_STANDARD.md
 [arch-principles]: ../coding_standards/ARCHITECTURE_PRINCIPLES.md
 [quality-gates]: ../coding_standards/QUALITY_GATES.md

@@ -3,8 +3,9 @@
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
 **Status:** ACTIVE  
-**Version:** 1.3  
-**Last Updated:** 2026-10-16
+**Version:** 1.4
+
+**Last Updated:** 2026-10-21
 
 ---
 
@@ -69,12 +70,15 @@ does not package active runtime locations.
 ## 2. Release Manifest Specification (`release_manifest.yaml`)
 
 The authoritative manifest is `.pgmcp/config/release_manifest.yaml`. The current
-manifest maps these repository sources into `mcp_server/assets/`:
+manifest maps selected repository sources into `mcp_server/assets/`. This excerpt
+shows the source boundaries; consult the manifest for the complete explicit reference-file list:
 
 ```yaml
 assets:
-  - source: ".pgmcp/config"
-    target: "config"
+  - source: ".pgmcp/config/defaults"
+    target: "config/defaults"
+  - source: ".pgmcp/config/check_schemas"
+    target: "config/check_schemas"
   - source: ".pgmcp/template_suite"
     target: "template_suite"
   - source: "docs/agents"
@@ -83,8 +87,12 @@ assets:
     target: "docs/coding_standards"
   - source: "docs/manuals"
     target: "docs/manuals"
-  - source: "docs/reference"
-    target: "docs/reference"
+  - source: "docs/reference/tools"
+    target: "docs/reference/tools"
+  - source: "docs/reference/presentation_architecture.md"
+    target: "docs/reference/presentation_architecture.md"
+  # Other installable reference files are explicitly selected in the manifest.
+  # This workspace-only procedure is deliberately not selected.
   - source: "docs/development/schema-template-maintenance.md"
     target: "docs/development/schema-template-maintenance.md"
   - source: "docs/setup"
@@ -98,6 +106,15 @@ assets:
 ```
 
 The single active maintenance guide is included at its existing documentation path so the template library and identity guides retain a delivered reading route. This mapping does not include the development archive or issue reports. Before distributing new or changed template packages, follow its [development and release review](../development/schema-template-maintenance.md#develop-and-release-a-package); asset assembly does not itself establish semantic conformance.
+
+Only config/defaults and config/check_schemas are distributed. Root configuration overrides,
+repository identity and reviewed native quality choices belong to the receiving workspace;
+never copy this repository's root overrides into an installable package. The manifest itself
+is a workspace build input, not target-workspace configuration.
+
+This release procedure remains in the PGMCP source workspace and is not an installed asset.
+Installable references are explicitly selected; their links to this procedure use the
+repository source URL. A new distributable reference requires an explicit manifest entry.
 
 The repository manifest is the source of truth for package asset mappings. Keep
 consumer copies of host instructions synchronized with their declared direct-copy
@@ -143,9 +160,12 @@ claim protection against hostile concurrent filesystem changes.
 
 ### 3.1 Prepare reviewable release artifacts
 
-GitHub Releases is the selected publication destination for 1.0.0, 2.0.0 and 3.0.0.
-Prepare a wheel and source distribution (sdist) for each version. PyPI publication
-is outside this procedure's approved scope. Run the existing
+GitHub Releases is the selected publication destination. Versions 1.0.0, 2.0.0 and
+3.0.0 are historical publication records, not the next release-version decision.
+Prepare a wheel and source distribution (sdist) for the selected candidate. An early
+installation-test build may retain current package metadata when its exact source,
+artifact hash and provisional status are recorded; it is not an accepted release.
+PyPI publication remains outside this procedure's approved scope. Run the existing
 `scripts/build_package.py` utility to assemble assets and build; the sdist must
 retain the assembled assets so it can rebuild a complete wheel.
 
@@ -271,3 +291,4 @@ part of this procedure.
 | 1.1 | 2026-10-07 | @imp documenter | Include the active template maintenance guide as one asset and connect package review to distribution without changing activation behavior. |
 | 1.2 | 2026-10-11 | @imp documenter | Define bounded GitHub release preparation, historical reconstruction provenance, exact-artifact verification and separate publication approval. |
 | 1.3 | 2026-10-16 | @imp documenter | Correct explicit assembly ordering, disposable-root boundaries and fail-closed diagnostics/build behavior for #505. |
+| 1.4 | 2026-10-21 | @imp implementer | Select generic configuration defaults/shared schemas and explicit installable references; retain release procedure only in the source workspace. |
